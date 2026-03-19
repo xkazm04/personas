@@ -850,6 +850,116 @@
         "label": "Emits events: execution failed, item created, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary action when an On Fire or Hot lead is identified?",
+        "type": "select",
+        "options": [
+          "Notify sales rep for manual outreach only",
+          "Notify sales AND auto-enroll in a follow-up sequence",
+          "Notify sales AND attempt to auto-book a discovery call",
+          "Assign to a specific rep by territory or segment and notify them"
+        ],
+        "default": "Notify sales rep for manual outreach only",
+        "context": "Determines whether the pipeline stops at alerting or also triggers downstream automation — affects how aggressively the persona acts on hot leads.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your primary sales motion?",
+        "type": "select",
+        "options": [
+          "Self-serve / product-led (low-touch, high volume)",
+          "Inside sales / SMB (moderate-touch, $1k–$25k ACV)",
+          "Enterprise / high-ACV (high-touch, long cycle, multiple stakeholders)",
+          "Hybrid — PLG with sales assist for upsell or expansion"
+        ],
+        "default": "Inside sales / SMB (moderate-touch, $1k–$25k ACV)",
+        "context": "Calibrates lead scoring weights and urgency thresholds — a PLG motion treats 'exploring' very differently from an enterprise team chasing net-new logos.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Which Typeform form(s) should this pipeline process? Provide the form name or ID.",
+        "type": "text",
+        "default": "",
+        "context": "Scopes the pipeline to the correct Typeform source. Multiple forms can be comma-separated if leads flow from more than one entry point (e.g., demo request, contact us, partner inquiry).",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "At what minimum score threshold should a Slack alert fire to the sales team?",
+        "type": "select",
+        "options": [
+          "81+ (On Fire only — highest intent)",
+          "61+ (Hot and On Fire)",
+          "31+ (Warm, Hot, and On Fire)",
+          "All leads regardless of score"
+        ],
+        "default": "61+ (Hot and On Fire)",
+        "context": "Prevents alert fatigue. Pinging sales for every Cold or Warm lead trains them to ignore the channel; tighter thresholds keep Slack signal-to-noise high.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel should receive hot lead alerts, and should different score tiers route to different channels?",
+        "type": "text",
+        "default": "#sales-alerts",
+        "context": "Routes notifications to the right audience. Example: On Fire → #sales-hot for immediate response, Hot → #sales-pipeline for daily review. Specify one channel or a tier→channel mapping.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this pipeline NEVER do automatically without explicit human confirmation?",
+        "type": "select",
+        "options": [
+          "Send any outbound email — all emails require approval before sending",
+          "Contact leads from known competitor or partner domains",
+          "Overwrite an existing Airtable record when a returning lead resubmits",
+          "Process or score leads that came from internal test submissions"
+        ],
+        "default": "Overwrite an existing Airtable record when a returning lead resubmits",
+        "context": "Sets a hard stop to prevent data loss, unwanted outreach, or accidental spam — especially important for re-engagement flows where existing CRM data could be silently clobbered.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which lead tiers require a sales rep to approve before the welcome email is sent?",
+        "type": "select",
+        "options": [
+          "None — send welcome emails automatically for all tiers",
+          "On Fire only — too high-value for a fully automated first touch",
+          "Hot and On Fire — sales should personalize these manually",
+          "All tiers — pipeline queues emails and rep batch-approves"
+        ],
+        "default": "None — send welcome emails automatically for all tiers",
+        "context": "High-ACV or strategic leads often warrant a human-crafted first email. Gating email send for these tiers ensures the automated pipeline hands off gracefully before touching your best prospects.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How deeply should the welcome email be personalized using Typeform responses?",
+        "type": "select",
+        "options": [
+          "Light — first name and company only",
+          "Moderate — reference their stated budget and timeline in the body",
+          "Score-tiered — Cold/Warm gets a nurture tone, Hot/On Fire gets an urgent CTA",
+          "Full — name, company, specific answers, and a score-tier-matched CTA"
+        ],
+        "default": "Score-tiered — Cold/Warm gets a nurture tone, Hot/On Fire gets an urgent CTA",
+        "context": "Controls how deeply the pipeline mines form responses when drafting emails. Heavier personalization increases relevance but also increases prompt complexity and latency per lead.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

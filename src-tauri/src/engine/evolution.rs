@@ -7,10 +7,9 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::{EvolutionCycle, EvolutionPolicy, LabRunStatus};
+use crate::db::models::EvolutionPolicy;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::lab::evolution as evolution_repo;
-use crate::db::repos::lab::genome as genome_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::engine::genome::{
@@ -44,6 +43,7 @@ impl EvolutionCycleStatus {
         }
     }
 
+    #[allow(dead_code)]
     pub fn from_db(s: &str) -> Self {
         match s {
             "breeding" => Self::Breeding,

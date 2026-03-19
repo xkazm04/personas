@@ -17,7 +17,6 @@ export function TuneStep() {
     designResult,
     adoptionRequirements,
     verification,
-    handleSkipQuestions,
   } = useAdoptionWizard();
 
   const sandboxPolicy = verification.sandboxPolicy;
@@ -73,9 +72,9 @@ export function TuneStep() {
     <div className="space-y-3">
       {/* Step header */}
       <div className="mb-1">
-        <h3 className="text-base font-semibold text-foreground">Configure Persona</h3>
+        <h3 className="text-base font-semibold text-foreground">Customize Persona</h3>
         <p className="text-sm text-muted-foreground/60 mt-0.5">
-          Set template variables, triggers, review policy, and memory.
+          Answer questions to tailor the persona to your needs, then configure triggers and policies.
           {hasRequiredMissing && (
             <span className="text-amber-400/70 ml-1">Required fields marked below.</span>
           )}
@@ -114,13 +113,12 @@ export function TuneStep() {
         />
       </div>
 
-      {/* AI Questions */}
+      {/* AI Questions — shown prominently as the primary customization interface */}
       {hasQuestions && (
         <AiQuestionsCard
           questions={questions}
           userAnswers={userAnswers}
           onAnswerUpdated={(questionId, answer) => wizard.answerUpdated(questionId, answer)}
-          onSkipQuestions={handleSkipQuestions}
         />
       )}
 
@@ -128,7 +126,7 @@ export function TuneStep() {
       {questionGenerating && !hasQuestions && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
           <ThinkingLoader size={20} />
-          <span className="text-sm text-violet-300/70">Analyzing template for configuration questions...</span>
+          <span className="text-sm text-violet-300/70">Analyzing template to generate customization questions...</span>
         </div>
       )}
     </div>

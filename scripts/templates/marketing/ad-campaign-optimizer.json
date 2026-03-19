@@ -810,6 +810,128 @@
         "label": "Emits events: execution completed, review requested, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary role of this optimizer in your workflow?",
+        "type": "select",
+        "options": [
+          "Full automation — auto-pause underperformers and send recommendations without review",
+          "Recommendations only — flag issues and suggest actions, but I approve all changes",
+          "Reporting focus — log data and send reports, minimal automated intervention",
+          "Hybrid — auto-pause low-budget ad groups, require approval for high-spend ones"
+        ],
+        "default": "Hybrid — auto-pause low-budget ad groups, require approval for high-spend ones",
+        "context": "Determines how aggressively the agent acts vs. defers to human judgment. Drives the auto-pause vs. escalation flow.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which Google Ads campaign types does this agent need to monitor?",
+        "type": "select",
+        "options": [
+          "Search campaigns only",
+          "Search + Shopping",
+          "Search + Display + Shopping",
+          "All types including Video and Performance Max"
+        ],
+        "default": "Search + Shopping",
+        "context": "Different campaign types have different KPIs and bidding mechanics — PMax and Video don't support ad group pausing the same way Search does.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What is your primary KPI for evaluating ad group performance?",
+        "type": "select",
+        "options": [
+          "Cost-per-conversion (CPA) against a fixed target",
+          "Return on ad spend (ROAS) against a minimum threshold",
+          "Conversion volume with a max CPA guardrail",
+          "Click-through rate (CTR) for awareness campaigns"
+        ],
+        "default": "Cost-per-conversion (CPA) against a fixed target",
+        "context": "Determines which metric the underperformer detection and auto-pause logic is built around.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What daily spend threshold should trigger a mandatory human review before pausing an ad group?",
+        "type": "select",
+        "options": [
+          "$50/day",
+          "$100/day",
+          "$250/day",
+          "$500/day or more"
+        ],
+        "default": "$100/day",
+        "context": "Sets the high-budget guardrail in the escalation flow — ad groups above this threshold route to Slack for approval rather than being auto-paused.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Who should receive the Slack approval request when a high-spend ad group is flagged for pausing?",
+        "type": "select",
+        "options": [
+          "Just me (solo manager)",
+          "My PPC team channel",
+          "A specific manager who must approve",
+          "Client-facing channel requiring client sign-off"
+        ],
+        "default": "Just me (solo manager)",
+        "context": "Determines the routing target for escalation alerts and whether the approval workflow needs a single responder or a group.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Are there campaign or ad group categories that should NEVER be auto-paused, regardless of CPA?",
+        "type": "select",
+        "options": [
+          "Brand/trademark campaigns must always stay live",
+          "Any campaign tagged 'always-on' in the name is off-limits",
+          "No exceptions — auto-pause logic applies to everything",
+          "I'll provide a specific exclusion list (campaigns/ad group IDs)"
+        ],
+        "default": "Brand/trademark campaigns must always stay live",
+        "context": "Prevents the agent from accidentally pausing brand-defense or contractually required campaigns during a CPA spike.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How many days of underperformance should the agent require before flagging an ad group?",
+        "type": "select",
+        "options": [
+          "1 day (immediate — high sensitivity)",
+          "3 consecutive days",
+          "5 of the last 7 days",
+          "Only flag if 30-day average also exceeds threshold (statistical confidence)"
+        ],
+        "default": "3 consecutive days",
+        "context": "Controls false-positive rate. Single-day spikes are often noise; requiring a trend window reduces unnecessary pauses.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "Who should receive the weekly performance email report?",
+        "type": "select",
+        "options": [
+          "Just me",
+          "My internal marketing team",
+          "External clients or stakeholders",
+          "Both internal team and clients (separate versions)"
+        ],
+        "default": "My internal marketing team",
+        "context": "Shapes report content and tone — client-facing reports typically omit internal cost data and include executive summaries.",
+        "dimension": "human-review"
+      }
     ]
   }
 }

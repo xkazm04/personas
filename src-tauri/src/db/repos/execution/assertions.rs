@@ -67,6 +67,7 @@ fn parse_failure_action(s: &str) -> AssertionFailureAction {
 
 // -- Assertion CRUD -------------------------------------------
 
+#[allow(clippy::too_many_arguments)]
 pub fn create(
     pool: &DbPool,
     persona_id: &str,
@@ -130,6 +131,7 @@ pub fn list_enabled_by_persona(
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update(
     pool: &DbPool,
     id: &str,

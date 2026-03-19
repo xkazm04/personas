@@ -731,6 +731,121 @@
         "label": "Emits events: threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is your primary goal for this Error Response Coordinator?",
+        "type": "select",
+        "options": [
+          "Reduce alert fatigue — batch and deduplicate noisy Sentry alerts",
+          "Speed up triage — get structured GitHub issues created automatically from every new error",
+          "Improve visibility — keep the team informed via Slack with clear severity-based summaries",
+          "Full pipeline — all three: deduplicate, issue-track, and notify"
+        ],
+        "default": "Full pipeline — all three: deduplicate, issue-track, and notify",
+        "context": "Determines which flows to prioritize and how aggressively to tune deduplication vs. issue creation thresholds.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which Sentry environments and projects should this agent monitor?",
+        "type": "text",
+        "default": "production only",
+        "context": "Scopes the agent's Sentry polling and webhook handling. Monitoring staging vs. production changes severity logic and notification routing.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What is your engineering team's stack and deployment model?",
+        "type": "select",
+        "options": [
+          "Monorepo / single backend service",
+          "Microservices (multiple repos/services)",
+          "Frontend-heavy (React/Next.js, mobile)",
+          "Mixed: frontend + backend + mobile"
+        ],
+        "default": "Mixed: frontend + backend + mobile",
+        "context": "Affects how errors are grouped by component, how GitHub issues are routed to repos, and how Slack summaries are structured by service.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "At what severity level should errors trigger an immediate Slack alert vs. be held for the 30-minute digest?",
+        "type": "select",
+        "options": [
+          "Only P0/critical errors go immediate; everything else is batched",
+          "P0 and P1 errors go immediate; P2 and below are batched",
+          "All new errors go immediate; digests are used for recurrences only",
+          "Everything is batched — no immediate alerts"
+        ],
+        "default": "P0 and P1 errors go immediate; P2 and below are batched",
+        "context": "Directly controls the digest buffer logic and the real-time alert flow trigger conditions.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do automatically without explicit human action?",
+        "type": "select",
+        "options": [
+          "Never auto-close or resolve GitHub issues",
+          "Never assign GitHub issues to specific engineers",
+          "Never post to #production or #incidents channels directly",
+          "Never create GitHub issues — only post Slack summaries"
+        ],
+        "default": "Never assign GitHub issues to specific engineers",
+        "context": "Sets hard guardrails to prevent the agent from taking actions that could disrupt on-call workflows or create noise in sensitive channels.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "For which situations should the agent pause and wait for human confirmation before acting?",
+        "type": "select",
+        "options": [
+          "Always confirm before creating a GitHub issue for a brand-new error cluster",
+          "Confirm before posting to Slack for P0 errors affecting more than 100 users",
+          "Confirm before marking an error as a duplicate of an existing known issue",
+          "No confirmation needed — run fully automated"
+        ],
+        "default": "Always confirm before creating a GitHub issue for a brand-new error cluster",
+        "context": "Prevents the agent from flooding the issue tracker or misfiling errors during high-volume incidents.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "What should the agent remember and track persistently across sessions?",
+        "type": "select",
+        "options": [
+          "Known error fingerprints and their linked GitHub issue numbers only",
+          "Error fingerprints + MTTR per error cluster + recurrence counts",
+          "Full history: fingerprints, MTTR, recurrence, known false positives, and resolved issues",
+          "Nothing persistent — treat each run as stateless"
+        ],
+        "default": "Error fingerprints + MTTR per error cluster + recurrence counts",
+        "context": "Controls what goes into known_issues.json and informs weekly report trend calculations and deduplication accuracy over time.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should auto-created GitHub issues be?",
+        "type": "select",
+        "options": [
+          "Minimal — title, error type, stack trace top frame, Sentry link",
+          "Standard — title, full stack trace, affected users/count, environment, reproduction steps",
+          "Comprehensive — all standard fields plus suggested root cause hypothesis and similar past issues"
+        ],
+        "default": "Standard — title, full stack trace, affected users/count, environment, reproduction steps",
+        "context": "Balances issue richness against noise. Comprehensive mode uses more tokens and may produce speculative content.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

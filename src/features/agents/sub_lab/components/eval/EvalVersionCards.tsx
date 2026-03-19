@@ -8,62 +8,93 @@ interface EvalVersionCardsProps {
   celebrateWinnerId: string | null;
 }
 
+function scoreLabel(score: number): string {
+  if (score >= 80) return 'Excellent';
+  if (score >= 60) return 'Good';
+  if (score >= 40) return 'Fair';
+  if (score >= 20) return 'Weak';
+  return 'Poor';
+}
+
+function scoreBg(score: number): string {
+  if (score >= 80) return 'from-emerald-500/20 to-emerald-500/5';
+  if (score >= 60) return 'from-blue-500/20 to-blue-500/5';
+  if (score >= 40) return 'from-amber-500/20 to-amber-500/5';
+  return 'from-red-500/20 to-red-500/5';
+}
+
+function ScoreBar({ value, label, icon: Icon }: { value: number; label: string; icon: typeof Target }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+          <Icon className="w-3 h-3" />{label}
+        </span>
+        <span className={`text-xs font-semibold ${scoreColor(value)}`}>{value}/100</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-primary/5 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${value >= 80 ? 'bg-emerald-500/70' : value >= 50 ? 'bg-amber-500/70' : 'bg-red-500/60'}`}
+          style={{ width: `${Math.max(value, 2)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: EvalVersionCardsProps) {
-  const colors = ['blue', 'violet', 'emerald', 'amber', 'rose', 'cyan'];
+  const colors = [
+    { gradient: 'from-blue-500/15 via-blue-500/10 to-blue-500/5', border: 'border-blue-500/20', text: 'text-blue-400', bg: 'bg-blue-500/15' },
+    { gradient: 'from-violet-500/15 via-violet-500/10 to-violet-500/5', border: 'border-violet-500/20', text: 'text-violet-400', bg: 'bg-violet-500/15' },
+    { gradient: 'from-emerald-500/15 via-emerald-500/10 to-emerald-500/5', border: 'border-emerald-500/20', text: 'text-emerald-400', bg: 'bg-emerald-500/15' },
+    { gradient: 'from-amber-500/15 via-amber-500/10 to-amber-500/5', border: 'border-amber-500/20', text: 'text-amber-400', bg: 'bg-amber-500/15' },
+  ];
 
   return (
-    <div className="space-y-2">
-      <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
-        <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
-        <Trophy className="w-3.5 h-3.5" />
-        Version Rankings
-      </h4>
+    <div className="space-y-3">
+      <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider px-1">Version Performance</h4>
       <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(versionAggs.length, 4)}, 1fr)` }}>
         {versionAggs.map((agg, idx) => {
           const isWinner = agg.versionId === winnerId;
-          const color = colors[idx % colors.length];
+          const c = colors[idx % colors.length]!;
           return (
             <div key={agg.versionId} data-testid={`eval-version-card-${agg.versionNumber}`}
-              className={`rounded-xl border p-4 space-y-3 ${
+              className={`rounded-xl border overflow-hidden transition-all ${
                 isWinner
-                  ? `bg-primary/5 border-primary/20 ${celebrateWinnerId === agg.versionId ? 'ring-1 ring-primary/20 shadow-[0_0_14px_rgba(99,102,241,0.18)]' : ''}`
-                  : 'bg-background/30 border-primary/10'
+                  ? `${c.border} shadow-lg shadow-primary/5 ${celebrateWinnerId === agg.versionId ? 'ring-1 ring-primary/20' : ''}`
+                  : 'border-primary/10'
               }`}>
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-0.5 rounded text-sm font-mono font-bold bg-${color}-500/15 text-${color}-400`}>
-                  v{agg.versionNumber}
-                </span>
-                {isWinner && (
-                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-sm font-medium bg-primary/15 text-primary border border-primary/20">
-                    <Trophy className="w-3 h-3 animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none" /> Winner
-                  </span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="flex items-center gap-1.5" title="Tool Accuracy">
-                  <Target className="w-3.5 h-3.5 text-muted-foreground/80" />
-                  <span className={scoreColor(agg.avgToolAccuracy)}>{agg.avgToolAccuracy}</span>
-                </div>
-                <div className="flex items-center gap-1.5" title="Output Quality">
-                  <FileText className="w-3.5 h-3.5 text-muted-foreground/80" />
-                  <span className={scoreColor(agg.avgOutputQuality)}>{agg.avgOutputQuality}</span>
-                </div>
-                <div className="flex items-center gap-1.5" title="Protocol Compliance">
-                  <Shield className="w-3.5 h-3.5 text-muted-foreground/80" />
-                  <span className={scoreColor(agg.avgProtocolCompliance)}>{agg.avgProtocolCompliance}</span>
+              {/* Card header */}
+              <div className={`px-4 py-2.5 bg-gradient-to-r ${isWinner ? c.gradient : 'from-secondary/40 to-secondary/20'}`}>
+                <div className="flex items-center justify-between">
+                  <span className={`px-2 py-0.5 rounded-md text-sm font-mono font-bold ${c.bg} ${c.text}`}>v{agg.versionNumber}</span>
+                  {isWinner && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
+                      <Trophy className="w-2.5 h-2.5" /> Best
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 text-sm">
-                <span className={`font-bold text-lg ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
-                <span className="text-muted-foreground/60">composite</span>
-                <div className="flex-1" />
-                <div className="flex items-center gap-1 text-muted-foreground/90">
-                  <DollarSign className="w-3 h-3" /><span>${agg.totalCost.toFixed(4)}</span>
+              {/* Scores */}
+              <div className="px-4 py-3 space-y-3 bg-background/40">
+                <div className={`flex items-center gap-3 p-2.5 rounded-lg bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
+                  <span className={`text-2xl font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
+                  <div>
+                    <span className={`text-xs font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
+                    <p className="text-[10px] text-muted-foreground/50">Composite</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-muted-foreground/90">
-                  <Clock className="w-3 h-3" /><span>{(agg.avgDuration / 1000).toFixed(1)}s</span>
+
+                <div className="space-y-2">
+                  <ScoreBar value={agg.avgToolAccuracy} label="Tool Usage" icon={Target} />
+                  <ScoreBar value={agg.avgOutputQuality} label="Output Quality" icon={FileText} />
+                  <ScoreBar value={agg.avgProtocolCompliance} label="Protocol" icon={Shield} />
+                </div>
+
+                <div className="flex items-center gap-3 pt-1 border-t border-primary/5 text-[11px] text-muted-foreground/50">
+                  <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}s avg</span>
                 </div>
               </div>
             </div>

@@ -92,18 +92,161 @@
         "name": "Weekly AI Research Briefing",
         "description": "Conduct structured research on AI developments and deliver a polished weekly briefing",
         "nodes": [
-          { "id": "1", "label": "Define Scope", "type": "start" },
-          { "id": "2", "label": "LLM Research", "type": "process" },
-          { "id": "3", "label": "Store Findings", "type": "storage" },
-          { "id": "4", "label": "Generate Briefing", "type": "process" },
-          { "id": "5", "label": "Deliver Message", "type": "end" }
+          {
+            "id": "1",
+            "label": "Define Scope",
+            "type": "start"
+          },
+          {
+            "id": "2",
+            "label": "LLM Research",
+            "type": "process"
+          },
+          {
+            "id": "3",
+            "label": "Store Findings",
+            "type": "storage"
+          },
+          {
+            "id": "4",
+            "label": "Generate Briefing",
+            "type": "process"
+          },
+          {
+            "id": "5",
+            "label": "Deliver Message",
+            "type": "end"
+          }
         ],
         "edges": [
-          { "source": "1", "target": "2" },
-          { "source": "2", "target": "3" },
-          { "source": "3", "target": "4" },
-          { "source": "4", "target": "5" }
+          {
+            "source": "1",
+            "target": "2"
+          },
+          {
+            "source": "2",
+            "target": "3"
+          },
+          {
+            "source": "3",
+            "target": "4"
+          },
+          {
+            "source": "4",
+            "target": "5"
+          }
         ]
+      }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary purpose of your weekly AI briefing?",
+        "type": "select",
+        "options": [
+          "Personal learning & staying current in the field",
+          "Team or stakeholder updates (distribute to others)",
+          "Product strategy & competitive intelligence",
+          "Investment research & market signals",
+          "Academic or policy research tracking"
+        ],
+        "default": "Personal learning & staying current in the field",
+        "context": "Determines the tone, depth, and framing of briefing summaries — a stakeholder update reads differently than a personal knowledge digest.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_intent_2",
+        "category": "intent",
+        "question": "Which AI subdomains should be the primary focus of each weekly briefing?",
+        "type": "select",
+        "options": [
+          "Large language models & generative AI (LLMs, multimodal, agents)",
+          "AI safety, alignment & governance",
+          "Applied ML, tooling & infrastructure (frameworks, deployment, APIs)",
+          "Robotics, embodied AI & physical systems",
+          "Broad coverage — all major AI domains equally"
+        ],
+        "default": "Large language models & generative AI (LLMs, multimodal, agents)",
+        "context": "Focuses the research scope so findings are highly relevant rather than scattered across all of AI.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your role and technical background when consuming AI research?",
+        "type": "select",
+        "options": [
+          "Software engineer or ML practitioner (technical depth welcome)",
+          "Product manager or strategist (business impact over math)",
+          "Executive or investor (high-signal, low-jargon summaries)",
+          "Researcher or academic (methodology and citations matter)"
+        ],
+        "default": "Software engineer or ML practitioner (technical depth welcome)",
+        "context": "Calibrates briefing language, abstraction level, and which details get surfaced vs. omitted.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What content should the researcher exclude or flag as out-of-scope?",
+        "type": "select",
+        "options": [
+          "Exclude pure academic papers — focus on industry and applied developments only",
+          "Exclude speculative or unverified claims — only report confirmed releases",
+          "Exclude hype and marketing content — only substantive technical or policy changes",
+          "No restrictions — include everything relevant, let me filter"
+        ],
+        "default": "Exclude hype and marketing content — only substantive technical or policy changes",
+        "context": "Prevents signal-to-noise degradation in the knowledge base and briefing output over time.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_boundaries_2",
+        "category": "boundaries",
+        "question": "Are there any specific organizations or topics the researcher should never cover?",
+        "type": "text",
+        "default": "None",
+        "context": "Avoids conflict-of-interest situations or topics outside your mandate (e.g., excluding a competitor by policy, or avoiding politically contentious AI ethics debates).",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When should a finding require your explicit review before it is stored to the knowledge base?",
+        "type": "select",
+        "options": [
+          "Never — store all findings automatically, I'll review the briefing output",
+          "Flag 'Transformative' impact findings for review before storing",
+          "Require approval any time a previous finding is contradicted or superseded",
+          "Always require review before anything is stored"
+        ],
+        "default": "Never — store all findings automatically, I'll review the briefing output",
+        "context": "Controls how much autonomy the agent has over the local knowledge base, which accumulates across weeks.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How many key developments should be highlighted in each weekly briefing?",
+        "type": "select",
+        "options": [
+          "3–5 items — concise, highest-signal only",
+          "5–7 items — balanced depth and breadth (default)",
+          "8–12 items — comprehensive, cover all significant developments"
+        ],
+        "default": "5–7 items — balanced depth and breadth (default)",
+        "context": "Sets the density of the weekly briefing output — shorter briefs are easier to consume, longer ones reduce the risk of missing important signals.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Should the knowledge base track longitudinal trends and explicitly flag when new findings contradict or supersede previous weeks?",
+        "type": "boolean",
+        "default": true,
+        "context": "Enables week-over-week intelligence — e.g., noting that a model previously rated 'Emerging' has now reached 'Significant' adoption. Requires the knowledge base files to grow over time.",
+        "dimension": "memory"
       }
     ]
   },
@@ -121,15 +264,21 @@
     "presets": [
       {
         "label": "News in AI this week",
-        "values": { "research_topic": "News in AI this week" }
+        "values": {
+          "research_topic": "News in AI this week"
+        }
       },
       {
         "label": "AI in Healthcare",
-        "values": { "research_topic": "AI in Healthcare" }
+        "values": {
+          "research_topic": "AI in Healthcare"
+        }
       },
       {
         "label": "Open Source AI Models",
-        "values": { "research_topic": "Open Source AI Models and Frameworks" }
+        "values": {
+          "research_topic": "Open Source AI Models and Frameworks"
+        }
       }
     ]
   }

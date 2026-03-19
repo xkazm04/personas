@@ -34,6 +34,8 @@ pub async fn start_scheduler(
         state.cloud_client.clone(),
         #[cfg(feature = "desktop")]
         state.ambient_context.clone(),
+        #[cfg(feature = "desktop")]
+        state.context_rule_engine.clone(),
     );
 
     Ok(state.scheduler.stats())

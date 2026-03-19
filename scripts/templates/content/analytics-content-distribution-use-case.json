@@ -783,6 +783,120 @@
         "label": "Emits events: execution failed, review requested, threshold breached",
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of distributing your WordPress posts to social media?",
+        "type": "select",
+        "options": [
+          "Drive referral traffic back to the blog",
+          "Build brand awareness and social following",
+          "Generate leads or product signups",
+          "Establish thought leadership in the industry"
+        ],
+        "default": "Drive referral traffic back to the blog",
+        "context": "This shapes caption copy — traffic-focused captions use stronger CTAs and link placement, while awareness captions prioritize hooks and shareability over clicks.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of content does your WordPress blog primarily publish?",
+        "type": "select",
+        "options": [
+          "B2B SaaS — product updates, tutorials, and industry guides",
+          "E-commerce — product announcements, reviews, and promotions",
+          "Media / editorial — news, analysis, and opinion pieces",
+          "Creator / personal brand — lifestyle, how-to, and storytelling"
+        ],
+        "default": "B2B SaaS — product updates, tutorials, and industry guides",
+        "context": "Content type determines default caption tone, hashtag style, and which platforms get prioritized in the distribution strategy.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Are there any WordPress post categories or tags that should NEVER be auto-distributed to social media?",
+        "type": "text",
+        "default": "",
+        "context": "Some posts (internal announcements, gated content, legal notices) should be excluded from social distribution. List category or tag names to block, or leave blank for no exclusions.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_boundaries_2",
+        "category": "boundaries",
+        "question": "Should the agent skip scheduling during weekends or outside specific business hours?",
+        "type": "select",
+        "options": [
+          "No restrictions — post any time for maximum reach",
+          "Weekdays only (Mon–Fri), reschedule weekend posts to Monday",
+          "Business hours only (09:00–18:00 in my time zone)",
+          "Custom — I will define hours in the caption strategy"
+        ],
+        "default": "No restrictions — post any time for maximum reach",
+        "context": "Prevents posts from going live at low-engagement times or during company blackout periods.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Should the agent queue captions to Buffer as drafts for your review, or publish them directly to the schedule?",
+        "type": "select",
+        "options": [
+          "Auto-schedule directly — no review needed",
+          "Queue as drafts for all posts — I will approve before publishing",
+          "Auto-schedule standard posts, draft only for featured or high-priority categories"
+        ],
+        "default": "Auto-schedule directly — no review needed",
+        "context": "Determines whether humans stay in the publishing loop. Draft mode adds a review step but prevents unintended live posts.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "When the 48-hour analytics review recommends a strategy change (e.g., stop posting to Facebook, shift to morning slots), should the agent apply changes automatically or notify you first?",
+        "type": "select",
+        "options": [
+          "Apply strategy changes automatically",
+          "Notify me with a summary and wait for approval before changing strategy",
+          "Apply low-impact changes (timing) automatically, require approval for platform removals"
+        ],
+        "default": "Notify me with a summary and wait for approval before changing strategy",
+        "context": "Strategy changes affect all future posts, so human sign-off prevents the agent from quietly deprioritizing a platform based on a small data sample.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which platforms connected to your Buffer account should receive auto-scheduled posts?",
+        "type": "select",
+        "options": [
+          "Twitter/X and LinkedIn only",
+          "Twitter/X, LinkedIn, and Facebook",
+          "LinkedIn only",
+          "All platforms currently connected in Buffer"
+        ],
+        "default": "Twitter/X and LinkedIn only",
+        "context": "Only selected platforms will receive captions. This also controls which platform engagement data the analytics review uses to rank performance.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What default caption tone should the agent use when generating social copy for your posts?",
+        "type": "select",
+        "options": [
+          "Professional and informative — facts first, minimal flair",
+          "Conversational and friendly — approachable, light humor welcome",
+          "Educational and authoritative — position the content as expert-level",
+          "Promotional and action-oriented — strong CTAs, urgency language"
+        ],
+        "default": "Conversational and friendly — approachable, light humor welcome",
+        "context": "Sets the baseline voice for all generated captions across platforms, which the agent may adjust per-platform (e.g., slightly more formal on LinkedIn).",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

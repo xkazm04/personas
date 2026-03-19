@@ -679,6 +679,116 @@
         "label": "Emits events: execution completed, execution failed, item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary workflow you want this agent to handle?",
+        "type": "select",
+        "options": [
+          "Keep Mailchimp audiences in sync with Airtable tags/segments only",
+          "Sync audiences AND auto-trigger campaigns when new segments appear",
+          "Full bidirectional sync including unsubscribe propagation back to Airtable",
+          "All of the above — full audience lifecycle management"
+        ],
+        "default": "Full bidirectional sync including unsubscribe propagation back to Airtable",
+        "context": "Determines which of the three use case flows are active and how aggressively the agent acts on changes.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of contact data lives in your Airtable base, and what do your tags/segments represent?",
+        "type": "select",
+        "options": [
+          "B2B leads segmented by industry, company size, or funnel stage",
+          "B2C customers segmented by purchase behavior or product interest",
+          "Event attendees or community members segmented by participation",
+          "Mixed — contacts span multiple audience types with custom tagging"
+        ],
+        "default": "B2B leads segmented by industry, company size, or funnel stage",
+        "context": "Shapes how the agent interprets tag changes and what campaign targeting logic makes sense for new segments.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which Airtable fields store segment and tag data that should drive Mailchimp audience membership?",
+        "type": "text",
+        "default": "Tags (multi-select field), Segment (single-select field)",
+        "context": "The agent needs exact field names to query and diff changes correctly. Example: 'Tags', 'Audience Segment', 'List Status'.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "When a contact is removed from a segment in Airtable, how should Mailchimp handle them?",
+        "type": "select",
+        "options": [
+          "Unsubscribe from that audience list only",
+          "Remove (delete) from that audience list entirely",
+          "Move to a general 'untagged' or catch-all audience",
+          "Archive but preserve for re-engagement campaigns"
+        ],
+        "default": "Unsubscribe from that audience list only",
+        "context": "Controls the removal behavior to balance compliance requirements with re-engagement possibilities.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Are there any contacts or segments the agent should NEVER modify or sync automatically?",
+        "type": "text",
+        "default": "VIP contacts, manually managed lists, contacts tagged 'Do Not Sync'",
+        "context": "Prevents the agent from overwriting carefully curated lists or touching contacts under active sales or legal review. Example: 'Never touch the Enterprise accounts list' or 'Skip contacts with a Hold flag'.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When the agent detects a brand-new segment in Airtable (never seen before), should it auto-create and schedule a Mailchimp campaign, or notify and wait for approval?",
+        "type": "select",
+        "options": [
+          "Post to Slack for human approval before creating any campaign",
+          "Auto-create the campaign as a draft — human must activate it",
+          "Auto-create and schedule the campaign fully autonomously",
+          "Only notify via Slack — never create campaigns automatically"
+        ],
+        "default": "Auto-create the campaign as a draft — human must activate it",
+        "context": "New segment campaigns carry real send risk. Determines how much autonomy the agent has over campaign creation vs. requiring human sign-off.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What level of detail should Slack sync status reports include?",
+        "type": "select",
+        "options": [
+          "Summary only — total contacts synced, errors count, elapsed time",
+          "Per-segment breakdown — counts added/removed per audience list",
+          "Full change log — list every contact modified with their tag changes",
+          "Silent unless errors occur — only post on failures or warnings"
+        ],
+        "default": "Per-segment breakdown — counts added/removed per audience list",
+        "context": "Balances Slack noise against visibility. High-volume teams often prefer summaries; smaller teams may want the full log for auditing.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "Should unsubscribe events from Mailchimp be written back to Airtable automatically, or flagged for manual review first?",
+        "type": "select",
+        "options": [
+          "Write back to Airtable automatically — update the record immediately",
+          "Post to Slack for confirmation before updating Airtable",
+          "Write back automatically but log every change to an Airtable audit table",
+          "Never write back to Airtable — Mailchimp unsubscribes are one-way only"
+        ],
+        "default": "Write back automatically but log every change to an Airtable audit table",
+        "context": "Unsubscribe writeback affects compliance and CRM data integrity. Some teams require human confirmation before altering the source-of-truth contact record.",
+        "dimension": "human-review"
+      }
     ]
   }
 }

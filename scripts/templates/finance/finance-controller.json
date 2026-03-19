@@ -843,6 +843,107 @@
         "label": "Emits events: review requested, item created, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary financial pain point this agent should solve for your business?",
+        "type": "select",
+        "options": [
+          "Chasing overdue invoices and reducing DSO (days sales outstanding)",
+          "Real-time cash flow visibility across QuickBooks and Google Sheets",
+          "Catching unusual or unauthorized expenses before they compound",
+          "Keeping leadership informed with weekly financial summaries"
+        ],
+        "default": "Chasing overdue invoices and reducing DSO (days sales outstanding)",
+        "context": "Determines which flow gets tuned most aggressively — reminder cadence, anomaly thresholds, or reporting depth.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your typical monthly invoice volume and average invoice value?",
+        "type": "select",
+        "options": [
+          "Under 50 invoices / under $5K average",
+          "50–200 invoices / $5K–$50K average",
+          "200–500 invoices / $50K–$200K average",
+          "500+ invoices / $200K+ average"
+        ],
+        "default": "50–200 invoices / $5K–$50K average",
+        "context": "Shapes reminder urgency, escalation timing, and anomaly detection baselines — a $500K invoice going 5 days overdue needs different handling than a $200 one.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What overdue reminder cadence should the agent follow before escalating to manual review?",
+        "type": "select",
+        "options": [
+          "Gentle (1 reminder at 7 days, 1 at 30 days, then flag for review)",
+          "Standard (reminders at 3, 10, and 21 days overdue, then escalate)",
+          "Aggressive (reminders at 1, 5, 10, and 15 days overdue, then escalate)",
+          "Custom — I'll specify in the next step"
+        ],
+        "default": "Standard (reminders at 3, 10, and 21 days overdue, then escalate)",
+        "context": "Defines the tiered reminder schedule and cooldown windows baked into the overdue invoice polling flow.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which customers or situations should the agent NEVER auto-send a payment reminder to?",
+        "type": "select",
+        "options": [
+          "Customers tagged as 'VIP' or 'Enterprise' in QuickBooks — require manual outreach only",
+          "Invoices with an active dispute note or credit memo pending",
+          "Customers currently on a payment plan arrangement",
+          "All of the above — I want full manual control over any escalation"
+        ],
+        "default": "All of the above — I want full manual control over any escalation",
+        "context": "Prevents the agent from damaging key relationships or contacting customers mid-dispute. These exclusions are hardcoded into the reminder flow's pre-check.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "At what transaction amount should an anomalous expense be flagged for human review rather than just logged?",
+        "type": "select",
+        "options": [
+          "Any single expense over $500 outside normal vendor history",
+          "Any single expense over $2,500 or 3x the vendor's 90-day average",
+          "Any single expense over $10,000 regardless of vendor",
+          "Only flag if a vendor is entirely new (never appeared in QuickBooks before)"
+        ],
+        "default": "Any single expense over $2,500 or 3x the vendor's 90-day average",
+        "context": "Sets the anomaly detection threshold — below this the agent logs and categorizes; above it, a Slack alert fires and the transaction is held for approval.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Slack channel should weekly cash flow summaries and anomaly escalations be posted to?",
+        "type": "text",
+        "default": "#finance",
+        "context": "Ensures summaries reach the right audience (exec team, finance team, or both). Anomaly alerts may go to a separate ops/alert channel if preferred — specify both if needed.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone should payment reminder emails use?",
+        "type": "select",
+        "options": [
+          "Friendly and professional — assume good faith, keep the relationship warm",
+          "Neutral and factual — state the amount due and due date, no extra framing",
+          "Firm and direct — clearly reference consequences (late fees, service hold) for later reminders",
+          "Escalating tone — friendly on day 3, firm by day 10, formal/legal language by day 21+"
+        ],
+        "default": "Escalating tone — friendly on day 3, firm by day 10, formal/legal language by day 21+",
+        "context": "Controls the Gmail reminder copy across all reminder tiers. Mismatched tone is the most common reason finance teams override automated collections.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

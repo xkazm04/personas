@@ -796,6 +796,122 @@
         "label": "Emits events: execution failed, threshold breached",
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is your primary goal for this Personal Finance Agent?",
+        "type": "select",
+        "options": [
+          "Track spending against monthly budgets",
+          "Detect fraud and unusual charges early",
+          "Understand spending patterns and trends over time",
+          "Full financial oversight — budgets, fraud, and reports"
+        ],
+        "default": "Full financial oversight — budgets, fraud, and reports",
+        "context": "Determines which flows to prioritize and how aggressively to tune anomaly detection vs. budget reporting vs. trend analysis.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of finances will this agent monitor?",
+        "type": "select",
+        "options": [
+          "Personal finances only",
+          "Joint household (shared with partner or family)",
+          "Freelance or side-business expenses mixed with personal",
+          "Small business accounts only"
+        ],
+        "default": "Personal finances only",
+        "context": "Shapes category mapping, report framing, and whether the agent should separate or flag business vs. personal transactions.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "At what transaction amount should an immediate anomaly alert be triggered?",
+        "type": "select",
+        "options": [
+          "$200 — flag most large purchases",
+          "$500 — flag significant charges (default)",
+          "$1,000 — only flag major transactions",
+          "$2,000 — only flag very large purchases"
+        ],
+        "default": "$500 — flag significant charges (default)",
+        "context": "The template defaults to $500 for standard flagging and $1,000 for high-severity escalation. Adjust to match your typical spending patterns.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which account types or transaction categories should the agent NEVER monitor or include in reports?",
+        "type": "select",
+        "options": [
+          "Monitor everything — no exclusions",
+          "Exclude investment and brokerage accounts",
+          "Exclude internal transfers between my own accounts",
+          "Exclude both investment accounts and internal transfers"
+        ],
+        "default": "Exclude both investment accounts and internal transfers",
+        "context": "Prevents noise from inter-account transfers and investment activity that are not true spending events.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "For high-severity anomalies (potential fraud, foreign currency charges over $1,000), what action should the agent take?",
+        "type": "select",
+        "options": [
+          "Send alert immediately — I will review and decide",
+          "Alert me and pause the daily sync until I confirm to resume",
+          "Alert me and auto-draft a dispute summary for my review before sending",
+          "Only escalate if the same suspicious pattern appears twice"
+        ],
+        "default": "Send alert immediately — I will review and decide",
+        "context": "Controls whether the agent acts autonomously on fraud signals or waits for human confirmation before taking follow-up actions.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How should alerts and reports be delivered across Slack and Gmail?",
+        "type": "select",
+        "options": [
+          "Slack only for everything",
+          "Gmail only for everything",
+          "Both — brief Slack messages and detailed Gmail reports",
+          "Slack for urgent anomalies only, Gmail for weekly summaries"
+        ],
+        "default": "Slack for urgent anomalies only, Gmail for weekly summaries",
+        "context": "Determines which notification channels are active and how content is split between real-time Slack pings and detailed email reports.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "List any recurring merchants or subscriptions (e.g. rent, Netflix, gym membership) that should never be flagged as anomalies.",
+        "type": "text",
+        "default": "",
+        "context": "Whitelisting known recurring merchants prevents false-positive fraud alerts for predictable monthly charges.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should the Monday weekly spending summary be?",
+        "type": "select",
+        "options": [
+          "Brief: top 3 categories and total spend only",
+          "Standard: all categories with spend vs. budget",
+          "Detailed: full transaction list, trends, and recommendations",
+          "Executive: one-line summary with a link to Google Sheets"
+        ],
+        "default": "Standard: all categories with spend vs. budget",
+        "context": "Controls the verbosity and format of the Monday morning report sent via Slack and Gmail.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

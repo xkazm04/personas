@@ -24,15 +24,26 @@ export function LabProgress() {
                     ? 'Generating draft persona...'
                     : labProgress.phase === 'generating'
                       ? 'Generating test scenarios...'
-                      : labProgress.phase === 'executing'
-                        ? `Testing ${labProgress.modelId ?? ''} -- ${labProgress.scenarioName ?? ''}`
-                        : labProgress.phase}
+                      : labProgress.phase === 'summarizing'
+                        ? 'Generating test summary...'
+                        : labProgress.phase === 'executing'
+                          ? `Testing ${labProgress.modelId ?? ''} -- ${labProgress.scenarioName ?? ''}`
+                          : labProgress.phase}
                 </span>
               </div>
               {labProgress.total != null && (
-                <span className="text-sm text-muted-foreground/90">
-                  {labProgress.current ?? 0} / {labProgress.total}
-                </span>
+                <div className="flex items-center gap-3">
+                  {labProgress.elapsedMs != null && (
+                    <span className="text-xs text-muted-foreground/50 tabular-nums">
+                      {labProgress.elapsedMs >= 60000
+                        ? `${Math.floor(labProgress.elapsedMs / 60000)}m ${Math.round((labProgress.elapsedMs % 60000) / 1000)}s`
+                        : `${(labProgress.elapsedMs / 1000).toFixed(1)}s`}
+                    </span>
+                  )}
+                  <span className="text-sm text-muted-foreground/90 tabular-nums">
+                    {labProgress.current ?? 0} / {labProgress.total}
+                  </span>
+                </div>
               )}
             </div>
 

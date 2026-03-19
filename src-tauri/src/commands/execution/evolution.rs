@@ -4,7 +4,7 @@ use tauri::State;
 
 use crate::db::models::*;
 use crate::db::repos::lab::evolution as evolution_repo;
-use crate::engine::evolution::{self, EvolutionCycleSummary};
+use crate::engine::evolution;
 use crate::engine::genome::FitnessObjective;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -26,6 +26,7 @@ pub fn evolution_get_policy(
 
 /// Create or update the evolution policy for a persona.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn evolution_upsert_policy(
     state: State<'_, Arc<AppState>>,
     persona_id: String,

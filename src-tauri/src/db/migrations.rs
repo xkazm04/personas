@@ -2725,6 +2725,102 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added view_type, view_config columns to saved_views");
     }
 
+    // Add llm_summary column to all lab run tables (LLM-generated prose summary)
+    let has_llm_summary: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('lab_arena_runs') WHERE name = 'llm_summary'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_llm_summary {
+        conn.execute_batch(
+            "ALTER TABLE lab_arena_runs ADD COLUMN llm_summary TEXT;
+             ALTER TABLE lab_ab_runs ADD COLUMN llm_summary TEXT;
+             ALTER TABLE lab_matrix_runs ADD COLUMN llm_summary TEXT;
+             ALTER TABLE lab_eval_runs ADD COLUMN llm_summary TEXT;"
+        )?;
+        tracing::info!("Added llm_summary column to all lab run tables");
+    }
+
+    // Add progress_json column to all lab run tables (persisted progress for hydration)
+    let has_progress_json: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('lab_arena_runs') WHERE name = 'progress_json'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_progress_json {
+        conn.execute_batch(
+            "ALTER TABLE lab_arena_runs ADD COLUMN progress_json TEXT;
+             ALTER TABLE lab_ab_runs ADD COLUMN progress_json TEXT;
+             ALTER TABLE lab_matrix_runs ADD COLUMN progress_json TEXT;
+             ALTER TABLE lab_eval_runs ADD COLUMN progress_json TEXT;"
+        )?;
+        tracing::info!("Added progress_json column to all lab run tables");
+    }
+
+    // -- Full persona versioning (M2) --------------------------------
+    // Create persona_versions table (replaces prompt-only versioning)
+    let has_persona_versions: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_versions'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_persona_versions {
+        conn.execute_batch(
+            "CREATE TABLE persona_versions (
+                id TEXT PRIMARY KEY,
+                persona_id TEXT NOT NULL,
+                version_number INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                system_prompt TEXT NOT NULL,
+                structured_prompt TEXT,
+                model_profile TEXT,
+                max_budget_usd REAL,
+                max_turns INTEGER,
+                timeout_ms INTEGER NOT NULL DEFAULT 300000,
+                design_context TEXT,
+                change_summary TEXT,
+                tag TEXT NOT NULL DEFAULT 'experimental',
+                parent_version_id TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
+            );
+            CREATE INDEX idx_pv_persona ON persona_versions(persona_id);
+            CREATE INDEX idx_pv_version ON persona_versions(persona_id, version_number DESC);
+
+            CREATE TABLE persona_version_tools (
+                id TEXT PRIMARY KEY,
+                version_id TEXT NOT NULL,
+                tool_id TEXT NOT NULL,
+                tool_config TEXT,
+                FOREIGN KEY (version_id) REFERENCES persona_versions(id) ON DELETE CASCADE,
+                UNIQUE(version_id, tool_id)
+            );
+            CREATE INDEX idx_pvt_version ON persona_version_tools(version_id);"
+        )?;
+        tracing::info!("Created persona_versions and persona_version_tools tables");
+
+        // Migrate existing persona_prompt_versions data
+        let has_ppv: bool = conn
+            .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_prompt_versions'")?
+            .query_row([], |row| row.get::<_, i64>(0))
+            .map(|c| c > 0)
+            .unwrap_or(false);
+        if has_ppv {
+            conn.execute_batch(
+                "INSERT OR IGNORE INTO persona_versions (id, persona_id, version_number, name, system_prompt, structured_prompt, change_summary, tag, created_at)
+                 SELECT ppv.id, ppv.persona_id, ppv.version_number,
+                        COALESCE(p.name, 'Unknown'),
+                        COALESCE(ppv.system_prompt, p.system_prompt, ''),
+                        ppv.structured_prompt, ppv.change_summary, ppv.tag, ppv.created_at
+                 FROM persona_prompt_versions ppv
+                 LEFT JOIN personas p ON p.id = ppv.persona_id;"
+            )?;
+            tracing::info!("Migrated persona_prompt_versions to persona_versions");
+        }
+    }
+
     Ok(())
 }
 

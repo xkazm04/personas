@@ -685,6 +685,112 @@
         "label": "Emits events: item created, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which workflow is most critical for your team right now?",
+        "type": "select",
+        "options": [
+          "Experiment results analysis and Linear ticket creation",
+          "Real-time feature flag change notifications",
+          "Stale flag cleanup and hygiene",
+          "All three equally important"
+        ],
+        "default": "All three equally important",
+        "context": "Determines which workflow to optimize and prioritize in Slack messaging tone and frequency.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How many active feature flags and concurrent experiments does your team typically maintain?",
+        "type": "select",
+        "options": [
+          "Small scale: fewer than 20 flags, 1–3 experiments",
+          "Medium scale: 20–100 flags, 4–15 experiments",
+          "Large scale: 100+ flags, 15+ experiments"
+        ],
+        "default": "Medium scale: 20–100 flags, 4–15 experiments",
+        "context": "Shapes summary verbosity and whether to group/batch notifications or send individually.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What statistical confidence threshold should trigger a 'winning variant' declaration and Linear ticket?",
+        "type": "select",
+        "options": [
+          "90% confidence (faster decisions, accepts more risk)",
+          "95% confidence (default — balanced)",
+          "99% confidence (conservative, high-stakes experiments only)"
+        ],
+        "default": "95% confidence (default — balanced)",
+        "context": "The template defaults to p > 0.95. Lower thresholds accelerate rollouts; higher thresholds reduce false winners.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel(s) should receive feature flag change notifications vs. experiment result summaries?",
+        "type": "text",
+        "default": "#product-experiments for results, #eng-deploys for flag changes",
+        "context": "Routing different signal types to the right audiences avoids noise. Enter channel names or describe your channel structure.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_3",
+        "category": "configuration",
+        "question": "After how many days without modification should a feature flag be considered stale and included in the cleanup digest?",
+        "type": "select",
+        "options": [
+          "14 days (aggressive hygiene)",
+          "30 days (default)",
+          "60 days (relaxed — long-lived flags are common)",
+          "90 days (only flag true zombies)"
+        ],
+        "default": "30 days (default)",
+        "context": "Calibrates the stale flag threshold to your team's release cadence. The template also escalates at 60 days.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Should the agent automatically create Linear tickets for winning experiments, or post a draft for human review first?",
+        "type": "select",
+        "options": [
+          "Auto-create tickets immediately when a winner is detected",
+          "Post Slack summary with a 'Create ticket' prompt and wait for approval",
+          "Always require explicit approval before any Linear ticket is created"
+        ],
+        "default": "Post Slack summary with a 'Create ticket' prompt and wait for approval",
+        "context": "Controls whether ticket creation is fully automated or gated on human confirmation to avoid noisy Linear backlogs.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Are there any feature flags or experiments the agent should NEVER touch, archive, or report on?",
+        "type": "text",
+        "default": "Flags prefixed with 'infra-' or 'killswitch-'; any experiment tagged 'sensitive'",
+        "context": "Prevents the agent from surfacing infrastructure kill switches, compliance-sensitive flags, or experiments under embargo as stale or winners.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How much detail should winning experiment Slack summaries include?",
+        "type": "select",
+        "options": [
+          "Concise: winner variant name, confidence %, and recommended next step only",
+          "Standard: add metric lifts, sample sizes, and experiment duration",
+          "Verbose: full breakdown including all variants, confidence intervals, and raw event counts"
+        ],
+        "default": "Standard: add metric lifts, sample sizes, and experiment duration",
+        "context": "Balances signal-to-noise in Slack. Concise suits high-volume teams; verbose suits data-driven teams who want to audit before acting.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

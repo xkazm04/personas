@@ -817,6 +817,128 @@
         "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which revenue operation is your highest priority to automate first?",
+        "type": "select",
+        "options": [
+          "Failed payment recovery — reducing churn from involuntary cancellations",
+          "Real-time Airtable sync — keeping revenue tracker current as events arrive",
+          "Daily revenue reporting — morning summaries for stakeholders",
+          "Full pipeline — all three equally important"
+        ],
+        "default": "Full pipeline — all three equally important",
+        "context": "Determines which flow to tune most carefully and which edge cases to handle with the most detail.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of subscription business are you running?",
+        "type": "select",
+        "options": [
+          "B2B SaaS — monthly/annual seats or usage plans",
+          "B2C SaaS — consumer app subscriptions",
+          "E-commerce / subscription box — physical or digital products",
+          "Marketplace / platform — subscriptions plus transaction fees"
+        ],
+        "default": "B2B SaaS — monthly/annual seats or usage plans",
+        "context": "Shapes how MRR is calculated, what plan tiers exist, and how customer emails should be framed.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Who receives the daily revenue summary report?",
+        "type": "select",
+        "options": [
+          "Founder / CEO only",
+          "Finance and leadership team",
+          "Sales and customer success teams",
+          "A shared Slack channel via email-to-channel"
+        ],
+        "default": "Finance and leadership team",
+        "context": "Determines report depth, tone, and which KPIs to highlight (e.g., executives want trends; CS teams want churn names).",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What actions should this agent NEVER take autonomously?",
+        "type": "select",
+        "options": [
+          "Never issue refunds or credits — only flag for human review",
+          "Never cancel or modify subscriptions — read-only on Stripe",
+          "Never email customers without a human-approved template",
+          "Never write to Airtable — reporting and alerting only"
+        ],
+        "default": "Never issue refunds or credits — only flag for human review",
+        "context": "Sets hard guardrails so the agent doesn't take irreversible financial or customer-facing actions without oversight.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "After how many failed payment attempts should the agent escalate to a human instead of sending another automated email?",
+        "type": "select",
+        "options": [
+          "After 1 failure — notify team immediately",
+          "After 2 failures — escalate if card still declined",
+          "After 3 failures — standard Stripe retry cycle",
+          "Never escalate — let automated emails run until cancellation"
+        ],
+        "default": "After 3 failures — standard Stripe retry cycle",
+        "context": "Controls when automated recovery hands off to a human CS rep to prevent over-emailing and preserve customer relationships.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "Above what refund amount (USD) should the agent require human approval before logging it as resolved?",
+        "type": "select",
+        "options": [
+          "$100 — flag any non-trivial refund",
+          "$500 — flag significant refunds",
+          "$1,000 — flag only large transactions",
+          "No threshold — log all refunds automatically"
+        ],
+        "default": "$500 — flag significant refunds",
+        "context": "Prevents large-dollar refund events from being silently absorbed into the tracker without finance team awareness.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What tone should failed-payment recovery emails use?",
+        "type": "select",
+        "options": [
+          "Warm and empathetic — assume good faith, avoid alarm",
+          "Direct and urgent — emphasize service interruption risk",
+          "Neutral and transactional — minimal prose, clear CTA only",
+          "Brand-matched — I'll provide example email copy during setup"
+        ],
+        "default": "Warm and empathetic — assume good faith, avoid alarm",
+        "context": "Directly shapes the copy generated for dunning emails sent via Gmail to customers with failed payments.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Which KPIs are most important to highlight in the daily revenue summary?",
+        "type": "select",
+        "options": [
+          "MRR movement — new, expansion, contraction, churn delta",
+          "Cash collected — gross revenue and refunds net of fees",
+          "Churn signals — at-risk accounts and cancellation reasons",
+          "All of the above with a brief narrative interpretation"
+        ],
+        "default": "All of the above with a brief narrative interpretation",
+        "context": "Determines what the agent calculates and surfaces in the morning report versus what it tracks silently in Airtable.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

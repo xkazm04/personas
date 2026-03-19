@@ -37,7 +37,7 @@ interface MetricChartProps {
   icon?: ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
   /** Colour token applied to the icon badge background/text (e.g. "cyan", "violet"). */
   iconColor?: MetricIconColor;
-  /** When true, renders a shimmer skeleton in place of the chart. */
+  /** When true, renders an empty placeholder in place of the chart. */
   loading?: boolean;
 }
 
@@ -76,7 +76,7 @@ export function MetricChart({
           className="w-full rounded-lg bg-secondary/60 overflow-hidden"
           style={{ height }}
         >
-          <div className="h-full w-full animate-pulse bg-gradient-to-r from-transparent via-foreground/5 to-transparent" />
+          <div className="h-full w-full" />
         </div>
       ) : (
         emptySlot ?? (

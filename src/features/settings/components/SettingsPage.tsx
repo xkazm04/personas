@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useSystemStore } from "@/stores/systemStore";
-import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 
 // Lazy-load each settings tab -- only the active one resolves.
 const AccountSettings = lazy(() => import('@/features/settings/sub_account/components/AccountSettings'));
@@ -39,7 +38,7 @@ export default function SettingsPage() {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
     >
-      <Suspense fallback={<PanelSkeleton variant="subtab" />}>
+      <Suspense fallback={null}>
         {content}
       </Suspense>
     </motion.div>

@@ -709,6 +709,128 @@
         "label": "Emits events: execution completed, execution failed, review requested",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which phase of the meeting lifecycle is most valuable to you?",
+        "type": "select",
+        "options": [
+          "Pre-meeting prep — I need rich context before every meeting",
+          "Real-time status — keeping my team informed when I'm unavailable",
+          "Post-meeting follow-up — distributing action items and notes",
+          "All phases equally — end-to-end automation"
+        ],
+        "default": "All phases equally — end-to-end automation",
+        "context": "Determines which lifecycle flows to prioritize and tune most aggressively.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How would you describe your typical meeting mix?",
+        "type": "select",
+        "options": [
+          "Mostly external (clients, partners, vendors)",
+          "Mostly internal (standups, 1:1s, team syncs)",
+          "Balanced mix of internal and external",
+          "Executive/leadership (board, exec syncs, strategic reviews)"
+        ],
+        "default": "Balanced mix of internal and external",
+        "context": "Shapes how attendee context is gathered — external meetings need email thread research, internal ones benefit from shared doc history and org context.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "How many meetings do you typically have per day?",
+        "type": "select",
+        "options": [
+          "1–3 (light calendar)",
+          "4–6 (moderate)",
+          "7–10 (heavy)",
+          "10+ (back-to-back)"
+        ],
+        "default": "4–6 (moderate)",
+        "context": "High meeting density triggers briefing compression and tighter follow-up windows to avoid notification overload.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which calendar events should be completely excluded from automation?",
+        "type": "select",
+        "options": [
+          "Private/personal events and blocked focus time only",
+          "All-day events, OOO blocks, and solo focus blocks",
+          "Recurring standups under 20 minutes",
+          "Any event I didn't create or explicitly accept"
+        ],
+        "default": "Private/personal events and blocked focus time only",
+        "context": "Prevents unwanted Slack status changes or prep emails for events that shouldn't trigger the lifecycle.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which outbound actions require your review before sending?",
+        "type": "select",
+        "options": [
+          "Action item emails to external attendees only",
+          "All outbound emails (prep reminders and follow-ups)",
+          "Everything — show me a draft and wait for approval",
+          "Nothing — run fully autonomously"
+        ],
+        "default": "Action item emails to external attendees only",
+        "context": "Controls whether the agent sends autonomously or queues drafts for your sign-off, especially for external communications.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How far in advance should prep reminders arrive?",
+        "type": "select",
+        "options": [
+          "15 minutes before — tight briefing window",
+          "30 minutes before — standard buffer",
+          "1 hour before — time to review and prepare",
+          "2 hours before — deep prep for complex meetings"
+        ],
+        "default": "30 minutes before — standard buffer",
+        "context": "Sets the trigger window for Phase 2 polling. Complex external meetings often benefit from longer lead times.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Where should your \"in meeting\" status be posted in Slack?",
+        "type": "select",
+        "options": [
+          "My Slack user status only (emoji + status text)",
+          "A specific team channel (e.g., #team-availability)",
+          "Both my user status and a team channel",
+          "Do not post Slack status — skip this flow"
+        ],
+        "default": "My Slack user status only (emoji + status text)",
+        "context": "Determines which Slack API calls are used and whether the bot needs channel post permissions.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What format should post-meeting action item follow-ups use?",
+        "type": "select",
+        "options": [
+          "Concise bullet list — just the actions and owners",
+          "Structured summary — context + action + deadline per item",
+          "Slack thread on the meeting channel instead of email",
+          "Email to all attendees + Slack DM to action item owners"
+        ],
+        "default": "Structured summary — context + action + deadline per item",
+        "context": "Drives the follow-up email template and whether Gmail or Slack is the primary distribution channel for accountability.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

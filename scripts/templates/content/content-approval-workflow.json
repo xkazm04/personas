@@ -652,6 +652,122 @@
         "label": "Emits events: execution completed, execution failed, review requested, item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What type of content does this approval workflow primarily manage?",
+        "type": "select",
+        "options": [
+          "Blog posts and long-form articles",
+          "Marketing campaigns and ad copy",
+          "Product documentation and release notes",
+          "Social media content",
+          "Internal communications and announcements"
+        ],
+        "default": "Blog posts and long-form articles",
+        "context": "Determines the urgency framing, email tone, and how the agent describes content in Slack messages and reviewer emails.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How is your review team structured?",
+        "type": "select",
+        "options": [
+          "One designated reviewer per content type",
+          "Any single reviewer from a shared pool can approve",
+          "Sequential approval — editor then manager",
+          "Parallel approval — multiple reviewers must all sign off"
+        ],
+        "default": "One designated reviewer per content type",
+        "context": "Shapes how the agent routes notifications and determines when an item is truly approved vs. still pending.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do without explicit human action?",
+        "type": "select",
+        "options": [
+          "Never move content to Published — always require a human to confirm in Notion",
+          "Never reassign a reviewer — always contact the author if the reviewer is unavailable",
+          "Never send more than one reminder email per review cycle",
+          "Never post rejection feedback publicly in Slack — DM the author only"
+        ],
+        "default": "Never move content to Published — always require a human to confirm in Notion",
+        "context": "Sets hard stops that prevent the agent from taking irreversible or politically sensitive actions autonomously.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "If a reviewer has not responded within your SLA window, what should the agent do?",
+        "type": "select",
+        "options": [
+          "Send one reminder to the reviewer, then notify the content author to follow up",
+          "Escalate to a designated backup reviewer",
+          "Notify the author and flag the item as 'Blocked' in Notion",
+          "Do nothing — wait indefinitely until the reviewer responds"
+        ],
+        "default": "Send one reminder to the reviewer, then notify the content author to follow up",
+        "context": "Defines escalation behavior so stalled reviews do not silently block publication pipelines.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What is your standard review SLA — the time a reviewer has before the agent escalates or sends a reminder?",
+        "type": "select",
+        "options": [
+          "4 hours (same-day turnaround)",
+          "24 hours (next business day)",
+          "48 hours (two business days)",
+          "72 hours (three business days)"
+        ],
+        "default": "24 hours (next business day)",
+        "context": "Used to time reminder emails and escalation triggers precisely rather than using an arbitrary delay.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How should rejection feedback be delivered to the content author?",
+        "type": "select",
+        "options": [
+          "Email only — keep feedback formal and documented",
+          "Slack DM only — keep it conversational and fast",
+          "Both email and Slack DM",
+          "Comment in Notion + Slack DM so feedback is attached to the content"
+        ],
+        "default": "Comment in Notion + Slack DM so feedback is attached to the content",
+        "context": "Determines the delivery channels the agent uses when routing reviewer rejection notes back to authors.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "What is the exact name of the Notion database (or database view) that this agent should poll for 'Ready for Review' items?",
+        "type": "text",
+        "default": "",
+        "context": "Required to target the correct Notion database; a mismatch means the agent polls the wrong content source.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone should reviewer notification emails and Slack messages use?",
+        "type": "select",
+        "options": [
+          "Formal and professional — this is a compliance-sensitive environment",
+          "Friendly and direct — our team prefers concise, warm communication",
+          "Urgent and action-oriented — deadlines are tight and reviewers need clear CTAs"
+        ],
+        "default": "Friendly and direct — our team prefers concise, warm communication",
+        "context": "Sets the communication style for all outbound messages so notifications match team culture and reduce friction.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

@@ -15,6 +15,7 @@ export interface RunStatusPayload {
   scores?: { tool_accuracy?: number; output_quality?: number; protocol_compliance?: number };
   summary?: Record<string, unknown>;
   error?: string;
+  elapsed_ms?: number;
   scenarios?: unknown[];
 }
 

@@ -60,9 +60,43 @@ jobs:
           git tag "v${{ steps.bump.outputs.new_version }}"
           git push origin master --tags
 
-  # ─── Job 2: Build on all platforms ─────────────────────────
-  build:
+  # ─── Job 2: Build frontend once, share across platforms ───
+  frontend:
     needs: bump-version
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout at tag
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.bump-version.outputs.new_version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: npm run build
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+          retention-days: 1
+
+  # ─── Job 3: Build native binaries on all platforms ────────
+  build:
+    needs: [bump-version, frontend]
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -102,6 +136,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -114,6 +149,7 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          cache-on-failure: true
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -133,6 +169,12 @@ jobs:
         run: |
           rustup target add aarch64-apple-darwin
           rustup target add x86_64-apple-darwin
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
 
       - name: Install frontend dependencies
         run: npm ci
@@ -154,6 +196,8 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+          tauriScript: npx tauri
+          beforeBuildCommand: ""
 
       - name: Upload source maps to Sentry
         if: matrix.label == 'linux-x64'
@@ -183,10 +227,11 @@ jobs:
             echo "Sentry source map upload skipped (secrets not configured)"
           fi
 
-  # ─── Job 3: Generate latest.json for Tauri updater ─────────
+  # ─── Job 4: Generate latest.json for Tauri updater ─────────
   updater-manifest:
     needs: [bump-version, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Generate and upload latest.json
@@ -198,11 +243,21 @@ jobs:
           REPO="${{ github.repository }}"
           BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
 
-          # Give GitHub a moment to finalize all assets
-          sleep 15
+          # Wait for GitHub to finalize release assets with retry logic
+          MAX_RETRIES=5
+          RETRY_DELAY=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            RELEASE_JSON=$(gh api "repos/${REPO}/releases/tags/${TAG}" 2>/dev/null) && break
+            echo "Attempt $i/$MAX_RETRIES: Release not ready, retrying in ${RETRY_DELAY}s..."
+            sleep $RETRY_DELAY
+            RETRY_DELAY=$((RETRY_DELAY * 2))
+          done
 
-          # Get release metadata
-          RELEASE_JSON=$(gh api "repos/${REPO}/releases/tags/${TAG}")
+          if [ -z "$RELEASE_JSON" ]; then
+            echo "::error::Failed to fetch release after $MAX_RETRIES attempts"
+            exit 1
+          fi
+
           RELEASE_NOTES=$(echo "$RELEASE_JSON" | jq -r '.body // "New release available."')
           PUB_DATE=$(echo "$RELEASE_JSON" | jq -r '.published_at // empty')
           if [ -z "$PUB_DATE" ]; then
@@ -210,6 +265,15 @@ jobs:
           fi
 
           ASSETS=$(echo "$RELEASE_JSON" | jq -r '.assets[].name')
+
+          # Verify we have assets before proceeding
+          ASSET_COUNT=$(echo "$ASSETS" | grep -c '.' || true)
+          if [ "$ASSET_COUNT" -lt 4 ]; then
+            echo "::warning::Only $ASSET_COUNT assets found, expected at least 4. Waiting for uploads..."
+            sleep 30
+            RELEASE_JSON=$(gh api "repos/${REPO}/releases/tags/${TAG}")
+            ASSETS=$(echo "$RELEASE_JSON" | jq -r '.assets[].name')
+          fi
 
           # Download all .sig files
           mkdir -p /tmp/sigs

@@ -659,6 +659,122 @@
         "label": "Emits lifecycle events to the event bus for downstream automation",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is your primary reason for using this capture bot?",
+        "type": "select",
+        "options": [
+          "Personal GTD / task management",
+          "Creative brainstorming and idea bank",
+          "Research bookmarking and notes",
+          "Work project tracking across contexts"
+        ],
+        "default": "Personal GTD / task management",
+        "context": "Determines how the classifier prioritizes ambiguous messages and which destination gets the most optimization",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How do you typically send captures to the bot?",
+        "type": "select",
+        "options": [
+          "Short typed phrases and fragments",
+          "Full sentences and structured notes",
+          "Mix of URLs, text, and media",
+          "Quick voice-to-text transcripts"
+        ],
+        "default": "Short typed phrases and fragments",
+        "context": "Shapes how the classifier handles terse vs. verbose inputs and whether to infer missing context from incomplete captures",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the bot NEVER do with your captures?",
+        "type": "select",
+        "options": [
+          "Never route personal/sensitive notes to Airtable — tasks only",
+          "Never infer a deadline I didn't explicitly state",
+          "Never send a digest on days with zero captures",
+          "Never auto-classify URLs as tasks even if they contain action words"
+        ],
+        "default": "Never route personal/sensitive notes to Airtable — tasks only",
+        "context": "Prevents mis-routing or unwanted behavior that could lose data or violate privacy expectations",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When should the bot ask you to confirm a classification before routing?",
+        "type": "select",
+        "options": [
+          "Only when confidence is low (ambiguous messages)",
+          "Only for tasks with inferred deadlines or high priority",
+          "Always confirm — I want full control over every routing decision",
+          "Never ask — route automatically and let me review in the digest"
+        ],
+        "default": "Only when confidence is low (ambiguous messages)",
+        "context": "Controls how much the bot interrupts you for clarification vs. acting autonomously on every incoming message",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What fields do you track for tasks in Airtable?",
+        "type": "select",
+        "options": [
+          "Title + due date only",
+          "Title, due date, priority, and project",
+          "Title, due date, and tags/labels",
+          "Title only — I organize manually after capture"
+        ],
+        "default": "Title, due date, priority, and project",
+        "context": "Determines how much structured data the bot extracts from task captures before writing to Airtable",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Do you have separate Notion databases for different capture types, or one unified inbox?",
+        "type": "select",
+        "options": [
+          "One unified Notion database for all non-task captures",
+          "Separate databases: notes in one, ideas in another",
+          "Separate databases: notes, ideas, and bookmarks each in their own",
+          "I'll configure databases during onboarding"
+        ],
+        "default": "One unified Notion database for all non-task captures",
+        "context": "Determines whether the bot routes to one Notion target or multiple databases based on classification result",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Are there personal shorthand phrases or recurring patterns the bot should always recognize?",
+        "type": "text",
+        "default": "",
+        "context": "Examples: 'TIL' always means a note, 'r/' always means a Reddit bookmark, 'remind' always means a task. Teaching these improves classification accuracy for your specific capture style",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should your nightly capture digest be?",
+        "type": "select",
+        "options": [
+          "Concise: count by type + list of titles only",
+          "Standard: grouped by type with one-line summaries",
+          "Detailed: full content of each capture with routing confirmation",
+          "Smart: brief on busy days, detailed when fewer than 5 things captured"
+        ],
+        "default": "Standard: grouped by type with one-line summaries",
+        "context": "Shapes the nightly digest format — too verbose and you'll stop reading it; too terse and it loses daily review value",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

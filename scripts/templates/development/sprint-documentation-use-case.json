@@ -680,6 +680,120 @@
         "label": "Emits events: execution failed, item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which workflows do you primarily want Sprint Chronicler to run?",
+        "type": "select",
+        "options": [
+          "Sprint close documentation only (Jira → Confluence → Slack → archive)",
+          "Mid-sprint progress snapshots only (no archiving)",
+          "Both sprint close and mid-sprint snapshots"
+        ],
+        "default": "Sprint close documentation only (Jira → Confluence → Slack → archive)",
+        "context": "Determines which use_case_flows are active and how the agent behaves when manually triggered mid-sprint.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your team's sprint cadence?",
+        "type": "select",
+        "options": [
+          "1-week sprints",
+          "2-week sprints (bi-weekly)",
+          "3-week sprints",
+          "Variable / irregular cadence"
+        ],
+        "default": "2-week sprints (bi-weekly)",
+        "context": "Controls the scheduled trigger frequency and ensures documentation aligns with actual sprint boundaries rather than a generic bi-weekly default.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What best describes your team's Jira setup?",
+        "type": "select",
+        "options": [
+          "Single scrum team, one active board",
+          "Multiple teams sharing one Jira project",
+          "Multiple projects, each with their own board",
+          "Program-level board spanning several team boards"
+        ],
+        "default": "Single scrum team, one active board",
+        "context": "Shapes how the agent resolves board IDs and whether it needs to aggregate across multiple boards or projects when collecting sprint data.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What actions should Sprint Chronicler NEVER take automatically?",
+        "type": "select",
+        "options": [
+          "Never close or archive the Jira sprint — documentation only",
+          "Never publish the Confluence page — create drafts only",
+          "Never post to Slack — silent documentation",
+          "No restrictions — fully automated end-to-end"
+        ],
+        "default": "Never close or archive the Jira sprint — documentation only",
+        "context": "Prevents irreversible actions (sprint archival, public page publication, team-wide Slack pings) from happening without explicit intent from the scrum master.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Before publishing the Confluence sprint review page, what approval step do you want?",
+        "type": "select",
+        "options": [
+          "Auto-publish immediately — no review needed",
+          "Create draft and notify me for review before publishing",
+          "Publish automatically but send me a review link within 1 hour to request edits"
+        ],
+        "default": "Create draft and notify me for review before publishing",
+        "context": "Sprint review pages are often visible to stakeholders and leadership; a review gate prevents incomplete or incorrect data from being published under time pressure.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which Slack channel(s) should receive the sprint review notification?",
+        "type": "select",
+        "options": [
+          "Team channel only (e.g., #team-engineering)",
+          "Team channel + a stakeholder or product channel",
+          "Engineering-wide announcement channel",
+          "I'll configure specific channels after setup"
+        ],
+        "default": "Team channel only (e.g., #team-engineering)",
+        "context": "Determines Slack notification scope — broadcasting to stakeholder channels requires a more polished summary format versus a dev-team-only message.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should the generated Confluence sprint review page be?",
+        "type": "select",
+        "options": [
+          "High-level summary: sprint goal, completion rate, key wins only",
+          "Standard: metrics table + completed issue list with assignees",
+          "Detailed: metrics + issue list + acceptance criteria + screenshot links from comments",
+          "Comprehensive: everything including cycle time analysis and carry-over risk notes"
+        ],
+        "default": "Standard: metrics table + completed issue list with assignees",
+        "context": "Controls page length and the depth of Jira data fetched per issue — detailed and comprehensive modes require significantly more API calls and generation time.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "What is the Jira board ID or project key this agent should monitor?",
+        "type": "text",
+        "default": "",
+        "context": "Required to correctly target the sprint board at runtime. Without this the agent cannot resolve the active sprint. Example: 'PROJ' or board ID '42'.",
+        "dimension": "connectors"
+      }
     ]
   }
 }

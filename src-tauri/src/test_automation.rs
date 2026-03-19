@@ -418,6 +418,25 @@ async fn handle_delete_agent(
     eval_bridge_method_with_timeout(&state, "deleteAgent", &params, BRIDGE_TIMEOUT_MUTATION).await
 }
 
+async fn handle_promote_build(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method_with_timeout(&state, "promoteBuildDraft", &serde_json::json!({}), BRIDGE_TIMEOUT_MUTATION).await
+}
+
+#[derive(Deserialize)]
+struct ExecutePersonaRequest {
+    name_or_id: String,
+}
+
+async fn handle_execute_persona(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<ExecutePersonaRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let params = serde_json::json!({ "nameOrId": req.name_or_id });
+    eval_bridge_method_with_timeout(&state, "executePersona", &params, BRIDGE_TIMEOUT_MUTATION).await
+}
+
 async fn handle_health() -> &'static str {
     r#"{"status":"ok","server":"personas-test-automation","version":"0.2.0"}"#
 }
@@ -456,6 +475,8 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses) {
         .route("/wait-toast", post(handle_wait_toast))
         .route("/answer-question", post(handle_answer_question))
         .route("/delete-agent", post(handle_delete_agent))
+        .route("/promote-build", post(handle_promote_build))
+        .route("/execute-persona", post(handle_execute_persona))
         .with_state(state);
 
     tauri::async_runtime::spawn(async move {

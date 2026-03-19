@@ -163,6 +163,7 @@ pub async fn start_design_review_run(
     // The guard ensures unregister_run is called even if the task panics.
     let (cancel_flag, run_guard) =
         state.process_registry.register_run_guarded("review", &run_id);
+    let registry = state.process_registry.clone();
 
     tokio::spawn(async move {
         let _guard = run_guard;

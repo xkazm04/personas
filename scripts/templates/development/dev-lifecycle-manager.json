@@ -778,6 +778,128 @@
         "label": "Emits events: review requested, threshold breached",
         "context": "6 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which development lifecycle flows are your primary focus?",
+        "type": "select",
+        "options": [
+          "PR lifecycle only (GitHub → Jira → Slack notifications)",
+          "Issue sync only (GitHub Issues ↔ Jira bidirectional)",
+          "Release management only (GitHub releases → Jira versions → Slack changelog)",
+          "All three flows equally"
+        ],
+        "default": "All three flows equally",
+        "context": "Determines which flows to activate and prioritize during polling cycles",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How many GitHub repositories should this agent monitor, and do they share a single Jira project or span multiple?",
+        "type": "select",
+        "options": [
+          "1-3 repos → single Jira project",
+          "1-3 repos → multiple Jira projects",
+          "4-10 repos → single Jira project",
+          "4-10 repos → multiple Jira projects",
+          "10+ repos (monorepo or large org)"
+        ],
+        "default": "1-3 repos → single Jira project",
+        "context": "Shapes how the agent routes GitHub activity to the correct Jira project and Slack channel per repo",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What line-change thresholds should trigger a LARGE or EXTRA_LARGE PR escalation flag?",
+        "type": "select",
+        "options": [
+          "Default: LARGE > 500 lines, EXTRA_LARGE > 1000 lines",
+          "Strict: LARGE > 200 lines, EXTRA_LARGE > 500 lines",
+          "Relaxed: LARGE > 800 lines, EXTRA_LARGE > 2000 lines",
+          "Disable size flagging entirely"
+        ],
+        "default": "Default: LARGE > 500 lines, EXTRA_LARGE > 1000 lines",
+        "context": "Controls when the agent escalates a PR for mandatory human review before it can progress",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Slack channels should receive notifications — and do you use separate channels per event type or a single dev channel?",
+        "type": "select",
+        "options": [
+          "Single #dev or #engineering channel for all events",
+          "Separate channels: #prs, #issues, #releases",
+          "Per-repo channels (e.g., #repo-name-updates)",
+          "Team-specific channels (each squad has its own)"
+        ],
+        "default": "Single #dev or #engineering channel for all events",
+        "context": "Determines the channel routing logic for PR, issue, and release Slack posts",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which actions should the agent NEVER take automatically without explicit human approval?",
+        "type": "select",
+        "options": [
+          "Never close or resolve Jira tickets automatically",
+          "Never transition Jira status (only add comments and links)",
+          "Never create new Jira tickets (only update existing ones)",
+          "Never post to Slack (read-only sync between GitHub and Jira only)"
+        ],
+        "default": "Never close or resolve Jira tickets automatically",
+        "context": "Hard guardrails prevent irreversible actions that could corrupt project tracking or spam channels",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When a PR is flagged LARGE or EXTRA_LARGE, what happens next?",
+        "type": "select",
+        "options": [
+          "Post Slack alert and pause — wait for a team lead to approve before updating Jira",
+          "Post Slack alert immediately, update Jira automatically, but tag a specific reviewer",
+          "Block the PR from transitioning Jira to 'In Review' until a senior engineer manually re-triggers",
+          "Notify only — no blocking, just visibility"
+        ],
+        "default": "Post Slack alert immediately, update Jira automatically, but tag a specific reviewer",
+        "context": "Defines the escalation path so oversized PRs get human attention without stopping the pipeline",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How much detail should Slack PR and issue notifications include?",
+        "type": "select",
+        "options": [
+          "Minimal: one-liner with title, author, and link only",
+          "Standard: title, author, status, Jira ticket link, and size label",
+          "Verbose: full diff stats, labels, reviewers, linked issues, and Jira transition history"
+        ],
+        "default": "Standard: title, author, status, Jira ticket link, and size label",
+        "context": "Balances channel signal-to-noise ratio against the team's need for context in notifications",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "What branch naming convention does your team use to link PRs to Jira tickets?",
+        "type": "select",
+        "options": [
+          "Standard: feature/PROJ-123-description or fix/PROJ-456-title",
+          "Short key only: PROJ-123 or PROJ-123-description",
+          "No convention — agent should scan PR title and description for ticket references",
+          "Mixed — both branch patterns and description references"
+        ],
+        "default": "Standard: feature/PROJ-123-description or fix/PROJ-456-title",
+        "context": "The agent uses this pattern to extract Jira ticket IDs and create accurate bidirectional links",
+        "dimension": "connectors"
+      }
     ]
   }
 }

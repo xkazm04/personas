@@ -308,11 +308,6 @@ input[type="number"] {
   50% { opacity: 0.7; }
 }
 
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -335,7 +330,6 @@ input[type="number"] {
 
 .animate-float { animation: float 5s ease-in-out infinite; }
 .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
-.animate-shimmer { animation: shimmer 2s ease-in-out infinite; }
 .animate-spin-slow { animation: spin-slow 30s linear infinite; }
 .animate-expand-in { animation: expand-in 150ms ease-out both; }
 
@@ -464,18 +458,18 @@ input[type="number"] {
   --status-neutral: #a3a3a3;
 }
 
-/* Matrix -- deep black with green phosphor tones */
+/* Matrix -- deep black canvas with green phosphor reserved for accents */
 [data-theme="dark-matrix"] {
   --primary: #00ff41;
   --accent: #20c20e;
-  --background: #000000;
-  --foreground: #b8e6b8;
-  --secondary: #0a0f0a;
-  --muted: #2d4a2d;
-  --muted-dark: #1a301a;
-  --muted-foreground: #6aaa6a;
-  --border: #0d1f0d;
-  --card-bg: rgba(0, 255, 65, 0.02);
+  --background: #050505;
+  --foreground: #d4d4d4;
+  --secondary: #0e0e0e;
+  --muted: #3a3a3a;
+  --muted-dark: #252525;
+  --muted-foreground: #808080;
+  --border: #0f1a0f;
+  --card-bg: rgba(255, 255, 255, 0.02);
   --card-border: rgba(0, 255, 65, 0.08);
   --brand-cyan: #00ff41;
   --brand-purple: #00cc33;
@@ -483,29 +477,29 @@ input[type="number"] {
   --brand-amber: #88cc44;
   --brand-rose: #00aa22;
   --btn-primary: #006618;
-  --glass-bg: rgba(0, 255, 65, 0.03);
-  --glass-border: rgba(0, 255, 65, 0.10);
+  --glass-bg: rgba(0, 255, 65, 0.02);
+  --glass-border: rgba(0, 255, 65, 0.08);
   --status-success: #33ff66;
   --status-warning: #88cc44;
   --status-error: #ff3333;
   --status-info: #00ff41;
   --status-pending: #88cc44;
   --status-processing: #00ff41;
-  --status-neutral: #6aaa6a;
+  --status-neutral: #808080;
 }
 
-/* Light -- warm paper-like palette */
+/* Light -- warm paper-like palette, toned-down brightness */
 [data-theme="light"] {
   --primary: #2554b0;
   --primary-rgb: 37, 84, 176;
   --accent: #3568c7;
-  --background: #f0ede6;
+  --background: #e9e6df;
   --foreground: #1c1c28;
-  --secondary: #e0dbd1;
-  --muted: #55555f;
-  --muted-dark: #3e3e4a;
-  --muted-foreground: #44444f;
-  --border: #c4bdb0;
+  --secondary: #dad5cb;
+  --muted: #4d4d58;
+  --muted-dark: #38384a;
+  --muted-foreground: #3d3d4a;
+  --border: #bfb8ab;
   --card-bg: rgba(0, 0, 0, 0.04);
   --card-border: rgba(0, 0, 0, 0.10);
   --brand-cyan: #0e7490;
@@ -522,25 +516,25 @@ input[type="number"] {
   --status-info: #2563eb;
   --status-pending: #b45309;
   --status-processing: #2563eb;
-  --status-neutral: #44444f;
+  --status-neutral: #3d3d4a;
   --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.06);
   --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.08);
   --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.12), 0 16px 32px rgba(0, 0, 0, 0.1);
 }
 
-/* Light: Ice -- icy blue-white palette with cold linear feel */
+/* Light: Ice -- icy blue-white palette, toned-down brightness */
 [data-theme="light-ice"] {
   --primary: #2563eb;
   --primary-rgb: 37, 99, 235;
   --accent: #38bdf8;
-  --background: #f0f5fa;
+  --background: #e8eff6;
   --foreground: #0f172a;
-  --secondary: #dbe8f4;
-  --muted: #4b6a8a;
-  --muted-dark: #334d6e;
-  --muted-foreground: #3d5a80;
-  --border: #b8d0e8;
+  --secondary: #d4e2f0;
+  --muted: #44607d;
+  --muted-dark: #2e4862;
+  --muted-foreground: #365272;
+  --border: #b0c8e0;
   --card-bg: rgba(255, 255, 255, 0.65);
   --card-border: rgba(59, 130, 246, 0.12);
   --brand-cyan: #0284c7;
@@ -620,18 +614,18 @@ input[type="number"] {
 [data-theme="light-ice"] .json-highlight .hljs-literal { color: #dc2626; }
 [data-theme="light-ice"] .json-highlight .hljs-punctuation { color: #6b7280; }
 
-/* Light: News -- vintage newspaper monochrome palette */
+/* Light: News -- vintage newspaper monochrome palette, toned-down brightness */
 [data-theme="light-news"] {
   --primary: #1a1a1a;
   --primary-rgb: 26, 26, 26;
   --accent: #555555;
-  --background: #e8e6e1;
+  --background: #e0ded9;
   --foreground: #111111;
-  --secondary: #d5d2cb;
-  --muted: #6b6b6b;
-  --muted-dark: #4a4a4a;
-  --muted-foreground: #555555;
-  --border: #b5b0a8;
+  --secondary: #d0cdc6;
+  --muted: #5e5e5e;
+  --muted-dark: #424242;
+  --muted-foreground: #4a4a4a;
+  --border: #ada8a0;
   --card-bg: rgba(255, 255, 255, 0.55);
   --card-border: rgba(0, 0, 0, 0.10);
   --brand-cyan: #333333;
@@ -887,21 +881,19 @@ input[type="number"] {
 
 /* -- Matrix theme specials -- */
 [data-theme="dark-matrix"] * {
-  scrollbar-color: rgba(0, 255, 65, 0.15) transparent;
+  scrollbar-color: rgba(0, 255, 65, 0.10) transparent;
 }
 
 [data-theme="dark-matrix"] ::selection {
-  background-color: rgba(0, 255, 65, 0.25);
+  background-color: rgba(0, 255, 65, 0.18);
   color: #000000;
 }
 
 [data-theme="dark-matrix"] .dot-grid {
-  background-image: radial-gradient(circle, rgba(0, 255, 65, 0.06) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(0, 255, 65, 0.04) 1px, transparent 1px);
 }
 
-/* Digital rain: columns of faint falling glyphs via CSS only.
-   Uses a repeating-linear-gradient for vertical "scan lines" and a subtle
-   after-pseudo for a gentle top-down fade -- zero JS, minimal paint cost. */
+/* Digital rain: faint vertical scan-lines — very subtle, mostly dark. */
 [data-theme="dark-matrix"] body::before {
   content: '';
   position: fixed;
@@ -913,12 +905,12 @@ input[type="number"] {
       90deg,
       transparent,
       transparent 19px,
-      rgba(0, 255, 65, 0.018) 19px,
-      rgba(0, 255, 65, 0.018) 20px
+      rgba(0, 255, 65, 0.012) 19px,
+      rgba(0, 255, 65, 0.012) 20px
     );
 }
 
-/* Vertical scan-line shimmer -- very faint phosphor glow from top */
+/* Vertical phosphor glow — extremely faint, just a hint of green at edges */
 [data-theme="dark-matrix"] body::after {
   content: '';
   position: fixed;
@@ -927,87 +919,89 @@ input[type="number"] {
   z-index: 0;
   background: linear-gradient(
     180deg,
-    rgba(0, 255, 65, 0.03) 0%,
-    transparent 30%,
-    transparent 70%,
-    rgba(0, 255, 65, 0.015) 100%
+    rgba(0, 255, 65, 0.015) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(0, 255, 65, 0.01) 100%
   );
 }
 
-/* Matrix: cards get phosphor border glow */
+/* Matrix: cards get subtle phosphor border — restrained glow */
 [data-theme="dark-matrix"] .rounded-xl {
-  box-shadow: 0 0 1px rgba(0, 255, 65, 0.12), inset 0 1px 0 rgba(0, 255, 65, 0.04);
+  box-shadow: 0 0 1px rgba(0, 255, 65, 0.08), inset 0 1px 0 rgba(0, 255, 65, 0.02);
 }
 [data-theme="dark-matrix"] .rounded-xl:hover {
-  box-shadow: 0 0 6px rgba(0, 255, 65, 0.15), inset 0 1px 0 rgba(0, 255, 65, 0.06);
+  box-shadow: 0 0 4px rgba(0, 255, 65, 0.10), inset 0 1px 0 rgba(0, 255, 65, 0.04);
 }
 
-/* Matrix: monochrome green JSON highlighting */
-[data-theme="dark-matrix"] .json-highlight .hljs-attr { color: #00ff41; font-weight: 600; }
-[data-theme="dark-matrix"] .json-highlight .hljs-string { color: #33cc33; }
-[data-theme="dark-matrix"] .json-highlight .hljs-number { color: #66ff66; }
-[data-theme="dark-matrix"] .json-highlight .hljs-literal { color: #00cc33; font-style: italic; }
-[data-theme="dark-matrix"] .json-highlight .hljs-punctuation { color: #1a5c1a; }
+/* Matrix: JSON highlighting — green for keys, neutral for values */
+[data-theme="dark-matrix"] .json-highlight .hljs-attr { color: #00dd38; font-weight: 600; }
+[data-theme="dark-matrix"] .json-highlight .hljs-string { color: #b0b0b0; }
+[data-theme="dark-matrix"] .json-highlight .hljs-number { color: #c8c8c8; }
+[data-theme="dark-matrix"] .json-highlight .hljs-literal { color: #18a835; font-style: italic; }
+[data-theme="dark-matrix"] .json-highlight .hljs-punctuation { color: #404040; }
 
-/* Matrix: recolor accent classes to green spectrum */
+/* Matrix: accent text — most colors stay neutral gray, green reserved for
+   cyan/emerald families (the "in-character" accents); other hues get muted
+   gray-green to avoid the all-green flood while keeping a terminal feel. */
 [data-theme="dark-matrix"] .text-violet-300,
 [data-theme="dark-matrix"] .text-violet-400,
 [data-theme="dark-matrix"] .text-purple-300,
 [data-theme="dark-matrix"] .text-purple-400,
 [data-theme="dark-matrix"] .text-indigo-300,
-[data-theme="dark-matrix"] .text-indigo-400  { color: #00cc33; }
+[data-theme="dark-matrix"] .text-indigo-400  { color: #a0a0a0; }
 
 [data-theme="dark-matrix"] .text-blue-300,
 [data-theme="dark-matrix"] .text-blue-400,
 [data-theme="dark-matrix"] .text-cyan-300,
 [data-theme="dark-matrix"] .text-cyan-400,
 [data-theme="dark-matrix"] .text-sky-300,
-[data-theme="dark-matrix"] .text-sky-400     { color: #00ff41; }
+[data-theme="dark-matrix"] .text-sky-400     { color: #00dd38; }
 
 [data-theme="dark-matrix"] .text-emerald-300,
 [data-theme="dark-matrix"] .text-emerald-400,
 [data-theme="dark-matrix"] .text-teal-300,
-[data-theme="dark-matrix"] .text-teal-400    { color: #33ff66; }
+[data-theme="dark-matrix"] .text-teal-400    { color: #22cc55; }
 
 [data-theme="dark-matrix"] .text-amber-300,
 [data-theme="dark-matrix"] .text-amber-400,
 [data-theme="dark-matrix"] .text-orange-300,
-[data-theme="dark-matrix"] .text-orange-400  { color: #88cc44; }
+[data-theme="dark-matrix"] .text-orange-400  { color: #b0b0b0; }
 
 [data-theme="dark-matrix"] .text-rose-300,
 [data-theme="dark-matrix"] .text-rose-400,
 [data-theme="dark-matrix"] .text-pink-300,
-[data-theme="dark-matrix"] .text-pink-400    { color: #00aa22; }
+[data-theme="dark-matrix"] .text-pink-400    { color: #909090; }
 
 [data-theme="dark-matrix"] .text-red-300,
 [data-theme="dark-matrix"] .text-red-400     { color: #ff4444; }
 
-/* Matrix: recolor accent backgrounds to green tints */
+/* Matrix: accent backgrounds — toned down, mostly neutral with subtle green */
 [data-theme="dark-matrix"] .bg-violet-500\/5,
 [data-theme="dark-matrix"] .bg-violet-500\/10,
 [data-theme="dark-matrix"] .bg-violet-500\/15,
 [data-theme="dark-matrix"] .bg-violet-500\/20,
 [data-theme="dark-matrix"] .bg-purple-500\/10,
 [data-theme="dark-matrix"] .bg-purple-500\/15,
-[data-theme="dark-matrix"] .bg-indigo-500\/10 { background-color: rgba(0, 204, 51, 0.08); }
+[data-theme="dark-matrix"] .bg-indigo-500\/10 { background-color: rgba(255, 255, 255, 0.04); }
 
 [data-theme="dark-matrix"] .bg-blue-500\/10,
 [data-theme="dark-matrix"] .bg-blue-500\/15,
 [data-theme="dark-matrix"] .bg-blue-500\/20,
 [data-theme="dark-matrix"] .bg-cyan-500\/10,
 [data-theme="dark-matrix"] .bg-cyan-500\/15,
-[data-theme="dark-matrix"] .bg-sky-500\/10    { background-color: rgba(0, 255, 65, 0.07); }
+[data-theme="dark-matrix"] .bg-sky-500\/10    { background-color: rgba(0, 255, 65, 0.04); }
 
 [data-theme="dark-matrix"] .bg-emerald-500\/5,
 [data-theme="dark-matrix"] .bg-emerald-500\/10,
 [data-theme="dark-matrix"] .bg-emerald-500\/15,
 [data-theme="dark-matrix"] .bg-emerald-500\/20,
-[data-theme="dark-matrix"] .bg-teal-500\/10   { background-color: rgba(51, 255, 102, 0.08); }
+[data-theme="dark-matrix"] .bg-teal-500\/10   { background-color: rgba(0, 255, 65, 0.04); }
 
 [data-theme="dark-matrix"] .bg-amber-500\/10,
 [data-theme="dark-matrix"] .bg-amber-500\/15,
 [data-theme="dark-matrix"] .bg-amber-500\/20,
-[data-theme="dark-matrix"] .bg-orange-500\/10  { background-color: rgba(136, 204, 68, 0.08); }
+[data-theme="dark-matrix"] .bg-orange-500\/10  { background-color: rgba(255, 255, 255, 0.04); }
 
 [data-theme="dark-matrix"] .bg-red-500\/5,
 [data-theme="dark-matrix"] .bg-red-500\/8,
@@ -1016,7 +1010,7 @@ input[type="number"] {
 [data-theme="dark-matrix"] .bg-red-500\/20,
 [data-theme="dark-matrix"] .bg-rose-500\/10,
 [data-theme="dark-matrix"] .bg-rose-500\/15,
-[data-theme="dark-matrix"] .bg-pink-500\/10    { background-color: rgba(255, 68, 68, 0.08); }
+[data-theme="dark-matrix"] .bg-pink-500\/10    { background-color: rgba(255, 68, 68, 0.06); }
 
 /* Matrix: recolor accent borders to green */
 [data-theme="dark-matrix"] .border-violet-500\/15,
@@ -1056,13 +1050,13 @@ input[type="number"] {
   box-shadow: 0 0 12px rgba(0, 255, 65, 0.15);
 }
 
-/* Matrix: colored sidebar notification badges -> green */
-[data-theme="dark-matrix"] .bg-amber-500 { background-color: #00cc33; }
-[data-theme="dark-matrix"] .bg-cyan-500  { background-color: #00ff41; }
-[data-theme="dark-matrix"] .border-amber-600\/50 { border-color: rgba(0, 204, 51, 0.50); }
-[data-theme="dark-matrix"] .border-cyan-600\/50  { border-color: rgba(0, 255, 65, 0.50); }
-[data-theme="dark-matrix"] .bg-amber-500\/40 { background-color: rgba(0, 204, 51, 0.4); }
-[data-theme="dark-matrix"] .bg-cyan-500\/40  { background-color: rgba(0, 255, 65, 0.4); }
+/* Matrix: sidebar notification badges — muted green accents */
+[data-theme="dark-matrix"] .bg-amber-500 { background-color: #18a835; }
+[data-theme="dark-matrix"] .bg-cyan-500  { background-color: #00cc33; }
+[data-theme="dark-matrix"] .border-amber-600\/50 { border-color: rgba(0, 204, 51, 0.35); }
+[data-theme="dark-matrix"] .border-cyan-600\/50  { border-color: rgba(0, 255, 65, 0.35); }
+[data-theme="dark-matrix"] .bg-amber-500\/40 { background-color: rgba(0, 204, 51, 0.25); }
+[data-theme="dark-matrix"] .bg-cyan-500\/40  { background-color: rgba(0, 255, 65, 0.25); }
 
 /* -- Pipeline Animations -- */
 @keyframes dash-flow {
@@ -1132,24 +1126,24 @@ input[type="number"] {
   animation-duration: calc(4s / var(--vibe-anim-scale, 1));
 }
 
-/* Vibe-tinted card borders -- apply subtle glow color to card outlines */
+/* Vibe-tinted card borders -- use theme primary for hue, vibe for intensity */
 [data-vibe="clinical"] .rounded-xl {
-  border-color: rgba(148, 163, 184, calc(0.1 * var(--_border)));
+  border-color: color-mix(in srgb, var(--primary) calc(10% * var(--_border)), transparent);
 }
 [data-vibe="creative"] .rounded-xl {
-  border-color: rgba(251, 191, 36, calc(0.06 * var(--_border)));
+  border-color: color-mix(in srgb, var(--accent) calc(6% * var(--_border)), transparent);
 }
 [data-vibe="guardian"] .rounded-xl {
-  border-color: rgba(52, 211, 153, calc(0.06 * var(--_border)));
+  border-color: color-mix(in srgb, var(--primary) calc(6% * var(--_border)), transparent);
 }
 [data-vibe="analytical"] .rounded-xl {
-  border-color: rgba(59, 130, 246, calc(0.06 * var(--_border)));
+  border-color: color-mix(in srgb, var(--primary) calc(6% * var(--_border)), transparent);
 }
 [data-vibe="energetic"] .rounded-xl {
-  border-color: rgba(244, 63, 94, calc(0.06 * var(--_border)));
+  border-color: color-mix(in srgb, var(--accent) calc(6% * var(--_border)), transparent);
 }
 [data-vibe="stealth"] .rounded-xl {
-  border-color: rgba(71, 85, 105, calc(0.04 * var(--_border)));
+  border-color: color-mix(in srgb, var(--primary) calc(4% * var(--_border)), transparent);
 }
 
 /* -- Light-Theme Color Corrections --
@@ -1575,6 +1569,67 @@ input[type="number"] {
 [data-theme="light"] .json-highlight .hljs-number { color: #1d4ed8; }
 [data-theme="light"] .json-highlight .hljs-literal { color: #dc2626; }
 [data-theme="light"] .json-highlight .hljs-punctuation { color: #6b7280; }
+
+/* -- Theme Background Gradients --
+   Subtle gradient overlays replace flat monotone backgrounds.
+   Each theme gets a gentle two-tone gradient that adds depth without
+   fighting the content.  Applied to body to sit beneath everything. */
+
+/* Dark: Midnight (default) -- dark blue-to-charcoal */
+:root body,
+[data-theme="dark-midnight"] body {
+  background: linear-gradient(168deg, #0a0e14 0%, #0d0f18 40%, #0a0c12 100%);
+}
+
+/* Dark: Cyan -- deep teal warmth at edges */
+[data-theme="dark-cyan"] body {
+  background: linear-gradient(168deg, #0a1214 0%, #0b1518 45%, #091012 100%);
+}
+
+/* Dark: Bronze -- warm amber undertone */
+[data-theme="dark-bronze"] body {
+  background: linear-gradient(168deg, #121008 0%, #14120a 45%, #100e06 100%);
+}
+
+/* Dark: Frost -- cool steel gradient */
+[data-theme="dark-frost"] body {
+  background: linear-gradient(168deg, #0f1115 0%, #111418 45%, #0d0f13 100%);
+}
+
+/* Dark: Purple -- deep violet at edges */
+[data-theme="dark-purple"] body {
+  background: linear-gradient(168deg, #0e0a14 0%, #100c18 45%, #0c0812 100%);
+}
+
+/* Dark: Pink -- deep magenta warmth */
+[data-theme="dark-pink"] body {
+  background: linear-gradient(168deg, #140a10 0%, #160c14 45%, #12080e 100%);
+}
+
+/* Dark: Red -- near-black with faint crimson at corners */
+[data-theme="dark-red"] body {
+  background: linear-gradient(168deg, #080808 0%, #0a0808 45%, #060606 100%);
+}
+
+/* Dark: Matrix -- pure black with barely-there green edge glow */
+[data-theme="dark-matrix"] body {
+  background: linear-gradient(168deg, #050505 0%, #040604 45%, #030303 100%);
+}
+
+/* Light -- warm parchment gradient */
+[data-theme="light"] body {
+  background: linear-gradient(168deg, #e9e6df 0%, #e5e1d8 50%, #ece8e0 100%);
+}
+
+/* Light: Ice -- cool blue fade */
+[data-theme="light-ice"] body {
+  background: linear-gradient(168deg, #e8eff6 0%, #e3eaf4 50%, #ebf0f7 100%);
+}
+
+/* Light: News -- vintage paper warmth */
+[data-theme="light-news"] body {
+  background: linear-gradient(168deg, #e0ded9 0%, #dcdad4 50%, #e2e0db 100%);
+}
 
 /* -- Theme Transition -- */
 .theme-transitioning,

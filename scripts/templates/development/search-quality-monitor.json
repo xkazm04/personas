@@ -731,6 +731,118 @@
         "label": "Emits events: execution completed, credential status change, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What type of content does your Algolia index serve?",
+        "type": "select",
+        "options": [
+          "E-commerce products",
+          "Documentation / knowledge base",
+          "SaaS app records (users, projects, etc.)",
+          "Blog / editorial content",
+          "Mixed content types"
+        ],
+        "default": "Documentation / knowledge base",
+        "context": "Determines how content gaps are classified and prioritized — a missing product query is treated differently from a missing doc topic when creating Notion tickets.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Who owns search quality on your team?",
+        "type": "select",
+        "options": [
+          "Engineering / platform team",
+          "Content / editorial team",
+          "Product team",
+          "Customer success / support",
+          "No dedicated owner — shared responsibility"
+        ],
+        "default": "Engineering / platform team",
+        "context": "Shapes how Notion tickets are written, who Slack reports address, and what action language is used in recommendations.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this monitor NEVER do automatically without explicit human action?",
+        "type": "select",
+        "options": [
+          "Apply any index configuration changes directly in Algolia",
+          "Create Notion tickets without prior review",
+          "Post to Slack channels outside the designated one",
+          "Escalate zero-result spikes beyond Slack (e.g., PagerDuty / email)"
+        ],
+        "default": "Apply any index configuration changes directly in Algolia",
+        "context": "Prevents unintended side-effects — especially critical for index tuning suggestions that could immediately affect live search relevance.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which actions require human approval before the monitor proceeds?",
+        "type": "select",
+        "options": [
+          "Index tuning recommendations only",
+          "Both Notion ticket creation and index tuning",
+          "Notion ticket creation only",
+          "Nothing — fully automated is preferred"
+        ],
+        "default": "Index tuning recommendations only",
+        "context": "Ensures sensitive changes like synonym rules or ranking adjustments go through review, while routine ticket creation can remain autonomous.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What zero-result rate threshold should trigger an urgent daily anomaly alert?",
+        "type": "select",
+        "options": [
+          "5% of daily searches",
+          "10% of daily searches",
+          "20% of daily searches",
+          "Only flag individual high-volume zero-result queries (50+ searches/day)"
+        ],
+        "default": "10% of daily searches",
+        "context": "Sets the sensitivity of the Tue–Fri anomaly check. Lower thresholds catch problems earlier but increase alert frequency.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "What is the Algolia index name (or names) to monitor?",
+        "type": "text",
+        "default": "",
+        "context": "All analytics queries are scoped to these index names. Use comma-separated values if monitoring multiple indices (e.g., products_en, products_fr).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How many problematic queries should the weekly Slack report surface per category?",
+        "type": "select",
+        "options": [
+          "Top 5 — keep it scannable",
+          "Top 10 — balanced detail",
+          "Top 20 — full picture",
+          "All queries above threshold"
+        ],
+        "default": "Top 10 — balanced detail",
+        "context": "Controls report length per section (zero-result, low-CTR, trending). Too many items causes alert fatigue; too few may miss important gaps.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Should the daily anomaly check post to Slack only when issues are found (silent-pass mode)?",
+        "type": "boolean",
+        "default": true,
+        "context": "Silent-pass reduces noise — Slack is only pinged when thresholds are breached. Disable if your team wants a daily 'all clear' confirmation message.",
+        "dimension": "triggers"
+      }
     ]
   }
 }

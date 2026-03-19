@@ -638,6 +638,122 @@
         "label": "Emits events: threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which product metrics should be the primary focus of your daily briefing?",
+        "type": "select",
+        "options": [
+          "User growth & activation (DAU, signups, activation funnel)",
+          "Engagement & retention (session depth, feature usage, cohort retention)",
+          "Revenue & monetization (conversion events, trial-to-paid, MRR proxies)",
+          "Balanced overview (all core metrics weighted equally)"
+        ],
+        "default": "Balanced overview (all core metrics weighted equally)",
+        "context": "Determines which Mixpanel queries get top billing and which numbers appear prominently in the Slack briefing vs. buried in the log",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of product does this analytics briefer serve?",
+        "type": "select",
+        "options": [
+          "B2B SaaS (team/workspace accounts, seat-based metrics)",
+          "B2C mobile app (individual consumers, session/retention focus)",
+          "E-commerce or marketplace (purchase funnel, GMV events)",
+          "Consumer web app (pageviews, signups, feature engagement)"
+        ],
+        "default": "B2B SaaS (team/workspace accounts, seat-based metrics)",
+        "context": "Shapes how the agent frames insights — e.g., 'workspaces activated' vs. 'users activated', and which funnel stages are meaningful",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which Slack channel should receive the morning briefing, and should severe anomalies route to a separate escalation channel or @mention?",
+        "type": "text",
+        "default": "#analytics for the daily briefing; same channel with @here for anomalies",
+        "context": "Configures Slack routing — broad teams often want briefings in #analytics but critical drops pinging #oncall or a specific person",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the briefing NEVER include or post to Slack?",
+        "type": "select",
+        "options": [
+          "Never share absolute revenue figures — use % vs. goal only",
+          "Never surface individual user data or anything that could identify a specific account",
+          "Never post an incomplete briefing — skip the day if Mixpanel data is unavailable",
+          "No restrictions — share all available data as-is"
+        ],
+        "default": "Never surface individual user data or anything that could identify a specific account",
+        "context": "Prevents unintended data exposure in a shared channel and defines whether a partial dataset should be posted or held",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "At what deviation threshold should the briefing escalate with an active alert (e.g., @mention) rather than a routine post?",
+        "type": "select",
+        "options": [
+          "Any metric >10% below its 7-day moving average",
+          "Any metric >20% deviation from the 30-day baseline",
+          "Only if DAU or a revenue event drops >30% (critical anomalies only)",
+          "No automated escalation — I will review the briefing myself each morning"
+        ],
+        "default": "Any metric >20% deviation from the 30-day baseline",
+        "context": "Sets the line between a normal informational post and an active alert that demands immediate human attention",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "How should the agent populate your initial goals and baselines in analytics_baselines.json?",
+        "type": "select",
+        "options": [
+          "I will provide specific targets: DAU goal, signup goal, and key conversion rate thresholds",
+          "Derive baselines automatically from the first 7 days of Mixpanel query history",
+          "Seed from a goals doc or spreadsheet I will supply during setup",
+          "Use placeholder benchmarks and I will refine them after the first week of briefings"
+        ],
+        "default": "I will provide specific targets: DAU goal, signup goal, and key conversion rate thresholds",
+        "context": "The baselines file drives all anomaly detection and goal-tracking logic — knowing how it gets populated prevents silent misconfiguration",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How should the Slack briefing be structured?",
+        "type": "select",
+        "options": [
+          "Executive TL;DR — 5-7 bullets with a metrics table, scannable in 30 seconds",
+          "Narrative summary — 2-3 short paragraphs with key numbers inline",
+          "Full structured report — one section per metric group with trend commentary",
+          "Numbers-only — raw figures and deltas, no narrative prose"
+        ],
+        "default": "Executive TL;DR — 5-7 bullets with a metrics table, scannable in 30 seconds",
+        "context": "Controls verbosity and layout of the daily Slack post to match how your team actually reads it",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Mixpanel project environment should the agent query for production data?",
+        "type": "select",
+        "options": [
+          "Single production project",
+          "Production + a separate staging project (agent queries both)",
+          "Multiple products — one Mixpanel project per product line",
+          "Single project but separate development and production event namespaces"
+        ],
+        "default": "Single production project",
+        "context": "Determines how many Mixpanel credentials are needed and whether the Notion log needs to label data by project source",
+        "dimension": "connectors"
+      }
     ]
   }
 }

@@ -721,6 +721,115 @@
         "label": "Emits events: execution completed, execution failed, credential status change, item created, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary purpose of this portfolio manager for your team?",
+        "type": "select",
+        "options": [
+          "Real-time blocker alerting for engineering or ops teams",
+          "Executive visibility into cross-project health",
+          "Risk escalation and accountability tracking",
+          "All of the above — unified portfolio oversight"
+        ],
+        "default": "All of the above — unified portfolio oversight",
+        "context": "Determines which workflows to prioritize and how aggressively to tune alert sensitivity versus executive reporting depth.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of work do your Monday.com boards primarily track?",
+        "type": "select",
+        "options": [
+          "Software development sprints and releases",
+          "Marketing campaigns and launches",
+          "Client delivery and professional services",
+          "Internal operations and cross-functional initiatives"
+        ],
+        "default": "Software development sprints and releases",
+        "context": "Shapes the language and metrics used in Slack alerts and executive summaries (e.g., 'sprint velocity' vs. 'campaign pacing' vs. 'milestone delivery').",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which Monday.com status labels in your workspace indicate a project is blocked or at-risk?",
+        "type": "text",
+        "default": "Stuck, Blocked, At Risk, On Hold",
+        "context": "Monday.com status labels are workspace-specific. Listing your exact label names ensures the agent detects the right state transitions and avoids missed alerts or false positives.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Who should receive the weekly executive summary email?",
+        "type": "select",
+        "options": [
+          "C-suite and VP level only",
+          "All project managers and team leads",
+          "A fixed distribution list I will specify",
+          "No email — Slack digest is sufficient"
+        ],
+        "default": "A fixed distribution list I will specify",
+        "context": "Determines the audience tone and detail level of the HTML email report, and whether a leadership DL or individual addresses are used.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do without explicit human instruction?",
+        "type": "select",
+        "options": [
+          "Send emails to external clients or stakeholders outside my org",
+          "Modify or update any Monday.com board items directly",
+          "Escalate to senior leadership without a manager review",
+          "All of the above"
+        ],
+        "default": "All of the above",
+        "context": "Prevents the agent from taking irreversible or high-visibility actions autonomously — especially important for cross-functional portfolio tools with broad connector access.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When a blocker has been unresolved for 24+ hours, how should the escalation proceed?",
+        "type": "select",
+        "options": [
+          "Post in Slack and wait for a human to escalate further",
+          "Draft an escalation email but require human approval before sending",
+          "Automatically send escalation to the project owner's manager",
+          "Log to risk register only — no outbound notification"
+        ],
+        "default": "Draft an escalation email but require human approval before sending",
+        "context": "Escalating blockers to leadership is a sensitive action. This determines whether the agent acts autonomously or creates a draft for review on the 24-hour escalation flow.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Should the agent track recurring patterns across weeks, such as the same project being blocked every sprint?",
+        "type": "boolean",
+        "default": true,
+        "context": "Enables trend detection and proactive commentary in weekly reports — e.g., flagging a project that has been at-risk three weeks in a row versus one that just entered that state.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should Slack alerts be for newly blocked items?",
+        "type": "select",
+        "options": [
+          "Terse: project name, item, and assignee only",
+          "Standard: status, assignee, due date, and time in current state",
+          "Verbose: full context including dependencies, linked items, and suggested next actions"
+        ],
+        "default": "Standard: status, assignee, due date, and time in current state",
+        "context": "Balances Slack channel noise against actionability. Verbose mode suits small teams; terse mode works better in high-volume channels.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

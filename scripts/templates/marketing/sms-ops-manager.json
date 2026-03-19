@@ -679,6 +679,117 @@
         "label": "Emits events: review requested, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary purpose of your inbound SMS operation?",
+        "type": "select",
+        "options": [
+          "Customer support — troubleshooting, order status, service issues",
+          "Sales lead qualification — inbound inquiries from prospects",
+          "Marketing response handling — replies to campaigns and promotions",
+          "Mixed operations — support, sales, and marketing in one inbox"
+        ],
+        "default": "Mixed operations — support, sales, and marketing in one inbox",
+        "context": "Determines how the intent classifier is weighted and which Slack channels get the most routing priority.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What industry and business type will this SMS hub serve?",
+        "type": "select",
+        "options": [
+          "E-commerce / retail (orders, shipping, returns)",
+          "SaaS / software (billing, account support, onboarding)",
+          "Healthcare / wellness (appointments, reminders, intake)",
+          "Service business — agency, consulting, home services",
+          "Real estate (listings, showing requests, lead follow-up)"
+        ],
+        "default": "E-commerce / retail (orders, shipping, returns)",
+        "context": "Shapes auto-reply templates, common request patterns, and Airtable field structure for conversation logging.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What are the Slack channel names for each routed intent type?",
+        "type": "text",
+        "default": "#sms-support, #sms-sales, #sms-optouts, #sms-general",
+        "context": "The persona routes each classified message to the matching channel. Providing your real channel names avoids placeholder values in the live workflow.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which message types should NEVER receive an automated reply and must always be held for a human?",
+        "type": "select",
+        "options": [
+          "Complaints and refund/chargeback requests",
+          "Any message containing legal, liability, or threat language",
+          "Messages with sensitive PII (SSN, medical info, account credentials)",
+          "All of the above — only route/log automatically, never auto-reply"
+        ],
+        "default": "All of the above — only route/log automatically, never auto-reply",
+        "context": "Prevents auto-replies from making binding statements or worsening escalations on sensitive topics.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "What conditions should trigger a human-review Slack alert instead of (or in addition to) a standard auto-reply?",
+        "type": "select",
+        "options": [
+          "Negative sentiment detected in the message",
+          "Intent cannot be classified with confidence",
+          "Customer explicitly asks to speak to a person",
+          "Any message from a VIP or known high-value contact"
+        ],
+        "default": "Intent cannot be classified with confidence",
+        "context": "Controls when the persona escalates beyond auto-routing so a human can intervene before a reply is sent.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Should auto-replies reflect business hours, and what is your timezone and operating window?",
+        "type": "text",
+        "default": "Mon–Fri 9am–6pm EST",
+        "context": "After-hours auto-replies can include expected response times. Leaving this blank disables time-aware messaging.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone should auto-replies use when responding to inbound SMS messages?",
+        "type": "select",
+        "options": [
+          "Professional and formal — brand-safe, no contractions",
+          "Friendly and conversational — warm, approachable",
+          "Concise and direct — minimal words, action-focused",
+          "Match the sender's tone — mirror casual vs. formal"
+        ],
+        "default": "Friendly and conversational — warm, approachable",
+        "context": "Ensures auto-replies feel consistent with your brand voice across all classified intents.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "What contact data should be persisted in Airtable across SMS conversations?",
+        "type": "select",
+        "options": [
+          "Full conversation history + contact profile (name, tags, account ID)",
+          "Most recent message + opt-out/opt-in status only",
+          "All messages + CRM-style fields (lead stage, last intent, sentiment score)",
+          "Opt-out compliance fields only — minimal data retention"
+        ],
+        "default": "All messages + CRM-style fields (lead stage, last intent, sentiment score)",
+        "context": "Determines the Airtable schema complexity and how much context is available for follow-up routing.",
+        "dimension": "memory"
+      }
     ]
   }
 }

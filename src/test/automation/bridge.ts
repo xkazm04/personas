@@ -485,6 +485,52 @@ const bridge: TestBridge = {
     }
   },
 
+  /** Promote the current build draft — applies structured_prompt, tools, design context to persona. */
+  async promoteBuildDraft() {
+    const state = useAgentStore.getState();
+    if (!state.buildSessionId || !state.buildPersonaId) {
+      return { success: false, error: 'No active build session' };
+    }
+    if (state.buildPhase !== 'draft_ready' && state.buildPhase !== 'test_complete') {
+      return { success: false, error: `Cannot promote in phase: ${state.buildPhase}` };
+    }
+    try {
+      const result = await invoke('promote_build_draft', {
+        sessionId: state.buildSessionId,
+        personaId: state.buildPersonaId,
+      });
+      // Refresh persona in store after promote
+      await useAgentStore.getState().fetchPersonas();
+      if (state.buildPersonaId) {
+        useAgentStore.getState().selectPersona(state.buildPersonaId);
+      }
+      return { success: true, result };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /** Execute a persona by ID or name. Returns the execution result. */
+  async executePersona(nameOrId: string) {
+    const store = useAgentStore.getState();
+    const match = store.personas.find(
+      p => p.id === nameOrId || p.name.toLowerCase().includes(nameOrId.toLowerCase()),
+    );
+    if (!match) return { success: false, error: `No agent matching: ${nameOrId}` };
+    try {
+      const result = await invoke('execute_persona', {
+        personaId: match.id,
+        triggerId: null,
+        inputData: null,
+        useCaseId: null,
+        continuation: null,
+      });
+      return { success: true, execution: result, personaName: match.name };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
   /** Gap 6: Trigger test_build_draft for the active build session */
   async triggerBuildTest() {
     const state = useAgentStore.getState();
@@ -508,13 +554,21 @@ const bridge: TestBridge = {
   /**
    * Dispatcher called from Rust via eval().
    * Executes a bridge method and sends the result back via Tauri IPC.
+   * Includes a 25s timeout to prevent bridge queue blocking.
    */
   async __exec__(id: string, method: string, params: Record<string, unknown>) {
+    const EXEC_TIMEOUT = 25000;
     try {
       const fn = (this as unknown as Record<string, unknown>)[method];
       if (typeof fn !== "function") throw new Error(`Unknown method: ${method}`);
       const args = Object.values(params);
-      const result = await fn.apply(this, args);
+
+      // Race the method call against a timeout to prevent queue blocking
+      const result = await Promise.race([
+        fn.apply(this, args),
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`Bridge method '${method}' timed out after ${EXEC_TIMEOUT / 1000}s`)), EXEC_TIMEOUT)),
+      ]);
+
       await invoke("__test_respond", { id, result: JSON.stringify(result) });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);

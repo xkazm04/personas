@@ -715,6 +715,122 @@
         "label": "Emits events: review requested, item created, threshold breached, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary driver for documentation freshness monitoring in your organization?",
+        "type": "select",
+        "options": [
+          "Onboarding quality — new hires are hitting stale docs and getting confused",
+          "Compliance or audit readiness — we need provable documentation hygiene",
+          "Engineering reliability — outdated API/tool references are causing incidents",
+          "General knowledge base health — reduce noise and build trust in our wiki"
+        ],
+        "default": "General knowledge base health — reduce noise and build trust in our wiki",
+        "context": "Drives which staleness signals to prioritize and how escalation urgency is framed in notifications.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which Confluence spaces should this guardian monitor?",
+        "type": "select",
+        "options": [
+          "All spaces across the entire organization",
+          "Engineering and platform spaces only",
+          "A specific list of high-trust spaces (runbooks, ADRs, onboarding guides)",
+          "All spaces except personal and archived ones"
+        ],
+        "default": "All spaces except personal and archived ones",
+        "context": "Determines scan scope. Scanning personal spaces often creates noise; critical runbook spaces need tighter thresholds.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What staleness threshold (in days) should trigger the first owner warning email?",
+        "type": "select",
+        "options": [
+          "60 days — fast-moving teams with frequently changing tooling",
+          "90 days (default) — standard for most engineering orgs",
+          "180 days — stable documentation that changes infrequently",
+          "365 days — compliance-style cadence, flag only truly ancient pages"
+        ],
+        "default": "90 days (default) — standard for most engineering orgs",
+        "context": "Sets the Warning tier threshold. Critical and Stale tiers scale proportionally from this value.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the Documentation Freshness Guardian never do autonomously?",
+        "type": "select",
+        "options": [
+          "Never archive or delete pages — only flag them for human review",
+          "Never email anyone outside the engineering organization",
+          "Never send more than one reminder email per owner per week",
+          "Never flag pages owned by executives or leadership without prior approval"
+        ],
+        "default": "Never archive or delete pages — only flag them for human review",
+        "context": "Hard safety rails prevent the agent from taking irreversible or politically sensitive actions.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which escalation actions require a human to approve before the guardian proceeds?",
+        "type": "select",
+        "options": [
+          "Escalating a Critical page to a manager or team lead (not just the page owner)",
+          "Recommending a page for archival in the Slack digest",
+          "Sending a second reminder after an owner has already been notified and ignored it",
+          "All escalations beyond the first notification email require approval"
+        ],
+        "default": "Escalating a Critical page to a manager or team lead (not just the page owner)",
+        "context": "Escalating beyond the page owner (to their manager) is high-stakes and should not happen autonomously.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Where should the weekly Slack digest be posted?",
+        "type": "text",
+        "default": "#docs-health",
+        "context": "The digest channel is where the team sees the aggregate staleness report. A dedicated channel avoids alert fatigue.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "How long should the guardian wait after an owner promises to update a page before following up?",
+        "type": "select",
+        "options": [
+          "7 days — short accountability window",
+          "14 days — standard sprint-length buffer",
+          "30 days — give owners a full month",
+          "Honor the owner's stated deadline, then wait 3 days before following up"
+        ],
+        "default": "Honor the owner's stated deadline, then wait 3 days before following up",
+        "context": "Owner commitment tracking determines when a promise becomes overdue and triggers a follow-up email.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone should owner notification emails use?",
+        "type": "select",
+        "options": [
+          "Friendly and collaborative — 'Hey, just a heads-up your page might need a refresh'",
+          "Neutral and factual — state the staleness data without editorial framing",
+          "Urgent for Critical pages, friendly for Warning/Stale tiers",
+          "Formal — suitable for compliance or regulated environments"
+        ],
+        "default": "Urgent for Critical pages, friendly for Warning/Stale tiers",
+        "context": "Tone affects whether owners engage or tune out notifications. Escalating urgency matches the actual risk level.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

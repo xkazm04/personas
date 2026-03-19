@@ -60,6 +60,7 @@ pub struct DreamFrame {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "snake_case")]
 #[ts(export)]
+#[allow(clippy::enum_variant_names)]
 pub enum DreamFrameEvent {
     /// A span started executing.
     SpanStart,

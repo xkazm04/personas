@@ -117,10 +117,12 @@ which = { version = "8.0.1", optional = true }
 name = "personas-mcp"
 path = "src/mcp_bin.rs"
 
+# Daily release profile: thin LTO is ~2-4x faster link with <2% perf difference.
+# Use `cargo tauri build` (default) for daily releases.
 [profile.release]
 opt-level = 3
-lto = true
-codegen-units = 1
+lto = "thin"
+codegen-units = 2
 strip = true
 panic = "abort"
 
@@ -138,9 +140,15 @@ lto = "thin"
 # Used by CI for test + clippy runs — avoids full LTO cost.
 [profile.ci]
 inherits = "release"
-lto = "thin"
 codegen-units = 4
 strip = false
+
+# Milestone/stable release profile: full LTO for maximum optimization.
+# Use via: cargo tauri build --profile stable
+[profile.stable]
+inherits = "release"
+lto = true
+codegen-units = 1
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [

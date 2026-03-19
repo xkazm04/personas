@@ -10,11 +10,6 @@ const IdeaScannerPage = lazy(() => import('./sub_scanner/IdeaScannerPage'));
 const IdeaTriagePage = lazy(() => import('./sub_triage/IdeaTriagePage'));
 const TaskRunnerPage = lazy(() => import('./sub_runner/TaskRunnerPage'));
 
-const SPINNER = (
-  <div className="flex-1 flex items-center justify-center">
-    <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-  </div>
-);
 
 // ---------------------------------------------------------------------------
 // Project Selector Banner — shown on all tabs except "projects"
@@ -122,7 +117,7 @@ export default function DevToolsPage() {
           transition={transition}
           className="flex-1 min-h-0"
         >
-          <Suspense fallback={SPINNER}>
+          <Suspense fallback={null}>
             {devToolsTab === 'projects' && <ProjectManagerPage />}
             {devToolsTab === 'context-map' && <ContextMapPage />}
             {devToolsTab === 'idea-scanner' && <IdeaScannerPage />}

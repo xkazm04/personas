@@ -759,6 +759,122 @@
         "label": "Emits events: execution completed, item created, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which database event type is the highest priority for your team to monitor in real time?",
+        "type": "select",
+        "options": [
+          "New user signups (growth & activation focus)",
+          "Order lifecycle changes (revenue & fulfillment focus)",
+          "Feature flag changes (deployment & release safety)",
+          "All event types equally"
+        ],
+        "default": "All event types equally",
+        "context": "Determines notification urgency, enrichment depth, and Slack routing priority across the three core flows.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of product does this Supabase database back?",
+        "type": "select",
+        "options": [
+          "B2B SaaS (subscription accounts, enterprise domains)",
+          "E-commerce / marketplace (high order volume, varied SKUs)",
+          "Consumer app (high signup volume, free tier + upgrades)",
+          "Internal tooling / back-office system"
+        ],
+        "default": "B2B SaaS (subscription accounts, enterprise domains)",
+        "context": "Shapes anomaly baselines (expected order values, signup rates), enterprise email domain detection logic, and notification tone.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which automated actions should this agent NEVER perform without explicit human approval?",
+        "type": "select",
+        "options": [
+          "Sending welcome emails (notify Slack only, hold emails)",
+          "Writing anomaly flags back to Supabase records",
+          "Disabling or rolling back feature flags",
+          "Posting alerts to any public-facing Slack channel"
+        ],
+        "default": "Writing anomaly flags back to Supabase records",
+        "context": "Prevents irreversible or customer-visible database mutations from being triggered automatically by anomaly detection logic.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "At what anomaly severity should the agent pause and await human confirmation before escalating?",
+        "type": "select",
+        "options": [
+          "Any anomaly — always notify, never auto-escalate",
+          "High severity only (e.g., order value > 5× baseline, signup spike > 3×)",
+          "Critical only (e.g., mass NULL values, full-table pattern break)",
+          "No pauses — fully automated escalation at all severities"
+        ],
+        "default": "High severity only (e.g., order value > 5× baseline, signup spike > 3×)",
+        "context": "Controls the human review gate in the anomaly detection flow to balance responsiveness with avoiding alert fatigue.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How should Slack notifications be routed across your workspace channels?",
+        "type": "select",
+        "options": [
+          "Single ops channel for all events (#ops-alerts)",
+          "Separate channels by event type (#signups, #orders, #feature-flags)",
+          "Separate channels by severity (critical vs. informational)",
+          "Route to team-specific channels (growth, engineering, ops)"
+        ],
+        "default": "Separate channels by event type (#signups, #orders, #feature-flags)",
+        "context": "Determines the Slack channel mapping for all three notification flows to prevent cross-team noise.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "What sensitivity should the agent use when detecting order value anomalies during baseline refresh?",
+        "type": "select",
+        "options": [
+          "Strict — flag anything > 2× the rolling average",
+          "Moderate — flag anything > 3× the rolling average (recommended)",
+          "Loose — flag only extreme outliers > 5× the rolling average",
+          "Disable order value anomaly detection"
+        ],
+        "default": "Moderate — flag anything > 3× the rolling average (recommended)",
+        "context": "Sets the threshold multiplier used during the 6-hour baseline refresh cycle; tune based on how volatile your order values typically are.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How much enrichment context should Slack notifications include?",
+        "type": "select",
+        "options": [
+          "Minimal — event type, table, and timestamp only",
+          "Standard — event summary + key fields (user name, order total, flag name)",
+          "Rich — full enriched payload with related records and field diffs",
+          "Adaptive — brief for routine events, rich for anomalies"
+        ],
+        "default": "Adaptive — brief for routine events, rich for anomalies",
+        "context": "Balances Slack readability with the depth of context needed to act on notifications without opening Supabase.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "Should feature flag changes require a team acknowledgment in Slack before the change is broadcast to the full ops channel?",
+        "type": "boolean",
+        "default": false,
+        "context": "Feature flag changes can immediately affect production behavior — some teams want a confirmation reaction or reply before the change is announced widely.",
+        "dimension": "human-review"
+      }
     ]
   }
 }

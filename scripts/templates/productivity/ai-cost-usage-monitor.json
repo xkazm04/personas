@@ -697,6 +697,121 @@
         "label": "Emits events: threshold breached, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of this cost monitor?",
+        "type": "select",
+        "options": [
+          "Keep a team or department within a fixed monthly budget",
+          "Track and optimize spend across multiple projects or API keys",
+          "Audit AI usage for finance/compliance reporting",
+          "Monitor personal or individual developer usage"
+        ],
+        "default": "Keep a team or department within a fixed monthly budget",
+        "context": "Determines whether the persona focuses on hard budget enforcement, cross-project attribution, compliance audit trails, or lightweight personal tracking.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your approximate monthly OpenAI budget?",
+        "type": "select",
+        "options": [
+          "Under $500 / month",
+          "$500 – $2,000 / month",
+          "$2,000 – $10,000 / month",
+          "Over $10,000 / month"
+        ],
+        "default": "$500 – $2,000 / month",
+        "context": "Used to calibrate default warning and critical threshold values so alerts are meaningful out of the box.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "How many OpenAI API keys or projects does your organization operate?",
+        "type": "select",
+        "options": [
+          "1 key (personal or single app)",
+          "2–5 keys (small team)",
+          "6–20 keys (department-level)",
+          "20+ keys (enterprise, multiple teams)"
+        ],
+        "default": "2–5 keys (small team)",
+        "context": "Determines how granular the per-key breakdown in Notion logs and Slack alerts should be, and whether org-level rollup reporting is needed.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "At what daily spend percentage should warning and critical Slack alerts fire?",
+        "type": "select",
+        "options": [
+          "Warning at 70%, Critical at 90%",
+          "Warning at 80%, Critical at 100%",
+          "Warning at 50%, Critical at 80% (tight budget control)",
+          "Warning only — no critical escalation"
+        ],
+        "default": "Warning at 80%, Critical at 100%",
+        "context": "Sets the two-tier alert thresholds baked into the persona's daily budget check logic.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this monitor NEVER do autonomously?",
+        "type": "select",
+        "options": [
+          "Never revoke or suspend API keys, even during critical overage",
+          "Never post cost figures to channels visible outside the engineering team",
+          "Never log raw API keys or secrets into the Notion database",
+          "Never send alerts on weekends or outside business hours"
+        ],
+        "default": "Never revoke or suspend API keys, even during critical overage",
+        "context": "Establishes hard guardrails so the persona doesn't take irreversible or sensitive actions without explicit human instruction.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which outputs require a human to review before they are posted or logged?",
+        "type": "select",
+        "options": [
+          "Monthly optimization reports (hold for approval before posting to Slack)",
+          "Critical threshold alerts only (warning alerts post automatically)",
+          "All Slack messages (fully gated — nothing posts without approval)",
+          "None — run fully automated"
+        ],
+        "default": "Monthly optimization reports (hold for approval before posting to Slack)",
+        "context": "Controls which parts of the workflow pause for human sign-off versus run autonomously, balancing speed with oversight.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What level of detail should the monthly optimization report include?",
+        "type": "select",
+        "options": [
+          "Executive summary: total spend, budget status, top 3 recommendations only",
+          "Standard: per-model cost breakdown + ranked optimization actions",
+          "Full technical: raw token counts, per-key attribution, trend charts, all recommendations"
+        ],
+        "default": "Standard: per-model cost breakdown + ranked optimization actions",
+        "context": "Shapes the depth and audience of the monthly report — concise for leadership, detailed for engineering or FinOps teams.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Slack channel should budget alerts be posted to? (e.g. #ai-costs, #engineering-ops)",
+        "type": "text",
+        "default": "#ai-costs",
+        "context": "Ensures alerts land in the right channel rather than a generic or high-traffic one, reducing noise for unrelated teams.",
+        "dimension": "connectors"
+      }
     ]
   }
 }

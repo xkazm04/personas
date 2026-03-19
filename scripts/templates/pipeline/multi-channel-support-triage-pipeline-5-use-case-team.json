@@ -922,6 +922,118 @@
         "label": "Emits events: item created, threshold breached, escalation triggered",
         "context": "5 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which support channels are actively used in your current environment?",
+        "type": "select",
+        "options": [
+          "All channels: Zendesk + Intercom + Twitter/X",
+          "Email + Chat only (Zendesk + Intercom)",
+          "Email + Social only (Zendesk + Twitter/X)",
+          "Email only (Zendesk)",
+          "Chat + Social only (Intercom + Twitter/X)"
+        ],
+        "default": "All channels: Zendesk + Intercom + Twitter/X",
+        "context": "Determines which channel agents are activated and which polling triggers are enabled. Unused channels can be disabled to reduce noise and unnecessary API calls.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How would you characterize your support operation's scale and customer base?",
+        "type": "select",
+        "options": [
+          "B2B SaaS — mostly enterprise/SMB accounts, low volume, high complexity",
+          "B2C product — high volume consumer tickets, quick resolution expected",
+          "Mixed B2B + B2C — both account tiers with different SLA expectations",
+          "E-commerce — order/shipping issues dominate, time-sensitive refunds",
+          "Developer platform — API/integration issues, technically complex tickets"
+        ],
+        "default": "B2B SaaS — mostly enterprise/SMB accounts, low volume, high complexity",
+        "context": "Shapes classification categories, VIP escalation logic, SLA defaults, and the tone of knowledge base suggestions surfaced to agents.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How does your team identify VIP customers who should trigger immediate P1 escalation?",
+        "type": "select",
+        "options": [
+          "Zendesk organization tags (e.g., 'vip', 'enterprise', 'priority')",
+          "Intercom company tier or custom attribute (e.g., plan = Enterprise)",
+          "Account MRR or spend threshold stored in CRM",
+          "Manual whitelist of email domains or account IDs",
+          "No VIP tier — all paying customers are treated equally"
+        ],
+        "default": "Zendesk organization tags (e.g., 'vip', 'enterprise', 'priority')",
+        "context": "Determines which data source is authoritative for VIP lookups during the deduplication and routing steps, and which tickets bypass standard queue ordering.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the triage coordinator NEVER do automatically without explicit human instruction?",
+        "type": "select",
+        "options": [
+          "Post public replies or DMs on Twitter/X on behalf of the brand",
+          "Close, merge, or resolve tickets in Zendesk",
+          "Send outbound emails to customers via Gmail or Zendesk",
+          "Assign tickets to specific agents or teams",
+          "Escalate directly to executives or leadership channels"
+        ],
+        "default": "Post public replies or DMs on Twitter/X on behalf of the brand",
+        "context": "Establishes hard guardrails to prevent brand risk or workflow disruption. The coordinator will flag these items for human review instead of acting unilaterally.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which scenarios should pause the pipeline and require human acknowledgment before the coordinator proceeds?",
+        "type": "select",
+        "options": [
+          "VIP/P1 escalations — human must acknowledge in Slack before coordinator routes",
+          "Cross-channel deduplication decisions — human confirms before tickets are merged",
+          "Any outbound customer-facing communication (email, DM, or chat reply)",
+          "SLA breach alerts only — coordinator routes but pings Slack for awareness",
+          "No pauses — fully automated; humans review async via daily Slack digest"
+        ],
+        "default": "VIP/P1 escalations — human must acknowledge in Slack before coordinator routes",
+        "context": "Sets human review checkpoints in the orchestration loop. Tighter approval requirements reduce automation risk but increase response latency.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "What SLA targets should the coordinator use when monitoring for breach risk?",
+        "type": "select",
+        "options": [
+          "Aggressive: P1 < 30 min, P2 < 2 hrs, P3 < 8 hrs, P4 < 48 hrs",
+          "Standard: P1 < 1 hr, P2 < 4 hrs, P3 < 24 hrs, P4 < 72 hrs",
+          "Relaxed: P1 < 2 hrs, P2 < 8 hrs, P3 < 48 hrs, P4 < 5 days",
+          "Pull from existing Zendesk SLA policies — do not hardcode targets"
+        ],
+        "default": "Standard: P1 < 1 hr, P2 < 4 hrs, P3 < 24 hrs, P4 < 72 hrs",
+        "context": "Calibrates the 10-minute SLA sweep trigger and determines when the coordinator escalates a near-breach ticket to the Slack alerts channel.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "When the Notion knowledge base has no relevant article for a ticket, how should the Knowledge Use Case respond?",
+        "type": "select",
+        "options": [
+          "Surface closest partial match with a low-confidence warning tag for agent review",
+          "Flag ticket as 'KB gap', route to a human specialist, and suggest nothing",
+          "Draft a placeholder response for human approval before it reaches the agent",
+          "Log the gap to a Notion tracking page and continue routing normally without a suggestion"
+        ],
+        "default": "Flag ticket as 'KB gap', route to a human specialist, and suggest nothing",
+        "context": "Defines fallback behavior to prevent the coordinator from confidently surfacing outdated or incorrect guidance to support agents when coverage is missing.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

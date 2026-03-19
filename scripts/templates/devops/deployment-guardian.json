@@ -761,6 +761,119 @@
         "label": "Emits events: threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which Vercel environments should the Deployment Guardian actively monitor?",
+        "type": "select",
+        "options": [
+          "Production only",
+          "Production and preview deployments",
+          "All environments (production, preview, development)"
+        ],
+        "default": "Production only",
+        "context": "Determines the scope of webhook handling and post-deploy health polling. Monitoring all environments generates significantly more noise.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How many Vercel projects will this guardian cover?",
+        "type": "select",
+        "options": [
+          "Single project (monorepo or one app)",
+          "Multiple projects in one Vercel team",
+          "Multiple Vercel teams across an organization"
+        ],
+        "default": "Single project (monorepo or one app)",
+        "context": "Shapes how the guardian routes webhooks, names Slack cards, and scopes rollback authority.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the Deployment Guardian never do autonomously?",
+        "type": "select",
+        "options": [
+          "Never execute a rollback without explicit human approval",
+          "Never post to Slack channels outside a designated #deployments channel",
+          "Never rollback AND never alert outside business hours without on-call escalation",
+          "No hard restrictions — act on all detections automatically"
+        ],
+        "default": "Never execute a rollback without explicit human approval",
+        "context": "Critical safety boundary. Rollbacks affect live traffic; many teams require a human in the loop before any production revert.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When a post-deploy regression is detected, how should rollback approval be requested?",
+        "type": "select",
+        "options": [
+          "Post an approval button in Slack and wait for a team member to click it",
+          "Page the on-call engineer via PagerDuty/OpsGenie and wait for acknowledgment",
+          "Notify Slack and auto-rollback after 5 minutes with no response",
+          "Always require manual CLI rollback — guardian only alerts, never rolls back"
+        ],
+        "default": "Post an approval button in Slack and wait for a team member to click it",
+        "context": "Defines the escalation path for the most sensitive action in the workflow. The approval mechanism must match your team's incident response process.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What error-rate increase after a production deploy should trigger a regression alert?",
+        "type": "select",
+        "options": [
+          "Any increase above baseline (sensitive)",
+          ">10% increase over the 10-minute post-deploy window",
+          ">25% increase — only catch significant spikes",
+          "Custom threshold — I'll specify in the setup notes"
+        ],
+        "default": ">10% increase over the 10-minute post-deploy window",
+        "context": "Too sensitive causes alert fatigue; too lenient misses real regressions. This threshold gates the entire rollback flow.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel(s) should deployment status cards be posted to?",
+        "type": "text",
+        "default": "#deployments",
+        "context": "The guardian needs a target channel for routine status cards. Some teams also want a separate high-urgency channel for regression alerts.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should the Slack deployment status cards be?",
+        "type": "select",
+        "options": [
+          "Minimal — status, project name, and commit author only",
+          "Standard — status, commit message, changed file count, build duration, and warning count",
+          "Verbose — full diff stats, bundle size delta, all warnings listed, CI check breakdown"
+        ],
+        "default": "Standard — status, commit message, changed file count, build duration, and warning count",
+        "context": "Determines signal-to-noise ratio in your Slack channel. Verbose cards are useful for debugging but can overwhelm high-velocity teams.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_2",
+        "category": "boundaries",
+        "question": "Should the guardian alert on build warnings, or only hard errors?",
+        "type": "select",
+        "options": [
+          "Errors only — warnings are noise for our team",
+          "Warnings above a count threshold (e.g., more than 5 new warnings)",
+          "All warnings, always — we maintain a zero-warning policy",
+          "Warnings flagged only for specific patterns (e.g., bundle size, deprecations)"
+        ],
+        "default": "Warnings above a count threshold (e.g., more than 5 new warnings)",
+        "context": "Prevents warning fatigue while ensuring critical build health signals aren't silently ignored.",
+        "dimension": "error-handling"
+      }
     ]
   }
 }

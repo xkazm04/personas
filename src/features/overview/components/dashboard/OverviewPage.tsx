@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
-import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 
 // Lazy-load each subtab -- only the active one ships to the render tree.
 // On Desktop these become separate chunks; on Android inlineDynamicImports
@@ -30,7 +29,7 @@ function OverviewContent() {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
     >
-      <Suspense fallback={<PanelSkeleton variant="section" />}>
+      <Suspense fallback={null}>
         {overviewTab === 'home' ? <DashboardWithSubtabs /> :
         overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
         overviewTab === 'manual-review' ? <ManualReviewList /> :

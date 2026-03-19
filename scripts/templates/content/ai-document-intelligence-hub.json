@@ -402,25 +402,114 @@
           }
         ],
         "edges": [
-          { "id": "de1", "source": "d1", "target": "d2" },
-          { "id": "de2", "source": "d2", "target": "d3" },
-          { "id": "de3", "source": "d3", "target": "d4" },
-          { "id": "de4", "source": "d4", "target": "d5", "label": "Yes", "variant": "yes" },
-          { "id": "de5", "source": "d4", "target": "d17", "label": "No changes", "variant": "no" },
-          { "id": "de6", "source": "d5", "target": "d6", "label": "Supported", "variant": "yes" },
-          { "id": "de7", "source": "d5", "target": "d16", "label": "Unsupported", "variant": "no" },
-          { "id": "de8", "source": "d6", "target": "d7" },
-          { "id": "de9", "source": "d7", "target": "d8" },
-          { "id": "de10", "source": "d8", "target": "d9" },
-          { "id": "de11", "source": "d9", "target": "d11", "label": "Exists", "variant": "yes" },
-          { "id": "de12", "source": "d9", "target": "d10", "label": "New", "variant": "no" },
-          { "id": "de13", "source": "d10", "target": "d12" },
-          { "id": "de14", "source": "d11", "target": "d12" },
-          { "id": "de15", "source": "d12", "target": "d13" },
-          { "id": "de16", "source": "d13", "target": "d14" },
-          { "id": "de17", "source": "d14", "target": "d15" },
-          { "id": "de18", "source": "d15", "target": "d17" },
-          { "id": "de19", "source": "d16", "target": "d17", "variant": "error" }
+          {
+            "id": "de1",
+            "source": "d1",
+            "target": "d2"
+          },
+          {
+            "id": "de2",
+            "source": "d2",
+            "target": "d3"
+          },
+          {
+            "id": "de3",
+            "source": "d3",
+            "target": "d4"
+          },
+          {
+            "id": "de4",
+            "source": "d4",
+            "target": "d5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "de5",
+            "source": "d4",
+            "target": "d17",
+            "label": "No changes",
+            "variant": "no"
+          },
+          {
+            "id": "de6",
+            "source": "d5",
+            "target": "d6",
+            "label": "Supported",
+            "variant": "yes"
+          },
+          {
+            "id": "de7",
+            "source": "d5",
+            "target": "d16",
+            "label": "Unsupported",
+            "variant": "no"
+          },
+          {
+            "id": "de8",
+            "source": "d6",
+            "target": "d7"
+          },
+          {
+            "id": "de9",
+            "source": "d7",
+            "target": "d8"
+          },
+          {
+            "id": "de10",
+            "source": "d8",
+            "target": "d9"
+          },
+          {
+            "id": "de11",
+            "source": "d9",
+            "target": "d11",
+            "label": "Exists",
+            "variant": "yes"
+          },
+          {
+            "id": "de12",
+            "source": "d9",
+            "target": "d10",
+            "label": "New",
+            "variant": "no"
+          },
+          {
+            "id": "de13",
+            "source": "d10",
+            "target": "d12"
+          },
+          {
+            "id": "de14",
+            "source": "d11",
+            "target": "d12"
+          },
+          {
+            "id": "de15",
+            "source": "d12",
+            "target": "d13"
+          },
+          {
+            "id": "de16",
+            "source": "d13",
+            "target": "d14"
+          },
+          {
+            "id": "de17",
+            "source": "d14",
+            "target": "d15"
+          },
+          {
+            "id": "de18",
+            "source": "d15",
+            "target": "d17"
+          },
+          {
+            "id": "de19",
+            "source": "d16",
+            "target": "d17",
+            "variant": "error"
+          }
         ]
       },
       {
@@ -504,19 +593,79 @@
           }
         ],
         "edges": [
-          { "id": "te1", "source": "t1", "target": "t2" },
-          { "id": "te2", "source": "t2", "target": "t3" },
-          { "id": "te3", "source": "t3", "target": "t4", "label": "/search or /find", "variant": "yes" },
-          { "id": "te4", "source": "t3", "target": "t11", "label": "Special command", "variant": "no" },
-          { "id": "te5", "source": "t4", "target": "t5" },
-          { "id": "te6", "source": "t5", "target": "t6" },
-          { "id": "te7", "source": "t6", "target": "t7" },
-          { "id": "te8", "source": "t7", "target": "t8", "label": "Yes", "variant": "yes" },
-          { "id": "te9", "source": "t7", "target": "t9", "label": "No matches", "variant": "no" },
-          { "id": "te10", "source": "t8", "target": "t10" },
-          { "id": "te11", "source": "t9", "target": "t10" },
-          { "id": "te12", "source": "t10", "target": "t12" },
-          { "id": "te13", "source": "t11", "target": "t10" }
+          {
+            "id": "te1",
+            "source": "t1",
+            "target": "t2"
+          },
+          {
+            "id": "te2",
+            "source": "t2",
+            "target": "t3"
+          },
+          {
+            "id": "te3",
+            "source": "t3",
+            "target": "t4",
+            "label": "/search or /find",
+            "variant": "yes"
+          },
+          {
+            "id": "te4",
+            "source": "t3",
+            "target": "t11",
+            "label": "Special command",
+            "variant": "no"
+          },
+          {
+            "id": "te5",
+            "source": "t4",
+            "target": "t5"
+          },
+          {
+            "id": "te6",
+            "source": "t5",
+            "target": "t6"
+          },
+          {
+            "id": "te7",
+            "source": "t6",
+            "target": "t7"
+          },
+          {
+            "id": "te8",
+            "source": "t7",
+            "target": "t8",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "te9",
+            "source": "t7",
+            "target": "t9",
+            "label": "No matches",
+            "variant": "no"
+          },
+          {
+            "id": "te10",
+            "source": "t8",
+            "target": "t10"
+          },
+          {
+            "id": "te11",
+            "source": "t9",
+            "target": "t10"
+          },
+          {
+            "id": "te12",
+            "source": "t10",
+            "target": "t12"
+          },
+          {
+            "id": "te13",
+            "source": "t11",
+            "target": "t10"
+          }
         ]
       },
       {
@@ -599,18 +748,68 @@
           }
         ],
         "edges": [
-          { "id": "we1", "source": "w1", "target": "w2" },
-          { "id": "we2", "source": "w2", "target": "w3" },
-          { "id": "we3", "source": "w3", "target": "w4" },
-          { "id": "we4", "source": "w4", "target": "w5" },
-          { "id": "we5", "source": "w5", "target": "w6" },
-          { "id": "we6", "source": "w6", "target": "w7" },
-          { "id": "we7", "source": "w7", "target": "w8" },
-          { "id": "we8", "source": "w8", "target": "w9" },
-          { "id": "we9", "source": "w9", "target": "w10" },
-          { "id": "we10", "source": "w10", "target": "w12" },
-          { "id": "we11", "source": "w9", "target": "w11", "variant": "error" },
-          { "id": "we12", "source": "w11", "target": "w12", "variant": "error" }
+          {
+            "id": "we1",
+            "source": "w1",
+            "target": "w2"
+          },
+          {
+            "id": "we2",
+            "source": "w2",
+            "target": "w3"
+          },
+          {
+            "id": "we3",
+            "source": "w3",
+            "target": "w4"
+          },
+          {
+            "id": "we4",
+            "source": "w4",
+            "target": "w5"
+          },
+          {
+            "id": "we5",
+            "source": "w5",
+            "target": "w6"
+          },
+          {
+            "id": "we6",
+            "source": "w6",
+            "target": "w7"
+          },
+          {
+            "id": "we7",
+            "source": "w7",
+            "target": "w8"
+          },
+          {
+            "id": "we8",
+            "source": "w8",
+            "target": "w9"
+          },
+          {
+            "id": "we9",
+            "source": "w9",
+            "target": "w10"
+          },
+          {
+            "id": "we10",
+            "source": "w10",
+            "target": "w12"
+          },
+          {
+            "id": "we11",
+            "source": "w9",
+            "target": "w11",
+            "variant": "error"
+          },
+          {
+            "id": "we12",
+            "source": "w11",
+            "target": "w12",
+            "variant": "error"
+          }
         ]
       }
     ],
@@ -638,56 +837,104 @@
     ],
     "adoption_questions": [
       {
-        "id": "drive_folder_ids",
-        "question": "Which Google Drive folder IDs should be monitored? (comma-separated)",
-        "type": "text",
-        "placeholder": "1AbC2dEf3GhI, 4JkL5mNo6PqR",
-        "helpText": "Find folder IDs in the URL when viewing a folder in Google Drive. You can monitor multiple folders and their subfolders.",
-        "required": true,
-        "appliesToConnector": "google_drive"
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of your knowledge hub?",
+        "type": "select",
+        "options": [
+          "Build a searchable archive of existing team documents",
+          "Auto-capture institutional knowledge as docs are created",
+          "Enable fast natural-language lookup for team Q&A",
+          "Generate executive-level knowledge growth reports"
+        ],
+        "default": "Auto-capture institutional knowledge as docs are created",
+        "context": "Determines which flows are prioritized and how deeply documents are analyzed vs. indexed for speed.",
+        "dimension": "use-cases"
       },
       {
-        "id": "notion_database_url",
-        "question": "What is the URL of your Notion knowledge base database?",
-        "type": "text",
-        "placeholder": "https://notion.so/workspace/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        "helpText": "Open the database in Notion and copy the URL. The database ID will be extracted automatically.",
-        "required": true,
-        "appliesToConnector": "notion"
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of documents does your team primarily produce?",
+        "type": "select",
+        "options": [
+          "Engineering specs, RFCs, and technical runbooks",
+          "Business strategy, OKRs, and meeting notes",
+          "Legal, compliance, and policy documents",
+          "Marketing briefs, campaign assets, and research",
+          "Mixed — all of the above"
+        ],
+        "default": "Mixed — all of the above",
+        "context": "Shapes the AI extraction schema: which entities, tags, and metadata fields are most valuable to surface in Notion.",
+        "dimension": "use-cases"
       },
       {
-        "id": "telegram_group",
-        "question": "Which Telegram group should the bot respond to search queries in?",
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which document types or folders should NEVER be indexed?",
         "type": "text",
-        "placeholder": "Knowledge Base Search",
-        "helpText": "The name of your Telegram group. Make sure the bot has been added to this group.",
-        "required": true,
-        "appliesToConnector": "telegram"
+        "default": "HR files, personal folders, files prefixed with [DRAFT] or [PRIVATE]",
+        "context": "Prevents sensitive content (compensation, PIIs, legal holds) from being ingested into the shared Notion knowledge base.",
+        "dimension": "error-handling"
       },
       {
-        "id": "slack_channel",
-        "question": "Which Slack channel should receive weekly knowledge base reports?",
-        "type": "text",
-        "placeholder": "#knowledge-base",
-        "helpText": "The Slack channel for weekly growth reports. Make sure the bot has been invited to this channel.",
-        "required": true,
-        "appliesToConnector": "slack"
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Should extracted Notion pages be auto-published, or held for review?",
+        "type": "select",
+        "options": [
+          "Auto-publish everything immediately",
+          "Auto-publish but flag low-confidence extractions for human review",
+          "Hold all new pages in a Notion review queue before publishing"
+        ],
+        "default": "Auto-publish but flag low-confidence extractions for human review",
+        "context": "Controls whether incorrect AI summaries or mis-tagged documents can surface to the team before a human approves them.",
+        "dimension": "human-review"
       },
       {
-        "id": "document_categories",
-        "question": "Do you want to customize document categories, or use the defaults? (Policy, Proposal, Report, Meeting Notes, Specification, Contract, Guide, Presentation, Spreadsheet Data, Other)",
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which Google Drive folder(s) should be monitored? (names or IDs, comma-separated)",
         "type": "text",
-        "placeholder": "Use defaults",
-        "helpText": "You can add custom categories specific to your organization. The default set covers most use cases.",
-        "required": false
+        "default": "Team Drive root",
+        "context": "Scopes the polling loop to avoid processing unrelated personal or archived folders and reduces API quota usage.",
+        "dimension": "connectors"
       },
       {
-        "id": "additional_file_types",
-        "question": "Any additional file types to monitor beyond Docs, Slides, Sheets, and PDFs?",
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel should receive the weekly knowledge growth report?",
         "type": "text",
-        "placeholder": "None -- defaults are sufficient",
-        "helpText": "The agent handles Google Docs, Slides, Sheets, and PDFs by default. Text-based formats like .txt and .md can also be supported.",
-        "required": false
+        "default": "#team-updates",
+        "context": "Ensures the Friday 5 PM digest reaches the right audience (leadership, whole team, or a dedicated knowledge-ops channel).",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How thorough should the AI analysis be for each document?",
+        "type": "select",
+        "options": [
+          "Fast: title, 2-sentence summary, and top 3 tags only",
+          "Balanced: summary, tags, key entities, and action items",
+          "Deep: full analysis including relationships, open questions, and cross-document links"
+        ],
+        "default": "Balanced: summary, tags, key entities, and action items",
+        "context": "Trades processing time and token cost against extraction richness. Deep mode is best for high-value strategy or compliance docs.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Should tags follow a fixed taxonomy you define, or be generated freely by the AI?",
+        "type": "select",
+        "options": [
+          "Fixed taxonomy — I will provide a list of approved tags",
+          "AI-generated free-form tags — maximize coverage",
+          "Hybrid — AI picks from my taxonomy but can add new tags with a review flag"
+        ],
+        "default": "Hybrid — AI picks from my taxonomy but can add new tags with a review flag",
+        "context": "Consistency matters for search precision. A fixed taxonomy prevents tag sprawl; free-form catches unexpected topics but can fragment search results.",
+        "dimension": "memory"
       }
     ]
   }

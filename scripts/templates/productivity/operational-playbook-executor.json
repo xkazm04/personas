@@ -796,6 +796,118 @@
         "label": "Emits events: execution completed, execution failed, review requested, threshold breached",
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What type of operational playbook will this executor primarily run?",
+        "type": "select",
+        "options": [
+          "Deployment runbooks",
+          "Incident response procedures",
+          "Daily operational checklists",
+          "Compliance & audit checks",
+          "Change management approvals"
+        ],
+        "default": "Daily operational checklists",
+        "context": "Determines step sequencing strictness, failure tolerance, and how completion summaries are framed in Gmail reports.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which team or function owns the playbooks this agent will execute?",
+        "type": "select",
+        "options": [
+          "SRE / Platform Engineering",
+          "DevOps / CI-CD",
+          "IT Operations",
+          "Security & Compliance",
+          "Business Operations"
+        ],
+        "default": "SRE / Platform Engineering",
+        "context": "Shapes Slack channel conventions, Gmail recipient lists, and the language used in status updates and escalation messages.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which action types should the agent NEVER execute automatically — always requiring explicit human confirmation first?",
+        "type": "select",
+        "options": [
+          "API calls that mutate production data or infrastructure",
+          "Any step flagged as 'destructive' or 'irreversible' in Coda",
+          "Notification broadcasts to external stakeholders or customers",
+          "All steps — agent proposes but never executes"
+        ],
+        "default": "API calls that mutate production data or infrastructure",
+        "context": "Sets hard guardrails so the agent never triggers unrecoverable actions autonomously, regardless of playbook instructions.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When a step fails after retries, what should the agent do before continuing?",
+        "type": "select",
+        "options": [
+          "Halt the entire playbook and page on-call via Slack",
+          "Mark the step as non-blocking, log it, and proceed",
+          "Post failure details to Slack and wait for a human 'resume' signal",
+          "Escalate to a fallback step defined in the Coda branches map"
+        ],
+        "default": "Post failure details to Slack and wait for a human 'resume' signal",
+        "context": "Controls the balance between automation speed and human oversight when errors occur mid-playbook.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "At decision/branching steps, how should the agent choose which branch to follow?",
+        "type": "select",
+        "options": [
+          "Decide autonomously based on step output data",
+          "Post branch options to Slack and pause for a human to select",
+          "Always default to the safest branch and log the decision",
+          "Require approval only when the branch affects production systems"
+        ],
+        "default": "Post branch options to Slack and pause for a human to select",
+        "context": "Branching mistakes can cascade through the rest of the playbook — this defines how much autonomy the agent has at decision forks.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What pre-execution conditions must be true for the playbook to run? (e.g., environment, severity threshold, pending deployments)",
+        "type": "text",
+        "default": "environment == production AND incident_severity >= 2",
+        "context": "Populates the playbook-level condition guard — if conditions aren't met, the agent skips execution and posts a skip notification to Slack instead.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How verbose should Slack progress notifications be during playbook execution?",
+        "type": "select",
+        "options": [
+          "One message per step (full audit trail)",
+          "Milestone updates only (start, decision points, completion)",
+          "Thread replies on a single parent message",
+          "Silent during execution — final summary only"
+        ],
+        "default": "Thread replies on a single parent message",
+        "context": "High-frequency step updates can create Slack noise; this balances real-time visibility against channel clutter.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "What is the Coda document ID and steps table ID (or name) for your primary operational playbook?",
+        "type": "text",
+        "default": "",
+        "context": "Required to construct the correct Coda REST API call at each trigger invocation — without this, the agent cannot locate the playbook rows.",
+        "dimension": "connectors"
+      }
     ]
   }
 }

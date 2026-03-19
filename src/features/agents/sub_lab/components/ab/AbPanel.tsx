@@ -70,9 +70,9 @@ export function AbPanel() {
       <label className={`text-sm font-medium text-${color}-400`}>{label}</label>
       <Listbox itemCount={versionOptions.length} onSelectFocused={(idx) => { const opt = versionOptions[idx]; if (opt) onChange(opt.value); }} ariaLabel={`Select ${label}`}
         renderTrigger={({ isOpen, toggle }) => (
-          <button onClick={toggle} disabled={isLabRunning} data-testid={testId}
-            title={isLabRunning ? 'Cannot change while test is running' : undefined}
-            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs border transition-all ${isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+          <button onClick={toggle} data-testid={testId}
+           
+            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs border transition-all ${isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'}`}>
             <span className="text-foreground/80">{versionOptions.find((o) => o.value === value)?.label ?? 'Select version'}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -110,9 +110,9 @@ export function AbPanel() {
             <label className="text-sm font-medium text-muted-foreground/80">Models</label>
             <div className="flex flex-wrap gap-2">
               {ANTHROPIC_MODELS.map((m) => (
-                <button key={m.id} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
-                  title={isLabRunning ? 'Cannot change while test is running' : undefined}
-                  className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                <button key={m.id} onClick={() => toggleModel(m.id)}
+                 
+                  className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'}`}>
                   {m.label}
                 </button>
               ))}
@@ -124,7 +124,7 @@ export function AbPanel() {
               <label className="text-sm font-medium text-muted-foreground/80 flex items-center gap-1.5"><Filter className="w-3.5 h-3.5" />Focus</label>
               <Listbox itemCount={useCaseOptions.length} onSelectFocused={(idx) => { const opt = useCaseOptions[idx]; if (opt) setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); }} ariaLabel="Filter by use case"
                 renderTrigger={({ isOpen, toggle }) => (
-                  <button onClick={toggle} disabled={isLabRunning} title={isLabRunning ? 'Cannot change while test is running' : undefined} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                  <button onClick={toggle} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'}`}>
                     <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -145,7 +145,7 @@ export function AbPanel() {
 
           <div className="space-y-1">
             <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
-            <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}' disabled={isLabRunning}
+            <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}'
               className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
           </div>
 

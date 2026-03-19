@@ -73,6 +73,8 @@ pub struct TestRunStatusEvent {
     pub error: Option<String>,
     /// Emitted once during the "generated" phase so the frontend can save scenarios to a suite.
     pub scenarios: Option<Vec<TestScenario>>,
+    /// Elapsed wall-clock milliseconds since the run started (for live progress display).
+    pub elapsed_ms: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -151,6 +153,7 @@ pub async fn run_test(
             summary: None,
             error: None,
             scenarios: Some(scenarios.clone()),
+            elapsed_ms: None,
         },
     );
 
@@ -191,6 +194,7 @@ pub async fn run_test(
                     summary: None,
                     error: None,
                     scenarios: None,
+                    elapsed_ms: None,
                 },
             );
 
@@ -283,6 +287,7 @@ pub async fn run_test(
                         summary: None,
                         error: Some(msg),
                         scenarios: None,
+                        elapsed_ms: None,
                     },
                 );
                 return;
@@ -308,6 +313,7 @@ pub async fn run_test(
                     summary: None,
                     error: scores.error_message,
                     scenarios: None,
+                    elapsed_ms: None,
                 },
             );
         }
@@ -343,6 +349,7 @@ pub async fn run_test(
             summary: Some(summary),
             error: None,
             scenarios: None,
+            elapsed_ms: None,
         },
     );
 }
@@ -644,6 +651,17 @@ async fn score_result(output: &ExecutionOutput, scenario: &TestScenario, persona
         &scenario.description,
     ).await;
 
+    // Serialize structured rationale as JSON for rich frontend display.
+    // The rationale field stores a JSON object with per-metric breakdowns
+    // when available, falling back to a plain string for older results.
+    let rationale_json = serde_json::json!({
+        "summary": llm_result.rationale,
+        "verdict": llm_result.verdict,
+        "tool_accuracy": llm_result.tool_accuracy_rationale,
+        "output_quality": llm_result.output_quality_rationale,
+        "protocol": llm_result.protocol_rationale,
+    });
+
     ScoreResult {
         tool_accuracy: llm_result.tool_accuracy,
         output_quality: llm_result.output_quality,
@@ -655,7 +673,7 @@ async fn score_result(output: &ExecutionOutput, scenario: &TestScenario, persona
         cost_usd: output.cost_usd,
         duration_ms: output.duration_ms as i64,
         error_message: output.error.clone(),
-        rationale: Some(llm_result.rationale),
+        rationale: Some(serde_json::to_string(&rationale_json).unwrap_or(llm_result.rationale)),
         suggestions: Some(llm_result.suggestions),
     }
 }
@@ -857,6 +875,7 @@ fn emit_status(app: &AppHandle, run_id: &str, phase: &str, error: Option<&str>) 
             summary: None,
             error: error.map(|s| s.to_string()),
             scenarios: None,
+            elapsed_ms: None,
         },
     );
 }
@@ -887,14 +906,18 @@ fn emit_lab_status(app: &AppHandle, event_name: &str, run_id: &str, phase: &str,
             summary: None,
             error: error.map(|s| s.to_string()),
             scenarios: None,
+            elapsed_ms: None,
         },
     );
 }
 
 /// A variant to test: a persona reference + a label used as tracker key prefix.
+/// Each variant can carry its own tool set for full persona versioning.
 struct LabVariant<'a> {
     persona: &'a Persona,
     label: String,
+    /// Per-variant tools. If empty, falls back to shared tools from run_lab_loop.
+    tools: Vec<PersonaToolDefinition>,
 }
 
 /// Callbacks that abstract mode-specific persistence and summary building.
@@ -904,6 +927,62 @@ struct LabCallbacks<'a> {
     update_status: Box<dyn Fn(&DbPool, &str, LabRunStatus, Option<i32>, Option<&str>, Option<&str>, Option<&str>) + Send + Sync + 'a>,
     persist_result: Box<dyn Fn(&DbPool, &str, &LabVariant<'_>, &TestScenario, &TestModelConfig, &str, &ScoreResult) + Send + Sync + 'a>,
     build_summary: Box<dyn Fn(&HashMap<String, Vec<(i32, i32, i32, f64, i64)>>, &[TestModelConfig]) -> serde_json::Value + Send + Sync + 'a>,
+}
+
+/// Generate a prose LLM summary of test results. Returns the summary text, or None on failure.
+#[allow(clippy::type_complexity)]
+async fn generate_llm_run_summary(
+    persona_name: &str,
+    persona_description: &str,
+    tracker: &HashMap<String, Vec<(i32, i32, i32, f64, i64)>>,
+    scenario_count: usize,
+) -> Option<String> {
+    let mut results_text = String::new();
+    for (key, entries) in tracker.iter() {
+        let n = entries.len() as f64;
+        if n == 0.0 { continue; }
+        let avg_ta = entries.iter().map(|r| r.0 as f64).sum::<f64>() / n;
+        let avg_oq = entries.iter().map(|r| r.1 as f64).sum::<f64>() / n;
+        let avg_pc = entries.iter().map(|r| r.2 as f64).sum::<f64>() / n;
+        let total_cost = entries.iter().map(|r| r.3).sum::<f64>();
+        let composite = avg_ta * 0.4 + avg_oq * 0.4 + avg_pc * 0.2;
+        results_text.push_str(&format!(
+            "- {key}: composite={:.0}/100 (tool_accuracy={:.0}, output_quality={:.0}, protocol={:.0}), cost=${:.4}, {:.0} scenarios\n",
+            composite, avg_ta, avg_oq, avg_pc, total_cost, n
+        ));
+    }
+
+    let prompt = format!(
+        r#"Write a 3-4 sentence executive summary of these test results. Be specific and actionable.
+
+Persona: {persona_name}
+Purpose: {persona_description}
+Scenarios tested: {scenario_count}
+
+Results by variant/model:
+{results_text}
+Rules:
+- Start with the key finding (which variant/model performed best and why)
+- Mention the weakest dimension and its impact on usability
+- End with the single most impactful improvement the user should make
+- Be concise — no bullet points, no headers, just flowing prose
+- Do not repeat the raw numbers — interpret them"#
+    );
+
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--max-turns".to_string());
+    cli_args.args.push("1".to_string());
+
+    match spawn_cli_and_collect(&cli_args, &prompt).await {
+        Ok(output) => {
+            let text = output.trim().to_string();
+            if text.is_empty() { None } else { Some(text) }
+        }
+        Err(e) => {
+            tracing::warn!("LLM run summary generation failed: {e}");
+            None
+        }
+    }
 }
 
 /// Generic lab execution loop shared by arena, A/B, eval, and matrix modes.
@@ -920,6 +999,8 @@ async fn run_lab_loop(
     use_case_filter: Option<&str>,
     cb: &LabCallbacks<'_>,
 ) {
+    let run_start = std::time::Instant::now();
+
     emit_lab_status(app, cb.event_name, run_id, "generating", None);
 
     let scenarios = match generate_scenarios(persona_for_scenarios, tools, use_case_filter, None).await {
@@ -947,6 +1028,7 @@ async fn run_lab_loop(
         scenarios_count: Some(scenario_count), current: None, total: None,
         model_id: None, scenario_name: None, status: None, scores: None, summary: None, error: None,
         scenarios: None,
+        elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
     });
 
     let total = scenario_count * model_configs.len() * variants.len();
@@ -971,9 +1053,12 @@ async fn run_lab_loop(
                     model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
                     status: Some("running".into()), scores: None, summary: None, error: None,
                     scenarios: None,
+                    elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
                 });
 
-                let result = execute_scenario(variant.persona, tools, scenario, model).await;
+                // Use per-variant tools if available, otherwise fall back to shared tools
+                let variant_tools = if variant.tools.is_empty() { tools } else { &variant.tools };
+                let result = execute_scenario(variant.persona, variant_tools, scenario, model).await;
 
                 let (status, scores) = match &result {
                     Ok(r) => ("passed".to_string(), score_result(r, scenario, variant.persona).await),
@@ -1006,6 +1091,7 @@ async fn run_lab_loop(
                     scores: Some(TestScores { tool_accuracy: Some(scores.tool_accuracy), output_quality: Some(scores.output_quality), protocol_compliance: Some(scores.protocol_compliance) }),
                     summary: None, error: scores.error_message,
                     scenarios: None,
+                    elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
                 });
             }
         }
@@ -1013,6 +1099,21 @@ async fn run_lab_loop(
 
     let summary = (cb.build_summary)(&tracker, model_configs);
     let summary_str = serde_json::to_string(&summary).unwrap_or_default();
+
+    // Generate LLM prose summary (non-blocking, falls back to None on failure)
+    emit_lab_status(app, cb.event_name, run_id, "summarizing", None);
+    let llm_summary = generate_llm_run_summary(
+        &persona_for_scenarios.name,
+        persona_for_scenarios.description.as_deref().unwrap_or(""),
+        &tracker,
+        scenario_count as usize,
+    ).await;
+
+    // Persist the LLM summary if available (best-effort, non-fatal)
+    if let Some(ref text) = llm_summary {
+        let _ = crate::db::repos::lab::arena::update_llm_summary(pool, run_id, text);
+    }
+
     let now = chrono::Utc::now().to_rfc3339();
     (cb.update_status)(pool, run_id, LabRunStatus::Completed, None, Some(&summary_str), None, Some(&now));
 
@@ -1022,6 +1123,7 @@ async fn run_lab_loop(
         model_id: None, scenario_name: None, status: None, scores: None,
         summary: Some(summary), error: None,
         scenarios: None,
+        elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
     });
 }
 
@@ -1161,7 +1263,7 @@ pub async fn run_arena_test(
 ) {
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
-    let variants = vec![LabVariant { persona, label: String::new() }];
+    let variants = vec![LabVariant { persona, label: String::new(), tools: Vec::new() }];
 
     let cb = LabCallbacks {
         event_name: "lab-arena-status",
@@ -1207,7 +1309,7 @@ pub async fn run_ab_test(
         .collect();
 
     let lab_variants: Vec<LabVariant<'_>> = variants.iter()
-        .map(|(_, num, p)| LabVariant { persona: p, label: format!("v{}", num) })
+        .map(|(_, num, p)| LabVariant { persona: p, label: format!("v{}", num), tools: Vec::new() })
         .collect();
     let primary_persona = &variants[0].2;
 
@@ -1256,7 +1358,7 @@ pub async fn run_eval_test(
         .collect();
 
     let lab_variants: Vec<LabVariant<'_>> = variants.iter()
-        .map(|(_, num, p)| LabVariant { persona: p, label: format!("v{}", num) })
+        .map(|(_, num, p)| LabVariant { persona: p, label: format!("v{}", num), tools: Vec::new() })
         .collect();
     let primary_persona = &variants[0].2;
 
@@ -1340,8 +1442,8 @@ pub async fn run_matrix_test(
     draft_persona.structured_prompt = Some(draft_json_str.clone());
 
     let variants = vec![
-        LabVariant { persona, label: "current".to_string() },
-        LabVariant { persona: &draft_persona, label: "draft".to_string() },
+        LabVariant { persona, label: "current".to_string(), tools: Vec::new() },
+        LabVariant { persona: &draft_persona, label: "draft".to_string(), tools: Vec::new() },
     ];
 
     let cb = LabCallbacks {

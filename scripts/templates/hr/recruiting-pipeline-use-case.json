@@ -658,6 +658,121 @@
         "label": "Emits events: review requested, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which candidate-facing email touchpoints should this agent send autonomously?",
+        "type": "select",
+        "options": [
+          "All stages: acknowledgment, interview prep, rejection, and offer",
+          "Acknowledgment and interview prep only (human handles rejection and offer)",
+          "Acknowledgment only — all other stages require human drafting",
+          "Notifications only — no outbound candidate emails"
+        ],
+        "default": "Acknowledgment and interview prep only (human handles rejection and offer)",
+        "context": "Determines the agent's email automation scope and where humans must stay in the loop for sensitive communications.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your typical monthly hiring volume and how many open roles does this agent need to track simultaneously?",
+        "type": "select",
+        "options": [
+          "Small — fewer than 10 candidates/month, 1-5 open roles",
+          "Medium — 10-50 candidates/month, 5-20 open roles",
+          "High-volume — 50+ candidates/month, 20+ open roles"
+        ],
+        "default": "Medium — 10-50 candidates/month, 5-20 open roles",
+        "context": "Affects state management complexity, polling strategy, and whether per-role or team-level Slack channels are needed.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do without explicit human instruction?",
+        "type": "select",
+        "options": [
+          "Never send rejection emails — always queue for human review",
+          "Never send offer-stage communications of any kind",
+          "Never contact a candidate more than once per stage",
+          "Never send any candidate email — only post internal Slack notifications"
+        ],
+        "default": "Never send rejection emails — always queue for human review",
+        "context": "Defines hard guardrails to prevent the agent from taking sensitive actions that could damage candidate experience or expose legal risk.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which outgoing communications require a recruiter to approve the draft before sending?",
+        "type": "select",
+        "options": [
+          "Offer emails only",
+          "Rejection and offer emails",
+          "All candidate-facing emails (agent drafts, human sends)",
+          "No approval required — agent sends all emails autonomously"
+        ],
+        "default": "Rejection and offer emails",
+        "context": "Determines where the agent pauses execution and routes drafts to a recruiter for review before any candidate receives a message.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which Slack channel(s) should receive candidate stage update notifications?",
+        "type": "select",
+        "options": [
+          "One shared #recruiting channel for all roles",
+          "Per-role channels (e.g., #hiring-engineering, #hiring-design)",
+          "Hiring manager DMs only — no shared channels",
+          "Shared channel for all stages plus per-role channels for offers and rejections"
+        ],
+        "default": "One shared #recruiting channel for all roles",
+        "context": "Shapes the Slack notification routing logic and whether the agent needs to map roles to specific channels.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone and personalization level should candidate emails use?",
+        "type": "select",
+        "options": [
+          "Warm and conversational — reference the candidate's name, role, and interview specifics",
+          "Professional and concise — standard corporate tone with minimal personalization",
+          "Highly personalized — include tailored prep materials, interviewer bios, and role context",
+          "Template-bound — agent fills variables only, no creative generation"
+        ],
+        "default": "Warm and conversational — reference the candidate's name, role, and interview specifics",
+        "context": "Guides how the agent composes emails at each stage and how much creative latitude it has versus following fixed templates.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "How long should the agent retain candidate history after a pipeline closes (hired or rejected)?",
+        "type": "select",
+        "options": [
+          "30 days — purge closed candidates after one month",
+          "90 days — retain for a quarter for compliance or re-engagement review",
+          "1 year — keep for re-hire eligibility tracking",
+          "Indefinitely — never auto-purge candidate records"
+        ],
+        "default": "90 days — retain for a quarter for compliance or re-engagement review",
+        "context": "Determines the data retention policy baked into the agent's state management, relevant for GDPR/CCPA compliance and re-engagement use cases.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Gmail address should send all candidate and hiring team communications?",
+        "type": "text",
+        "default": "recruiting@yourcompany.com",
+        "context": "Identifies the sender identity for all outbound emails, ensuring candidates and hiring managers see a consistent, branded address rather than a personal account.",
+        "dimension": "connectors"
+      }
     ]
   }
 }

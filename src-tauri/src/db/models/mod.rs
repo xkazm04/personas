@@ -17,7 +17,7 @@ mod test_run;
 mod n8n_session;
 mod audit_log;
 mod rotation;
-mod lab;
+pub(crate) mod lab;
 mod design_conversation;
 mod test_suite;
 mod platform_definition;

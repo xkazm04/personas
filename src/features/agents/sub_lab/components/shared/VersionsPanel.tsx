@@ -88,7 +88,10 @@ export function VersionsPanel() {
       <div className="w-72 flex-shrink-0 flex flex-col min-h-0">
         <div className="flex items-center gap-2 mb-3 flex-shrink-0">
           <GitBranch className="w-4 h-4 text-primary/70" />
-          <h3 className="text-sm font-medium text-foreground/80">Prompt Versions</h3>
+          <div>
+            <h3 className="text-sm font-medium text-foreground/80">Persona Versions</h3>
+            <p className="text-[10px] text-muted-foreground/40">Prompts, tools, and settings</p>
+          </div>
           <span className="ml-auto text-sm text-muted-foreground/60">{promptVersions.length}</span>
         </div>
 

@@ -754,6 +754,119 @@
         "label": "Emits events: execution completed, execution failed, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What type of documentation will this pipeline primarily publish?",
+        "type": "select",
+        "options": [
+          "Public-facing product docs (user guides, API reference)",
+          "Internal engineering/team knowledge base",
+          "Developer changelog and release notes",
+          "Mixed: both internal and external docs"
+        ],
+        "default": "Public-facing product docs (user guides, API reference)",
+        "context": "Determines how aggressively the agent should validate content quality and whether Slack notifications should include public URLs or internal-only links.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which team owns the Notion-to-GitHub publishing workflow?",
+        "type": "select",
+        "options": [
+          "Developer Advocacy / DevRel",
+          "Engineering (owns the repo and docs-as-code)",
+          "Product or Technical Writing team",
+          "Cross-functional — multiple teams contribute"
+        ],
+        "default": "Engineering (owns the repo and docs-as-code)",
+        "context": "Shapes Slack notification routing, commit author attribution, and how strict the Markdown quality checks should be.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the agent NEVER publish, even if a page is marked 'Ready to Publish'?",
+        "type": "select",
+        "options": [
+          "Pages with the 'Confidential' or 'Internal Only' tag",
+          "Pages missing required metadata (title, slug, author)",
+          "Pages that haven't had at least one collaborator edit in the last 7 days",
+          "Any page outside the designated publishing Notion database"
+        ],
+        "default": "Pages missing required metadata (title, slug, author)",
+        "context": "Prevents accidental exposure of sensitive content and enforces minimum quality gates before a page goes live.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Does a commit to the GitHub Pages repo require human review before going live?",
+        "type": "select",
+        "options": [
+          "No — commit directly to main and let CI/CD publish immediately",
+          "Yes — open a pull request and wait for approval before merging",
+          "Yes — open a PR but auto-merge after 30 minutes if no review"
+        ],
+        "default": "No — commit directly to main and let CI/CD publish immediately",
+        "context": "Determines whether the agent creates PRs or commits directly. PR-based flow adds a review checkpoint but delays publication.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What static site generator does your GitHub Pages repo use?",
+        "type": "select",
+        "options": [
+          "Jekyll (default GitHub Pages)",
+          "Hugo",
+          "Docusaurus",
+          "Plain Markdown / no SSG (raw files only)"
+        ],
+        "default": "Jekyll (default GitHub Pages)",
+        "context": "Controls frontmatter format, file naming conventions, and the directory structure the agent commits files into.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How should images extracted from Notion pages be stored?",
+        "type": "select",
+        "options": [
+          "Committed to the repo under /assets/images/ (self-hosted)",
+          "Uploaded to an external CDN and referenced by URL",
+          "Keep original Notion-hosted URLs (simplest, may expire)"
+        ],
+        "default": "Committed to the repo under /assets/images/ (self-hosted)",
+        "context": "Notion image URLs expire after a period. Self-hosting or CDN upload ensures images remain accessible after publish.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "After publishing, should the agent update the Notion page status to confirm it went live?",
+        "type": "boolean",
+        "default": true,
+        "context": "When enabled, the agent sets the Notion 'Status' property to 'Published' and stamps a 'Published At' date — keeping Notion as the source of truth for content state.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "When a publish fails (conversion error, GitHub API failure), how should the agent escalate?",
+        "type": "select",
+        "options": [
+          "Post error details to Slack and pause that page — require manual re-trigger",
+          "Retry up to 3 times automatically, then alert Slack if still failing",
+          "Mark the Notion page 'Publish Failed' and alert Slack immediately"
+        ],
+        "default": "Retry up to 3 times automatically, then alert Slack if still failing",
+        "context": "Determines how much autonomy the agent has during failure recovery vs. when it hands off to a human.",
+        "dimension": "human-review"
+      }
     ]
   }
 }

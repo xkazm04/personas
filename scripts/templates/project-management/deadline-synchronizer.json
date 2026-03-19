@@ -743,6 +743,107 @@
         "label": "Emits events: execution completed, item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of deadline synchronization for your team?",
+        "type": "select",
+        "options": [
+          "Prevent deadlines from being missed across multiple projects",
+          "Keep a personal calendar in sync with team Trello boards",
+          "Enforce accountability and escalate overdue work to management",
+          "Coordinate cross-team dependencies with shared calendar visibility"
+        ],
+        "default": "Prevent deadlines from being missed across multiple projects",
+        "context": "Determines whether reminders should be informational nudges or escalation-focused alerts, and how aggressively overdue enforcement runs.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How many Trello boards should be monitored, and are they scoped to one team or shared across teams?",
+        "type": "select",
+        "options": [
+          "1–3 boards for a single team",
+          "4–10 boards across multiple teams or projects",
+          "All boards accessible to the Trello account",
+          "Specific boards filtered by label or naming convention"
+        ],
+        "default": "1–3 boards for a single team",
+        "context": "Affects polling load, Calendar event volume, and whether board-name prefixes should be added to event titles to distinguish sources.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which Slack reminder thresholds should trigger notifications?",
+        "type": "select",
+        "options": [
+          "Default: 48h, 4h, and 15min before due",
+          "Daily digest only (24h before, no intraday pings)",
+          "48h and 2h only (skip the 15-minute alert)",
+          "Custom: 1 week, 48h, and 1h before due"
+        ],
+        "default": "Default: 48h, 4h, and 15min before due",
+        "context": "High-frequency reminders reduce missed deadlines but can cause notification fatigue; matching thresholds to the team's rhythm improves adoption.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the agent NEVER do without explicit human action?",
+        "type": "select",
+        "options": [
+          "Never move cards to Blocked — only send Slack alerts for overdue cards",
+          "Never post in public Slack channels — DM the card assignee only",
+          "Never delete Google Calendar events when a Trello card is removed",
+          "Never modify cards owned by specific lists (e.g., 'Done', 'Backlog')"
+        ],
+        "default": "Never move cards to Blocked — only send Slack alerts for overdue cards",
+        "context": "Prevents the agent from taking destructive or disruptive actions that should remain human decisions, especially in sensitive workflows.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which actions should require a Slack confirmation before executing?",
+        "type": "select",
+        "options": [
+          "Moving any card to the Blocked list (always confirm first)",
+          "Sending escalation reminders to Slack channels (not DMs)",
+          "Deleting a Calendar event when its Trello card is archived",
+          "No confirmation needed — run fully autonomously"
+        ],
+        "default": "Moving any card to the Blocked list (always confirm first)",
+        "context": "Confirmation gates prevent automated actions from surprising team members or managers, especially for high-visibility operations like Blocked escalations.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel(s) should receive deadline reminders and overdue alerts?",
+        "type": "text",
+        "default": "#project-deadlines",
+        "context": "Specifying channels (or 'DM assignees only') ensures alerts reach the right audience without spamming unrelated team members.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should Slack reminder messages be?",
+        "type": "select",
+        "options": [
+          "Brief: card name, due time, and Trello link only",
+          "Standard: card name, assignees, due time, and board context",
+          "Verbose: full card description, checklist progress, and assignees",
+          "Escalating: brief at 48h, verbose with @mentions at 4h and 15min"
+        ],
+        "default": "Escalating: brief at 48h, verbose with @mentions at 4h and 15min",
+        "context": "Message verbosity affects whether team members act on reminders or ignore them; escalating detail matches urgency to information density.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

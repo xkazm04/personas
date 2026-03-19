@@ -694,6 +694,122 @@
         "label": "Emits events: item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of your weekly planning workflow?",
+        "type": "select",
+        "options": [
+          "Personal productivity — plan my own tasks across projects",
+          "Small team coordination — align a team of 2-15 people",
+          "Engineering sprint tracking — map Notion epics to sprint tasks",
+          "Cross-functional project management — coordinate multiple teams"
+        ],
+        "default": "Small team coordination — align a team of 2-15 people",
+        "context": "Determines how tasks are grouped, whether per-person breakdowns are generated, and how the Slack summary is structured.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of work does your Notion project database track?",
+        "type": "select",
+        "options": [
+          "Software / product development (features, bugs, epics)",
+          "Marketing / content (campaigns, briefs, launches)",
+          "Operations / finance (processes, reporting, compliance)",
+          "General business / consulting (deliverables, client work)"
+        ],
+        "default": "Software / product development (features, bugs, epics)",
+        "context": "Shapes how items are labeled in Todoist tasks and how the Slack summary frames priorities (e.g., 'sprint items' vs 'campaign deliverables').",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which priority scheme does your Notion database use?",
+        "type": "select",
+        "options": [
+          "P0 / P1 / P2 / P3 (default mapping)",
+          "High / Medium / Low",
+          "MoSCoW (Must / Should / Could / Won't)",
+          "Urgency × Impact matrix (2×2)"
+        ],
+        "default": "P0 / P1 / P2 / P3 (default mapping)",
+        "context": "The agent maps Notion priorities to Todoist priority levels. Knowing your scheme ensures correct translation and avoids all tasks landing at the same priority.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel should the weekly plan and Friday wrap-up be posted to?",
+        "type": "text",
+        "default": "#weekly-planning",
+        "context": "The agent posts Monday summaries and Friday archival reports here. Provide the exact channel name (e.g., #team-standup, #engineering-sync).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "What should require your review before the agent proceeds?",
+        "type": "select",
+        "options": [
+          "Preview and approve the task list before it posts to Slack on Monday",
+          "Approve the Friday archival list before Notion items are marked complete",
+          "Confirm when more than 20 tasks are queued in a single planning cycle",
+          "Run fully automated — no approval gates"
+        ],
+        "default": "Preview and approve the task list before it posts to Slack on Monday",
+        "context": "Sets where the agent pauses for human sign-off. Prevents incorrect priorities or missing context from reaching the team without review.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do automatically?",
+        "type": "select",
+        "options": [
+          "Never update or overwrite Notion page properties directly",
+          "Never create Todoist tasks for items without an assigned owner",
+          "Never archive Notion items that were only partially completed",
+          "Never post to any Slack channel other than the designated one"
+        ],
+        "default": "Never archive Notion items that were only partially completed",
+        "context": "Hard guardrails prevent irreversible actions. Partial-completion archival is the most common source of data loss in automated planning workflows.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should the Monday Slack planning summary be?",
+        "type": "select",
+        "options": [
+          "Brief digest — top 5 priorities + total task count",
+          "Full task list grouped by project area",
+          "Executive summary with blockers and dependencies highlighted",
+          "Per-person breakdown showing each assignee's tasks"
+        ],
+        "default": "Executive summary with blockers and dependencies highlighted",
+        "context": "Controls Slack message verbosity. Larger teams often prefer per-person breakdowns; leadership prefers blocker-focused summaries.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "What should the agent track and carry forward week-to-week?",
+        "type": "select",
+        "options": [
+          "Items repeatedly pushed to the following week (chronic deprioritization)",
+          "Project area definitions and their owners",
+          "Team member capacity changes or known absences",
+          "Nothing — treat each week as a fresh cycle"
+        ],
+        "default": "Items repeatedly pushed to the following week (chronic deprioritization)",
+        "context": "Persistent memory lets the agent surface patterns (e.g., a P1 item skipped 3 weeks in a row) and escalate or flag them proactively.",
+        "dimension": "memory"
+      }
     ]
   }
 }

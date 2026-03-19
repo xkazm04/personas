@@ -6,7 +6,7 @@ import { LabProgress } from '../shared/LabProgress';
 import { ArenaHistory } from './ArenaHistory';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
-import { ANTHROPIC_MODELS, OLLAMA_MODELS, ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { ANTHROPIC_MODELS, ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 
 export function ArenaPanel() {
@@ -76,7 +76,7 @@ export function ArenaPanel() {
               <label className="text-sm font-medium text-muted-foreground/80 flex items-center gap-1.5"><Filter className="w-3.5 h-3.5" />Focus on Use Case</label>
               <Listbox itemCount={useCaseOptions.length} onSelectFocused={(idx) => { const opt = useCaseOptions[idx]; if (opt) setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); }} ariaLabel="Filter by use case"
                 renderTrigger={({ isOpen, toggle }) => (
-                  <button onClick={toggle} disabled={isLabRunning} title={isLabRunning ? 'Cannot change while test is running' : undefined} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30 text-foreground/90' : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                  <button onClick={toggle} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30 text-foreground/90' : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'} cursor-pointer`}>
                     <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -96,34 +96,14 @@ export function ArenaPanel() {
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground/80">Select Models to Compare</label>
-            <div className="space-y-2">
-              <div className="space-y-1">
-                <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">Anthropic</span>
-                <div className="flex flex-wrap gap-2">
-                  {ANTHROPIC_MODELS.map((m) => (
-                    <button key={m.id} data-testid={`arena-model-${m.id}`} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
-                      title={isLabRunning ? 'Cannot change while test is running' : undefined}
-                      className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {OLLAMA_MODELS.length > 0 && (
-                <div className="space-y-1">
-                  <span className="text-sm text-muted-foreground/80 uppercase tracking-wider">Ollama Cloud</span>
-                  <div className="flex flex-wrap gap-2">
-                    {OLLAMA_MODELS.map((m) => (
-                      <button key={m.id} data-testid={`arena-model-${m.id}`} onClick={() => toggleModel(m.id)} disabled={isLabRunning}
-                        title={isLabRunning ? 'Cannot change while test is running' : undefined}
-                        className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'} ${isLabRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <label className="text-sm font-medium text-muted-foreground/80">Models</label>
+            <div className="flex flex-wrap gap-2">
+              {ANTHROPIC_MODELS.map((m) => (
+                <button key={m.id} data-testid={`arena-model-${m.id}`} onClick={() => toggleModel(m.id)}
+                  className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all cursor-pointer ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'}`}>
+                  {m.label}
+                </button>
+              ))}
             </div>
           </div>
 

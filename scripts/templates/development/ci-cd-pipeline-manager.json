@@ -785,6 +785,109 @@
         "label": "Emits events: execution completed, execution failed, item created, threshold breached, escalation triggered",
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which workflows should this persona actively manage?",
+        "type": "select",
+        "options": [
+          "Pipeline monitoring + Slack notifications only",
+          "Full release workflow (Slack + Jira tickets + stakeholder email)",
+          "All workflows including weekly DORA metrics digest",
+          "DORA metrics and reporting only"
+        ],
+        "default": "All workflows including weekly DORA metrics digest",
+        "context": "Determines which of the three core flows are activated: pipeline monitoring, production release automation, and DORA metrics reporting.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your team's typical production deployment cadence?",
+        "type": "select",
+        "options": [
+          "Multiple deploys per day (high-frequency / continuous delivery)",
+          "Once or twice daily",
+          "A few times per week",
+          "Weekly or on a fixed release schedule"
+        ],
+        "default": "A few times per week",
+        "context": "Shapes DORA metrics baseline expectations, Jira ticket verbosity, and whether polling fallback should be aggressive or relaxed.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which branch names (or patterns) should trigger the production release flow — creating a Jira ticket, compiling release notes, and emailing stakeholders?",
+        "type": "text",
+        "default": "main, release/*",
+        "context": "Only pipelines on these branches will invoke the full Jira + email workflow. All other branches receive Slack notifications only.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which branches or pipeline types should be completely silenced — no Slack posts, no tickets, no emails?",
+        "type": "text",
+        "default": "feature/*, dependabot/*, renovate/*",
+        "context": "Prevents notification noise from short-lived feature branches and automated dependency update bots.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Before the agent emails release notes to stakeholders after a production deploy, should it pause and wait for a human to approve the content?",
+        "type": "select",
+        "options": [
+          "Send automatically — no approval needed",
+          "Post draft to a Slack approval channel and wait for a thumbs-up",
+          "Always require explicit human approval before any external email"
+        ],
+        "default": "Post draft to a Slack approval channel and wait for a thumbs-up",
+        "context": "Release notes go to external or executive stakeholders — controlling when they send prevents embarrassing or premature communications.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "What is the Jira project key where deployment tickets should be created (e.g., OPS, DEPLOY, REL)?",
+        "type": "text",
+        "default": "OPS",
+        "context": "All production deployment tickets will be filed under this Jira project. The agent uses this to link GitLab pipeline IDs to Jira issues.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How verbose should Slack pipeline notifications be?",
+        "type": "select",
+        "options": [
+          "Stage-by-stage threaded updates (build → test → deploy, one message per stage)",
+          "Single message updated in-place at each stage transition",
+          "Final status only — one message when the pipeline completes",
+          "Failures only — no notifications for successful pipelines"
+        ],
+        "default": "Stage-by-stage threaded updates (build → test → deploy, one message per stage)",
+        "context": "Controls Slack channel noise. High-frequency teams often prefer failures-only; smaller teams value stage-level visibility.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "When a pipeline stage fails, how should the agent escalate beyond the Slack thread?",
+        "type": "select",
+        "options": [
+          "Slack thread only — post first 20 lines of failure log",
+          "Slack thread + tag the commit author",
+          "Slack thread + tag the commit author + page the on-call engineer",
+          "Slack thread + open a Jira incident ticket automatically"
+        ],
+        "default": "Slack thread + tag the commit author",
+        "context": "Determines escalation behavior for broken pipelines, balancing urgency with on-call fatigue.",
+        "dimension": "error-handling"
+      }
     ]
   }
 }

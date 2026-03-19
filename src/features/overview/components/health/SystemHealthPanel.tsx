@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { RefreshCw, Monitor } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useAuthStore } from '@/stores/authStore';
@@ -13,14 +12,12 @@ import { useSystemStore } from "@/stores/systemStore";
 import { SECTION_ICONS, SECTION_STYLES, DEFAULT_SECTION_STYLE, SKELETON_SECTIONS } from './healthPanelConstants';
 import { OLLAMA_FIELDS, OLLAMA_FOOTER, LITELLM_FIELDS } from './popupFieldConfigs';
 import { CrashLogsSection } from './CrashLogsSection';
-import { SkeletonCard } from './SkeletonCard';
 import { SectionCard } from './SectionCard';
 import { FooterActions } from './FooterActions';
 import { useHealthChecks } from './useHealthChecks';
 
 export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
   const { sections, loading, hasIssues, ipcError, runChecks } = useHealthChecks();
-  const { shouldAnimate, duration } = useMotion();
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const authLoading = useAuthStore((s) => s.isLoading);
@@ -90,20 +87,6 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
               const loaded = sectionMap.get(stub.id);
               const SectionIcon = SECTION_ICONS[stub.id] || Monitor;
               const sectionStyle = SECTION_STYLES[stub.id] ?? DEFAULT_SECTION_STYLE;
-
-              if (loading && !loaded) {
-                return (
-                  <SkeletonCard
-                    key={stub.id}
-                    stub={stub}
-                    stubIdx={stubIdx}
-                    SectionIcon={SectionIcon}
-                    sectionStyle={sectionStyle}
-                    shouldAnimate={shouldAnimate}
-                    duration={duration}
-                  />
-                );
-              }
 
               const section = loaded ?? { id: stub.id, label: stub.label, items: [] };
               return (

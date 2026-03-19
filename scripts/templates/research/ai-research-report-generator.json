@@ -879,6 +879,128 @@
         "label": "Emits events: report completed, credentials expired, quality degradation detected",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary research use case for this persona?",
+        "type": "select",
+        "options": [
+          "Competitive intelligence (tracking competitors, market positioning)",
+          "Market & industry research (trends, sizing, forecasts)",
+          "Technical due diligence (evaluating vendors, tools, or technologies)",
+          "News & current events monitoring (ongoing topic surveillance)",
+          "Academic or policy research (deep literature synthesis)"
+        ],
+        "default": "Competitive intelligence (tracking competitors, market positioning)",
+        "context": "Determines which sources to prioritize, how to frame findings, and what level of recency vs. depth to optimize for.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What industry or domain will most research topics fall within?",
+        "type": "select",
+        "options": [
+          "Technology / SaaS / AI",
+          "Finance / Fintech / Investments",
+          "Healthcare / Life Sciences",
+          "Legal / Regulatory / Compliance",
+          "Marketing / Media / Consumer brands"
+        ],
+        "default": "Technology / SaaS / AI",
+        "context": "Calibrates source selection, terminology, and report framing for domain-appropriate credibility and depth.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What default research scope should be used when none is specified in the request?",
+        "type": "select",
+        "options": [
+          "Quick (3–5 sources, 1–2 page summary)",
+          "Standard (8–12 sources, 3–5 page report)",
+          "Deep (15–25 sources, 8–12 page analysis)"
+        ],
+        "default": "Standard (8–12 sources, 3–5 page report)",
+        "context": "Sets the fallback depth when webhook payloads or Telegram messages omit a scope field, balancing speed vs. thoroughness for your typical request volume.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Who is the primary audience for delivered reports?",
+        "type": "select",
+        "options": [
+          "Executive / C-suite (concise, strategic, minimal jargon)",
+          "Technical practitioners (detailed, methodology-visible, data-heavy)",
+          "Mixed / varies per request (infer from requester context)"
+        ],
+        "default": "Executive / C-suite (concise, strategic, minimal jargon)",
+        "context": "Controls tone, section structure, and how much raw data vs. synthesized insight appears in the final Notion page and email delivery.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What types of sources or content should this persona NEVER include in reports?",
+        "type": "select",
+        "options": [
+          "No paywalled or subscription-only content (open sources only)",
+          "No social media or user-generated content (news and publications only)",
+          "No content older than 12 months (recency-gated)",
+          "No politically partisan sources or opinion pieces",
+          "No restrictions — include all relevant sources"
+        ],
+        "default": "No paywalled or subscription-only content (open sources only)",
+        "context": "Prevents the persona from citing sources that undermine report credibility or violate organizational policies on acceptable evidence.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_boundaries_2",
+        "category": "boundaries",
+        "question": "Should the persona ever make forward-looking predictions or recommendations, or only synthesize existing evidence?",
+        "type": "select",
+        "options": [
+          "Synthesis only — summarize what sources say, no original predictions",
+          "Allowed with clear labeling (e.g., 'Based on trends, this suggests...')",
+          "Full analyst mode — include strategic recommendations as a closing section"
+        ],
+        "default": "Allowed with clear labeling (e.g., 'Based on trends, this suggests...')",
+        "context": "Sets the epistemic boundary of the report — critical for organizations where AI-generated predictions could be mistaken for authoritative guidance.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which reports require human review before they are delivered via email or Telegram?",
+        "type": "select",
+        "options": [
+          "All reports — hold for approval before any delivery",
+          "Deep-scope reports only (15+ sources) — standard and quick auto-deliver",
+          "Reports on sensitive or flagged topics — auto-deliver all others",
+          "None — fully automated delivery for all scopes"
+        ],
+        "default": "Deep-scope reports only (15+ sources) — standard and quick auto-deliver",
+        "context": "Determines when a human must approve before the persona sends output to external recipients, balancing automation speed against quality control risk.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "When the persona cannot find sufficient sources (fewer than the scope minimum), what should it do?",
+        "type": "select",
+        "options": [
+          "Halt and notify requester — do not deliver a partial report",
+          "Deliver with a prominent caveat section disclosing source gaps",
+          "Automatically escalate to the next deeper scope and try again",
+          "Deliver whatever was found, no special handling"
+        ],
+        "default": "Deliver with a prominent caveat section disclosing source gaps",
+        "context": "Defines the fallback behavior for low-coverage research, ensuring users understand confidence levels and preventing silent under-researched reports.",
+        "dimension": "human-review"
+      }
     ]
   },
   "adoption": {

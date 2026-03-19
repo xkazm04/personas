@@ -940,6 +940,127 @@
         "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
         "context": "8 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which fulfillment flows are most critical to your business right now?",
+        "type": "select",
+        "options": [
+          "Full pipeline — order routing through delivery confirmation",
+          "Order routing and inventory management only (no shipping label automation yet)",
+          "Shipping and customer communications only (routing handled elsewhere)",
+          "Inventory reconciliation and low-stock alerting only"
+        ],
+        "default": "Full pipeline — order routing through delivery confirmation",
+        "context": "Determines which of the four agents (Order Router, Inventory Manager, Shipping Coordinator, Customer Communicator) are actively used vs. standing by.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which geographic shipping regions does your store serve?",
+        "type": "select",
+        "options": [
+          "US domestic only (all four zones: East, West, Central, plus fallback)",
+          "US + Canada",
+          "US + major international markets (EU, AU, CA)",
+          "Global — all regions including Warehouse-INTL for non-US orders"
+        ],
+        "default": "US domestic only (all four zones: East, West, Central, plus fallback)",
+        "context": "Drives which warehouse routing rules are enforced and whether international compliance (duties, restricted SKUs) must be checked.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How should the pipeline handle split-shipment orders (items spanning multiple warehouses)?",
+        "type": "select",
+        "options": [
+          "Auto-split and ship from each warehouse independently",
+          "Hold and consolidate at the warehouse with the most items, even if delayed",
+          "Flag in Slack for manual routing decision before proceeding",
+          "Always route to a single primary warehouse and backorder the rest"
+        ],
+        "default": "Flag in Slack for manual routing decision before proceeding",
+        "context": "Split shipments affect ShipStation label creation, customer email logic (one vs. multiple tracking numbers), and inventory reservation complexity.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which order types should the pipeline NEVER process automatically without a human check?",
+        "type": "select",
+        "options": [
+          "Orders above a high-value threshold (e.g., >$500)",
+          "All international / cross-border orders",
+          "Orders containing custom, personalized, or made-to-order SKUs",
+          "Bulk/wholesale orders (quantity > threshold per line item)"
+        ],
+        "default": "Orders above a high-value threshold (e.g., >$500)",
+        "context": "Prevents the pipeline from auto-committing inventory, generating labels, or emailing customers on orders that carry financial or compliance risk.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "At what point should the pipeline pause and wait for human approval before continuing?",
+        "type": "select",
+        "options": [
+          "Only on errors — run fully automated otherwise",
+          "On low-inventory alerts AND before shipping any expedited orders",
+          "Before generating labels for any order over a defined dollar value",
+          "Before each major stage (inventory reserve → label creation → customer email)"
+        ],
+        "default": "On low-inventory alerts AND before shipping any expedited orders",
+        "context": "Sets the human-review checkpoints across the four-agent pipeline. More checkpoints = safer but slower throughput.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "What is your low-inventory alert threshold (units remaining before Slack alert fires)?",
+        "type": "select",
+        "options": [
+          "≤ 5 units per SKU per warehouse",
+          "≤ 10 units per SKU per warehouse",
+          "≤ 20 units per SKU per warehouse",
+          "Custom — I'll specify per SKU category in the persona instructions"
+        ],
+        "default": "≤ 10 units per SKU per warehouse",
+        "context": "The Inventory Manager uses this threshold to decide when to alert #ops or pause fulfillment on that SKU, balancing stockout risk vs. alert noise.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How much customer communication should the Customer Communicator send per order?",
+        "type": "select",
+        "options": [
+          "Minimal — shipping confirmation with tracking number only",
+          "Standard — order confirmation + shipping notification + delivery confirmation",
+          "Proactive — above plus estimated delivery updates and delay alerts",
+          "White-glove — every stage update including warehouse assignment and label creation"
+        ],
+        "default": "Standard — order confirmation + shipping notification + delivery confirmation",
+        "context": "Controls email volume per order and which Gmail triggers fire. Higher frequency increases customer trust but can feel intrusive for low-value orders.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Shopify store environment should the pipeline connect to initially?",
+        "type": "select",
+        "options": [
+          "Production store only",
+          "Development/staging store first, then promote to production",
+          "Both — production for live orders, staging for testing new routing rules"
+        ],
+        "default": "Development/staging store first, then promote to production",
+        "context": "Determines whether initial Shopify API token credential should target your live store or a test environment, preventing accidental label generation or customer emails during setup.",
+        "dimension": "connectors"
+      }
     ]
   }
 }

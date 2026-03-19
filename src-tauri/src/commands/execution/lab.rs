@@ -769,6 +769,73 @@ fn build_results_summary_eval(results: &[LabEvalResult]) -> String {
 }
 
 // ============================================================================
+// Progress -- Active run progress hydration
+// ============================================================================
+
+#[tauri::command]
+pub fn lab_get_active_progress(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    let pool = &state.db;
+
+    // Check arena runs for an active (non-terminal) run with progress_json
+    if let Ok(runs) = arena_repo::get_runs_by_persona(pool, &persona_id, Some(1)) {
+        for run in &runs {
+            if !run.status.is_terminal() {
+                if let Some(ref pj) = run.progress_json {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(pj) {
+                        return Ok(serde_json::json!({ "mode": "arena", "run_id": run.id, "progress": val }));
+                    }
+                }
+            }
+        }
+    }
+
+    // Check A/B runs
+    if let Ok(runs) = ab_repo::get_runs_by_persona(pool, &persona_id, Some(1)) {
+        for run in &runs {
+            if !run.status.is_terminal() {
+                if let Some(ref pj) = run.progress_json {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(pj) {
+                        return Ok(serde_json::json!({ "mode": "ab", "run_id": run.id, "progress": val }));
+                    }
+                }
+            }
+        }
+    }
+
+    // Check matrix runs
+    if let Ok(runs) = matrix_repo::get_runs_by_persona(pool, &persona_id, Some(1)) {
+        for run in &runs {
+            if !run.status.is_terminal() {
+                if let Some(ref pj) = run.progress_json {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(pj) {
+                        return Ok(serde_json::json!({ "mode": "matrix", "run_id": run.id, "progress": val }));
+                    }
+                }
+            }
+        }
+    }
+
+    // Check eval runs
+    if let Ok(runs) = eval_repo::get_runs_by_persona(pool, &persona_id, Some(1)) {
+        for run in &runs {
+            if !run.status.is_terminal() {
+                if let Some(ref pj) = run.progress_json {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(pj) {
+                        return Ok(serde_json::json!({ "mode": "eval", "run_id": run.id, "progress": val }));
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(serde_json::Value::Null)
+}
+
+// ============================================================================
 // Ratings -- User thumbs up/down feedback on lab results
 // ============================================================================
 

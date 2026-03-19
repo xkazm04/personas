@@ -9,4 +9,4 @@ versionIds: string,
 /**
  * JSON array of version numbers, e.g. [1,3,5]
  */
-versionNumbers: string, modelsTested: string, scenariosCount: number, useCaseFilter: string | null, testInput: string | null, summary: string | null, error: string | null, createdAt: string, completedAt: string | null, };
+versionNumbers: string, modelsTested: string, scenariosCount: number, useCaseFilter: string | null, testInput: string | null, summary: string | null, llmSummary: string | null, progressJson: string | null, error: string | null, createdAt: string, completedAt: string | null, };

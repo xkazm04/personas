@@ -745,6 +745,128 @@
         "label": "Emits events: item created, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which sprint lifecycle phases should this agent handle?",
+        "type": "select",
+        "options": [
+          "Full lifecycle (kickoff + mid-sprint sync + close report)",
+          "Kickoff and close only (no mid-sprint polling)",
+          "Mid-sprint sync only (we manage kickoff/close manually)",
+          "Reporting only (generate reports, no issue creation)"
+        ],
+        "default": "Full lifecycle (kickoff + mid-sprint sync + close report)",
+        "context": "Determines which of the three automation flows to activate — avoids setting up polling if the team only wants boundary-event automation.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your team's sprint cadence and schedule?",
+        "type": "select",
+        "options": [
+          "1-week sprints (Monday start, Friday end)",
+          "2-week sprints (Monday start, Friday end)",
+          "2-week sprints (Wednesday start, Tuesday end)",
+          "Custom cadence — I'll configure triggers manually"
+        ],
+        "default": "2-week sprints (Monday start, Friday end)",
+        "context": "Drives the sprint start/end schedule triggers and determines the polling window. Misaligned cadence means kickoff emails arrive mid-sprint.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "How is your GitHub project structured?",
+        "type": "select",
+        "options": [
+          "Single repo per team — one milestone per sprint",
+          "Monorepo — one milestone, issues tagged by service/package",
+          "Multiple repos — issues spread across repos by domain",
+          "GitHub Projects board — issues linked to a project, not milestones"
+        ],
+        "default": "Single repo per team — one milestone per sprint",
+        "context": "Affects how GitHub milestones and labels are created, and whether the sprint mapping file needs multi-repo support.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which outbound actions require human approval before executing?",
+        "type": "select",
+        "options": [
+          "All emails must be reviewed before sending",
+          "Sprint close report must be approved; kickoff email can auto-send",
+          "No approval needed — run fully autonomously",
+          "GitHub issue creation must be reviewed; emails auto-send"
+        ],
+        "default": "Sprint close report must be approved; kickoff email can auto-send",
+        "context": "Prevents accidental stakeholder emails or bulk GitHub issue creation. Sprint close reports often contain metrics that may need QA before distribution.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the agent NEVER do automatically, regardless of task state?",
+        "type": "select",
+        "options": [
+          "Never close or reopen GitHub issues — only update labels",
+          "Never modify ClickUp task status — GitHub is read-only mirror",
+          "Never email external stakeholders — internal team only",
+          "Never archive ClickUp tasks — only generate the report"
+        ],
+        "default": "Never close or reopen GitHub issues — only update labels",
+        "context": "Defines the hard safety boundary to prevent irreversible actions. Most teams want status sync to be advisory rather than destructive.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which ClickUp task fields map to GitHub issue priority labels?",
+        "type": "select",
+        "options": [
+          "Use ClickUp priority levels (urgent→P0, high→P1, normal→P2, low→P3)",
+          "Use ClickUp tags only — ignore priority field",
+          "Use story points as priority proxy (0-3pts→P3, 8+pts→P0)",
+          "Map manually — I'll define the label rules after setup"
+        ],
+        "default": "Use ClickUp priority levels (urgent→P0, high→P1, normal→P2, low→P3)",
+        "context": "Determines the label mapping logic applied during sprint kickoff issue creation. Mismatched labels make GitHub triage unreliable.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What level of detail should the sprint close report include?",
+        "type": "select",
+        "options": [
+          "Executive summary — velocity, completion rate, and top blockers only",
+          "Standard — metrics + per-assignee breakdown + carry-over tasks",
+          "Comprehensive — full metrics, blocker analysis, and retrospective data",
+          "Raw data only — export CSV, no narrative email"
+        ],
+        "default": "Standard — metrics + per-assignee breakdown + carry-over tasks",
+        "context": "Shapes the sprint close email and report format sent to stakeholders. Over-detailed reports are often ignored; too sparse and leadership asks follow-ups.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "What cross-sprint context should the agent retain and reference?",
+        "type": "select",
+        "options": [
+          "Velocity trends only — track story points completed per sprint",
+          "Carry-over task history — flag tasks that slip across multiple sprints",
+          "Both velocity and carry-over patterns",
+          "No cross-sprint memory — treat each sprint as independent"
+        ],
+        "default": "Both velocity and carry-over patterns",
+        "context": "Enables the agent to surface recurring slip patterns and calibrate sprint planning recommendations over time. Without this, each sprint report lacks trend context.",
+        "dimension": "memory"
+      }
     ]
   }
 }

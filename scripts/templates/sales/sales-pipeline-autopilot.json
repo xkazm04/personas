@@ -697,6 +697,116 @@
         "label": "Emits events: execution failed, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which Sales Pipeline Autopilot capabilities do you want to activate?",
+        "type": "select",
+        "options": [
+          "All flows: stage emails + Slack notifications + stale alerts + weekly reports",
+          "Email sequences only — no Slack notifications",
+          "Slack notifications + stale deal alerts only (no outbound emails)",
+          "Stale deal detection + weekly reporting only"
+        ],
+        "default": "All flows: stage emails + Slack notifications + stale alerts + weekly reports",
+        "context": "Determines which of the four workflows to activate. Unused flows are disabled to reduce noise and avoid unintended outreach.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your typical deal cycle length and sales motion?",
+        "type": "select",
+        "options": [
+          "Short cycle (under 2 weeks), high-volume transactional sales",
+          "Mid-cycle (2–8 weeks), consultative B2B sales",
+          "Long cycle (2–6 months), enterprise or complex deals",
+          "Mixed — varies significantly by deal size or segment"
+        ],
+        "default": "Mid-cycle (2–8 weeks), consultative B2B sales",
+        "context": "Informs stale deal thresholds, email urgency framing, and how pipeline health metrics are benchmarked in weekly reports.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which HubSpot pipeline should be monitored?",
+        "type": "text",
+        "default": "Default Pipeline",
+        "context": "Multi-pipeline HubSpot accounts need explicit pipeline targeting to avoid cross-pollinating deals from different products, regions, or business units.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which outbound actions should the autopilot NEVER perform without explicit approval?",
+        "type": "select",
+        "options": [
+          "Closed Lost emails — always require approval before sending a graceful close",
+          "Any email to a contact tagged Do Not Contact in HubSpot",
+          "Direct Slack DMs to individual reps (channel posts only, no personal pings)",
+          "All of the above"
+        ],
+        "default": "All of the above",
+        "context": "Prevents irreversible actions at sensitive moments — lost deal outreach and personal DMs carry high brand and relationship risk if sent without human judgment.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which deal-stage emails should be queued for rep review before sending?",
+        "type": "select",
+        "options": [
+          "None — send all stage-transition emails automatically",
+          "Closed Won onboarding kickoff emails only",
+          "Closed Won and Closed Lost emails (high-stakes transitions)",
+          "All emails — always queue for rep approval before sending"
+        ],
+        "default": "Closed Won and Closed Lost emails (high-stakes transitions)",
+        "context": "Won and lost transitions are high-stakes relationship moments. Queuing them for rep review prevents impersonal automated messages at critical inflection points.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How many days without deal activity should trigger a stale deal alert?",
+        "type": "select",
+        "options": [
+          "5 days (aggressive — high-velocity or transactional teams)",
+          "10 days (standard — typical B2B cycles)",
+          "21 days (relaxed — enterprise or long-cycle deals)",
+          "Custom — I will define per-stage thresholds during setup"
+        ],
+        "default": "10 days (standard — typical B2B cycles)",
+        "context": "Sets the inactivity threshold before a deal is flagged as stale and escalation begins — first to the channel, then to the rep directly via DM.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel should receive deal-stage updates and the Monday pipeline report?",
+        "type": "text",
+        "default": "#sales",
+        "context": "All deal notifications and weekly reports post here. Specify separate channels with a comma (e.g. #deal-updates, #sales-reports) if you want them split.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone should outbound stage-transition emails use?",
+        "type": "select",
+        "options": [
+          "Formal and professional — enterprise B2B",
+          "Warm and consultative — relationship-driven sales",
+          "Concise and direct — low-friction, action-focused",
+          "Casual and conversational — startup or SMB style"
+        ],
+        "default": "Warm and consultative — relationship-driven sales",
+        "context": "Stage emails represent your brand voice to active prospects. Matching the tone to how your reps already communicate ensures consistency and higher response rates.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

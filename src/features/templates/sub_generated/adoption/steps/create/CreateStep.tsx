@@ -13,6 +13,7 @@ import { CreateSuccessState } from './CreateSuccessState';
 import { CreateIdentityCard } from './CreateIdentityCard';
 import { CreateReadinessChecklist } from './CreateReadinessChecklist';
 import { CreateEditDetails } from './CreateEditDetails';
+import { PromptQualityGate } from './PromptQualityGate';
 
 export function CreateStep() {
   const { motion: MOTION } = useTemplateMotion();
@@ -127,6 +128,7 @@ export function CreateStep() {
         <h3 className="text-base font-semibold text-foreground">Review & Create</h3>
         <p className="text-sm text-muted-foreground/60 mt-0.5">Review the generated persona, then create it.</p>
       </div>
+      <PromptQualityGate draft={draft} />
       <ScanResultsBanner result={safetyScan} scanning={false} />
       {verification.trustLevel !== 'verified' && <SandboxWarningBanner verification={verification} />}
       <CreateIdentityCard

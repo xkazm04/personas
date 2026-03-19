@@ -650,6 +650,121 @@
         "label": "Emits events: review requested, item created, threshold breached, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which sync direction reflects how your team primarily works?",
+        "type": "select",
+        "options": [
+          "Asana is the source of truth — GitHub issues mirror it",
+          "GitHub is the source of truth — Asana tasks mirror it",
+          "Truly bidirectional — both teams update independently"
+        ],
+        "default": "Truly bidirectional — both teams update independently",
+        "context": "Determines conflict resolution priority and which platform wins when timestamps are close.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How are your Asana projects and GitHub repositories mapped to each other?",
+        "type": "select",
+        "options": [
+          "One Asana project maps to one GitHub repo",
+          "One Asana project maps to multiple GitHub repos",
+          "Multiple Asana projects map to one GitHub repo",
+          "Multiple Asana projects map to multiple GitHub repos"
+        ],
+        "default": "One Asana project maps to one GitHub repo",
+        "context": "Shapes how the sync ledger is structured and how cross-project conflicts are scoped.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which tasks or issues should NEVER be automatically synced?",
+        "type": "select",
+        "options": [
+          "Only sync items explicitly tagged [sync] — ignore everything else",
+          "Sync all open items; never touch closed or completed ones",
+          "Sync everything except archived items older than 30 days",
+          "Sync all items with no exclusions"
+        ],
+        "default": "Only sync items explicitly tagged [sync] — ignore everything else",
+        "context": "Prevents unintended propagation of sensitive, deprecated, or unrelated work into the other platform.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When a conflict is detected (both platforms updated the same item since last sync), what should happen?",
+        "type": "select",
+        "options": [
+          "Always escalate to Slack for human review — never auto-resolve",
+          "Auto-resolve with last-write-wins; only escalate if both edits are within 60 seconds",
+          "Auto-resolve with Asana always winning; post a Slack notification",
+          "Auto-resolve with GitHub always winning; post a Slack notification"
+        ],
+        "default": "Auto-resolve with last-write-wins; only escalate if both edits are within 60 seconds",
+        "context": "Controls the conflict escalation threshold and whether a human must always approve overwrites.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How verbose should Slack sync summaries be?",
+        "type": "select",
+        "options": [
+          "Only notify on conflicts or sync errors",
+          "Post a summary each time a task moves between phases (e.g., In Progress → Done)",
+          "Post every individual sync event in real time",
+          "Daily digest only — one rollup per day"
+        ],
+        "default": "Post a summary each time a task moves between phases (e.g., In Progress → Done)",
+        "context": "Controls Slack noise; high-velocity teams often prefer digest mode while smaller teams benefit from phase-change alerts.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "What is the name of the primary Asana project and GitHub repository this agent should sync?",
+        "type": "text",
+        "default": "",
+        "context": "Scopes the sync ledger and API polling to the correct workspace, preventing accidental cross-project syncs.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Which Asana task fields should be mapped to GitHub issue metadata?",
+        "type": "select",
+        "options": [
+          "Title and description only",
+          "Title, description, assignee, and due date",
+          "Title, description, assignee, due date, and labels/tags",
+          "Title, description, assignee, due date, labels, and custom fields"
+        ],
+        "default": "Title, description, assignee, and due date",
+        "context": "Richer field mapping means tighter integration but more potential for conflicts on frequently updated items.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What should happen when a sync operation fails after all retries are exhausted?",
+        "type": "select",
+        "options": [
+          "Post a Slack alert with the failed item details and pause that item's sync",
+          "Post a Slack alert and mark the item as requiring manual reconciliation",
+          "Log the failure locally only — no Slack notification",
+          "Keep retrying indefinitely in the background"
+        ],
+        "default": "Post a Slack alert with the failed item details and pause that item's sync",
+        "context": "Determines whether sync failures surface visibly to the team or silently accumulate in the retry queue.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

@@ -738,6 +738,128 @@
         "label": "Emits events: execution failed, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What are the primary webhook sources you plan to connect to Router?",
+        "type": "select",
+        "options": [
+          "Payment & billing events (Stripe, Paddle, Chargebee)",
+          "Developer & CI/CD events (GitHub, GitLab, deployment hooks)",
+          "Form submissions & CRM (Typeform, HubSpot, Webflow)",
+          "E-commerce events (Shopify, WooCommerce, order/fulfillment hooks)",
+          "Mixed or custom internal app webhooks"
+        ],
+        "default": "Mixed or custom internal app webhooks",
+        "context": "Determines the default classification logic and routing rule presets loaded on first run.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What best describes your team and operational context?",
+        "type": "select",
+        "options": [
+          "Solo developer or indie hacker managing personal projects",
+          "Small startup (< 20 people) replacing a Zapier account",
+          "Growth-stage company with a dedicated ops or engineering team",
+          "Agency routing events across multiple client workspaces"
+        ],
+        "default": "Small startup (< 20 people) replacing a Zapier account",
+        "context": "Shapes default verbosity, approval thresholds, and whether multi-tenant routing rules are needed.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which destination services should Router actively route events to?",
+        "type": "select",
+        "options": [
+          "Slack only — all events go to channels, nothing else",
+          "Slack + Notion (notifications + structured records)",
+          "Slack + Airtable (notifications + database logging)",
+          "Gmail + Notion (email alerts + knowledge base)",
+          "All connected services (Slack, Notion, Airtable, Gmail, Google Sheets)"
+        ],
+        "default": "Slack + Notion (notifications + structured records)",
+        "context": "Defines which connectors are active in routing rules and avoids sending events to unused services.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How should Router handle a webhook payload it cannot classify or match to any routing rule?",
+        "type": "select",
+        "options": [
+          "Log to local file and send a Slack alert for manual review",
+          "Route to a dedicated catch-all Slack channel",
+          "Email me with the raw payload for inspection",
+          "Discard silently (suppress noise from unknown sources)"
+        ],
+        "default": "Log to local file and send a Slack alert for manual review",
+        "context": "Critical for preventing silent data loss when new webhook sources are onboarded or payloads change shape.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should Router NEVER do autonomously, regardless of routing rules?",
+        "type": "select",
+        "options": [
+          "Never send outbound emails automatically — always require confirmation",
+          "Never write records to Airtable or Notion from unverified/unknown sources",
+          "Never discard any webhook — always persist a local log even if routing fails",
+          "Never take action on payment or financial events without explicit approval"
+        ],
+        "default": "Never discard any webhook — always persist a local log even if routing fails",
+        "context": "Sets hard constraints that override AI routing decisions, protecting against data loss or accidental outbound actions.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which event priority levels require your explicit approval before Router executes routing actions?",
+        "type": "select",
+        "options": [
+          "Urgent events only (payment failures, security alerts, errors)",
+          "All financial and billing events regardless of priority",
+          "Any event classified above 'normal' priority",
+          "Fully autonomous — no approval needed for any event type"
+        ],
+        "default": "Urgent events only (payment failures, security alerts, errors)",
+        "context": "Determines when Router pauses and notifies you vs. proceeds automatically, balancing speed with oversight.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "How should Router's initial routing_rules.json be populated?",
+        "type": "select",
+        "options": [
+          "Use template defaults (payments→Slack+Airtable, forms→Notion+email, errors→Slack)",
+          "Start empty — I will define all rules conversationally after setup",
+          "Generate rules automatically based on my connected services and webhook sources"
+        ],
+        "default": "Use template defaults (payments→Slack+Airtable, forms→Notion+email, errors→Slack)",
+        "context": "Determines whether Router has working rules on day one or waits for the user to configure them via chat.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How should Router format event notifications sent to Slack?",
+        "type": "select",
+        "options": [
+          "Concise one-liner: source, event type, and a plain-English summary",
+          "Structured block: source, event type, priority badge, and key extracted fields",
+          "Verbose: structured block plus truncated raw payload for debugging"
+        ],
+        "default": "Structured block: source, event type, priority badge, and key extracted fields",
+        "context": "Affects signal-to-noise ratio in Slack; verbose mode is useful during initial setup, concise for steady-state operations.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

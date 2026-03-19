@@ -195,7 +195,7 @@ pub fn composite_tick(pool: &DbPool) {
 
             let result = PartialMatchResult {
                 trigger_id: trigger.id.clone(),
-                trigger_name: trigger.name.clone(),
+                trigger_name: trigger.trigger_type.clone(),
                 persona_id: trigger.persona_id.clone(),
                 operator: op.to_string(),
                 window_seconds: window_secs,

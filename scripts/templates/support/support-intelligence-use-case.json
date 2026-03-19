@@ -717,6 +717,114 @@
         "label": "Emits events: review requested, item created, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary outcome you want Support Intelligence to optimize for?",
+        "type": "select",
+        "options": [
+          "Faster first-response time",
+          "Accurate routing to the right team",
+          "Building a self-improving knowledge base",
+          "SLA breach prevention"
+        ],
+        "default": "Faster first-response time",
+        "context": "Determines which flows to prioritize — triage speed, KB enrichment depth, or SLA monitoring aggressiveness.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of support operation is this agent joining?",
+        "type": "select",
+        "options": [
+          "B2B SaaS customer support",
+          "E-commerce / consumer support",
+          "Internal IT helpdesk",
+          "Developer / API support"
+        ],
+        "default": "B2B SaaS customer support",
+        "context": "Calibrates urgency classification rules — e.g., payment failures are critical for e-commerce but irrelevant for internal IT.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Should the agent ever post a reply directly to the customer in Zendesk, or only surface suggestions internally?",
+        "type": "select",
+        "options": [
+          "Suggest only — never post to customers",
+          "Auto-reply for low/medium tickets, suggest for high/critical",
+          "Auto-reply for all tickets with a high-confidence KB match"
+        ],
+        "default": "Suggest only — never post to customers",
+        "context": "Prevents unexpected customer-facing messages. Auto-reply mode requires explicit opt-in and a high KB confidence threshold.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which urgency levels require a human to acknowledge the Slack alert before the agent takes further action on a ticket?",
+        "type": "select",
+        "options": [
+          "Critical only",
+          "Critical and High",
+          "All tickets — agent suggests, humans decide",
+          "None — agent handles all tiers autonomously"
+        ],
+        "default": "Critical and High",
+        "context": "Sets the human review gate. 'Critical only' maximizes automation; 'All tickets' maximizes oversight at the cost of response speed.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What is your SLA target for first response on high-urgency tickets?",
+        "type": "select",
+        "options": [
+          "15 minutes",
+          "1 hour",
+          "4 hours",
+          "Next business day"
+        ],
+        "default": "1 hour",
+        "context": "The SLA breach prevention flow sends proactive warnings before this deadline. The warning lead time is set relative to this value.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel should receive critical and high-urgency ticket alerts?",
+        "type": "text",
+        "default": "#support-urgent",
+        "context": "The agent routes escalations to this channel. Providing the exact channel name ensures routing is correct from the first ticket.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Should the agent track per-account ticket history and factor it into urgency scoring for future tickets from the same account?",
+        "type": "boolean",
+        "default": true,
+        "context": "Enables account-level intelligence — e.g., automatically escalating a ticket if the same account had a critical outage last week.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What minimum confidence score should the knowledge base match reach before the agent auto-suggests a canned response?",
+        "type": "select",
+        "options": [
+          "High (90%+) — only suggest when very confident",
+          "Medium (70%+) — suggest with a confidence caveat",
+          "Low (50%+) — always surface the closest match"
+        ],
+        "default": "High (90%+) — only suggest when very confident",
+        "context": "Lower thresholds increase suggestion volume but risk irrelevant responses. Higher thresholds keep suggestions precise but may miss useful partial matches.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

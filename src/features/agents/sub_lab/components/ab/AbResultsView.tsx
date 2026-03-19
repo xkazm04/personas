@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Trophy, Target, FileText, Shield, DollarSign, Clock } from 'lucide-react';
+import { Trophy, Target, FileText, Shield, DollarSign, Clock, ArrowRight, MessageSquare, Lightbulb, ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
-import { aggregateAbResults } from '../../libs/labAggregation';
+import { aggregateAbResults, type AbVersionAggregate } from '../../libs/labAggregation';
 
 interface UserRatingEntry {
   rating: number;
@@ -18,6 +18,107 @@ interface Props {
   onRate?: (scenarioName: string, versionId: string, rating: number, feedback?: string) => void;
 }
 
+function scoreLabel(score: number): string {
+  if (score >= 80) return 'Excellent';
+  if (score >= 60) return 'Good';
+  if (score >= 40) return 'Fair';
+  if (score >= 20) return 'Weak';
+  return 'Poor';
+}
+
+function scoreBg(score: number): string {
+  if (score >= 80) return 'from-emerald-500/20 to-emerald-500/5';
+  if (score >= 60) return 'from-blue-500/20 to-blue-500/5';
+  if (score >= 40) return 'from-amber-500/20 to-amber-500/5';
+  return 'from-red-500/20 to-red-500/5';
+}
+
+function ScoreBar({ value, label, icon: Icon }: { value: number; label: string; icon: typeof Target }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+          <Icon className="w-3 h-3" />{label}
+        </span>
+        <span className={`text-xs font-semibold ${scoreColor(value)}`}>{value}/100</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-primary/5 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${value >= 80 ? 'bg-emerald-500/70' : value >= 50 ? 'bg-amber-500/70' : 'bg-red-500/60'}`}
+          style={{ width: `${Math.max(value, 2)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function buildSummary(aggs: AbVersionAggregate[], winnerId: string | null, scenarios: string[]): string {
+  if (aggs.length < 2) return '';
+  const winner = aggs.find(a => a.versionId === winnerId);
+  const loser = aggs.find(a => a.versionId !== winnerId);
+  if (!winner || !loser) return '';
+
+  const gap = winner.compositeScore - loser.compositeScore;
+  let text = `**Version ${winner.versionNumber}** scored **${winner.compositeScore}/100** overall`;
+
+  if (gap > 0) {
+    text += `, beating v${loser.versionNumber} by ${gap} points across ${scenarios.length} scenarios.`;
+  } else {
+    text += `. Both versions scored identically across ${scenarios.length} scenarios.`;
+  }
+
+  // Highlight dimension differences
+  const oqDiff = winner.avgOutputQuality - loser.avgOutputQuality;
+  const taDiff = winner.avgToolAccuracy - loser.avgToolAccuracy;
+  if (Math.abs(oqDiff) > 10) {
+    text += oqDiff > 0
+      ? ` v${winner.versionNumber} produced notably higher quality output (+${oqDiff}).`
+      : ` However, v${loser.versionNumber} had better output quality (+${Math.abs(oqDiff)}).`;
+  }
+  if (Math.abs(taDiff) > 10) {
+    text += taDiff > 0
+      ? ` v${winner.versionNumber} used tools more effectively (+${taDiff}).`
+      : ` v${loser.versionNumber} had stronger tool usage (+${Math.abs(taDiff)}).`;
+  }
+  return text;
+}
+
+function parseVerdict(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw) as { verdict?: string; summary?: string };
+    return parsed.verdict ?? parsed.summary ?? raw;
+  } catch { return raw; }
+}
+
+function collectTopRationale(results: LabAbResult[], limit = 3): Array<{ scenario: string; version: number; rationale: string }> {
+  const items: Array<{ scenario: string; version: number; rationale: string; score: number }> = [];
+  for (const r of results) {
+    if (r.rationale) {
+      const comp = compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0);
+      items.push({ scenario: r.scenarioName, version: r.versionNumber, rationale: parseVerdict(r.rationale), score: comp });
+    }
+  }
+  items.sort((a, b) => b.score - a.score);
+  return items.slice(0, limit);
+}
+
+function collectTopSuggestions(results: LabAbResult[], limit = 3): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of results) {
+    if (r.suggestions && !seen.has(r.suggestions)) {
+      seen.add(r.suggestions);
+      out.push(r.suggestions);
+    }
+  }
+  return out.slice(0, limit);
+}
+
+const VERSION_COLORS = [
+  { accent: 'blue', gradient: 'from-blue-500/15 via-blue-500/10 to-blue-500/5', border: 'border-blue-500/20', text: 'text-blue-400', bg: 'bg-blue-500/15' },
+  { accent: 'violet', gradient: 'from-violet-500/15 via-violet-500/10 to-violet-500/5', border: 'border-violet-500/20', text: 'text-violet-400', bg: 'bg-violet-500/15' },
+] as const;
+
 export function AbResultsView({ results, runId: _runId, userRatings, onRate }: Props) {
   const { versionAggs, scenarios, matrix, winnerId } = useMemo(
     () => aggregateAbResults(results),
@@ -25,9 +126,13 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
   );
   const [selectedCell, setSelectedCell] = useState<{ scenario: string; versionId: string } | null>(null);
 
+  const summary = useMemo(() => buildSummary(versionAggs, winnerId, scenarios), [versionAggs, winnerId, scenarios]);
+  const topRationale = useMemo(() => collectTopRationale(results), [results]);
+  const topSuggestions = useMemo(() => collectTopSuggestions(results), [results]);
+
   if (results.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground/80 text-sm">
+      <div className="text-center py-12 text-muted-foreground/60 text-sm">
         No results to display
       </div>
     );
@@ -38,39 +143,94 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
   const selectedVersion = selectedCell ? versionAggs.find((a) => a.versionId === selectedCell.versionId) : null;
 
   return (
-    <div className="space-y-5">
-      {/* Version comparison */}
-      <div className="space-y-2">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
-          <span className="w-6 h-[2px] bg-gradient-to-r from-primary to-accent rounded-full" />
-          <Trophy className="w-3.5 h-3.5" />
-          Version Comparison
-        </h4>
-        <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-6">
+      {/* Executive summary */}
+      <div className="rounded-xl border border-primary/10 bg-gradient-to-br from-secondary/40 to-background/20 backdrop-blur-sm overflow-hidden">
+        <div className="px-5 py-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-violet-500/20 flex items-center justify-center">
+              <Trophy className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-foreground/90">A/B Test Summary</h4>
+              <p className="text-xs text-muted-foreground/50">
+                v{versionAggs[0]?.versionNumber} vs v{versionAggs[1]?.versionNumber} across {scenarios.length} scenarios
+              </p>
+            </div>
+          </div>
+          {summary && (
+            <p className="text-sm text-foreground/75 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: summary.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90">$1</strong>') }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Head-to-head comparison */}
+      <div className="space-y-3">
+        <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider px-1">Head-to-Head</h4>
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-0 items-stretch">
           {versionAggs.map((agg, idx) => {
             const isWinner = agg.versionId === winnerId;
-            const color = idx === 0 ? 'blue' : 'violet';
+            const c = VERSION_COLORS[idx] ?? VERSION_COLORS[0]!;
+            const other = versionAggs[1 - idx];
+
             return (
-              <div key={agg.versionId} className={`rounded-xl border p-4 space-y-3 ${isWinner ? 'bg-primary/5 border-primary/20' : 'bg-background/30 border-primary/10'}`}>
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded text-sm font-mono font-bold bg-${color}-500/15 text-${color}-400`}>v{agg.versionNumber}</span>
-                  {isWinner && (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-xs font-medium bg-primary/15 text-primary border border-primary/20">
-                      <Trophy className="w-3 h-3" /> Winner
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <div className="flex items-center gap-1" title="Tool Accuracy"><Target className="w-3 h-3 text-muted-foreground/60" /><span className={scoreColor(agg.avgToolAccuracy)}>{agg.avgToolAccuracy}</span></div>
-                  <div className="flex items-center gap-1" title="Output Quality"><FileText className="w-3 h-3 text-muted-foreground/60" /><span className={scoreColor(agg.avgOutputQuality)}>{agg.avgOutputQuality}</span></div>
-                  <div className="flex items-center gap-1" title="Protocol"><Shield className="w-3 h-3 text-muted-foreground/60" /><span className={scoreColor(agg.avgProtocolCompliance)}>{agg.avgProtocolCompliance}</span></div>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <span className={`font-bold text-lg ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
-                  <span className="text-muted-foreground/50">composite</span>
-                  <div className="flex-1" />
-                  <span className="text-muted-foreground/60"><DollarSign className="w-3 h-3 inline" />{agg.totalCost.toFixed(4)}</span>
-                  <span className="text-muted-foreground/60"><Clock className="w-3 h-3 inline" />{(agg.avgDuration / 1000).toFixed(1)}s</span>
+              <div key={agg.versionId} className="contents">
+                {idx === 1 && (
+                  <div className="flex items-center justify-center px-3">
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">vs</span>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground/20 rotate-90" />
+                    </div>
+                  </div>
+                )}
+                <div className={`rounded-xl border overflow-hidden ${isWinner ? `${c.border} shadow-lg shadow-primary/5` : 'border-primary/10'}`}>
+                  {/* Version header */}
+                  <div className={`px-4 py-3 bg-gradient-to-r ${c.gradient}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-md text-sm font-mono font-bold ${c.bg} ${c.text}`}>v{agg.versionNumber}</span>
+                        {isWinner && (
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/15 text-primary border border-primary/20">
+                            <Trophy className="w-2.5 h-2.5" /> Winner
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scores */}
+                  <div className="px-4 py-3 space-y-3 bg-background/40">
+                    <div className={`flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r ${scoreBg(agg.compositeScore)}`}>
+                      <span className={`text-3xl font-black tracking-tight ${scoreColor(agg.compositeScore)}`}>{agg.compositeScore}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-xs font-semibold ${scoreColor(agg.compositeScore)}`}>{scoreLabel(agg.compositeScore)}</span>
+                        <p className="text-[10px] text-muted-foreground/50">Composite Score</p>
+                      </div>
+                      {other && (
+                        <div className="flex items-center gap-0.5 text-xs text-muted-foreground/50">
+                          {agg.compositeScore > other.compositeScore
+                            ? <><TrendingUp className="w-3 h-3 text-emerald-400/60" /><span>+{agg.compositeScore - other.compositeScore}</span></>
+                            : agg.compositeScore < other.compositeScore
+                              ? <><TrendingDown className="w-3 h-3 text-red-400/60" /><span>{agg.compositeScore - other.compositeScore}</span></>
+                              : <span>tied</span>
+                          }
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <ScoreBar value={agg.avgToolAccuracy} label="Tool Usage" icon={Target} />
+                      <ScoreBar value={agg.avgOutputQuality} label="Output Quality" icon={FileText} />
+                      <ScoreBar value={agg.avgProtocolCompliance} label="Protocol" icon={Shield} />
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-1 border-t border-primary/5 text-[11px] text-muted-foreground/50">
+                      <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}s avg</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
@@ -78,21 +238,65 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
         </div>
       </div>
 
+      {/* Key insights */}
+      {(topRationale.length > 0 || topSuggestions.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {topRationale.length > 0 && (
+            <div className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-primary/5 bg-secondary/30">
+                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                  <MessageSquare className="w-3 h-3" /> Evaluation Insights
+                </h4>
+              </div>
+              <div className="px-4 py-3 space-y-2.5">
+                {topRationale.map((r, i) => (
+                  <div key={i} className="text-sm leading-relaxed">
+                    <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase">v{r.version} — {r.scenario}</span>
+                    <p className="text-foreground/70 mt-0.5">{r.rationale.length > 200 ? r.rationale.slice(0, 200) + '...' : r.rationale}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {topSuggestions.length > 0 && (
+            <div className="rounded-xl border border-amber-500/10 bg-amber-500/[0.03] overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-amber-500/10 bg-amber-500/[0.05]">
+                <h4 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/70 uppercase tracking-wider">
+                  <Lightbulb className="w-3 h-3" /> Improvement Suggestions
+                </h4>
+              </div>
+              <div className="px-4 py-3 space-y-2">
+                {topSuggestions.map((s, i) => (
+                  <p key={i} className="text-sm text-foreground/70 leading-relaxed">
+                    {s.length > 200 ? s.slice(0, 200) + '...' : s}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Scenario breakdown */}
-      <div className="space-y-2">
-        <h4 className="flex items-center gap-2.5 text-sm font-semibold text-foreground/90 tracking-wide">
-          <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
-          Scenario Breakdown
-          <span className="text-xs font-normal text-muted-foreground/50 ml-1">Click a cell for details</span>
-        </h4>
-        <div className="overflow-x-auto border border-primary/10 rounded-xl">
+      <details className="group" open>
+        <summary className="flex items-center gap-2 cursor-pointer select-none px-1">
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 transition-transform group-open:rotate-180" />
+          <h4 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">Scenario Breakdown</h4>
+          <span className="text-[10px] text-muted-foreground/30">Click a cell for details</span>
+        </summary>
+        <div className="mt-3 overflow-x-auto border border-primary/10 rounded-xl">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-primary/10 bg-secondary/30">
-                <th className="text-left px-3 py-2 font-medium text-muted-foreground/80">Scenario</th>
-                {versionAggs.map((agg) => (
-                  <th key={agg.versionId} className="text-center px-3 py-2 font-medium text-muted-foreground/80">v{agg.versionNumber}</th>
-                ))}
+              <tr className="border-b border-primary/10 bg-secondary/20">
+                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground/60 text-xs uppercase tracking-wider">Scenario</th>
+                {versionAggs.map((agg, idx) => {
+                  const c = VERSION_COLORS[idx] ?? VERSION_COLORS[0]!;
+                  return (
+                    <th key={agg.versionId} className={`text-center px-3 py-2.5 font-medium text-xs uppercase tracking-wider ${c.text}`}>
+                      v{agg.versionNumber}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <VirtualizedTableBody
@@ -100,22 +304,25 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
               rowKey={(s) => s}
               renderRow={(scenario) => (
                 <>
-                  <td className="px-3 py-2 text-foreground/80 font-medium max-w-[200px] truncate">{scenario}</td>
+                  <td className="px-3 py-2.5 text-foreground/70 text-sm max-w-[250px] truncate">{scenario}</td>
                   {versionAggs.map((agg) => {
                     const rows = matrix[scenario]?.[agg.versionId] ?? [];
-                    if (rows.length === 0) return <td key={agg.versionId} className="px-3 py-2 text-center text-muted-foreground/80">--</td>;
+                    if (rows.length === 0) return <td key={agg.versionId} className="px-3 py-2.5 text-center text-muted-foreground/30">--</td>;
                     const avgTA = rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / rows.length;
                     const avgOQ = rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / rows.length;
                     const avgPC = rows.reduce((s, r) => s + (r.protocolCompliance ?? 0), 0) / rows.length;
                     const comp = compositeScore(avgTA, avgOQ, avgPC);
                     const isSelected = selectedCell?.scenario === scenario && selectedCell?.versionId === agg.versionId;
                     return (
-                      <td key={agg.versionId} className="px-3 py-2 text-center">
+                      <td key={agg.versionId} className="px-3 py-1.5 text-center">
                         <button
                           onClick={() => setSelectedCell(isSelected ? null : { scenario, versionId: agg.versionId })}
-                          className={`rounded-lg px-2 py-1 transition-colors ${isSelected ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-secondary/30'}`}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all ${
+                            isSelected ? 'bg-primary/10 ring-1 ring-primary/25 shadow-sm' : 'hover:bg-secondary/40'
+                          }`}
                         >
-                          <span className={`text-sm font-bold ${scoreColor(comp)}`}>{comp}</span>
+                          <div className={`w-2 h-2 rounded-full ${comp >= 60 ? 'bg-emerald-500/60' : comp >= 30 ? 'bg-amber-500/60' : 'bg-red-500/40'}`} />
+                          <span className={`text-sm font-semibold ${scoreColor(comp)}`}>{comp}</span>
                         </button>
                       </td>
                     );
@@ -125,7 +332,7 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
             />
           </table>
         </div>
-      </div>
+      </details>
 
       {/* Detail panel */}
       {selectedFirst && selectedCell && (() => {

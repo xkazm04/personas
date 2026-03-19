@@ -695,6 +695,120 @@
         "label": "Emits events: execution completed, review requested, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary driver for maintaining review cycles in your knowledge base?",
+        "type": "select",
+        "options": [
+          "Accuracy — prevent outdated support articles from misleading customers",
+          "Compliance — satisfy regulatory or audit requirements for documentation freshness",
+          "Onboarding — keep internal docs current for new team members",
+          "Product alignment — sync KB with frequent product/feature releases"
+        ],
+        "default": "Accuracy — prevent outdated support articles from misleading customers",
+        "context": "Determines the urgency framing of reminders, escalation thresholds, and what metadata to surface in Slack summaries.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of content lives in this Notion knowledge base?",
+        "type": "select",
+        "options": [
+          "Customer-facing support articles and FAQs",
+          "Internal team runbooks and SOPs",
+          "Product and engineering documentation",
+          "Compliance, legal, or policy documents"
+        ],
+        "default": "Customer-facing support articles and FAQs",
+        "context": "Shapes the reviewer assignment logic, reminder tone, and whether completions should trigger downstream notifications (e.g. publishing pipeline).",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What review frequency applies to most articles in your knowledge base?",
+        "type": "select",
+        "options": [
+          "Monthly (30 days)",
+          "Quarterly (90 days)",
+          "Semi-annually (180 days)",
+          "Annually (365 days)"
+        ],
+        "default": "Quarterly (90 days)",
+        "context": "Used as the fallback review interval when an article has no explicit Review Frequency set in Notion, and to calculate next due dates after completion.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How many articles should a single reviewer be assigned per daily scan cycle?",
+        "type": "select",
+        "options": [
+          "1 — light workload, high completion rate priority",
+          "3 — default balanced cap",
+          "5 — higher throughput, larger team",
+          "No cap — assign all due articles"
+        ],
+        "default": "3 — default balanced cap",
+        "context": "Controls the per-reviewer daily assignment cap to prevent burnout. Excess articles roll over to the next available reviewer in the rotation.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "After sending escalating reminders with no reviewer response, what should the agent do with an overdue review?",
+        "type": "select",
+        "options": [
+          "Reassign automatically to the next reviewer in the rotation",
+          "Escalate to a manager via Slack DM and halt further reminders",
+          "Flag the article as 'Overdue' in Notion and post to team channel — no reassignment",
+          "Do nothing further — require manual intervention after max reminders"
+        ],
+        "default": "Escalate to a manager via Slack DM and halt further reminders",
+        "context": "Defines the hard boundary of autonomous action. Prevents the agent from silently dropping articles or endlessly spamming reviewers.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_boundaries_2",
+        "category": "boundaries",
+        "question": "Should the agent skip any categories of articles during scanning — even if they are past their review due date?",
+        "type": "text",
+        "default": "Skip archived articles and any articles tagged 'Deprecated' or 'Draft'",
+        "context": "Prevents unnecessary assignments for content intentionally excluded from active review cycles (e.g. sunset products, in-progress drafts).",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Should reviewer assignments be sent automatically each morning, or should a summary be posted to Slack first for a human to confirm before reminders go out?",
+        "type": "select",
+        "options": [
+          "Fully automatic — assign and send Gmail reminders without confirmation",
+          "Post Slack summary first, wait for a manager thumbs-up before sending emails",
+          "Send emails automatically but require approval before posting public Slack shoutouts"
+        ],
+        "default": "Fully automatic — assign and send Gmail reminders without confirmation",
+        "context": "Determines whether a human approves each batch before the agent takes external communication actions (email/Slack), which matters for teams with strict comms policies.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone should the Gmail review reminder emails use?",
+        "type": "select",
+        "options": [
+          "Friendly and informal — conversational, light nudge",
+          "Professional and concise — brief, task-focused",
+          "Detailed and instructional — include review checklist and guidelines in each email"
+        ],
+        "default": "Professional and concise — brief, task-focused",
+        "context": "Calibrates the voice of outbound emails to match your team culture and reduces friction for reviewers engaging with reminders.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

@@ -743,6 +743,128 @@
         "label": "Emits events: item created, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which environments should trigger PagerDuty escalation? Non-selected environments will log incidents but skip on-call paging.",
+        "type": "select",
+        "options": [
+          "Production only",
+          "Production and staging",
+          "All environments (production, staging, dev)",
+          "Custom tag-based filtering"
+        ],
+        "default": "Production only",
+        "context": "The severity matrix gates SEV-1/SEV-2 escalation on env:production tags. Knowing your scope prevents unnecessary on-call noise.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How is your on-call rotation structured?",
+        "type": "select",
+        "options": [
+          "Small team (1-3 engineers), single escalation path",
+          "Mid-size (4-10 engineers), two-tier L1 → L2 escalation",
+          "Large org (10+), tiered with management escalation for SEV-1",
+          "Follow-the-sun across multiple time zones"
+        ],
+        "default": "Mid-size (4-10 engineers), two-tier L1 → L2 escalation",
+        "context": "Determines how PagerDuty escalation policies and Slack @mentions are structured across severity tiers.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What is the primary SLA pressure driving your incident response?",
+        "type": "select",
+        "options": [
+          "Customer-facing SLA with contractual penalties (fintech, enterprise SaaS)",
+          "Internal SLO targets with error budget tracking (platform/infra teams)",
+          "Regulatory uptime requirements (healthcare, financial services)",
+          "Best-effort reliability without formal SLAs (early-stage startup)"
+        ],
+        "default": "Internal SLO targets with error budget tracking (platform/infra teams)",
+        "context": "Shapes how urgently borderline severity cases are escalated and how MTTR is framed in the weekly incident report.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the Incident Commander never do autonomously?",
+        "type": "select",
+        "options": [
+          "Never auto-resolve a PagerDuty incident — always require human acknowledgment",
+          "Never page on-call for SEV-3 or below — Slack-only for low severity",
+          "Never create incidents outside business hours without manager escalation",
+          "Never suppress repeat alerts — always create a separate incident per trigger"
+        ],
+        "default": "Never auto-resolve a PagerDuty incident — always require human acknowledgment",
+        "context": "Sets hard guardrails to prevent over-automation in sensitive scenarios like premature incident closure or after-hours paging.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "For self-healing alerts, what confirmation is required before the agent closes the PagerDuty incident?",
+        "type": "select",
+        "options": [
+          "Auto-resolve immediately on Datadog 'Recovered' webhook",
+          "Post a Slack confirmation request to on-call before resolving",
+          "Auto-resolve only if alert self-healed within 5 minutes AND has prior auto-heal history",
+          "Never auto-resolve — on-call must always close in PagerDuty manually"
+        ],
+        "default": "Auto-resolve only if alert self-healed within 5 minutes AND has prior auto-heal history",
+        "context": "Controls risk of premature closure for flapping alerts that recover briefly before re-triggering.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "Should the weekly incident digest be auto-posted to Slack or drafted for review first?",
+        "type": "select",
+        "options": [
+          "Auto-post to #incidents-review every Monday morning",
+          "DM the on-call lead for approval before posting",
+          "Generate but only post when a human triggers /post-report",
+          "Skip the weekly report — real-time threads only"
+        ],
+        "default": "Auto-post to #incidents-review every Monday morning",
+        "context": "Controls whether the Monday digest is fully autonomous or requires sign-off before reaching the broader team.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How should incidents be routed across Slack channels by severity?",
+        "type": "select",
+        "options": [
+          "Single #incidents channel for all severities",
+          "#incidents for SEV-1/2, #incidents-low for SEV-3/4",
+          "Separate channels per service or team that owns the alert",
+          "#incidents for all, with @here for SEV-2 and @channel for SEV-1"
+        ],
+        "default": "#incidents for all, with @here for SEV-2 and @channel for SEV-1",
+        "context": "Drives Slack posting logic and @mention strategy to balance visibility without causing channel fatigue.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How aggressively should flapping detection suppress repeat pages from the same monitor firing multiple times in 24 hours?",
+        "type": "select",
+        "options": [
+          "Strict: skip PagerDuty page if the same monitor fired 3+ times in 24 hours",
+          "Moderate: still page, but surface a flapping warning in the incident",
+          "Lenient: always page; tag incident with flapping context for post-mortem only",
+          "Disabled: treat every alert independently with no deduplication"
+        ],
+        "default": "Moderate: still page, but surface a flapping warning in the incident",
+        "context": "Balances alert fatigue reduction against the risk of missing a real incident that looks like a recurring false positive.",
+        "dimension": "triggers"
+      }
     ]
   }
 }

@@ -680,6 +680,118 @@
         "label": "Emits events: execution failed, item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary type of email this processor should focus on?",
+        "type": "select",
+        "options": [
+          "Customer support requests and bug reports",
+          "Sales leads and partnership inquiries",
+          "Vendor and operational communications",
+          "Internal team and cross-department messages",
+          "All inbound email equally"
+        ],
+        "default": "All inbound email equally",
+        "context": "Determines the classification vocabulary and routing priority rules the agent applies",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which team or department owns this inbox?",
+        "type": "select",
+        "options": [
+          "Engineering / DevOps",
+          "Sales / Business Development",
+          "Customer Support",
+          "Operations / Finance",
+          "Executive / General company inbox"
+        ],
+        "default": "Operations / Finance",
+        "context": "Shapes the Slack channel routing map and Notion database schema the agent uses",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which email types should NEVER be auto-posted to Slack or logged in Notion?",
+        "type": "select",
+        "options": [
+          "HR, personnel, and compensation-related emails",
+          "Executive-to-executive communications",
+          "Emails explicitly marked confidential or for-your-eyes-only",
+          "Legal and compliance correspondence",
+          "None — process everything except promotions and social"
+        ],
+        "default": "HR, personnel, and compensation-related emails",
+        "context": "Prevents sensitive content from being broadcast to team channels or stored in shared databases",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which actions should pause and wait for human approval before executing?",
+        "type": "select",
+        "options": [
+          "Posting to Slack for emails from unknown senders",
+          "Creating Notion entries for any email flagged as high-urgency",
+          "Both Slack posts and Notion entries for unrecognized sender domains",
+          "Run fully automatically — no approval needed"
+        ],
+        "default": "Posting to Slack for emails from unknown senders",
+        "context": "Controls how much autonomy the agent has versus when it escalates to a human reviewer",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What urgency signals should trigger immediate high-priority routing instead of standard processing?",
+        "type": "select",
+        "options": [
+          "Keywords only (URGENT, ASAP, outage, blocker, incident)",
+          "Keywords + emails from C-level or VP-level senders",
+          "Keywords + attachments with financial figures or contracts",
+          "Standard processing for all emails — no escalation track"
+        ],
+        "default": "Keywords only (URGENT, ASAP, outage, blocker, incident)",
+        "context": "Determines when the agent skips batching and routes immediately to an escalation Slack channel",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "List any known sender domains or addresses to pre-classify (e.g., @acme.com → Sales, support@vendor.com → Ops). Leave blank to let the agent learn from scratch.",
+        "type": "text",
+        "default": "",
+        "context": "Pre-seeding sender memory reduces misrouting during the cold-start period before the agent accumulates pattern data",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "List the Slack channel names where routed summaries should be posted (e.g., #support-triage, #sales-leads, #ops-inbox). Include a fallback channel for unclassified emails.",
+        "type": "text",
+        "default": "#general-intake",
+        "context": "Maps email categories to specific Slack destinations; the agent needs this routing table to post to the right channels",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How should Slack summaries be formatted?",
+        "type": "select",
+        "options": [
+          "One-liner: sender, subject, and urgency tag only",
+          "Short block: 2–3 sentence summary + action items",
+          "Full digest: summary, key entities, attachments list, and suggested next step"
+        ],
+        "default": "Short block: 2–3 sentence summary + action items",
+        "context": "Controls the verbosity of Slack notifications to match your team's preferred signal-to-noise ratio",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

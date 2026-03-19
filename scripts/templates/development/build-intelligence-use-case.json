@@ -669,6 +669,130 @@
         "label": "Emits events: execution completed, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is your primary pain point that this agent should solve first?",
+        "type": "select",
+        "options": [
+          "Build failures are hard to diagnose — logs are too noisy to find the real cause quickly",
+          "Flaky tests are wasting developer time and obscuring real failures",
+          "PR authors don't get actionable feedback — they just see 'build failed'",
+          "We need visibility into build health trends across multiple projects"
+        ],
+        "default": "Build failures are hard to diagnose — logs are too noisy to find the real cause quickly",
+        "context": "Determines which analysis workflow the agent should prioritize and optimize its output format around.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is the primary language/runtime in your CircleCI pipelines?",
+        "type": "select",
+        "options": [
+          "JavaScript / TypeScript (Node.js)",
+          "Python",
+          "Java / Kotlin (JVM)",
+          "Go",
+          "Ruby",
+          "Mixed / polyglot monorepo"
+        ],
+        "default": "JavaScript / TypeScript (Node.js)",
+        "context": "Log parsing patterns differ significantly by language — stack traces, test runner output formats, and dependency error signatures all vary. This lets the agent apply the right extraction heuristics.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which branches should trigger full failure analysis and PR comments?",
+        "type": "select",
+        "options": [
+          "All branches (every PR and push)",
+          "main / master + all open PRs",
+          "main / master only — ignore feature branches",
+          "Only branches with open PRs targeting main"
+        ],
+        "default": "main / master + all open PRs",
+        "context": "Controls analysis scope and notification volume. Analyzing every branch push can be noisy for large teams; restricting to PR branches balances signal vs. noise.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Where should Slack failure alerts be routed?",
+        "type": "select",
+        "options": [
+          "A dedicated #ci-alerts channel only",
+          "#ci-alerts for failures + DM the commit author directly",
+          "The squad/team channel of the PR author",
+          "A single #engineering channel for all notifications"
+        ],
+        "default": "A dedicated #ci-alerts channel only",
+        "context": "Routing strategy affects developer response time and notification fatigue. DMing the author creates urgency; a shared channel gives team visibility.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the agent NEVER do without explicit human instruction?",
+        "type": "select",
+        "options": [
+          "Never trigger CircleCI re-runs or retries on its own",
+          "Never post to Slack or GitHub on weekend / off-hours builds",
+          "Never comment on Draft PRs — only post when a PR is marked ready for review",
+          "Never surface failures from dependency/infrastructure flaps as developer errors"
+        ],
+        "default": "Never trigger CircleCI re-runs or retries on its own",
+        "context": "Defines hard guardrails so the agent doesn't create noise, embarrass developers with premature comments, or take automated actions that require human judgment.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When the agent identifies a likely fix for a failing test or build error, what should it do?",
+        "type": "select",
+        "options": [
+          "Post the suggestion as a GitHub PR comment — no approval needed",
+          "Post to Slack first; only comment on GitHub after a team member reacts with ✅",
+          "Summarize the root cause only — never suggest specific code fixes",
+          "Tag the PR author in Slack with the suggestion and wait for them to request the GitHub comment"
+        ],
+        "default": "Post the suggestion as a GitHub PR comment — no approval needed",
+        "context": "Automated code fix suggestions on PRs can be helpful but may also add noise or appear authoritative. This determines how much gatekeeping the team wants over AI-generated suggestions.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "How should the agent define a 'flaky' test for tracking and reporting purposes?",
+        "type": "select",
+        "options": [
+          "Failed ≥2 times on the same branch within 7 days, then passed without code changes",
+          "Failed on one run and passed on a retry in the same workflow at least once",
+          "Failure rate between 10–80% over the last 30 builds (consistently inconsistent)",
+          "Any test that has appeared in a failed build more than 3 times in the past 14 days"
+        ],
+        "default": "Failure rate between 10–80% over the last 30 builds (consistently inconsistent)",
+        "context": "The flakiness definition determines what gets tracked and surfaced in the weekly digest. Too sensitive = noise; too loose = real flaky tests go unreported.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should failure analysis be in GitHub PR comments?",
+        "type": "select",
+        "options": [
+          "Brief: one-liner root cause + link to full CircleCI logs",
+          "Standard: root cause, affected file/line, and 2-3 sentence fix suggestion",
+          "Detailed: full error classification, stack trace excerpt, suggested fix with code snippet, and related flaky test history",
+          "Adaptive: brief for recurring known failures, detailed for new failure types"
+        ],
+        "default": "Standard: root cause, affected file/line, and 2-3 sentence fix suggestion",
+        "context": "Comment verbosity affects developer experience. Overly long comments can obscure the actionable signal; too brief and developers still have to dig through logs themselves.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

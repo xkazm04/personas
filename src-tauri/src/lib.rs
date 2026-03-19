@@ -761,6 +761,7 @@ pub fn run() {
             commands::execution::lab::lab_rollback_version,
             commands::execution::lab::lab_get_error_rate,
             commands::execution::lab::lab_improve_prompt,
+            commands::execution::lab::lab_get_active_progress,
             commands::execution::lab::lab_rate_result,
             commands::execution::lab::lab_get_ratings,
             // Execution -- Genome Breeding

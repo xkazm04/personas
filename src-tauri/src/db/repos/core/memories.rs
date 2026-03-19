@@ -560,7 +560,7 @@ mod tests {
         // Read by id
         let fetched = get_by_id(&pool, &m1.id).unwrap();
         assert_eq!(fetched.title, "User prefers dark mode");
-        assert_eq!(fetched.tags, Some("ui,preference".into()));
+        assert_eq!(fetched.tags, Some("[\"ui\",\"preference\"]".into()));
 
         // Get all (no filters)
         let all = get_all(&pool, None, None, None, None, None, None, None).unwrap();

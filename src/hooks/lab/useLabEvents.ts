@@ -19,6 +19,7 @@ function mapPayload(p: RunStatusPayload, mode: LabMode): LabRunProgress {
     scores: p.scores,
     summary: p.summary,
     error: p.error,
+    elapsedMs: p.elapsed_ms,
   };
 }
 

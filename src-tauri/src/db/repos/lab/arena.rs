@@ -15,6 +15,8 @@ fn row_to_run(row: &Row) -> rusqlite::Result<LabArenaRun> {
         scenarios_count: row.get("scenarios_count")?,
         use_case_filter: row.get("use_case_filter")?,
         summary: row.get("summary")?,
+        llm_summary: row.get("llm_summary").unwrap_or(None),
+        progress_json: row.get("progress_json").unwrap_or(None),
         error: row.get("error")?,
         created_at: row.get("created_at")?,
         completed_at: row.get("completed_at")?,
@@ -129,6 +131,24 @@ pub fn update_run_status(
          WHERE id = ?6",
         params![status.as_str(), scenarios_count, summary, error, completed_at, id],
     )?;
+    Ok(())
+}
+
+pub fn update_llm_summary(pool: &DbPool, id: &str, llm_summary: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE lab_arena_runs SET llm_summary = ?1 WHERE id = ?2",
+        params![llm_summary, id],
+    )?;
+    Ok(())
+}
+
+pub fn update_progress(pool: &DbPool, run_id: &str, progress_json: &str) -> Result<(), AppError> {
+    let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    conn.execute(
+        "UPDATE lab_arena_runs SET progress_json = ?1 WHERE id = ?2",
+        rusqlite::params![progress_json, run_id],
+    ).map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(())
 }
 

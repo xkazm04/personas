@@ -838,6 +838,121 @@
         "label": "Emits events: item created, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is your primary monitoring priority for this agent?",
+        "type": "select",
+        "options": [
+          "Crash rate spikes and new error clusters",
+          "ANR events and app freezes",
+          "Screen performance regressions",
+          "Balanced coverage across crashes, ANRs, and performance"
+        ],
+        "default": "Balanced coverage across crashes, ANRs, and performance",
+        "context": "Determines which Firebase signals the agent treats as highest severity and alerts on first in each polling cycle.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of mobile app are you monitoring?",
+        "type": "select",
+        "options": [
+          "Consumer app with high DAU (100k+)",
+          "B2B / enterprise app with lower but critical usage",
+          "Early-stage app still in active development",
+          "Multi-app suite sharing a Firebase project"
+        ],
+        "default": "Consumer app with high DAU (100k+)",
+        "context": "Shapes alert thresholds, deduplication windows, and how aggressively Linear bugs are created — a 1% crash spike means very different things at 1k vs 1M DAU.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How sensitive should crash spike detection be?",
+        "type": "select",
+        "options": [
+          "Strict — alert on any >10% increase from 24h baseline",
+          "Default — alert on >20% increase (template default)",
+          "Relaxed — alert only on >40% increase to reduce noise",
+          "Critical only — alert only when crash-free rate drops below 99%"
+        ],
+        "default": "Default — alert on >20% increase (template default)",
+        "context": "Controls the threshold for triggering Slack alerts and Linear bug creation. High-noise environments may need a higher bar to prevent alert fatigue.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channels should receive alerts, and how should severity be routed?",
+        "type": "text",
+        "default": "e.g., #mobile-oncall for P1 crashes/ANRs, #mobile-alerts for all others",
+        "context": "The agent can route critical issues (ANR spikes, crash-free rate drops) to an oncall channel while sending lower-severity performance regressions to a broader team channel.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do automatically without human review?",
+        "type": "select",
+        "options": [
+          "Never create Linear bugs — only send Slack alerts",
+          "Never assign Linear bugs to specific engineers automatically",
+          "Never send the weekly report to external stakeholders (only internal team)",
+          "Never escalate to Slack if the same issue already has an open Linear ticket"
+        ],
+        "default": "Never assign Linear bugs to specific engineers automatically",
+        "context": "Prevents the agent from taking actions that could surprise or overload your team. Auto-assignment in particular can cause friction if the agent picks the wrong owner.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which actions should be held for human approval before executing?",
+        "type": "select",
+        "options": [
+          "Creating any Linear bug (agent only suggests via Slack)",
+          "Creating P1/critical Linear bugs only; P2+ can be auto-created",
+          "Sending the weekly Gmail report (draft for review first)",
+          "No approval needed — run fully autonomously"
+        ],
+        "default": "Creating P1/critical Linear bugs only; P2+ can be auto-created",
+        "context": "Determines where the agent pauses and waits for a human to confirm before writing to Linear or sending emails — important for teams with strict ticket hygiene.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How much detail should Slack crash alerts include?",
+        "type": "select",
+        "options": [
+          "Terse — one-line summary with link to Crashlytics",
+          "Standard — crash rate delta, affected OS versions, and Linear ticket link",
+          "Verbose — full stack trace excerpt, impacted user count, and reproduction steps from Crashlytics"
+        ],
+        "default": "Standard — crash rate delta, affected OS versions, and Linear ticket link",
+        "context": "Terse alerts reduce Slack noise; verbose alerts let on-call engineers triage without leaving Slack. Choose based on your team's workflow.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "What baseline window should the agent use when calculating 'normal' performance?",
+        "type": "select",
+        "options": [
+          "3 days — fast adaptation, catches regressions quickly after releases",
+          "7 days — default rolling window (template default)",
+          "14 days — more stable baseline, reduces post-release false positives",
+          "30 days — long-term trend analysis, best for mature stable apps"
+        ],
+        "default": "7 days — default rolling window (template default)",
+        "context": "Shorter windows adapt faster after releases but can trigger false positives if traffic patterns are uneven. Longer windows are more stable but slower to reset after a bad period.",
+        "dimension": "memory"
+      }
     ]
   }
 }

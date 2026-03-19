@@ -668,6 +668,122 @@
         "label": "Emits events: execution failed, credential status change, review requested, item created, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of routing customer feedback?",
+        "type": "select",
+        "options": [
+          "Capture bug reports to reduce engineering blind spots",
+          "Collect feature requests to inform the product roadmap",
+          "Balance both bugs and feature requests equally",
+          "Reduce support noise so the team only sees actionable items"
+        ],
+        "default": "Balance both bugs and feature requests equally",
+        "context": "Determines classification priority and how aggressively the agent creates Linear issues vs. silently logs.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Who is the primary audience for the Slack summaries and Linear issues?",
+        "type": "select",
+        "options": [
+          "Product managers building the roadmap",
+          "Engineering team triaging bugs",
+          "Support leads tracking recurring pain points",
+          "A cross-functional channel (product + engineering + support)"
+        ],
+        "default": "A cross-functional channel (product + engineering + support)",
+        "context": "Shapes how issues are labeled, how summaries are written, and which Slack channel receives alerts.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which conversation types should NEVER auto-create a Linear issue?",
+        "type": "select",
+        "options": [
+          "Billing and payment complaints (route to finance, not product)",
+          "Churn or cancellation conversations (route to CS, not engineering)",
+          "Internal test or demo account conversations",
+          "All of the above"
+        ],
+        "default": "All of the above",
+        "context": "Prevents noise in Linear from non-product conversations and avoids exposing sensitive churn signals to engineering.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Should the agent auto-create Linear issues, or require human approval for any category?",
+        "type": "select",
+        "options": [
+          "Auto-create all issues — trust the classification fully",
+          "Auto-create feature requests; require approval for bug reports",
+          "Require approval for all issues before they appear in Linear",
+          "Auto-create only when confidence is high; flag ambiguous for review"
+        ],
+        "default": "Auto-create only when confidence is high; flag ambiguous for review",
+        "context": "Controls whether the agent acts autonomously or keeps a human in the loop before writing to Linear.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Where should real-time Slack alerts and the weekly Friday digest be posted?",
+        "type": "select",
+        "options": [
+          "Same channel for both (e.g., #product-feedback)",
+          "Separate channels — real-time alerts and digest go to different audiences",
+          "Real-time alerts only to a thread in an existing support channel",
+          "Digest only — suppress per-conversation Slack messages"
+        ],
+        "default": "Same channel for both (e.g., #product-feedback)",
+        "context": "Determines Slack routing configuration. Separate channels reduce noise if the team has different audiences for immediate vs. weekly rollup.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Linear team and project should feedback issues be created under?",
+        "type": "text",
+        "default": "e.g., Team: Product / Project: Customer Feedback",
+        "context": "Ensures issues land in the right Linear workspace context and inherit the correct workflow states and labels.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "How long should the agent remember a Linear issue before re-raising a duplicate?",
+        "type": "select",
+        "options": [
+          "30 days — treat issues older than a month as potentially stale",
+          "90 days — standard product cycle",
+          "Forever — never re-raise a known issue unless it is marked closed",
+          "Only deduplicate against open issues; re-raise if the issue is closed"
+        ],
+        "default": "Only deduplicate against open issues; re-raise if the issue is closed",
+        "context": "Controls deduplication window. Deduping against closed issues risks missing regressions; too short a window creates duplicate issues.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should individual Slack alert messages be when a new issue is created?",
+        "type": "select",
+        "options": [
+          "One-liner: issue type, title, and Linear link only",
+          "Structured card: type, customer segment, severity, and link",
+          "Full excerpt: structured card plus a quoted snippet from the conversation",
+          "Silent — only post the weekly digest, no per-issue alerts"
+        ],
+        "default": "Structured card: type, customer segment, severity, and link",
+        "context": "Balances Slack signal-to-noise ratio against the team's need for immediate context without opening every Linear issue.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

@@ -883,6 +883,129 @@
         "label": "Emits events: execution failed, threshold breached, escalation triggered",
         "context": "5 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary contract management problem this agent should solve?",
+        "type": "select",
+        "options": [
+          "Reducing signature delays — getting contracts signed faster",
+          "Renewal risk management — never missing a renewal window",
+          "Compliance and audit trail — full visibility into contract status",
+          "All of the above — unified contract operations"
+        ],
+        "default": "All of the above — unified contract operations",
+        "context": "Determines which flows to prioritize and how aggressively to configure reminders vs. renewal alerts.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What types of contracts does your team manage?",
+        "type": "select",
+        "options": [
+          "Vendor and supplier agreements",
+          "Client and customer contracts",
+          "Employment and HR documents",
+          "Mixed portfolio (all contract types)"
+        ],
+        "default": "Mixed portfolio (all contract types)",
+        "context": "Shapes how the agent labels, categorizes, and routes contract events in Airtable and Slack notifications.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Which team owns contract operations at your organization?",
+        "type": "select",
+        "options": [
+          "Legal / General Counsel",
+          "Sales Operations",
+          "Procurement / Finance",
+          "HR / People Ops",
+          "Cross-functional — multiple teams share ownership"
+        ],
+        "default": "Legal / General Counsel",
+        "context": "Determines Slack channel routing, escalation contacts, and tone of reminder communications.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "When should the agent start sending unsigned contract reminders, and when should it escalate to the contract owner?",
+        "type": "select",
+        "options": [
+          "Remind at 3 days, escalate at 7 days (default)",
+          "Remind at 2 days, escalate at 5 days (high-velocity)",
+          "Remind at 5 days, escalate at 10 days (relaxed)",
+          "Remind at 1 day, escalate at 3 days (hard legal deadlines)"
+        ],
+        "default": "Remind at 3 days, escalate at 7 days (default)",
+        "context": "Directly configures the daily reminder sweep thresholds for unsigned contracts.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "At what renewal lead times should the agent send tiered notifications?",
+        "type": "select",
+        "options": [
+          "60 / 30 / 14 days (default — standard enterprise cycle)",
+          "90 / 60 / 30 days (long-cycle — complex vendor renegotiations)",
+          "30 / 14 / 7 days (short-cycle — lightweight agreements)",
+          "Custom — I will specify thresholds during setup"
+        ],
+        "default": "60 / 30 / 14 days (default — standard enterprise cycle)",
+        "context": "Sets the renewal monitoring thresholds for the weekly Monday scan.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do autonomously?",
+        "type": "select",
+        "options": [
+          "Void or cancel a DocuSign envelope",
+          "Send outbound email to external counterparties without review",
+          "Escalate directly to executives or C-suite",
+          "Post contract details in public or company-wide Slack channels"
+        ],
+        "default": "Void or cancel a DocuSign envelope",
+        "context": "Defines hard stops to prevent high-stakes irreversible actions from executing without human oversight.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which outbound communications require human approval before the agent sends them?",
+        "type": "select",
+        "options": [
+          "Escalation emails to internal contract owners only",
+          "Any email sent to external signers or counterparties",
+          "Renewal notifications for contracts above a certain value",
+          "All outbound email — agent drafts, human approves and sends"
+        ],
+        "default": "Any email sent to external signers or counterparties",
+        "context": "Configures human-in-the-loop checkpoints to balance automation speed with oversight requirements.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How verbose should Slack notifications be when contract status changes?",
+        "type": "select",
+        "options": [
+          "Minimal — only notify on declined or fully completed envelopes",
+          "Standard — status, signer name, and recommended next action",
+          "Detailed — full recipient breakdown, timestamps, and contract value",
+          "Brief — one-line status update for every event"
+        ],
+        "default": "Standard — status, signer name, and recommended next action",
+        "context": "Shapes Slack message verbosity to keep stakeholders informed without causing channel noise.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

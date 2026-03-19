@@ -656,6 +656,35 @@ You MUST output your result as a single JSON code block. The JSON must conform t
       "description": "When and why to listen for this event"
     }
   ],
+  "adoption_questions": [
+    {
+      "id": "aq_intent_1",
+      "category": "intent",
+      "question": "What specific problem do you want this persona to solve?",
+      "type": "select",
+      "options": ["Option derived from template use cases"],
+      "default": "Most common option",
+      "context": "Why this matters for persona quality",
+      "dimension": "use-cases"
+    },
+    {
+      "id": "aq_domain_1",
+      "category": "domain",
+      "question": "Domain-specific question about user's context",
+      "type": "text",
+      "default": "Sensible default",
+      "context": "How this shapes persona behavior",
+      "dimension": "use-cases"
+    },
+    {
+      "id": "aq_boundaries_1",
+      "category": "boundaries",
+      "question": "What should this persona NEVER do?",
+      "type": "text",
+      "context": "Defines hard limits on persona behavior",
+      "dimension": "error-handling"
+    }
+  ],
   "use_case_flows": [
     {
       "id": "flow_1",
@@ -707,7 +736,12 @@ Critical rules:
 18. Flow edges MUST use \`variant\`: "yes"/"no" for decision branches, "error" for error paths, omit for default flow
 19. Connector nodes MUST set the \`connector\` field to match the connector slug from \`suggested_connectors\` (e.g., "slack", "github")
 20. Flow nodes should have meaningful \`detail\` descriptions explaining what happens at each step
-21. Create separate flows for distinct use cases (e.g., "Incoming Email Processing", "Daily Digest Generation", "Error Recovery")`;
+21. Create separate flows for distinct use cases (e.g., "Incoming Email Processing", "Daily Digest Generation", "Error Recovery")
+22. \`adoption_questions\` MUST contain 4-8 curated questions that are SPECIFIC to this template's domain
+23. Each adoption_question MUST have: id (unique, prefixed "aq_"), category (intent|domain|configuration|credentials|boundaries|human_in_the_loop|memory|quality|notifications), question, type (select|text|boolean), context, dimension (use-cases|connectors|triggers|messages|human-review|memory|error-handling|events)
+24. adoption_questions MUST include at least: 1 "intent" question (what specific use case), 1 "domain" question (user's context/workflow), 1 "boundaries" question (what NOT to do), 1 "human_in_the_loop" question (approval policy)
+25. For "select" type questions, derive OPTIONS from the template's actual use cases, connectors, or capabilities — not generic choices
+26. Questions should be DOMAIN-SPECIFIC: an invoice template should ask about billing cycles and payment terms, a security template about vulnerability severity thresholds, a marketing template about campaign KPIs`;
 
 function buildDesignPrompt(template) {
   let prompt = '# Persona Design Analysis\n\n';
@@ -1005,6 +1039,20 @@ function scoreDesignResult(result, template) {
   if (sp?.toolGuidance?.length > 100) structural += 5;
   if (sp?.errorHandling?.length > 100) structural += 5;
   if (result.design_highlights?.length >= 2) structural += 5;
+
+  // Adoption questions quality scoring (10 points)
+  if (result.adoption_questions?.length >= 4) {
+    let aqScore = 0;
+    const categories = new Set(result.adoption_questions.map(q => q.category));
+    if (categories.has('intent')) aqScore += 2;
+    if (categories.has('domain')) aqScore += 2;
+    if (categories.has('boundaries')) aqScore += 2;
+    if (categories.has('human_in_the_loop')) aqScore += 2;
+    // Bonus for having dimension mapping
+    const hasDimensions = result.adoption_questions.every(q => q.dimension);
+    if (hasDimensions) aqScore += 2;
+    structural += Math.min(aqScore, 10);
+  }
 
   // Connector quality scoring (20 points)
   if (result.suggested_connectors?.length > 0) {

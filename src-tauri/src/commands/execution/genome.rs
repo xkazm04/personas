@@ -337,7 +337,7 @@ pub fn genome_adopt_offspring(
 
     // Assign tools from genome
     for tool_id in &genome.tools.tool_ids {
-        let _ = tool_repo::assign_tool(&state.db, &persona.id, tool_id);
+        let _ = tool_repo::assign_tool(&state.db, &persona.id, tool_id, None);
     }
 
     // Mark as adopted

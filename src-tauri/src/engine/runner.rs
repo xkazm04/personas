@@ -679,35 +679,9 @@ pub async fn run_execution(
             ..default_result()
         };
     };
-    let Some(stderr) = driver.take_stderr() else {
-        let error_msg = "Failed to capture stderr pipe from child process".to_string();
-        trace.end_span_error(&stream_output_stage, &error_msg);
-        logger.log(&format!("[ERROR] {error_msg}"));
-        logger.close();
-        driver.kill().await;
-        driver.unregister_pid(&child_pids, &execution_id).await;
-        let duration_ms = start_time.elapsed().as_millis() as u64;
-        let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
-        let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
-        let _ = app.emit(
-            "execution-status",
-            ExecutionStatusEvent {
-                execution_id: execution_id.clone(),
-                status: ExecutionState::Failed,
-                error: Some(error_msg.clone()),
-                duration_ms: Some(duration_ms),
-                cost_usd: None,
-            },
-        );
-        return ExecutionResult {
-            success: false,
-            error: Some(error_msg),
-            log_file_path: Some(log_file_path),
-            duration_ms,
-            trace_id: Some(final_trace.trace_id.clone()),
-            ..default_result()
-        };
-    };
+    // Stderr may be null if piped to /dev/null (Windows deadlock prevention).
+    // Gracefully handle by spawning an empty background collector.
+    let stderr_opt = driver.take_stderr();
 
     let mut metrics = ExecutionMetrics::default();
     let mut assistant_text = String::new();
@@ -721,8 +695,8 @@ pub async fn run_execution(
     let mut output_truncated = false;
 
     // Read stderr in background (capped at 100KB to prevent OOM)
-    let mut stderr_reader = stderr;
-    let stderr_handle = tokio::spawn(async move {
+    let stderr_handle = if let Some(mut stderr_reader) = stderr_opt {
+        tokio::spawn(async move {
         const MAX_STDERR_BYTES: usize = 100 * 1024;
         let mut buf = vec![0u8; MAX_STDERR_BYTES];
         let mut total = 0;
@@ -743,7 +717,11 @@ pub async fn run_execution(
             s.push_str("\n... [stderr truncated at 100KB]");
         }
         s
-    });
+    })
+    } else {
+        // stderr was piped to null (Windows deadlock prevention) — return empty string
+        tokio::spawn(async { String::new() })
+    };
 
     // Set up timeout
     let timeout_ms = if persona.timeout_ms > 0 {
@@ -1153,9 +1131,28 @@ pub async fn run_execution(
         },
     );
 
+    // Deliver message to persona_messages if execution produced output
+    if success && !assistant_text.is_empty() {
+        let title = format!("Execution output — {}", chrono::Local::now().format("%b %d, %H:%M"));
+        let content = if assistant_text.len() > 50_000 {
+            format!("{}...\n[truncated at 50KB]", &assistant_text[..50_000])
+        } else {
+            assistant_text.clone()
+        };
+        let msg_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let _ = pool.get().map(|conn| {
+            conn.execute(
+                "INSERT INTO persona_messages (id, persona_id, execution_id, title, content, content_type, priority, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, 'text', 'normal', ?6)",
+                rusqlite::params![msg_id, persona.id, execution_id, title, content, now],
+            ).ok();
+        });
+    }
+
     ExecutionResult {
         success,
-        output: None,
+        output: if assistant_text.is_empty() { None } else { Some(assistant_text.clone()) },
         error,
         session_limit_reached,
         log_file_path: Some(log_file_path),

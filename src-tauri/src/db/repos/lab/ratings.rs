@@ -43,10 +43,10 @@ pub fn upsert_rating(pool: &DbPool, input: &CreateRatingInput) -> Result<LabUser
         .next();
 
     // Delete duplicates if more than one rating for same run+scenario+result
-    if existing.is_some() {
+    if let Some(existing_item) = &existing {
         conn.execute(
             "DELETE FROM lab_user_ratings WHERE run_id = ?1 AND scenario_name = ?2 AND (result_id = ?3 OR (result_id IS NULL AND ?3 IS NULL)) AND id != ?4",
-            params![input.run_id, input.scenario_name, input.result_id, existing.as_ref().unwrap().id],
+            params![input.run_id, input.scenario_name, input.result_id, existing_item.id],
         )?;
     }
 

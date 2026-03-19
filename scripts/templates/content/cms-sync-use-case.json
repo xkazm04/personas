@@ -812,6 +812,111 @@
         "label": "Emits events: execution completed, execution failed, credential status change, item created, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of this CMS Sync Agent for your team?",
+        "type": "select",
+        "options": [
+          "Keep Airtable as a reliable content backup and analytics source",
+          "Alert the team instantly when content is published on Webflow",
+          "Enforce SEO completeness before content goes live",
+          "All three — full content operations coverage"
+        ],
+        "default": "All three — full content operations coverage",
+        "context": "Determines which flows to prioritize and how aggressively the agent monitors vs. notifies.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of Webflow CMS content will this agent primarily monitor?",
+        "type": "select",
+        "options": [
+          "Blog posts and editorial articles",
+          "Product or service catalog pages",
+          "Landing pages and campaign content",
+          "Portfolio, case studies, or resources",
+          "Multiple mixed collections"
+        ],
+        "default": "Blog posts and editorial articles",
+        "context": "Shapes the SEO field requirements, Slack notification format, and Airtable schema assumptions.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which actions should the agent NEVER perform autonomously?",
+        "type": "select",
+        "options": [
+          "Never delete or overwrite existing Airtable records — only upsert",
+          "Never post Slack notifications for draft or staging updates",
+          "Never modify or patch fields directly in Webflow",
+          "Never send any notification when SEO fields are incomplete — log silently instead"
+        ],
+        "default": "Never delete or overwrite existing Airtable records — only upsert",
+        "context": "Prevents destructive or noisy behavior that erodes team trust in the automation.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When SEO validation fails on a published item, what should the agent do?",
+        "type": "select",
+        "options": [
+          "Post a Slack warning and wait for a human to acknowledge before retrying",
+          "Post to Slack immediately and continue syncing — human resolves async",
+          "DM the content author directly and log the failure",
+          "Log only — do not notify anyone unless the issue persists after 24 hours"
+        ],
+        "default": "Post to Slack immediately and continue syncing — human resolves async",
+        "context": "Determines whether SEO gaps create a blocking review step or an async nudge.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which SEO fields are mandatory for a published Webflow page to pass validation?",
+        "type": "text",
+        "default": "meta-title, meta-description, og-image",
+        "context": "The agent uses this list to flag SEO gaps. Comma-separated Webflow field slugs (e.g. meta-title, meta-description, og-image, canonical-url).",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Webflow CMS collections should the agent monitor? (leave blank for all collections)",
+        "type": "text",
+        "default": "",
+        "context": "Scoping to specific collection slugs reduces noise and prevents syncing irrelevant internal collections to Airtable.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What level of detail should Slack publish notifications include?",
+        "type": "select",
+        "options": [
+          "Brief — item title and live URL only",
+          "Standard — title, author, publish timestamp, and URL",
+          "Detailed — all metadata including SEO field status and collection name",
+          "Rich — Standard plus a thumbnail or OG image preview"
+        ],
+        "default": "Standard — title, author, publish timestamp, and URL",
+        "context": "Controls the verbosity of Slack messages so the channel stays useful rather than becoming noise.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Airtable base and table name should serve as the CMS sync destination?",
+        "type": "text",
+        "default": "Base: Content Hub / Table: CMS Items",
+        "context": "Ensures the agent targets the correct Airtable table from the start and avoids creating duplicate bases.",
+        "dimension": "connectors"
+      }
     ]
   }
 }

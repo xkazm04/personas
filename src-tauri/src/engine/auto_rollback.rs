@@ -299,8 +299,8 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
             let event = AutoRollbackEvent {
                 persona_id: persona.id.clone(),
                 persona_name: persona.name.clone(),
-                from_version: current.version_number,
-                to_version: previous.version_number,
+                from_version: current.version_number as i64,
+                to_version: previous.version_number as i64,
                 current_error_rate,
                 previous_error_rate,
             };

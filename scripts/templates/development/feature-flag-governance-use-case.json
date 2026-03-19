@@ -840,6 +840,121 @@
         "label": "Emits events: execution completed, execution failed, item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is your primary goal for this Feature Flag Governance agent?",
+        "type": "select",
+        "options": [
+          "Audit trail & compliance — track every flag change with full accountability",
+          "Stale flag cleanup — reduce flag debt and keep LaunchDarkly tidy",
+          "Naming convention enforcement — prevent collisions and maintain consistency",
+          "Full lifecycle governance — all of the above"
+        ],
+        "default": "Full lifecycle governance — all of the above",
+        "context": "Determines which flows to prioritize and how assertively the agent acts on each",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How many LaunchDarkly projects and environments does your team manage?",
+        "type": "select",
+        "options": [
+          "1 project, 2–3 environments (dev / staging / prod)",
+          "2–5 projects, multiple environments",
+          "6+ projects or a large multi-team setup",
+          "Single project, production only"
+        ],
+        "default": "1 project, 2–3 environments (dev / staging / prod)",
+        "context": "Affects scope of weekly stale scans, Notion registry structure, and whether Slack routing should be per-project",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What flag naming convention does your team enforce?",
+        "type": "text",
+        "default": "e.g., {team}-{feature}-{variant} in kebab-case",
+        "context": "The agent uses this pattern to detect collisions and flag non-conforming keys at creation time",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "After how many days of inactivity should a flag be considered stale and trigger a Linear cleanup ticket?",
+        "type": "select",
+        "options": [
+          "30 days",
+          "60 days",
+          "90 days (default)",
+          "180 days"
+        ],
+        "default": "90 days (default)",
+        "context": "Controls the staleness threshold used in the weekly Monday scan",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do without explicit human instruction?",
+        "type": "select",
+        "options": [
+          "Never archive or delete flags in LaunchDarkly — only create cleanup tickets",
+          "Never post outside the designated #feature-flags-audit Slack channel",
+          "Never modify the Notion registry without a corresponding LaunchDarkly event",
+          "All of the above"
+        ],
+        "default": "Never archive or delete flags in LaunchDarkly — only create cleanup tickets",
+        "context": "Guards against destructive autonomous actions on live feature flags or shared tooling",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which agent actions should pause and surface for human review before executing?",
+        "type": "select",
+        "options": [
+          "Stale-flag Linear ticket creation only — Slack and Notion updates are automatic",
+          "Both Linear tickets and bulk Notion registry changes from reconciliation runs",
+          "Collision blocks only — halt flag creation and alert until a human resolves the name conflict",
+          "No approval needed — run fully automated"
+        ],
+        "default": "Stale-flag Linear ticket creation only — Slack and Notion updates are automatic",
+        "context": "Defines where the agent pauses vs. acts immediately; critical for production flag safety",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which LaunchDarkly environments should the agent monitor for webhook audit events?",
+        "type": "select",
+        "options": [
+          "Production only",
+          "Staging and production only",
+          "All environments (dev, staging, production)",
+          "Custom — I'll specify per-project in configuration"
+        ],
+        "default": "All environments (dev, staging, production)",
+        "context": "Determines which webhook payloads the agent processes and which environments appear in the Notion registry",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should Slack audit notifications be for flag change events?",
+        "type": "select",
+        "options": [
+          "Compact — single-line summary (flag key, actor, change type)",
+          "Standard — Block Kit card with flag metadata, environment, and severity color",
+          "Detailed — full diff including previous vs. new targeting rules and rollout percentages"
+        ],
+        "default": "Standard — Block Kit card with flag metadata, environment, and severity color",
+        "context": "Balances Slack channel signal-to-noise against the depth of audit information surfaced",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

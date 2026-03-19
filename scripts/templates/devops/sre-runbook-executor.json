@@ -665,6 +665,122 @@
         "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of this agent when a runbook match is found?",
+        "type": "select",
+        "options": [
+          "Diagnose and report only — never attempt remediation steps",
+          "Diagnose, report, and suggest remediation commands for a human to run",
+          "Diagnose and auto-execute safe read-only remediation steps (e.g., cache flush, log rotation)",
+          "Full autonomous remediation with Slack confirmation before each destructive step"
+        ],
+        "default": "Diagnose and report only — never attempt remediation steps",
+        "context": "Determines how far the agent goes in the runbook execution chain — critical for scoping its autonomy boundary.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What infrastructure layer do most of your Prometheus alerts target?",
+        "type": "select",
+        "options": [
+          "Kubernetes workloads (pods, deployments, nodes)",
+          "Cloud-managed services (RDS, ElastiCache, Lambda, etc.)",
+          "Bare-metal or VM hosts (CPU, disk, network)",
+          "Mixed — alerts span Kubernetes, cloud services, and hosts"
+        ],
+        "default": "Kubernetes workloads (pods, deployments, nodes)",
+        "context": "Shapes the diagnostic step vocabulary, HTTP endpoint targets, and the language used in GitHub issues and Slack posts.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which alert severity levels should automatically create a GitHub issue (vs. Slack-notify only)?",
+        "type": "select",
+        "options": [
+          "critical only",
+          "critical and warning",
+          "All severities (including info)",
+          "None — GitHub issues require explicit human trigger"
+        ],
+        "default": "critical only",
+        "context": "Controls the GitHub issue creation threshold so low-signal alerts don't flood the issue tracker.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do autonomously, even if a runbook step instructs it to?",
+        "type": "select",
+        "options": [
+          "Never delete or scale down any resource",
+          "Never execute any write/mutation HTTP call — read-only diagnostics only",
+          "Never page or notify anyone outside of the configured Slack channel",
+          "Never act on alerts outside business hours without explicit on-call acknowledgment"
+        ],
+        "default": "Never execute any write/mutation HTTP call — read-only diagnostics only",
+        "context": "Establishes a hard safety floor that overrides any runbook instruction — prevents runaway automation during incidents.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When the agent cannot resolve an incident after executing all runbook steps, what should it do before escalating to on-call?",
+        "type": "select",
+        "options": [
+          "Escalate immediately and page on-call without waiting",
+          "Post findings to Slack and wait for a human acknowledgment before paging",
+          "Create the GitHub issue and wait — do not page on-call at all",
+          "Post a Slack message with a timed acknowledgment window (e.g., 10 min), then auto-page"
+        ],
+        "default": "Post findings to Slack and wait for a human acknowledgment before paging",
+        "context": "Defines the human checkpoint in the escalation path to prevent alert fatigue and unnecessary out-of-hours pages.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which GitHub repository should incident issues be created in?",
+        "type": "text",
+        "default": "org/repo-name",
+        "context": "The agent needs an explicit target repo — incident issues should land in the right project board, not a catch-all repo.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How should Slack channel routing work for different alert severities?",
+        "type": "select",
+        "options": [
+          "Single channel for all alerts regardless of severity",
+          "Separate channels per severity (e.g., #incidents-critical, #incidents-warning)",
+          "Route by team/namespace label from the alert payload",
+          "Use the channel specified in the Notion runbook entry, falling back to a default"
+        ],
+        "default": "Use the channel specified in the Notion runbook entry, falling back to a default",
+        "context": "Determines Slack routing logic — misrouted alerts are a common source of delayed incident response.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How much diagnostic detail should Slack messages include?",
+        "type": "select",
+        "options": [
+          "Terse — alert name, severity, and a single-line status only",
+          "Summary — key findings from each diagnostic step with pass/fail indicators",
+          "Full — all diagnostic output, raw metric values, and the full runbook steps attempted",
+          "Adaptive — terse for warning, full detail for critical"
+        ],
+        "default": "Summary — key findings from each diagnostic step with pass/fail indicators",
+        "context": "Balances information density vs. Slack noise — overly verbose messages in high-traffic channels reduce signal-to-noise ratio.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

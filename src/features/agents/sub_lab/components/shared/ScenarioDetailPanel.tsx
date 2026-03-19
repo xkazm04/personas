@@ -1,4 +1,4 @@
-import { Target, FileText, Shield, Lightbulb, MessageSquare, X, ChevronDown } from 'lucide-react';
+import { Target, FileText, Shield, Lightbulb, MessageSquare, X, ChevronDown, Zap } from 'lucide-react';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { UserRating } from './UserRating';
 
@@ -19,6 +19,14 @@ interface ScenarioResult {
   suggestions: string | null;
 }
 
+interface StructuredRationale {
+  summary?: string;
+  verdict?: string;
+  tool_accuracy?: string;
+  output_quality?: string;
+  protocol?: string;
+}
+
 interface ScenarioDetailPanelProps {
   result: ScenarioResult;
   onClose: () => void;
@@ -27,13 +35,58 @@ interface ScenarioDetailPanelProps {
   onRate?: (rating: number, feedback?: string) => void;
 }
 
-function ScoreGauge({ label, icon: Icon, score, color }: { label: string; icon: typeof Target; score: number | null; color: string }) {
+/** Try to parse structured rationale JSON, fall back to plain string. */
+function parseRationale(raw: string | null): { structured: StructuredRationale | null; plain: string | null } {
+  if (!raw) return { structured: null, plain: null };
+  try {
+    const parsed = JSON.parse(raw) as StructuredRationale;
+    if (typeof parsed === 'object' && parsed !== null && (parsed.tool_accuracy || parsed.output_quality || parsed.protocol || parsed.verdict)) {
+      return { structured: parsed, plain: null };
+    }
+  } catch { /* not JSON — treat as plain string */ }
+  return { structured: null, plain: raw };
+}
+
+function scoreLabel(score: number): string {
+  if (score >= 80) return 'Excellent';
+  if (score >= 60) return 'Good';
+  if (score >= 40) return 'Fair';
+  if (score >= 20) return 'Weak';
+  return 'Poor';
+}
+
+function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: {
+  label: string;
+  icon: typeof Target;
+  score: number | null;
+  rationale?: string;
+  color: string;
+  borderColor: string;
+}) {
   const s = score ?? 0;
   return (
-    <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-secondary/30 border border-primary/10 min-w-[100px]">
-      <Icon className={`w-4 h-4 ${color}`} />
-      <span className={`text-2xl font-bold ${scoreColor(s)}`}>{s}</span>
-      <span className="text-xs text-muted-foreground/60">{label}</span>
+    <div className={`rounded-xl border ${borderColor} bg-background/30 overflow-hidden`}>
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        <Icon className={`w-4 h-4 ${color} flex-shrink-0`} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-foreground/70">{label}</span>
+            <span className={`text-xs font-semibold ${scoreColor(s)}`}>{scoreLabel(s)}</span>
+          </div>
+          <div className="mt-1 h-1.5 rounded-full bg-primary/5 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${s >= 80 ? 'bg-emerald-500/70' : s >= 50 ? 'bg-amber-500/70' : 'bg-red-500/60'}`}
+              style={{ width: `${Math.max(s, 2)}%` }}
+            />
+          </div>
+        </div>
+        <span className={`text-lg font-bold tabular-nums ${scoreColor(s)}`}>{s}</span>
+      </div>
+      {rationale && (
+        <div className="px-3 pb-2.5 -mt-0.5">
+          <p className="text-xs text-foreground/60 leading-relaxed">{rationale}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -44,10 +97,12 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
   const pc = result.protocolCompliance ?? 0;
   const composite = compositeScore(ta, oq, pc);
 
+  const { structured, plain } = parseRationale(result.rationale);
+
   return (
-    <div className="border border-primary/15 rounded-xl bg-secondary/10 overflow-hidden">
+    <div className="border border-primary/15 rounded-xl bg-gradient-to-b from-secondary/20 to-background/30 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-secondary/20 border-b border-primary/10">
+      <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 border-b border-primary/10">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-medium text-foreground/90 truncate">{result.scenarioName}</span>
           {result.modelId && <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary/70">{result.modelId}</span>}
@@ -58,27 +113,65 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
       </div>
 
       <div className="p-4 space-y-4">
-        {/* Score gauges */}
-        <div className="flex items-center gap-3">
-          <ScoreGauge label="Tool Accuracy" icon={Target} score={ta} color="text-blue-400" />
-          <ScoreGauge label="Output Quality" icon={FileText} score={oq} color="text-emerald-400" />
-          <ScoreGauge label="Protocol" icon={Shield} score={pc} color="text-violet-400" />
-          <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-primary/5 border border-primary/15 min-w-[100px]">
-            <span className="text-xs text-muted-foreground/60 uppercase tracking-wider">Composite</span>
-            <span className={`text-3xl font-bold ${scoreColor(composite)}`}>{composite}</span>
-            <span className="text-xs text-muted-foreground/50">${result.costUsd.toFixed(4)} / {(result.durationMs / 1000).toFixed(1)}s</span>
+        {/* Verdict banner */}
+        {structured?.verdict && (
+          <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-gradient-to-r from-primary/8 to-accent/5 border border-primary/10">
+            <Zap className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-foreground/80 leading-relaxed">{structured.verdict}</p>
+          </div>
+        )}
+
+        {/* Composite score header */}
+        <div className="flex items-center gap-4 py-2">
+          <div className={`text-4xl font-black tracking-tight ${scoreColor(composite)}`}>{composite}</div>
+          <div>
+            <span className={`text-sm font-semibold ${scoreColor(composite)}`}>{scoreLabel(composite)}</span>
+            <p className="text-xs text-muted-foreground/50">Composite Score (TA 40% + OQ 40% + PC 20%)</p>
+          </div>
+          <div className="flex-1" />
+          <div className="text-right text-xs text-muted-foreground/40">
+            <div>${result.costUsd.toFixed(4)}</div>
+            <div>{(result.durationMs / 1000).toFixed(1)}s</div>
           </div>
         </div>
 
-        {/* Rationale */}
-        {result.rationale && (
+        {/* Per-metric score cards with inline rationale */}
+        <div className="space-y-2">
+          <ScoreCard
+            label="Tool Accuracy"
+            icon={Target}
+            score={ta}
+            rationale={structured?.tool_accuracy ?? undefined}
+            color="text-blue-400"
+            borderColor="border-blue-500/10"
+          />
+          <ScoreCard
+            label="Output Quality"
+            icon={FileText}
+            score={oq}
+            rationale={structured?.output_quality ?? undefined}
+            color="text-emerald-400"
+            borderColor="border-emerald-500/10"
+          />
+          <ScoreCard
+            label="Protocol Compliance"
+            icon={Shield}
+            score={pc}
+            rationale={structured?.protocol ?? undefined}
+            color="text-violet-400"
+            borderColor="border-violet-500/10"
+          />
+        </div>
+
+        {/* Plain rationale fallback (for older results without structured data) */}
+        {plain && (
           <div className="space-y-1.5">
             <h5 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
               <MessageSquare className="w-3 h-3" />
-              Rationale
+              Evaluation Notes
             </h5>
-            <p className="text-sm text-foreground/80 leading-relaxed bg-secondary/20 rounded-lg px-3 py-2.5 border border-primary/5">
-              {result.rationale}
+            <p className="text-sm text-foreground/70 leading-relaxed bg-secondary/20 rounded-lg px-3 py-2.5 border border-primary/5">
+              {plain}
             </p>
           </div>
         )}
@@ -88,9 +181,9 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <div className="space-y-1.5">
             <h5 className="flex items-center gap-1.5 text-xs font-semibold text-amber-400/80 uppercase tracking-wider">
               <Lightbulb className="w-3 h-3" />
-              Improvement Suggestions
+              How to Fix This
             </h5>
-            <p className="text-sm text-foreground/80 leading-relaxed bg-amber-500/5 rounded-lg px-3 py-2.5 border border-amber-500/10">
+            <p className="text-sm text-foreground/70 leading-relaxed bg-amber-500/5 rounded-lg px-3 py-2.5 border border-amber-500/10">
               {result.suggestions}
             </p>
           </div>

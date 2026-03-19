@@ -5,6 +5,7 @@ use crate::db::DbPool;
 use crate::error::AppError;
 
 /// Insert a new token refresh metric record.
+#[allow(clippy::too_many_arguments)]
 pub fn insert(
     pool: &DbPool,
     credential_id: &str,

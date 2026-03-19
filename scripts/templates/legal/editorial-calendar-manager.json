@@ -745,6 +745,127 @@
         "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary editorial operation you want this agent to optimize?",
+        "type": "select",
+        "options": [
+          "Internal team blog — coordinating staff writers and editors",
+          "Freelance contributor pipeline — managing external writers and deadlines",
+          "Multi-channel publication — syncing content across blog, social, and video",
+          "Marketing content calendar — aligning content with campaigns and launches"
+        ],
+        "default": "Internal team blog — coordinating staff writers and editors",
+        "context": "Determines how the agent prioritizes writer communication tone, reminder urgency, and gap analysis framing.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How many active writers or contributors does your editorial calendar typically track at once?",
+        "type": "select",
+        "options": [
+          "1–3 (solo or very small team)",
+          "4–10 (small editorial team)",
+          "11–25 (mid-size team or mixed staff/freelance)",
+          "25+ (large team or high-volume freelance network)"
+        ],
+        "default": "4–10 (small editorial team)",
+        "context": "Affects reminder batching logic, report verbosity, and whether the agent should de-duplicate cross-writer deadline clusters.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "At what intervals before a deadline should the agent send reminder emails to writers?",
+        "type": "select",
+        "options": [
+          "7 days, 3 days, and 1 day before (standard cadence)",
+          "5 days and 2 days before (lighter touch)",
+          "14 days, 7 days, and 2 days before (long lead-time content)",
+          "Only 1 day before (minimal interruption)"
+        ],
+        "default": "7 days, 3 days, and 1 day before (standard cadence)",
+        "context": "Sets the tiered reminder schedule used in the Deadline Reminder Pipeline flow.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Should the Monday weekly status report be sent automatically, or drafted to a staging email for editorial review first?",
+        "type": "select",
+        "options": [
+          "Send automatically to the full recipient list every Monday",
+          "Draft to a staging/review email first — I'll approve before it goes out",
+          "Save to a file/record only — I'll send it manually"
+        ],
+        "default": "Draft to a staging/review email first — I'll approve before it goes out",
+        "context": "Controls whether the Weekly Status Report & Gap Analysis flow auto-sends or requires human sign-off before distribution.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which writer communications should the agent NEVER send without your explicit approval?",
+        "type": "select",
+        "options": [
+          "Any message about a missed or overdue deadline",
+          "Messages to external/freelance contributors (only auto-send to staff)",
+          "Any email that mentions reassignment or cancellation of a piece",
+          "None — the agent can send all standard reminder types automatically"
+        ],
+        "default": "Any message about a missed or overdue deadline",
+        "context": "Defines the hard guardrails on automated writer outreach to prevent sensitive communications being sent without human judgment.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Who should receive the weekly editorial status report?",
+        "type": "select",
+        "options": [
+          "Editor-in-chief only",
+          "Full editorial team (editors + writers)",
+          "Editorial team + marketing/content strategy stakeholders",
+          "A custom distribution list I will specify"
+        ],
+        "default": "Editor-in-chief only",
+        "context": "Determines the recipient list for the Monday status report generated in the Weekly Status Report & Gap Analysis flow.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What content types does your Notion editorial calendar track?",
+        "type": "select",
+        "options": [
+          "Blog posts only",
+          "Blog posts + social media content",
+          "Long-form articles, short-form posts, and video scripts",
+          "Mixed: editorial + marketing copy + product announcements"
+        ],
+        "default": "Blog posts only",
+        "context": "Shapes how the agent categorizes entries during Notion→Airtable sync and what gap analysis considers a 'balanced' schedule.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "When the agent detects a content gap (e.g., a week with no scheduled posts), what should it do?",
+        "type": "select",
+        "options": [
+          "Flag it in the weekly report only — no proactive action",
+          "Flag it AND send a gap-alert email to the editor immediately",
+          "Flag it AND suggest specific topics or writers to fill the gap in the report",
+          "Flag it AND create a placeholder Notion entry for the editor to assign"
+        ],
+        "default": "Flag it AND send a gap-alert email to the editor immediately",
+        "context": "Controls how assertive the agent is when responding to schedule gaps discovered during content gap analysis.",
+        "dimension": "human-review"
+      }
     ]
   }
 }

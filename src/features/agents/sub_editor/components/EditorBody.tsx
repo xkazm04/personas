@@ -13,7 +13,6 @@ import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from './Edi
 import { OnboardingBanner } from '@/features/agents/components/onboarding/OnboardingChecklist';
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
-import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import {
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
   PersonaConnectorsTab, DesignTab, LabTab, HealthTab, ChatTab, AssertionsTab,
@@ -191,7 +190,7 @@ export function EditorBody() {
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
           >
-            <Suspense fallback={<PanelSkeleton variant="tab" />}>
+            <Suspense fallback={null}>
               {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
               {editorTab === 'prompt' && <PersonaPromptEditor />}
               {editorTab === 'lab' && <LabTab />}

@@ -737,6 +737,119 @@
         "label": "Emits events: opportunity.discovered, opportunity.accepted, opportunity.rejected, opportunity.failed",
         "context": "4 event types -- feeds downstream implementation agents and auto-healing"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which type of implementation opportunity should the Product Scout prioritize?",
+        "type": "select",
+        "options": [
+          "New connectors to integrate (highest priority)",
+          "API version updates for existing services (highest priority)",
+          "Tooling that improves developer workflows (highest priority)",
+          "All three equally weighted"
+        ],
+        "default": "All three equally weighted",
+        "context": "Determines how opportunities are ranked and ordered in the Slack triage cards",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What types of email senders should the scout monitor?",
+        "type": "select",
+        "options": [
+          "Vendor product/API newsletters only (e.g. SendGrid, Stripe, Twilio)",
+          "Developer community digests (e.g. TLDR, DevDigest, changelog.md)",
+          "Both vendor and community sources",
+          "Internal team forwarding addresses only"
+        ],
+        "default": "Both vendor and community sources",
+        "context": "Shapes the default sender list seed and classification heuristics",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the Product Scout NEVER surface as an opportunity?",
+        "type": "select",
+        "options": [
+          "Anything not directly integrable with Personas (no general SaaS tools)",
+          "Paid/enterprise-only services with no free tier or trial",
+          "Services that overlap with connectors already in the Personas catalog",
+          "No hard exclusions — flag everything and let triage decide"
+        ],
+        "default": "Services that overlap with connectors already in the Personas catalog",
+        "context": "Prevents noise and duplicate work in the triage queue",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "How should high-confidence opportunities be handled before posting to Slack?",
+        "type": "select",
+        "options": [
+          "Always post to Slack — all opportunities require human triage",
+          "Auto-accept if it matches 3+ previously accepted patterns, post the rest",
+          "Auto-reject low-signal items (no docs URL, no version number), post the rest",
+          "Post a daily digest summary instead of individual cards"
+        ],
+        "default": "Always post to Slack — all opportunities require human triage",
+        "context": "Controls automation level; more automation reduces noise but risks missed items",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which Slack channel should triage cards be posted to?",
+        "type": "text",
+        "default": "#product-opportunities",
+        "context": "The scout posts one card per opportunity with Accept/Reject buttons — pick a channel your team monitors",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How deep should web enrichment go when researching a found opportunity?",
+        "type": "select",
+        "options": [
+          "Shallow — fetch the linked page only, extract summary",
+          "Medium — fetch linked page + check GitHub repo stars/activity if available",
+          "Deep — fetch page, GitHub, check existing Personas connector catalog, search for community reviews"
+        ],
+        "default": "Medium — fetch linked page + check GitHub repo stars/activity if available",
+        "context": "Deeper enrichment produces richer triage cards but increases scan runtime",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "How should the scout update its topic preference model after a triage decision?",
+        "type": "select",
+        "options": [
+          "Learn from every accept/reject immediately (fast adaptation)",
+          "Update preferences only after 3+ consistent decisions on a topic (noise-resistant)",
+          "Never auto-update — I will manually adjust the preference list"
+        ],
+        "default": "Update preferences only after 3+ consistent decisions on a topic (noise-resistant)",
+        "context": "Governs how quickly the scout adapts to your accept/reject patterns to reduce future noise",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What should each Slack triage card include beyond the opportunity title and source?",
+        "type": "select",
+        "options": [
+          "Minimal — title, source URL, opportunity type, accept/reject buttons",
+          "Standard — adds a 2-sentence summary and estimated integration complexity",
+          "Full — adds summary, complexity, related existing connectors, and GitHub/docs links"
+        ],
+        "default": "Standard — adds a 2-sentence summary and estimated integration complexity",
+        "context": "Richer cards help faster decisions but take longer to generate and are more verbose in Slack",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

@@ -335,6 +335,7 @@ pub struct SchedulerStats {
 ///
 /// Returns a webhook shutdown sender -- hold onto it to keep the server running,
 /// send `true` or drop it to trigger graceful shutdown.
+#[allow(clippy::too_many_arguments)]
 pub fn start_loops(
     scheduler: Arc<SchedulerState>,
     app: AppHandle,
@@ -1088,12 +1089,12 @@ mod tests {
         assert_eq!(state.stats().chain_cascade_duration_ms, 0);
 
         // Recording an empty cascade (no triggers) should be a no-op
-        let empty = super::chain::CascadeMetrics::default();
+        let empty = crate::engine::chain::CascadeMetrics::default();
         state.record_chain_cascade(&empty);
         assert_eq!(state.stats().chain_cascades_total, 0);
 
         // Recording a cascade with triggers_evaluated > 0 should increment
-        let metrics = super::chain::CascadeMetrics {
+        let metrics = crate::engine::chain::CascadeMetrics {
             triggers_evaluated: 3,
             predicates_matched: 2,
             events_published: 2,
@@ -1108,7 +1109,7 @@ mod tests {
         assert_eq!(state.stats().chain_cascade_duration_ms, 42);
 
         // Record a second cascade
-        let metrics2 = super::chain::CascadeMetrics {
+        let metrics2 = crate::engine::chain::CascadeMetrics {
             triggers_evaluated: 1,
             duration_ms: 18,
             ..Default::default()

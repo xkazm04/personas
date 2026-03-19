@@ -23,14 +23,14 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use ts_rs::TS;
 
-use super::ambient_context::{AmbientContextHandle, ContextEvent, ContextStreamReceiver};
+use super::ambient_context::{ContextEvent, ContextStreamReceiver};
 
 // ---------------------------------------------------------------------------
 // Rule types
 // ---------------------------------------------------------------------------
 
 /// A pattern that a context rule matches against incoming context events.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ContextPattern {
@@ -46,17 +46,6 @@ pub struct ContextPattern {
     /// Match only when the specified app is focused (empty = any app).
     /// Case-insensitive substring match against app_name.
     pub app_filter: String,
-}
-
-impl Default for ContextPattern {
-    fn default() -> Self {
-        Self {
-            sources: Vec::new(),
-            summary_contains: String::new(),
-            path_glob: String::new(),
-            app_filter: String::new(),
-        }
-    }
 }
 
 /// What happens when a context rule matches.
@@ -357,7 +346,7 @@ pub async fn context_rule_tick(
                         use_case_id: None,
                     };
                     if let Err(e) =
-                        crate::db::repos::communication::events::publish(pool, &input)
+                        crate::db::repos::communication::events::publish(pool, input)
                     {
                         tracing::error!(
                             rule_id = %m.rule_id,

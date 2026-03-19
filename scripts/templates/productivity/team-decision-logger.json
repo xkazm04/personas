@@ -690,6 +690,122 @@
         "label": "Emits events: execution failed, item created",
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary purpose for capturing team decisions?",
+        "type": "select",
+        "options": [
+          "Compliance & audit trail for regulatory requirements",
+          "Team alignment and transparency across departments",
+          "Onboarding — helping new members understand past context",
+          "Reducing repeated debates by documenting rationale"
+        ],
+        "default": "Team alignment and transparency across departments",
+        "context": "Determines how decisions are structured in Notion and what metadata is prioritized in the digest (e.g., audit trails need full author chains; onboarding prioritizes 'why' and alternatives).",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which team type is the primary source of decisions being logged?",
+        "type": "select",
+        "options": [
+          "Engineering / Technical (architecture, tooling, code standards)",
+          "Product / Design (roadmap, feature scope, UX direction)",
+          "Operations / Business (process, policy, vendor choices)",
+          "Cross-functional leadership (company-wide decisions spanning multiple teams)"
+        ],
+        "default": "Engineering / Technical (architecture, tooling, code standards)",
+        "context": "Used to infer default category tags, Notion property schemas, and digest grouping logic that match your team's vocabulary.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How should the agent detect a decision in Slack?",
+        "type": "select",
+        "options": [
+          "📋 emoji reaction added to any message",
+          "/decision keyword prefix in the message text",
+          "Either emoji reaction OR /decision keyword (broadest capture)",
+          "Only messages in dedicated #decisions channels"
+        ],
+        "default": "Either emoji reaction OR /decision keyword (broadest capture)",
+        "context": "Determines the polling filter logic. Emoji-only is least intrusive; dedicated channel mode requires no special tagging but needs a channel per topic.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What content should the agent NEVER capture or include in the Notion log?",
+        "type": "select",
+        "options": [
+          "Private channels and DMs (only public/shared channels)",
+          "HR, personnel, or compensation-related discussions",
+          "Informal polls or low-stakes operational choices (e.g., lunch orders, meeting times)",
+          "All of the above — apply all exclusions"
+        ],
+        "default": "All of the above — apply all exclusions",
+        "context": "Prevents sensitive or irrelevant content from polluting the decision log and protects employee privacy.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Before a decision is written to the Notion database, should a human confirm it?",
+        "type": "select",
+        "options": [
+          "Log automatically — no confirmation needed",
+          "Post a Slack preview to the decision author and wait for a ✅ reaction before logging",
+          "Auto-log for same-team decisions; require approval for cross-team or high-impact ones",
+          "Always require the original author to explicitly approve the extracted summary"
+        ],
+        "default": "Post a Slack preview to the decision author and wait for a ✅ reaction before logging",
+        "context": "Controls whether extracted summaries can be wrong or misattributed before they land in the permanent log. Higher approval friction = higher accuracy.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "Who should receive and can modify the weekly digest before it is emailed to stakeholders?",
+        "type": "select",
+        "options": [
+          "Send directly to all stakeholders — no pre-review",
+          "Send a preview to a single designated reviewer (e.g., team lead) 1 hour before sending",
+          "Require explicit approval from the reviewer before the digest is sent",
+          "Post draft digest in a Slack channel for team review before sending"
+        ],
+        "default": "Send a preview to a single designated reviewer (e.g., team lead) 1 hour before sending",
+        "context": "Digest emails go to potentially broad audiences; a review step catches mis-categorized or sensitive entries before external visibility.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How much context should each Notion decision entry contain?",
+        "type": "select",
+        "options": [
+          "Minimal — decision text, author, date, and channel only",
+          "Standard — decision + thread summary + participants + inferred category",
+          "Detailed — full thread analysis, alternatives considered, affected teams, and confidence score",
+          "Detailed + link back to original Slack thread for every entry"
+        ],
+        "default": "Standard — decision text + thread summary + participants + inferred category",
+        "context": "Detailed entries take longer to generate per polling cycle and produce larger Notion pages, but provide richer onboarding and audit value.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Slack channels should be monitored, and what is the name of your Notion decision log database?",
+        "type": "text",
+        "default": "e.g., #engineering-decisions, #product-decisions → Notion DB: 'Team Decision Log'",
+        "context": "Required to configure the polling scope and Notion write target. Listing channels explicitly avoids scanning all workspace channels and reduces noise.",
+        "dimension": "connectors"
+      }
     ]
   }
 }

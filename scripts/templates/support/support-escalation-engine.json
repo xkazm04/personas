@@ -814,6 +814,115 @@
         "label": "Emits events: threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is your primary goal for this escalation engine?",
+        "type": "select",
+        "options": [
+          "Minimize first-response SLA breaches on Enterprise/VIP accounts",
+          "Ensure all SLA breaches are logged for compliance and reporting",
+          "Reduce escalation noise by surfacing only the most critical tickets",
+          "Identify and flag customers with repeat escalation patterns"
+        ],
+        "default": "Minimize first-response SLA breaches on Enterprise/VIP accounts",
+        "context": "Determines which breach severity levels are prioritized and how aggressively the engine escalates lower-tier tickets.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How large is your support team and what is your typical daily inbound ticket volume?",
+        "type": "select",
+        "options": [
+          "Small team (1–5 agents), fewer than 50 tickets/day",
+          "Mid-size team (6–20 agents), 50–200 tickets/day",
+          "Large team (20+ agents), more than 200 tickets/day"
+        ],
+        "default": "Mid-size team (6–20 agents), 50–200 tickets/day",
+        "context": "Affects escalation throttling logic and how the daily summary is structured — a small team needs less noise filtering than a large one.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Which customer tiers are actively used in your Freshdesk instance?",
+        "type": "select",
+        "options": [
+          "Enterprise and Professional only",
+          "Enterprise, Professional, and Starter",
+          "All four tiers: Enterprise, Professional, Starter, Free",
+          "We use custom tier names (I will describe in setup)"
+        ],
+        "default": "All four tiers: Enterprise, Professional, Starter, Free",
+        "context": "Determines which tier-to-priority mappings are active and whether Free/Starter tickets are included in SLA breach detection.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the escalation engine NEVER do, even when an SLA is breached?",
+        "type": "select",
+        "options": [
+          "Never escalate Free tier customers to the support lead or Slack channel",
+          "Never escalate or alert outside of defined business hours",
+          "Never log customer email addresses or PII in the Notion escalation log",
+          "Never escalate the same ticket more than once per SLA window"
+        ],
+        "default": "Never escalate the same ticket more than once per SLA window",
+        "context": "Sets hard guardrails that override severity logic — prevents alert fatigue, compliance violations, or off-hours noise.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which escalations should require a human to confirm before the Slack alert is posted?",
+        "type": "select",
+        "options": [
+          "None — fully automated escalation is preferred",
+          "Only Critical severity (Enterprise/VIP first-response breach)",
+          "All escalations above Medium severity",
+          "Any escalation that would DM or @mention a specific agent"
+        ],
+        "default": "None — fully automated escalation is preferred",
+        "context": "Controls whether the engine posts to Slack autonomously or stages escalations for a lead to approve, balancing speed vs. oversight.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How far in advance of an SLA deadline should the engine fire a warning alert?",
+        "type": "select",
+        "options": [
+          "15 minutes before deadline (default)",
+          "30 minutes before deadline",
+          "1 hour before deadline",
+          "No early warnings — alert only on confirmed breaches"
+        ],
+        "default": "15 minutes before deadline (default)",
+        "context": "Sets the Low-severity early-warning threshold. Earlier warnings give agents more time to act but increase alert volume.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel should escalation alerts be posted to?",
+        "type": "text",
+        "default": "#support-escalations",
+        "context": "The engine posts all SLA breach alerts to this channel. Use a dedicated escalation channel to avoid flooding general support channels.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Should the engine track customers with repeat SLA escalations and include a warning flag in their alerts?",
+        "type": "boolean",
+        "default": true,
+        "context": "Enables the repeat-offender pattern detection flow — checks Notion history on each escalation and enriches the Slack alert with context like '3rd escalation this month for Acme Corp.'",
+        "dimension": "memory"
+      }
     ]
   }
 }

@@ -669,6 +669,104 @@
         "label": "Emits events: item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary intelligence goal for this aggregator?",
+        "type": "select",
+        "options": [
+          "Track competitor moves and product launches",
+          "Monitor industry trends and market signals",
+          "Follow regulatory and compliance changes",
+          "Combine all: competitor, trends, and regulatory"
+        ],
+        "default": "Combine all: competitor, trends, and regulatory",
+        "context": "Determines which RSS feed categories to prioritize and how articles are tagged and surfaced in briefings",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which industry or sector should this aggregator focus on?",
+        "type": "text",
+        "context": "Used to tune relevance scoring and filter out off-topic articles from general news feeds",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Who receives the daily intelligence briefing?",
+        "type": "select",
+        "options": [
+          "Just me (individual researcher)",
+          "A small team (2–10 people)",
+          "A department or leadership group",
+          "No email recipients — Notion-only storage"
+        ],
+        "default": "A small team (2–10 people)",
+        "context": "Affects summary depth, email distribution list setup, and whether Slack alerts need to target a specific channel",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What importance score threshold should trigger a real-time Slack alert?",
+        "type": "select",
+        "options": [
+          "3+ (moderate — frequent alerts)",
+          "4+ (high — breaking news only, default)",
+          "5 only (critical — very rare alerts)"
+        ],
+        "default": "4+ (high — breaking news only, default)",
+        "context": "Controls Slack noise level; importance scores 1–5 are assigned by AI based on article significance relative to your industry",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Are there any topics, sources, or competitor names this aggregator should NEVER include or alert on?",
+        "type": "text",
+        "context": "Adds a blocklist filter before summarization and distribution — prevents noise from irrelevant domains or sensitive topics that shouldn't be broadcast",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Should the daily email briefing be sent automatically, or should you review it first?",
+        "type": "select",
+        "options": [
+          "Send automatically at 7 AM",
+          "Draft to my inbox for review before sending",
+          "Send automatically but BCC me on every send"
+        ],
+        "default": "Send automatically at 7 AM",
+        "context": "Determines whether the agent operates fully autonomously or pauses for human approval before distributing intelligence to the recipient list",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "List the competitor names or companies this aggregator should treat as high-priority (any mention raises the importance score).",
+        "type": "text",
+        "context": "Stored as a priority watchlist — articles mentioning these entities are boosted in scoring and more likely to trigger Slack alerts",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What style should AI-generated summaries use in the daily briefing?",
+        "type": "select",
+        "options": [
+          "Executive bullet points (concise, action-oriented)",
+          "Analyst narrative (2–3 sentences with context + implication)",
+          "Headline + one-line takeaway only"
+        ],
+        "default": "Executive bullet points (concise, action-oriented)",
+        "context": "Sets the tone and format for all AI summaries written to Notion entries and the daily email digest",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

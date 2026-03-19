@@ -64,6 +64,7 @@ static FAILOVER_UNCLASSIFIED_ERRORS: AtomicU64 = AtomicU64::new(0);
 
 /// Returns the cumulative count of errors that `classify_error` could not
 /// classify. Useful for diagnostics and deciding when to add new patterns.
+#[allow(dead_code)]
 pub fn unclassified_error_count() -> u64 {
     FAILOVER_UNCLASSIFIED_ERRORS.load(Ordering::Relaxed)
 }

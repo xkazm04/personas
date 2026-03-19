@@ -385,8 +385,20 @@ pub struct LlmEvalResult {
     pub tool_accuracy: i32,
     pub output_quality: i32,
     pub protocol_compliance: i32,
+    /// Combined rationale string (backwards-compatible). Built from per-metric fields.
     pub rationale: String,
+    /// Combined suggestions string (backwards-compatible).
     pub suggestions: String,
+    /// Per-metric rationale for rich UI display (optional for backwards compat).
+    #[serde(default)]
+    pub tool_accuracy_rationale: Option<String>,
+    #[serde(default)]
+    pub output_quality_rationale: Option<String>,
+    #[serde(default)]
+    pub protocol_rationale: Option<String>,
+    /// Verdict: one-line summary of the overall result.
+    #[serde(default)]
+    pub verdict: Option<String>,
 }
 
 /// Ask an LLM to evaluate a persona's test result, providing scores, rationale,
@@ -434,43 +446,60 @@ fn build_llm_eval_prompt(
     format!(
         r#"# Persona Test Evaluation
 
-You are an expert evaluator for AI persona testing. Score this test result.
+You are an expert AI persona evaluator. Analyze this test result and provide scores WITH clear explanations a human can act on.
 
-## Persona
-Name: {persona_name}
-Description: {persona_description}
+## Persona Under Test
+- **Name**: {persona_name}
+- **Purpose**: {persona_description}
 
-## Test Scenario
-Name: {scenario_name}
-Description: {scenario_description}
+## Test Scenario: "{scenario_name}"
+{scenario_description}
 
-## Expected Behavior
-{expected_behavior}
+## What Was Expected
+**Behavior**: {expected_behavior}
+**Tool calls**: {tool_calls_expected}
 
-## Expected Tool Calls
-{tool_calls_expected}
-
-## Actual Tool Calls
-{tool_calls_actual}
-
-## Agent Output (first 3000 chars)
+## What Actually Happened
+**Tool calls made**: {tool_calls_actual}
+**Agent output** (truncated to 3000 chars):
+---
 {output_preview}
+---
 
-## Scoring Instructions
-Rate each metric from 0 to 100:
+## Scoring Rubric (0-100 each)
 
-1. **tool_accuracy**: Did the agent call the right tools in the right order? 100 = perfect match, 0 = completely wrong tools or no tools when expected.
-2. **output_quality**: Does the output address the scenario correctly? 100 = comprehensive and accurate, 0 = irrelevant or empty.
-3. **protocol_compliance**: Does the agent follow its protocols correctly? 100 = perfect adherence, 0 = no protocol compliance.
+### tool_accuracy — Did the agent use the right tools correctly?
+- **90-100**: Called every expected tool with correct parameters in the right order
+- **60-89**: Called most expected tools but missed some or used wrong parameters
+- **30-59**: Called some tools but significant gaps or wrong tool choices
+- **1-29**: Called almost no expected tools, or called completely wrong tools
+- **0**: Made zero tool calls when tools were expected, or no tools were expected and score is N/A (give 50)
+
+### output_quality — Is the output useful and well-structured?
+- **90-100**: Complete, well-formatted, directly addresses the scenario with accurate content
+- **60-89**: Mostly addresses the scenario but has gaps in completeness or formatting
+- **30-59**: Partially addresses the scenario, missing key information or poorly structured
+- **1-29**: Barely relevant output, mostly filler or hallucinated content
+- **0**: Empty output or completely irrelevant
+
+### protocol_compliance — Did the agent follow its prompt instructions?
+- **90-100**: Followed all persona instructions, constraints, and output format rules
+- **60-89**: Followed most instructions but missed some constraints
+- **30-59**: Followed some instructions but violated important constraints
+- **1-29**: Largely ignored the persona's defined behavior
+- **0**: No evidence of following any persona instructions
 
 ## Response Format
-Respond with ONLY a JSON object (no markdown fences, no extra text):
+Respond with ONLY a JSON object:
 {{
-  "tool_accuracy": <number 0-100>,
-  "output_quality": <number 0-100>,
-  "protocol_compliance": <number 0-100>,
-  "rationale": "<1-2 sentences per metric explaining the score>",
-  "suggestions": "<1-2 specific, actionable prompt improvements>"
+  "tool_accuracy": <0-100>,
+  "output_quality": <0-100>,
+  "protocol_compliance": <0-100>,
+  "tool_accuracy_rationale": "<What tools were/weren't called and why this matters. Be specific about which tools were expected vs used.>",
+  "output_quality_rationale": "<What the output got right/wrong. Reference specific content from the output.>",
+  "protocol_rationale": "<Which persona instructions were followed/violated. Quote specific rules if possible.>",
+  "verdict": "<One sentence: what is the single most important thing the user should know about this result?>",
+  "suggestions": "<2-3 specific prompt changes that would fix the weakest areas. Be concrete — say exactly what to add/change in the prompt, not vague advice.>"
 }}"#
     )
 }
@@ -527,6 +556,23 @@ fn parse_llm_eval_response(raw: &str) -> Result<LlmEvalResult, String> {
 fn validate_llm_result(mut result: LlmEvalResult) -> Result<LlmEvalResult, String> {
     result.tool_accuracy = result.tool_accuracy.clamp(0, 100);
     result.output_quality = result.output_quality.clamp(0, 100);
+
+    // Build combined rationale from per-metric fields if the rationale is empty or generic
+    if result.rationale.is_empty() || result.rationale.len() < 20 {
+        let mut parts = Vec::new();
+        if let Some(ref r) = result.tool_accuracy_rationale {
+            parts.push(format!("Tool usage: {}", r));
+        }
+        if let Some(ref r) = result.output_quality_rationale {
+            parts.push(format!("Output quality: {}", r));
+        }
+        if let Some(ref r) = result.protocol_rationale {
+            parts.push(format!("Protocol: {}", r));
+        }
+        if !parts.is_empty() {
+            result.rationale = parts.join(" | ");
+        }
+    }
     result.protocol_compliance = result.protocol_compliance.clamp(0, 100);
     Ok(result)
 }
@@ -548,6 +594,10 @@ fn fallback_heuristic(input: &EvalInput<'_>) -> LlmEvalResult {
             protocol.score, protocol.explanation,
         ),
         suggestions: "LLM evaluation unavailable; consider re-running with LLM eval enabled.".to_string(),
+        tool_accuracy_rationale: Some(tool.explanation.clone()),
+        output_quality_rationale: Some(keyword.explanation.clone()),
+        protocol_rationale: Some(protocol.explanation.clone()),
+        verdict: Some("Scored using heuristic fallback (LLM eval was unavailable).".to_string()),
     }
 }
 

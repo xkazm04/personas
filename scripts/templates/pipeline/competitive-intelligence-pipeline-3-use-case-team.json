@@ -637,6 +637,114 @@
         "label": "Emits events: execution failed, threshold breached",
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which competitive signals should trigger an URGENT escalation, bypassing the weekly cadence?",
+        "type": "select",
+        "options": [
+          "Pricing changes or new pricing tiers",
+          "Direct feature/product launches targeting your customers",
+          "Acquisitions, mergers, or funding announcements",
+          "Key executive hires or mass hiring in a competing area"
+        ],
+        "default": "Direct feature/product launches targeting your customers",
+        "context": "Determines which daily collector findings activate the Urgent Finding Escalation flow vs. queuing for the Monday briefing",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What industry and competitive landscape does this pipeline operate in? Include your product category and 2–3 known competitors.",
+        "type": "text",
+        "context": "Shapes how the Analyst frames strategic implications — SaaS pricing benchmarks differ from e-commerce or fintech contexts",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Who are the primary consumers of the weekly intelligence briefings?",
+        "type": "select",
+        "options": [
+          "C-suite / board (strategic, high-level)",
+          "Product managers (feature and roadmap focus)",
+          "Sales team (competitive battlecards)",
+          "Marketing team (messaging and positioning)"
+        ],
+        "default": "C-suite / board (strategic, high-level)",
+        "context": "Determines analytical depth and framing — executives want strategic implications; sales teams need tactical objection-handling points",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which data sources should collectors prioritize per competitor?",
+        "type": "select",
+        "options": [
+          "Website changes only (pricing, product pages, job postings)",
+          "Website + social media (Twitter/X, LinkedIn, blog posts)",
+          "Website + social + press releases and news mentions",
+          "All sources including public API endpoints"
+        ],
+        "default": "Website + social + press releases and news mentions",
+        "context": "Affects collector scope and runtime — broader coverage increases intelligence quality but also processing time and noise",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the pipeline NEVER do when collecting or distributing competitive data?",
+        "type": "select",
+        "options": [
+          "Never scrape login-gated or paywalled content",
+          "Never send external emails without explicit human review",
+          "Never surface unverified social media rumors as confirmed intelligence",
+          "Never store raw competitor data outside the approved Notion database"
+        ],
+        "default": "Never scrape login-gated or paywalled content",
+        "context": "Sets hard guardrails for collectors and the reporter — critical for legal compliance and executive briefing integrity",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which outputs require human approval before distribution?",
+        "type": "select",
+        "options": [
+          "All executive email briefings must be reviewed before sending",
+          "Only URGENT escalation alerts require approval; weekly briefings send automatically",
+          "Slack posts are automatic; only Gmail to executives needs approval",
+          "All outputs are fully automated — no manual review needed"
+        ],
+        "default": "Only URGENT escalation alerts require approval; weekly briefings send automatically",
+        "context": "Determines where the Reporter pauses for human sign-off — balances speed with oversight for sensitive executive communications",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What format should the weekly intelligence briefing follow?",
+        "type": "select",
+        "options": [
+          "Executive summary only (top 3 findings per competitor, 1 page)",
+          "Structured report with sections per competitor: pricing, product, hiring, social",
+          "Side-by-side competitor comparison matrix with trend indicators",
+          "Narrative analysis with strategic recommendations and action items"
+        ],
+        "default": "Narrative analysis with strategic recommendations and action items",
+        "context": "Shapes how the Reporter structures Notion pages and the email body — the right format drives faster executive decision-making",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Where in Notion should intelligence reports and raw findings be stored? Provide the database name or page title.",
+        "type": "text",
+        "context": "The Analyst reads your existing market positioning docs from this Notion location; the Reporter writes weekly briefings back to it",
+        "dimension": "connectors"
+      }
     ]
   }
 }

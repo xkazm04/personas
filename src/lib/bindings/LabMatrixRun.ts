@@ -11,6 +11,8 @@ export interface LabMatrixRun {
   scenariosCount: number;
   useCaseFilter: string | null;
   summary: string | null;
+  llmSummary: string | null;
+  progressJson: string | null;
   error: string | null;
   draftAccepted: boolean;
   createdAt: string;

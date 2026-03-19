@@ -642,6 +642,120 @@
         "label": "Emits events: execution completed, execution failed, item created, threshold breached, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of this database sentinel?",
+        "type": "select",
+        "options": [
+          "Catch production incidents before users are impacted",
+          "Track capacity trends for proactive infrastructure planning",
+          "Monitor replication health for a high-availability setup",
+          "Audit slow queries to drive query performance optimization"
+        ],
+        "default": "Catch production incidents before users are impacted",
+        "context": "Determines which health metrics to prioritize and what thresholds trigger alerts vs. informational tracking.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your PostgreSQL deployment topology?",
+        "type": "select",
+        "options": [
+          "Single standalone instance",
+          "Primary + one or more read replicas",
+          "Cloud-managed (RDS, Aurora, Cloud SQL)",
+          "Multi-tenant with multiple schemas or databases"
+        ],
+        "default": "Single standalone instance",
+        "context": "Determines whether replication lag monitoring is relevant and how connection pool limits should be interpreted across nodes.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "At what connection utilization percentage should a WARNING alert fire?",
+        "type": "select",
+        "options": [
+          "70% of max_connections",
+          "80% of max_connections (default)",
+          "90% of max_connections",
+          "Custom — I will specify thresholds in the persona instructions"
+        ],
+        "default": "80% of max_connections (default)",
+        "context": "Sets the WARNING threshold for pg_stat_activity count checks. CRITICAL will be set 10 percentage points above this value.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How long must a query run before it is flagged as slow?",
+        "type": "select",
+        "options": [
+          "10 seconds — aggressive detection for OLTP workloads",
+          "30 seconds — default balanced threshold",
+          "2 minutes — suitable for batch or analytics workloads",
+          "5 minutes — only flag truly runaway queries"
+        ],
+        "default": "30 seconds — default balanced threshold",
+        "context": "Sets the interval in the slow-query pg_stat_activity check. Should match your application's expected query latency profile.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Should the sentinel ever recommend or execute query termination (pg_terminate_backend)?",
+        "type": "select",
+        "options": [
+          "Never — observe and alert only, no kill suggestions",
+          "Suggest the pg_terminate_backend command in Slack but never execute it",
+          "Auto-terminate only if the same query exceeds the slow threshold for 3 consecutive checks"
+        ],
+        "default": "Suggest the pg_terminate_backend command in Slack but never execute it",
+        "context": "Prevents unintended disruption to long-running but legitimate jobs (e.g., ETL, backups). Defines the hard boundary between monitoring and remediation.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which escalation actions require an on-call DBA to explicitly acknowledge before the sentinel continues?",
+        "type": "select",
+        "options": [
+          "None — all alerts are fire-and-forget notifications",
+          "CRITICAL threshold breaches — sentinel pauses escalation emails until acknowledged in Slack",
+          "Any alert outside business hours (9 AM – 6 PM local time)",
+          "Only capacity planning recommendations in the weekly report"
+        ],
+        "default": "CRITICAL threshold breaches — sentinel pauses escalation emails until acknowledged in Slack",
+        "context": "Controls paging fatigue and ensures the right human is in the loop before email escalations flood an on-call inbox.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_3",
+        "category": "configuration",
+        "question": "Who should receive the weekly DBA health report email, and which Slack channel should receive real-time alerts?",
+        "type": "text",
+        "default": "e.g., dba-team@company.com | #db-alerts",
+        "context": "Populates the Gmail recipient list for Monday reports and the Slack channel target for 5-minute health check alerts. Separate email and channel with a pipe character.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How should the sentinel handle flapping — a metric that briefly breaches a threshold then recovers?",
+        "type": "select",
+        "options": [
+          "Alert immediately on every breach, even if it self-resolves",
+          "Only alert if the threshold is breached for 2 or more consecutive checks (~10 min)",
+          "Only alert if the threshold is breached for 3 or more consecutive checks (~15 min)"
+        ],
+        "default": "Only alert if the threshold is breached for 2 or more consecutive checks (~10 min)",
+        "context": "Reduces noise from transient spikes (e.g., a momentary connection surge during a deploy) without masking genuine sustained degradation.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

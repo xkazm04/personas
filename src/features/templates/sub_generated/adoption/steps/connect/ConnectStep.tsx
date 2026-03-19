@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Plug, ChevronDown } from 'lucide-react';
+import { Plug, ChevronDown, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { healthcheckCredential } from '@/api/vault/credentials';
 import { ConnectorPipeline } from '../../../shared/ConnectorPipeline';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
 import type { ConnectorPipelineStep } from '@/lib/types/designTypes';
@@ -56,6 +57,28 @@ export function ConnectStep() {
   const isSimple = useSimpleMode();
   const [inlineStartMode, setInlineStartMode] = useState<'pick' | 'design-query'>('pick');
   const [showPipeline, setShowPipeline] = useState(false);
+  const [testingAll, setTestingAll] = useState(false);
+  const [testAllResults, setTestAllResults] = useState<Record<string, { success: boolean; message: string }>>({});
+
+  const handleTestAll = useCallback(async () => {
+    setTestingAll(true);
+    const results: Record<string, { success: boolean; message: string }> = {};
+    const BUILTIN = new Set(['personas_messages', 'personas_database', 'personas_vector_db']);
+
+    for (const c of requiredConnectors) {
+      if (BUILTIN.has(c.activeName)) continue;
+      const credId = connectorCredentialMap[c.activeName];
+      if (!credId) continue;
+      try {
+        const result = await healthcheckCredential(credId);
+        results[c.activeName] = { success: result.success, message: result.message };
+      } catch (err) {
+        results[c.activeName] = { success: false, message: err instanceof Error ? err.message : 'Test failed' };
+      }
+    }
+    setTestAllResults(results);
+    setTestingAll(false);
+  }, [requiredConnectors, connectorCredentialMap]);
 
   const handleOpenInlineForm = useCallback((name: string) => {
     setInlineStartMode('pick');
@@ -153,11 +176,28 @@ export function ConnectStep() {
           <p className="text-sm text-muted-foreground/70">
             {configuredCount} of {totalCount} configured
           </p>
-          {missingNames.length > 0 && (
-            <span className="text-sm text-amber-400/70">
-              Missing: {missingNames.join(', ')}
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {configuredCount > 0 && (
+              <button
+                type="button"
+                onClick={() => void handleTestAll()}
+                disabled={testingAll}
+                className="flex items-center gap-1.5 text-sm text-violet-400/70 hover:text-violet-300 transition-colors disabled:opacity-50"
+              >
+                {testingAll ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                )}
+                {testingAll ? 'Testing...' : 'Test all connections'}
+              </button>
+            )}
+            {missingNames.length > 0 && (
+              <span className="text-sm text-amber-400/70">
+                Missing: {missingNames.join(', ')}
+              </span>
+            )}
+          </div>
         </div>
         <div className="h-1 rounded-full bg-secondary/40 overflow-hidden">
           <div
@@ -165,6 +205,25 @@ export function ConnectStep() {
             style={{ width: `${progressPercent}%` }}
           />
         </div>
+        {/* Test all results summary */}
+        {Object.keys(testAllResults).length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-1">
+            {Object.entries(testAllResults).map(([name, result]) => (
+              <span
+                key={name}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
+                  result.success
+                    ? 'bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20'
+                    : 'bg-red-500/10 text-red-400/80 border border-red-500/20'
+                }`}
+                title={result.message}
+              >
+                {result.success ? <ShieldCheck className="w-3 h-3" /> : <RefreshCw className="w-3 h-3" />}
+                {getConnectorMeta(name).label}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* All connectors -- editable cards */}

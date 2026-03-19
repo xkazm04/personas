@@ -12,7 +12,6 @@ import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavConte
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
-import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
 import BreadcrumbTrail from '@/features/shared/components/layout/BreadcrumbTrail';
 
@@ -33,8 +32,8 @@ const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/comp
 const DevToolsPage = lazy(() => import('@/features/dev-tools/DevToolsPage'));
 const CompositionEditor = lazy(() => import('@/features/composition/components/CompositionEditor'));
 
-// Shared Suspense fallback for all lazy-loaded sections
-const SectionFallback = <PanelSkeleton variant="section" />;
+// Shared Suspense fallback — null (content fades in via motion.div wrapper)
+const SectionFallback = null;
 
 // Direction-aware cross-fade variants for section switches.
 // `custom` receives the navigation direction (1 = down, -1 = up, 0 = no motion).

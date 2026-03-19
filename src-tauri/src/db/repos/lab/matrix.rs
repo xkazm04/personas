@@ -18,6 +18,8 @@ fn row_to_run(row: &Row) -> rusqlite::Result<LabMatrixRun> {
         scenarios_count: row.get("scenarios_count")?,
         use_case_filter: row.get("use_case_filter")?,
         summary: row.get("summary")?,
+        llm_summary: row.get("llm_summary").unwrap_or(None),
+        progress_json: row.get("progress_json").unwrap_or(None),
         error: row.get("error")?,
         draft_accepted: row.get::<_, i32>("draft_accepted")? != 0,
         created_at: row.get("created_at")?,
@@ -158,6 +160,15 @@ pub fn accept_draft(pool: &DbPool, id: &str) -> Result<(), AppError> {
         "UPDATE lab_matrix_runs SET draft_accepted = 1 WHERE id = ?1",
         params![id],
     )?;
+    Ok(())
+}
+
+pub fn update_progress(pool: &DbPool, run_id: &str, progress_json: &str) -> Result<(), AppError> {
+    let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    conn.execute(
+        "UPDATE lab_matrix_runs SET progress_json = ?1 WHERE id = ?2",
+        rusqlite::params![progress_json, run_id],
+    ).map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(())
 }
 

@@ -103,6 +103,7 @@ pub struct FileWatcherSubscription {
     pub state: Arc<tokio::sync::Mutex<super::file_watcher::FileWatcherState>>,
     pub tx: tokio::sync::mpsc::Sender<super::file_watcher::RawFsEvent>,
     pub rx: Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<super::file_watcher::RawFsEvent>>>,
+    #[allow(dead_code)]
     pub ambient_ctx: super::ambient_context::AmbientContextHandle,
 }
 
@@ -625,12 +626,13 @@ async fn run_single(
         let tick_start = Instant::now();
 
         // Execute the tick within a tracing span for structured observability.
-        let tick_result = {
+        let tick_future = {
             let _span = tracing::debug_span!("subscription_tick", subscription = name).entered();
             // Panic boundary: catch any panic inside tick() so the subscription
             // loop survives and the crash is surfaced via logs + metrics.
-            AssertUnwindSafe(sub.tick()).catch_unwind().await
+            AssertUnwindSafe(sub.tick()).catch_unwind()
         };
+        let tick_result = tick_future.await;
         let elapsed = tick_start.elapsed();
 
         if let Err(panic_payload) = tick_result {

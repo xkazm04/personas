@@ -711,6 +711,129 @@
         "label": "Emits events: execution failed, item created, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which Contentful content types should be synced to Algolia?",
+        "type": "select",
+        "options": [
+          "Single content type (e.g., blog posts or articles only)",
+          "Multiple editorial types (articles, pages, announcements)",
+          "E-commerce catalog (products, categories, variants)",
+          "Documentation and knowledge base entries",
+          "All published content types across the space"
+        ],
+        "default": "Multiple editorial types (articles, pages, announcements)",
+        "context": "Determines how the agent maps Contentful content types to Algolia index records and whether type-specific field transformations are needed.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which Contentful environments and spaces should the sync agent monitor?",
+        "type": "select",
+        "options": [
+          "Production space, master environment only",
+          "Production and staging spaces with separate Algolia indexes",
+          "Single space, multiple environments (master + preview)",
+          "Multiple brand or regional spaces feeding one Algolia app"
+        ],
+        "default": "Production space, master environment only",
+        "context": "Drives webhook secret scoping, index routing logic, and whether environment-specific Algolia index names are required.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the sync agent NEVER do without explicit human instruction?",
+        "type": "select",
+        "options": [
+          "Never delete Algolia records unless the Contentful entry is confirmed deleted (not just unpublished)",
+          "Never process webhook events from non-production Contentful environments",
+          "Never trigger a full index rebuild — only incremental updates",
+          "Never retry a failed sync more than 3 times before halting and alerting"
+        ],
+        "default": "Never delete Algolia records unless the Contentful entry is confirmed deleted (not just unpublished)",
+        "context": "Prevents destructive index operations and defines the hard floor on automation without oversight.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which operations must pause for human approval before the agent proceeds?",
+        "type": "select",
+        "options": [
+          "Bulk reconciliation touching more than 50 records during the daily audit",
+          "Any record deletion detected during the consistency audit (not from a live unpublish event)",
+          "Full index rebuild if drift exceeds a threshold",
+          "All operations are fully automated — no approval gates needed"
+        ],
+        "default": "Any record deletion detected during the consistency audit (not from a live unpublish event)",
+        "context": "Balances automation speed against risk of mass-deleting valid search records due to audit logic errors.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What Slack notification verbosity do you want for sync activity?",
+        "type": "select",
+        "options": [
+          "Failures and retry exhaustion only",
+          "Daily audit summary + any failures",
+          "All sync events (publish, unpublish, retry, audit) — verbose",
+          "Critical escalations only (max retries hit or index drift above threshold)"
+        ],
+        "default": "Daily audit summary + any failures",
+        "context": "Controls Slack channel noise and ensures the right signal-to-noise ratio for your team's monitoring workflow.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "What index drift level should trigger an immediate Slack alert during the daily audit?",
+        "type": "select",
+        "options": [
+          "Zero tolerance — any mismatch triggers an alert",
+          "More than 5 records out of sync",
+          "More than 1% of total index records drifted",
+          "More than 50 records or 5% of the index, whichever is smaller"
+        ],
+        "default": "More than 5 records out of sync",
+        "context": "Sets the sensitivity of the consistency audit alarm so teams aren't paged for trivial transient drift.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "What should the agent persist in its sync state file for audit and recovery?",
+        "type": "select",
+        "options": [
+          "Last successful sync timestamp per content type plus the current retry queue",
+          "Full per-entry sync log with operation, result, and timestamp (detailed audit trail)",
+          "Only failed operations and their retry count (minimal footprint)",
+          "Last audit result summary plus any entries currently in the retry queue"
+        ],
+        "default": "Last audit result summary plus any entries currently in the retry queue",
+        "context": "Shapes what the agent can use to self-heal after a restart and what's available for post-incident review.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How should the agent handle nested Contentful references when building Algolia records?",
+        "type": "select",
+        "options": [
+          "Flatten one level deep — inline direct linked entry fields, skip deeper nesting",
+          "Resolve all linked entries recursively up to 3 levels and include relevant fields",
+          "Store only the reference IDs in Algolia — no expansion",
+          "Expand only specific reference fields I will configure (e.g., author, category)"
+        ],
+        "default": "Flatten one level deep — inline direct linked entry fields, skip deeper nesting",
+        "context": "Controls Algolia record size, searchability of related content, and how much Contentful CDA traffic the agent generates per sync event.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

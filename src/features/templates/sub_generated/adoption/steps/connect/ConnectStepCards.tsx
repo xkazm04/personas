@@ -2,16 +2,20 @@
  * ConnectStep sub-components: UnresolvedComponentCard.
  * DatabaseSetupCard is in DatabaseSetupCard.tsx.
  */
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import {
   CheckCircle2,
   AlertCircle,
   Box,
   Plus,
+  RefreshCw,
+  ShieldCheck,
+  ShieldX,
 } from 'lucide-react';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { ConnectorDropdown } from './ConnectorDropdown';
+import { healthcheckCredential } from '@/api/vault/credentials';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { RequiredConnector } from './ConnectStep';
 
@@ -60,6 +64,24 @@ export function UnresolvedComponentCard({
     () => findMatchingCredentials(connector.activeName, credentials),
     [connector.activeName, credentials],
   );
+
+  // Health check state
+  const [healthStatus, setHealthStatus] = useState<'idle' | 'checking' | 'healthy' | 'unhealthy'>('idle');
+  const [healthMessage, setHealthMessage] = useState<string | null>(null);
+
+  const runHealthCheck = useCallback(async () => {
+    if (!selectedCredentialId || builtIn) return;
+    setHealthStatus('checking');
+    setHealthMessage(null);
+    try {
+      const result = await healthcheckCredential(selectedCredentialId);
+      setHealthStatus(result.success ? 'healthy' : 'unhealthy');
+      setHealthMessage(result.message);
+    } catch (err) {
+      setHealthStatus('unhealthy');
+      setHealthMessage(err instanceof Error ? err.message : 'Health check failed');
+    }
+  }, [selectedCredentialId, builtIn]);
 
   const handleCredentialChange = useCallback(
     (val: string) => {
@@ -135,6 +157,31 @@ export function UnresolvedComponentCard({
               <Plus className="w-3 h-3" />
               Add credential
             </button>
+          )}
+
+          {/* Health check button + status */}
+          {hasCredential && !builtIn && (
+            <div className="flex items-center gap-2 mt-1.5">
+              <button
+                type="button"
+                onClick={() => void runHealthCheck()}
+                disabled={healthStatus === 'checking'}
+                className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-foreground/70 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3 h-3 ${healthStatus === 'checking' ? 'animate-spin' : ''}`} />
+                {healthStatus === 'idle' ? 'Test connection' : healthStatus === 'checking' ? 'Testing...' : 'Re-test'}
+              </button>
+              {healthStatus === 'healthy' && (
+                <span className="flex items-center gap-1 text-xs text-emerald-400/80">
+                  <ShieldCheck className="w-3 h-3" /> Connected
+                </span>
+              )}
+              {healthStatus === 'unhealthy' && (
+                <span className="flex items-center gap-1 text-xs text-red-400/80" title={healthMessage ?? undefined}>
+                  <ShieldX className="w-3 h-3" /> {healthMessage ? healthMessage.substring(0, 60) : 'Failed'}
+                </span>
+              )}
+            </div>
           )}
         </div>
       )}

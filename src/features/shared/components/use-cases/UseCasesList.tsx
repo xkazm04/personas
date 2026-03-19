@@ -50,7 +50,18 @@ export function parseDesignContext(raw: string | null | undefined): DesignContex
 
     // New format: check for camelCase envelope keys
     if ('designFiles' in parsed || 'credentialLinks' in parsed || 'useCases' in parsed) {
-      return store(parsed as unknown as DesignContextData);
+      const data = parsed as unknown as DesignContextData;
+      // Normalize useCases: convert string[] to DesignUseCase[] if needed
+      if (Array.isArray(data.useCases) && data.useCases.length > 0 && typeof data.useCases[0] === 'string') {
+        data.useCases = (data.useCases as unknown as string[]).map((s, i) => ({
+          id: `uc-${i}`,
+          title: s.length > 80 ? s.slice(0, 80) + '...' : s,
+          description: s,
+          category: 'general',
+          execution_mode: 'mock' as const,
+        }));
+      }
+      return store(data);
     }
 
     // Legacy format: snake_case top-level keys -> migrate to camelCase envelope

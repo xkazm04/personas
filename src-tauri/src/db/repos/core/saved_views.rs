@@ -56,7 +56,7 @@ pub fn get_by_id(conn: &Connection, id: &str) -> Result<Option<SavedView>, AppEr
         &format!("SELECT {SELECT_COLS} FROM saved_views WHERE id = ?1"),
     )?;
 
-    let view = stmt.query_row(params![id], |row| row_to_view(row)).optional()?;
+    let view = stmt.query_row(params![id], row_to_view).optional()?;
     Ok(view)
 }
 
@@ -65,7 +65,7 @@ pub fn list_all(conn: &Connection) -> Result<Vec<SavedView>, AppError> {
         &format!("SELECT {SELECT_COLS} FROM saved_views ORDER BY is_smart DESC, name ASC"),
     )?;
 
-    let iter = stmt.query_map([], |row| row_to_view(row))?;
+    let iter = stmt.query_map([], row_to_view)?;
     let mut views = Vec::new();
     for view in iter {
         views.push(view?);
@@ -78,7 +78,7 @@ pub fn list_by_type(conn: &Connection, view_type: &str) -> Result<Vec<SavedView>
         &format!("SELECT {SELECT_COLS} FROM saved_views WHERE view_type = ?1 ORDER BY is_smart DESC, name ASC"),
     )?;
 
-    let iter = stmt.query_map(params![view_type], |row| row_to_view(row))?;
+    let iter = stmt.query_map(params![view_type], row_to_view)?;
     let mut views = Vec::new();
     for view in iter {
         views.push(view?);

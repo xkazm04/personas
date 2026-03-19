@@ -328,22 +328,94 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n1", "target": "n3" },
-          { "id": "e3", "source": "n1", "target": "n4" },
-          { "id": "e4", "source": "n2", "target": "n5" },
-          { "id": "e5", "source": "n3", "target": "n5" },
-          { "id": "e6", "source": "n4", "target": "n5" },
-          { "id": "e7", "source": "n5", "target": "n6" },
-          { "id": "e8", "source": "n6", "target": "n7" },
-          { "id": "e9", "source": "n7", "target": "n8", "label": "Yes", "variant": "yes" },
-          { "id": "e10", "source": "n7", "target": "n13", "label": "No", "variant": "no" },
-          { "id": "e11", "source": "n8", "target": "n9" },
-          { "id": "e12", "source": "n9", "target": "n10" },
-          { "id": "e13", "source": "n10", "target": "n12", "label": "Yes", "variant": "yes" },
-          { "id": "e14", "source": "n10", "target": "n11", "label": "No", "variant": "no" },
-          { "id": "e15", "source": "n11", "target": "n13" },
-          { "id": "e16", "source": "n12", "target": "n13" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n1",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n1",
+            "target": "n4"
+          },
+          {
+            "id": "e4",
+            "source": "n2",
+            "target": "n5"
+          },
+          {
+            "id": "e5",
+            "source": "n3",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e7",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e10",
+            "source": "n7",
+            "target": "n13",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e11",
+            "source": "n8",
+            "target": "n9"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n12",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e14",
+            "source": "n10",
+            "target": "n11",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e15",
+            "source": "n11",
+            "target": "n13"
+          },
+          {
+            "id": "e16",
+            "source": "n12",
+            "target": "n13"
+          }
         ]
       },
       {
@@ -420,19 +492,80 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3", "label": "Approved", "variant": "yes" },
-          { "id": "e3", "source": "n2", "target": "n4", "label": "Edited" },
-          { "id": "e4", "source": "n2", "target": "n5", "label": "Rejected", "variant": "no" },
-          { "id": "e5", "source": "n3", "target": "n7" },
-          { "id": "e6", "source": "n4", "target": "n6" },
-          { "id": "e7", "source": "n6", "target": "n7" },
-          { "id": "e8", "source": "n5", "target": "n10" },
-          { "id": "e9", "source": "n7", "target": "n8" },
-          { "id": "e10", "source": "n8", "target": "n9", "label": "Yes", "variant": "yes" },
-          { "id": "e11", "source": "n8", "target": "n10", "label": "No", "variant": "no" },
-          { "id": "e12", "source": "n9", "target": "n10" },
-          { "id": "e13", "source": "n10", "target": "n11" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3",
+            "label": "Approved",
+            "variant": "yes"
+          },
+          {
+            "id": "e3",
+            "source": "n2",
+            "target": "n4",
+            "label": "Edited"
+          },
+          {
+            "id": "e4",
+            "source": "n2",
+            "target": "n5",
+            "label": "Rejected",
+            "variant": "no"
+          },
+          {
+            "id": "e5",
+            "source": "n3",
+            "target": "n7"
+          },
+          {
+            "id": "e6",
+            "source": "n4",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7"
+          },
+          {
+            "id": "e8",
+            "source": "n5",
+            "target": "n10"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e11",
+            "source": "n8",
+            "target": "n10",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e12",
+            "source": "n9",
+            "target": "n10"
+          },
+          {
+            "id": "e13",
+            "source": "n10",
+            "target": "n11"
+          }
         ]
       },
       {
@@ -496,16 +629,63 @@
           }
         ],
         "edges": [
-          { "id": "e1", "source": "n1", "target": "n2" },
-          { "id": "e2", "source": "n2", "target": "n3" },
-          { "id": "e3", "source": "n3", "target": "n4", "label": "Rate limit / transient" },
-          { "id": "e4", "source": "n3", "target": "n5", "label": "Auth failure", "variant": "error" },
-          { "id": "e5", "source": "n4", "target": "n6" },
-          { "id": "e6", "source": "n5", "target": "n6" },
-          { "id": "e7", "source": "n6", "target": "n7", "label": "Yes", "variant": "yes" },
-          { "id": "e8", "source": "n6", "target": "n8", "label": "No", "variant": "no" },
-          { "id": "e9", "source": "n7", "target": "n8" },
-          { "id": "e10", "source": "n8", "target": "n9" }
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "Rate limit / transient"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Auth failure",
+            "variant": "error"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n6"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          },
+          {
+            "id": "e7",
+            "source": "n6",
+            "target": "n7",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e8",
+            "source": "n6",
+            "target": "n8",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e9",
+            "source": "n7",
+            "target": "n8"
+          },
+          {
+            "id": "e10",
+            "source": "n8",
+            "target": "n9"
+          }
         ]
       }
     ],
@@ -529,6 +709,122 @@
         "type": "emit_event",
         "label": "Emits events: message.received, draft.approved, contact.graduated, channel.health_degraded",
         "context": "5 event subscription(s) configured -- agent participates in event bus"
+      }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is your primary goal for the Digital Clone?",
+        "type": "select",
+        "options": [
+          "Reduce response time and keep inbox at zero",
+          "Maintain quality while freeing focus time for deep work",
+          "Handle routine replies so I can prioritize high-stakes conversations",
+          "Manage communication overflow during travel or unavailability"
+        ],
+        "default": "Maintain quality while freeing focus time for deep work",
+        "context": "Determines draft urgency, triage prioritization, and how aggressively the agent escalates vs. queues messages",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What best describes your communication context?",
+        "type": "select",
+        "options": [
+          "Individual contributor (internal team + external stakeholders)",
+          "Founder or executive (investors, customers, media, team)",
+          "Freelancer or consultant (clients, leads, partners)",
+          "Personal use (friends, family, personal projects)"
+        ],
+        "default": "Individual contributor (internal team + external stakeholders)",
+        "context": "Seeds the formality baseline, VIP sender classification, and which channels carry the highest-stakes messages",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "How many actionable messages do you receive per day across all channels?",
+        "type": "select",
+        "options": [
+          "Under 20 — mostly high-stakes, low volume",
+          "20–60 — moderate mix of routine and important",
+          "60–150 — heavy inbox, significant triage needed",
+          "150+ — near-full delegation required"
+        ],
+        "default": "20–60 — moderate mix of routine and important",
+        "context": "Informs polling frequency tuning, digest batch size, and how aggressively routine messages are auto-classified",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which message categories should NEVER be drafted or sent autonomously, regardless of approval history?",
+        "type": "select",
+        "options": [
+          "Financial, legal, or contractual commitments only",
+          "Any first message to a contact I have never replied to",
+          "Emotionally sensitive or conflict-related conversations",
+          "All of the above — permanently exclude all high-stakes categories"
+        ],
+        "default": "All of the above — permanently exclude all high-stakes categories",
+        "context": "Defines permanent exclusions from the auto-send graduation logic — these contacts or topics never exit the approval queue",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "How do you want to review pending draft replies?",
+        "type": "select",
+        "options": [
+          "Batched digest every 4 hours with all pending drafts",
+          "Immediate push notification per draft via Telegram or Slack DM",
+          "On-demand — I will ask the agent when I am ready to review",
+          "Mixed — VIP contacts notify immediately, rest batch daily"
+        ],
+        "default": "Mixed — VIP contacts notify immediately, rest batch daily",
+        "context": "Controls the delivery mechanism and cadence for the human-review approval queue",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What auto-send graduation threshold feels right for trusted contacts?",
+        "type": "select",
+        "options": [
+          "10 consecutive unadjusted approvals (faster, more autonomous)",
+          "20 consecutive unadjusted approvals (default — balanced)",
+          "30 consecutive unadjusted approvals (conservative, slow to trust)",
+          "Never auto-send — always require my approval"
+        ],
+        "default": "20 consecutive unadjusted approvals (default — balanced)",
+        "context": "Sets the approval streak required before a contact graduates out of the human-review queue into auto-send mode",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How would you describe your default writing style?",
+        "type": "select",
+        "options": [
+          "Professional and formal — complete sentences, no slang",
+          "Friendly professional — warm but businesslike, light humor OK",
+          "Casual and direct — short, punchy, conversational",
+          "Context-adaptive — mirror whatever tone the sender uses"
+        ],
+        "default": "Friendly professional — warm but businesslike, light humor OK",
+        "context": "Seeds the initial style profile before the agent has enough per-contact interaction data to calibrate tone on its own",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "List any personal rules or habits the agent should always reflect in your replies (e.g. sign-off name, scheduling preferences, topics you never discuss over email).",
+        "type": "text",
+        "default": "",
+        "context": "Stored in your persistent style profile and injected into every drafting prompt — these override learned behavior and never expire",
+        "dimension": "memory"
       }
     ]
   }

@@ -28,6 +28,7 @@ pub fn get_output_assertion(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn create_output_assertion(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
@@ -52,6 +53,7 @@ pub fn create_output_assertion(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn update_output_assertion(
     state: State<'_, Arc<AppState>>,
     id: String,

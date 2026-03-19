@@ -830,6 +830,118 @@
         "label": "Emits events: execution completed, execution failed, item created, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary purpose of the survey you're processing?",
+        "type": "select",
+        "options": [
+          "Customer satisfaction / NPS tracking",
+          "Lead qualification and interest scoring",
+          "Employee feedback and engagement",
+          "Event or webinar registration follow-up",
+          "Product or UX research"
+        ],
+        "default": "Customer satisfaction / NPS tracking",
+        "context": "Determines the scoring rubric, tier labels, and the tone and content of follow-up emails the agent will generate.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which team owns and acts on the processed survey responses?",
+        "type": "select",
+        "options": [
+          "Customer success / support",
+          "Sales / business development",
+          "Marketing",
+          "HR / people ops",
+          "Product / UX research"
+        ],
+        "default": "Customer success / support",
+        "context": "Shapes Slack summary format, Airtable field naming, and who the detractor escalation alerts are routed to.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which response classification system should the agent apply when scoring submissions?",
+        "type": "select",
+        "options": [
+          "NPS tiers: Promoter (9-10), Passive (7-8), Detractor (0-6)",
+          "Interest tiers: High / Medium / Low based on custom score thresholds",
+          "Sentiment tiers: Positive / Neutral / Negative based on keyword flags",
+          "I will define a custom rubric during setup"
+        ],
+        "default": "NPS tiers: Promoter (9-10), Passive (7-8), Detractor (0-6)",
+        "context": "Determines how multi-choice answers are scored, what tier labels appear in Airtable and Slack, and which tier triggers the Detractor Escalation Flow.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should the agent NEVER do automatically — requiring human initiation every time?",
+        "type": "select",
+        "options": [
+          "Send any outbound email to respondents",
+          "Escalate low-score or urgency-flagged responses to the team",
+          "Overwrite or delete existing Airtable records",
+          "Post individual response details (names, free-text answers) to Slack"
+        ],
+        "default": "Send any outbound email to respondents",
+        "context": "Prevents the agent from taking irreversible or privacy-sensitive actions without explicit sign-off, critical for GDPR/CCPA compliance and avoiding unwanted respondent contact.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which responses should pause the pipeline and require human review before the agent proceeds?",
+        "type": "select",
+        "options": [
+          "All Detractor / low-score responses before any escalation or email is sent",
+          "Any response containing complaint, refund, legal, or urgency keywords",
+          "Responses from respondents already flagged as high-value accounts in Airtable",
+          "None — fully automate all tiers including Detractor handling"
+        ],
+        "default": "All Detractor / low-score responses before any escalation or email is sent",
+        "context": "Controls the Detractor Escalation Flow gate — determines whether the agent drafts and queues actions for approval or fires them immediately.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone should the agent use for personalized follow-up emails?",
+        "type": "select",
+        "options": [
+          "Warm and personal — high-touch, relationship-focused language",
+          "Professional and concise — efficient B2B style",
+          "Friendly and casual — consumer-facing brand voice",
+          "Tier-adaptive — warm for Promoters, formal and empathetic for Detractors"
+        ],
+        "default": "Tier-adaptive — warm for Promoters, formal and empathetic for Detractors",
+        "context": "Guides Gmail email generation so messaging feels appropriate to both the respondent relationship and their expressed sentiment.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Where should Slack response summaries be posted?",
+        "type": "text",
+        "default": "",
+        "context": "Specify the Slack channel name (e.g., #survey-responses, #cs-alerts) so the agent routes the right summaries to the right audience without cross-posting noise.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Should the agent remember and skip responses it has already processed if re-triggered manually?",
+        "type": "boolean",
+        "default": true,
+        "context": "Controls deduplication behavior during manual full-reprocessing runs — when true, the agent uses its stored last-processed checkpoint to avoid duplicate Airtable records and repeated emails.",
+        "dimension": "memory"
+      }
     ]
   }
 }

@@ -4,7 +4,7 @@
  */
 
 // Re-export slice interfaces for domain store composition
-import { silentCatch } from "@/lib/silentCatch";
+
 import type { PersonaSlice } from "./slices/agents/personaSlice";
 import type { ToolSlice } from "./slices/agents/toolSlice";
 import type { TriggerSlice } from "./slices/pipeline/triggerSlice";
@@ -63,6 +63,10 @@ export function errMsg(err: unknown, fallback: string): string {
  *     "both" (default) = update state AND fire toast
  *   • stateUpdates - extra fields to merge into the set() call (e.g. isLoading: false)
  */
+// Toast deduplication: suppress identical error toasts within a cooldown window
+const _toastCooldownMs = 5000;
+const _recentToasts = new Map<string, number>();
+
 export function reportError(
   err: unknown,
   fallback: string,
@@ -79,10 +83,21 @@ export function reportError(
     set({ error: message, ...stateUpdates } as { error: string });
   }
   if (severity !== "state") {
-    // Lazy import to avoid circular dependency at module load time
-    import("@/stores/toastStore").then(({ useToastStore }) => {
-      useToastStore.getState().addToast(message, "error");
-    }).catch(silentCatch("storeTypes:importToastStore"));
+    const now = Date.now();
+    const lastShown = _recentToasts.get(message);
+    if (!lastShown || now - lastShown > _toastCooldownMs) {
+      _recentToasts.set(message, now);
+      // Evict stale entries to prevent memory leak
+      if (_recentToasts.size > 50) {
+        for (const [key, ts] of _recentToasts) {
+          if (now - ts > _toastCooldownMs * 2) _recentToasts.delete(key);
+        }
+      }
+      // Lazy import to avoid circular dependency at module load time
+      import("@/stores/toastStore").then(({ useToastStore }) => {
+        useToastStore.getState().addToast(message, "error");
+      }).catch(() => {});
+    }
   }
   return message;
 }

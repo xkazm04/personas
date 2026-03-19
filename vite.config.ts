@@ -89,8 +89,12 @@ export default defineConfig(async () => ({
   },
 
   build: {
+    // Target modern WebView2/WebKit — enables smaller output (no legacy polyfills)
+    target: "es2022",
     sourcemap: "hidden",
     chunkSizeWarningLimit: 500,
+    // Inline SVGs and small images <8KB to reduce HTTP requests in WebView
+    assetsInlineLimit: 8192,
     // Disable module preload polyfill -- injects crossorigin links at runtime
     // which breaks Tauri Android WebView's custom protocol
     modulePreload: false,

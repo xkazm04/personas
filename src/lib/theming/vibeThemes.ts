@@ -30,6 +30,12 @@ export interface VibeTheme {
   borderIntensity: number;
 }
 
+/**
+ * Glow/tint colors are tokenized via color-mix() referencing
+ * var(--primary) and var(--accent) so the orb always matches the
+ * active app theme.  Each vibe controls intensity (%) and personality
+ * (animation speed, border sharpness) — the hue comes from the theme.
+ */
 export const VIBE_THEMES: Record<VibeId, VibeTheme> = {
   default: {
     id: 'default',
@@ -43,54 +49,54 @@ export const VIBE_THEMES: Record<VibeId, VibeTheme> = {
   clinical: {
     id: 'clinical',
     label: 'Clinical',
-    glowColor: 'rgba(148, 163, 184, 0.12)',
-    glowColorAlt: 'rgba(100, 116, 139, 0.08)',
-    bgTint: 'rgba(148, 163, 184, 0.02)',
+    glowColor: 'color-mix(in srgb, var(--primary) 10%, transparent)',
+    glowColorAlt: 'color-mix(in srgb, var(--accent) 6%, transparent)',
+    bgTint: 'color-mix(in srgb, var(--primary) 2%, transparent)',
     animationScale: 0.7,
     borderIntensity: 1.3,
   },
   creative: {
     id: 'creative',
     label: 'Creative',
-    glowColor: 'rgba(251, 191, 36, 0.12)',
-    glowColorAlt: 'rgba(236, 72, 153, 0.08)',
-    bgTint: 'rgba(251, 191, 36, 0.02)',
+    glowColor: 'color-mix(in srgb, var(--accent) 12%, transparent)',
+    glowColorAlt: 'color-mix(in srgb, var(--primary) 8%, transparent)',
+    bgTint: 'color-mix(in srgb, var(--accent) 2%, transparent)',
     animationScale: 1.3,
     borderIntensity: 0.8,
   },
   guardian: {
     id: 'guardian',
     label: 'Guardian',
-    glowColor: 'rgba(52, 211, 153, 0.12)',
-    glowColorAlt: 'rgba(6, 182, 212, 0.08)',
-    bgTint: 'rgba(52, 211, 153, 0.02)',
+    glowColor: 'color-mix(in srgb, var(--primary) 12%, transparent)',
+    glowColorAlt: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+    bgTint: 'color-mix(in srgb, var(--primary) 2%, transparent)',
     animationScale: 0.85,
     borderIntensity: 1.1,
   },
   analytical: {
     id: 'analytical',
     label: 'Analytical',
-    glowColor: 'rgba(59, 130, 246, 0.12)',
-    glowColorAlt: 'rgba(139, 92, 246, 0.08)',
-    bgTint: 'rgba(59, 130, 246, 0.02)',
+    glowColor: 'color-mix(in srgb, var(--primary) 12%, transparent)',
+    glowColorAlt: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+    bgTint: 'color-mix(in srgb, var(--primary) 2%, transparent)',
     animationScale: 0.9,
     borderIntensity: 1.2,
   },
   energetic: {
     id: 'energetic',
     label: 'Energetic',
-    glowColor: 'rgba(244, 63, 94, 0.12)',
-    glowColorAlt: 'rgba(249, 115, 22, 0.08)',
-    bgTint: 'rgba(244, 63, 94, 0.02)',
+    glowColor: 'color-mix(in srgb, var(--accent) 14%, transparent)',
+    glowColorAlt: 'color-mix(in srgb, var(--primary) 10%, transparent)',
+    bgTint: 'color-mix(in srgb, var(--accent) 2%, transparent)',
     animationScale: 1.4,
     borderIntensity: 0.9,
   },
   stealth: {
     id: 'stealth',
     label: 'Stealth',
-    glowColor: 'rgba(100, 116, 139, 0.06)',
-    glowColorAlt: 'rgba(71, 85, 105, 0.04)',
-    bgTint: 'rgba(15, 23, 42, 0.03)',
+    glowColor: 'color-mix(in srgb, var(--primary) 5%, transparent)',
+    glowColorAlt: 'color-mix(in srgb, var(--accent) 3%, transparent)',
+    bgTint: 'color-mix(in srgb, var(--primary) 1%, transparent)',
     animationScale: 0.6,
     borderIntensity: 0.5,
   },

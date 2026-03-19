@@ -469,7 +469,7 @@ pub async fn run_smee_relay(
 
         drop(tasks);
 
-        // Poll every 10 seconds
-        tokio::time::sleep(Duration::from_secs(10)).await;
+        // Poll every 60 seconds (reduced from 10s to avoid IPC congestion)
+        tokio::time::sleep(Duration::from_secs(60)).await;
     }
 }

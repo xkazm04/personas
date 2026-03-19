@@ -696,6 +696,122 @@
         "label": "Emits events: item created, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which workflow pain point is this automation primarily solving for your team?",
+        "type": "select",
+        "options": [
+          "Manual branch creation toil when tickets go In Progress",
+          "Status drift between Linear and GitHub (tickets out of sync with PRs)",
+          "Lack of visibility into delivery velocity and cycle times",
+          "All of the above equally"
+        ],
+        "default": "All of the above equally",
+        "context": "Determines which workflow loop to prioritize and tune first during setup.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How is your engineering work organized across Linear and GitHub?",
+        "type": "select",
+        "options": [
+          "Single Linear team + single GitHub repo",
+          "Multiple Linear teams all targeting one monorepo",
+          "One Linear team per GitHub repo (separate services)",
+          "Multiple Linear teams across multiple GitHub repos"
+        ],
+        "default": "Single Linear team + single GitHub repo",
+        "context": "Determines whether branch creation and PR matching logic needs to handle cross-team or cross-repo routing.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What branch naming convention should be enforced when creating feature branches?",
+        "type": "select",
+        "options": [
+          "Issue ID + slugified title (e.g., eng-123-add-user-auth)",
+          "Issue ID only (e.g., eng-123)",
+          "Team prefix + issue ID + title (e.g., team/eng-123-add-user-auth)",
+          "Assignee username + issue ID (e.g., jsmith/eng-123)"
+        ],
+        "default": "Issue ID + slugified title (e.g., eng-123-add-user-auth)",
+        "context": "Controls how the agent normalizes Linear issue titles into valid Git branch names.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which actions should the agent NEVER perform automatically, even if triggered?",
+        "type": "select",
+        "options": [
+          "Never close a Linear ticket unless a PR is explicitly merged to main/master",
+          "Never create a branch if one already exists for the issue ID",
+          "Never post to Slack channels other than the designated engineering channel",
+          "All of the above"
+        ],
+        "default": "All of the above",
+        "context": "Defines hard guardrails to prevent the agent from creating noise or conflicting with existing artifacts.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which operations should pause and require human confirmation before executing?",
+        "type": "select",
+        "options": [
+          "None — run fully autonomously",
+          "Only when closing/transitioning a Linear ticket to Done",
+          "When a PR is merged to a protected branch (main, release/*)",
+          "Both ticket closure and protected-branch merges"
+        ],
+        "default": "None — run fully autonomously",
+        "context": "Determines whether the agent operates in fire-and-forget mode or introduces approval checkpoints for state-changing operations.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How should the weekly velocity report be scoped and delivered?",
+        "type": "select",
+        "options": [
+          "Team aggregate only (throughput + avg cycle time)",
+          "Per-assignee breakdown with individual throughput and cycle time",
+          "By epic/project with drill-down into individual contributors",
+          "Full report: team aggregate + per-assignee + per-epic"
+        ],
+        "default": "Per-assignee breakdown with individual throughput and cycle time",
+        "context": "Controls report granularity posted to Slack each Friday — affects both data aggregation logic and message length.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "What is the GitHub repository slug (owner/repo) this agent should target for branch creation and PR polling?",
+        "type": "text",
+        "default": "",
+        "context": "Required to scope GitHub API calls to the correct repository — prevents accidental writes to unrelated repos.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "How long should the agent retain historical velocity data for trend analysis in reports?",
+        "type": "select",
+        "options": [
+          "Rolling 7 days only (current week vs last week)",
+          "Rolling 30 days (monthly trend lines)",
+          "Rolling 90 days (quarterly view)",
+          "Indefinitely (full project history)"
+        ],
+        "default": "Rolling 30 days (monthly trend lines)",
+        "context": "Determines the retention window in the local velocity tracking file, which affects report comparisons and storage size.",
+        "dimension": "memory"
+      }
     ]
   }
 }

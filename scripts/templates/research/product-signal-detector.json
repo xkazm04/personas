@@ -699,6 +699,110 @@
         "label": "Emits events: item created, threshold breached, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which product signal type is your highest priority to detect?",
+        "type": "select",
+        "options": [
+          "Funnel breakages and conversion drop-offs",
+          "Feature adoption spikes and first-use trends",
+          "Retention degradation (D1/D7/D14 cohort drops)",
+          "All signal types equally weighted"
+        ],
+        "default": "All signal types equally weighted",
+        "context": "Determines which anomalies get classified as Critical vs Warning, and which trigger immediate Linear tickets vs Slack-only posts.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of product is this monitoring?",
+        "type": "select",
+        "options": [
+          "B2B SaaS (team/org activation funnels)",
+          "Consumer mobile app (DAU/retention focused)",
+          "Developer tool or API product",
+          "Marketplace or two-sided platform"
+        ],
+        "default": "B2B SaaS (team/org activation funnels)",
+        "context": "Shapes how baselines are interpreted — e.g., B2B products expect weekday/weekend DAU variance that consumer apps don't.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How sensitive should anomaly detection be?",
+        "type": "select",
+        "options": [
+          "Conservative — only flag deviations >25% from 14-day baseline",
+          "Balanced — flag deviations >15% (default)",
+          "Aggressive — flag deviations >8% to catch early signals"
+        ],
+        "default": "Balanced — flag deviations >15% (default)",
+        "context": "Controls the percentage-deviation threshold used in Step 3. Conservative reduces noise; Aggressive catches subtle regressions earlier.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How should Slack insight cards be routed?",
+        "type": "select",
+        "options": [
+          "All signals to one product channel",
+          "Route by severity: #product-alerts for Critical, #product-insights for Warning/Info",
+          "Route by domain: separate channels per product area or funnel"
+        ],
+        "default": "Route by severity: #product-alerts for Critical, #product-insights for Warning/Info",
+        "context": "Determines the Slack posting logic. Multi-channel routing reduces noise but requires more channel configuration up front.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do automatically without human review?",
+        "type": "select",
+        "options": [
+          "Never auto-create Linear tickets — post to Slack only, always",
+          "Never auto-create tickets for Warning-level signals (Critical only)",
+          "Never post to public Slack channels — use DMs or private channels only",
+          "No restrictions — full automation is fine"
+        ],
+        "default": "Never auto-create tickets for Warning-level signals (Critical only)",
+        "context": "Prevents Linear ticket spam and controls how much autonomy the agent has over your team's backlog.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which signal scenarios require a human to confirm before a Linear ticket is created?",
+        "type": "select",
+        "options": [
+          "All ticket creation requires approval",
+          "Only when the same Critical signal persists 2+ consecutive runs",
+          "Only when DAU drops >30% (potential data pipeline failure, not product issue)",
+          "No approval needed — auto-create tickets for all Critical signals"
+        ],
+        "default": "Only when DAU drops >30% (potential data pipeline failure, not product issue)",
+        "context": "Large DAU swings often indicate an Amplitude instrumentation failure rather than a real product regression. Human review prevents false-alarm tickets.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should Slack insight cards be?",
+        "type": "select",
+        "options": [
+          "Compact — signal name, metric delta, severity badge only",
+          "Standard — delta, affected funnel/feature, 1-line hypothesis",
+          "Verbose — full context including baseline values, affected user segments, and suggested investigation steps"
+        ],
+        "default": "Standard — delta, affected funnel/feature, 1-line hypothesis",
+        "context": "Controls the richness of Slack messages. Verbose format is useful for async teams; compact is better for high-volume signal environments.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

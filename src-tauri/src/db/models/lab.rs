@@ -80,6 +80,8 @@ pub struct LabArenaRun {
     pub scenarios_count: i32,
     pub use_case_filter: Option<String>,
     pub summary: Option<String>,
+    pub llm_summary: Option<String>,
+    pub progress_json: Option<String>,
     pub error: Option<String>,
     pub created_at: String,
     pub completed_at: Option<String>,
@@ -162,6 +164,8 @@ pub struct LabAbRun {
     pub use_case_filter: Option<String>,
     pub test_input: Option<String>,
     pub summary: Option<String>,
+    pub llm_summary: Option<String>,
+    pub progress_json: Option<String>,
     pub error: Option<String>,
     pub created_at: String,
     pub completed_at: Option<String>,
@@ -245,6 +249,8 @@ pub struct LabMatrixRun {
     pub scenarios_count: i32,
     pub use_case_filter: Option<String>,
     pub summary: Option<String>,
+    pub llm_summary: Option<String>,
+    pub progress_json: Option<String>,
     pub error: Option<String>,
     pub draft_accepted: bool,
     pub created_at: String,
@@ -328,6 +334,8 @@ pub struct LabEvalRun {
     pub use_case_filter: Option<String>,
     pub test_input: Option<String>,
     pub summary: Option<String>,
+    pub llm_summary: Option<String>,
+    pub progress_json: Option<String>,
     pub error: Option<String>,
     pub created_at: String,
     pub completed_at: Option<String>,
@@ -416,4 +424,34 @@ pub struct CreateEvalResultInput {
     pub error_message: Option<String>,
     pub rationale: Option<String>,
     pub suggestions: Option<String>,
+}
+
+// ============================================================================
+// Full Persona Versioning (prompts + settings + tools reference)
+// ============================================================================
+
+/// Full persona version snapshot (prompts + settings + tools reference).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PersonaVersion {
+    pub id: String,
+    pub persona_id: String,
+    #[ts(type = "number")]
+    pub version_number: i32,
+    pub name: String,
+    pub description: Option<String>,
+    pub system_prompt: String,
+    pub structured_prompt: Option<String>,
+    pub model_profile: Option<String>,
+    pub max_budget_usd: Option<f64>,
+    #[ts(type = "number | null")]
+    pub max_turns: Option<i32>,
+    #[ts(type = "number")]
+    pub timeout_ms: i32,
+    pub design_context: Option<String>,
+    pub change_summary: Option<String>,
+    pub tag: String,
+    pub parent_version_id: Option<String>,
+    pub created_at: String,
 }

@@ -975,6 +975,128 @@
         "label": "Emits events: execution completed, execution failed, item created, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary way new customers enter your onboarding pipeline?",
+        "type": "select",
+        "options": [
+          "Webhook from CRM or website form",
+          "Stripe payment/subscription event",
+          "Manual trigger or CSV upload",
+          "Zapier/Make automation"
+        ],
+        "default": "Webhook from CRM or website form",
+        "context": "Determines how the coordinator parses the intake payload and which fields to validate at Stage 0.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_intent_2",
+        "category": "intent",
+        "question": "Which pipeline stages are active in your workflow?",
+        "type": "select",
+        "options": [
+          "All five stages (Welcome → Account → Data → Training → Coordinate)",
+          "Skip Data Migration — no CSV/API import needed",
+          "Skip Training Scheduler — self-serve product",
+          "Welcome + Account provisioning only"
+        ],
+        "default": "All five stages (Welcome → Account → Data → Training → Coordinate)",
+        "context": "Allows the coordinator to skip unused stages rather than waiting on timeouts or surfacing false errors.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of customers does this pipeline onboard?",
+        "type": "select",
+        "options": [
+          "B2B SaaS teams and companies",
+          "B2C individual end users",
+          "Enterprise accounts with a dedicated CSM",
+          "Agency clients with custom deliverables"
+        ],
+        "default": "B2B SaaS teams and companies",
+        "context": "Shapes welcome email tone, Notion page structure, Slack channel naming conventions, and training call format.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What is the typical source of customer data for the migration stage?",
+        "type": "select",
+        "options": [
+          "CSV file URL submitted at signup",
+          "REST API from an existing system (Salesforce, HubSpot, etc.)",
+          "Spreadsheet uploaded manually to Google Drive",
+          "No data migration — skip this stage"
+        ],
+        "default": "CSV file URL submitted at signup",
+        "context": "Configures how the Data Migrator fetches, validates, and maps fields into Airtable.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which action should the coordinator NEVER perform automatically without explicit confirmation?",
+        "type": "select",
+        "options": [
+          "Never auto-create or charge a Stripe subscription",
+          "Never send the welcome email until account setup is confirmed",
+          "Never book a Calendly call without checking team availability first",
+          "Never import data without a human reviewing the field mapping"
+        ],
+        "default": "Never auto-create or charge a Stripe subscription",
+        "context": "Prevents irreversible actions — billing charges, external comms, data writes — from executing without a safety gate.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "At which stage should the coordinator pause for human sign-off before continuing?",
+        "type": "select",
+        "options": [
+          "After intake validation, before any writes",
+          "Before provisioning the Stripe account or subscription",
+          "Before sending the welcome email",
+          "Run fully automated — alert only on failures"
+        ],
+        "default": "Before provisioning the Stripe account or subscription",
+        "context": "Sets the human review checkpoint so high-stakes actions can be verified before the pipeline advances.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "When a customer's record hits an error or has missing required data, how should the coordinator respond?",
+        "type": "select",
+        "options": [
+          "Pause that customer and notify me via Slack",
+          "Auto-email the customer requesting the missing info, then retry",
+          "Mark the Airtable record BLOCKED and wait for manual re-trigger",
+          "Skip the failed stage and continue with the remaining stages"
+        ],
+        "default": "Pause that customer and notify me via Slack",
+        "context": "Defines the error-recovery contract so the coordinator never silently skips steps or sends unintended emails to customers.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How many new customers do you onboard per week on average?",
+        "type": "select",
+        "options": [
+          "1–10 (low volume, sequential processing fine)",
+          "11–50 (moderate, light parallelism helpful)",
+          "51–200 (high volume, parallel stage execution needed)",
+          "200+ (bulk batch processing mode)"
+        ],
+        "default": "11–50 (moderate, light parallelism helpful)",
+        "context": "Determines whether pipeline stages run sequentially or in parallel and how frequently the Gmail poller runs for missing-data recovery.",
+        "dimension": "triggers"
+      }
     ]
   }
 }

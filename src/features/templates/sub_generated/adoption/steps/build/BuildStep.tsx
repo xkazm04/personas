@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState } from 'react';
-import { Sparkles, AlertCircle, RefreshCw, Trash2, HelpCircle, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, AlertCircle, RefreshCw, Trash2, HelpCircle, Send, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
@@ -190,6 +190,88 @@ function BuildQuestionnaire({
   );
 }
 
+const DIMENSION_PROMPTS = [
+  { key: 'use-cases', label: 'Core Behavior', hint: 'What the persona does — adjust scope, capabilities, or focus area', color: 'violet' },
+  { key: 'connectors', label: 'Services', hint: 'Which external services to use — add, remove, or change integrations', color: 'blue' },
+  { key: 'triggers', label: 'Triggers', hint: 'When and how it activates — schedules, webhooks, polling', color: 'cyan' },
+  { key: 'human-review', label: 'Approval Policy', hint: 'What needs your approval before executing', color: 'amber' },
+  { key: 'memory', label: 'Memory', hint: 'What to remember across runs — learning and persistence', color: 'emerald' },
+  { key: 'error-handling', label: 'Error Handling', hint: 'How to handle failures, boundaries, and escalation', color: 'red' },
+] as const;
+
+function DimensionAdjustmentPanel({
+  adjustmentRequest,
+  onSetAdjustment,
+}: {
+  adjustmentRequest: string;
+  onSetAdjustment: (value: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [dimensionNotes, setDimensionNotes] = useState<Record<string, string>>({});
+
+  // Build combined adjustment from dimension notes + freeform
+  const handleDimensionNote = useCallback((key: string, value: string) => {
+    setDimensionNotes(prev => {
+      const next = { ...prev, [key]: value };
+      // Build combined adjustment text
+      const parts = Object.entries(next)
+        .filter(([, v]) => v.trim())
+        .map(([k, v]) => {
+          const dim = DIMENSION_PROMPTS.find(d => d.key === k);
+          return `[${dim?.label ?? k}]: ${v.trim()}`;
+        });
+      onSetAdjustment(parts.join('\n'));
+      return next;
+    });
+  }, [onSetAdjustment]);
+
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 text-sm font-medium text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+      >
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? '' : '-rotate-90'}`} />
+        Refine persona (optional)
+      </button>
+
+      {expanded && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground/50">
+            Target specific dimensions to adjust, or use freeform below.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {DIMENSION_PROMPTS.map(dim => (
+              <div key={dim.key} className={`rounded-lg border border-${dim.color}-500/10 bg-${dim.color}-500/[0.03] p-2.5`}>
+                <label className="text-xs font-medium text-foreground/70 block mb-1">
+                  {dim.label}
+                </label>
+                <input
+                  type="text"
+                  value={dimensionNotes[dim.key] ?? ''}
+                  onChange={e => handleDimensionNote(dim.key, e.target.value)}
+                  placeholder={dim.hint}
+                  className="w-full px-2 py-1.5 text-xs rounded-lg border border-primary/10 bg-background/40 text-foreground/75 placeholder-muted-foreground/30"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Freeform fallback */}
+          <textarea
+            value={adjustmentRequest}
+            onChange={e => onSetAdjustment(e.target.value)}
+            placeholder="Or describe adjustments in your own words..."
+            className="w-full h-16 p-2.5 rounded-xl border border-primary/10 bg-background/40 text-xs text-foreground/75 resize-y placeholder-muted-foreground/30"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function BuildStep() {
   const {
     state,
@@ -286,19 +368,12 @@ export function BuildStep() {
         </div>
       )}
 
-      {/* Adjustment request (post-build) */}
+      {/* Dimension-targeted adjustment (post-build) */}
       {state.draft && !state.transforming && (
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-muted-foreground/70">
-            Request adjustments (optional)
-          </label>
-          <textarea
-            value={state.adjustmentRequest}
-            onChange={(e) => wizard.setAdjustment(e.target.value)}
-            placeholder="Example: Change the schedule to run at 9 AM, remove ClickUp integration, add Slack notifications"
-            className="w-full h-20 p-3 rounded-xl border border-primary/15 bg-background/40 text-sm text-foreground/75 resize-y placeholder-muted-foreground/30"
-          />
-        </div>
+        <DimensionAdjustmentPanel
+          adjustmentRequest={state.adjustmentRequest}
+          onSetAdjustment={wizard.setAdjustment}
+        />
       )}
 
       {/* Discard draft */}

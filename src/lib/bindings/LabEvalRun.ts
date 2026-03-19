@@ -11,6 +11,8 @@ export interface LabEvalRun {
   useCaseFilter: string | null;
   testInput: string | null;
   summary: string | null;
+  llmSummary: string | null;
+  progressJson: string | null;
   error: string | null;
   createdAt: string;
   completedAt: string | null;

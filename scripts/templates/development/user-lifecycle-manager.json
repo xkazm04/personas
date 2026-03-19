@@ -737,6 +737,122 @@
         "label": "Emits events: item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which lifecycle event is most critical to get right for your product?",
+        "type": "select",
+        "options": [
+          "New user signup & Supabase provisioning",
+          "Onboarding drip email sequence",
+          "User deletion & offboarding cleanup",
+          "Email change propagation across systems"
+        ],
+        "default": "New user signup & Supabase provisioning",
+        "context": "Determines which flow receives the most robust error-handling and retry logic",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of product are users signing up for?",
+        "type": "select",
+        "options": [
+          "B2B SaaS (teams & organizations)",
+          "B2C consumer app",
+          "Developer tool or API product",
+          "Internal company platform"
+        ],
+        "default": "B2B SaaS (teams & organizations)",
+        "context": "Shapes onboarding email content, Slack celebration tone, and whether org-level provisioning logic is needed",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What is your onboarding drip sequence structure?",
+        "type": "select",
+        "options": [
+          "3 emails: day 1, 3, 7",
+          "5 emails: day 1, 3, 7, 14, 30",
+          "Welcome email only (no drip)",
+          "Custom — I'll describe it"
+        ],
+        "default": "3 emails: day 1, 3, 7",
+        "context": "Drives the daily scheduler — which users are due for their next email based on days since signup",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel should new user celebrations post to, and should internal signups (your company domain) be excluded?",
+        "type": "text",
+        "default": "#general — celebrate all signups including internal",
+        "context": "Configures the Slack connector target channel and whether to filter out @yourcompany.com signups from celebrations",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do autonomously?",
+        "type": "select",
+        "options": [
+          "Hard-delete rows from Supabase (soft-delete only)",
+          "Send emails to internal company domain addresses",
+          "Modify user records outside of Clerk webhook events",
+          "Trigger deletion cleanup within 24 hours of the event"
+        ],
+        "default": "Hard-delete rows from Supabase (soft-delete only)",
+        "context": "Sets absolute guardrails the agent refuses to cross regardless of the webhook payload received",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which actions should pause for human approval before executing?",
+        "type": "select",
+        "options": [
+          "User account deletion (always require confirmation)",
+          "Bulk email sends affecting more than 50 users at once",
+          "Any action on accounts older than 1 year",
+          "None — run fully autonomously"
+        ],
+        "default": "User account deletion (always require confirmation)",
+        "context": "Inserts a human-review checkpoint instead of proceeding automatically for high-stakes or irreversible operations",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone should onboarding and lifecycle emails use?",
+        "type": "select",
+        "options": [
+          "Friendly & conversational (startup feel)",
+          "Professional & formal (enterprise)",
+          "Technical & concise (developer-focused)",
+          "Warm & supportive (consumer or education)"
+        ],
+        "default": "Friendly & conversational (startup feel)",
+        "context": "Applied consistently across welcome emails, drip sequence, and farewell emails sent via Gmail",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Do users have different plans or roles that should branch the onboarding flow?",
+        "type": "select",
+        "options": [
+          "No — single onboarding path for all users",
+          "Yes — trial vs paid users get different email sequences",
+          "Yes — multiple plans with distinct onboarding tracks",
+          "Yes — org admins vs regular members get separate flows"
+        ],
+        "default": "No — single onboarding path for all users",
+        "context": "Determines whether the agent must read Clerk metadata or Supabase plan fields to fork lifecycle logic",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

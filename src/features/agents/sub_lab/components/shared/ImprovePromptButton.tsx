@@ -4,6 +4,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
 import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 
 interface ImprovePromptButtonProps {
   personaId: string;
@@ -85,7 +86,8 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
         `Analyze weaknesses and low-scoring scenarios, then generate an improved version ` +
         `that addresses the identified issues while preserving existing strengths.`;
 
-      const newRunId = await startMatrix(personaId, instruction, []);
+      const defaultModels = selectedModelsToConfigs(new Set(['haiku', 'sonnet']));
+      const newRunId = await startMatrix(personaId, instruction, defaultModels);
       if (newRunId) {
         setState('success');
         addToast('Improvement run started! Check the Matrix tab for results.', 'success');
@@ -125,23 +127,46 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
     );
   }
 
+  // Build a preview of what will be improved
+  const results = getResultsForRun(runId, mode);
+  const avgScores = results.length > 0 ? {
+    ta: Math.round(results.reduce((s, r) => s + ((r.toolAccuracyScore as number | null) ?? 0), 0) / results.length),
+    oq: Math.round(results.reduce((s, r) => s + ((r.outputQualityScore as number | null) ?? 0), 0) / results.length),
+    pc: Math.round(results.reduce((s, r) => s + ((r.protocolCompliance as number | null) ?? 0), 0) / results.length),
+  } : null;
+
+  const weakest = avgScores
+    ? [
+        { name: 'tool usage', score: avgScores.ta },
+        { name: 'output quality', score: avgScores.oq },
+        { name: 'protocol', score: avgScores.pc },
+      ].sort((a, b) => a.score - b.score)[0]
+    : null;
+
   return (
-    <button
-      onClick={handleClick}
-      disabled={disabled || state === 'loading'}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-    >
-      {state === 'loading' ? (
-        <>
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          Generating improvements...
-        </>
-      ) : (
-        <>
-          <Wand2 className="w-3.5 h-3.5" />
-          Improve Prompt from Results
-        </>
+    <div className="flex items-center gap-3">
+      <button
+        onClick={handleClick}
+        disabled={disabled || state === 'loading'}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r from-violet-500/15 to-primary/15 text-primary border border-primary/15 hover:border-primary/25 hover:from-violet-500/20 hover:to-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+      >
+        {state === 'loading' ? (
+          <>
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Analyzing and patching prompt...
+          </>
+        ) : (
+          <>
+            <Wand2 className="w-3.5 h-3.5" />
+            Auto-Improve Prompt
+          </>
+        )}
+      </button>
+      {weakest && state === 'idle' && (
+        <span className="text-[11px] text-muted-foreground/50">
+          Will focus on <strong className="text-muted-foreground/70">{weakest.name}</strong> (avg {weakest.score}/100)
+        </span>
       )}
-    </button>
+    </div>
   );
 }

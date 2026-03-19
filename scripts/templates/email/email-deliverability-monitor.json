@@ -802,6 +802,131 @@
         "label": "Emits events: execution completed, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What type of email program does this monitor need to protect?",
+        "type": "select",
+        "options": [
+          "Transactional only (receipts, password resets, notifications)",
+          "Marketing campaigns only (newsletters, promotions)",
+          "Both transactional and marketing",
+          "Automated lifecycle emails (onboarding, re-engagement)"
+        ],
+        "default": "Both transactional and marketing",
+        "context": "Determines alert sensitivity and suppression aggressiveness — transactional programs require stricter thresholds since a suppressed user may miss a critical notification.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What compliance frameworks govern your email sending?",
+        "type": "select",
+        "options": [
+          "CAN-SPAM only (US-based audience)",
+          "GDPR (EU recipients included)",
+          "Both CAN-SPAM and GDPR",
+          "CASL (Canadian recipients included)",
+          "Highly regulated industry (HIPAA, financial services)"
+        ],
+        "default": "CAN-SPAM only (US-based audience)",
+        "context": "GDPR and CASL require different unsubscribe handling urgency and audit trail depth. Regulated industries may need suppression decisions logged with full justification.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What bounce rate percentage should trigger an immediate Slack alert?",
+        "type": "select",
+        "options": [
+          "2% (strict — high-volume senders protecting sender score)",
+          "5% (standard — balanced alerting for mixed programs)",
+          "10% (lenient — early-stage list or expected high bounce volume)",
+          "Custom threshold I'll specify"
+        ],
+        "default": "5% (standard — balanced alerting for mixed programs)",
+        "context": "The right threshold depends on your list hygiene baseline and send volume. Too low causes alert fatigue; too high means damage is already done before you're notified.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which email addresses or domains should NEVER be auto-suppressed without explicit human approval?",
+        "type": "select",
+        "options": [
+          "VIP customer domains (enterprise accounts, high-value subscribers)",
+          "Internal company addresses (@yourdomain.com)",
+          "Both VIP domains and internal addresses",
+          "No exceptions — auto-suppress all problematic addresses",
+          "I'll provide a protected list during setup"
+        ],
+        "default": "Both VIP domains and internal addresses",
+        "context": "Auto-suppression is powerful but irreversible in practice. Protecting critical domains prevents accidentally blocking a major customer or internal testing address.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which suppression decisions should require human confirmation before executing?",
+        "type": "select",
+        "options": [
+          "Hard bounces only — soft bounces and spam reports auto-suppress",
+          "Spam reports only — these directly impact sender reputation scores",
+          "All bulk suppressions (10+ addresses in one event batch)",
+          "No confirmations needed — fully automated suppression",
+          "All suppression decisions require approval"
+        ],
+        "default": "All bulk suppressions (10+ addresses in one event batch)",
+        "context": "Bulk suppression events can be triggered by a single bad campaign send. Requiring approval for large batches prevents cascading list damage from a one-time issue.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channel should receive deliverability alerts, and at what urgency level?",
+        "type": "select",
+        "options": [
+          "Dedicated #email-deliverability channel with all events",
+          "Engineering/ops channel for spikes only, separate channel for weekly reports",
+          "#general or #alerts channel for critical spikes only",
+          "Direct message to a specific team member for critical alerts"
+        ],
+        "default": "Dedicated #email-deliverability channel with all events",
+        "context": "Alert routing affects response time. Spam report spikes need immediate attention; weekly reports benefit from a dedicated channel that doesn't create noise.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What is your approximate monthly send volume?",
+        "type": "select",
+        "options": [
+          "Under 10,000 emails/month (startup or low-frequency sender)",
+          "10,000–100,000 emails/month (growing program)",
+          "100,000–1M emails/month (established sender)",
+          "Over 1M emails/month (high-volume — ISP reputation closely watched)"
+        ],
+        "default": "10,000–100,000 emails/month (growing program)",
+        "context": "Send volume calibrates the 15-minute polling interval sensitivity and determines whether deferral rate thresholds should be tightened. High-volume senders face stricter ISP scrutiny.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What should the weekly Monday deliverability report emphasize?",
+        "type": "select",
+        "options": [
+          "Trend analysis — week-over-week bounce/spam rate changes with anomaly flags",
+          "Action items only — suppressed addresses, unresolved spikes, recommended fixes",
+          "Full metrics dashboard — all rates, top bounce reasons, engagement breakdown",
+          "Executive summary — single health score with pass/fail indicators"
+        ],
+        "default": "Trend analysis — week-over-week bounce/spam rate changes with anomaly flags",
+        "context": "Report format determines what your team acts on. Technical teams benefit from full metrics; leadership wants a health score; deliverability specialists want trend data.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

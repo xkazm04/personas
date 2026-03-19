@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState, startTransition } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Workflow } from 'lucide-react';
 import GlobalExecutionList from '@/features/overview/sub_executions/components/GlobalExecutionList';
-import PanelSkeleton from '@/features/shared/components/layout/PanelSkeleton';
 
 // History is the default -- keep eager. Workflows is heavy and lazy-loaded.
 const WorkflowsDashboard = lazy(() => import('@/features/overview/sub_workflows/components/WorkflowsDashboard'));
@@ -45,13 +45,24 @@ export default function ExecutionsWithSubtabs() {
       </div>
 
       {/* Content */}
-      {subtab === 'history' ? (
-        <GlobalExecutionList />
-      ) : (
-        <Suspense fallback={<PanelSkeleton variant="subtab" />}>
-          <WorkflowsDashboard />
-        </Suspense>
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={subtab}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="flex-1 min-h-0 flex flex-col"
+        >
+          {subtab === 'history' ? (
+            <GlobalExecutionList />
+          ) : (
+            <Suspense fallback={null}>
+              <WorkflowsDashboard />
+            </Suspense>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

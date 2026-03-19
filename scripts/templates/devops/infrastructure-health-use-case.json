@@ -836,6 +836,128 @@
         "label": "Emits events: item created, threshold breached, escalation triggered",
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "Which monitoring capability is your primary reason for adopting this agent?",
+        "type": "select",
+        "options": [
+          "Real-time alarm detection and Slack alerting",
+          "Persistent issue escalation to Jira ops tickets",
+          "AWS cost anomaly tracking and budget guardrails",
+          "Weekly infrastructure health reporting for stakeholders"
+        ],
+        "default": "Real-time alarm detection and Slack alerting",
+        "context": "Determines which flow to optimize and emphasize in the persona's behavior and memory priorities.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How is your AWS infrastructure organized?",
+        "type": "select",
+        "options": [
+          "Single AWS account, single region",
+          "Single AWS account, multiple regions",
+          "Multiple AWS accounts (dev/staging/prod)",
+          "AWS Organizations with centralized CloudWatch"
+        ],
+        "default": "Single AWS account, single region",
+        "context": "Affects how the agent scopes alarm polling, filters noise from non-production environments, and structures reports.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What is your team's primary infrastructure stack monitored via CloudWatch?",
+        "type": "select",
+        "options": [
+          "ECS / Fargate containerized services",
+          "EC2 instances and Auto Scaling groups",
+          "Serverless (Lambda, API Gateway, DynamoDB)",
+          "Mixed stack (containers + serverless + EC2)"
+        ],
+        "default": "Mixed stack (containers + serverless + EC2)",
+        "context": "Shapes how the agent classifies and correlates alarms — CPU+memory correlation differs from Lambda throttle+error correlation.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which actions should this agent NEVER take autonomously?",
+        "type": "select",
+        "options": [
+          "Never create Jira tickets without a human approving the escalation",
+          "Never post to #incidents or @channel mention without confirmation",
+          "Never suppress or acknowledge alarms — always surface everything",
+          "Never act on cost anomalies below a manually-confirmed dollar threshold"
+        ],
+        "default": "Never create Jira tickets without a human approving the escalation",
+        "context": "Prevents the agent from taking high-impact actions (ticket spam, channel noise) without explicit authorization boundaries.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "At what point in the escalation flow do you want a human to approve before the agent proceeds?",
+        "type": "select",
+        "options": [
+          "Before creating any Jira ticket (agent drafts, human approves)",
+          "Only before escalating a WARNING to CRITICAL severity",
+          "Only when a cost anomaly exceeds a defined weekly spend threshold",
+          "Full autonomy — agent should handle all escalations without approval"
+        ],
+        "default": "Before creating any Jira ticket (agent drafts, human approves)",
+        "context": "Defines the human review gate so the agent knows when to pause and request confirmation vs. act immediately.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What is your monthly AWS spend threshold that should trigger a cost anomaly alert?",
+        "type": "select",
+        "options": [
+          "5% above the 30-day rolling average",
+          "10% above the 30-day rolling average",
+          "Absolute dollar spike (e.g., >$500/day above baseline)",
+          "No cost monitoring needed — alarm monitoring only"
+        ],
+        "default": "10% above the 30-day rolling average",
+        "context": "Sets the sensitivity of cost anomaly detection to avoid alert fatigue from normal spend fluctuations.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "How long must an alarm persist before the agent escalates it to a Jira ops ticket?",
+        "type": "select",
+        "options": [
+          "10 minutes (fast escalation for production-critical teams)",
+          "30 minutes (standard ops escalation window)",
+          "1 hour (only truly persistent issues warrant a ticket)",
+          "Manual only — never auto-create tickets based on duration"
+        ],
+        "default": "30 minutes (standard ops escalation window)",
+        "context": "Prevents Jira ticket spam from transient alarms while ensuring persistent degradation doesn't go untracked.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Who is the primary audience for the Monday weekly health report?",
+        "type": "select",
+        "options": [
+          "Engineering team — technical metrics, alarm counts, p99 latencies",
+          "Engineering + product managers — plain-language summary with cost highlights",
+          "Leadership / executives — high-level SLA adherence and spend trends only",
+          "On-call team only — actionable items and open Jira tickets for the week ahead"
+        ],
+        "default": "Engineering + product managers — plain-language summary with cost highlights",
+        "context": "Determines the report's depth, technical vocabulary, and which metrics to surface vs. summarize.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

@@ -713,6 +713,103 @@
         "label": "Emits events: item created, threshold breached",
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary operational problem you need this agent to solve?",
+        "type": "select",
+        "options": [
+          "Catch high-value and suspicious orders before they slip through",
+          "Prevent stockouts by getting inventory alerts before it's too late",
+          "Replace manual daily reporting with automated sales digests",
+          "All three — unified e-commerce ops visibility"
+        ],
+        "default": "All three — unified e-commerce ops visibility",
+        "context": "Determines which monitoring flows to prioritize and how aggressively to tune thresholds",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is your Shopify store's average monthly order volume and home country?",
+        "type": "text",
+        "default": "~500 orders/month, United States",
+        "context": "Order volume sets polling sensitivity; home country is required to correctly classify international orders for alerts",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What order total defines 'high-value' for your business, and what is your critical inventory threshold?",
+        "type": "text",
+        "default": "High-value: $500+; Warn inventory at 10 units, critical at 3 units",
+        "context": "These two thresholds drive the majority of Slack alerts — wrong values mean alert fatigue or missed events",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Slack channels should receive each alert type?",
+        "type": "text",
+        "default": "#sales-alerts for high-value orders, #ops-alerts for inventory warnings, #daily-digest for the 9 PM report",
+        "context": "Routing alerts to the wrong channel is the most common setup mistake — lets the agent target the right audiences from day one",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do, regardless of what it detects?",
+        "type": "select",
+        "options": [
+          "Never cancel, modify, or fulfill orders — read-only on Shopify",
+          "Never contact customers directly — alerts go to internal team only",
+          "Never overwrite existing rows in Google Sheets — append only",
+          "All of the above — strictly read and report, never mutate"
+        ],
+        "default": "All of the above — strictly read and report, never mutate",
+        "context": "Prevents the agent from taking irreversible actions on live orders or customer data without explicit authorization",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which scenarios require a human to review and approve before the agent escalates or flags?",
+        "type": "select",
+        "options": [
+          "All refund requests over a certain dollar amount before they appear in reports",
+          "Orders flagged as suspicious (unusual discounts, bulk quantities) before Slack alert is sent",
+          "Critical inventory alerts (near zero stock) before notifying the wider team",
+          "No approval needed — alert immediately and let the team decide"
+        ],
+        "default": "No approval needed — alert immediately and let the team decide",
+        "context": "Determines whether the agent operates as a pure notifier or pauses on sensitive events to avoid false alarms reaching the team",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How much detail do you want in the daily 9 PM sales digest?",
+        "type": "select",
+        "options": [
+          "Executive summary: revenue, order count, top 3 SKUs only",
+          "Standard: revenue, orders, top SKUs, refunds, and day-over-day comparison",
+          "Full ops report: all of the above plus inventory health, international breakdown, and trend alerts"
+        ],
+        "default": "Standard: revenue, orders, top SKUs, refunds, and day-over-day comparison",
+        "context": "Controls digest length and the rolling-average comparison window used for trend analysis",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "What is the name of the Google Sheets workbook and tab where orders should be logged?",
+        "type": "text",
+        "default": "E-Commerce Ops > Orders Log",
+        "context": "Needed to target the exact sheet from day one rather than creating a new one — prevents duplicate ledgers if you already track orders manually",
+        "dimension": "connectors"
+      }
     ]
   }
 }

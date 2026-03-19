@@ -693,6 +693,110 @@
         "label": "Emits events: item created, threshold breached, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary goal of this agent for your team?",
+        "type": "select",
+        "options": [
+          "Real-time sales alerts when users show high-intent signals",
+          "Behavioral pattern escalation for users who accumulate medium-intent signals",
+          "Both real-time alerts and pattern-based escalation",
+          "Analytics and Notion logging only — no Slack alerts yet"
+        ],
+        "default": "Both real-time alerts and pattern-based escalation",
+        "context": "Determines which workflows the agent prioritizes and how aggressively it routes to Slack vs. silently accumulates signals.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of product and customer base does this agent monitor?",
+        "type": "select",
+        "options": [
+          "B2B SaaS with sales-assisted upgrades",
+          "B2B SaaS with product-led growth (self-serve)",
+          "B2C subscription app",
+          "Marketplace or e-commerce platform"
+        ],
+        "default": "B2B SaaS with sales-assisted upgrades",
+        "context": "Shapes which Segment events are treated as high-intent signals and how urgently the sales team should respond.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Which features in your product count as 'power feature activation' that should trigger a high-intent alert?",
+        "type": "text",
+        "default": "SSO setup, API key creation, webhook configuration, advanced analytics dashboard",
+        "context": "The template uses SSO, API webhooks, and advanced analytics as defaults — replace with your actual product's activation milestones so the signal catalog is accurate.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "Which Slack channel(s) should receive high-intent sales alerts?",
+        "type": "text",
+        "default": "#sales-signals",
+        "context": "Determines Slack routing. Some teams use a single shared channel; others route by account tier (e.g., #enterprise-signals vs #smb-signals).",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "What is your minimum intent score for an immediate Slack alert?",
+        "type": "select",
+        "options": [
+          "70 — alert on most meaningful signals",
+          "80 — default: high-confidence signals only",
+          "90 — alert only on the strongest buying signals (pricing page, checkout)",
+          "Custom — I'll describe it in the next question"
+        ],
+        "default": "80 — default: high-confidence signals only",
+        "context": "Controls alert volume. Lower thresholds generate more Slack noise; higher thresholds reduce coverage. The template default is 80.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which users or segments should NEVER trigger sales alerts, regardless of their behavior?",
+        "type": "text",
+        "default": "Internal employees, QA test accounts, free-tier users in trial grace period",
+        "context": "Prevents alert fatigue from internal testing, churned accounts, or user segments your sales team doesn't work. Used to filter events before scoring.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "When a behavioral pattern escalation triggers (accumulated medium-intent signals), what should happen?",
+        "type": "select",
+        "options": [
+          "Auto-alert Slack immediately — no human gate",
+          "Post to Slack flagged as 'needs review' and wait for a rep to confirm before logging to Notion",
+          "Log to Notion only — let reps pull the report on their own schedule",
+          "Alert a specific on-call rep via Slack DM for manual triage"
+        ],
+        "default": "Post to Slack flagged as 'needs review' and wait for a rep to confirm before logging to Notion",
+        "context": "Pattern escalations are less certain than single high-intent events. This controls whether a human validates the signal before it enters the CRM/Notion pipeline.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What context should be included in a Slack sales alert to make it actionable?",
+        "type": "select",
+        "options": [
+          "Minimal: user ID, event name, timestamp",
+          "Standard: user name/email, event, company, account age, plan tier",
+          "Full: all of the above plus recent session history, previous high-intent events, and Segment Profiles enrichment",
+          "Custom — I'll specify the fields I need"
+        ],
+        "default": "Full: all of the above plus recent session history, previous high-intent events, and Segment Profiles enrichment",
+        "context": "More context helps reps act faster but makes alerts longer. Match the format to how your sales team actually works in Slack.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

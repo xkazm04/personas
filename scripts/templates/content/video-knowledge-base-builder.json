@@ -571,6 +571,118 @@
         "label": "Emits events: execution completed, execution failed, item created, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary type of Loom recording this persona will process?",
+        "type": "select",
+        "options": [
+          "Engineering demos & technical walkthroughs",
+          "Product updates & feature announcements",
+          "Meeting recordings & decision logs",
+          "Customer calls & feedback sessions",
+          "Training & onboarding content"
+        ],
+        "default": "Engineering demos & technical walkthroughs",
+        "context": "Determines the summary structure, topic taxonomy, and Slack channel routing logic used when generating Notion pages.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which team or department primarily creates these Loom recordings?",
+        "type": "select",
+        "options": [
+          "Engineering / Product",
+          "Sales / Customer Success",
+          "HR / People & Training",
+          "Executive / Leadership",
+          "Cross-functional — all teams"
+        ],
+        "default": "Engineering / Product",
+        "context": "Shapes how creator metadata is used to route Slack notifications and tag Notion pages with the correct owner team.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How should this persona decide which Slack channel(s) to post a video summary to?",
+        "type": "select",
+        "options": [
+          "Always post to one designated channel",
+          "Route by the video creator's team or department",
+          "Route by AI-detected topic tags",
+          "Post to creator's channel + a central knowledge-base channel"
+        ],
+        "default": "Post to creator's channel + a central knowledge-base channel",
+        "context": "Controls the Slack distribution strategy so notifications reach the right audience without spamming unrelated channels.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "What is the name or ID of the Notion database where knowledge pages should be created?",
+        "type": "text",
+        "default": "",
+        "context": "Required to target the correct Notion database; avoids creating pages in the wrong workspace or database.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "At what stage should a human review the AI-generated content before it is published?",
+        "type": "select",
+        "options": [
+          "Never — publish Notion page and Slack post automatically",
+          "Review the summary before the Notion page goes live",
+          "Review before the Slack notification is sent",
+          "Review both the Notion page and Slack post before any publishing"
+        ],
+        "default": "Review the summary before the Notion page goes live",
+        "context": "Sets the approval gate to prevent low-quality or sensitive summaries from being distributed without oversight.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which Loom recordings should this persona NEVER process or publish?",
+        "type": "select",
+        "options": [
+          "Recordings shared externally with customers or prospects",
+          "Recordings explicitly marked private by the creator",
+          "Recordings shorter than 2 minutes (likely accidental)",
+          "None — process every incoming webhook without restriction"
+        ],
+        "default": "Recordings shared externally with customers or prospects",
+        "context": "Prevents sensitive, confidential, or incomplete recordings from being automatically surfaced in Notion and Slack.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should the Notion knowledge page content be?",
+        "type": "select",
+        "options": [
+          "Brief — executive summary + top 3 bullet points only",
+          "Standard — summary + key discussion points + action items",
+          "Detailed — timestamped breakdown every 2-3 minutes + full action items",
+          "Comprehensive — full transcript with inline AI annotations"
+        ],
+        "default": "Standard — summary + key discussion points + action items",
+        "context": "Balances information density against readability; affects how useful the Notion page is for async consumption.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_human_in_the_loop_2",
+        "category": "human_in_the_loop",
+        "question": "If the Loom transcript is unavailable after 3 retries, should the persona create a partial Notion page and notify Slack anyway?",
+        "type": "boolean",
+        "default": true,
+        "context": "Determines whether partial knowledge pages are acceptable or if the workflow should silently abort when transcript processing fails.",
+        "dimension": "human-review"
+      }
     ]
   }
 }

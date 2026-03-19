@@ -642,6 +642,116 @@
         "label": "Emits events: item created, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary purpose of tracking campaign performance at your 24h and 72h windows?",
+        "type": "select",
+        "options": [
+          "Identify underperforming campaigns for immediate intervention",
+          "Build historical benchmarks to improve future campaign planning",
+          "Report performance to stakeholders and executives",
+          "Monitor list health (bounces, unsubscribes, abuse reports)"
+        ],
+        "default": "Build historical benchmarks to improve future campaign planning",
+        "context": "Determines which metrics the analyst prioritizes and how it frames Slack summaries",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What industry are your Mailchimp campaigns targeting? This calibrates benchmark expectations (e.g., B2B open rates differ significantly from e-commerce).",
+        "type": "select",
+        "options": [
+          "E-commerce / Retail",
+          "B2B / SaaS",
+          "Nonprofit / Advocacy",
+          "Media / Publishing / Newsletter",
+          "Healthcare / Wellness"
+        ],
+        "default": "B2B / SaaS",
+        "context": "Industry averages vary widely — a 20% open rate is excellent in e-commerce but below par for a niche newsletter",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What open rate and click rate should be treated as your baseline 'healthy' benchmark? (e.g., open rate ≥ 22%, click rate ≥ 2.5%)",
+        "type": "text",
+        "default": "Open rate ≥ 20%, click rate ≥ 2%",
+        "context": "Sets the threshold used in benchmark comparisons and outlier detection before enough historical data accumulates in Airtable",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "Which Mailchimp audience lists should this agent monitor? (Leave blank for all lists, or name specific ones.)",
+        "type": "text",
+        "default": "All lists",
+        "context": "Scopes the campaign detection query — prevents noise from transactional or test lists you don't want benchmarked",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent never do automatically, even during an outlier event?",
+        "type": "select",
+        "options": [
+          "Never pause, modify, or resend any Mailchimp campaign",
+          "Never post to Slack channels outside the designated reporting channel",
+          "Never delete or overwrite historical rows in Airtable",
+          "Never send alerts outside business hours (9 AM–6 PM local time)"
+        ],
+        "default": "Never pause, modify, or resend any Mailchimp campaign",
+        "context": "Prevents the agent from taking destructive or irreversible actions during automated runs",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which outlier conditions should escalate to a human-review @mention in Slack rather than a quiet log?",
+        "type": "select",
+        "options": [
+          "Open rate more than 30% below historical benchmark",
+          "Hard bounce rate exceeds 2% or unsubscribe rate exceeds 0.5%",
+          "Any metric deviation beyond 1 standard deviation from the benchmark",
+          "All outlier conditions — always escalate for human review"
+        ],
+        "default": "Hard bounce rate exceeds 2% or unsubscribe rate exceeds 0.5%",
+        "context": "List health issues (bounces, unsubscribes) carry deliverability risk that typically warrants immediate human attention",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "How many historical campaigns should be used to calculate rolling benchmarks in Airtable?",
+        "type": "select",
+        "options": [
+          "Last 10 campaigns (responsive to recent trends)",
+          "Last 30 days of sends",
+          "Last 90 days of sends (stable baseline)",
+          "All-time average (maximally stable)"
+        ],
+        "default": "Last 90 days of sends (stable baseline)",
+        "context": "Shorter windows react faster to list/strategy shifts; longer windows reduce noise from seasonal spikes",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What format should the Slack performance cards use?",
+        "type": "select",
+        "options": [
+          "Compact: 3–4 key metrics with a pass/fail benchmark badge",
+          "Standard: metrics table + benchmark delta + one-line recommendation",
+          "Detailed: full metric breakdown, benchmark comparison, and trend direction vs. prior 3 campaigns"
+        ],
+        "default": "Standard: metrics table + benchmark delta + one-line recommendation",
+        "context": "Determines how much information lands in the channel vs. requiring a click-through to Airtable",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

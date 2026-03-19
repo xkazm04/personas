@@ -755,6 +755,100 @@
         "label": "Emits events: item created, threshold breached",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What types of meetings does this orchestrator primarily manage?",
+        "type": "select",
+        "options": [
+          "B2B sales (discovery calls, demos, proposals)",
+          "Customer success and onboarding",
+          "Support and troubleshooting sessions",
+          "Mixed — both sales and post-sales"
+        ],
+        "default": "B2B sales (discovery calls, demos, proposals)",
+        "context": "Determines how deals are staged in HubSpot, what prep materials are generated, and how follow-up emails are framed.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which Slack channel(s) should receive new booking and cancellation alerts?",
+        "type": "text",
+        "default": "#sales-pipeline",
+        "context": "Ensures team notifications route to the right channel instead of a generic default.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What HubSpot pipeline should new deals be created in?",
+        "type": "text",
+        "default": "Sales Pipeline",
+        "context": "HubSpot supports multiple pipelines; the orchestrator needs the exact pipeline name to place deals correctly.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Should the orchestrator automatically update deal stages or close deals based on no-shows and cancellations?",
+        "type": "select",
+        "options": [
+          "Yes — update stages automatically on cancellations and no-shows",
+          "Update stage on cancellation, but never close a deal automatically",
+          "Never change deal stage automatically — log a note only"
+        ],
+        "default": "Update stage on cancellation, but never close a deal automatically",
+        "context": "Prevents unintended CRM mutations on sensitive deal records without explicit human intent.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which outbound emails require human review before sending?",
+        "type": "select",
+        "options": [
+          "None — send all emails automatically",
+          "Follow-up emails only (confirmations go out automatically)",
+          "Any email to a contact with no prior HubSpot history",
+          "All outbound emails must be approved before sending"
+        ],
+        "default": "Follow-up emails only (confirmations go out automatically)",
+        "context": "Balances automation speed against the risk of sending poorly-timed or inaccurate emails to prospects.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How should reminder and follow-up timing work?",
+        "type": "select",
+        "options": [
+          "Default: reminder 24h before, follow-up 24h after",
+          "Reminder 48h before, follow-up 24h after",
+          "Reminder 24h before, follow-up 48h after",
+          "Reminder 1h before only (no follow-up)"
+        ],
+        "default": "Default: reminder 24h before, follow-up 24h after",
+        "context": "The daily 8 AM UTC scan window is fixed, but configuring lead/lag times prevents premature or stale outreach.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What tone and depth should confirmation and follow-up emails use?",
+        "type": "select",
+        "options": [
+          "Concise and professional (under 150 words, no fluff)",
+          "Warm and conversational with personal touches",
+          "Detailed — include agenda, prep questions, and resource links",
+          "Adapt to deal stage (casual early stage, formal late stage)"
+        ],
+        "default": "Concise and professional (under 150 words, no fluff)",
+        "context": "Shapes the generated prep materials and email copy to match the user's brand voice and buyer expectations.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

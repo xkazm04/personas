@@ -751,6 +751,116 @@
         "label": "Emits events: item created, threshold breached, escalation triggered",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is your primary goal for automating subscription billing operations?",
+        "type": "select",
+        "options": [
+          "Recover failed payments and reduce involuntary churn",
+          "Maintain accurate real-time subscription records in Airtable",
+          "Keep the team informed on revenue events via Slack",
+          "Generate accurate MRR reports for finance and leadership"
+        ],
+        "default": "Recover failed payments and reduce involuntary churn",
+        "context": "Determines which flows to prioritize and tune — dunning logic, record accuracy, Slack verbosity, or reporting depth.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of SaaS business are you running?",
+        "type": "select",
+        "options": [
+          "B2B SaaS (business customers, annual/monthly contracts)",
+          "B2C subscription (consumer product, monthly billing)",
+          "Usage-based or hybrid billing",
+          "Marketplace or multi-tenant platform"
+        ],
+        "default": "B2B SaaS (business customers, annual/monthly contracts)",
+        "context": "Shapes dunning email tone, MRR segmentation logic, and whether cancellations trigger retention flows vs. immediate record closure.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Which Slack channels should receive subscription events and MRR reports? (e.g., #revenue, #billing-alerts, #finance)",
+        "type": "text",
+        "default": "#revenue",
+        "context": "Ensures Slack notifications route to the right audience — sales team, finance, or exec — without spamming unrelated channels.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How should the 3-tier dunning sequence be spaced? (days between each attempt)",
+        "type": "select",
+        "options": [
+          "Aggressive: Day 1, Day 3, Day 7",
+          "Standard: Day 1, Day 7, Day 14",
+          "Gentle: Day 3, Day 10, Day 21",
+          "Custom — I'll specify in the persona instructions"
+        ],
+        "default": "Standard: Day 1, Day 7, Day 14",
+        "context": "Controls the escalation cadence for failed payment recovery. Aggressive suits low-margin B2C; gentle suits high-touch B2B accounts.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "What is the name of your Airtable base and table used to store customer subscription records?",
+        "type": "text",
+        "default": "Billing / Subscriptions",
+        "context": "Required to correctly target Airtable API calls for record creation, updates, and MRR aggregation queries.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent NEVER do automatically without a human decision?",
+        "type": "select",
+        "options": [
+          "Never cancel a subscription — only flag for human review",
+          "Never issue refunds or credit adjustments",
+          "Never send customer-facing emails without approval",
+          "Never post MRR figures to Slack — finance channel only"
+        ],
+        "default": "Never cancel a subscription — only flag for human review",
+        "context": "Sets hard guardrails so the agent doesn't take irreversible billing actions that could harm customer relationships or revenue.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which dunning actions require human approval before the agent proceeds?",
+        "type": "select",
+        "options": [
+          "Fully automated — send all three dunning tiers without approval",
+          "Approve only the final warning email (Tier 3) before sending",
+          "Approve every dunning email before it goes out",
+          "Approve any action on accounts over a set MRR threshold"
+        ],
+        "default": "Approve only the final warning email (Tier 3) before sending",
+        "context": "Balances speed of recovery with human oversight — especially important for high-value accounts where a bad email could accelerate churn.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "What level of detail do you need in the monthly MRR report?",
+        "type": "select",
+        "options": [
+          "Executive summary: total MRR, net new MRR, churn rate",
+          "Plan breakdown: MRR segmented by subscription tier",
+          "Full cohort view: new, expansion, contraction, churned, reactivated",
+          "Anomaly-focused: only surface significant deviations from prior month"
+        ],
+        "default": "Executive summary: total MRR, net new MRR, churn rate",
+        "context": "Determines the depth of Airtable queries and report structure — a founder needs a one-pager, a finance team needs full cohort reconciliation.",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

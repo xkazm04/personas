@@ -730,6 +730,125 @@
         "label": "Emits events: execution failed, threshold breached, escalation triggered",
         "context": "3 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary reconciliation challenge you're solving?",
+        "type": "select",
+        "options": [
+          "High-volume daily matching (500+ transactions/day)",
+          "Multi-currency transactions requiring FX reconciliation",
+          "Multi-entity or intercompany reconciliation",
+          "Catching fraud or unauthorized charges quickly",
+          "Replacing a manual month-end close process"
+        ],
+        "default": "High-volume daily matching (500+ transactions/day)",
+        "context": "Shapes which classification rules, tolerance windows, and escalation logic the agent prioritizes",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How would you describe your organization's accounting complexity?",
+        "type": "select",
+        "options": [
+          "Single entity, one bank account",
+          "Single entity, multiple bank accounts or cards",
+          "Multiple entities sharing one Xero org",
+          "Accounting firm managing multiple client orgs"
+        ],
+        "default": "Single entity, multiple bank accounts or cards",
+        "context": "Determines whether the agent needs to segment reconciliation by entity, account, or client and how it labels discrepancy logs",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "What transaction amount should trigger an immediate Slack alert for an unmatched item?",
+        "type": "select",
+        "options": [
+          "Any amount (alert on everything unmatched)",
+          "$100 and above",
+          "$500 and above",
+          "$1,000 and above",
+          "$5,000 and above"
+        ],
+        "default": "$500 and above",
+        "context": "Controls alert noise — low thresholds are thorough but noisy; high thresholds reduce pings but may delay catching small recurring errors",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_configuration_2",
+        "category": "configuration",
+        "question": "What confidence score should a partial match reach before it is auto-accepted without human review?",
+        "type": "select",
+        "options": [
+          "Never auto-accept — flag all partial matches for review",
+          "85% or higher",
+          "90% or higher",
+          "95% or higher"
+        ],
+        "default": "90% or higher",
+        "context": "Balances automation speed against reconciliation accuracy; lower thresholds reduce manual work but increase mis-match risk",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which scenarios must always wait for human sign-off before the agent logs them as reconciled?",
+        "type": "select",
+        "options": [
+          "Any transaction above a set dollar threshold",
+          "All UNMATCHED_BANK entries regardless of amount",
+          "Any item flagged as a new, unrecognized merchant or payee",
+          "All of the above",
+          "None — fully automate reconciliation, alert only"
+        ],
+        "default": "Any transaction above a set dollar threshold",
+        "context": "Defines the agent's autonomy ceiling and audit-trail expectations for your finance team or auditors",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "What should this agent never do, even if it appears confident in a match?",
+        "type": "select",
+        "options": [
+          "Never write or edit any Xero entries — read-only access only",
+          "Never suppress an alert for a recurring pattern without re-confirming monthly",
+          "Never send the weekly summary email before a human reviews it",
+          "Never auto-reconcile transactions older than the current period"
+        ],
+        "default": "Never write or edit any Xero entries — read-only access only",
+        "context": "Hard guardrails prevent the agent from taking irreversible financial actions; critical for audit compliance",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Are there known recurring transactions the agent should learn to match without alerting each time (e.g., payroll, rent, SaaS subscriptions)?",
+        "type": "text",
+        "default": "E.g., Monthly rent on the 1st, weekly payroll from ADP, Stripe settlement with 2-day offset",
+        "context": "Pre-seeding known patterns eliminates false-positive alerts from day one and lets the pattern-learning flow focus on genuinely new anomalies",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Who receives the weekly reconciliation summary email, and what level of detail do they expect?",
+        "type": "select",
+        "options": [
+          "CFO / finance director — executive summary with totals and exception counts only",
+          "Bookkeeper / controller — full itemized list of all unmatched and partial-match transactions",
+          "Both — send a summary version to leadership and a detailed version to the ops team",
+          "No email needed — Google Sheets log is sufficient"
+        ],
+        "default": "Both — send a summary version to leadership and a detailed version to the ops team",
+        "context": "Drives the email template structure, recipient list, and how much raw transaction data is included versus summarized",
+        "dimension": "use-cases"
+      }
     ]
   }
 }

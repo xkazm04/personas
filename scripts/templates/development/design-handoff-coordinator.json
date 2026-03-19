@@ -684,6 +684,114 @@
         "label": "Emits events: execution failed, credential status change, threshold breached",
         "context": "2 event subscription(s) configured -- agent participates in event bus"
       }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_intent_1",
+        "category": "intent",
+        "question": "What is the primary handoff goal for your team?",
+        "type": "select",
+        "options": [
+          "Notify devs of component changes and auto-create implementation tickets",
+          "Track design system evolution and flag breaking changes only",
+          "Keep Slack updated on handoffs without creating Linear tickets",
+          "Full pipeline: Figma → Linear tickets → Slack summaries"
+        ],
+        "default": "Full pipeline: Figma → Linear tickets → Slack summaries",
+        "context": "Determines which parts of the workflow are active and how aggressively tickets are created.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of design work does this persona primarily track?",
+        "type": "select",
+        "options": [
+          "Shared design system / component library",
+          "Product feature screens and flows",
+          "Marketing and brand assets",
+          "Mixed — product features and design system components"
+        ],
+        "default": "Product feature screens and flows",
+        "context": "Shapes how component changes are categorized and described in tickets and Slack messages.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_configuration_1",
+        "category": "configuration",
+        "question": "How should Linear tickets be scoped when components change?",
+        "type": "select",
+        "options": [
+          "One ticket per changed component (granular, one-to-one)",
+          "One ticket per Figma file version (batched per publish)",
+          "One ticket per Figma file per day (daily rollup)"
+        ],
+        "default": "One ticket per Figma file version (batched per publish)",
+        "context": "Controls ticket volume. Per-component is precise but noisy; per-version batches work per publish event.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_boundaries_1",
+        "category": "boundaries",
+        "question": "Which types of Figma changes should be silently ignored and never generate tickets or Slack messages?",
+        "type": "select",
+        "options": [
+          "Rename-only changes (no structural diff)",
+          "Changes to hidden or draft components",
+          "Both renames and hidden/draft components",
+          "Nothing — track all changes including minor ones"
+        ],
+        "default": "Both renames and hidden/draft components",
+        "context": "Prevents ticket spam from cosmetic or work-in-progress Figma edits that are not ready for dev.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_human_in_the_loop_1",
+        "category": "human_in_the_loop",
+        "question": "Which actions require a human to approve before the persona proceeds?",
+        "type": "select",
+        "options": [
+          "None — run fully automated end-to-end",
+          "Only when a component is REMOVED (potentially breaking change)",
+          "Before posting any Slack message (Linear tickets auto-create)",
+          "Both REMOVED components and Slack posts require approval"
+        ],
+        "default": "Only when a component is REMOVED (potentially breaking change)",
+        "context": "REMOVED components can break existing implementations. Gating on removals reduces risk without slowing routine handoffs.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_credentials_1",
+        "category": "credentials",
+        "question": "Which Linear team or project should handoff tickets be filed under by default?",
+        "type": "text",
+        "default": "",
+        "context": "Sets the default Linear destination so tickets land in the right backlog without manual routing each time.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How detailed should Slack handoff summaries be?",
+        "type": "select",
+        "options": [
+          "Minimal — file name, version number, and count of changes",
+          "Standard — component list with change type (ADDED/MODIFIED/REMOVED) and Linear ticket links",
+          "Verbose — full changelog with Figma deep links, ticket links, and implementation notes per component"
+        ],
+        "default": "Standard — component list with change type (ADDED/MODIFIED/REMOVED) and Linear ticket links",
+        "context": "Balances channel noise vs. developer context. Standard is usually enough; verbose suits design system teams.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_memory_1",
+        "category": "memory",
+        "question": "Should the persona remember which components have been flagged before and suppress repeat tickets for unchanged components across versions?",
+        "type": "boolean",
+        "default": true,
+        "context": "Prevents duplicate tickets when the same component appears in multiple consecutive Figma versions without meaningful new changes.",
+        "dimension": "memory"
+      }
     ]
   }
 }
