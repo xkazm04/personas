@@ -4,8 +4,9 @@ node_modules/
 # Build output
 dist/
 
-# Rust
-src-tauri/target/
+# Rust build artifacts (any target/ dir, including nested)
+**/target/
+src-tauri/src-tauri/
 
 # Environment
 .env
@@ -22,6 +23,22 @@ Thumbs.db
 # Logs
 *.log
 
+# Python bytecode
+**/__pycache__/
+*.pyc
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
+# Database
+personas.db
+
+# Machine-specific MCP config
+.mcp.json
+
+# Playwright test artifacts
+src-tauri/.playwright-mcp/
+
 # Claude Code (allow commands and skills to be tracked)
 .claude/*
 !.claude/skills/
@@ -37,4 +54,12 @@ dist/bundle-report.html
 
 # Integration test reports (generated)
 src/test/integration/reports/
+
+# Generated reports
+adoption-reports/
+
+# Debug / intermediate artifacts
+scripts/templates/_debug/
+
+# Planning docs (GSD)
 .planning/
