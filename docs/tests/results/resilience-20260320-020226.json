@@ -1,0 +1,100 @@
+{
+  "timestamp": "2026-03-20T01:02:26.431018+00:00",
+  "persona_count": 1,
+  "results": [
+    {
+      "num": 1,
+      "name": "Daily Tech Digest",
+      "persona_id": null,
+      "execution_id": null,
+      "phases": {
+        "A": [
+          {
+            "name": "Start create agent",
+            "passed": true,
+            "category": "technical",
+            "detail": "{'success': True}"
+          },
+          {
+            "name": "Fill intent field",
+            "passed": true,
+            "category": "technical",
+            "detail": "{'success': True, 'testId': 'agent-intent-input', 'value': 'Research latest tech news from major sources and create a daily digest with the 5 most impactful stories'}"
+          },
+          {
+            "name": "Click launch button",
+            "passed": true,
+            "category": "technical",
+            "detail": "{'success': True, 'testId': 'agent-launch-btn'}"
+          },
+          {
+            "name": "Build reached draft_ready",
+            "passed": false,
+            "category": "technical",
+            "detail": "phase=awaiting_input"
+          },
+          {
+            "name": "Dimensions resolved (0/8)",
+            "passed": false,
+            "category": "technical",
+            "detail": "cells={'use-cases': 'highlighted'}"
+          },
+          {
+            "name": "Build persona ID exists",
+            "passed": false,
+            "category": "technical",
+            "detail": "id=None"
+          },
+          {
+            "name": "Phase A completed without error",
+            "passed": false,
+            "category": "technical",
+            "detail": "[WinError 10061] No connection could be made because the target machine actively refused it"
+          }
+        ],
+        "B": [
+          {
+            "name": "Persona ID available",
+            "passed": false,
+            "category": "technical",
+            "detail": "Skipped - no persona_id from Phase A"
+          }
+        ],
+        "C": [
+          {
+            "name": "Persona ID available",
+            "passed": false,
+            "category": "technical",
+            "detail": "Skipped - no persona_id"
+          }
+        ],
+        "D": [
+          {
+            "name": "Persona ID available",
+            "passed": false,
+            "category": "technical",
+            "detail": "Skipped - no persona_id"
+          }
+        ],
+        "E": [
+          {
+            "name": "Persona ID available",
+            "passed": false,
+            "category": "technical",
+            "detail": "Skipped"
+          }
+        ]
+      },
+      "errors": [
+        "Phase A error: [WinError 10061] No connection could be made because the target machine actively refused it"
+      ],
+      "timings": {
+        "A": 326.60612654685974,
+        "B": 1.0967254638671875e-05,
+        "C": 6.67572021484375e-06,
+        "D": 3.0994415283203125e-06,
+        "E": 3.5762786865234375e-06
+      }
+    }
+  ]
+}

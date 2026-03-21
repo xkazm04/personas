@@ -77,9 +77,9 @@ export default function ScheduleRow({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground/70 mt-0.5">
+          <div className="flex items-center gap-2 text-xs text-foreground/70 mt-0.5">
             <Clock className="w-3 h-3 shrink-0" />
-            <span className="font-mono text-xs">{schedule}</span>
+            <span className="font-mono text-xs text-foreground/80">{schedule}</span>
             {agent.cron_expression && (
               <span className="text-amber-400/50 text-[10px] font-medium">{tzLabel}</span>
             )}
@@ -95,15 +95,15 @@ export default function ScheduleRow({
         {/* Next / last run */}
         <div className="text-right shrink-0 min-w-[90px]">
           {nextRun ? (
-            <div className="text-xs text-muted-foreground/70">
-              <span className="text-muted-foreground/40">next </span>
+            <div className="text-xs text-foreground/70">
+              <span className="text-foreground/50">next </span>
               {formatRelative(nextRun.toISOString())}
             </div>
           ) : (
-            <div className="text-xs text-muted-foreground/40">--</div>
+            <div className="text-xs text-foreground/40">--</div>
           )}
           {lastRun && (
-            <div className="text-[10px] text-muted-foreground/40 mt-0.5">
+            <div className="text-[10px] text-foreground/50 mt-0.5">
               last {formatRelative(lastRun.toISOString())}
             </div>
           )}

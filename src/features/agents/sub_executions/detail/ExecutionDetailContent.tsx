@@ -26,10 +26,10 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
   const [showOutputData, setShowOutputData] = useState(false);
 
   return (
-    <>
+    <div className="space-y-4 divide-y divide-primary/10 [&>*]:pt-4 [&>*:first-child]:pt-0">
       {/* Status Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="space-y-1.5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-xl border border-primary/10 overflow-hidden bg-primary/5">
+        <div className="space-y-1.5 p-3 bg-background">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider">Status</div>
           <div className="flex items-center gap-2">
             <span className={`inline-block px-2 py-0.5 rounded-lg typo-heading ${badgeClass(getStatusEntry(execution.status))}`}>
@@ -44,7 +44,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 p-3 bg-background">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Clock className="w-3 h-3" />
             Duration
@@ -54,7 +54,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 p-3 bg-background">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             Started
@@ -64,7 +64,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 p-3 bg-background">
           <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             Completed
@@ -166,6 +166,6 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
       {execution.log_file_path && (
         <ExecutionLogViewer executionId={execution.id} personaId={execution.persona_id} />
       )}
-    </>
+    </div>
   );
 }

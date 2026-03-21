@@ -7,18 +7,43 @@ import type { PersonaEvent, Persona } from '@/lib/types/types';
 
 // -- HighlightedJson --------------------------------------------------
 
+/** Simple token-level JSON syntax colouring. */
+function colorizeJson(json: string): React.ReactNode[] {
+  const TOKEN_RE = /("(?:\\.|[^"\\])*")\s*:|("(?:\\.|[^"\\])*")|(true|false|null)|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+  const nodes: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  while ((match = TOKEN_RE.exec(json)) !== null) {
+    if (match.index > last) nodes.push(json.slice(last, match.index));
+    if (match[1]) {
+      nodes.push(<span key={key++} className="text-sky-400">{match[1]}</span>, ':');
+    } else if (match[2]) {
+      nodes.push(<span key={key++} className="text-emerald-400">{match[2]}</span>);
+    } else if (match[3]) {
+      nodes.push(<span key={key++} className="text-amber-400">{match[3]}</span>);
+    } else if (match[4]) {
+      nodes.push(<span key={key++} className="text-violet-400">{match[4]}</span>);
+    }
+    last = match.index + match[0].length;
+  }
+  if (last < json.length) nodes.push(json.slice(last));
+  return nodes;
+}
+
 export function HighlightedJson({ raw }: { raw: string }) {
-  const pretty = useMemo(() => {
+  const colored = useMemo(() => {
     try {
-      return JSON.stringify(JSON.parse(raw), null, 2);
+      const p = JSON.stringify(JSON.parse(raw), null, 2);
+      return colorizeJson(p);
     } catch {
       return null;
     }
   }, [raw]);
 
   return (
-    <pre className="bg-background/40 p-2 rounded-lg text-foreground overflow-x-auto max-h-40 text-sm">
-      {pretty ?? raw}
+    <pre className="bg-background/60 p-3 rounded-lg overflow-auto flex-1 text-sm font-mono leading-relaxed">
+      {colored || <span className="text-foreground">{raw}</span>}
     </pre>
   );
 }
@@ -33,8 +58,8 @@ interface EventDetailContentProps {
 
 export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: EventDetailContentProps) {
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+    <div className="flex flex-col gap-4 h-full min-h-0">
+      <div className="grid grid-cols-2 gap-3 flex-shrink-0">
         <div>
           <span className="text-sm text-foreground/70 font-medium block mb-0.5">Event ID</span>
           <span className="text-sm"><UuidLabel value={event.id} /></span>
@@ -62,8 +87,8 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
       </div>
 
       {event.payload && (
-        <div>
-          <div className="flex items-center justify-between mb-1">
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex items-center justify-between mb-1 flex-shrink-0">
             <span className="text-sm text-foreground/70 font-medium">Event Data</span>
             <button
               onClick={() => {
@@ -84,7 +109,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
               )}
             </button>
           </div>
-          <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3 overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-primary/10 bg-secondary/20 p-3">
             <HighlightedJson raw={event.payload} />
           </div>
         </div>

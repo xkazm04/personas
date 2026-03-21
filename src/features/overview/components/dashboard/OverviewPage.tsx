@@ -3,19 +3,31 @@ import { motion } from 'framer-motion';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
+import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
+
+/** Lazy with one automatic retry — handles transient network / HMR failures. */
+function lazyRetry<T extends { default: React.ComponentType<any> }>(
+  importFn: () => Promise<T>,
+): React.LazyExoticComponent<T['default']> {
+  return lazy(() =>
+    importFn().catch(() =>
+      new Promise<T>((resolve) => setTimeout(() => resolve(importFn()), 1500))
+    )
+  );
+}
 
 // Lazy-load each subtab -- only the active one ships to the render tree.
 // On Desktop these become separate chunks; on Android inlineDynamicImports
 // collapses them into the IIFE so the Suspense resolves in one microtask.
-const DashboardWithSubtabs = lazy(() => import('@/features/overview/components/dashboard/DashboardWithSubtabs'));
-const ExecutionsWithSubtabs = lazy(() => import('@/features/overview/components/dashboard/ExecutionsWithSubtabs'));
-const ManualReviewList = lazy(() => import('@/features/overview/sub_manual-review/components/ManualReviewList'));
-const MessageList = lazy(() => import('@/features/overview/sub_messages/components/MessageList'));
-const EventLogList = lazy(() => import('@/features/overview/sub_events/components/EventLogList'));
-const KnowledgeHub = lazy(() => import('@/features/overview/components/dashboard/cards/KnowledgeHub'));
-const SLADashboard = lazy(() => import('@/features/overview/sub_sla/components/SLADashboard'));
-const ScheduleTimeline = lazy(() => import('@/features/overview/sub_schedules/components/ScheduleTimeline'));
-const PersonaHealthDashboard = lazy(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
+const DashboardWithSubtabs = lazyRetry(() => import('@/features/overview/components/dashboard/DashboardWithSubtabs'));
+const ExecutionsWithSubtabs = lazyRetry(() => import('@/features/overview/components/dashboard/ExecutionsWithSubtabs'));
+const ManualReviewList = lazyRetry(() => import('@/features/overview/sub_manual-review/components/ManualReviewList'));
+const MessageList = lazyRetry(() => import('@/features/overview/sub_messages/components/MessageList'));
+const EventLogList = lazyRetry(() => import('@/features/overview/sub_events/components/EventLogList'));
+const KnowledgeHub = lazyRetry(() => import('@/features/overview/components/dashboard/cards/KnowledgeHub'));
+const SLADashboard = lazyRetry(() => import('@/features/overview/sub_sla/components/SLADashboard'));
+const ScheduleTimeline = lazyRetry(() => import('@/features/overview/sub_schedules/components/ScheduleTimeline'));
+const PersonaHealthDashboard = lazyRetry(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
 
 function OverviewContent() {
   useExecutionDashboardPipeline();
@@ -29,6 +41,7 @@ function OverviewContent() {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
     >
+      <ErrorBoundary name={`Overview/${overviewTab}`}>
       <Suspense fallback={null}>
         {overviewTab === 'home' ? <DashboardWithSubtabs /> :
         overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
@@ -41,6 +54,7 @@ function OverviewContent() {
         overviewTab === 'health' ? <PersonaHealthDashboard /> :
         <DashboardWithSubtabs />}
       </Suspense>
+      </ErrorBoundary>
     </motion.div>
   );
 }

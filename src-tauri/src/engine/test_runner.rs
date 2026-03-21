@@ -167,62 +167,55 @@ pub async fn run_test(
         Arc::new(Mutex::new(Vec::new()));
 
     for scenario in &scenarios {
-        for model in &model_configs {
-            // Check cancellation
-            if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-                let _ = repo::update_run_status(
-                    &pool, &run_id, "cancelled", None, None, None, None,
-                );
-                emit_status(&app, &run_id, "cancelled", None);
-                return;
-            }
-
-            current += 1;
-
-            let _ = app.emit(
-                "test-run-status",
-                TestRunStatusEvent {
-                    run_id: run_id.clone(),
-                    phase: "executing".into(),
-                    scenarios_count: Some(scenario_count),
-                    current: Some(current),
-                    total: Some(total),
-                    model_id: Some(model.id.clone()),
-                    scenario_name: Some(scenario.name.clone()),
-                    status: Some("running".into()),
-                    scores: None,
-                    summary: None,
-                    error: None,
-                    scenarios: None,
-                    elapsed_ms: None,
-                },
+        // Check cancellation before each scenario
+        if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+            let _ = repo::update_run_status(
+                &pool, &run_id, "cancelled", None, None, None, None,
             );
+            emit_status(&app, &run_id, "cancelled", None);
+            return;
+        }
 
-            let result = execute_scenario(persona, tools, scenario, model).await;
+        // Spawn all model executions for this scenario concurrently
+        let mut handles = Vec::new();
+        for (mi, model) in model_configs.iter().enumerate() {
+            let persona_c = persona.clone();
+            let tools_c = tools.to_vec();
+            let scenario_c = scenario.clone();
+            let model_c = model.clone();
 
-            let (status, scores) = match &result {
-                Ok(r) => {
-                    let s = score_result(r, scenario, persona).await;
-                    ("passed".to_string(), s)
+            handles.push(tokio::spawn(async move {
+                let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
+                let (status, scores) = match &result {
+                    Ok(r) => {
+                        let s = score_result(r, &scenario_c, &persona_c).await;
+                        ("passed".to_string(), s)
+                    }
+                    Err(e) => (
+                        "error".to_string(),
+                        ScoreResult {
+                            tool_accuracy: 0, output_quality: 0, protocol_compliance: 0,
+                            output_preview: Some(e.clone()), tool_calls_actual: None,
+                            input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
+                            error_message: Some(e.clone()), rationale: None, suggestions: None,
+                        },
+                    ),
+                };
+                (mi, status, scores)
+            }));
+        }
+
+        // Collect results and persist
+        for handle in handles {
+            let (mi, status, scores) = match handle.await {
+                Ok(r) => r,
+                Err(e) => {
+                    tracing::error!("Test task panicked: {e}");
+                    continue;
                 }
-                Err(e) => (
-                    "error".to_string(),
-                    ScoreResult {
-                        tool_accuracy: 0,
-                        output_quality: 0,
-                        protocol_compliance: 0,
-                        output_preview: Some(e.clone()),
-                        tool_calls_actual: None,
-                        input_tokens: 0,
-                        output_tokens: 0,
-                        cost_usd: 0.0,
-                        duration_ms: 0,
-                        error_message: Some(e.clone()),
-                        rationale: None,
-                        suggestions: None,
-                    },
-                ),
             };
+            current += 1;
+            let model = &model_configs[mi];
 
             // Track for summary
             {
@@ -783,7 +776,7 @@ async fn spawn_cli_and_collect(cli_args: &CliArgs, prompt_text: &str) -> Result<
     driver.write_stdin(prompt_text.as_bytes()).await;
 
     let mut assistant_text = String::new();
-    let timeout = tokio::time::Duration::from_secs(120);
+    let timeout = tokio::time::Duration::from_secs(300);
 
     driver.collect_lines_with_timeout(timeout, |line| {
         let (line_type, _) = parser::parse_stream_line(line);
@@ -811,7 +804,7 @@ async fn spawn_cli_and_collect_structured(
     let mut tool_calls: Vec<String> = Vec::new();
     let mut metrics = ExecutionMetrics::default();
 
-    let timeout = tokio::time::Duration::from_secs(180);
+    let timeout = tokio::time::Duration::from_secs(300);
     let stream_err = driver.collect_lines_with_timeout(timeout, |line| {
         let (line_type, _) = parser::parse_stream_line(line);
 
@@ -835,7 +828,7 @@ async fn spawn_cli_and_collect_structured(
     driver.cleanup_dir();
 
     let error = if stream_err.is_err() {
-        Some("Execution timed out after 180 seconds".to_string())
+        Some("Execution timed out after 300 seconds".to_string())
     } else if let Ok(status) = exit {
         if !status.success() {
             Some(format!("CLI exited with code {}", status.code().unwrap_or(-1)))
@@ -1037,63 +1030,73 @@ async fn run_lab_loop(
     let mut tracker: HashMap<String, Vec<(i32, i32, i32, f64, i64)>> = HashMap::new();
 
     for scenario in &scenarios {
-        for model in model_configs {
-            for variant in variants {
-                if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-                    (cb.update_status)(pool, run_id, LabRunStatus::Cancelled, None, None, None, None);
-                    emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
-                    return;
-                }
+        if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+            (cb.update_status)(pool, run_id, LabRunStatus::Cancelled, None, None, None, None);
+            emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
+            return;
+        }
 
-                current += 1;
+        // Spawn all model × variant pairs for this scenario concurrently
+        let mut handles = Vec::new();
+        for (mi, model) in model_configs.iter().enumerate() {
+            for (vi, variant) in variants.iter().enumerate() {
+                let persona_c = variant.persona.clone();
+                let tools_c = if variant.tools.is_empty() { tools.to_vec() } else { variant.tools.clone() };
+                let scenario_c = scenario.clone();
+                let model_c = model.clone();
 
-                let _ = app.emit(cb.event_name, TestRunStatusEvent {
-                    run_id: run_id.to_string(), phase: "executing".into(),
-                    scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
-                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                    status: Some("running".into()), scores: None, summary: None, error: None,
-                    scenarios: None,
-                    elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
-                });
-
-                // Use per-variant tools if available, otherwise fall back to shared tools
-                let variant_tools = if variant.tools.is_empty() { tools } else { &variant.tools };
-                let result = execute_scenario(variant.persona, variant_tools, scenario, model).await;
-
-                let (status, scores) = match &result {
-                    Ok(r) => ("passed".to_string(), score_result(r, scenario, variant.persona).await),
-                    Err(e) => ("error".to_string(), ScoreResult {
-                        tool_accuracy: 0, output_quality: 0, protocol_compliance: 0,
-                        output_preview: Some(e.clone()), tool_calls_actual: None,
-                        input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                        error_message: Some(e.clone()),
-                        rationale: None, suggestions: None,
-                    }),
-                };
-
-                let key = if variant.label.is_empty() {
-                    model.id.clone()
-                } else {
-                    format!("{}:{}", variant.label, model.id)
-                };
-                tracker.entry(key).or_default().push((
-                    scores.tool_accuracy, scores.output_quality, scores.protocol_compliance,
-                    scores.cost_usd, scores.duration_ms,
-                ));
-
-                (cb.persist_result)(pool, run_id, variant, scenario, model, &status, &scores);
-
-                let _ = app.emit(cb.event_name, TestRunStatusEvent {
-                    run_id: run_id.to_string(), phase: "executing".into(),
-                    scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
-                    model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                    status: Some(status),
-                    scores: Some(TestScores { tool_accuracy: Some(scores.tool_accuracy), output_quality: Some(scores.output_quality), protocol_compliance: Some(scores.protocol_compliance) }),
-                    summary: None, error: scores.error_message,
-                    scenarios: None,
-                    elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
-                });
+                handles.push(tokio::spawn(async move {
+                    let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
+                    let (status, scores) = match &result {
+                        Ok(r) => ("passed".to_string(), score_result(r, &scenario_c, &persona_c).await),
+                        Err(e) => ("error".to_string(), ScoreResult {
+                            tool_accuracy: 0, output_quality: 0, protocol_compliance: 0,
+                            output_preview: Some(e.clone()), tool_calls_actual: None,
+                            input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
+                            error_message: Some(e.clone()),
+                            rationale: None, suggestions: None,
+                        }),
+                    };
+                    (mi, vi, status, scores)
+                }));
             }
+        }
+
+        // Collect results and process sequentially (persist, emit progress, update tracker)
+        for handle in handles {
+            let (mi, vi, status, scores) = match handle.await {
+                Ok(r) => r,
+                Err(e) => {
+                    tracing::error!("Lab task panicked: {e}");
+                    continue;
+                }
+            };
+            current += 1;
+            let model = &model_configs[mi];
+            let variant = &variants[vi];
+
+            let key = if variant.label.is_empty() {
+                model.id.clone()
+            } else {
+                format!("{}:{}", variant.label, model.id)
+            };
+            tracker.entry(key).or_default().push((
+                scores.tool_accuracy, scores.output_quality, scores.protocol_compliance,
+                scores.cost_usd, scores.duration_ms,
+            ));
+
+            (cb.persist_result)(pool, run_id, variant, scenario, model, &status, &scores);
+
+            let _ = app.emit(cb.event_name, TestRunStatusEvent {
+                run_id: run_id.to_string(), phase: "executing".into(),
+                scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
+                model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
+                status: Some(status),
+                scores: Some(TestScores { tool_accuracy: Some(scores.tool_accuracy), output_quality: Some(scores.output_quality), protocol_compliance: Some(scores.protocol_compliance) }),
+                summary: None, error: scores.error_message,
+                scenarios: None,
+                elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
+            });
         }
     }
 

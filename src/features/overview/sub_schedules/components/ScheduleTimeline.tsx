@@ -208,10 +208,10 @@ export default function ScheduleTimeline() {
         {/* Scheduler stats bar */}
         {schedulerStats && (
           <div className="flex flex-col gap-2 mt-3">
-            <div className="flex items-center gap-4 text-xs text-muted-foreground/60">
-              <span>Triggers fired: <span className="font-mono text-foreground/70">{schedulerStats.triggersFired}</span></span>
-              <span>Events processed: <span className="font-mono text-foreground/70">{schedulerStats.eventsProcessed}</span></span>
-              <span>Delivered: <span className="font-mono text-foreground/70">{schedulerStats.eventsDelivered}</span></span>
+            <div className="flex items-center gap-4 text-xs text-foreground/60">
+              <span>Triggers fired: <span className="font-mono text-foreground/80">{schedulerStats.triggersFired}</span></span>
+              <span>Events processed: <span className="font-mono text-foreground/80">{schedulerStats.eventsProcessed}</span></span>
+              <span>Delivered: <span className="font-mono text-foreground/80">{schedulerStats.eventsDelivered}</span></span>
               {schedulerStats.eventsFailed > 0 && (
                 <span className="text-red-400">
                   Failed: <span className="font-mono">{schedulerStats.eventsFailed}</span>
@@ -219,8 +219,8 @@ export default function ScheduleTimeline() {
               )}
               {schedulerStats.chainCascadesTotal > 0 && (
                 <span title={`Total wall time: ${schedulerStats.chainCascadeDurationMs}ms`}>
-                  Chain cascades: <span className="font-mono text-foreground/70">{schedulerStats.chainCascadesTotal}</span>
-                  <span className="ml-1 text-muted-foreground/40">({schedulerStats.chainCascadeDurationMs}ms)</span>
+                  Chain cascades: <span className="font-mono text-foreground/80">{schedulerStats.chainCascadesTotal}</span>
+                  <span className="ml-1 text-foreground/50">({schedulerStats.chainCascadeDurationMs}ms)</span>
                 </span>
               )}
               {schedulerStats.queueRejections > 0 && (
@@ -250,7 +250,7 @@ export default function ScheduleTimeline() {
                         ? 'bg-red-500/10 border-red-500/20 text-red-400'
                         : sub.overrun
                           ? 'bg-orange-500/10 border-orange-500/20 text-orange-400'
-                          : 'bg-primary/5 border-primary/10 text-muted-foreground/60'
+                          : 'bg-primary/5 border-primary/10 text-foreground/60'
                     }`}
                     title={`${sub.name}: last ${sub.lastTickDurationMs}ms / avg ${sub.avgTickDurationMs}ms / max ${sub.maxTickDurationMs}ms (interval ${sub.intervalMs}ms) | ticks: ${sub.tickCount}, errors: ${sub.errorCount}${sub.consecutivePanics > 0 ? `, consecutive panics: ${sub.consecutivePanics}` : ''}${sub.overrun ? ' — OVERRUN' : ''}`}
                   >
@@ -272,10 +272,10 @@ export default function ScheduleTimeline() {
             Loading schedules...
           </div>
         ) : cronAgents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-2 text-muted-foreground/70">
+          <div className="flex flex-col items-center justify-center py-20 gap-2 text-foreground/60">
             <CalendarClock className="w-8 h-8 opacity-40" />
             <p className="text-sm">No scheduled agents found.</p>
-            <p className="text-xs">Create a schedule or polling trigger on any agent to see it here.</p>
+            <p className="text-xs text-foreground/50">Create a schedule or polling trigger on any agent to see it here.</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -323,15 +323,15 @@ function GroupedView({
     'Next hour': 'text-blue-400 border-blue-500/20',
     'Next 6 hours': 'text-violet-400 border-violet-500/20',
     'Next 24 hours': 'text-amber-400 border-amber-500/20',
-    'Later': 'text-muted-foreground/60 border-primary/10',
-    'Paused / Unscheduled': 'text-muted-foreground/40 border-primary/10',
+    'Later': 'text-foreground/60 border-primary/10',
+    'Paused / Unscheduled': 'text-foreground/40 border-primary/10',
   };
 
   return (
     <div className="space-y-5">
       {groups.map((group) => (
         <div key={group.label}>
-          <div className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[group.label] || 'text-muted-foreground/60 border-primary/10'}`}>
+          <div className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[group.label] || 'text-foreground/60 border-primary/10'}`}>
             <span className="typo-caption uppercase tracking-wider">
               {group.label}
             </span>

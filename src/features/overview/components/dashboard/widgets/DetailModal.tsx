@@ -17,7 +17,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
       onClose={onClose}
       titleId="detail-modal-title"
       size="full"
-      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh]"
+      panelClassName="bg-gradient-to-b from-background via-background to-secondary/30 border border-primary/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh]"
     >
       {/* Header */}
       <div className="flex items-start justify-between p-4 border-b border-primary/10 flex-shrink-0">
@@ -37,7 +37,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
       </div>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col min-h-0">
         {children}
       </div>
 

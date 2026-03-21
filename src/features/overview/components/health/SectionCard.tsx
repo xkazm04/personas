@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Chrome, Key } from 'lucide-react';
+import { Chrome, Key, Loader2 } from 'lucide-react';
 import type { HealthCheckSection } from "@/api/system/system";
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
 import { Button } from '@/features/shared/components/buttons';
@@ -59,58 +59,66 @@ export function SectionCard({
       </div>
 
       <div className="divide-y divide-primary/5 flex-1 bg-gradient-to-b from-transparent to-black/[0.02]">
-        {section.items.map((check) => (
-          <div key={check.id} className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
-            {getStatusIcon(check.status)}
-            <div className="flex-1 min-w-0">
-              <p className="typo-body text-foreground/80">{check.label}</p>
-              {check.detail && (
-                <p className="typo-body text-muted-foreground/80 break-words line-clamp-2">{check.detail}</p>
-              )}
-
-              {check.id === 'node' && check.installable && !ipcError && (
-                <InstallButton
-                  checkId="node"
-                  status={check.status}
-                  installState={nodeState}
-                  onInstall={() => install('node')}
-                />
-              )}
-              {check.id === 'claude_cli' && check.installable && !ipcError && (
-                <InstallButton
-                  checkId="claude_cli"
-                  status={check.status}
-                  installState={claudeState}
-                  onInstall={() => install('claude_cli')}
-                />
-              )}
-              {check.id === 'ollama_api_key' && !ipcError && (
-                <Button
-                  variant="accent"
-                  accentColor="emerald"
-                  size="xs"
-                  onClick={onShowOllama}
-                  icon={<Key className="w-3 h-3" />}
-                  className="mt-2"
-                >
-                  {check.status === 'ok' ? 'Edit Key' : 'Configure'}
-                </Button>
-              )}
-              {check.id === 'litellm_proxy' && !ipcError && (
-                <Button
-                  variant="accent"
-                  accentColor="sky"
-                  size="xs"
-                  onClick={onShowLiteLLM}
-                  icon={<Key className="w-3 h-3" />}
-                  className="mt-2"
-                >
-                  {check.status === 'ok' ? 'Edit Config' : 'Configure'}
-                </Button>
-              )}
-            </div>
+        {section.items.length === 0 ? (
+          /* Loading indicator — shown while this section's health check is in-flight */
+          <div className="flex-1 flex flex-col items-center justify-center gap-2.5 py-6 px-4">
+            <Loader2 className={`w-5 h-5 animate-spin ${sectionStyle.icon} opacity-60`} />
+            <span className="text-xs text-muted-foreground/60">Checking {section.label.toLowerCase()}...</span>
           </div>
-        ))}
+        ) : (
+          section.items.map((check) => (
+            <div key={check.id} className="flex items-start gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
+              {getStatusIcon(check.status)}
+              <div className="flex-1 min-w-0">
+                <p className="typo-body text-foreground/80">{check.label}</p>
+                {check.detail && (
+                  <p className="typo-body text-muted-foreground/80 break-words line-clamp-2">{check.detail}</p>
+                )}
+
+                {check.id === 'node' && check.installable && !ipcError && (
+                  <InstallButton
+                    checkId="node"
+                    status={check.status}
+                    installState={nodeState}
+                    onInstall={() => install('node')}
+                  />
+                )}
+                {check.id === 'claude_cli' && check.installable && !ipcError && (
+                  <InstallButton
+                    checkId="claude_cli"
+                    status={check.status}
+                    installState={claudeState}
+                    onInstall={() => install('claude_cli')}
+                  />
+                )}
+                {check.id === 'ollama_api_key' && !ipcError && (
+                  <Button
+                    variant="accent"
+                    accentColor="emerald"
+                    size="xs"
+                    onClick={onShowOllama}
+                    icon={<Key className="w-3 h-3" />}
+                    className="mt-2"
+                  >
+                    {check.status === 'ok' ? 'Edit Key' : 'Configure'}
+                  </Button>
+                )}
+                {check.id === 'litellm_proxy' && !ipcError && (
+                  <Button
+                    variant="accent"
+                    accentColor="sky"
+                    size="xs"
+                    onClick={onShowLiteLLM}
+                    icon={<Key className="w-3 h-3" />}
+                    className="mt-2"
+                  >
+                    {check.status === 'ok' ? 'Edit Config' : 'Configure'}
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
 
         {showSignIn && (
           <div className="px-4 py-2.5 space-y-1.5">

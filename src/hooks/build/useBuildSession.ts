@@ -206,7 +206,7 @@ export function useBuildSession(
       sessionIdRef.current = sessionId;
 
       // Update the store
-      useAgentStore.setState({ buildSessionId: sessionId });
+      useAgentStore.setState({ buildSessionId: sessionId, buildPersonaId: effectivePersonaId });
 
       return sessionId;
     },

@@ -1,4 +1,6 @@
-import { Heart, TrendingDown, TrendingUp, Minus, DollarSign, AlertTriangle, Clock, Wrench } from 'lucide-react';
+import { useState } from 'react';
+import { Heart, TrendingDown, TrendingUp, Minus, DollarSign, AlertTriangle, Clock, Wrench, ChevronDown, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { HeartbeatIndicator } from './HeartbeatIndicator';
 
@@ -33,12 +35,16 @@ const GRADE_BG = {
 };
 
 export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
+  const [expanded, setExpanded] = useState(false);
   const TrendIcon = TREND_ICON[signal.failureTrend];
 
   return (
-    <div className={`relative rounded-xl border bg-gradient-to-br ${GRADE_BG[signal.grade]} to-transparent ${GRADE_BORDER[signal.grade]} bg-secondary/20 p-4 transition-all duration-200 cursor-default`}>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-3">
+    <div
+      className={`relative rounded-xl border bg-gradient-to-br ${GRADE_BG[signal.grade]} to-transparent ${GRADE_BORDER[signal.grade]} bg-secondary/20 transition-all duration-200 cursor-pointer select-none`}
+      onClick={() => setExpanded(!expanded)}
+    >
+      {/* Header — always visible */}
+      <div className="flex items-center gap-3 p-3">
         <HeartbeatIndicator score={signal.heartbeatScore} grade={signal.grade} size="md" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -50,63 +56,83 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
             <span className={`text-xs ${TREND_COLOR[signal.failureTrend]}`}>
               {signal.failureTrend === 'improving' ? 'Improving' : signal.failureTrend === 'degrading' ? 'Degrading' : 'Stable'}
             </span>
+            <span className="text-xs text-foreground/40 ml-1">{signal.successRate.toFixed(0)}% success</span>
           </div>
         </div>
+        {expanded
+          ? <ChevronDown className="w-4 h-4 text-foreground/40 flex-shrink-0" />
+          : <ChevronRight className="w-4 h-4 text-foreground/40 flex-shrink-0" />
+        }
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-2 gap-2">
-        <MetricCell
-          icon={Heart}
-          label="Success"
-          value={`${signal.successRate.toFixed(1)}%`}
-          color={signal.successRate >= 90 ? 'text-emerald-400' : signal.successRate >= 70 ? 'text-amber-400' : 'text-red-400'}
-        />
-        <MetricCell
-          icon={DollarSign}
-          label="Burn"
-          value={`$${signal.dailyBurnRate.toFixed(2)}/d`}
-          color={signal.budgetRatio > 0.8 ? 'text-red-400' : signal.budgetRatio > 0.5 ? 'text-amber-400' : 'text-emerald-400'}
-        />
-        <MetricCell
-          icon={Wrench}
-          label="Healing"
-          value={`${signal.healingFrequency.toFixed(1)}/d`}
-          color={signal.healingFrequency > 2 ? 'text-red-400' : signal.healingFrequency > 0.5 ? 'text-amber-400' : 'text-emerald-400'}
-        />
-        <MetricCell
-          icon={AlertTriangle}
-          label="Rollbacks"
-          value={String(signal.rollbackCount)}
-          color={signal.rollbackCount > 2 ? 'text-red-400' : signal.rollbackCount > 0 ? 'text-amber-400' : 'text-emerald-400'}
-        />
-      </div>
+      {/* Expandable content */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 pt-0">
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 gap-2 border-t border-primary/10 pt-3">
+                <MetricCell
+                  icon={Heart}
+                  label="Success"
+                  value={`${signal.successRate.toFixed(1)}%`}
+                  color={signal.successRate >= 90 ? 'text-emerald-400' : signal.successRate >= 70 ? 'text-amber-400' : 'text-red-400'}
+                />
+                <MetricCell
+                  icon={DollarSign}
+                  label="Burn"
+                  value={`$${signal.dailyBurnRate.toFixed(2)}/d`}
+                  color={signal.budgetRatio > 0.8 ? 'text-red-400' : signal.budgetRatio > 0.5 ? 'text-amber-400' : 'text-emerald-400'}
+                />
+                <MetricCell
+                  icon={Wrench}
+                  label="Healing"
+                  value={`${signal.healingFrequency.toFixed(1)}/d`}
+                  color={signal.healingFrequency > 2 ? 'text-red-400' : signal.healingFrequency > 0.5 ? 'text-amber-400' : 'text-emerald-400'}
+                />
+                <MetricCell
+                  icon={AlertTriangle}
+                  label="Rollbacks"
+                  value={String(signal.rollbackCount)}
+                  color={signal.rollbackCount > 2 ? 'text-red-400' : signal.rollbackCount > 0 ? 'text-amber-400' : 'text-emerald-400'}
+                />
+              </div>
 
-      {/* Predictions */}
-      {(signal.projectedExhaustionDays !== null || signal.predictedFailureInDays !== null) && (
-        <div className="mt-3 pt-3 border-t border-primary/10 space-y-1.5">
-          {signal.projectedExhaustionDays !== null && (
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3 h-3 text-amber-400" />
-              <span className="text-xs text-muted-foreground">
-                Budget exhaustion in{' '}
-                <span className={signal.projectedExhaustionDays <= 3 ? 'text-red-400 font-semibold' : signal.projectedExhaustionDays <= 7 ? 'text-amber-400 font-semibold' : 'text-foreground/80'}>
-                  {signal.projectedExhaustionDays === 0 ? 'exhausted' : `${signal.projectedExhaustionDays}d`}
-                </span>
-              </span>
+              {/* Predictions */}
+              {(signal.projectedExhaustionDays !== null || signal.predictedFailureInDays !== null) && (
+                <div className="mt-3 pt-3 border-t border-primary/10 space-y-1.5">
+                  {signal.projectedExhaustionDays !== null && (
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3 h-3 text-amber-400" />
+                      <span className="text-xs text-muted-foreground">
+                        Budget exhaustion in{' '}
+                        <span className={signal.projectedExhaustionDays <= 3 ? 'text-red-400 font-semibold' : signal.projectedExhaustionDays <= 7 ? 'text-amber-400 font-semibold' : 'text-foreground/80'}>
+                          {signal.projectedExhaustionDays === 0 ? 'exhausted' : `${signal.projectedExhaustionDays}d`}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                  {signal.predictedFailureInDays !== null && (
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="w-3 h-3 text-red-400" />
+                      <span className="text-xs text-muted-foreground">
+                        Predicted failure spike in{' '}
+                        <span className="text-red-400 font-semibold">{signal.predictedFailureInDays}d</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-          {signal.predictedFailureInDays !== null && (
-            <div className="flex items-center gap-1.5">
-              <AlertTriangle className="w-3 h-3 text-red-400" />
-              <span className="text-xs text-muted-foreground">
-                Predicted failure spike in{' '}
-                <span className="text-red-400 font-semibold">{signal.predictedFailureInDays}d</span>
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

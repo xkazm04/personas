@@ -287,31 +287,77 @@ pub async fn promote_build_draft(
 
     if let Some(tools) = agent_ir.get("tools").and_then(|v| v.as_array()) {
         for tool_json in tools {
-            let name = tool_json.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            // Handle both string tool names ("web_search") and object definitions ({name, ...})
+            let name = if let Some(s) = tool_json.as_str() {
+                s.to_string()
+            } else {
+                tool_json.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string()
+            };
             if name.is_empty() { continue; }
+
+            // Normalize PascalCase/CamelCase to snake_case: "WebSearch" → "web_search"
+            let normalized: String = name.chars().enumerate().fold(String::new(), |mut acc, (i, c)| {
+                if c.is_uppercase() && i > 0 { acc.push('_'); }
+                acc.push(c.to_ascii_lowercase());
+                acc
+            });
+
             tool_names.push(name.clone());
 
-            // Schema inference: check LLM-provided → parameters → permissive fallback
-            let input_schema = tool_json.get("input_schema")
-                .map(|v| serde_json::to_string(v).unwrap_or_default())
-                .or_else(|| tool_json.get("parameters").map(|p| {
-                    serde_json::json!({"type": "object", "properties": p}).to_string()
-                }))
-                .or_else(|| Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()));
+            // Try to find an existing tool definition by name (case-insensitive, try both forms)
+            let existing_def = tool_repo::get_definition_by_name(&state.db, &normalized)
+                .ok().flatten()
+                .or_else(|| tool_repo::get_definition_by_name(&state.db, &name).ok().flatten());
 
-            let output_schema = tool_json.get("output_schema")
-                .map(|v| serde_json::to_string(v).unwrap_or_default())
-                .or_else(|| Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()));
+            if let Some(def) = existing_def {
+                // Existing (builtin or custom) tool found — just assign it
+                if let Err(e) = tool_repo::assign_tool(&state.db, &persona_id, &def.id, None) {
+                    entity_errors.push(serde_json::json!({"entity_type": "tool_assignment", "entity_name": name, "error": e.to_string()}));
+                } else {
+                    tools_created += 1;
+                }
+                continue;
+            }
+
+            // No existing definition — create a new one
+            let (category, description, input_schema, output_schema, req_cred, impl_guide) = if tool_json.is_object() {
+                // Full object tool with schema info
+                let is = tool_json.get("input_schema")
+                    .map(|v| serde_json::to_string(v).unwrap_or_default())
+                    .or_else(|| tool_json.get("parameters").map(|p| {
+                        serde_json::json!({"type": "object", "properties": p}).to_string()
+                    }))
+                    .or_else(|| Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()));
+                let os = tool_json.get("output_schema")
+                    .map(|v| serde_json::to_string(v).unwrap_or_default())
+                    .or_else(|| Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()));
+                (
+                    tool_json.get("category").and_then(|v| v.as_str()).unwrap_or("api").to_string(),
+                    tool_json.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                    is, os,
+                    tool_json.get("requires_credential_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    tool_json.get("implementation_guide").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                )
+            } else {
+                // String-only tool — create minimal definition
+                (
+                    "api".to_string(),
+                    format!("Auto-created from build: {}", name),
+                    Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()),
+                    Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()),
+                    None, None,
+                )
+            };
 
             let input = CreateToolDefinitionInput {
-                name: name.clone(),
-                category: tool_json.get("category").and_then(|v| v.as_str()).unwrap_or("api").to_string(),
-                description: tool_json.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                name: normalized.clone(),
+                category,
+                description,
                 script_path: String::new(),
                 input_schema,
                 output_schema,
-                requires_credential_type: tool_json.get("requires_credential_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                implementation_guide: tool_json.get("implementation_guide").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                requires_credential_type: req_cred,
+                implementation_guide: impl_guide,
                 is_builtin: Some(false),
             };
 
@@ -324,7 +370,16 @@ pub async fn promote_build_draft(
                     }
                 }
                 Err(e) => {
-                    entity_errors.push(serde_json::json!({"entity_type": "tool", "entity_name": name, "error": e.to_string()}));
+                    // UNIQUE constraint — tool name may already exist; try to find and assign
+                    if let Ok(Some(existing)) = tool_repo::get_definition_by_name(&state.db, &normalized) {
+                        if let Err(ae) = tool_repo::assign_tool(&state.db, &persona_id, &existing.id, None) {
+                            entity_errors.push(serde_json::json!({"entity_type": "tool_assignment", "entity_name": name, "error": ae.to_string()}));
+                        } else {
+                            tools_created += 1;
+                        }
+                    } else {
+                        entity_errors.push(serde_json::json!({"entity_type": "tool", "entity_name": name, "error": e.to_string()}));
+                    }
                 }
             }
         }
@@ -393,9 +448,20 @@ pub async fn promote_build_draft(
     // ================================================================
     // Step 5: Notification channels
     // ================================================================
-    let notification_channels = ir_messages
-        .or_else(|| agent_ir.get("notification_channels"))
-        .map(|v| serde_json::to_string(v).unwrap_or_default());
+    // notification_channels must be a JSON array of {type, config} objects.
+    // ir_messages is the raw "messages" dimension (an object like {"channels":[...], "items":[...]}),
+    // NOT a valid notification_channels array.  Extract the inner "channels" sub-array
+    // if present, otherwise try agent_ir.notification_channels directly.
+    let notification_channels = {
+        let from_messages = ir_messages
+            .and_then(|v| v.get("channels"))
+            .filter(|v| v.is_array());
+        let from_ir = agent_ir.get("notification_channels")
+            .filter(|v| v.is_array());
+        from_messages
+            .or(from_ir)
+            .map(|v| serde_json::to_string(v).unwrap_or_default())
+    };
 
     // ================================================================
     // Step 6: Build AgentIR-compatible last_design_result

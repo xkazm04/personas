@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 
 use crate::db::models::{CreateToolDefinitionInput, PersonaTool, PersonaToolDefinition, UpdateToolDefinitionInput};
 use crate::db::DbPool;
@@ -43,6 +43,17 @@ pub fn get_definition_by_id(pool: &DbPool, id: &str) -> Result<PersonaToolDefini
         }
         other => AppError::Database(other),
     })
+}
+
+pub fn get_definition_by_name(pool: &DbPool, name: &str) -> Result<Option<PersonaToolDefinition>, AppError> {
+    let conn = pool.get()?;
+    conn.query_row(
+        "SELECT * FROM persona_tool_definitions WHERE LOWER(name) = LOWER(?1)",
+        params![name],
+        row_to_tool_def,
+    )
+    .optional()
+    .map_err(AppError::Database)
 }
 
 pub fn get_definitions_by_category(

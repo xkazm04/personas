@@ -579,4 +579,7 @@ const bridge: TestBridge = {
 
 // Expose on window for Rust eval() access
 (window as unknown as Record<string, unknown>).__TEST__ = bridge;
+// Expose stores for direct state manipulation in e2e tests
+(window as unknown as Record<string, unknown>).__AGENT_STORE__ = useAgentStore;
+(window as unknown as Record<string, unknown>).__SYSTEM_STORE__ = useSystemStore;
 console.log("[test-automation] Bridge loaded — window.__TEST__ ready");

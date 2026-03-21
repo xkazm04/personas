@@ -27,7 +27,7 @@ pub(crate) const MAX_LINE_BYTES: usize = 64 * 1024; // 64 KB
 /// read is aborted and whatever has been buffered so far is returned.
 /// Prevents indefinite hangs from processes that produce output without newlines.
 /// Set generously to accommodate initial API latency + model reasoning time.
-pub(crate) const LINE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
+pub(crate) const LINE_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(300);
 
 // =============================================================================
 // read_line_limited -- robust per-line reader with size + time guards
