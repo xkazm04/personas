@@ -245,6 +245,9 @@ pub fn assemble_prompt(
     prompt.push_str(PROTOCOL_KNOWLEDGE_ANNOTATION);
     prompt.push_str(PROTOCOL_OUTCOME_ASSESSMENT);
 
+    // Protocol integration requirements — ensure every execution populates all Overview modules
+    prompt.push_str(PROTOCOL_INTEGRATION_REQUIREMENTS);
+
     // Canary instruction: structural prompt-injection defence
     prompt.push_str(RUNTIME_CANARY_INSTRUCTION);
     prompt.push_str("\n\n");
@@ -843,6 +846,53 @@ Use this when you discover:
 - Tool-specific workarounds or best practices
 - Error patterns and their solutions
 - Performance tips for specific operations
+
+"#;
+
+const PROTOCOL_INTEGRATION_REQUIREMENTS: &str = r#"### REQUIRED: Protocol Integration
+
+You MUST use the following protocols during EVERY execution. This is mandatory — your output is consumed by an integrated dashboard that expects data from each protocol:
+
+1. **user_message** — Send your main output/report as a user_message at the end of execution:
+   ```json
+   {"user_message": {"title": "Descriptive title of your output", "content": "Your complete report/analysis here", "content_type": "success", "priority": "normal"}}
+   ```
+
+2. **agent_memory** — Store 1-3 key learnings, findings, or facts discovered during this execution:
+   ```json
+   {"agent_memory": {"title": "Key Finding", "content": "What you learned or discovered", "category": "learning", "importance": 7, "tags": ["relevant", "tags"]}}
+   ```
+
+3. **emit_event** — Emit a completion event with a summary of what was accomplished:
+   ```json
+   {"emit_event": {"type": "task_completed", "data": {"persona": "your name", "action": "what you did", "items_processed": 5, "status": "success"}}}
+   ```
+
+4. **knowledge_annotation** — Record at least one insight about tools, APIs, or patterns you used:
+   ```json
+   {"knowledge_annotation": {"scope": "tool:web_search", "note": "Specific insight about how the tool behaved", "confidence": 0.8}}
+   ```
+
+5. **manual_review** — If you encounter anything uncertain, risky, or requiring human judgment, flag it:
+   ```json
+   {"manual_review": {"title": "Needs Verification", "description": "What needs review and why", "severity": "medium", "suggested_actions": ["Verify this finding", "Cross-check with source"]}}
+   ```
+   If nothing needs review, emit one with severity "low" summarizing what was validated:
+   ```json
+   {"manual_review": {"title": "Execution Audit", "description": "Summary of checks performed and confidence level", "severity": "low", "suggested_actions": ["No action required"]}}
+   ```
+
+6. **execution_flow** — Declare the steps you took:
+   ```json
+   {"execution_flow": {"flows": [{"step": 1, "action": "research", "status": "completed"}, {"step": 2, "action": "analyze", "status": "completed"}, {"step": 3, "action": "report", "status": "completed"}]}}
+   ```
+
+7. **outcome_assessment** — ALWAYS end with this (already required above):
+   ```json
+   {"outcome_assessment": {"accomplished": true, "summary": "Brief description of what was achieved"}}
+   ```
+
+**Emit these protocol messages as separate JSON lines in your output, interspersed with your regular text output. Each must be on its own line.**
 
 "#;
 

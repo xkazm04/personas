@@ -1384,6 +1384,19 @@ Ask a question (2-4 specific options):
 When ALL 8 are resolved, also emit agent_ir:
 {{"agent_ir": {{"name": "Short Agent Name", "description": "...", "system_prompt": "...", "structured_prompt": {{"identity": "...", "instructions": "...", "toolGuidance": "...", "examples": "...", "errorHandling": "..."}}, "icon": "Sparkles", "color": "#8b5cf6", "tools": [...], "triggers": [...], "required_connectors": [...], "design_context": {{"summary": "...", "use_cases": [...]}}, "use_cases": [...], "connectors": [...], "triggers_summary": [...], "human_review": {{}}, "messages": {{}}, "memory": {{}}, "error_handling": {{}}, "events": []}}}}
 
+## Protocol Message Integration
+
+The agent runs on a platform with built-in communication protocols. When composing structured_prompt.instructions, you MUST include explicit guidance for the agent to use these JSON protocol messages during execution:
+
+1. **user_message** — Agent sends its main output/report. Map from the "messages" dimension. Example instruction: "After completing analysis, send results via: {{"user_message": {{"title": "Report Title", "content": "full report", "content_type": "success", "priority": "normal"}}}}"
+2. **agent_memory** — Agent stores key findings for future runs. Map from the "memory" dimension. Example: "Store each key finding via: {{"agent_memory": {{"title": "Finding", "content": "details", "category": "learning"}}}}"
+3. **manual_review** — Agent flags items needing human approval. Map from the "human-review" dimension. Example: "Flag uncertain items via: {{"manual_review": {{"title": "Needs Review", "description": "why", "severity": "medium"}}}}"
+4. **emit_event** — Agent emits events for inter-agent coordination. Map from the "events" dimension. Example: "Emit completion: {{"emit_event": {{"type": "task_completed", "data": {{"status": "success"}}}}}}"
+5. **knowledge_annotation** — Agent records tool/API insights. Example: "Record insights via: {{"knowledge_annotation": {{"scope": "tool:web_search", "note": "insight"}}}}"
+6. **execution_flow** — Agent declares its execution steps. Example: "Declare steps via: {{"execution_flow": {{"flows": [{{"step": 1, "action": "research", "status": "completed"}}]}}}}"
+
+The structured_prompt.instructions MUST reference at least user_message, agent_memory, and emit_event protocols with specific guidance for WHEN to use them based on the agent's purpose. Include the exact JSON format inline in the instructions.
+
 ## Rules
 1. Output RAW JSON only — no markdown, no code fences, no prose
 2. Dimension keys exactly: use-cases, connectors, triggers, messages, human-review, memory, error-handling, events
