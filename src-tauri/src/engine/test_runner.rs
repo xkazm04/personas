@@ -349,7 +349,7 @@ pub async fn run_test(
 
 // -- Phase 1: Generate scenarios --------------------------------
 
-async fn generate_scenarios(
+pub(crate) async fn generate_scenarios(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
     use_case_filter: Option<&str>,
@@ -523,22 +523,22 @@ fn parse_scenarios_from_output(output: &str) -> Result<Vec<TestScenario>, String
 
 // -- Phase 2: Execute scenario with a specific model ------------
 
-struct ScoreResult {
-    tool_accuracy: i32,
-    output_quality: i32,
-    protocol_compliance: i32,
-    output_preview: Option<String>,
-    tool_calls_actual: Option<String>,
-    input_tokens: i64,
-    output_tokens: i64,
-    cost_usd: f64,
-    duration_ms: i64,
-    error_message: Option<String>,
-    rationale: Option<String>,
-    suggestions: Option<String>,
+pub(crate) struct ScoreResult {
+    pub(crate) tool_accuracy: i32,
+    pub(crate) output_quality: i32,
+    pub(crate) protocol_compliance: i32,
+    pub(crate) output_preview: Option<String>,
+    pub(crate) tool_calls_actual: Option<String>,
+    pub(crate) input_tokens: i64,
+    pub(crate) output_tokens: i64,
+    pub(crate) cost_usd: f64,
+    pub(crate) duration_ms: i64,
+    pub(crate) error_message: Option<String>,
+    pub(crate) rationale: Option<String>,
+    pub(crate) suggestions: Option<String>,
 }
 
-async fn execute_scenario(
+pub(crate) async fn execute_scenario(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
     scenario: &TestScenario,
@@ -608,7 +608,7 @@ fn inject_sandbox_into_prompt(base_prompt: &str, sandbox_section: &str) -> Strin
 
 // -- Scoring (delegates to unified eval framework + LLM eval) ---
 
-async fn score_result(output: &ExecutionOutput, scenario: &TestScenario, persona: &Persona) -> ScoreResult {
+pub(crate) async fn score_result(output: &ExecutionOutput, scenario: &TestScenario, persona: &Persona) -> ScoreResult {
     let expected_tools = scenario.expected_tool_sequence.as_deref();
     let expected_protocols = scenario.expected_protocols.as_deref();
 
@@ -755,7 +755,7 @@ async fn build_summary(
 // -- CLI helpers ------------------------------------------------
 
 /// Structured output from a CLI execution.
-struct ExecutionOutput {
+pub(crate) struct ExecutionOutput {
     assistant_text: String,
     tool_calls: Vec<String>,
     input_tokens: u64,

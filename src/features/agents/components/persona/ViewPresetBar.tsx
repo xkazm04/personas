@@ -18,8 +18,8 @@ export const DEFAULT_VIEW_CONFIG: AgentListViewConfig = {
   healthFilter: 'all',
   connectorFilter: 'all',
   favoriteOnly: false,
-  sortKey: 'name',
-  sortDirection: 'asc',
+  sortKey: 'lastRun',
+  sortDirection: 'desc',
 };
 
 interface SmartPreset {

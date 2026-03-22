@@ -41,7 +41,25 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
   const loadChannels = useCallback(() => {
     if (isDraftMode) return;
     if (!selectedPersona?.notification_channels) { setChannelsInternal([]); return; }
-    try { const parsed = JSON.parse(selectedPersona.notification_channels); setChannelsInternal(Array.isArray(parsed) ? parsed : []); }
+    try {
+      const parsed = JSON.parse(selectedPersona.notification_channels);
+      if (!Array.isArray(parsed)) { setChannelsInternal([]); return; }
+      // Normalize: agent_ir uses "channel" key, frontend expects "type" key.
+      // Filter out "built-in" channels (handled separately as In-App Messages).
+      const validTypes = new Set(['slack', 'telegram', 'email']);
+      const normalized: NotificationChannel[] = [];
+      for (const ch of parsed) {
+        const rawType = ch.type ?? ch.channel ?? '';
+        if (!validTypes.has(rawType)) continue;
+        normalized.push({
+          type: rawType as NotificationChannelType,
+          config: ch.config ?? {},
+          enabled: ch.enabled !== false,
+          credential_id: ch.credential_id,
+        });
+      }
+      setChannelsInternal(normalized);
+    }
     catch { setChannelsInternal([]); }
     setIsDirty(false);
   }, [selectedPersona?.notification_channels, isDraftMode]);
@@ -85,7 +103,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
     try { await applyPersonaOp(personaId, { kind: 'UpdateNotifications', notification_channels: JSON.stringify(effectiveChannels) }); setIsDirty(false); }
     catch (error) {
       console.error('Failed to save notification channels:', error);
-      setSaveError(error instanceof Error ? error.message : 'Failed to save channels');
+      setSaveError('Could not save notification channels. Please check your connection and try again.');
       setIsDirty(true);
     }
     finally { setIsSaving(false); }

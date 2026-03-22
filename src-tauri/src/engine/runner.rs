@@ -82,8 +82,9 @@ fn credential_refresh_lock(credential_id: &str) -> CredentialLockHandle {
     }
 }
 
-use crate::db::models::{Persona, PersonaToolDefinition};
+use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
 use crate::db::repos::core::groups as group_repo;
+use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
 use crate::db::repos::resources::{
     audit_log, connectors as connector_repo, credentials as cred_repo,
@@ -748,169 +749,291 @@ pub async fn run_execution(
     );
 
     // Process stdout lines with timeout
+    let mut last_activity = std::time::Instant::now();
     let stream_result = tokio::time::timeout(timeout_duration, async {
-        while let Ok(Some(raw_line)) = read_line_limited(&mut stdout_reader).await {
-            if raw_line.trim().is_empty() {
-                continue;
-            }
+        let mut heartbeat_interval = tokio::time::interval(std::time::Duration::from_secs(30));
+        heartbeat_interval.tick().await; // consume immediate first tick
 
-            // Enforce total output byte cap
-            total_stdout_bytes += raw_line.len();
-            if total_stdout_bytes > MAX_OUTPUT_BYTES {
-                if !output_truncated {
-                    output_truncated = true;
-                    logger.log("[RUNNER] stdout truncated -- MAX_OUTPUT_BYTES (10MB) exceeded");
+        loop {
+            tokio::select! {
+                biased;  // prefer line reads over heartbeat
+
+                line_result = read_line_limited(&mut stdout_reader) => {
+                    match line_result {
+                        Ok(Some(raw_line)) => {
+                            last_activity = std::time::Instant::now();
+
+                            if raw_line.trim().is_empty() {
+                                continue;
+                            }
+
+                            // Enforce total output byte cap
+                            total_stdout_bytes += raw_line.len();
+                            if total_stdout_bytes > MAX_OUTPUT_BYTES {
+                                if !output_truncated {
+                                    output_truncated = true;
+                                    logger.log("[RUNNER] stdout truncated -- MAX_OUTPUT_BYTES (10MB) exceeded");
+                                    let _ = app.emit(
+                                        "execution-output",
+                                        ExecutionOutputEvent {
+                                            execution_id: exec_id_for_stream.clone(),
+                                            line: "[output truncated -- 10MB limit exceeded]".to_string(),
+                                        },
+                                    );
+                                }
+                                continue;
+                            }
+
+                            // Per-line truncation is now handled by read_line_limited (64KB cap).
+                            let line = raw_line;
+
+                            logger.log(&format!("[STDOUT] {}", line.trim()));
+
+                            // Parse stream line using the active provider
+                            let (line_type, display) = cli_provider.parse_stream_line(&line);
+
+                            // Emit user-facing output to frontend
+                            if let Some(ref display_text) = display {
+                                let _ = app.emit(
+                                    "execution-output",
+                                    ExecutionOutputEvent {
+                                        execution_id: exec_id_for_stream.clone(),
+                                        line: display_text.clone(),
+                                    },
+                                );
+                            }
+
+                            // Update metrics from result lines
+                            parser::update_metrics_from_result(&mut metrics, &line_type);
+
+                            // Persist session_id to DB immediately when first captured
+                            if let StreamLineType::SystemInit { ref session_id, .. } = line_type {
+                                if let Some(ref sid) = session_id {
+                                    if metrics.session_id.is_none() {
+                                        metrics.session_id = Some(sid.clone());
+                                        let pool_ref = pool_for_stream.clone();
+                                        let exec_id_ref = exec_id_for_stream.clone();
+                                        let sid_clone = sid.clone();
+                                        // Fire-and-forget DB update
+                                        tokio::spawn(async move {
+                                            let _ = exec_repo::update_status(
+                                                &pool_ref,
+                                                &exec_id_ref,
+                                                UpdateExecutionStatus {
+                                                    status: ExecutionState::Running,
+                                                    claude_session_id: Some(sid_clone),
+                                                    ..Default::default()
+                                                },
+                                            );
+                                        });
+                                    }
+                                }
+                            }
+
+                            // Emit structured event on the typed channel
+                            let structured_event = match &line_type {
+                                StreamLineType::AssistantText { text } => Some(StructuredExecutionEvent::Text {
+                                    execution_id: exec_id_for_stream.clone(),
+                                    content: text.clone(),
+                                }),
+                                StreamLineType::AssistantToolUse { tool_name, input_preview } => Some(StructuredExecutionEvent::ToolUse {
+                                    execution_id: exec_id_for_stream.clone(),
+                                    tool_name: tool_name.clone(),
+                                    input_preview: input_preview.clone(),
+                                }),
+                                StreamLineType::ToolResult { content_preview } => Some(StructuredExecutionEvent::ToolResult {
+                                    execution_id: exec_id_for_stream.clone(),
+                                    content_preview: content_preview.clone(),
+                                }),
+                                StreamLineType::SystemInit { model, session_id } => Some(StructuredExecutionEvent::SystemInit {
+                                    execution_id: exec_id_for_stream.clone(),
+                                    model: model.clone(),
+                                    session_id: session_id.clone(),
+                                }),
+                                StreamLineType::Result { duration_ms, total_cost_usd, total_input_tokens, total_output_tokens, model, session_id } => Some(StructuredExecutionEvent::ExecutionResult {
+                                    execution_id: exec_id_for_stream.clone(),
+                                    duration_ms: *duration_ms,
+                                    cost_usd: *total_cost_usd,
+                                    input_tokens: *total_input_tokens,
+                                    output_tokens: *total_output_tokens,
+                                    model: model.clone(),
+                                    session_id: session_id.clone(),
+                                }),
+                                StreamLineType::Unknown => None,
+                            };
+                            if let Some(event) = structured_event {
+                                let _ = app.emit("execution-event", &event);
+                            }
+
+                            // Track tool usage and build tool steps for inspector
+                            if let StreamLineType::AssistantToolUse {
+                                ref tool_name,
+                                ref input_preview,
+                            } = line_type
+                            {
+                                tool_use_lines.push(line_type.clone());
+                                step_counter += 1;
+
+                                // Create trace span for this tool call
+                                let tool_span_id = trace.start_span(
+                                    SpanType::ToolCall,
+                                    &format!("ToolCall: {tool_name}"),
+                                    Some(&stream_span),
+                                    Some(serde_json::json!({
+                                        "tool_name": tool_name,
+                                        "step_index": step_counter,
+                                    })),
+                                );
+                                // Emit live trace span event to frontend
+                                if let Some(span_data) = trace.get_span(&tool_span_id) {
+                                    let _ = app.emit("execution-trace-span", TraceSpanEvent {
+                                        execution_id: exec_id_for_stream.clone(),
+                                        span: span_data,
+                                        event_type: "start".to_string(),
+                                    });
+                                }
+
+                                tool_steps.push(ToolCallStep {
+                                    step_index: step_counter,
+                                    tool_name: tool_name.clone(),
+                                    input_preview: input_preview.clone(),
+                                    output_preview: String::new(),
+                                    started_at_ms: start_time.elapsed().as_millis() as u64,
+                                    ended_at_ms: None,
+                                    duration_ms: None,
+                                });
+
+                                // Emit file change event if this is a file operation
+                                if let Some(file_change) = parser::extract_file_change(tool_name, input_preview) {
+                                    let _ = app.emit(
+                                        "execution-file-change",
+                                        serde_json::json!({
+                                            "execution_id": exec_id_for_stream,
+                                            "path": file_change.path,
+                                            "change_type": file_change.change_type,
+                                        }),
+                                    );
+                                    let _ = app.emit(
+                                        "execution-event",
+                                        &StructuredExecutionEvent::FileChange {
+                                            execution_id: exec_id_for_stream.clone(),
+                                            path: file_change.path.clone(),
+                                            change_type: format!("{:?}", file_change.change_type).to_lowercase(),
+                                        },
+                                    );
+                                }
+                            }
+
+                            // Fill last tool step with result output
+                            if let StreamLineType::ToolResult {
+                                ref content_preview,
+                            } = line_type
+                            {
+                                if let Some(last) = tool_steps.last_mut() {
+                                    if last.ended_at_ms.is_none() {
+                                        let now = start_time.elapsed().as_millis() as u64;
+                                        last.output_preview = if content_preview.len() > 500 {
+                                            format!("{}...", &content_preview[..500])
+                                        } else {
+                                            content_preview.clone()
+                                        };
+                                        last.ended_at_ms = Some(now);
+                                        last.duration_ms = Some(now.saturating_sub(last.started_at_ms));
+                                    }
+                                }
+
+                                // End the most recent open ToolCall trace span
+                                let tool_span_to_close = {
+                                    let spans = trace.spans.lock().unwrap_or_else(|e| e.into_inner());
+                                    spans.iter().rev()
+                                        .find(|s| s.span_type == SpanType::ToolCall && s.end_ms.is_none())
+                                        .map(|s| s.span_id.clone())
+                                };
+                                if let Some(span_id) = tool_span_to_close {
+                                    trace.end_span_ok(&span_id);
+                                    // Emit live trace span end event
+                                    if let Some(span_data) = trace.get_span(&span_id) {
+                                        let _ = app.emit("execution-trace-span", TraceSpanEvent {
+                                            execution_id: exec_id_for_stream.clone(),
+                                            span: span_data,
+                                            event_type: "end".to_string(),
+                                        });
+                                    }
+                                }
+                            }
+
+                            // For assistant text, check for protocol messages
+                            if let StreamLineType::AssistantText { ref text } = line_type {
+                                for text_line in text.split('\n') {
+                                    if assistant_text.len() < MAX_OUTPUT_BYTES {
+                                        assistant_text.push_str(text_line);
+                                        assistant_text.push('\n');
+                                    }
+
+                                    // Mid-stream protocol message detection.
+                                    // Fast prefix check then parse once; use from_value to avoid
+                                    // re-deserializing what parse_stream_line already parsed.
+                                    let protocol_msg = {
+                                        let trimmed = text_line.trim();
+                                        if trimmed.starts_with('{') {
+                                            serde_json::from_str::<serde_json::Value>(trimmed)
+                                                .ok()
+                                                .and_then(|v| parser::extract_protocol_message_from_value(&v))
+                                        } else {
+                                            None
+                                        }
+                                    };
+                                    if let Some(protocol_msg) = protocol_msg {
+                                        let dispatch_span = trace.start_span(
+                                            SpanType::ProtocolDispatch,
+                                            &format!("Protocol: {:?}", std::mem::discriminant(&protocol_msg)),
+                                            Some(&stream_span),
+                                            None,
+                                        );
+                                        let mut dispatch_ctx = super::dispatch::DispatchContext {
+                                            app: &app,
+                                            pool: &pool_for_stream,
+                                            execution_id: &exec_id_for_stream,
+                                            persona_id: &persona_id_for_stream,
+                                            project_id: &project_id_for_stream,
+                                            persona_name: &persona_name_for_stream,
+                                            notification_channels: notif_channels_for_stream.as_deref(),
+                                            logger: &mut logger,
+                                        };
+                                        super::dispatch::dispatch(&mut dispatch_ctx, &protocol_msg);
+                                        trace.end_span_ok(&dispatch_span);
+                                    }
+                                }
+                            }
+                        }
+                        Ok(None) => break,  // EOF
+                        Err(e) => {
+                            logger.log(&format!("[RUNNER] stdout read error: {e}"));
+                            break;
+                        }
+                    }
+                }
+
+                _ = heartbeat_interval.tick() => {
+                    let elapsed_ms = start_time.elapsed().as_millis() as u64;
+                    let silence_ms = last_activity.elapsed().as_millis() as u64;
                     let _ = app.emit(
-                        "execution-output",
-                        ExecutionOutputEvent {
+                        "execution-heartbeat",
+                        HeartbeatEvent {
                             execution_id: exec_id_for_stream.clone(),
-                            line: "[output truncated -- 10MB limit exceeded]".to_string(),
+                            elapsed_ms,
+                            silence_ms,
                         },
                     );
-                }
-                continue;
-            }
-
-            // Per-line truncation is now handled by read_line_limited (64KB cap).
-            let line = raw_line;
-
-            logger.log(&format!("[STDOUT] {}", line.trim()));
-
-            // Parse stream line using the active provider
-            let (line_type, display) = cli_provider.parse_stream_line(&line);
-
-            // Emit user-facing output to frontend
-            if let Some(ref display_text) = display {
-                let _ = app.emit(
-                    "execution-output",
-                    ExecutionOutputEvent {
-                        execution_id: exec_id_for_stream.clone(),
-                        line: display_text.clone(),
-                    },
-                );
-            }
-
-            // Update metrics from result lines
-            parser::update_metrics_from_result(&mut metrics, &line_type);
-
-            // Track tool usage and build tool steps for inspector
-            if let StreamLineType::AssistantToolUse {
-                ref tool_name,
-                ref input_preview,
-            } = line_type
-            {
-                tool_use_lines.push(line_type.clone());
-                step_counter += 1;
-
-                // Create trace span for this tool call
-                let tool_span_id = trace.start_span(
-                    SpanType::ToolCall,
-                    &format!("ToolCall: {tool_name}"),
-                    Some(&stream_span),
-                    Some(serde_json::json!({
-                        "tool_name": tool_name,
-                        "step_index": step_counter,
-                    })),
-                );
-                // Emit live trace span event to frontend
-                if let Some(span_data) = trace.get_span(&tool_span_id) {
-                    let _ = app.emit("execution-trace-span", TraceSpanEvent {
-                        execution_id: exec_id_for_stream.clone(),
-                        span: span_data,
-                        event_type: "start".to_string(),
-                    });
-                }
-
-                tool_steps.push(ToolCallStep {
-                    step_index: step_counter,
-                    tool_name: tool_name.clone(),
-                    input_preview: input_preview.clone(),
-                    output_preview: String::new(),
-                    started_at_ms: start_time.elapsed().as_millis() as u64,
-                    ended_at_ms: None,
-                    duration_ms: None,
-                });
-            }
-
-            // Fill last tool step with result output
-            if let StreamLineType::ToolResult {
-                ref content_preview,
-            } = line_type
-            {
-                if let Some(last) = tool_steps.last_mut() {
-                    if last.ended_at_ms.is_none() {
-                        let now = start_time.elapsed().as_millis() as u64;
-                        last.output_preview = if content_preview.len() > 500 {
-                            format!("{}...", &content_preview[..500])
-                        } else {
-                            content_preview.clone()
-                        };
-                        last.ended_at_ms = Some(now);
-                        last.duration_ms = Some(now.saturating_sub(last.started_at_ms));
-                    }
-                }
-
-                // End the most recent open ToolCall trace span
-                let tool_span_to_close = {
-                    let spans = trace.spans.lock().unwrap_or_else(|e| e.into_inner());
-                    spans.iter().rev()
-                        .find(|s| s.span_type == SpanType::ToolCall && s.end_ms.is_none())
-                        .map(|s| s.span_id.clone())
-                };
-                if let Some(span_id) = tool_span_to_close {
-                    trace.end_span_ok(&span_id);
-                    // Emit live trace span end event
-                    if let Some(span_data) = trace.get_span(&span_id) {
-                        let _ = app.emit("execution-trace-span", TraceSpanEvent {
+                    // Also emit on structured channel
+                    let _ = app.emit(
+                        "execution-event",
+                        &StructuredExecutionEvent::Heartbeat {
                             execution_id: exec_id_for_stream.clone(),
-                            span: span_data,
-                            event_type: "end".to_string(),
-                        });
-                    }
-                }
-            }
-
-            // For assistant text, check for protocol messages
-            if let StreamLineType::AssistantText { ref text } = line_type {
-                for text_line in text.split('\n') {
-                    if assistant_text.len() < MAX_OUTPUT_BYTES {
-                        assistant_text.push_str(text_line);
-                        assistant_text.push('\n');
-                    }
-
-                    // Mid-stream protocol message detection.
-                    // Fast prefix check then parse once; use from_value to avoid
-                    // re-deserializing what parse_stream_line already parsed.
-                    let protocol_msg = {
-                        let trimmed = text_line.trim();
-                        if trimmed.starts_with('{') {
-                            serde_json::from_str::<serde_json::Value>(trimmed)
-                                .ok()
-                                .and_then(|v| parser::extract_protocol_message_from_value(&v))
-                        } else {
-                            None
-                        }
-                    };
-                    if let Some(protocol_msg) = protocol_msg {
-                        let dispatch_span = trace.start_span(
-                            SpanType::ProtocolDispatch,
-                            &format!("Protocol: {:?}", std::mem::discriminant(&protocol_msg)),
-                            Some(&stream_span),
-                            None,
-                        );
-                        let mut dispatch_ctx = super::dispatch::DispatchContext {
-                            app: &app,
-                            pool: &pool_for_stream,
-                            execution_id: &exec_id_for_stream,
-                            persona_id: &persona_id_for_stream,
-                            project_id: &project_id_for_stream,
-                            persona_name: &persona_name_for_stream,
-                            notification_channels: notif_channels_for_stream.as_deref(),
-                            logger: &mut logger,
-                        };
-                        super::dispatch::dispatch(&mut dispatch_ctx, &protocol_msg);
-                        trace.end_span_ok(&dispatch_span);
-                    }
+                            elapsed_ms,
+                            silence_ms,
+                        },
+                    );
                 }
             }
         }
@@ -1190,9 +1313,6 @@ fn resolve_global_provider_settings(pool: &DbPool, profile: &mut ModelProfile) {
         Some(providers::LITELLM) => {
             apply_global_setting(pool, &mut profile.base_url, settings_keys::LITELLM_BASE_URL);
             apply_global_setting(pool, &mut profile.auth_token, settings_keys::LITELLM_MASTER_KEY);
-        }
-        Some(providers::COPILOT) => {
-            apply_global_setting(pool, &mut profile.auth_token, settings_keys::COPILOT_GITHUB_TOKEN);
         }
         _ => {}
     }

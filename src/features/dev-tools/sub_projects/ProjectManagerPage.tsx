@@ -11,6 +11,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useContextScanBackground } from '../hooks/useContextScanBackground';
+import { ImplementationLog } from './ImplementationLog';
 
 // ---------------------------------------------------------------------------
 // Types – thin view-models mapped from store bindings
@@ -387,6 +388,8 @@ function GoalBoard({
   onCreateGoal,
   selectedGoalId,
   onSelectGoal,
+  onAddNote,
+  rawGoalSignals,
 }: {
   goals: Goal[];
   onUpdateGoal: (id: string, data: Partial<Goal>) => void;
@@ -394,6 +397,8 @@ function GoalBoard({
   onCreateGoal: (title: string) => void;
   selectedGoalId: string | null;
   onSelectGoal: (id: string | null) => void;
+  onAddNote: (goalId: string, message: string) => void;
+  rawGoalSignals: import("@/lib/bindings/DevGoalSignal").DevGoalSignal[];
 }) {
   const [newTitle, setNewTitle] = useState('');
   const { staggerDelay } = useMotion();
@@ -484,34 +489,18 @@ function GoalBoard({
         </div>
       </div>
 
-      {/* Signal timeline sidebar */}
+      {/* Implementation log sidebar */}
       {selectedGoal && (
         <motion.div
           initial={{ opacity: 0, x: 12 }}
           animate={{ opacity: 1, x: 0 }}
           className="w-72 flex-shrink-0 border-l border-primary/10 pl-4 overflow-y-auto"
         >
-          <h4 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-3">
-            Signal Timeline
-          </h4>
-          {selectedGoal.signals.length === 0 ? (
-            <p className="text-xs text-muted-foreground/50">No signals recorded yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {selectedGoal.signals.map((signal) => (
-                <div key={signal.id} className="flex gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
-                    signal.type === 'success' ? 'bg-emerald-400' :
-                    signal.type === 'warning' ? 'bg-amber-400' : 'bg-blue-400'
-                  }`} />
-                  <div>
-                    <p className="text-xs text-foreground/70">{signal.message}</p>
-                    <p className="text-[10px] text-muted-foreground/50 mt-0.5">{signal.timestamp}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <ImplementationLog
+            goalId={selectedGoal.id}
+            signals={rawGoalSignals.filter((s) => s.goal_id === selectedGoal.id)}
+            onAddNote={(msg) => onAddNote(selectedGoal.id, msg)}
+          />
         </motion.div>
       )}
     </div>
@@ -534,6 +523,8 @@ export default function ProjectManagerPage() {
   const createGoal = useSystemStore((s) => s.createGoal);
   const updateGoal = useSystemStore((s) => s.updateGoal);
   const deleteGoal = useSystemStore((s) => s.deleteGoal);
+  const fetchGoalSignals = useSystemStore((s) => s.fetchGoalSignals);
+  const recordGoalSignal = useSystemStore((s) => s.recordGoalSignal);
   const { startBackgroundScan } = useContextScanBackground();
 
   // Map store data into view-models
@@ -563,6 +554,10 @@ export default function ProjectManagerPage() {
   useEffect(() => {
     if (activeProjectId) fetchGoals?.(activeProjectId);
   }, [activeProjectId]);
+
+  useEffect(() => {
+    if (selectedGoalId) fetchGoalSignals?.(selectedGoalId);
+  }, [selectedGoalId]);
 
   const handleCreateProject = useCallback(async (data: { name: string; path: string; description: string; projectType: ProjectType }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
@@ -646,6 +641,8 @@ export default function ProjectManagerPage() {
                   onCreateGoal={(title) => activeProjectId ? createGoal?.(activeProjectId, title) : undefined}
                   selectedGoalId={selectedGoalId}
                   onSelectGoal={setSelectedGoalId}
+                  onAddNote={(goalId, msg) => recordGoalSignal?.(goalId, 'manual_note', 0, msg)}
+                  rawGoalSignals={storeGoalSignals}
                 />
               </div>
             </motion.div>

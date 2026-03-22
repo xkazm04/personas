@@ -7,7 +7,10 @@ import {
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
+import { useSystemStore } from '@/stores/systemStore';
 import { AGENT_CATEGORIES } from '../constants/scanAgents';
+import { TriageRulesPanel } from './TriageRulesPanel';
+import { EffortRiskFilter } from './EffortRiskFilter';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,9 +25,9 @@ interface TriageIdea {
   reasoning: string;
   category: CategoryKey;
   agentEmoji: string;
-  effort: 'low' | 'medium' | 'high';
-  impact: 'low' | 'medium' | 'high';
-  risk: 'low' | 'medium' | 'high';
+  effort: number;
+  impact: number;
+  risk: number;
   status: 'pending' | 'accepted' | 'rejected';
 }
 
@@ -34,11 +37,11 @@ interface TriageIdea {
 
 const SWIPE_THRESHOLD = 150;
 
-const LEVEL_STYLES: Record<string, string> = {
-  low: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  medium: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
-  high: 'bg-red-500/15 text-red-400 border-red-500/25',
-};
+function levelColor(value: number): string {
+  if (value <= 3) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25';
+  if (value <= 6) return 'bg-amber-500/15 text-amber-400 border-amber-500/25';
+  return 'bg-red-500/15 text-red-400 border-red-500/25';
+}
 
 const DEFAULT_TRIAGE_TW = { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25', dot: 'bg-blue-400' };
 const CATEGORY_TW: Record<string, { bg: string; text: string; border: string; dot: string }> = {
@@ -155,7 +158,7 @@ function SwipeCard({
           {(['effort', 'impact', 'risk'] as const).map((key) => (
             <span
               key={key}
-              className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${LEVEL_STYLES[idea[key]] ?? LEVEL_STYLES.low}`}
+              className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${levelColor(idea[key])}`}
             >
               {key}: {idea[key]}
             </span>
@@ -172,12 +175,18 @@ function SwipeCard({
 
 export default function IdeaTriagePage() {
   const { triageIdea, deleteIdea } = useDevToolsActions();
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
   const [ideas, setIdeas] = useState<TriageIdea[]>([]);
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [effortRange, setEffortRange] = useState<[number, number]>([1, 10]);
+  const [riskRange, setRiskRange] = useState<[number, number]>([1, 10]);
 
-  const pendingIdeas = ideas.filter((i) => i.status === 'pending' && (filterCategory === 'all' || i.category === filterCategory));
+  const pendingIdeas = ideas
+    .filter((i) => i.status === 'pending' && (filterCategory === 'all' || i.category === filterCategory))
+    .filter((i) => i.effort >= effortRange[0] && i.effort <= effortRange[1])
+    .filter((i) => i.risk >= riskRange[0] && i.risk <= riskRange[1]);
   const acceptedCount = ideas.filter((i) => i.status === 'accepted').length;
   const rejectedCount = ideas.filter((i) => i.status === 'rejected').length;
   const pendingCount = ideas.filter((i) => i.status === 'pending').length;
@@ -254,8 +263,15 @@ export default function IdeaTriagePage() {
       />
 
       <ContentBody>
+        {/* Auto-Triage Rules Panel */}
+        {activeProjectId && (
+          <div className="mb-4">
+            <TriageRulesPanel projectId={activeProjectId} />
+          </div>
+        )}
+
         <div className="flex gap-6 h-full min-h-[500px]">
-          {/* Left sidebar: category filters */}
+          {/* Left sidebar: category filters + effort/risk filter */}
           <div className="w-44 flex-shrink-0 space-y-1">
             <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
               Filter by Category
@@ -289,6 +305,16 @@ export default function IdeaTriagePage() {
                 </button>
               );
             })}
+
+            {/* Effort / Risk filters */}
+            <div className="pt-3 mt-3 border-t border-border/15">
+              <EffortRiskFilter
+                effortRange={effortRange}
+                riskRange={riskRange}
+                onEffortChange={setEffortRange}
+                onRiskChange={setRiskRange}
+              />
+            </div>
           </div>
 
           {/* Center: card stack */}

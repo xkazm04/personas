@@ -1209,6 +1209,7 @@ async fn handle_execution_result(
             output_tokens: Some(result.output_tokens as i64),
             cost_usd: Some(result.cost_usd),
             tool_steps: result.tool_steps.clone(),
+            claude_session_id: result.claude_session_id.clone(),
         },
     )
     .await;
@@ -1849,6 +1850,7 @@ fn spawn_healing_chain(
                 output_tokens: Some(result.output_tokens as i64),
                 cost_usd: Some(result.cost_usd),
                 tool_steps: result.tool_steps.clone(),
+                claude_session_id: result.claude_session_id.clone(),
             },
         )
         .await;
@@ -2137,6 +2139,7 @@ fn spawn_delayed_retry(
                     output_tokens: Some(result.output_tokens as i64),
                     cost_usd: Some(result.cost_usd),
                     tool_steps: result.tool_steps.clone(),
+                    claude_session_id: result.claude_session_id.clone(),
                 },
             )
             .await;

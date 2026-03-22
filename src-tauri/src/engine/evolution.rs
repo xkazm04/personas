@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::EvolutionPolicy;
+use crate::db::models::{EvolutionPolicy, Persona, PersonaToolDefinition};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;
@@ -15,6 +15,8 @@ use crate::db::DbPool;
 use crate::engine::genome::{
     self, breed_generation, compute_fitness, FitnessObjective, FitnessScore, PersonaGenome,
 };
+use super::test_runner::{generate_scenarios, execute_scenario, score_result, TestModelConfig};
+use super::prompt;
 
 // =============================================================================
 // Types
@@ -144,6 +146,9 @@ pub async fn run_evolution_cycle(
         }
     }
 
+    // Update variant count so frontend shows progress
+    let _ = evolution_repo::update_variants_tested(&pool, &cycle_id, variants.len() as i32);
+
     // Phase 2: Evaluating
     if let Err(e) = evolution_repo::update_cycle_status(
         &pool,
@@ -155,23 +160,66 @@ pub async fn run_evolution_cycle(
         return;
     }
 
-    // Since variants don't have execution history yet, we evaluate them
-    // by their structural similarity to historically successful patterns.
-    // The fitness function uses the incumbent's persona_id execution data
-    // as a proxy, with small perturbations based on genome changes.
-    //
-    // In a full implementation, each variant would be executed against test
-    // scenarios. For now, we score variants based on genome-level heuristics:
-    // - Prompt coherence (segment count preservation)
-    // - Tool coverage (retaining tools)
-    // - Config reasonableness
+    // Evaluate variants by running them through real test scenarios via CLI.
+    // 1. Generate test scenarios from the incumbent persona
+    // 2. Execute each variant against the scenarios
+    // 3. Score results with LLM eval
+    // 4. Compare variant scores against incumbent
+
+    // Generate scenarios from incumbent
+    let scenarios = match generate_scenarios(&persona, &tools, None, None).await {
+        Ok(s) if !s.is_empty() => s,
+        Ok(_) => {
+            let _ = evolution_repo::update_cycle_status(
+                &pool, &cycle_id, EvolutionCycleStatus::Failed,
+                Some("No test scenarios generated for evaluation"),
+            );
+            return;
+        }
+        Err(e) => {
+            let _ = evolution_repo::update_cycle_status(
+                &pool, &cycle_id, EvolutionCycleStatus::Failed,
+                Some(&format!("Scenario generation failed: {e}")),
+            );
+            return;
+        }
+    };
+
+    // Default model for evaluation
+    let eval_model = TestModelConfig {
+        id: "sonnet".to_string(),
+        model: Some("claude-sonnet-4-6".to_string()),
+        provider: "anthropic".to_string(),
+        base_url: None,
+        auth_token: None,
+    };
+
+    // Score the incumbent first (baseline)
+    let incumbent_avg = evaluate_persona_on_scenarios(&persona, &tools, &scenarios, &eval_model).await;
+
+    // Score each variant
     let mut best_variant_idx: Option<usize> = None;
     let mut best_variant_score: f64 = 0.0;
 
     for (i, variant) in variants.iter().enumerate() {
-        let score = score_variant(variant, &incumbent_genome, &incumbent_fitness);
-        if score > best_variant_score {
-            best_variant_score = score;
+        // Create ephemeral persona from variant genome
+        let mut variant_persona = persona.clone();
+        variant_persona.system_prompt = variant.reassemble_prompt();
+        // Clear structured_prompt so the system_prompt is used
+        variant_persona.structured_prompt = None;
+
+        let variant_avg = evaluate_persona_on_scenarios(&variant_persona, &tools, &scenarios, &eval_model).await;
+
+        tracing::debug!(
+            cycle_id = %cycle_id,
+            variant = i,
+            score = variant_avg,
+            incumbent = incumbent_avg,
+            "Evolution: variant {} scored {:.2} (incumbent: {:.2})", i, variant_avg, incumbent_avg,
+        );
+
+        if variant_avg > best_variant_score {
+            best_variant_score = variant_avg;
             best_variant_idx = Some(i);
         }
     }
@@ -299,6 +347,45 @@ fn score_variant(
     };
 
     (base + seg_bonus + tool_bonus + timeout_penalty + perturbation).clamp(0.0, 1.0)
+}
+
+// =============================================================================
+// Real variant evaluation via CLI execution
+// =============================================================================
+
+/// Run a persona against test scenarios and return average composite score (0.0-1.0).
+async fn evaluate_persona_on_scenarios(
+    persona: &Persona,
+    tools: &[PersonaToolDefinition],
+    scenarios: &[super::test_runner::TestScenario],
+    model: &TestModelConfig,
+) -> f64 {
+    let mut total_score: f64 = 0.0;
+    let mut count: usize = 0;
+
+    // Run up to 3 scenarios to keep evaluation fast
+    let max_scenarios = scenarios.len().min(3);
+    for scenario in &scenarios[..max_scenarios] {
+        match execute_scenario(persona, tools, scenario, model).await {
+            Ok(output) => {
+                let scores = score_result(&output, scenario, persona).await;
+                let composite = (scores.tool_accuracy as f64 * 0.3
+                    + scores.output_quality as f64 * 0.4
+                    + scores.protocol_compliance as f64 * 0.3)
+                    / 100.0;
+                total_score += composite;
+                count += 1;
+            }
+            Err(e) => {
+                tracing::debug!("Evolution eval failed for scenario '{}': {}", scenario.name, e);
+                // Count failures as 0 score
+                count += 1;
+            }
+        }
+    }
+
+    if count == 0 { return 0.0; }
+    total_score / count as f64
 }
 
 // =============================================================================

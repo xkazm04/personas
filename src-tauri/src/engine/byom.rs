@@ -46,7 +46,7 @@ pub struct RoutingRule {
     pub name: String,
     /// Task complexity level that triggers this rule.
     pub task_complexity: TaskComplexity,
-    /// Provider to route to (as engine kind string: "claude_code", "gemini_cli", etc.).
+    /// Provider to route to (as engine kind string: "claude_code", "codex_cli", etc.).
     pub provider: String,
     /// Optional model override (e.g., "claude-haiku-4-5-20251001").
     pub model: Option<String>,
@@ -344,8 +344,6 @@ fn parse_engine_kind(s: &str) -> Option<EngineKind> {
     match s {
         "claude_code" => Some(EngineKind::ClaudeCode),
         "codex_cli" => Some(EngineKind::CodexCli),
-        "gemini_cli" => Some(EngineKind::GeminiCli),
-        "copilot_cli" => Some(EngineKind::CopilotCli),
         _ => None,
     }
 }
@@ -355,8 +353,6 @@ fn all_engine_kinds() -> Vec<EngineKind> {
     vec![
         EngineKind::ClaudeCode,
         EngineKind::CodexCli,
-        EngineKind::GeminiCli,
-        EngineKind::CopilotCli,
     ]
 }
 
@@ -376,7 +372,7 @@ mod tests {
     fn test_disabled_policy_allows_all() {
         let policy = ByomPolicy {
             enabled: false,
-            blocked_providers: vec!["gemini_cli".into()],
+            blocked_providers: vec!["codex_cli".into()],
             ..Default::default()
         };
         let decision = policy.evaluate(&[], None);
@@ -387,12 +383,11 @@ mod tests {
     fn test_blocked_providers() {
         let policy = ByomPolicy {
             enabled: true,
-            blocked_providers: vec!["gemini_cli".into(), "copilot_cli".into()],
+            blocked_providers: vec!["codex_cli".into()],
             ..Default::default()
         };
         let decision = policy.evaluate(&[], None);
-        assert!(decision.blocked_providers.contains(&EngineKind::GeminiCli));
-        assert!(decision.blocked_providers.contains(&EngineKind::CopilotCli));
+        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
         assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
     }
 
@@ -405,9 +400,7 @@ mod tests {
         };
         let decision = policy.evaluate(&[], None);
         assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
-        assert!(decision.blocked_providers.contains(&EngineKind::GeminiCli));
         assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
-        assert!(decision.blocked_providers.contains(&EngineKind::CopilotCli));
     }
 
     #[test]
@@ -452,7 +445,7 @@ mod tests {
         };
         let decision = policy.evaluate(&["hipaa-workflow".into()], None);
         assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
-        assert!(decision.blocked_providers.contains(&EngineKind::GeminiCli));
+        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
         assert_eq!(decision.compliance_rule_name.as_deref(), Some("HIPAA"));
     }
 
@@ -464,8 +457,8 @@ mod tests {
             compliance_rules: vec![ComplianceRule {
                 name: "HIPAA".into(),
                 workflow_tags: vec!["hipaa".into()],
-                // Gemini is NOT in allowed_providers
-                allowed_providers: vec!["claude_code".into(), "gemini_cli".into()],
+                // Codex is NOT in allowed_providers
+                allowed_providers: vec!["claude_code".into(), "codex_cli".into()],
                 enabled: true,
             }],
             ..Default::default()
@@ -473,7 +466,7 @@ mod tests {
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 1);
         assert!(warnings[0].contains("HIPAA"));
-        assert!(warnings[0].contains("gemini_cli"));
+        assert!(warnings[0].contains("codex_cli"));
         assert!(warnings[0].contains("not in the top-level"));
     }
 
@@ -481,11 +474,11 @@ mod tests {
     fn test_validate_compliance_rule_blocked_provider() {
         let policy = ByomPolicy {
             enabled: true,
-            blocked_providers: vec!["gemini_cli".into()],
+            blocked_providers: vec!["codex_cli".into()],
             compliance_rules: vec![ComplianceRule {
                 name: "DataSov".into(),
                 workflow_tags: vec!["eu".into()],
-                allowed_providers: vec!["gemini_cli".into()],
+                allowed_providers: vec!["codex_cli".into()],
                 enabled: true,
             }],
             ..Default::default()
@@ -503,7 +496,7 @@ mod tests {
             routing_rules: vec![RoutingRule {
                 name: "Cheap simple".into(),
                 task_complexity: TaskComplexity::Simple,
-                provider: "gemini_cli".into(),
+                provider: "codex_cli".into(),
                 model: None,
                 enabled: true,
             }],
@@ -512,14 +505,14 @@ mod tests {
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 1);
         assert!(warnings[0].contains("Routing rule"));
-        assert!(warnings[0].contains("gemini_cli"));
+        assert!(warnings[0].contains("codex_cli"));
     }
 
     #[test]
     fn test_validate_clean_policy_no_warnings() {
         let policy = ByomPolicy {
             enabled: true,
-            allowed_providers: vec!["claude_code".into(), "gemini_cli".into()],
+            allowed_providers: vec!["claude_code".into(), "codex_cli".into()],
             compliance_rules: vec![ComplianceRule {
                 name: "HIPAA".into(),
                 workflow_tags: vec!["hipaa".into()],

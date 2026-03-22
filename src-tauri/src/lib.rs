@@ -703,6 +703,7 @@ pub fn run() {
             commands::execution::executions::cancel_execution,
             commands::execution::executions::list_executions_for_use_case,
             commands::execution::executions::get_execution_log,
+            commands::execution::executions::get_execution_log_lines,
             commands::execution::executions::get_execution_trace,
             commands::execution::executions::get_chain_trace,
             commands::execution::executions::get_dream_replay,
@@ -1342,11 +1343,16 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_create_task,
             commands::infrastructure::dev_tools::dev_tools_update_task,
             commands::infrastructure::dev_tools::dev_tools_delete_task,
+            // Dev Tools -- Task Executor (CLI-powered)
+            commands::infrastructure::task_executor::dev_tools_execute_task,
+            commands::infrastructure::task_executor::dev_tools_start_batch,
+            commands::infrastructure::task_executor::dev_tools_cancel_task_execution,
             // Dev Tools -- Triage Rules
             commands::infrastructure::dev_tools::dev_tools_list_triage_rules,
             commands::infrastructure::dev_tools::dev_tools_create_triage_rule,
             commands::infrastructure::dev_tools::dev_tools_update_triage_rule,
             commands::infrastructure::dev_tools::dev_tools_delete_triage_rule,
+            commands::infrastructure::dev_tools::dev_tools_run_triage_rules,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,

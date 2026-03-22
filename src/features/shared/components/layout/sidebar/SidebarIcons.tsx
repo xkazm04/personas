@@ -268,6 +268,46 @@ export function IconSettings({ active = false, className = '' }: IconProps) {
   );
 }
 
+// -- Plugins: Circuit chip with connector pins ----------------------------
+
+export function IconPlugins({ active = false, className = '' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      {/* Chip body */}
+      <rect x="7" y="7" width="10" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.6 : 0.4} />
+      <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" opacity={active ? 0.07 : 0.03} />
+      {/* Core node */}
+      <circle cx="12" cy="12" r="2.2" fill="currentColor" opacity={active ? 0.12 : 0.06} />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" className={a('pi-breathe', active)} opacity={active ? undefined : 0.5} />
+      {/* Top pins */}
+      <line x1="9.5" y1="7" x2="9.5" y2="3" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      <line x1="12" y1="7" x2="12" y2="2" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      <line x1="14.5" y1="7" x2="14.5" y2="3" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      {/* Bottom pins */}
+      <line x1="9.5" y1="17" x2="9.5" y2="21" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      <line x1="12" y1="17" x2="12" y2="22" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      <line x1="14.5" y1="17" x2="14.5" y2="21" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      {/* Left pins */}
+      <line x1="7" y1="9.5" x2="3" y2="9.5" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      <line x1="7" y1="12" x2="2" y2="12" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      <line x1="7" y1="14.5" x2="3" y2="14.5" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      {/* Right pins */}
+      <line x1="17" y1="9.5" x2="21" y2="9.5" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      <line x1="17" y1="12" x2="22" y2="12" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      <line x1="17" y1="14.5" x2="21" y2="14.5" className={a('pi-flow', active)} stroke="currentColor" strokeWidth="1" opacity={active ? 0.7 : 0.3} />
+      {/* Pin tips */}
+      <circle cx="9.5" cy="2.5" r="0.8" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? undefined : 0.3} />
+      <circle cx="14.5" cy="2.5" r="0.8" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? undefined : 0.3} />
+      <circle cx="9.5" cy="21.5" r="0.8" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? undefined : 0.3} />
+      <circle cx="14.5" cy="21.5" r="0.8" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? undefined : 0.3} />
+      <circle cx="2.5" cy="9.5" r="0.8" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? undefined : 0.3} />
+      <circle cx="2.5" cy="14.5" r="0.8" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? undefined : 0.3} />
+      <circle cx="21.5" cy="9.5" r="0.8" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? undefined : 0.3} />
+      <circle cx="21.5" cy="14.5" r="0.8" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? undefined : 0.3} />
+    </svg>
+  );
+}
+
 /** Map section ID -> custom icon */
 export const SIDEBAR_ICONS: Record<string, (props: IconProps) => React.JSX.Element> = {
   home: IconHome,
@@ -276,6 +316,7 @@ export const SIDEBAR_ICONS: Record<string, (props: IconProps) => React.JSX.Eleme
   events: IconEvents,
   credentials: IconKeys,
   'design-reviews': IconTemplates,
+  plugins: IconPlugins,
   team: IconTeams,
   cloud: IconCloud,
   settings: IconSettings,

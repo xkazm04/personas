@@ -30,6 +30,8 @@ export type UnregisteredCommand =
   | "dev_tools_set_active_project"
   | "dev_tools_start_batch"
   | "dev_tools_start_task"
+  | "dev_tools_execute_task"
+  | "dev_tools_cancel_task_execution"
   | "dev_tools_triage_ideas"
   | "gitlab_connect_from_vault"
   | "gitlab_get_job_log"
@@ -60,4 +62,5 @@ export type UnregisteredCommand =
   | "smee_relay_create"
   | "smee_relay_update"
   | "smee_relay_set_status"
-  | "smee_relay_delete";
+  | "smee_relay_delete"
+  | "get_execution_log_lines";

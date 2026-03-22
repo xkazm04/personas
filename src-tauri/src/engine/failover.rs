@@ -360,8 +360,6 @@ impl ProviderCircuitBreaker {
         let all_kinds = [
             EngineKind::ClaudeCode,
             EngineKind::CodexCli,
-            EngineKind::GeminiCli,
-            EngineKind::CopilotCli,
         ];
 
         let providers = all_kinds
@@ -599,10 +597,8 @@ pub fn build_failover_chain(
 
     // 3. Cross-provider failover: add alternate providers
     let alternates = match primary {
-        EngineKind::ClaudeCode => vec![EngineKind::GeminiCli, EngineKind::CodexCli, EngineKind::CopilotCli],
-        EngineKind::GeminiCli => vec![EngineKind::ClaudeCode, EngineKind::CodexCli, EngineKind::CopilotCli],
-        EngineKind::CodexCli => vec![EngineKind::ClaudeCode, EngineKind::GeminiCli, EngineKind::CopilotCli],
-        EngineKind::CopilotCli => vec![EngineKind::ClaudeCode, EngineKind::GeminiCli, EngineKind::CodexCli],
+        EngineKind::ClaudeCode => vec![EngineKind::CodexCli],
+        EngineKind::CodexCli => vec![EngineKind::ClaudeCode],
     };
 
     for alt in alternates {
@@ -666,7 +662,7 @@ mod tests {
             Some(FailoverReason::ProviderNotFound),
         );
         assert_eq!(
-            classify_error("Failed to spawn Gemini CLI: not found"),
+            classify_error("Failed to spawn CLI: not found"),
             Some(FailoverReason::ProviderNotFound),
         );
     }
@@ -704,7 +700,6 @@ mod tests {
     fn test_circuit_breaker_starts_closed() {
         let cb = ProviderCircuitBreaker::new();
         assert!(cb.try_acquire_and_probe(EngineKind::ClaudeCode));
-        assert!(cb.try_acquire_and_probe(EngineKind::GeminiCli));
         assert!(cb.try_acquire_and_probe(EngineKind::CodexCli));
         assert!(!cb.is_globally_paused());
     }
@@ -719,7 +714,7 @@ mod tests {
         // Circuit should now be open
         assert!(!cb.try_acquire_and_probe(EngineKind::ClaudeCode));
         // Other providers unaffected
-        assert!(cb.try_acquire_and_probe(EngineKind::GeminiCli));
+        assert!(cb.try_acquire_and_probe(EngineKind::CodexCli));
     }
 
     #[test]
@@ -738,29 +733,28 @@ mod tests {
     #[test]
     fn test_global_breaker_trips_after_threshold() {
         let cb = ProviderCircuitBreaker::new();
-        // Spread failures across multiple providers to hit the global threshold
+        // Spread failures across both providers to hit the global threshold
         // without hitting any single provider's threshold (5)
-        for _ in 0..4 {
+        for _ in 0..5 {
             cb.record_failure(EngineKind::ClaudeCode);
         }
-        for _ in 0..4 {
-            cb.record_failure(EngineKind::GeminiCli);
-        }
-        // 8 total failures -- still under global threshold (10)
+        // Claude circuit is now open (5 consecutive), but global has 5 < 10
         assert!(!cb.is_globally_paused());
-        assert!(cb.try_acquire_and_probe(EngineKind::CodexCli));
+
+        for _ in 0..4 {
+            cb.record_failure(EngineKind::CodexCli);
+        }
+        // 9 total failures -- still under global threshold (10)
+        assert!(!cb.is_globally_paused());
 
         // Push past global threshold
-        cb.record_failure(EngineKind::CodexCli);
         cb.record_failure(EngineKind::CodexCli);
         // 10 total failures -- global breaker should trip
         assert!(cb.is_globally_paused());
 
         // All providers should be blocked
         assert!(!cb.try_acquire_and_probe(EngineKind::ClaudeCode));
-        assert!(!cb.try_acquire_and_probe(EngineKind::GeminiCli));
         assert!(!cb.try_acquire_and_probe(EngineKind::CodexCli));
-        assert!(!cb.try_acquire_and_probe(EngineKind::CopilotCli));
     }
 
     #[test]
@@ -772,9 +766,9 @@ mod tests {
         }
         cb.record_success(EngineKind::ClaudeCode);
         for _ in 0..4 {
-            cb.record_failure(EngineKind::GeminiCli);
+            cb.record_failure(EngineKind::CodexCli);
         }
-        // 1 success offsets 1 Claude failure: 3 Claude + 4 Gemini = 7 < 10
+        // 1 success offsets 1 Claude failure: 3 Claude + 4 Codex = 7 < 10
         assert!(!cb.is_globally_paused());
     }
 
@@ -786,17 +780,17 @@ mod tests {
             cb.record_failure(EngineKind::ClaudeCode);
         }
         for _ in 0..4 {
-            cb.record_failure(EngineKind::GeminiCli);
+            cb.record_failure(EngineKind::CodexCli);
         }
         assert!(!cb.is_globally_paused()); // 8 < 10
 
         // Claude recovers -- only 1 failure removed (1:1 offset)
         cb.record_success(EngineKind::ClaudeCode);
-        // 3 Claude + 4 Gemini = 7 remaining
+        // 3 Claude + 4 Codex = 7 remaining
 
-        // 3 more Gemini failures push past threshold: 3 + 4 + 3 = 10
+        // 3 more Codex failures push past threshold: 3 + 4 + 3 = 10
         for _ in 0..3 {
-            cb.record_failure(EngineKind::GeminiCli);
+            cb.record_failure(EngineKind::CodexCli);
         }
         assert!(cb.is_globally_paused());
     }
@@ -809,14 +803,14 @@ mod tests {
             cb.record_failure(EngineKind::ClaudeCode);
         }
         for _ in 0..4 {
-            cb.record_failure(EngineKind::GeminiCli);
+            cb.record_failure(EngineKind::CodexCli);
         }
         // Each success removes 1 failure from that provider
-        cb.record_success(EngineKind::ClaudeCode); // 3 Claude + 4 Gemini = 7
-        cb.record_success(EngineKind::GeminiCli); // 3 Claude + 3 Gemini = 6
+        cb.record_success(EngineKind::ClaudeCode); // 3 Claude + 4 Codex = 7
+        cb.record_success(EngineKind::CodexCli); // 3 Claude + 3 Codex = 6
         // 2 more failures: 6 + 2 = 8 < 10
         cb.record_failure(EngineKind::ClaudeCode);
-        cb.record_failure(EngineKind::GeminiCli);
+        cb.record_failure(EngineKind::CodexCli);
         assert!(!cb.is_globally_paused());
     }
 
@@ -828,15 +822,15 @@ mod tests {
             cb.record_failure(EngineKind::ClaudeCode);
         }
         for _ in 0..3 {
-            cb.record_failure(EngineKind::GeminiCli);
+            cb.record_failure(EngineKind::CodexCli);
         }
         assert!(!cb.is_globally_paused()); // 9 < 10
 
         // One lucky success on provider A: should only remove 1 of 6, not all 6
         cb.record_success(EngineKind::ClaudeCode);
-        // 5 Claude + 3 Gemini = 8
+        // 5 Claude + 3 Codex = 8
 
-        // 2 more failures on provider C tip the global breaker
+        // 2 more failures on Codex tip the global breaker
         cb.record_failure(EngineKind::CodexCli);
         cb.record_failure(EngineKind::CodexCli);
         // 5 + 3 + 2 = 10 → trips
@@ -846,22 +840,12 @@ mod tests {
     #[test]
     fn test_failover_chain_claude_primary() {
         let chain = build_failover_chain(EngineKind::ClaudeCode, None);
-        // Should have: Claude(configured) + Claude model fallbacks + Gemini + Codex + Copilot
-        assert!(chain.len() >= 5);
+        // Should have: Claude(configured) + Claude model fallbacks + Codex
+        assert!(chain.len() >= 3);
         assert_eq!(chain[0].engine_kind, EngineKind::ClaudeCode);
-        // Last three should be alternate providers
-        let last_three: Vec<_> = chain.iter().rev().take(3).collect();
-        assert!(last_three.iter().any(|c| c.engine_kind == EngineKind::GeminiCli));
-        assert!(last_three.iter().any(|c| c.engine_kind == EngineKind::CodexCli));
-        assert!(last_three.iter().any(|c| c.engine_kind == EngineKind::CopilotCli));
-    }
-
-    #[test]
-    fn test_failover_chain_gemini_primary() {
-        let chain = build_failover_chain(EngineKind::GeminiCli, None);
-        assert_eq!(chain[0].engine_kind, EngineKind::GeminiCli);
-        // No model-level fallback for Gemini, so alternates follow immediately
-        assert_eq!(chain.len(), 4); // Gemini + Claude + Codex + Copilot
+        // Last alternate should be Codex
+        let last = chain.last().unwrap();
+        assert_eq!(last.engine_kind, EngineKind::CodexCli);
     }
 
     #[test]
@@ -896,23 +880,23 @@ mod tests {
     }
 
     #[test]
-    fn test_global_trip_returns_two_transitions() {
+    fn test_global_trip_returns_transition() {
         let cb = ProviderCircuitBreaker::new();
-        // 4 failures on each of two providers (8 total, no per-provider trip)
+        // 4 failures on Claude, 4 on Codex (8 total, no per-provider trip yet)
         for _ in 0..4 {
             cb.record_failure(EngineKind::ClaudeCode);
         }
         for _ in 0..4 {
-            cb.record_failure(EngineKind::GeminiCli);
+            cb.record_failure(EngineKind::CodexCli);
         }
-        // 9th failure on a third provider — still no trip
-        cb.record_failure(EngineKind::CodexCli);
-        // 10th failure: hits global threshold. Codex also hits 2 failures (under 5).
+        // 9th failure
+        cb.record_failure(EngineKind::ClaudeCode);
+        // Claude now has 5 consecutive → per-provider circuit opens
+        // 10th failure: hits global threshold
         let transitions = cb.record_failure(EngineKind::CodexCli);
-        // Should have exactly 1 transition: global pause (no per-provider open at 2 failures)
-        assert_eq!(transitions.len(), 1);
-        assert_eq!(transitions[0].provider, "global");
-        assert_eq!(transitions[0].to_state, "paused");
+        // Should have exactly 1 transition: global pause (Codex at 5 also opens, but
+        // the per-provider open for Codex is a separate transition)
+        assert!(transitions.iter().any(|t| t.provider == "global" && t.to_state == "paused"));
     }
 
     #[test]
@@ -931,7 +915,7 @@ mod tests {
         let claude = status.providers.iter().find(|p| p.provider == "claude_code").unwrap();
         assert_eq!(claude.trip_count_1h, 1);
         // Other providers should have 0
-        let gemini = status.providers.iter().find(|p| p.provider == "gemini_cli").unwrap();
-        assert_eq!(gemini.trip_count_1h, 0);
+        let codex = status.providers.iter().find(|p| p.provider == "codex_cli").unwrap();
+        assert_eq!(codex.trip_count_1h, 0);
     }
 }

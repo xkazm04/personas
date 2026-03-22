@@ -236,6 +236,15 @@ pub fn update_cycle_status(
     Ok(())
 }
 
+pub fn update_variants_tested(pool: &DbPool, id: &str, count: i32) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE evolution_cycles SET variants_tested = ?1 WHERE id = ?2",
+        params![count, id],
+    )?;
+    Ok(())
+}
+
 pub fn complete_cycle(
     pool: &DbPool,
     id: &str,

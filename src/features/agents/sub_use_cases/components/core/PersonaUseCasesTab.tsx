@@ -1,19 +1,15 @@
 import { memo } from 'react';
-import { ListChecks, Wrench, ChevronDown, ChevronRight } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { ListChecks } from 'lucide-react';
 import { UseCaseRow } from '@/features/shared/components/use-cases/UseCaseRow';
 import { UseCaseHistory } from '@/features/shared/components/use-cases/UseCaseHistory';
 import { UseCaseExecutionPanel } from '@/features/shared/components/use-cases/UseCaseExecutionPanel';
 import { DefaultModelSection } from './DefaultModelSection';
 import { UseCaseDetailPanel } from '../detail/UseCaseDetailPanel';
-import { UseCaseGeneralHistory } from './UseCaseTabHeader';
-import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { LinkedRecipesSection } from '@/features/recipes/sub_list/components/LinkedRecipesSection';
-import { ModelABCompare } from '@/features/agents/sub_model_config';
 import { useUseCasesTab } from '../../libs/useUseCasesTab';
 
 const MemoUseCaseRow = memo(UseCaseRow);
@@ -39,8 +35,6 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
     historyExpandedMap,
     configExpandedMap,
     historyRefreshKey,
-    toolRunnerOpen,
-    setToolRunnerOpen,
     executionPanelRef,
     handleExecute,
     handleToggleHistory,
@@ -61,9 +55,6 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
     <div className="space-y-6">
       {/* Persona Default Model */}
       <DefaultModelSection draft={draft} patch={patch} modelDirty={modelDirty} />
-
-      {/* Model A/B Comparison */}
-      <ModelABCompare />
 
       {/* Use Cases Section */}
       {useCases.length === 0 ? (
@@ -111,34 +102,6 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
 
       {/* Linked Recipes */}
       <LinkedRecipesSection personaId={personaId} />
-
-      {/* Direct Tool Testing */}
-      {(selectedPersona?.tools?.length ?? 0) > 0 && (
-        <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
-          <button
-            onClick={() => setToolRunnerOpen(!toolRunnerOpen)}
-            aria-expanded={toolRunnerOpen}
-            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors focus-ring"
-          >
-            {toolRunnerOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
-            <Wrench className="w-3.5 h-3.5 text-muted-foreground/80" />
-            <span className="text-sm font-medium text-muted-foreground/80">Direct Tool Testing</span>
-            <span className="text-sm text-muted-foreground/60">{selectedPersona!.tools!.length} tool{selectedPersona!.tools!.length !== 1 ? 's' : ''}</span>
-          </button>
-          <AnimatePresence>
-            {toolRunnerOpen && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
-                <div className="border-t border-primary/10 px-3.5 py-3">
-                  <ToolRunnerPanel tools={selectedPersona!.tools!} personaId={personaId} />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* General History */}
-      <UseCaseGeneralHistory personaId={personaId} refreshSignal={historyRefreshKey} />
 
       {/* Execution Panel */}
       {selectedUseCase && (

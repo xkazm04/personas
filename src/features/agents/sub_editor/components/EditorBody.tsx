@@ -10,13 +10,13 @@ import { useEditorDirtyState, useEditorHistory, TabSaveError } from '../libs/Edi
 import { tabIdsToLabels } from '../libs/editorTabConstants';
 import { useEditorSave } from '../libs/useEditorSave';
 import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from './EditorBanners';
-import { OnboardingBanner } from '@/features/agents/components/onboarding/OnboardingChecklist';
+// OnboardingBanner removed — setup stepper no longer shown
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
   ActivityTab, MatrixTab,
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
-  PersonaConnectorsTab, DesignTab, LabTab, HealthTab, ChatTab, AssertionsTab,
+  PersonaConnectorsTab, DesignTab, LabTab, HealthTab, ChatTab,
 } from './EditorLazyTabs';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
@@ -125,7 +125,7 @@ export function EditorBody() {
   if (!selectedPersona) {
     return (
       <ContentBox>
-        <div className="flex-1 flex items-center justify-center text-muted-foreground/80">No persona selected</div>
+        <div className="flex-1 flex items-center justify-center text-muted-foreground/80">Select an agent to get started</div>
       </ContentBox>
     );
   }
@@ -180,7 +180,6 @@ export function EditorBody() {
       <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={connectorsMissing} />
       <DesignNudgeBanner />
       <CloudNudgeBanner />
-      <OnboardingBanner personaId={selectedPersona.id} />
 
       <div className="flex-1 overflow-y-auto p-4">
         <AnimatePresence mode="wait" initial={false}>
@@ -196,12 +195,12 @@ export function EditorBody() {
               {editorTab === 'matrix' && <MatrixTab />}
               {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
               {editorTab === 'prompt' && <PersonaPromptEditor />}
-              {editorTab === 'lab' && <LabTab />}
+              {editorTab === 'lab' && import.meta.env.DEV && <LabTab />}
               {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
               {editorTab === 'chat' && <ChatTab />}
               {editorTab === 'design' && <DesignTab />}
-              {editorTab === 'health' && <HealthTab />}
-              {editorTab === 'assertions' && <AssertionsTab personaId={selectedPersona.id} />}
+              {editorTab === 'health' && import.meta.env.DEV && <HealthTab />}
+              {/* Assertions tab removed — assertions are now part of persona prompts */}
               {editorTab === 'settings' && (
                 <PersonaSettingsTab
                   draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}

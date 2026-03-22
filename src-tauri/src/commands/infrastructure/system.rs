@@ -287,26 +287,6 @@ fn build_local_section(active_engine: &str, sched_running: bool) -> HealthCheckS
                 &["claude", "claude-code"]
             },
         },
-        EngineProbe {
-            id: "copilot_cli",
-            label: "Copilot CLI",
-            setting_key: "copilot_cli",
-            candidates: if cfg!(target_os = "windows") {
-                &["copilot", "copilot.cmd"]
-            } else {
-                &["copilot"]
-            },
-        },
-        EngineProbe {
-            id: "gemini_cli",
-            label: "Gemini CLI",
-            setting_key: "gemini_cli",
-            candidates: if cfg!(target_os = "windows") {
-                &["gemini", "gemini.cmd"]
-            } else {
-                &["gemini"]
-            },
-        },
     ];
 
     for engine in &engines {

@@ -226,7 +226,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 // -- Navigation Types ---------------------------------------------------
 
-export type SidebarSection = "home" | "overview" | "personas" | "workflows" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings" | "dev-tools";
+export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "settings";
 export type HomeTab = "welcome" | "system-check";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design" | "health" | "chat" | "assertions";
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "schedules" | "health";
@@ -234,10 +234,11 @@ export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin";
 export type DevToolsTab = "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner";
-export type AgentTab = "all" | "create";
+export type AgentTab = "all" | "create" | "team" | "cloud";
+export type PluginTab = "browse" | "dev-tools";
 export type EventBusTab = "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks";
 
-export type CliEngine = "claude_code" | "codex_cli" | "gemini_cli" | "copilot_cli";
+export type CliEngine = "claude_code" | "codex_cli";
 
 // -- Analytics Types ----------------------------------------------------
 

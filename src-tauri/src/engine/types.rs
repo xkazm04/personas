@@ -272,7 +272,6 @@ pub mod providers {
     pub const OLLAMA: &str = "ollama";
     pub const LITELLM: &str = "litellm";
     pub const CUSTOM: &str = "custom";
-    pub const COPILOT: &str = "copilot";
 }
 
 // =============================================================================
@@ -436,6 +435,62 @@ pub struct QueueStatusEvent {
     pub position: Option<usize>,
     /// Total queue depth for this persona
     pub queue_depth: usize,
+}
+
+/// Heartbeat event emitted during stream silence so frontend can detect stuck executions.
+#[derive(Debug, Clone, Serialize)]
+pub struct HeartbeatEvent {
+    pub execution_id: String,
+    /// Total milliseconds since execution started.
+    pub elapsed_ms: u64,
+    /// Milliseconds since last stdout line was received.
+    pub silence_ms: u64,
+}
+
+/// Structured execution event emitted on the `execution-event` channel.
+/// Provides typed, discriminated events for frontend consumption alongside
+/// the raw `execution-output` display string channel.
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum StructuredExecutionEvent {
+    Text {
+        execution_id: String,
+        content: String,
+    },
+    ToolUse {
+        execution_id: String,
+        tool_name: String,
+        input_preview: String,
+    },
+    ToolResult {
+        execution_id: String,
+        content_preview: String,
+    },
+    SystemInit {
+        execution_id: String,
+        model: String,
+        session_id: Option<String>,
+    },
+    #[serde(rename = "result")]
+    ExecutionResult {
+        execution_id: String,
+        duration_ms: Option<u64>,
+        cost_usd: Option<f64>,
+        input_tokens: Option<u64>,
+        output_tokens: Option<u64>,
+        model: Option<String>,
+        session_id: Option<String>,
+    },
+    FileChange {
+        execution_id: String,
+        path: String,
+        change_type: String,
+    },
+    Heartbeat {
+        execution_id: String,
+        elapsed_ms: u64,
+        silence_ms: u64,
+    },
 }
 
 /// Healing event emitted to frontend after post-execution analysis

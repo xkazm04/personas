@@ -27,16 +27,20 @@ interface ScanIdea {
   description: string;
   category: CategoryKey;
   agentKey: string;
-  effort: 'low' | 'medium' | 'high';
-  impact: 'low' | 'medium' | 'high';
-  risk: 'low' | 'medium' | 'high';
+  effort: number;
+  impact: number;
+  risk: number;
 }
 
 interface ScanHistoryEntry {
   id: string;
-  agentKey: string;
+  agentTypes: string;
   ideaCount: number;
   timestamp: string;
+  status: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  durationMs: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,20 +72,40 @@ function agentColor(agent: ScanAgentDef) {
   return COLOR_MAP[agent.color] ?? { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20' };
 }
 
+function relativeTime(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 60_000) return `${Math.floor(ms / 1000)}s ago`;
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
+  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
+  return `${Math.floor(ms / 86_400_000)}d ago`;
+}
+
+function formatDuration(ms: number | null): string {
+  if (ms == null) return '-';
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+const SCAN_STATUS_STYLES: Record<string, string> = {
+  complete: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
+  running: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
+  error: 'bg-red-500/15 text-red-400 border-red-500/25',
+};
+
 // ---------------------------------------------------------------------------
 // Badge helpers
 // ---------------------------------------------------------------------------
 
-const LEVEL_STYLES: Record<string, string> = {
-  low: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  medium: 'bg-amber-500/15 text-amber-400 border-amber-500/25',
-  high: 'bg-red-500/15 text-red-400 border-red-500/25',
-};
+function levelColor(value: number): string {
+  if (value <= 3) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25';
+  if (value <= 6) return 'bg-amber-500/15 text-amber-400 border-amber-500/25';
+  return 'bg-red-500/15 text-red-400 border-red-500/25';
+}
 
-function LevelBadge({ label, level }: { label: string; level: string }) {
+function LevelBadge({ label, value }: { label: string; value: number }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${LEVEL_STYLES[level] ?? LEVEL_STYLES.low}`}>
-      {label}: {level}
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${levelColor(value)}`}>
+      {label}: {value}
     </span>
   );
 }
@@ -205,9 +229,9 @@ function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
         <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
           {catLabel}
         </span>
-        <LevelBadge label="Effort" level={idea.effort} />
-        <LevelBadge label="Impact" level={idea.impact} />
-        <LevelBadge label="Risk" level={idea.risk} />
+        <LevelBadge label="Effort" value={idea.effort} />
+        <LevelBadge label="Impact" value={idea.impact} />
+        <LevelBadge label="Risk" value={idea.risk} />
       </div>
     </motion.div>
   );
@@ -225,6 +249,9 @@ export default function IdeaScannerPage() {
   const currentScanId = useSystemStore((s) => s.currentScanId);
   const scanPhase = useSystemStore((s) => s.scanPhase);
   const isRunning = scanPhase === 'running';
+  const scans = useSystemStore((s) => s.scans ?? []);
+  const fetchScans = useSystemStore((s) => s.fetchScans);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
   const [scanProgress, setScanProgress] = useState(isRunning ? 50 : 0);
@@ -239,13 +266,29 @@ export default function IdeaScannerPage() {
       description: i.description ?? '',
       category: (i.category as CategoryKey) || 'technical',
       agentKey: i.scan_type,
-      effort: i.effort != null && i.effort <= 2 ? 'low' : i.effort != null && i.effort >= 4 ? 'high' : 'medium',
-      impact: i.impact != null && i.impact <= 2 ? 'low' : i.impact != null && i.impact >= 4 ? 'high' : 'medium',
-      risk: i.risk != null && i.risk <= 2 ? 'low' : i.risk != null && i.risk >= 4 ? 'high' : 'medium',
+      effort: i.effort ?? 5,
+      impact: i.impact ?? 5,
+      risk: i.risk ?? 5,
     })),
   [storeIdeas]);
 
-  const history: ScanHistoryEntry[] = [];
+  const history: ScanHistoryEntry[] = useMemo(() =>
+    scans.map((s) => ({
+      id: s.id,
+      agentTypes: s.scan_type,
+      ideaCount: s.idea_count,
+      timestamp: s.created_at,
+      status: s.status,
+      inputTokens: s.input_tokens,
+      outputTokens: s.output_tokens,
+      durationMs: s.duration_ms,
+    })),
+  [scans]);
+
+  // Fetch scans when active project changes
+  useEffect(() => {
+    if (activeProjectId) fetchScans(activeProjectId);
+  }, [activeProjectId, fetchScans]);
 
   // Listen for streaming events — works even when navigating back to a running scan
   useEffect(() => {
@@ -261,10 +304,13 @@ export default function IdeaScannerPage() {
       if (currentScanId && event.payload.job_id === currentScanId) {
         const { status } = event.payload;
         if (status === 'completed' || status === 'failed' || status === 'cancelled') {
-          // Fetch ideas after completion
+          // Fetch ideas and scans after completion
           if (status === 'completed') {
             const pid = useSystemStore.getState().activeProjectId;
-            if (pid) useSystemStore.getState().fetchIdeas(pid);
+            if (pid) {
+              useSystemStore.getState().fetchIdeas(pid);
+              useSystemStore.getState().fetchScans(pid);
+            }
           }
           setScanProgress(100);
           setCurrentAgentKey(null);
@@ -454,25 +500,47 @@ export default function IdeaScannerPage() {
           {/* Scan history */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 mb-3">
-              Scan History
+              Scan History ({history.length})
             </h3>
             {history.length === 0 ? (
               <p className="text-xs text-muted-foreground/40">No previous scans.</p>
             ) : (
-              <div className="space-y-1">
+              <div className="border border-primary/10 rounded-xl overflow-hidden">
+                {/* Table header */}
+                <div className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">
+                  <span>Agents</span>
+                  <span>Status</span>
+                  <span>Ideas</span>
+                  <span>Tokens</span>
+                  <span>Duration</span>
+                  <span>When</span>
+                </div>
                 {history.map((entry) => {
-                  const agent = SCAN_AGENTS.find((a) => a.key === entry.agentKey);
+                  const agentKeys = entry.agentTypes.split(',');
+                  const agentEmojis = agentKeys.map((k) => SCAN_AGENTS.find((a) => a.key === k.trim())?.emoji ?? '?').join(' ');
+                  const statusStyle = SCAN_STATUS_STYLES[entry.status] ?? SCAN_STATUS_STYLES.error;
+                  const totalTokens = (entry.inputTokens ?? 0) + (entry.outputTokens ?? 0);
                   return (
-                    <div key={entry.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/5 transition-colors">
-                      <span className="text-sm">{agent?.emoji ?? '?'}</span>
-                      <span className="text-xs text-foreground/70 flex-1">{agent?.label ?? entry.agentKey}</span>
-                      <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
-                        <BarChart3 className="w-3 h-3" />
-                        {entry.ideaCount} ideas
+                    <div key={entry.id} className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2.5 border-b border-primary/5 last:border-b-0 hover:bg-primary/5 transition-colors items-center">
+                      <span className="text-xs text-foreground/70 truncate" title={agentKeys.join(', ')}>
+                        {agentEmojis} <span className="text-muted-foreground/50">{agentKeys.length > 1 ? `(${agentKeys.length})` : agentKeys[0]}</span>
+                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border w-fit ${statusStyle}`}>
+                        {entry.status}
+                      </span>
+                      <span className="text-xs text-foreground/70 flex items-center gap-1">
+                        <BarChart3 className="w-3 h-3 text-muted-foreground/40" />
+                        {entry.ideaCount}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/50 font-mono">
+                        {totalTokens > 0 ? totalTokens.toLocaleString() : '-'}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/50">
+                        {formatDuration(entry.durationMs)}
                       </span>
                       <span className="text-[10px] text-muted-foreground/40 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {entry.timestamp}
+                        {relativeTime(entry.timestamp)}
                       </span>
                     </div>
                   );

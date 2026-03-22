@@ -11,6 +11,8 @@ export interface DevToolsScannerSlice {
   scanPhase: "idle" | "running" | "complete" | "error";
   scanResults: DevIdea[];
   currentScanId: string | null;
+  scans: DevScan[];
+  scansLoading: boolean;
 
   setScanAgentSelection: (keys: string[]) => void;
   toggleScanAgent: (key: string) => void;
@@ -35,6 +37,8 @@ export const createDevToolsScannerSlice: StateCreator<SystemStore, [], [], DevTo
   scanPhase: "idle",
   scanResults: [],
   currentScanId: null,
+  scans: [],
+  scansLoading: false,
 
   setScanAgentSelection: (keys) => {
     set({ scanAgentSelection: keys });
@@ -76,10 +80,13 @@ export const createDevToolsScannerSlice: StateCreator<SystemStore, [], [], DevTo
   },
 
   fetchScans: async (projectId, limit) => {
+    set({ scansLoading: true });
     try {
       const scans = await devApi.listScans(projectId, limit);
+      set({ scans, scansLoading: false });
       return scans;
     } catch (err) {
+      set({ scansLoading: false });
       reportError(err, "Failed to fetch scans", set);
       throw err;
     }

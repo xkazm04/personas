@@ -16,13 +16,6 @@ export {
   type OllamaCloudPreset,
 } from './libs/OllamaCloudPresets';
 export {
-  COPILOT_PRESETS,
-  COPILOT_GITHUB_TOKEN_SETTING,
-  isCopilotValue,
-  getCopilotPreset,
-  type CopilotPreset,
-} from './libs/CopilotPresets';
-export {
   ALL_COMPARE_MODELS,
   toTestConfig,
   aggregateResults,

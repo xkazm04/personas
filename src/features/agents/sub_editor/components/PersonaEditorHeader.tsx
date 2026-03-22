@@ -54,7 +54,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       await applyPersonaOp(selectedPersona.id, { kind: 'ToggleEnabled', enabled: nextEnabled });
       patch({ enabled: nextEnabled });
       setBaseline((prev) => ({ ...prev, enabled: nextEnabled }));
-    } catch { useToastStore.getState().addToast('Failed to toggle persona -- check your connection', 'error'); }
+    } catch { useToastStore.getState().addToast('Could not update agent status. Please check your connection.', 'error'); }
   }, [selectedPersona, readiness, applyPersonaOp, patch, setBaseline]);
 
   if (!effective) return null;
@@ -82,7 +82,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       subtitle={
         <span className="flex items-center gap-2">
           {effective.description && <span>{effective.description}</span>}
-          <LabQualityBadge testMetadata={designContext.labTestMetadata} compact />
+          {import.meta.env.DEV && <LabQualityBadge testMetadata={designContext.labTestMetadata} compact />}
         </span>
       }
       actions={
@@ -102,7 +102,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
             {showReadinessTooltip && readiness.reasons.length > 0 && (
               <motion.div initial={{ opacity: 0, y: 4, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4, scale: 0.95 }} className="absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-lg shadow-xl p-2.5 z-50">
                 <p className="typo-heading text-amber-400 mb-1.5 flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5" /> Cannot enable persona
+                  <AlertCircle className="w-3.5 h-3.5" /> Cannot enable agent
                 </p>
                 {readiness.reasons.map((r, i) => <p key={i} className="typo-body text-muted-foreground/80 pl-5">{r}</p>)}
               </motion.div>

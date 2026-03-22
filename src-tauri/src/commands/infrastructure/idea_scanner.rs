@@ -291,7 +291,7 @@ You are analyzing a codebase to generate actionable improvement ideas. You have 
 Output each idea as a JSON object on its own line:
 
 ```
-{{"scan_idea": {{"project_id": "{project_id}", "scan_type": "<agent-key>", "category": "<technical|user|business|mastermind>", "title": "Short actionable title", "description": "Detailed description of the improvement", "reasoning": "Why this matters and what evidence you found", "effort": <1-5>, "impact": <1-5>, "risk": <1-5>}}}}
+{{"scan_idea": {{"project_id": "{project_id}", "scan_type": "<agent-key>", "category": "<technical|user|business|mastermind>", "title": "Short actionable title", "description": "Detailed description of the improvement", "reasoning": "Why this matters and what evidence you found", "effort": <1-10>, "impact": <1-10>, "risk": <1-10>}}}}
 ```
 
 Field guidelines:
@@ -300,9 +300,9 @@ Field guidelines:
 - **title**: Concise action item (max ~80 chars)
 - **description**: What to do and how (2-3 sentences)
 - **reasoning**: Evidence from the codebase that supports this idea
-- **effort**: 1=trivial, 2=small, 3=medium, 4=large, 5=epic
-- **impact**: 1=minimal, 2=minor, 3=moderate, 4=significant, 5=critical
-- **risk**: 1=safe, 2=low, 3=moderate, 4=high, 5=dangerous
+- **effort**: 1=trivial, 2=minimal, 3=small, 4=easy, 5=moderate, 6=medium, 7=substantial, 8=large, 9=very large, 10=epic
+- **impact**: 1=negligible, 2=minimal, 3=minor, 4=low, 5=moderate, 6=notable, 7=significant, 8=major, 9=critical, 10=transformative
+- **risk**: 1=none, 2=trivial, 3=low, 4=minor, 5=moderate, 6=notable, 7=high, 8=risky, 9=dangerous, 10=critical
 
 At the end, output a summary:
 ```

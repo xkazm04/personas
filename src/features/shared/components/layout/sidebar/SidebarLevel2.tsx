@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Users, Sparkles, Plus, List, Star, Bot, ChevronDown } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Star, Bot, ChevronDown, Cloud, Wrench, Puzzle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
@@ -10,7 +10,6 @@ import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 
 import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/useFavoriteAgents';
-import TeamDragPanel from '@/features/pipeline/components/TeamDragPanel';
 import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';
 import {
@@ -32,11 +31,9 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
   const [credentials, setCredentials] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [connectorDefinitions, setConnectorDefinitions] = useState<any[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [overviewTab, setOverviewTabState] = useState<OverviewTab>("home" as OverviewTab);
   useEffect(() => {
     let vaultUnsub: (() => void) | undefined;
-    let pipelineUnsub: (() => void) | undefined;
     let overviewUnsub: (() => void) | undefined;
     void import("@/stores/vaultStore").then(({ useVaultStore }) => {
       const s = useVaultStore.getState();
@@ -47,15 +44,11 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
         setConnectorDefinitions(s.connectorDefinitions);
       });
     });
-    void import("@/stores/pipelineStore").then(({ usePipelineStore }) => {
-      setSelectedTeamId(usePipelineStore.getState().selectedTeamId);
-      pipelineUnsub = usePipelineStore.subscribe((s) => setSelectedTeamId(s.selectedTeamId));
-    });
     void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
       setOverviewTabState(useOverviewStore.getState().overviewTab);
       overviewUnsub = useOverviewStore.subscribe((s) => setOverviewTabState(s.overviewTab));
     });
-    return () => { vaultUnsub?.(); pipelineUnsub?.(); overviewUnsub?.(); };
+    return () => { vaultUnsub?.(); overviewUnsub?.(); };
   }, []);
   const setOverviewTab = useCallback((tab: OverviewTab) => {
     setOverviewTabState(tab);
@@ -67,16 +60,10 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
   const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
   const { pendingReviewCount, unreadMessageCount, pendingEventCount } = useBadgeCounts();
   const templateGalleryTotal = useSystemStore((s) => s.templateGalleryTotal);
-  const cloudTab = useSystemStore((s) => s.cloudTab);
-  const setCloudTab = useSystemStore((s) => s.setCloudTab);
   const settingsTab = useSystemStore((s) => s.settingsTab);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
-  const devToolsTab = useSystemStore((s) => s.devToolsTab);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const eventBusTab = useSystemStore((s) => s.eventBusTab);
   const setEventBusTab = useSystemStore((s) => s.setEventBusTab);
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const projects = useSystemStore((s) => s.projects);
 
   const isDev = import.meta.env.DEV;
   const tier = useTier();
@@ -192,51 +179,9 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
         />
       );
 
-    case 'team':
-      if (selectedTeamId) {
-        return <TeamDragPanel />;
-      }
-      return (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-            <Users className="w-6 h-6 text-indigo-400/60" />
-          </div>
-          <p className="typo-body text-muted-foreground/80">Multi-Agent Teams</p>
-          <p className="typo-body text-muted-foreground/80 mt-1">Select a team to begin</p>
-        </div>
-      );
 
-    case 'cloud':
-      return (
-        <SidebarSubNav
-          items={cloudItems}
-          activeId={cloudTab}
-          onSelect={(id) => setCloudTab(id as CloudTab)}
-        />
-      );
-
-    case 'dev-tools': {
-      const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
-      return (
-        <>
-          <SidebarSubNav
-            items={devToolsItems}
-            activeId={devToolsTab}
-            onSelect={(id) => setDevToolsTab(id as DevToolsTab)}
-            variant="overview"
-          />
-          {activeProject && (
-            <div className="mx-3 mt-3 px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/15">
-              <p className="text-[10px] uppercase tracking-wider text-amber-400/50 font-medium mb-0.5">Active Project</p>
-              <p className="typo-caption text-foreground/70 truncate">{activeProject.name}</p>
-              {activeProject.root_path && (
-                <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">{activeProject.root_path}</p>
-              )}
-            </div>
-          )}
-        </>
-      );
-    }
+    case 'plugins':
+      return <PluginsSidebarNav />;
 
     case 'settings':
       return (
@@ -260,10 +205,13 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
   const personas = useAgentStore((s) => s.personas);
   const agentTab = useSystemStore((s) => s.agentTab);
   const setAgentTab = useSystemStore((s) => s.setAgentTab);
+  const cloudTab = useSystemStore((s) => s.cloudTab);
+  const setCloudTab = useSystemStore((s) => s.setCloudTab);
   const isCreatingPersona = useSystemStore((s) => s.isCreatingPersona);
   const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const [favoritesCollapsed, setFavoritesCollapsed] = useState(false);
+  const isDev = import.meta.env.DEV;
 
   const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
   const buildingPersona = hasActiveBuild ? personas.find((p) => p.id === buildPersonaId) : null;
@@ -367,8 +315,140 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
             )}
           </div>
         )}
+
+        {/* Cloud & Teams (dev-only, gold border) */}
+        {isDev && (
+          <div className="mt-3 pt-3 border-t border-amber-500/20 space-y-1">
+            <button
+              onClick={() => { selectPersona(null); setAgentTab('team'); useSystemStore.getState().setIsCreatingPersona(false); }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
+                agentTab === 'team'
+                  ? 'bg-amber-500/10 text-foreground/90'
+                  : 'text-muted-foreground/70 hover:bg-amber-500/5 hover:text-foreground/80'
+              }`}
+            >
+              <Users className="w-4 h-4 flex-shrink-0" />
+              Teams
+            </button>
+            <button
+              onClick={() => { selectPersona(null); setAgentTab('cloud'); useSystemStore.getState().setIsCreatingPersona(false); }}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
+                agentTab === 'cloud'
+                  ? 'bg-amber-500/10 text-foreground/90'
+                  : 'text-muted-foreground/70 hover:bg-amber-500/5 hover:text-foreground/80'
+              }`}
+            >
+              <Cloud className="w-4 h-4 flex-shrink-0" />
+              Cloud
+            </button>
+            {/* Cloud sub-tabs */}
+            {agentTab === 'cloud' && (
+              <div className="ml-4 space-y-0.5">
+                {cloudItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setCloudTab(item.id as CloudTab)}
+                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                      cloudTab === item.id
+                        ? 'bg-primary/10 text-foreground/80'
+                        : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/70'
+                    }`}
+                  >
+                    {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
+// -- Plugins sidebar (extensibility hub) --
+
+function PluginsSidebarNav() {
+  const pluginTab = useSystemStore((s) => s.pluginTab);
+  const setPluginTab = useSystemStore((s) => s.setPluginTab);
+  const devToolsTab = useSystemStore((s) => s.devToolsTab);
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const projects = useSystemStore((s) => s.projects);
+  const isDev = import.meta.env.DEV;
+
+  const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="px-3 py-3 border-b border-primary/10">
+        <span className="typo-label text-muted-foreground/50">Plugins</span>
+      </div>
+
+      {/* Nav items */}
+      <div className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
+        {/* Browse */}
+        <button
+          onClick={() => setPluginTab('browse')}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+            pluginTab === 'browse'
+              ? 'bg-primary/10 text-foreground/90'
+              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+          }`}
+        >
+          <Puzzle className="w-4 h-4 flex-shrink-0" />
+          Browse
+        </button>
+
+        {/* Dev Tools (dev-only, gold border) */}
+        {isDev && (
+          <div className="mt-3 pt-3 border-t border-amber-500/20 space-y-1">
+            <button
+              onClick={() => setPluginTab('dev-tools')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
+                pluginTab === 'dev-tools'
+                  ? 'bg-amber-500/10 text-foreground/90'
+                  : 'text-muted-foreground/70 hover:bg-amber-500/5 hover:text-foreground/80'
+              }`}
+            >
+              <Wrench className="w-4 h-4 flex-shrink-0" />
+              Dev Tools
+            </button>
+            {/* Dev Tools sub-tabs */}
+            {pluginTab === 'dev-tools' && (
+              <>
+                <div className="ml-4 space-y-0.5">
+                  {devToolsItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setDevToolsTab(item.id as DevToolsTab)}
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                        devToolsTab === item.id
+                          ? 'bg-primary/10 text-foreground/80'
+                          : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/70'
+                      }`}
+                    >
+                      {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                {activeProject && (
+                  <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/15">
+                    <p className="text-[10px] uppercase tracking-wider text-amber-400/50 font-medium mb-0.5">Active Project</p>
+                    <p className="typo-caption text-foreground/70 truncate">{activeProject.name}</p>
+                    {activeProject.root_path && (
+                      <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">{activeProject.root_path}</p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

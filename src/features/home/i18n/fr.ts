@@ -30,17 +30,9 @@ export const fr = {
         label: "Modèles",
         description: "Importez des workflows n8n et générez des modèles d'agents"
       },
-      team: {
-        label: "Équipes",
-        description: "Construisez des pipelines multi-agents par glisser-déposer"
-      },
-      cloud: {
-        label: "Cloud",
-        description: "Déployez des agents sur l'infrastructure cloud et GitLab CI"
-      },
-      'dev-tools': {
-        label: "Outils de développement",
-        description: "Gestion de projets, analyse du code, génération d'idées, triage et exécution de tâches"
+      plugins: {
+        label: "Plugins",
+        description: "Étendez votre espace avec des plugins, outils de développement et intégrations"
       },
       settings: {
         label: "Paramètres",

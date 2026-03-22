@@ -74,14 +74,32 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     set({ executionOutput: output, executionOutputBytes: totalBytes });
   });
 
+  // Recovery: restore active execution state from localStorage
+  const recoveredState = (() => {
+    try {
+      const stored = localStorage.getItem('personas:active-execution');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.activeExecutionId && parsed.isExecuting) {
+          return {
+            activeExecutionId: parsed.activeExecutionId as string,
+            executionPersonaId: parsed.executionPersonaId as string | null,
+            isExecuting: true,
+          };
+        }
+      }
+    } catch { /* ignore corrupt localStorage */ }
+    return null;
+  })();
+
   return ({
   executions: [],
-  activeExecutionId: null,
-  executionPersonaId: null,
+  activeExecutionId: recoveredState?.activeExecutionId ?? null,
+  executionPersonaId: recoveredState?.executionPersonaId ?? null,
   activeUseCaseId: null,
   executionOutput: [],
   executionOutputBytes: 0,
-  isExecuting: false,
+  isExecuting: recoveredState?.isExecuting ?? false,
   pipelineTrace: null,
   queuePosition: null,
   queueDepth: null,
@@ -151,6 +169,14 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       trace = { ...trace, executionId: execution.id };
 
       set({ activeExecutionId: execution.id, pipelineTrace: trace });
+      // Persist to localStorage for recovery after refresh
+      try {
+        localStorage.setItem('personas:active-execution', JSON.stringify({
+          activeExecutionId: execution.id,
+          executionPersonaId: personaId,
+          isExecuting: true,
+        }));
+      } catch { /* ignore */ }
       return execution.id;
     } catch (err) {
       trace = traceStage(trace, 'validate', undefined, String(err));
@@ -183,6 +209,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       const lastId = get().activeExecutionId;
       // Always reset execution state regardless of API success/failure.
       set({ isExecuting: false, activeExecutionId: null, lastExecutionId: lastId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
+      try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
       const personaId = get().selectedPersona?.id;
       if (personaId) get().fetchExecutions(personaId);
     }
@@ -291,6 +318,8 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         console.warn('[execution] drift detection failed', { executionId: execId, personaId: execPersonaId, error: String(err) });
       }
     }
+    // Clear recovery state
+    try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
   },
 
   fetchExecutions: async (personaId) => {

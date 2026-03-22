@@ -6,8 +6,8 @@ import type { UnregisteredCommand } from "./commandNames.overrides";
 /** All valid command names: registered + known-unregistered forward-references. */
 export type CommandName = RegisteredCommand | UnregisteredCommand;
 
-/** Default timeout for Tauri IPC calls (30 seconds). */
-const DEFAULT_TIMEOUT_MS = 30_000;
+/** Default timeout for Tauri IPC calls (90 seconds). */
+const DEFAULT_TIMEOUT_MS = 90_000;
 
 export class InvokeTimeoutError extends Error {
   constructor(cmd: string, timeoutMs: number) {

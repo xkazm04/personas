@@ -37,7 +37,7 @@ export function StreamingLogPanel({ outputLines, isGenerating, error, onDismiss 
       {/* Inline error after log lines */}
       {error && !isGenerating && (
         <div className="mt-2 pt-2 border-t border-red-400/20 text-red-400/80">
-          Error: {error}
+          Something went wrong. Please try again.
         </div>
       )}
     </div>

@@ -788,3 +788,127 @@ pub fn dev_tools_delete_triage_rule(
     require_auth_sync(&state)?;
     repo::delete_triage_rule(&state.db, &id)
 }
+
+/// Run all enabled triage rules against pending ideas for a project.
+/// Returns the number of ideas affected.
+#[tauri::command]
+pub fn dev_tools_run_triage_rules(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+
+    // 1. Fetch enabled rules
+    let rules = repo::list_triage_rules(&state.db, Some(&project_id))?;
+    let enabled_rules: Vec<_> = rules.into_iter().filter(|r| r.enabled).collect();
+
+    if enabled_rules.is_empty() {
+        return Ok(serde_json::json!({ "applied": 0, "ideas_affected": 0 }));
+    }
+
+    // 2. Fetch pending ideas
+    let ideas = repo::list_ideas(
+        &state.db,
+        Some(&project_id),
+        Some("pending"),
+        None,
+        None,
+        None,
+    )?;
+
+    let mut ideas_affected = 0;
+
+    // 3. Evaluate rules against each idea (first matching rule wins)
+    for idea in &ideas {
+        for rule in &enabled_rules {
+            if evaluate_triage_conditions(&rule.conditions, idea) {
+                let new_status = if rule.action == "accept" {
+                    "accepted"
+                } else {
+                    "rejected"
+                };
+                let _ = repo::update_idea(
+                    &state.db,
+                    &idea.id,
+                    None,
+                    None,
+                    Some(new_status),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                );
+                // Increment times_fired
+                let _ = repo::update_triage_rule(
+                    &state.db,
+                    &rule.id,
+                    None,
+                    None,
+                    None,
+                    None,
+                    Some(rule.times_fired + 1),
+                );
+                ideas_affected += 1;
+                break; // first match wins
+            }
+        }
+    }
+
+    Ok(serde_json::json!({ "applied": enabled_rules.len(), "ideas_affected": ideas_affected }))
+}
+
+/// Evaluate triage rule conditions against a single idea.
+/// Conditions are JSON: [{ "field": "effort|impact|risk|category|scan_type", "op": "lt|gt|eq|in", "value": ... }]
+/// All conditions must match (AND logic).
+fn evaluate_triage_conditions(
+    conditions_json: &str,
+    idea: &DevIdea,
+) -> bool {
+    let conditions: Vec<serde_json::Value> = match serde_json::from_str(conditions_json) {
+        Ok(c) => c,
+        Err(_) => return false,
+    };
+
+    conditions.iter().all(|cond| {
+        let field = cond.get("field").and_then(|f| f.as_str()).unwrap_or("");
+        let op = cond.get("op").and_then(|o| o.as_str()).unwrap_or("");
+        let value = cond.get("value");
+
+        match field {
+            "effort" => compare_numeric(idea.effort.unwrap_or(0), op, value),
+            "impact" => compare_numeric(idea.impact.unwrap_or(0), op, value),
+            "risk" => compare_numeric(idea.risk.unwrap_or(0), op, value),
+            "category" => compare_string(Some(&idea.category), op, value),
+            "scan_type" => compare_string(Some(&idea.scan_type), op, value),
+            _ => false,
+        }
+    })
+}
+
+fn compare_numeric(field_value: i32, op: &str, value: Option<&serde_json::Value>) -> bool {
+    let target = value.and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+    match op {
+        "lt" => field_value < target,
+        "gt" => field_value > target,
+        "eq" => field_value == target,
+        "lte" => field_value <= target,
+        "gte" => field_value >= target,
+        _ => false,
+    }
+}
+
+fn compare_string(field_value: Option<&str>, op: &str, value: Option<&serde_json::Value>) -> bool {
+    let field_str = field_value.unwrap_or("");
+    match op {
+        "eq" => value
+            .and_then(|v| v.as_str())
+            .map(|s| s == field_str)
+            .unwrap_or(false),
+        "in" => value
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().any(|item| item.as_str() == Some(field_str)))
+            .unwrap_or(false),
+        _ => false,
+    }
+}

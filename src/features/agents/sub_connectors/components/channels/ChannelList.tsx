@@ -45,9 +45,10 @@ export function ChannelList({
   onToggleEnabled, onRemove, onConfigChange, onCredentialChange, onAdd,
 }: ChannelListProps) {
   const getMatchingCredentials = (type: string) => {
+    if (!type) return [];
     const connectorName = type === 'email' ? 'gmail' : type;
     const connector = connectorDefinitions.find(c => c.name === connectorName);
-    if (!connector) return credentials;
+    if (!connector) return [];
     return credentials.filter(c => c.service_type === connectorName);
   };
 

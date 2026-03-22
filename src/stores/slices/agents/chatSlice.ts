@@ -11,14 +11,18 @@ import {
 } from "@/api/agents/chat";
 import { executePersona } from "@/api/agents/executions";
 
+export type ChatMode = 'ops' | 'agent';
+
 export interface ChatSlice {
   // State
   chatSessions: ChatSession[];
   chatMessages: ChatMessage[];
   activeChatSessionId: string | null;
   chatStreaming: boolean;
+  chatMode: ChatMode;
 
   // Actions
+  setChatMode: (mode: ChatMode) => void;
   fetchChatSessions: (personaId: string) => Promise<void>;
   fetchChatMessages: (personaId: string, sessionId: string) => Promise<void>;
   startNewChatSession: (personaId: string) => Promise<string>;
@@ -36,6 +40,9 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
   chatMessages: [],
   activeChatSessionId: null,
   chatStreaming: false,
+  chatMode: 'ops' as ChatMode,
+
+  setChatMode: (mode) => set({ chatMode: mode }),
 
   fetchChatSessions: async (personaId) => {
     try {
@@ -87,8 +94,10 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       (m) => `${m.role === "user" ? "Human" : "Assistant"}: ${m.content}`,
     );
     contextLines.push(`Human: ${content}`);
+
+    const isOps = get().chatMode === 'ops';
     const conversationInput = JSON.stringify({
-      _chat: true,
+      ...(isOps ? { _ops: true } : { _chat: true }),
       conversation: contextLines.join("\n\n"),
       latest_message: content,
     });
@@ -137,6 +146,29 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         chatMessages: [...s.chatMessages, assistantMsg].slice(-MAX_CHAT_MESSAGES),
         chatStreaming: false,
       }));
+
+      // Ops mode: extract and dispatch operations from assistant output
+      if (get().chatMode === 'ops') {
+        const { extractOperations, dispatchOperations, formatResults } = await import(
+          "@/features/agents/sub_chat/libs/chatOpsDispatch"
+        );
+        const ops = extractOperations(fullResponse);
+        if (ops.length > 0) {
+          const results = await dispatchOperations(ops, personaId);
+          const resultText = formatResults(results);
+          if (resultText) {
+            const resultMsg = await createChatMessage({
+              personaId,
+              sessionId,
+              role: "assistant",
+              content: resultText,
+            });
+            set((s) => ({
+              chatMessages: [...s.chatMessages, resultMsg].slice(-MAX_CHAT_MESSAGES),
+            }));
+          }
+        }
+      }
     } catch {
       set({ chatStreaming: false });
     }

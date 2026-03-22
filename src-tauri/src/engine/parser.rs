@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use serde::{Serialize, Deserialize};
 use super::types::{ExecutionMetrics, ProtocolMessage, StreamLineType};
 
 const MAX_TOOL_INPUT_DISPLAY: usize = 500;
@@ -463,9 +464,99 @@ pub fn count_tool_usage(lines: &[StreamLineType]) -> HashMap<String, u32> {
     counts
 }
 
+// =============================================================================
+// File change extraction from tool_use events
+// =============================================================================
+
+/// Type of file change detected from a tool use event.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FileChangeType {
+    Read,
+    Write,
+    Edit,
+}
+
+/// A file change extracted from a tool use event.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileChange {
+    pub path: String,
+    pub change_type: FileChangeType,
+}
+
+/// Extract a file change from a tool use event, if the tool is a file operation.
+pub fn extract_file_change(tool_name: &str, input_preview: &str) -> Option<FileChange> {
+    let change_type = match tool_name {
+        "Read" | "read" | "read_file" => FileChangeType::Read,
+        "Write" | "write" | "write_file" | "create_file" => FileChangeType::Write,
+        "Edit" | "edit" | "edit_file" | "MultiEdit" | "multi_edit" => FileChangeType::Edit,
+        "NotebookEdit" | "notebook_edit" => FileChangeType::Edit,
+        _ => return None,
+    };
+
+    // Try to parse the input preview as JSON and extract a file path
+    let value: serde_json::Value = serde_json::from_str(input_preview).ok()?;
+    let path = value
+        .get("file_path")
+        .or_else(|| value.get("path"))
+        .and_then(|p| p.as_str())
+        .map(String::from)?;
+
+    if path.is_empty() {
+        return None;
+    }
+
+    Some(FileChange { path, change_type })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod file_change_tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_edit() {
+        let result = extract_file_change("Edit", r#"{"file_path":"/src/main.rs","old_string":"foo","new_string":"bar"}"#);
+        assert!(result.is_some());
+        let fc = result.unwrap();
+        assert_eq!(fc.path, "/src/main.rs");
+        assert_eq!(fc.change_type, FileChangeType::Edit);
+    }
+
+    #[test]
+    fn test_extract_write() {
+        let result = extract_file_change("Write", r#"{"file_path":"/new.txt","content":"hello"}"#);
+        assert!(result.is_some());
+        let fc = result.unwrap();
+        assert_eq!(fc.path, "/new.txt");
+        assert_eq!(fc.change_type, FileChangeType::Write);
+    }
+
+    #[test]
+    fn test_extract_read_with_path_key() {
+        let result = extract_file_change("Read", r#"{"path":"/readme.md"}"#);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().change_type, FileChangeType::Read);
+    }
+
+    #[test]
+    fn test_extract_unknown_tool() {
+        assert!(extract_file_change("Bash", r#"{"command":"ls"}"#).is_none());
+    }
+
+    #[test]
+    fn test_extract_invalid_json() {
+        assert!(extract_file_change("Edit", "not json").is_none());
+    }
+
+    #[test]
+    fn test_extract_no_path() {
+        assert!(extract_file_change("Edit", r#"{"old":"a","new":"b"}"#).is_none());
+    }
+}
 
 #[cfg(test)]
 mod tests {

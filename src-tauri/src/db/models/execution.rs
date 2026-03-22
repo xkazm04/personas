@@ -96,6 +96,7 @@ pub struct UpdateExecutionStatus {
     pub output_tokens: Option<i64>,
     pub cost_usd: Option<f64>,
     pub tool_steps: Option<String>,
+    pub claude_session_id: Option<String>,
 }
 
 impl Default for UpdateExecutionStatus {
@@ -111,6 +112,7 @@ impl Default for UpdateExecutionStatus {
             output_tokens: None,
             cost_usd: None,
             tool_steps: None,
+            claude_session_id: None,
         }
     }
 }

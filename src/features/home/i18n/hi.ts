@@ -38,9 +38,9 @@ export const hi = {
         label: "क्लाउड",
         description: "क्लाउड इंफ्रास्ट्रक्चर और GitLab CI पर एजेंट तैनात करें"
       },
-      'dev-tools': {
-        label: "डेव टूल्स",
-        description: "प्रोजेक्ट प्रबंधन, कोडबेस स्कैनिंग, आइडिया जनरेशन, ट्राइएज और टास्क निष्पादन"
+      plugins: {
+        label: "Plugins",
+        description: "प्लगइन और इंटीग्रेशन के साथ अपने वर्कस्पेस का विस्तार करें"
       },
       settings: {
         label: "सेटिंग्स",

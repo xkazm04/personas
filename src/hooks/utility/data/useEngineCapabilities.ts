@@ -59,8 +59,6 @@ export function useEngineCapabilities(): UseEngineCapabilitiesResult {
           for (const item of localSection.items) {
             if (item.status === 'ok') {
               if (item.id === 'claude_cli') installed.add('claude_code');
-              else if (item.id === 'gemini_cli') installed.add('gemini_cli');
-              else if (item.id === 'copilot_cli') installed.add('copilot_cli');
               else if (item.id === 'codex_cli') installed.add('codex_cli');
             }
           }

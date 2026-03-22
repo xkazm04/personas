@@ -4,8 +4,6 @@ import type { TaskComplexity } from '@/api/system/byom';
 export const PROVIDER_OPTIONS: { id: CliEngine; label: string }[] = [
   { id: 'claude_code', label: 'Claude Code' },
   { id: 'codex_cli', label: 'Codex CLI' },
-  { id: 'gemini_cli', label: 'Gemini CLI' },
-  { id: 'copilot_cli', label: 'Copilot CLI' },
 ];
 
 export const COMPLEXITY_OPTIONS: { id: TaskComplexity; label: string; description: string }[] = [
@@ -17,6 +15,4 @@ export const COMPLEXITY_OPTIONS: { id: TaskComplexity; label: string; descriptio
 export const ENGINE_LABELS: Record<string, string> = {
   claude_code: 'Claude Code',
   codex_cli: 'Codex CLI',
-  gemini_cli: 'Gemini CLI',
-  copilot_cli: 'Copilot CLI',
 };

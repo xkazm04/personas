@@ -55,6 +55,20 @@ pub fn assemble_prompt(
 ) -> String {
     let mut prompt = String::new();
 
+    // ── Ops Assistant Mode ──────────────────────────────────────────────
+    // When input_data contains "_ops": true, replace the entire persona prompt
+    // with the Operations Assistant system prompt + injected persona context.
+    let is_ops_mode = input_data
+        .and_then(|d| d.get("_ops"))
+        .and_then(|f| f.as_bool())
+        .unwrap_or(false);
+
+    if is_ops_mode {
+        return build_ops_prompt(persona, tools, input_data);
+    }
+
+    // ── Normal Persona Execution ────────────────────────────────────────
+
     // Context-aware variable substitution: replace {{variable}} in persona fields.
     let name = replace_variables(&persona.name, persona, input_data);
     let description = persona.description.as_ref().map(|d| replace_variables(d, persona, input_data));
@@ -846,6 +860,140 @@ Use this when you discover:
 - Tool-specific workarounds or best practices
 - Error patterns and their solutions
 - Performance tips for specific operations
+
+"#;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Operations Assistant
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Build the full prompt for Operations Assistant mode.
+/// Replaces the persona's identity with a management assistant that can inspect
+/// and modify the persona's configuration, run tests, and manage assertions.
+fn build_ops_prompt(
+    persona: &Persona,
+    tools: &[PersonaToolDefinition],
+    input_data: Option<&serde_json::Value>,
+) -> String {
+    let mut p = String::new();
+
+    p.push_str(OPS_ASSISTANT_PROMPT);
+
+    // ── Managed Persona Context ─────────────────────────────────────────
+    p.push_str("## Managed Persona\n\n");
+    p.push_str(&format!("**Name**: {}\n", persona.name));
+    if let Some(ref desc) = persona.description {
+        if !desc.is_empty() {
+            p.push_str(&format!("**Description**: {}\n", desc));
+        }
+    }
+    p.push_str(&format!("**Enabled**: {}\n", persona.enabled));
+    p.push_str(&format!("**ID**: {}\n\n", persona.id));
+
+    // Structured prompt summary
+    if let Some(ref sp_json) = persona.structured_prompt {
+        if let Ok(sp) = serde_json::from_str::<serde_json::Value>(sp_json) {
+            p.push_str("### Current Prompt Sections\n");
+            for section in &["identity", "instructions", "toolGuidance", "examples", "errorHandling"] {
+                if let Some(val) = sp.get(section).and_then(|v| v.as_str()) {
+                    let preview = if val.len() > 200 { &val[..200] } else { val };
+                    p.push_str(&format!("- **{}** ({} chars): {}...\n", section, val.len(), preview));
+                }
+            }
+            p.push('\n');
+        }
+    } else if !persona.system_prompt.is_empty() {
+        let preview = if persona.system_prompt.len() > 200 { &persona.system_prompt[..200] } else { &persona.system_prompt };
+        p.push_str(&format!("### System Prompt ({} chars)\n{}\n\n", persona.system_prompt.len(), preview));
+    }
+
+    // Tools
+    if !tools.is_empty() {
+        p.push_str("### Assigned Tools\n");
+        for tool in tools {
+            p.push_str(&format!("- **{}** ({}): {}\n", tool.name, tool.category, tool.description));
+        }
+        p.push('\n');
+    } else {
+        p.push_str("### Assigned Tools\nNo tools assigned.\n\n");
+    }
+
+    // Model profile
+    if let Some(ref profile_json) = persona.model_profile {
+        if let Ok(profile) = serde_json::from_str::<serde_json::Value>(profile_json) {
+            if let Some(model) = profile.get("model").and_then(|v| v.as_str()) {
+                p.push_str(&format!("### Model: {}\n\n", model));
+            }
+        }
+    }
+
+    // Budget/limits
+    if let Some(budget) = persona.max_budget_usd {
+        p.push_str(&format!("### Budget: ${:.2}/execution\n\n", budget));
+    }
+    if let Some(turns) = persona.max_turns {
+        p.push_str(&format!("### Max Turns: {}\n\n", turns));
+    }
+
+    // ── Conversation Input ──────────────────────────────────────────────
+    if let Some(data) = input_data {
+        if let Some(conversation) = data.get("conversation").and_then(|v| v.as_str()) {
+            p.push_str("## Conversation History\n");
+            p.push_str(conversation);
+            p.push_str("\n\n");
+        }
+        if let Some(latest) = data.get("latest_message").and_then(|v| v.as_str()) {
+            p.push_str("## Current User Message\n");
+            p.push_str(latest);
+            p.push_str("\n\n");
+        }
+    }
+
+    p.push_str("Respond to the user's message now. If they request an action, describe what you would do and output the operation JSON on its own line. Be concise and actionable.\n");
+
+    p
+}
+
+const OPS_ASSISTANT_PROMPT: &str = r#"# Operations Assistant
+
+You are an AI operations assistant for managing a persona (AI agent). You help the user understand, test, improve, and maintain their agent.
+
+## Your Role
+- Analyze the persona's configuration, health, and performance
+- Answer questions about the persona's setup, recent executions, and capabilities
+- Suggest improvements to prompts, tools, and error handling
+- Execute operations when the user requests actions
+
+## Available Operations
+
+When the user asks you to perform an action, output a JSON operation on its own line. The system will execute it and show results.
+
+### Read Operations
+```
+{"op": "health_check"}
+{"op": "list_executions", "limit": 5}
+{"op": "list_assertions"}
+{"op": "list_memories", "limit": 5}
+{"op": "list_versions", "limit": 5}
+```
+
+### Write Operations
+```
+{"op": "execute", "input": "optional input text"}
+{"op": "edit_prompt", "section": "instructions", "content": "new content for this section"}
+{"op": "create_assertion", "name": "rule name", "assertion_type": "contains", "config": "{\"pattern\": \"expected text\"}", "severity": "warning"}
+{"op": "start_arena", "models": ["haiku", "sonnet"]}
+{"op": "start_matrix", "instruction": "improvement instruction here"}
+```
+
+## Rules
+1. Always read the persona context below before answering
+2. Be concise — short paragraphs, bullet points, tables
+3. When suggesting prompt changes, show the exact edit_prompt operation
+4. For health questions, emit a health_check operation and explain the results
+5. Don't fabricate execution data — only report what's in the context
+6. Output operation JSON on its own line (not inside markdown code blocks)
+7. You can emit multiple operations in one response
 
 "#;
 

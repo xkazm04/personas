@@ -6,6 +6,7 @@ import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/exe
 import { isTerminalState } from '@/lib/execution/executionState';
 import { validatePayload, ExecutionStatusSchema } from '@/lib/validation/eventPayloads';
 import type { QueueStatusPayload } from '@/stores/slices/agents/executionSlice';
+import { getExecutionLogLines } from '@/api/agents/executions';
 
 export function usePersonaExecution() {
   const clearOutput = useAgentStore((s) => s.clearExecutionOutput);
@@ -101,6 +102,31 @@ export function usePersonaExecution() {
     // duplicate memory usage and divergent trim points.
     bufferLines: false,
   });
+
+  // Recovery: replay missed output lines after page reload
+  const recoveryAttemptedRef = useRef(false);
+  useEffect(() => {
+    if (recoveryAttemptedRef.current) return;
+    const store = useAgentStore.getState();
+    const execId = store.activeExecutionId;
+    const personaId = store.executionPersonaId;
+    if (!execId || !store.isExecuting || !personaId) return;
+
+    recoveryAttemptedRef.current = true;
+
+    // Replay log lines that were missed during reload
+    getExecutionLogLines(execId, personaId)
+      .then((lines) => {
+        const sink = useAgentStore.getState().appendExecutionOutput;
+        for (const line of lines) {
+          sink(line);
+        }
+      })
+      .catch(() => {
+        // Recovery failed -- execution may have completed during reload
+        // Check if still running by trying to get status
+      });
+  }, []);
 
   // Listen for queue-status events only while an execution is active.
   // This avoids registering idle listeners on the Tauri IPC bridge when

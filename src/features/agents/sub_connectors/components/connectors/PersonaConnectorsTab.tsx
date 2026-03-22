@@ -6,7 +6,7 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ToolsSection } from './ToolsSection';
 import { AutomationsSection } from '../automation/AutomationsSection';
 import { AutomationSetupModal } from '../automation/AutomationSetupModal';
-import { UseCaseSubscriptionsSection } from '../subscriptions/UseCaseSubscriptionsSection';
+// UseCaseSubscriptionsSection removed
 import { AgentCredentialDemands } from './AgentCredentialDemands';
 import { useConnectorStatuses } from '../../libs/useConnectorStatuses';
 import { silentCatch } from "@/lib/silentCatch";
@@ -15,6 +15,8 @@ import type { ConnectorStatus } from '../../libs/connectorTypes';
 import { ReadinessWarnings, ConnectorsSection } from './ConnectorsTabSections';
 import { DependencyGraphPanel } from './DependencyGraphPanel';
 import { buildPersonaDependencyGraph } from '../../libs/dependencyGraph';
+import { extractConnectorNames } from '@/lib/personas/utils';
+import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 
 interface PersonaConnectorsTabProps {
   onMissingCountChange?: (count: number) => void;
@@ -85,8 +87,27 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
 
   const hasGraphContent = dependencyGraph.nodes.length > 0;
 
+  const connectorNames = selectedPersona ? extractConnectorNames(selectedPersona, 10) : [];
+
   return (
     <div className="space-y-6">
+      {/* Connector icons row */}
+      {connectorNames.length > 0 && (
+        <div className="flex items-center gap-3 px-1">
+          <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Connectors</span>
+          <div className="flex items-center gap-1.5">
+            {connectorNames.map((name) => {
+              const meta = getConnectorMeta(name);
+              return (
+                <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/30 border border-primary/10" title={meta.label}>
+                  <ConnectorIcon meta={meta} size="w-4 h-4" />
+                  <span className="text-xs text-foreground/70">{meta.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <AgentCredentialDemands />
       {hasGraphContent && (
         <div className="flex items-center justify-end gap-1">
@@ -130,7 +151,6 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
       )}
         </>
       )}
-      <UseCaseSubscriptionsSection />
       <AutomationSetupModal open={automationModalOpen} personaId={selectedPersona.id} onClose={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} onComplete={() => { setAutomationModalOpen(false); setEditingAutomationId(null); }} editAutomationId={editingAutomationId} />
       {designOpen && (
         <div className="mt-4 border border-violet-500/20 rounded-xl overflow-hidden">

@@ -1,4 +1,5 @@
 import { useSystemStore } from '@/stores/systemStore';
+import * as devApi from '@/api/devTools/devTools';
 
 /**
  * Typed accessors for DevToolsSlice actions.
@@ -14,7 +15,7 @@ export function useDevToolsActions() {
   const pid = () => store.activeProjectId ?? '';
 
   return {
-    // Context Map — convenience wrappers that resolve projectId
+    // Context Map -- convenience wrappers that resolve projectId
     fetchContextMap: async () => {
       const id = pid();
       if (!id) return;
@@ -53,13 +54,18 @@ export function useDevToolsActions() {
       );
     },
     startBatch: async () => {
-      const pending = store.tasks.filter((t) => t.status === 'pending');
+      // Sort pending/queued tasks by effort ascending (quick wins first)
+      const pending = store.tasks.filter((t) => t.status === 'queued' || t.status === 'pending');
       if (pending.length === 0) return;
-      await store.startBatch(pending.map((t) => t.id));
+      const sorted = [...pending]; // Keep creation order (effort is on ideas, not tasks)
+      await store.startBatch(sorted.map((t) => t.id));
     },
     cancelAllTasks: async () => {
-      const active = store.tasks.filter((t) => t.status === 'running' || t.status === 'pending');
-      await Promise.all(active.map((t) => store.cancelTask(t.id)));
+      const active = store.tasks.filter((t) => t.status === 'running');
+      await Promise.all(active.map((t) => devApi.cancelTaskExecution(t.id)));
+      // Also cancel queued tasks by updating their status
+      const queued = store.tasks.filter((t) => t.status === 'queued' || t.status === 'pending');
+      await Promise.all(queued.map((t) => store.cancelTask(t.id)));
     },
   } as const;
 }

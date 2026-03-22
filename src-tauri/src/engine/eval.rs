@@ -414,13 +414,22 @@ pub async fn eval_with_llm(
         input, persona_name, persona_description, scenario_name, scenario_description,
     );
 
-    match run_llm_eval(&eval_prompt).await {
-        Ok(result) => result,
-        Err(e) => {
-            tracing::warn!("LLM eval failed, falling back to heuristic scoring: {e}");
-            fallback_heuristic(input)
+    // Try LLM eval up to 2 times before falling back to heuristic
+    let mut last_err = String::new();
+    for attempt in 0..2u8 {
+        match run_llm_eval(&eval_prompt).await {
+            Ok(result) => return result,
+            Err(e) => {
+                last_err = e;
+                if attempt == 0 {
+                    tracing::debug!("LLM eval attempt 1 failed, retrying: {last_err}");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                }
+            }
         }
     }
+    tracing::warn!("LLM eval failed after 2 attempts, falling back to heuristic: {last_err}");
+    fallback_heuristic(input)
 }
 
 fn build_llm_eval_prompt(
@@ -514,7 +523,7 @@ async fn run_llm_eval(prompt_text: &str) -> Result<LlmEvalResult, String> {
     driver.write_stdin(prompt_text.as_bytes()).await;
 
     let mut assistant_text = String::new();
-    let timeout = tokio::time::Duration::from_secs(60);
+    let timeout = tokio::time::Duration::from_secs(180);
 
     driver.collect_lines_with_timeout(timeout, |line| {
         let (line_type, _) = parser::parse_stream_line(line);

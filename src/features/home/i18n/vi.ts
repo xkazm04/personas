@@ -38,9 +38,9 @@ export const vi = {
         label: "Đám Mây",
         description: "Triển khai agent lên hạ tầng đám mây và GitLab CI"
       },
-      'dev-tools': {
-        label: "Công Cụ Phát Triển",
-        description: "Quản lý dự án, quét mã nguồn, tạo ý tưởng, phân loại và thực thi tác vụ"
+      plugins: {
+        label: "Plugins",
+        description: "Mở rộng không gian làm việc của bạn với plugin và tích hợp"
       },
       settings: {
         label: "Cài Đặt",

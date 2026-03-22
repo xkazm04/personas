@@ -11,7 +11,6 @@ import {
   eventBusItems,
   templateItems,
   devToolsItems,
-  cloudItems,
 } from '@/features/shared/components/layout/sidebar/sidebarData';
 import { TAB_LABELS } from '@/features/agents/sub_editor/libs/editorTabConstants';
 
@@ -49,9 +48,11 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
     sidebarSection,
     homeTab,
     editorTab,
+    agentTab,
     cloudTab,
     settingsTab,
     templateTab,
+    pluginTab,
     devToolsTab,
     eventBusTab,
     isCreatingPersona,
@@ -60,9 +61,11 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
       sidebarSection: s.sidebarSection,
       homeTab: s.homeTab,
       editorTab: s.editorTab,
+      agentTab: s.agentTab,
       cloudTab: s.cloudTab,
       settingsTab: s.settingsTab,
       templateTab: s.templateTab,
+      pluginTab: s.pluginTab,
       devToolsTab: s.devToolsTab,
       eventBusTab: s.eventBusTab,
       isCreatingPersona: s.isCreatingPersona,
@@ -116,7 +119,13 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
       }
 
       case 'personas': {
-        if (isCreatingPersona) {
+        if (agentTab === 'cloud') {
+          trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setAgentTab('all') });
+          trail.push({ label: 'Cloud' });
+        } else if (agentTab === 'team') {
+          trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setAgentTab('all') });
+          trail.push({ label: 'Teams' });
+        } else if (isCreatingPersona) {
           trail.push({ label: sectionLabel, onClick: () => {
             setSidebarSection('personas');
             useSystemStore.getState().setIsCreatingPersona(false);
@@ -165,17 +174,6 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
         break;
       }
 
-      case 'cloud': {
-        const tabLabel = findSubLabel(cloudItems, cloudTab);
-        if (cloudTab === 'unified') {
-          trail.push({ label: sectionLabel });
-        } else {
-          trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setCloudTab('unified') });
-          trail.push({ label: tabLabel });
-        }
-        break;
-      }
-
       case 'settings': {
         const tabLabel = settingsTab.charAt(0).toUpperCase() + settingsTab.slice(1);
         trail.push({ label: sectionLabel, onClick: () => setSidebarSection('settings') });
@@ -183,15 +181,19 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
         break;
       }
 
-      case 'dev-tools': {
-        const tabLabel = findSubLabel(devToolsItems, devToolsTab);
-        trail.push({ label: sectionLabel, onClick: () => setSidebarSection('dev-tools') });
-        trail.push({ label: tabLabel });
+      case 'plugins': {
+        if (pluginTab === 'dev-tools') {
+          const tabLabel = findSubLabel(devToolsItems, devToolsTab);
+          trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setPluginTab('browse') });
+          trail.push({ label: 'Dev Tools', onClick: () => setSidebarSection('plugins') });
+          trail.push({ label: tabLabel });
+        } else {
+          trail.push({ label: sectionLabel });
+        }
         break;
       }
 
       default: {
-        // workflows, team, etc. — single segment
         trail.push({ label: sectionLabel });
         break;
       }
@@ -199,8 +201,8 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
 
     return trail;
   }, [
-    sidebarSection, homeTab, editorTab, cloudTab, settingsTab,
-    templateTab, devToolsTab, eventBusTab, isCreatingPersona,
+    sidebarSection, homeTab, editorTab, agentTab, cloudTab, settingsTab,
+    templateTab, pluginTab, devToolsTab, eventBusTab, isCreatingPersona,
     selectedPersonaId, selectedPersona, credentialNav.currentKey,
   ]);
 }

@@ -1,10 +1,10 @@
 import {
   BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare,
-  FlaskConical, Users, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
+  FlaskConical, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
   List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, CalendarClock, HardDriveDownload, Heart,
-  Wrench, FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
-  Radio, Gauge, Unplug, Webhook,
+  FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
+  Radio, Gauge, Unplug, Webhook, Puzzle,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -31,13 +31,10 @@ export const sections: SectionDef[] = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'personas', icon: Bot, label: 'Agents' },
-  { id: 'workflows', icon: GitBranch, label: 'Workflows' },
-  { id: 'events', icon: Radio, label: 'Event Bus', minTier: TIERS.TEAM },
+  { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Keys' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
-  { id: 'team', icon: Users, label: 'Teams', minTier: TIERS.TEAM, devOnly: true },
-  { id: 'cloud', icon: Cloud, label: 'Cloud', minTier: TIERS.TEAM, devOnly: true },
-  { id: 'dev-tools', icon: Wrench, label: 'Dev Tools', minTier: TIERS.BUILDER },
+  { id: 'plugins', icon: Puzzle, label: 'Plugins' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -79,10 +76,10 @@ export const credentialItems: SubNavItem[] = [
 
 export const eventBusItems: SubNavItem[] = [
   { id: 'live-stream', label: 'Live Stream', icon: Activity },
-  { id: 'rate-limits', label: 'Rate Limits', icon: Gauge },
+  { id: 'rate-limits', label: 'Throttling', icon: Gauge },
   { id: 'test', label: 'Test', icon: Zap },
-  { id: 'smee-relay', label: 'Smee Relay', icon: Unplug },
-  { id: 'cloud-webhooks', label: 'Cloud Webhooks', icon: Webhook },
+  { id: 'smee-relay', label: 'Local Relay', icon: Unplug },
+  { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook },
 ];
 
 export const templateItems: SubNavItem[] = [

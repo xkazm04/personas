@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Bot, Home, BarChart3, Radio, Key, FlaskConical, Users,
-  Cloud, Settings, Plus, Power, Workflow, Play, ToggleLeft, Copy,
+  Search, Bot, Home, BarChart3, Radio, Key, FlaskConical,
+  Settings, Plus, Power, Workflow, Play, ToggleLeft, Copy, Puzzle,
   HeartPulse, Pencil,
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
@@ -33,8 +33,7 @@ const NAV_ITEMS: { id: SidebarSection; label: string; icon: React.ReactNode }[] 
   { id: 'events', label: 'Event Bus', icon: <Radio className="w-4 h-4" /> },
   { id: 'credentials', label: 'Keys', icon: <Key className="w-4 h-4" /> },
   { id: 'design-reviews', label: 'Templates', icon: <FlaskConical className="w-4 h-4" /> },
-  { id: 'team', label: 'Teams', icon: <Users className="w-4 h-4" /> },
-  { id: 'cloud', label: 'Cloud', icon: <Cloud className="w-4 h-4" /> },
+  { id: 'plugins', label: 'Plugins', icon: <Puzzle className="w-4 h-4" /> },
   { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
 ];
 

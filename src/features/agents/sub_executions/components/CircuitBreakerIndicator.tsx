@@ -10,15 +10,13 @@ const POLL_INTERVAL_MS = 10_000;
 const PROVIDER_LABELS: Record<string, string> = {
   claude_code: 'Claude',
   codex_cli: 'Codex',
-  gemini_cli: 'Gemini',
-  copilot_cli: 'Copilot',
   global: 'Global',
 };
 
 const STATE_LABELS: Record<string, string> = {
-  closed: 'Closed',
-  open: 'Open',
-  half_open: 'Half-open',
+  closed: 'Connected',
+  open: 'Disconnected',
+  half_open: 'Reconnecting',
   paused: 'Paused',
 };
 
@@ -115,8 +113,8 @@ export function CircuitBreakerIndicator() {
           {status.globalPaused
             ? 'All providers paused'
             : hasIssue
-              ? `${openProviders.length} provider${openProviders.length > 1 ? 's' : ''} circuit-broken`
-              : `${totalTrips1h} trip${totalTrips1h !== 1 ? 's' : ''} in last hour`}
+              ? `${openProviders.length} provider${openProviders.length > 1 ? 's' : ''} temporarily unavailable`
+              : `${totalTrips1h} interruption${totalTrips1h !== 1 ? 's' : ''} in last hour`}
         </span>
 
         <span className="ml-auto text-muted-foreground/50">
@@ -131,7 +129,7 @@ export function CircuitBreakerIndicator() {
             const label = PROVIDER_LABELS[p.provider] ?? p.provider;
             const tripBadge = p.tripCount1h > 0 ? (
               <span className="text-muted-foreground/40 typo-caption ml-1">
-                ({p.tripCount1h} trip{p.tripCount1h !== 1 ? 's' : ''}/1h)
+                ({p.tripCount1h} interruption{p.tripCount1h !== 1 ? 's' : ''}/1h)
               </span>
             ) : null;
 
@@ -141,7 +139,7 @@ export function CircuitBreakerIndicator() {
                   <ShieldAlert className="w-3 h-3 text-red-400" />
                   <span className="text-red-400 font-mono">{label}</span>
                   <span className="text-muted-foreground/60">
-                    {p.consecutiveFailures} failures — cooldown {Math.ceil(p.cooldownRemainingSecs)}s
+                    {p.consecutiveFailures} error{p.consecutiveFailures !== 1 ? 's' : ''} — retrying in {Math.ceil(p.cooldownRemainingSecs)}s
                   </span>
                   {tripBadge}
                 </div>
@@ -153,7 +151,7 @@ export function CircuitBreakerIndicator() {
                   <ShieldCheck className="w-3 h-3 text-amber-400" />
                   <span className="text-amber-400 font-mono">{label}</span>
                   <span className="text-muted-foreground/60">
-                    {p.consecutiveFailures} failure{p.consecutiveFailures > 1 ? 's' : ''}
+                    {p.consecutiveFailures} error{p.consecutiveFailures > 1 ? 's' : ''}
                   </span>
                   {tripBadge}
                 </div>
@@ -171,9 +169,9 @@ export function CircuitBreakerIndicator() {
 
           {status.globalPaused && (
             <div className="mt-1.5 px-2 py-1.5 bg-red-500/10 border border-red-500/15 rounded-lg typo-body text-red-400">
-              Global pause active — {status.globalFailureCount} total failures.
+              All providers paused due to repeated errors ({status.globalFailureCount} total).
               {status.globalCooldownRemainingSecs > 0 &&
-                ` Resumes in ${Math.ceil(status.globalCooldownRemainingSecs)}s.`}
+                ` Resuming automatically in ${Math.ceil(status.globalCooldownRemainingSecs)}s.`}
             </div>
           )}
 
@@ -185,7 +183,7 @@ export function CircuitBreakerIndicator() {
                 className="flex items-center gap-1.5 typo-caption text-muted-foreground/50 hover:text-muted-foreground/70 mt-1"
               >
                 <History className="w-3 h-3" />
-                {showHistory ? 'Hide' : 'Show'} transition history ({status.recentTransitions.length})
+                {showHistory ? 'Hide' : 'Show'} recent activity ({status.recentTransitions.length})
               </button>
 
               {showHistory && (

@@ -9,6 +9,8 @@ export interface DevToolsTaskSlice {
   tasks: DevTask[];
   tasksLoading: boolean;
   activeBatchId: string | null;
+  taskOutputBuffers: Record<string, string[]>;
+  maxParallelTasks: number;
 
   fetchTasks: (projectId?: string, status?: string, goalId?: string) => Promise<void>;
   createTask: (title: string, projectId?: string, description?: string, sourceIdeaId?: string, goalId?: string) => Promise<DevTask>;
@@ -17,13 +19,18 @@ export interface DevToolsTaskSlice {
   cancelTask: (id: string) => Promise<void>;
   startBatch: (taskIds: string[]) => Promise<{ batch_id: string; started: number }>;
   getBatchStatus: (batchId: string) => Promise<{ batch_id: string; total: number; completed: number; failed: number; running: number; pending: number; tasks: DevTask[] }>;
+  appendTaskOutput: (taskId: string, line: string) => void;
+  clearTaskOutput: (taskId: string) => void;
+  setMaxParallelTasks: (n: number) => void;
 }
 
-export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevToolsTaskSlice> = (set) => ({
+export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevToolsTaskSlice> = (set, get) => ({
   // -- Tasks state -----------------------------------------------------
   tasks: [],
   tasksLoading: false,
   activeBatchId: null,
+  taskOutputBuffers: {},
+  maxParallelTasks: 2,
 
   fetchTasks: async (projectId, status, goalId) => {
     set({ tasksLoading: true });
@@ -59,11 +66,8 @@ export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevTools
 
   startTask: async (id) => {
     try {
-      const updated = await devApi.startTask(id);
-      set((state) => ({
-        tasks: state.tasks.map((t) => (t.id === id ? updated : t)),
-        error: null,
-      }));
+      await devApi.executeTask(id);
+      // Tasks will update via event listeners
     } catch (err) {
       reportError(err, "Failed to start task", set);
     }
@@ -71,11 +75,8 @@ export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevTools
 
   cancelTask: async (id) => {
     try {
-      const updated = await devApi.cancelTask(id);
-      set((state) => ({
-        tasks: state.tasks.map((t) => (t.id === id ? updated : t)),
-        error: null,
-      }));
+      await devApi.cancelTaskExecution(id);
+      // Refetch to get updated status
     } catch (err) {
       reportError(err, "Failed to cancel task", set);
     }
@@ -83,7 +84,8 @@ export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevTools
 
   startBatch: async (taskIds) => {
     try {
-      const result = await devApi.startBatch(taskIds);
+      const maxParallel = get().maxParallelTasks;
+      const result = await devApi.startBatchExecution(taskIds, maxParallel);
       set({ activeBatchId: result.batch_id, error: null });
       return result;
     } catch (err) {
@@ -107,5 +109,25 @@ export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevTools
       reportError(err, "Failed to get batch status", set);
       throw err;
     }
+  },
+
+  appendTaskOutput: (taskId, line) => {
+    set((state) => ({
+      taskOutputBuffers: {
+        ...state.taskOutputBuffers,
+        [taskId]: [...(state.taskOutputBuffers[taskId] ?? []), line],
+      },
+    }));
+  },
+
+  clearTaskOutput: (taskId) => {
+    set((state) => {
+      const { [taskId]: _, ...rest } = state.taskOutputBuffers;
+      return { taskOutputBuffers: rest };
+    });
+  },
+
+  setMaxParallelTasks: (n) => {
+    set({ maxParallelTasks: n });
   },
 });

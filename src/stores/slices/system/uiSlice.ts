@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, EventBusTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab } from "@/lib/types/types";
 import type { AdoptWizardStep } from "@/features/templates/sub_generated/adoption/hooks/useAdoptReducer";
 
 /** Snapshot of adoption wizard state saved when the user closes mid-adoption. */
@@ -50,6 +50,7 @@ export interface UiSlice {
   templateTestActive: boolean;
   connectorTestActive: boolean;
   templateGalleryTotal: number;
+  pluginTab: PluginTab;
   devToolsTab: DevToolsTab;
   eventBusTab: EventBusTab;
   adoptionDraft: AdoptionDraft | null;
@@ -78,6 +79,7 @@ export interface UiSlice {
   setConnectorTestActive: (active: boolean) => void;
   setTemplateGalleryTotal: (total: number) => void;
   setAdoptionDraft: (draft: AdoptionDraft | null) => void;
+  setPluginTab: (tab: PluginTab) => void;
   setDevToolsTab: (tab: DevToolsTab) => void;
   setEventBusTab: (tab: EventBusTab) => void;
   setContextScanActive: (active: boolean) => void;
@@ -106,6 +108,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   templateTestActive: false,
   connectorTestActive: false,
   templateGalleryTotal: 0,
+  pluginTab: "browse" as PluginTab,
   devToolsTab: "projects" as DevToolsTab,
   eventBusTab: "live-stream" as EventBusTab,
   adoptionDraft: null,
@@ -133,6 +136,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setConnectorTestActive: (active) => set({ connectorTestActive: active }),
   setTemplateGalleryTotal: (total) => set({ templateGalleryTotal: total }),
   setAdoptionDraft: (draft) => set({ adoptionDraft: draft }),
+  setPluginTab: (tab) => set({ pluginTab: tab }),
   setDevToolsTab: (tab) => set({ devToolsTab: tab }),
   setEventBusTab: (tab) => set({ eventBusTab: tab }),
   setContextScanActive: (active) => set({ contextScanActive: active }),

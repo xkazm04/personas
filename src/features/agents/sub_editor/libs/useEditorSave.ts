@@ -3,7 +3,6 @@ import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { useAgentStore } from "@/stores/agentStore";
 import { type PersonaDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from './PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '../../sub_model_config/OllamaCloudPresets';
-import { getCopilotPreset } from '../../sub_model_config/CopilotPresets';
 import { useTabSection } from './useTabSection';
 import { useDebouncedSaveGroup } from './useDebouncedSaveGroup';
 import { useEditorHistory, type UndoEntry } from './EditorDocument';
@@ -70,18 +69,11 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
 
     let profile: string | null;
     const ollamaPreset = getOllamaPreset(d.selectedModel);
-    const copilotPreset = getCopilotPreset(d.selectedModel);
-
     if (ollamaPreset) {
       profile = JSON.stringify({
         model: ollamaPreset.modelId,
         provider: 'ollama',
         base_url: OLLAMA_CLOUD_BASE_URL,
-      } satisfies ModelProfile);
-    } else if (copilotPreset) {
-      profile = JSON.stringify({
-        model: copilotPreset.modelId,
-        provider: 'copilot',
       } satisfies ModelProfile);
     } else if (d.selectedModel === 'custom') {
       profile = JSON.stringify({

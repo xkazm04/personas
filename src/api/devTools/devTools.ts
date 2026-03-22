@@ -421,3 +421,14 @@ export const getBatchStatus = (batchId: string) =>
     "dev_tools_get_batch_status",
     { batchId },
   );
+
+// -- Task Execution (CLI-powered) -------------------------------------------
+
+export const executeTask = (taskId: string) =>
+  invoke<{ task_id: string }>("dev_tools_execute_task", { taskId });
+
+export const startBatchExecution = (taskIds: string[], maxParallel?: number) =>
+  invoke<{ batch_id: string; started: number }>("dev_tools_start_batch", { taskIds, maxParallel });
+
+export const cancelTaskExecution = (taskId: string) =>
+  safeInvoke<boolean>(false, "dev_tools_cancel_task_execution", { taskId });

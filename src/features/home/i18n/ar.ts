@@ -38,9 +38,9 @@ export const ar = {
         label: "السحابة",
         description: "نشر الوكلاء في البنية التحتية السحابية و GitLab CI"
       },
-      'dev-tools': {
-        label: "أدوات التطوير",
-        description: "إدارة المشاريع، مسح قاعدة الشفرة، توليد الأفكار، الفرز، وتنفيذ المهام"
+      plugins: {
+        label: "Plugins",
+        description: "توسيع مساحة العمل الخاصة بك باستخدام الإضافات والتكاملات"
       },
       settings: {
         label: "الإعدادات",

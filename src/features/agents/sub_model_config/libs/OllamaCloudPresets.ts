@@ -1,5 +1,4 @@
 import type { ModelProfile } from '@/lib/types/frontendTypes';
-import { COPILOT_PRESETS } from './CopilotPresets';
 
 // -- Ollama Cloud model presets --
 
@@ -27,11 +26,6 @@ export function profileToDropdownValue(mp: ModelProfile): string {
   if (mp.provider === 'ollama' && mp.base_url === OLLAMA_CLOUD_BASE_URL && mp.model) {
     const preset = OLLAMA_CLOUD_PRESETS.find((p) => p.modelId === mp.model);
     if (preset) return preset.value;
-  }
-  // Check Copilot presets
-  if (mp.provider === 'copilot' && mp.model) {
-    const copilotPreset = COPILOT_PRESETS.find((p) => p.modelId === mp.model);
-    if (copilotPreset) return copilotPreset.value;
   }
   // Standard Anthropic models
   if (!mp.provider || mp.provider === 'anthropic') {

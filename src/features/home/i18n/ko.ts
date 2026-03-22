@@ -38,9 +38,9 @@ export const ko = {
         label: "클라우드",
         description: "클라우드 인프라 및 GitLab CI에 에이전트 배포"
       },
-      'dev-tools': {
-        label: "개발 도구",
-        description: "프로젝트 관리, 코드베이스 스캔, 아이디어 생성, 분류 및 작업 실행"
+      plugins: {
+        label: "Plugins",
+        description: "플러그인과 통합으로 워크스페이스를 확장하세요"
       },
       settings: {
         label: "설정",

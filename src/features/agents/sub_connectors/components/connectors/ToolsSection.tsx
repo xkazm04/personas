@@ -10,7 +10,7 @@ interface ToolsSectionProps {
 }
 
 export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
-  const [toolsExpanded, setToolsExpanded] = useState(false);
+  const [toolsExpanded, setToolsExpanded] = useState(true);
   const [showRunner, setShowRunner] = useState(false);
 
   const invocableTools = tools.filter(

@@ -7,6 +7,7 @@ pub mod cloud;
 pub mod context_generation;
 pub mod dev_tools;
 pub mod idea_scanner;
+pub mod task_executor;
 pub mod gitlab;
 pub mod workflows;
 pub mod tier_usage;

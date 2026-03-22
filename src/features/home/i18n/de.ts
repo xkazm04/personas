@@ -38,9 +38,9 @@ export const de = {
         label: "Cloud",
         description: "Agenten in Cloud-Infrastruktur und GitLab CI bereitstellen"
       },
-      'dev-tools': {
-        label: "Entwicklerwerkzeuge",
-        description: "Projektmanagement, Codebase-Scanning, Ideengenerierung, Triage und Aufgabenausführung"
+      plugins: {
+        label: "Plugins",
+        description: "Erweitern Sie Ihren Arbeitsbereich mit Plugins und Integrationen"
       },
       settings: {
         label: "Einstellungen",

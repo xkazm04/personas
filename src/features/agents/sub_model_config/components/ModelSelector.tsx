@@ -1,9 +1,7 @@
 import { Cpu, Check, Settings2 } from 'lucide-react';
 import type { ModelProvider } from '@/lib/types/frontendTypes';
 import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '../libs/OllamaCloudPresets';
-import { COPILOT_PRESETS, isCopilotValue } from '../libs/CopilotPresets';
 import { OllamaApiKeyField } from './OllamaApiKeyField';
-import { CopilotTokenField } from './CopilotTokenField';
 import { CustomModelConfigForm } from './CustomModelConfigForm';
 import { BudgetControls } from './BudgetControls';
 
@@ -11,7 +9,6 @@ import { BudgetControls } from './BudgetControls';
 const PROVIDER_COLORS: Record<string, string> = {
   anthropic: '#D97706',
   ollama: '#10B981',
-  copilot: '#6E40C9',
   custom: '#3B82F6',
 };
 
@@ -36,16 +33,6 @@ function OllamaLogo({ color }: { color: string }) {
   );
 }
 
-function CopilotLogo({ color }: { color: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="inline-block flex-shrink-0">
-      <defs><linearGradient id="ms-cop" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor={color} /><stop offset="100%" stopColor="#fff" stopOpacity="0.7" /></linearGradient></defs>
-      <path d="M3 8c0-2 1-4 3-5l2 1.5L10 3c2 1 3 3 3 5v3c0 1.5-1 2.5-2.5 2.5h-5C4 13.5 3 12.5 3 11V8z" fill="url(#ms-cop)" />
-      <path d="M6 9h4" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeOpacity="0.8" />
-    </svg>
-  );
-}
-
 function CustomGearLogo({ color }: { color: string }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="inline-block flex-shrink-0">
@@ -61,7 +48,6 @@ function CustomGearLogo({ color }: { color: string }) {
 const PROVIDER_LOGOS: Record<string, (props: { color: string }) => ReturnType<typeof AnthropicLogo>> = {
   anthropic: AnthropicLogo,
   ollama: OllamaLogo,
-  copilot: CopilotLogo,
   custom: CustomGearLogo,
 };
 
@@ -84,12 +70,6 @@ const OLLAMA_MODELS: ModelDef[] = OLLAMA_CLOUD_PRESETS.map((p) => ({
   cost: 'Free',
 }));
 
-const COPILOT_MODELS: ModelDef[] = COPILOT_PRESETS.map((p) => ({
-  value: p.value,
-  name: p.label.split(' (')[0] ?? p.label,
-  cost: p.value === 'copilot:gpt-5-mini' ? 'Free' : p.value === 'copilot:gemini-3-flash' ? '~$0.10/1K' : '~$3/1K',
-}));
-
 const CUSTOM_MODELS: ModelDef[] = [
   { value: 'custom', name: 'Custom', cost: '\u2014' },
 ];
@@ -104,7 +84,6 @@ interface ProviderColumn {
 const COLUMNS: ProviderColumn[] = [
   { key: 'anthropic', label: 'Anthropic', color: PROVIDER_COLORS.anthropic!, models: ANTHROPIC_MODELS },
   { key: 'ollama', label: 'Ollama', color: PROVIDER_COLORS.ollama!, models: OLLAMA_MODELS },
-  { key: 'copilot', label: 'Copilot', color: PROVIDER_COLORS.copilot!, models: COPILOT_MODELS },
   { key: 'custom', label: 'Custom', color: PROVIDER_COLORS.custom!, models: CUSTOM_MODELS },
 ];
 
@@ -148,9 +127,6 @@ export function ModelSelector({
   dirty,
   hideHeader,
 }: ModelSelectorProps) {
-  const showCopilotTokenField = isCopilotValue(selectedModel);
-  const CopilotTokenFieldComponent = CopilotTokenField;
-
   return (
     <div className="space-y-3">
       {!hideHeader && (
@@ -162,7 +138,7 @@ export function ModelSelector({
       )}
       <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl p-3 space-y-3">
         {/* Three provider columns side by side */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {COLUMNS.map((col) => {
             const Logo = PROVIDER_LOGOS[col.key];
             return (
@@ -223,7 +199,6 @@ export function ModelSelector({
 
         {/* Provider credential fields */}
         {isOllamaCloudValue(selectedModel) && <OllamaApiKeyField />}
-        {showCopilotTokenField && <CopilotTokenFieldComponent />}
 
         {customConfig && (
           <CustomModelConfigForm selectedModel={selectedModel} customConfig={customConfig} />

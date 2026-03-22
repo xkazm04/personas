@@ -1,14 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Plus, ListChecks, XCircle, ChevronDown, ChevronRight,
   Loader2, CheckCircle2, AlertCircle, Clock, Ban, X, Link2,
 } from 'lucide-react';
+import { listen } from '@tauri-apps/api/event';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
+import { useSystemStore } from '@/stores/systemStore';
+import { TaskOutputPanel } from './TaskOutputPanel';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,6 +31,19 @@ interface RunnerTask {
   goalId?: string;
   output?: string;
   createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function progressToPhase(progress: number, status: TaskStatus): TaskPhase {
+  if (status === 'completed') return 'complete';
+  if (progress < 15) return 'analyzing';
+  if (progress < 30) return 'planning';
+  if (progress < 60) return 'implementing';
+  if (progress < 85) return 'validating';
+  return 'complete';
 }
 
 // ---------------------------------------------------------------------------
@@ -176,13 +192,16 @@ function TaskModal({
 function TaskCard({
   task,
   index,
+  outputLines,
 }: {
   task: RunnerTask;
   index: number;
+  outputLines: string[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const { staggerDelay } = useMotion();
   const phaseCfg = PHASE_CONFIG[task.phase];
+  const hasOutput = outputLines.length > 0 || task.output;
 
   return (
     <motion.div
@@ -222,7 +241,7 @@ function TaskCard({
         )}
 
         {/* Expand button for output */}
-        {task.output && (
+        {hasOutput && (
           <Button
             variant="ghost"
             size="icon-sm"
@@ -235,7 +254,7 @@ function TaskCard({
 
       {/* Expanded output */}
       <AnimatePresence>
-        {expanded && task.output && (
+        {expanded && hasOutput && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -244,9 +263,17 @@ function TaskCard({
             className="overflow-hidden"
           >
             <div className="px-4 pb-3 pt-0">
-              <pre className="text-[11px] text-muted-foreground/60 bg-primary/5 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap font-mono max-h-48">
-                {task.output}
-              </pre>
+              {outputLines.length > 0 ? (
+                <TaskOutputPanel
+                  taskId={task.id}
+                  lines={outputLines}
+                  isRunning={task.status === 'running'}
+                />
+              ) : task.output ? (
+                <pre className="text-[11px] text-muted-foreground/60 bg-primary/5 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap font-mono max-h-48">
+                  {task.output}
+                </pre>
+              ) : null}
             </div>
           </motion.div>
         )}
@@ -262,8 +289,59 @@ function TaskCard({
 export default function TaskRunnerPage() {
   const { createTask, batchFromAcceptedIdeas: batchFromAccepted, startBatch, cancelAllTasks: cancelAll } = useDevToolsActions();
 
-  const [tasks] = useState<RunnerTask[]>([]);
+  const storeTasks = useSystemStore((s) => s.tasks);
+  const fetchTasks = useSystemStore((s) => s.fetchTasks);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const taskOutputBuffers = useSystemStore((s) => s.taskOutputBuffers);
+  const appendTaskOutput = useSystemStore((s) => s.appendTaskOutput);
+
   const [showModal, setShowModal] = useState(false);
+
+  // Map DevTask to RunnerTask view model
+  const tasks: RunnerTask[] = storeTasks.map((t) => ({
+    id: t.id,
+    title: t.title,
+    description: t.description ?? '',
+    status: (t.status as TaskStatus) || 'queued',
+    phase: progressToPhase(t.progress_pct ?? 0, (t.status as TaskStatus) || 'queued'),
+    progress: t.progress_pct ?? 0,
+    source: t.source_idea_id ?? undefined,
+    goalId: t.goal_id ?? undefined,
+    output: undefined,
+    createdAt: t.created_at,
+  }));
+
+  // Fetch tasks on mount and when project changes
+  useEffect(() => {
+    if (activeProjectId) {
+      fetchTasks(activeProjectId);
+    }
+  }, [activeProjectId, fetchTasks]);
+
+  // Event listeners for task execution streaming
+  useEffect(() => {
+    const outputUn = listen<{ job_id: string; line: string }>('task-exec-output', (event) => {
+      const { job_id, line } = event.payload;
+      appendTaskOutput(job_id, line);
+    });
+
+    const statusUn = listen<{ job_id: string; status: string; error?: string }>('task-exec-status', (event) => {
+      const { job_id: _job_id, status: _status } = event.payload;
+      // Refetch tasks to get updated status
+      if (activeProjectId) fetchTasks(activeProjectId);
+    });
+
+    const completeUn = listen<{ task_id: string; output_lines: number }>('task-exec-complete', () => {
+      // Refetch tasks to get final state
+      if (activeProjectId) fetchTasks(activeProjectId);
+    });
+
+    return () => {
+      outputUn.then(fn => fn());
+      statusUn.then(fn => fn());
+      completeUn.then(fn => fn());
+    };
+  }, [activeProjectId, fetchTasks, appendTaskOutput]);
 
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const runningCount = tasks.filter((t) => t.status === 'running').length;
@@ -409,7 +487,12 @@ export default function TaskRunnerPage() {
             ) : (
               <div className="space-y-2">
                 {tasks.map((task, i) => (
-                  <TaskCard key={task.id} task={task} index={i} />
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    index={i}
+                    outputLines={taskOutputBuffers[task.id] ?? []}
+                  />
                 ))}
               </div>
             )}

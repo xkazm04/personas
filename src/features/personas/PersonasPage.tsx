@@ -2,6 +2,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Puzzle } from 'lucide-react';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -30,7 +31,6 @@ const CloudDeployPanel = lazy(() => import('@/features/deployment/components/clo
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
 const DevToolsPage = lazy(() => import('@/features/dev-tools/DevToolsPage'));
-const CompositionEditor = lazy(() => import('@/features/composition/components/CompositionEditor'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
@@ -45,10 +45,12 @@ const sectionFadeVariants = {
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
-  const { sidebarSection, cloudTab, isCreatingPersona, isLoading, error } = useSystemStore(
+  const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
       cloudTab: s.cloudTab,
+      agentTab: s.agentTab,
+      pluginTab: s.pluginTab,
       isCreatingPersona: s.isCreatingPersona,
       isLoading: s.isLoading,
       error: s.error,
@@ -71,14 +73,13 @@ export default function PersonasPage() {
     // Run all startup fetches in parallel and collect failures.
     // Vault and pipeline stores are dynamically imported to keep them out of the main bundle.
     setError(null);
-    const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'groups', 'workflows'] as const;
+    const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'groups'] as const;
     Promise.allSettled([
       fetchPersonas(),
       fetchToolDefinitions(),
       import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
-      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchWorkflows()),
     ]).then((results) => {
       setPersonasFetched(true);
       const failed = (results as PromiseSettledResult<void>[])
@@ -156,6 +157,37 @@ export default function PersonasPage() {
   const renderContent = () => {
     // Show unified wizard when no personas exist OR when explicitly creating
     if (sidebarSection === 'personas') {
+      // Cloud sub-view (dev-only, gated in sidebar)
+      if (agentTab === 'cloud') {
+        return (
+          <ErrorBoundary name="Cloud">
+          <Suspense fallback={SectionFallback}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={cloudTab}
+              initial={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? 14 : -14) : 0 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? -14 : 14) : 0 }}
+              transition={transition}
+              className="h-full w-full"
+            >
+              {cloudTab === 'unified' ? (
+                <UnifiedDeploymentDashboard />
+              ) : cloudTab === 'gitlab' ? (
+                <GitLabPanel />
+              ) : (
+                <CloudDeployPanel />
+              )}
+            </motion.div>
+          </AnimatePresence>
+          </Suspense>
+          </ErrorBoundary>
+        );
+      }
+      // Teams sub-view (dev-only, gated in sidebar)
+      if (agentTab === 'team') {
+        return <ErrorBoundary name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
+      }
       if (personasFetched && !isLoading && !error && personas.length === 0) {
         return <ErrorBoundary name="UnifiedMatrixEntry"><Suspense fallback={SectionFallback}><UnifiedMatrixEntry /></Suspense></ErrorBoundary>;
       }
@@ -165,45 +197,29 @@ export default function PersonasPage() {
     }
 
     if (sidebarSection === 'home') return <ErrorBoundary name="Home"><Suspense fallback={SectionFallback}><HomePage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'workflows') {
-      return <ErrorBoundary name="Workflows"><Suspense fallback={SectionFallback}><CompositionEditor /></Suspense></ErrorBoundary>;
-    }
-    if (sidebarSection === 'team') {
-      return <ErrorBoundary name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
-    }
-    if (sidebarSection === 'cloud') {
-      return (
-        <ErrorBoundary name="Cloud">
-        <Suspense fallback={SectionFallback}>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={cloudTab}
-            initial={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? 14 : -14) : 0 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? -14 : 14) : 0 }}
-            transition={transition}
-            className="h-full w-full"
-          >
-            {cloudTab === 'unified' ? (
-              <UnifiedDeploymentDashboard />
-            ) : cloudTab === 'gitlab' ? (
-              <GitLabPanel />
-            ) : (
-              <CloudDeployPanel />
-            )}
-          </motion.div>
-        </AnimatePresence>
-        </Suspense>
-        </ErrorBoundary>
-      );
-    }
     if (sidebarSection === 'overview') {
       return <ErrorBoundary name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={SectionFallback}><EventsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'dev-tools') return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'plugins') {
+      if (pluginTab === 'dev-tools') {
+        return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
+      }
+      // Default browse view — placeholder for future plugin marketplace
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center">
+              <Puzzle className="w-8 h-8 text-primary/60" />
+            </div>
+            <p className="typo-heading text-foreground/80">Plugins</p>
+            <p className="typo-body text-muted-foreground/60 max-w-xs">Extend your workspace with plugins. More coming soon.</p>
+          </div>
+        </div>
+      );
+    }
     if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
     if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {
       return <ErrorBoundary name="UnifiedMatrixEntry"><Suspense fallback={SectionFallback}><UnifiedMatrixEntry canCancel /></Suspense></ErrorBoundary>;

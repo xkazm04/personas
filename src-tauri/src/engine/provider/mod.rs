@@ -1,7 +1,5 @@
 pub mod claude;
 pub mod codex;
-pub mod copilot;
-pub mod gemini;
 
 use crate::db::DbPool;
 use crate::db::models::Persona;
@@ -18,7 +16,7 @@ pub enum PromptDelivery {
     Stdin,
     /// Prompt is embedded as a positional argument (Codex: `exec "<prompt>"`).
     PositionalArg,
-    /// Prompt is passed via a flag (Gemini: `-p "<prompt>"`).
+    /// Prompt is passed via a flag (Codex: `-p "<prompt>"`).
     Flag(String),
 }
 
@@ -31,8 +29,6 @@ pub enum PromptDelivery {
 pub enum EngineKind {
     ClaudeCode,
     CodexCli,
-    GeminiCli,
-    CopilotCli,
 }
 
 impl EngineKind {
@@ -40,8 +36,6 @@ impl EngineKind {
     pub fn from_setting(s: &str) -> Self {
         match s {
             "codex_cli" => EngineKind::CodexCli,
-            "gemini_cli" => EngineKind::GeminiCli,
-            "copilot_cli" => EngineKind::CopilotCli,
             _ => EngineKind::ClaudeCode,
         }
     }
@@ -52,8 +46,6 @@ impl EngineKind {
         match self {
             EngineKind::ClaudeCode => "claude_code",
             EngineKind::CodexCli => "codex_cli",
-            EngineKind::GeminiCli => "gemini_cli",
-            EngineKind::CopilotCli => "copilot_cli",
         }
     }
 }
@@ -136,8 +128,6 @@ pub fn resolve_provider(kind: EngineKind) -> Box<dyn CliProvider> {
     match kind {
         EngineKind::ClaudeCode => Box::new(claude::ClaudeProvider),
         EngineKind::CodexCli => Box::new(codex::CodexProvider),
-        EngineKind::GeminiCli => Box::new(gemini::GeminiProvider),
-        EngineKind::CopilotCli => Box::new(copilot::CopilotProvider),
     }
 }
 

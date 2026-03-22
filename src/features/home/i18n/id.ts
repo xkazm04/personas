@@ -38,9 +38,9 @@ export const id = {
         label: "Cloud",
         description: "Terapkan agen ke infrastruktur cloud dan GitLab CI"
       },
-      'dev-tools': {
-        label: "Alat Pengembang",
-        description: "Manajemen proyek, pemindaian kode, pembuatan ide, triase, dan eksekusi tugas"
+      plugins: {
+        label: "Plugins",
+        description: "Perluas ruang kerja Anda dengan plugin dan integrasi"
       },
       settings: {
         label: "Pengaturan",

@@ -12,7 +12,7 @@ import { usePanelRunState } from '../../libs/usePanelRunState';
 export function MatrixPanel() {
   const matrixRuns = useAgentStore((s) => s.matrixRuns);
   const matrixResultsMap = useAgentStore((s) => s.matrixResultsMap);
-  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const isLabRunning = useAgentStore((s) => s.isMatrixRunning);
   const startMatrix = useAgentStore((s) => s.startMatrix);
   const cancelMatrix = useAgentStore((s) => s.cancelMatrix);
   const fetchMatrixRuns = useAgentStore((s) => s.fetchMatrixRuns);

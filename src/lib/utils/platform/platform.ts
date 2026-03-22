@@ -90,5 +90,5 @@ export const SIMPLE_SECTIONS = new Set<string>([
 
 /** Sidebar sections only visible in dev mode. */
 export const DEV_MODE_SECTIONS = new Set<string>([
-  'dev-tools',
+  'plugins',
 ]);

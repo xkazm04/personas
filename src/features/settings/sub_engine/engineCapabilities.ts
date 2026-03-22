@@ -1,10 +1,8 @@
 /**
  * Engine capability map -- defines which CLI operations each provider supports.
  *
- * Defaults are derived from Round 9 business-level integration tests (9 operations × 3 providers).
+ * Defaults are derived from Round 9 business-level integration tests.
  * Claude Sonnet 4.6: 9/9 passed (100%) -- all operations enabled
- * Gemini Flash Lite: 6/9 passed (67%) -- failed n8n_transform, persona_execution, template_adopt
- * Copilot GPT-5.1:   6/9 passed (67%) -- failed credential_healthcheck, n8n_transform, template_adopt
  *
  * Users can override these defaults via the Engine settings UI.
  * The map is stored as a JSON string in app_settings under key "engine_capabilities".
@@ -98,8 +96,6 @@ export interface ProviderMeta {
 
 export const PROVIDERS: ProviderMeta[] = [
   { id: 'claude_code', label: 'Claude Code CLI', shortLabel: 'Claude' },
-  { id: 'gemini_cli', label: 'Gemini CLI', shortLabel: 'Gemini' },
-  { id: 'copilot_cli', label: 'Copilot CLI', shortLabel: 'Copilot' },
 ];
 
 // ===========================================================================
@@ -114,25 +110,23 @@ export type EngineCapabilityMap = Record<CliOperation, Record<CliEngine, boolean
  * All 10 operations now have test coverage (9 from Round 9, healing/recipe from Round 8).
  *
  * Claude Sonnet 4.6: 9/9 (100%) -- all A grades
- * Gemini Flash Lite: 6/9 (67%) -- failed n8n_transform (F), persona_execution (F), template_adopt (F)
- * Copilot GPT-5.1:   6/9 (67%) -- failed credential_healthcheck (F), n8n_transform (F), template_adopt (F)
  *
  * Codex CLI is excluded (deprecated/untested).
  */
 export const DEFAULT_CAPABILITIES: EngineCapabilityMap = {
-  //                                claude    codex     gemini    copilot     Round 9 grade
-  design_analysis:        { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: true  }, // A / A(92%) / A
-  credential_design:      { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: true  }, // A / A / A
-  credential_healthcheck: { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: false }, // A / A / F
-  n8n_transform:          { claude_code: true,  codex_cli: false, gemini_cli: false, copilot_cli: false }, // A / F / F
-  test_generation:        { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: false }, // A / C(61%) / F
-  persona_execution:      { claude_code: true,  codex_cli: false, gemini_cli: false, copilot_cli: true  }, // A / F(12%) / A
-  template_adopt:         { claude_code: true,  codex_cli: false, gemini_cli: false, copilot_cli: false }, // A / F / F
-  query_debug:            { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: true  }, // A / A / A
+  //                                claude    codex
+  design_analysis:        { claude_code: true,  codex_cli: false },
+  credential_design:      { claude_code: true,  codex_cli: false },
+  credential_healthcheck: { claude_code: true,  codex_cli: false },
+  n8n_transform:          { claude_code: true,  codex_cli: false },
+  test_generation:        { claude_code: true,  codex_cli: false },
+  persona_execution:      { claude_code: true,  codex_cli: false },
+  template_adopt:         { claude_code: true,  codex_cli: false },
+  query_debug:            { claude_code: true,  codex_cli: false },
 
-  // Round 8 tested (generic tasks -- all providers passed)
-  healing_analysis:       { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: true  },
-  recipe_execution:       { claude_code: true,  codex_cli: false, gemini_cli: true,  copilot_cli: true  },
+  // Round 8 tested (generic tasks)
+  healing_analysis:       { claude_code: true,  codex_cli: false },
+  recipe_execution:       { claude_code: true,  codex_cli: false },
 };
 
 /** Settings key for the persisted capability map */

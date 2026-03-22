@@ -38,9 +38,9 @@ export const cs = {
         label: "Cloud",
         description: "Nasaďte agenty na cloudovou infrastrukturu a GitLab CI"
       },
-      'dev-tools': {
-        label: "Vývojářské nástroje",
-        description: "Správa projektů, skenování kódu, generování nápadů, třídění a provádění úkolů"
+      plugins: {
+        label: "Plugins",
+        description: "Rozšiřte svůj pracovní prostor pomocí pluginů a integrací"
       },
       settings: {
         label: "Nastavení",

@@ -210,7 +210,8 @@ pub fn update_status(
             cost_usd = COALESCE(?9, cost_usd),
             started_at = COALESCE(?10, started_at),
             completed_at = COALESCE(?11, completed_at),
-            tool_steps = COALESCE(?13, tool_steps)
+            tool_steps = COALESCE(?13, tool_steps),
+            claude_session_id = COALESCE(?14, claude_session_id)
          WHERE id = ?12",
         params![
             status_str,
@@ -226,6 +227,7 @@ pub fn update_status(
             completed_at,
             id,
             input.tool_steps,
+            input.claude_session_id,
         ],
     )?;
 

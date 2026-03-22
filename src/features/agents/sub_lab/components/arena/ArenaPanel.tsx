@@ -8,11 +8,12 @@ import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { ANTHROPIC_MODELS, ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
+import { useHealthCheck, HealthCheckPanel } from '@/features/agents/health';
 
 export function ArenaPanel() {
   const arenaRuns = useAgentStore((s) => s.arenaRuns);
   const arenaResultsMap = useAgentStore((s) => s.arenaResultsMap);
-  const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const isLabRunning = useAgentStore((s) => s.isArenaRunning);
   const startArena = useAgentStore((s) => s.startArena);
   const cancelArena = useAgentStore((s) => s.cancelArena);
   const fetchArenaRuns = useAgentStore((s) => s.fetchArenaRuns);
@@ -54,11 +55,15 @@ export function ArenaPanel() {
 
   const handleDelete = async (runId: string) => { await deleteArenaRun(runId); if (expandedRunId === runId) setExpandedRunId(null); };
 
+  const healthCheck = useHealthCheck();
+
   const hasTools = (selectedPersona?.tools?.length ?? 0) > 0;
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
 
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Left: Arena setup */}
       <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
         <div className="p-4 space-y-3">
           {(!hasPrompt || !hasTools) && (
@@ -130,6 +135,12 @@ export function ArenaPanel() {
 
           <LabProgress />
         </div>
+      </div>
+
+      {/* Right: Health Check */}
+      <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40 p-4">
+        <HealthCheckPanel healthCheck={healthCheck} />
+      </div>
       </div>
 
       <ArenaHistory runs={arenaRuns} resultsMap={arenaResultsMap} expandedRunId={expandedRunId} onToggleExpand={setExpandedRunId} onDelete={(id) => void handleDelete(id)} />

@@ -6,7 +6,6 @@ import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
 import { getVersion } from '@tauri-apps/api/app';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
-import { useAuthStore } from '@/stores/authStore';
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { SidebarSection } from '@/lib/types/types';
 import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
@@ -72,22 +71,12 @@ export default function Sidebar() {
     }
   }, [sidebarSection]);
 
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const disabledSections = useMemo(() => {
-    const disabled = new Set<SidebarSection>();
-    if (!isAuthenticated) disabled.add('cloud');
-    return disabled;
-  }, [isAuthenticated]);
+    return new Set<SidebarSection>();
+  }, []);
 
   const tier = useTier();
 
-  // Redirect away from dev-only sections/tabs when not in dev mode
-  useEffect(() => {
-    if (isDev) return;
-    if (sidebarSection === 'team' || sidebarSection === 'cloud') {
-      setSidebarSection('home');
-    }
-  }, [isDev, sidebarSection, setSidebarSection]);
 
   // Redirect away from sections the current tier doesn't include
   useEffect(() => {

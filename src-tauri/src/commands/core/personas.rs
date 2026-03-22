@@ -87,7 +87,7 @@ pub fn get_persona_detail(
 ) -> Result<PersonaDetail, AppError> {
     require_auth_sync(&state)?;
     let persona = repo::get_by_id(&state.db, &id)?;
-    let tools = tool_repo::get_all_definitions(&state.db).unwrap_or_default();
+    let tools = tool_repo::get_tools_for_persona(&state.db, &id).unwrap_or_default();
     let triggers = trigger_repo::get_by_persona_id(&state.db, &id).unwrap_or_default();
     let subscriptions = event_repo::get_subscriptions_by_persona(&state.db, &id).unwrap_or_default();
     let automations = automation_repo::get_by_persona(&state.db, &id).unwrap_or_default();

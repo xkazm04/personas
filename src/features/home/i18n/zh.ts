@@ -38,9 +38,9 @@ export const zh = {
         label: "云端",
         description: "将代理部署到云基础设施和 GitLab CI"
       },
-      'dev-tools': {
-        label: "开发工具",
-        description: "项目管理、代码库扫描、创意生成、分类和任务执行"
+      plugins: {
+        label: "Plugins",
+        description: "使用插件和集成扩展您的工作区"
       },
       settings: {
         label: "设置",

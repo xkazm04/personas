@@ -5,7 +5,6 @@ import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
 } from '../OllamaCloudPresets';
-import { COPILOT_PRESETS } from '../CopilotPresets';
 
 // -- Model options --
 
@@ -31,14 +30,6 @@ export const ALL_COMPARE_MODELS: ModelOption[] = [
     base_url: OLLAMA_CLOUD_BASE_URL,
     group: 'Ollama',
     cost: 'Free',
-  })),
-  ...COPILOT_PRESETS.map((p) => ({
-    id: p.value,
-    label: p.label.split(' (')[0] ?? p.label,
-    provider: 'copilot',
-    model: p.modelId,
-    group: 'Copilot',
-    cost: p.value === 'copilot:gpt-5-mini' ? 'Free' : '~$3/1K',
   })),
 ];
 

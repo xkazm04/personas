@@ -30,17 +30,9 @@ export const en = {
         label: "Templates",
         description: "Import n8n workflows, browse the template gallery, and generate agent blueprints"
       },
-      team: {
-        label: "Teams",
-        description: "Build multi-agent team pipelines with drag-and-drop orchestration and routing"
-      },
-      cloud: {
-        label: "Cloud",
-        description: "Deploy agents to cloud infrastructure, manage schedules, and integrate GitLab CI"
-      },
-      'dev-tools': {
-        label: "Dev Tools",
-        description: "Project management, codebase scanning, idea generation, triage, and task execution"
+      plugins: {
+        label: "Plugins",
+        description: "Extend your workspace with plugins, dev tools, and integrations"
       },
       settings: {
         label: "Settings",

@@ -16,6 +16,9 @@ import type { ModelTestConfig } from "@/api/agents/tests";
 import * as api from "@/api/agents/lab";
 import { createRunLifecycle } from "./runLifecycle";
 
+const arenaLifecycle = createRunLifecycle('isArenaRunning', 'arenaProgress');
+const matrixLifecycle = createRunLifecycle('isMatrixRunning', 'matrixProgress');
+// Legacy alias — panels that still check isLabRunning will see true if ANY mode is running
 const labLifecycle = createRunLifecycle('isLabRunning', 'labProgress');
 
 const RUN_HISTORY_LIMIT = 20;
@@ -67,7 +70,9 @@ function createLabCrud<TRun extends { id: string }, TResult>(
   label: string,
   calls: LabCrudApi<TRun, TResult>,
   set: StoreSetter,
+  lifecycle?: ReturnType<typeof createRunLifecycle>,
 ): LabCrudActions<TRun> {
+  const lc = lifecycle ?? labLifecycle;
   return {
     fetchRuns: async (personaId) => {
       try {
@@ -123,12 +128,12 @@ function createLabCrud<TRun extends { id: string }, TResult>(
       }
     },
     wrapStart: async (fn, ...args) => {
-      labLifecycle.markStarted(set);
+      lc.markStarted(set);
       try {
         const run = await fn(...args);
         return run.id;
       } catch (err) {
-        labLifecycle.markFailed(set);
+        lc.markFailed(set);
         reportError(err, `Failed to start ${label} test`, set);
         return null;
       }
@@ -148,7 +153,12 @@ export interface LabSlice {
   abPreselectedB: string | null;
   setAbPreselect: (a: string | null, b: string | null) => void;
 
-  // Shared running state
+  // Per-mode running state (allows concurrent runs)
+  isArenaRunning: boolean;
+  arenaProgress: LabRunProgress | null;
+  isMatrixRunning: boolean;
+  matrixProgress: LabRunProgress | null;
+  // Legacy shared state (true if ANY mode is running)
   isLabRunning: boolean;
   labProgress: LabRunProgress | null;
   setLabProgress: (p: LabRunProgress | null) => void;
@@ -212,10 +222,10 @@ export interface LabSlice {
 
 export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, get) => {
   // Instantiate CRUD factories -- one line per mode
-  const arena  = createLabCrud<LabArenaRun, LabArenaResult>('arenaRuns', 'arenaResultsMap', 'arena', { list: api.labListArenaRuns, results: api.labGetArenaResults, remove: api.labDeleteArenaRun, cancel: api.labCancelArena }, set);
-  const ab     = createLabCrud<LabAbRun, LabAbResult>('abRuns', 'abResultsMap', 'A/B', { list: api.labListAbRuns, results: api.labGetAbResults, remove: api.labDeleteAbRun, cancel: api.labCancelAb }, set);
-  const matrix = createLabCrud<LabMatrixRun, LabMatrixResult>('matrixRuns', 'matrixResultsMap', 'matrix', { list: api.labListMatrixRuns, results: api.labGetMatrixResults, remove: api.labDeleteMatrixRun, cancel: api.labCancelMatrix }, set);
-  const eval_  = createLabCrud<LabEvalRun, LabEvalResult>('evalRuns', 'evalResultsMap', 'eval', { list: api.labListEvalRuns, results: api.labGetEvalResults, remove: api.labDeleteEvalRun, cancel: api.labCancelEval }, set);
+  const arena  = createLabCrud<LabArenaRun, LabArenaResult>('arenaRuns', 'arenaResultsMap', 'arena', { list: api.labListArenaRuns, results: api.labGetArenaResults, remove: api.labDeleteArenaRun, cancel: api.labCancelArena }, set, arenaLifecycle);
+  const ab     = createLabCrud<LabAbRun, LabAbResult>('abRuns', 'abResultsMap', 'A/B', { list: api.labListAbRuns, results: api.labGetAbResults, remove: api.labDeleteAbRun, cancel: api.labCancelAb }, set, matrixLifecycle);
+  const matrix = createLabCrud<LabMatrixRun, LabMatrixResult>('matrixRuns', 'matrixResultsMap', 'matrix', { list: api.labListMatrixRuns, results: api.labGetMatrixResults, remove: api.labDeleteMatrixRun, cancel: api.labCancelMatrix }, set, matrixLifecycle);
+  const eval_  = createLabCrud<LabEvalRun, LabEvalResult>('evalRuns', 'evalResultsMap', 'eval', { list: api.labListEvalRuns, results: api.labGetEvalResults, remove: api.labDeleteEvalRun, cancel: api.labCancelEval }, set, matrixLifecycle);
 
   return {
     // Mode
@@ -227,11 +237,19 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
     abPreselectedB: null,
     setAbPreselect: (a, b) => set({ abPreselectedA: a, abPreselectedB: b }),
 
-    // Shared
+    // Per-mode running state
+    isArenaRunning: false,
+    arenaProgress: null,
+    isMatrixRunning: false,
+    matrixProgress: null,
+    // Legacy shared
     isLabRunning: false,
     labProgress: null,
     setLabProgress: (p) => set({ labProgress: p }),
     finishLabRun: (mode) => {
+      // Finish the mode-specific lifecycle
+      if (mode === 'arena') arenaLifecycle.markFinished(set);
+      else if (mode === 'matrix' || mode === 'ab' || mode === 'eval') matrixLifecycle.markFinished(set);
       labLifecycle.markFinished(set);
       const personaId = get().selectedPersona?.id;
       if (!personaId) return;

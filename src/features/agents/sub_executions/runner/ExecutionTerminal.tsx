@@ -4,6 +4,7 @@ import { TerminalSearchBar, useTerminalFilter } from '@/features/shared/componen
 import { TerminalBody } from '@/features/shared/components/terminal/TerminalBody';
 import type { TerminalEmptyState } from '@/features/shared/components/terminal/TerminalBody';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import type { StaleLevel } from '@/hooks/execution/useActivityMonitor';
 
 interface ExecutionTerminalProps {
   lines: string[];
@@ -23,6 +24,8 @@ interface ExecutionTerminalProps {
   children?: ReactNode;
   /** Context-aware empty state for the terminal body. */
   emptyState?: TerminalEmptyState;
+  /** Activity level from heartbeat monitoring. */
+  staleLevel?: StaleLevel;
 }
 
 export function ExecutionTerminal({
@@ -36,6 +39,7 @@ export function ExecutionTerminal({
   onResizeStart,
   children,
   emptyState,
+  staleLevel,
 }: ExecutionTerminalProps) {
   const { copied, copy: copyToClipboard } = useCopyToClipboard();
   const { filter, setFilter, isLineVisible, isFiltering } = useTerminalFilter();
@@ -63,6 +67,22 @@ export function ExecutionTerminal({
 
       {/* Slot: phase strip or other between-header-and-body content */}
       {children}
+
+      {/* Activity indicator for silent executions */}
+      {isRunning && staleLevel && staleLevel !== 'active' && (
+        <div className={`flex items-center gap-2 px-3 py-1.5 text-xs border-b ${
+          staleLevel === 'stuck'
+            ? 'bg-amber-500/8 border-amber-500/15 text-amber-400/80'
+            : 'bg-muted/30 border-border/20 text-muted-foreground/50'
+        }`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${
+            staleLevel === 'stuck' ? 'bg-amber-400 animate-pulse' : 'bg-muted-foreground/40 animate-pulse'
+          }`} />
+          {staleLevel === 'stuck'
+            ? 'Taking longer than expected — the agent may need more time to respond'
+            : 'Processing\u2026'}
+        </div>
+      )}
 
       <TerminalBody
         lines={lines}

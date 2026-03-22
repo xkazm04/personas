@@ -5,12 +5,12 @@ import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from '../libs/editorTabConstants';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
-const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText }> = [
+const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText; devOnly?: boolean }> = [
   { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'matrix', label: 'Matrix', icon: Grid3X3 },
   { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
   { id: 'prompt', label: 'Prompt', icon: FileText },
-  { id: 'lab', label: 'Lab', icon: FlaskConical },
+  { id: 'lab', label: 'Lab', icon: FlaskConical, devOnly: true },
   { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'design', label: 'Design', icon: Wand2 },
@@ -60,7 +60,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
   return (
     <div className="border-b border-primary/10 bg-primary/5">
       <div className={`flex overflow-x-auto ${IS_MOBILE ? 'px-1 gap-0' : 'px-6 gap-1'} scrollbar-none`}>
-        {tabDefs.map((tab) => {
+        {tabDefs.filter((t) => !t.devOnly || import.meta.env.DEV).map((tab) => {
           const Icon = tab.icon;
           const isActive = editorTab === tab.id;
           const tabDirty = isTabDirty(tab.id, dirtyTabs);

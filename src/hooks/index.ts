@@ -36,6 +36,9 @@ export * from "./design/template/useAiArtifactFlow";
 // Execution hooks
 export * from "./execution/usePersonaExecution";
 export * from "./execution/useCorrelatedCliStream";
+export * from "./execution/useActivityMonitor";
+export * from "./execution/useFileChanges";
+export { useStructuredStream, type StreamHandlers } from "./execution/useStructuredStream";
 
 // Realtime hooks
 export * from "./realtime/useRealtimeEvents";

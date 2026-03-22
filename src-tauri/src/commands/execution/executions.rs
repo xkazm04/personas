@@ -257,6 +257,52 @@ pub fn get_execution_log(
     }
 }
 
+/// Get parsed display lines from the execution log for session recovery (replay after refresh).
+#[tauri::command]
+pub fn get_execution_log_lines(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    caller_persona_id: String,
+) -> Result<Vec<String>, AppError> {
+    require_auth_sync(&state)?;
+    let execution = repo::get_by_id(&state.db, &id)?;
+    verify_execution_owner(&execution, &caller_persona_id)?;
+    if let Some(ref path) = execution.log_file_path {
+        let log_root = state
+            .engine
+            .log_dir()
+            .canonicalize()
+            .unwrap_or_else(|_| state.engine.log_dir().to_path_buf());
+        let requested = std::path::Path::new(path)
+            .canonicalize()
+            .map_err(|_| AppError::NotFound(format!("Log file not found: {id}")))?;
+        if !requested.starts_with(&log_root) {
+            return Err(AppError::Validation(
+                "Log file path is outside the allowed log directory".into(),
+            ));
+        }
+        match std::fs::read_to_string(&requested) {
+            Ok(content) => {
+                let lines: Vec<String> = content
+                    .lines()
+                    .filter_map(|line| {
+                        // Extract display text from log lines with [STDOUT] prefix
+                        if let Some(pos) = line.find("[STDOUT] ") {
+                            Some(line[pos + 9..].to_string())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                Ok(lines)
+            }
+            Err(_) => Ok(vec![]),
+        }
+    } else {
+        Ok(vec![])
+    }
+}
+
 /// Get the structured execution trace for a specific execution.
 #[tauri::command]
 pub fn get_execution_trace(

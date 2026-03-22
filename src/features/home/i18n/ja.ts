@@ -38,9 +38,9 @@ export const ja = {
         label: "クラウド",
         description: "クラウドインフラとGitLab CIへのエージェントデプロイ"
       },
-      'dev-tools': {
-        label: "開発ツール",
-        description: "プロジェクト管理、コードベーススキャン、アイデア生成、トリアージ、タスク実行"
+      plugins: {
+        label: "Plugins",
+        description: "プラグインとインテグレーションでワークスペースを拡張"
       },
       settings: {
         label: "設定",

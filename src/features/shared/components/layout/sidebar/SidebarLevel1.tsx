@@ -71,8 +71,8 @@ export default function SidebarLevel1({
               data-testid={`sidebar-${section.id}`}
               onClick={() => {
                 if (isDisabled) return;
-                // Clear context scan complete indicator when navigating to dev-tools
-                if (section.id === 'dev-tools' && contextScanComplete) {
+                // Clear context scan complete indicator when navigating to plugins
+                if (section.id === 'plugins' && contextScanComplete) {
                   setContextScanComplete(false);
                 }
                 if (IS_MOBILE) {
@@ -85,7 +85,7 @@ export default function SidebarLevel1({
               className={`relative ${collapsed ? 'w-[40px]' : 'w-[76px]'} rounded-xl flex flex-col items-center justify-center py-2 transition-all group ${
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
               } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''} ${isDevModeSection ? 'ring-1 ring-amber-500/30' : ''}`}
-              title={isDisabled ? `${section.label} (${section.id === 'cloud' ? 'Sign in to unlock cloud features' : 'Coming soon'})` : section.label}
+              title={isDisabled ? `${section.label} (Coming soon)` : section.label}
             >
               {isActive && !isDisabled && (
                 <motion.div
@@ -111,7 +111,7 @@ export default function SidebarLevel1({
                   {section.label}
                 </span>
               )}
-              {isDisabled && section.id !== 'cloud' && (
+              {isDisabled && (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px typo-label leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
                   soon
                 </span>
@@ -133,14 +133,14 @@ export default function SidebarLevel1({
                   <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-500 border border-cyan-600/50" />
                 </span>
               )}
-              {/* Dev tools: pulsing amber while scanning, green when complete (click to dismiss) */}
-              {section.id === 'dev-tools' && contextScanActive && (
+              {/* Plugins: pulsing amber while scanning, green when complete (click to dismiss) */}
+              {section.id === 'plugins' && contextScanActive && (
                 <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
                   <span className="absolute inset-0 rounded-full bg-amber-500/40 animate-ping" />
                   <span className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600/50" />
                 </span>
               )}
-              {section.id === 'dev-tools' && !contextScanActive && contextScanComplete && (
+              {section.id === 'plugins' && !contextScanActive && contextScanComplete && (
                 <span
                   className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center cursor-pointer"
                   onClick={(e) => { e.stopPropagation(); setContextScanComplete(false); }}

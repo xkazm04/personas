@@ -15,7 +15,7 @@ import type { SidebarSection } from "@/lib/types/types";
 
 const VALID_SECTIONS: SidebarSection[] = [
   "home", "overview", "personas", "events", "credentials",
-  "design-reviews", "team", "cloud", "settings", "dev-tools",
+  "design-reviews", "plugins", "settings",
 ];
 
 interface TestBridge {

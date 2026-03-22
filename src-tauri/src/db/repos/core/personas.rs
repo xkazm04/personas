@@ -518,7 +518,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
     let project_id = input.project_id.unwrap_or_else(|| "default".into());
     let enabled = input.enabled.unwrap_or(true) as i32;
     let sensitive = 0i32;
-    let max_concurrent = input.max_concurrent.unwrap_or(1);
+    let max_concurrent = input.max_concurrent.unwrap_or(4);
     let timeout_ms = input.timeout_ms.unwrap_or(300_000);
 
     if let Some(ref channels_json) = input.notification_channels {

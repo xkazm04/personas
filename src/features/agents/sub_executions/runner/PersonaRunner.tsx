@@ -11,6 +11,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ExecutionTerminal } from '@/features/agents/sub_executions/runner/ExecutionTerminal';
 import type { TerminalEmptyState } from '@/features/shared/components/terminal/TerminalBody';
 import { listExecutions } from "@/api/agents/executions";
+import { useActivityMonitor } from '@/hooks/execution/useActivityMonitor';
+import { useFileChanges } from '@/hooks/execution/useFileChanges';
+import { FileChangesPanel } from './FileChangesPanel';
 
 import type { HealingEventPayload } from '../runnerTypes';
 import { HealingCard } from '../detail/HealingCard';
@@ -54,6 +57,8 @@ export function PersonaRunner() {
 
   const { phases, showPhases, setShowPhases } = usePhaseTracker(outputLines, elapsedMs, isExecuting, personaId);
   const { terminalHeight, isTerminalFullscreen, handleTerminalResizeStart, toggleTerminalFullscreen } = useTerminalResize();
+  const { staleLevel } = useActivityMonitor(activeExecutionId, isExecuting && isThisPersonasExecution);
+  const { changes, editedCount, createdCount, readCount } = useFileChanges(activeExecutionId);
 
   const executionSummary = useMemo(() => {
     for (let i = outputLines.length - 1; i >= 0; i--) {
@@ -184,7 +189,14 @@ export function PersonaRunner() {
             label={activeExecutionId ? `exec:${activeExecutionId.slice(0, 8)}` : undefined}
             isFullscreen={isTerminalFullscreen} onToggleFullscreen={toggleTerminalFullscreen}
             terminalHeight={terminalHeight} onResizeStart={handleTerminalResizeStart} emptyState={terminalEmptyState}
+            staleLevel={staleLevel}
           >
+            <FileChangesPanel
+              changes={changes}
+              editedCount={editedCount}
+              createdCount={createdCount}
+              readCount={readCount}
+            />
             {queuePosition != null && isThisPersonasExecution && (
               <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-amber-500/5">
                 <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
