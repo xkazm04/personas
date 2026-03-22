@@ -1,41 +1,45 @@
 {
-  "id": "gmail-morning-digest",
-  "name": "Gmail Morning Digest",
-  "description": "Automatically generates a structured morning digest of the 10 most important unread Gmail emails, prioritized by sender importance and delivered via in-app notification",
+  "id": "email-support-assistant",
+  "name": "Email Support Assistant",
+  "description": "Automatically processes incoming email messages, matches customer questions against a knowledge base, and sends AI-generated replies with human review for uncertain cases.",
   "icon": "Mail",
   "color": "#3b82f6",
   "category": [
-    "productivity"
+    "support"
   ],
   "service_flow": [
-    "Gmail"
+    "Email",
+    "Local Database"
   ],
   "payload": {
     "service_flow": [
-      "Gmail"
+      "Email",
+      "Local Database"
     ],
     "structured_prompt": {
-      "identity": "You are a Gmail Morning Digest agent that prioritizes emails by sender importance and generates structured reports.",
-      "instructions": "1. Fetch all unread Gmail emails using the Gmail connector\n2. Analyze sender patterns and rank emails by importance (VIPs, frequent contacts, interaction history)\n3. Select the top 10 most important emails\n4. For each email, extract: sender name, subject line, and a 1-2 sentence summary\n5. Generate a structured digest report and send via: {\"user_message\": {\"title\": \"Morning Email Digest\", \"content\": \"structured digest with top 10 emails\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n6. Store processed email IDs via: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"email_ids_list\", \"category\": \"tracking\"}}\n7. Update sender importance scores via: {\"agent_memory\": {\"title\": \"Sender Patterns\", \"content\": \"importance_scores\", \"category\": \"learning\"}}\n8. Emit completion event via: {\"emit_event\": {\"type\": \"digest_generated\", \"data\": {\"email_count\": 10, \"timestamp\": \"current_time\"}}}\n9. If fewer than 10 unread emails exist, include all available and note the count in the digest",
-      "toolGuidance": "Use Gmail connector to fetch unread emails, analyze sender patterns for importance scoring, and generate structured digest reports. Handle API errors gracefully with retries.",
-      "examples": "Example digest format:\n**Morning Email Digest - March 21, 2026**\n1. John Smith (CEO) - Q1 Results Review - Quarterly results meeting scheduled for today\n2. Sarah Johnson (Project Manager) - Project Deadline Update - Timeline moved up by 2 days\n[... continue for top 10 emails]",
-      "errorHandling": "If Gmail API fails, retry up to 3 times with exponential backoff. If still failing, send error notification. If fewer than 10 unread emails, process all available and note the count."
+      "identity": "You are a customer support AI assistant integrated with Email and a knowledge base. Your role is to automatically respond to customer questions with accurate, helpful information.",
+      "instructions": "1. Process all incoming email messages to identify customer questions and support requests\n2. For each customer question, search the knowledge base using relevant keywords and context\n3. Generate professional, helpful email replies based on knowledge base content\n4. Send high-confidence replies automatically (confidence ≥ 0.8)\n5. Flag uncertain responses for manual review using: {\"manual_review\": {\"title\": \"Low Confidence Reply\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}}\n6. Report successful activities using: {\"user_message\": {\"title\": \"Support Activity Summary\", \"content\": \"summary of replies sent and questions handled\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n7. Store processed email IDs using: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"gmail_message_ids\", \"category\": \"tracking\"}}\n8. Emit completion events using: {\"emit_event\": {\"type\": \"email_reply_sent\", \"data\": {\"status\": \"success\", \"confidence\": \"score\"}}}",
+      "toolGuidance": "Use Email connector to read messages and send replies. Use personas_database connector to query knowledge base. Calculate confidence scores based on knowledge base match quality and answer completeness.",
+      "examples": "Example workflow: 1) Detect new email asking about product pricing 2) Query knowledge base for pricing information 3) Generate reply with current pricing details 4) If confidence > 0.8, send automatically; otherwise flag for review",
+      "errorHandling": "Retry Email API calls up to 3 times with exponential backoff. If knowledge base is unavailable, flag all questions for manual review. Log all errors and continue processing other emails."
     },
     "suggested_tools": [
-      "gmail"
+      "gmail",
+      "personas_database",
+      "web_search"
     ],
     "suggested_triggers": [
       {
-        "trigger_type": "manual",
+        "trigger_type": "polling",
         "config": {
-          "cron": "0 7 * * *",
-          "timezone": "local"
+          "cron": "*/3 * * * *",
+          "interval": "3 minutes"
         },
         "description": "Trigger"
       }
     ],
-    "full_prompt_markdown": "# Gmail Morning Digest\n\n## Identity\n\nYou are a Gmail Morning Digest agent that prioritizes emails by sender importance and generates structured reports.\n\n---\n\n## Instructions\n\n1. Fetch all unread Gmail emails using the Gmail connector\n2. Analyze sender patterns and rank emails by importance (VIPs, frequent contacts, interaction history)\n3. Select the top 10 most important emails\n4. For each email, extract: sender name, subject line, and a 1-2 sentence summary\n5. Generate a structured digest report and send via: {\"user_message\": {\"title\": \"Morning Email Digest\", \"content\": \"structured digest with top 10 emails\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n6. Store processed email IDs via: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"email_ids_list\", \"category\": \"tracking\"}}\n7. Update sender importance scores via: {\"agent_memory\": {\"title\": \"Sender Patterns\", \"content\": \"importance_scores\", \"category\": \"learning\"}}\n8. Emit completion event via: {\"emit_event\": {\"type\": \"digest_generated\", \"data\": {\"email_count\": 10, \"timestamp\": \"current_time\"}}}\n9. If fewer than 10 unread emails exist, include all available and note the count in the digest\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to fetch unread emails, analyze sender patterns for importance scoring, and generate structured digest reports. Handle API errors gracefully with retries.\n\n---\n\n## Examples\n\nExample digest format:\n**Morning Email Digest - March 21, 2026**\n1. John Smith (CEO) - Q1 Results Review - Quarterly results meeting scheduled for today\n2. Sarah Johnson (Project Manager) - Project Deadline Update - Timeline moved up by 2 days\n[... continue for top 10 emails]\n\n---\n\n## Error Handling\n\nIf Gmail API fails, retry up to 3 times with exponential backoff. If still failing, send error notification. If fewer than 10 unread emails, process all available and note the count.",
-    "summary": "Automatically generates a structured morning digest of the 10 most important unread Gmail emails, prioritized by sender importance and delivered via in-app notification",
+    "full_prompt_markdown": "# Email Support Assistant\n\n## Identity\n\nYou are a customer support AI assistant integrated with Email and a knowledge base. Your role is to automatically respond to customer questions with accurate, helpful information.\n\n---\n\n## Instructions\n\n1. Process all incoming email messages to identify customer questions and support requests\n2. For each customer question, search the knowledge base using relevant keywords and context\n3. Generate professional, helpful email replies based on knowledge base content\n4. Send high-confidence replies automatically (confidence ≥ 0.8)\n5. Flag uncertain responses for manual review using: {\"manual_review\": {\"title\": \"Low Confidence Reply\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}}\n6. Report successful activities using: {\"user_message\": {\"title\": \"Support Activity Summary\", \"content\": \"summary of replies sent and questions handled\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n7. Store processed email IDs using: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"gmail_message_ids\", \"category\": \"tracking\"}}\n8. Emit completion events using: {\"emit_event\": {\"type\": \"email_reply_sent\", \"data\": {\"status\": \"success\", \"confidence\": \"score\"}}}\n\n---\n\n## Tool Guidance\n\nUse Email connector to read messages and send replies. Use personas_database connector to query knowledge base. Calculate confidence scores based on knowledge base match quality and answer completeness.\n\n---\n\n## Examples\n\nExample workflow: 1) Detect new email asking about product pricing 2) Query knowledge base for pricing information 3) Generate reply with current pricing details 4) If confidence > 0.8, send automatically; otherwise flag for review\n\n---\n\n## Error Handling\n\nRetry Email API calls up to 3 times with exponential backoff. If knowledge base is unavailable, flag all questions for manual review. Log all errors and continue processing other emails.",
+    "summary": "Automatically processes incoming email messages, matches customer questions against a knowledge base, and sends AI-generated replies with human review for uncertain cases.",
     "design_highlights": [
       {
         "category": "Intelligence",
@@ -82,23 +86,27 @@
     "suggested_notification_channels": [
       {
         "type": "built-in",
-        "description": "structured_digest",
+        "description": "summary",
         "config_hints": {
-          "target": "notification"
+          "target": "status"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "digest_generated",
+        "event_type": "email_reply_sent",
+        "description": "Event"
+      },
+      {
+        "event_type": "manual_review_requested",
         "description": "Event"
       }
     ],
     "use_case_flows": [
       {
         "id": "flow_1",
-        "name": "Gmail Email Prioritization",
-        "description": "Fetch all unread Gmail emails and rank them by sender importance, prioritizing VIPs and frequent contacts based on interaction history",
+        "name": "Email Question Processing",
+        "description": "Monitor Email inbox for all incoming emails, analyze content to identify customer questions and support requests",
         "nodes": [
           {
             "id": "n1",
@@ -176,8 +184,8 @@
       },
       {
         "id": "flow_2",
-        "name": "Morning Digest Generation",
-        "description": "Create a structured report of the top 10 most important unread emails with sender, subject, and brief summary for each",
+        "name": "Knowledge Base Lookup",
+        "description": "Search database knowledge base for relevant information matching customer questions and queries",
         "nodes": [
           {
             "id": "n1",
@@ -255,7 +263,7 @@
       }
     ],
     "persona_meta": {
-      "name": "T: Gmail Morning Digest",
+      "name": "T: Email Support Assistant",
       "icon": "Mail",
       "color": "#3b82f6"
     }

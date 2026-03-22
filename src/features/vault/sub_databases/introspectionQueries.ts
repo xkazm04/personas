@@ -1,4 +1,4 @@
-export type ConnectorFamily = 'postgres' | 'mysql' | 'redis' | 'convex' | 'sqlite' | 'unsupported';
+export type ConnectorFamily = 'postgres' | 'mysql' | 'redis' | 'convex' | 'sqlite' | 'notion' | 'airtable' | 'unsupported';
 
 export function getConnectorFamily(serviceType: string): ConnectorFamily {
   switch (serviceType) {
@@ -14,9 +14,18 @@ export function getConnectorFamily(serviceType: string): ConnectorFamily {
       return 'convex';
     case 'personas_database':
       return 'sqlite';
+    case 'notion':
+      return 'notion';
+    case 'airtable':
+      return 'airtable';
     default:
       return 'unsupported';
   }
+}
+
+/** Whether this family uses API-based introspection (no SQL queries). */
+export function isApiFamily(family: ConnectorFamily): boolean {
+  return family === 'notion' || family === 'airtable';
 }
 
 export function getListTablesQuery(serviceType: string): string | null {

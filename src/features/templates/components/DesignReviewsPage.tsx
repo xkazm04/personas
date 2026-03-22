@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { FlaskConical, Users } from 'lucide-react';
+import { FlaskConical } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useDesignReviews } from '@/hooks/design/template/useDesignReviews';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { GeneratedReviewsTab, TeamSynthesisPanel } from '@/features/templates/sub_generated';
+import { GeneratedReviewsTab } from '@/features/templates/sub_generated';
 import N8nImportTab from '@/features/templates/sub_n8n/steps/N8nImportTab';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import ActivityDiagramModal from '@/features/templates/sub_diagrams/ActivityDiagramModal';
@@ -26,7 +26,6 @@ export default function DesignReviewsPage() {
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const activeTab = useSystemStore((s) => s.templateTab);
-  const [showSynthesis, setShowSynthesis] = useState(false);
   const [diagramReview, setDiagramReview] = useState<PersonaDesignReview | null>(null);
   const galleryTotal = useSystemStore((s) => s.templateGalleryTotal);
   const setGalleryTotal = useSystemStore((s) => s.setTemplateGalleryTotal);
@@ -41,15 +40,6 @@ export default function DesignReviewsPage() {
           const count = activeTab === 'generated' && galleryTotal > 0 ? galleryTotal : reviews.length;
           return `${count} template${count !== 1 ? 's' : ''} available`;
         })()}
-        actions={
-          <button
-            onClick={() => setShowSynthesis(true)}
-            className="px-4 py-2 text-sm rounded-xl bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors flex items-center gap-2"
-          >
-            <Users className="w-3.5 h-3.5" />
-            Synthesize Team
-          </button>
-        }
       />
 
       {/* Error */}
@@ -86,15 +76,6 @@ export default function DesignReviewsPage() {
           flows={parseJsonSafe<UseCaseFlow[]>(diagramReview.use_case_flows, [])}
         />
       )}
-
-      {/* Team Synthesis panel */}
-      <TeamSynthesisPanel
-        isOpen={showSynthesis}
-        onClose={() => setShowSynthesis(false)}
-        onTeamCreated={() => {
-          refresh();
-        }}
-      />
 
     </ContentBox>
   );

@@ -60,4 +60,9 @@ export function getSeedReviews(): SeedReviewInput[] {
   return TEMPLATE_CATALOG.map((t) => templateToReviewInput(t, SEED_RUN_ID));
 }
 
+/** IDs of all templates currently in the catalog (used to prune stale seeds). */
+export function getActiveSeedIds(): string[] {
+  return TEMPLATE_CATALOG.map((t) => t.id);
+}
+
 export { SEED_RUN_ID };

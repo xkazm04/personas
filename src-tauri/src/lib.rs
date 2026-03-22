@@ -872,6 +872,7 @@ pub fn run() {
             commands::design::reviews::get_trending_templates,
             commands::design::reviews::get_design_review,
             commands::design::reviews::delete_design_review,
+            commands::design::reviews::delete_stale_seed_templates,
             commands::design::reviews::start_design_review_run,
             commands::design::reviews::import_design_review,
             commands::design::reviews::cancel_design_review_run,

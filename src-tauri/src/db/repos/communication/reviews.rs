@@ -184,6 +184,36 @@ pub fn delete_review(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     Ok(rows > 0)
 }
 
+/// Delete seed templates whose `test_case_id` is NOT in the provided list.
+///
+/// Only deletes rows whose `test_run_id` matches the seed run ID, so
+/// user-generated or AI-generated reviews are never touched.
+pub fn delete_stale_seed_templates(
+    pool: &DbPool,
+    seed_run_id: &str,
+    active_ids: &[String],
+) -> Result<usize, AppError> {
+    let conn = pool.get()?;
+    if active_ids.is_empty() {
+        // If the catalog is empty (shouldn't happen), don't mass-delete
+        return Ok(0);
+    }
+    let placeholders: Vec<String> = active_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 2)).collect();
+    let sql = format!(
+        "DELETE FROM persona_design_reviews WHERE test_run_id = ?1 AND test_case_id NOT IN ({})",
+        placeholders.join(","),
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::with_capacity(active_ids.len() + 1);
+    params_vec.push(Box::new(seed_run_id.to_string()));
+    for id in active_ids {
+        params_vec.push(Box::new(id.clone()));
+    }
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let rows = stmt.execute(param_refs.as_slice())?;
+    Ok(rows)
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn update_review_result(
     pool: &DbPool,

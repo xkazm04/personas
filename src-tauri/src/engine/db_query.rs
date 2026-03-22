@@ -186,6 +186,8 @@ pub async fn introspect_tables(
             execute_upstash(&fields, "SCAN 0 MATCH * COUNT 100").await
         }
         "convex" => introspect_convex_tables(&fields).await,
+        "notion" => introspect_notion_tables(&fields).await,
+        "airtable" => introspect_airtable_tables(&fields).await,
         other => Err(AppError::Internal(format!(
             "Table introspection is not supported for '{other}'."
         ))),
@@ -271,6 +273,8 @@ pub async fn introspect_columns(
             .await
         }
         "convex" => introspect_convex_columns(&fields, &safe_name).await,
+        "notion" => introspect_notion_columns(&fields, &safe_name).await,
+        "airtable" => introspect_airtable_columns(&fields, &safe_name).await,
         other => Err(AppError::Internal(format!(
             "Column introspection is not supported for '{other}'."
         ))),
@@ -1845,6 +1849,436 @@ pub fn introspect_local_sqlite_columns(
         user_db,
         &format!("PRAGMA table_info('{}')", safe_name),
     )
+}
+
+// ============================================================================
+// Notion -- API-based database/page introspection
+// ============================================================================
+
+/// Notion API version header required by all endpoints.
+const NOTION_VERSION: &str = "2022-06-28";
+
+/// Fetch Notion databases shared with the integration.
+///
+/// Uses `POST /v1/search` with `filter.value = "database"` to discover
+/// databases the integration token has access to. Each database maps to a
+/// "table" in our schema browser.
+async fn introspect_notion_tables(
+    fields: &HashMap<String, String>,
+) -> Result<QueryResult, AppError> {
+    let api_key = fields
+        .get("api_key")
+        .ok_or_else(|| AppError::Validation("Missing api_key field".into()))?;
+
+    let client = http_client();
+    let body = serde_json::json!({
+        "filter": { "property": "object", "value": "database" },
+        "page_size": 100
+    });
+
+    let resp = client
+        .post("https://api.notion.com/v1/search")
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Notion-Version", NOTION_VERSION)
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Notion search request failed: {e}")))?;
+
+    let status = resp.status();
+    let json: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Notion response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = json
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Notion search failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    let results = json
+        .get("results")
+        .and_then(|r| r.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let rows: Vec<Vec<Value>> = results
+        .iter()
+        .filter_map(|db| {
+            let id = db.get("id")?.as_str()?;
+            let title = notion_extract_title(db);
+            Some(vec![
+                Value::String(id.to_string()),
+                Value::String(title),
+                Value::String("DATABASE".to_string()),
+            ])
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec!["table_name".into(), "display_label".into(), "table_type".into()],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Extract a plain-text title from a Notion database object.
+fn notion_extract_title(db: &Value) -> String {
+    // title is an array of rich-text objects
+    if let Some(title_arr) = db.get("title").and_then(|t| t.as_array()) {
+        let text: String = title_arr
+            .iter()
+            .filter_map(|rt| rt.get("plain_text").and_then(|t| t.as_str()))
+            .collect();
+        if !text.is_empty() {
+            return text;
+        }
+    }
+    "Untitled".to_string()
+}
+
+/// Fetch properties (columns) for a specific Notion database.
+///
+/// Uses `GET /v1/databases/{database_id}` to retrieve the schema.
+/// Each property becomes a column with its Notion type.
+async fn introspect_notion_columns(
+    fields: &HashMap<String, String>,
+    database_id: &str,
+) -> Result<QueryResult, AppError> {
+    let api_key = fields
+        .get("api_key")
+        .ok_or_else(|| AppError::Validation("Missing api_key field".into()))?;
+
+    // Notion database IDs are UUIDs with dashes -- validate format
+    let safe_id = database_id
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
+        .collect::<String>();
+
+    let url = format!("https://api.notion.com/v1/databases/{safe_id}");
+
+    let client = http_client();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Notion-Version", NOTION_VERSION)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Notion database request failed: {e}")))?;
+
+    let status = resp.status();
+    let json: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Notion response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = json
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(AppError::Internal(format!(
+            "Notion database fetch failed (HTTP {status}): {msg}"
+        )));
+    }
+
+    let empty_map = serde_json::Map::new();
+    let properties = json
+        .get("properties")
+        .and_then(|p| p.as_object())
+        .unwrap_or(&empty_map);
+
+    let rows: Vec<Vec<Value>> = properties
+        .iter()
+        .map(|(name, prop)| {
+            let prop_type = prop
+                .get("type")
+                .and_then(|t| t.as_str())
+                .unwrap_or("unknown");
+            vec![
+                Value::String(name.clone()),
+                Value::String(prop_type.to_string()),
+                Value::String("YES".to_string()), // Notion properties are always nullable
+                Value::Null,
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec![
+            "column_name".into(),
+            "data_type".into(),
+            "is_nullable".into(),
+            "column_default".into(),
+        ],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+// ============================================================================
+// Airtable -- Meta API-based table introspection
+// ============================================================================
+
+/// Fetch Airtable tables accessible with the token.
+///
+/// Strategy:
+/// - If `base_id` field is set, fetch tables from that single base.
+/// - Otherwise, list all bases via `GET /meta/bases` then fetch tables per base.
+///
+/// Tables are returned as `base_name / table_name` for disambiguation when
+/// spanning multiple bases, or just `table_name` when scoped to a single base.
+async fn introspect_airtable_tables(
+    fields: &HashMap<String, String>,
+) -> Result<QueryResult, AppError> {
+    let api_key = fields
+        .get("api_key")
+        .ok_or_else(|| AppError::Validation("Missing api_key field".into()))?;
+
+    let client = http_client();
+
+    // Determine which bases to scan
+    let single_base = fields.get("base_id").filter(|b| !b.trim().is_empty());
+
+    let bases: Vec<(String, String)> = if let Some(base_id) = single_base {
+        // Single base -- we still need to get its name via bases list
+        vec![(base_id.trim().to_string(), String::new())]
+    } else {
+        // List all bases
+        let resp = client
+            .get("https://api.airtable.com/v0/meta/bases")
+            .header("Authorization", format!("Bearer {api_key}"))
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Airtable bases request failed: {e}")))?;
+
+        let status = resp.status();
+        let json: Value = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to parse Airtable response: {e}")))?;
+
+        if !status.is_success() {
+            let msg = airtable_error_message(&json, status);
+            return Err(AppError::Internal(msg));
+        }
+
+        json.get("bases")
+            .and_then(|b| b.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|base| {
+                        let id = base.get("id")?.as_str()?.to_string();
+                        let name = base
+                            .get("name")
+                            .and_then(|n| n.as_str())
+                            .unwrap_or("Unnamed")
+                            .to_string();
+                        Some((id, name))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+
+    let multi_base = single_base.is_none() && bases.len() > 1;
+    let mut rows: Vec<Vec<Value>> = Vec::new();
+
+    for (base_id, base_name) in &bases {
+        let url = format!(
+            "https://api.airtable.com/v0/meta/bases/{}/tables",
+            base_id
+        );
+
+        let resp = client
+            .get(&url)
+            .header("Authorization", format!("Bearer {api_key}"))
+            .send()
+            .await
+            .map_err(|e| AppError::Internal(format!("Airtable tables request failed: {e}")))?;
+
+        let status = resp.status();
+        let json: Value = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to parse Airtable response: {e}")))?;
+
+        if !status.is_success() {
+            let msg = airtable_error_message(&json, status);
+            tracing::warn!(base_id = %base_id, error = %msg, "Airtable table fetch failed for base");
+            continue;
+        }
+
+        let tables = json
+            .get("tables")
+            .and_then(|t| t.as_array())
+            .cloned()
+            .unwrap_or_default();
+
+        for table in &tables {
+            let table_id = table
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let table_name = table
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unnamed")
+                .to_string();
+
+            // Compose a unique identifier: base_id:table_id for column introspection
+            let compound_id = format!("{}:{}", base_id, table_id);
+
+            let display = if multi_base {
+                format!("{} / {}", base_name, table_name)
+            } else {
+                table_name
+            };
+
+            rows.push(vec![
+                Value::String(compound_id),
+                Value::String(display),
+                Value::String("TABLE".to_string()),
+            ]);
+        }
+    }
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec!["table_name".into(), "display_label".into(), "table_type".into()],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Fetch fields (columns) for an Airtable table.
+///
+/// `table_name` is expected to be a compound ID: `base_id:table_id`.
+async fn introspect_airtable_columns(
+    fields: &HashMap<String, String>,
+    table_name: &str,
+) -> Result<QueryResult, AppError> {
+    let api_key = fields
+        .get("api_key")
+        .ok_or_else(|| AppError::Validation("Missing api_key field".into()))?;
+
+    // Parse compound ID (base_id:table_id)
+    let (base_id, table_id) = table_name
+        .split_once(':')
+        .ok_or_else(|| {
+            AppError::Validation(format!(
+                "Invalid Airtable table reference '{table_name}'. Expected format: base_id:table_id"
+            ))
+        })?;
+
+    let url = format!(
+        "https://api.airtable.com/v0/meta/bases/{}/tables",
+        base_id
+    );
+
+    let client = http_client();
+    let resp = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Airtable tables request failed: {e}")))?;
+
+    let status = resp.status();
+    let json: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse Airtable response: {e}")))?;
+
+    if !status.is_success() {
+        let msg = airtable_error_message(&json, status);
+        return Err(AppError::Internal(msg));
+    }
+
+    // Find the matching table by ID
+    let table = json
+        .get("tables")
+        .and_then(|t| t.as_array())
+        .and_then(|arr| {
+            arr.iter().find(|t| {
+                t.get("id")
+                    .and_then(|v| v.as_str())
+                    .map(|id| id == table_id)
+                    .unwrap_or(false)
+            })
+        })
+        .ok_or_else(|| {
+            AppError::Internal(format!(
+                "Table '{table_id}' not found in base '{base_id}'"
+            ))
+        })?;
+
+    let airtable_fields = table
+        .get("fields")
+        .and_then(|f| f.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let rows: Vec<Vec<Value>> = airtable_fields
+        .iter()
+        .map(|field| {
+            let name = field
+                .get("name")
+                .and_then(|n| n.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            let field_type = field
+                .get("type")
+                .and_then(|t| t.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            vec![
+                Value::String(name),
+                Value::String(field_type),
+                Value::String("YES".to_string()),
+                Value::Null,
+            ]
+        })
+        .collect();
+
+    let row_count = rows.len();
+    Ok(QueryResult {
+        columns: vec![
+            "column_name".into(),
+            "data_type".into(),
+            "is_nullable".into(),
+            "column_default".into(),
+        ],
+        rows,
+        row_count,
+        duration_ms: 0,
+        truncated: false,
+    })
+}
+
+/// Extract a human-readable error message from an Airtable API error response.
+fn airtable_error_message(json: &Value, status: reqwest::StatusCode) -> String {
+    let msg = json
+        .get("error")
+        .and_then(|e| e.get("message").and_then(|m| m.as_str()))
+        .or_else(|| json.get("error").and_then(|e| e.get("type").and_then(|t| t.as_str())))
+        .unwrap_or("Unknown error");
+    format!("Airtable API request failed (HTTP {status}): {msg}")
 }
 
 // ============================================================================

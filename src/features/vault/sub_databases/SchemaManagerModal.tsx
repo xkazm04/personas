@@ -132,6 +132,10 @@ function getQueryLanguage(serviceType: string): string {
       return 'mongodb';
     case 'convex':
       return 'convex';
+    case 'notion':
+      return 'notion';
+    case 'airtable':
+      return 'airtable';
     default:
       return 'sql';
   }

@@ -1,14 +1,55 @@
 import { useState, useCallback } from 'react';
+import { Zap, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { useVaultStore } from "@/stores/vaultStore";
-import { getSelectAllQuery } from '../introspectionQueries';
+import { getSelectAllQuery, isApiFamily } from '../introspectionQueries';
 import { TableContextMenu, type TableContextMenuState } from './TableContextMenu';
 import { useTableIntrospection, getCachedColumns } from '@/hooks/database/useTableIntrospection';
+import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { TableListSidebar } from './TableListSidebar';
 import { TableDetailPanel } from './TableDetailPanel';
 
 interface TablesTabProps {
   credentialId: string;
   serviceType: string;
+}
+
+/** Inline test-connection widget reused in empty/unsupported states. */
+function TestConnectionButton({ credentialId }: { credentialId: string }) {
+  const { result, isHealthchecking, checkStored } = useCredentialHealth(credentialId);
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <button
+        onClick={checkStored}
+        disabled={isHealthchecking}
+        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
+      >
+        {isHealthchecking ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Zap className="w-3.5 h-3.5" />
+        )}
+        {isHealthchecking ? 'Testing...' : 'Test Connection'}
+      </button>
+
+      {result && !isHealthchecking && (
+        <div
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
+            result.success
+              ? 'bg-emerald-500/10 text-emerald-400'
+              : 'bg-red-500/10 text-red-400'
+          }`}
+        >
+          {result.success ? (
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+          ) : (
+            <XCircle className="w-3.5 h-3.5 shrink-0" />
+          )}
+          <span className="truncate max-w-xs">{result.message}</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
@@ -30,6 +71,8 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
     columnsError,
     clearCache,
   } = useTableIntrospection({ credentialId, serviceType });
+
+  const isApi = isApiFamily(family);
 
   // Selection state
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -98,13 +141,14 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
     navigator.clipboard.writeText(tableName);
   }, []);
 
-  // Unsupported connector
+  // Unsupported connector -- show test connection fallback
   if (family === 'unsupported') {
     return (
-      <div className="flex items-center justify-center h-full min-h-[300px]">
+      <div className="flex flex-col items-center justify-center gap-4 h-full min-h-[300px]">
         <p className="text-sm text-muted-foreground/50">
           Table introspection is not available for this connector type.
         </p>
+        <TestConnectionButton credentialId={credentialId} />
       </div>
     );
   }
@@ -119,6 +163,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
         loading={loading}
         error={error}
         isRedis={isRedis}
+        isApi={isApi}
         filter={filter}
         onFilterChange={setFilter}
         selectedTable={selectedTable}
@@ -128,10 +173,12 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
         onSelectKey={handleSelectKey}
         onRefresh={handleRefresh}
         onContextMenu={handleContextMenu}
+        credentialId={credentialId}
       />
 
       <TableDetailPanel
         isRedis={isRedis}
+        isApi={isApi}
         selectedTable={selectedTable}
         selectedKey={selectedKey}
         keyTypeResult={keyTypeResult}
@@ -141,6 +188,7 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
         columnsError={columnsError}
         isPinned={selectedTable ? pinnedTableNames.has(selectedTable) : false}
         onPinTable={handlePinTable}
+        family={family}
       />
 
       {/* Context menu */}

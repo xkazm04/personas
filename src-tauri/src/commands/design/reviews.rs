@@ -72,6 +72,20 @@ pub fn delete_design_review(
     repo::delete_review(&state.db, &id)
 }
 
+/// Remove seed templates whose IDs are no longer in the catalog.
+///
+/// Called during frontend seed sync to clean up templates that were renamed
+/// or deleted from `scripts/templates/`.
+#[tauri::command]
+pub fn delete_stale_seed_templates(
+    state: State<'_, Arc<AppState>>,
+    seed_run_id: String,
+    active_ids: Vec<String>,
+) -> Result<usize, AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_stale_seed_templates(&state.db, &seed_run_id, &active_ids)
+}
+
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub fn list_design_reviews_paginated(

@@ -11,6 +11,7 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 ## Key Features
 
 ### Agent Creation & Management
+
 - Create and configure AI personas with custom system prompts, tools, and behavioral rules
 - Version-controlled prompt editor with history, diff view, and performance tracking
 - Onboarding wizard for quick persona creation from built-in or n8n-imported templates
@@ -18,6 +19,7 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 - Reusable recipe system for multi-step execution workflows with versioning
 
 ### Multi-Provider AI Execution
+
 - Pluggable provider architecture supporting **Claude** (Anthropic), **Codex** (OpenAI), **Gemini** (Google), and **Copilot** (GitHub)
 - Automatic failover between providers with circuit-breaker health tracking
 - Streaming NDJSON output parsing with token counting and cost attribution
@@ -25,11 +27,13 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 - Configurable concurrency and timeout controls per persona
 
 ### Team Canvas & Pipelines
+
 - Visual node-based editor (React Flow) for composing multi-agent pipelines
 - Define data-flow connections between personas with chain triggers
 - Pipeline execution controls with real-time status propagation
 
 ### Trigger System
+
 - **Manual** — on-demand execution from UI
 - **Schedule** — 5-field cron expressions with preview
 - **Webhook** — inbound HTTP POST to local server (`localhost:9420`)
@@ -39,6 +43,7 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 - **Event Listener** — custom events published by other personas via the event bus
 
 ### Credential Vault
+
 - **AES-256-GCM** encryption at rest for all stored credentials
 - OS-native keyring integration (Windows Credential Manager / macOS Keychain / Linux Secret Service)
 - PBKDF2-HMAC-SHA256 fallback key derivation (600,000 iterations)
@@ -51,6 +56,7 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 - API Playground for testing authenticated requests against any connector
 
 ### Observability & Monitoring
+
 - Real-time event bus visualization with animated particle lanes
 - OpenTelemetry-style execution tracing (spans, parent-child relationships, durations)
 - Observability dashboard with execution metrics, cost tracking, and charts
@@ -59,17 +65,20 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 - Structured logging with tracing; per-execution log files
 
 ### Self-Healing Engine
+
 - Automatic detection and recovery from transient execution failures
 - Healing issue tracking with root-cause analysis
 - Circuit-breaker pattern disables unhealthy providers automatically
 
 ### Design Reviews & Testing
+
 - Automated design review generation for agent configurations
 - Manual review queue with approval workflow
 - Test suite runner with mock tools and scenario-based validation
 - Quality scoring and prompt performance benchmarking
 
 ### Deployment & Automation
+
 - Deploy personas to **cloud orchestrator** (webhook-based job dispatch)
 - **GitHub Actions** integration — trigger repository dispatch workflows
 - **GitLab CI/CD** integration — export personas as pipeline YAML, auto-commit and deploy
@@ -77,6 +86,7 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 - Automation run history with status tracking and retry configuration
 
 ### Desktop Integration
+
 - System tray with scheduler pause/resume and recent execution shortcuts
 - Desktop notifications for execution events, reviews, and healing alerts
 - Window state persistence across sessions
@@ -144,15 +154,19 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 ### Windows Setup
 
 1. **Install Node.js** (if not already installed):
+
    ```powershell
    winget install OpenJS.NodeJS.LTS
    ```
 
 2. **Install Rust** via rustup:
+
    ```powershell
    winget install Rustlang.Rustup
    ```
+
    After installation, **restart your terminal** so `cargo` and `rustc` are on your PATH. Verify with:
+
    ```powershell
    rustc --version
    cargo --version
@@ -164,14 +178,17 @@ Personas Desktop provides a local-first environment for creating AI agents with 
    - This provides the MSVC compiler and Windows SDK required by Tauri
 
 4. **Install LLVM/Clang** (required on Windows ARM64 for the `ring` crypto crate):
+
    ```powershell
    winget install LLVM.LLVM
    ```
+
    After installation, ensure `C:\Program Files\LLVM\bin` is on your PATH (the installer usually adds it automatically; restart your terminal to pick it up).
 
 5. **WebView2 Runtime** ships with Windows 10 (version 1803+) and Windows 11. No action needed on modern Windows.
 
 6. **Run from a Developer Command Prompt** or ensure the MSVC environment is active. The easiest way is to launch your terminal from **"Developer Command Prompt for VS"** or **"Developer PowerShell for VS"** so that `cl.exe`, `INCLUDE`, and `LIB` are set. Alternatively, run:
+
    ```powershell
    # PowerShell: load VS environment into your current session
    & "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\Launch-VsDevShell.ps1" -Arch arm64
@@ -180,15 +197,20 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 ### macOS Setup
 
 1. Install Xcode Command Line Tools:
+
    ```bash
    xcode-select --install
    ```
+
 2. Install Node.js and Rust:
+
    ```bash
    brew install node
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    ```
+
 3. Restart your terminal, then verify:
+
    ```bash
    node --version && rustc --version && cargo --version
    ```
@@ -196,17 +218,22 @@ Personas Desktop provides a local-first environment for creating AI agents with 
 ### Linux Setup (Debian/Ubuntu)
 
 1. Install system dependencies:
+
    ```bash
    sudo apt update
    sudo apt install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
      libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
    ```
+
 2. Install Node.js (via [NodeSource](https://github.com/nodesource/distributions)):
+
    ```bash
    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
    sudo apt install -y nodejs
    ```
+
 3. Install Rust:
+
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    source "$HOME/.cargo/env"
@@ -292,6 +319,9 @@ When `VITE_APP_TIER` is not set, the build includes all tiers and users can swit
 | `npm run check:budget` | Check JS chunk sizes against budget limits |
 | `npm run check:assets` | Show potential image optimization savings |
 
+  npm run tauri dev --features test-automation    # With test HTTP server on :17320
+  npm run dev                                    # Vite only (port 1420)
+
 ## Project Structure
 
 ```
@@ -335,19 +365,25 @@ personas-desktop/
 ## Troubleshooting
 
 ### `failed to run 'cargo metadata'` / `program not found`
+
 Rust is not installed. Install it with `winget install Rustlang.Rustup` (Windows) or `rustup` (macOS/Linux), then **restart your terminal**.
 
 ### `failed to find tool "clang": program not found` (Windows ARM64)
+
 The `ring` crate requires Clang for ARM64 assembly. Install LLVM:
+
 ```powershell
 winget install LLVM.LLVM
 ```
+
 Restart your terminal so `clang` is on your PATH.
 
 ### `Cannot open include file: 'windows.h'`
+
 The MSVC environment variables (`INCLUDE`, `LIB`) are not set. Run your build from a **Developer Command Prompt for VS** or **Developer PowerShell for VS**, not a plain terminal.
 
 ### First build is very slow
+
 This is expected — Cargo compiles ~200+ Rust crates on the first build. Subsequent builds use incremental compilation and are much faster.
 
 ## Security

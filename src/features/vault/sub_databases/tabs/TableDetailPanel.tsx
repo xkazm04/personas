@@ -1,9 +1,12 @@
-import { Table2, Pin, Eye, Key } from 'lucide-react';
+import { Table2, Pin, Eye, Key, Database } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
+import type { ConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
 
 interface TableDetailPanelProps {
   isRedis: boolean;
+  /** Notion/Airtable API-based connector. */
+  isApi?: boolean;
   selectedTable: string | null;
   selectedKey: string | null;
   keyTypeResult: string | null;
@@ -13,10 +16,12 @@ interface TableDetailPanelProps {
   columnsError: string | null;
   isPinned: boolean;
   onPinTable: (tableName: string) => void;
+  family?: ConnectorFamily;
 }
 
 export function TableDetailPanel({
   isRedis,
+  isApi = false,
   selectedTable,
   selectedKey,
   keyTypeResult,
@@ -26,17 +31,28 @@ export function TableDetailPanel({
   columnsError,
   isPinned,
   onPinTable,
+  family,
 }: TableDetailPanelProps) {
+  const tableEntry = selectedTable ? tables.find((t) => t.table_name === selectedTable) : null;
+  const displayName = tableEntry?.display_label || selectedTable;
+  const HeaderIcon = isApi ? Database : Table2;
+
+  // Column header labels adapt for API connectors
+  const columnLabel = isApi ? 'Property' : 'Column';
+  const typeLabel = isApi
+    ? (family === 'notion' ? 'Notion Type' : family === 'airtable' ? 'Field Type' : 'Type')
+    : 'Type';
+
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      {/* SQL table detail */}
+      {/* SQL / API table detail */}
       {!isRedis && selectedTable && (
         <>
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
-            <Table2 className="w-4 h-4 text-blue-400/60" />
-            <span className="text-sm font-mono font-medium text-foreground/80 flex-1">
-              {selectedTable}
+            <HeaderIcon className="w-4 h-4 text-blue-400/60" />
+            <span className={`text-sm font-medium text-foreground/80 flex-1 ${isApi ? '' : 'font-mono'}`}>
+              {displayName}
             </span>
             {tables.find((t) => t.table_name === selectedTable)?.table_type === 'VIEW' && (
               <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-violet-500/10 text-violet-400/70">
@@ -81,10 +97,10 @@ export function TableDetailPanel({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-secondary/40 border-b border-primary/10">
-                      <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/3">Column</th>
-                      <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/4">Type</th>
-                      <th className="px-3 py-2 text-center font-semibold text-foreground/70 w-20">Nullable</th>
-                      <th className="px-3 py-2 text-left font-semibold text-foreground/70">Default</th>
+                      <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/3">{columnLabel}</th>
+                      <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/4">{typeLabel}</th>
+                      {!isApi && <th className="px-3 py-2 text-center font-semibold text-foreground/70 w-20">Nullable</th>}
+                      {!isApi && <th className="px-3 py-2 text-left font-semibold text-foreground/70">Default</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -99,18 +115,22 @@ export function TableDetailPanel({
                         <td className="px-3 py-1.5 font-mono text-blue-400/70">
                           {col.data_type}
                         </td>
-                        <td className="px-3 py-1.5 text-center">
-                          {col.is_nullable === 'YES' ? (
-                            <span className="text-muted-foreground/60">yes</span>
-                          ) : (
-                            <span className="text-amber-400/70 font-medium">NOT NULL</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-1.5 text-muted-foreground/50 truncate max-w-[200px]" title={col.column_default ?? ''}>
-                          {col.column_default ?? (
-                            <span className="text-muted-foreground/20">-</span>
-                          )}
-                        </td>
+                        {!isApi && (
+                          <td className="px-3 py-1.5 text-center">
+                            {col.is_nullable === 'YES' ? (
+                              <span className="text-muted-foreground/60">yes</span>
+                            ) : (
+                              <span className="text-amber-400/70 font-medium">NOT NULL</span>
+                            )}
+                          </td>
+                        )}
+                        {!isApi && (
+                          <td className="px-3 py-1.5 text-muted-foreground/50 truncate max-w-[200px]" title={col.column_default ?? ''}>
+                            {col.column_default ?? (
+                              <span className="text-muted-foreground/20">-</span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -120,13 +140,13 @@ export function TableDetailPanel({
 
             {!columnsLoading && !columnsError && columns.length === 0 && (
               <p className="text-sm text-muted-foreground/60 text-center py-8">
-                No columns found
+                {isApi ? 'No properties found' : 'No columns found'}
               </p>
             )}
 
             {!columnsLoading && !columnsError && columns.length > 0 && (
               <div className="mt-3 text-sm text-muted-foreground/60">
-                {columns.length} column{columns.length !== 1 ? 's' : ''}
+                {columns.length} {isApi ? 'propert' : 'column'}{columns.length !== 1 ? (isApi ? 'ies' : 's') : (isApi ? 'y' : '')}
               </div>
             )}
           </div>
@@ -168,9 +188,13 @@ export function TableDetailPanel({
       {/* Empty state */}
       {!isRedis && !selectedTable && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
-          <Eye className="w-6 h-6 text-muted-foreground/15" />
+          {isApi ? (
+            <Database className="w-6 h-6 text-muted-foreground/15" />
+          ) : (
+            <Eye className="w-6 h-6 text-muted-foreground/15" />
+          )}
           <p className="text-sm text-muted-foreground/60">
-            Select a table to view its schema
+            {isApi ? 'Select a database to view its properties' : 'Select a table to view its schema'}
           </p>
         </div>
       )}

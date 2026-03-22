@@ -190,7 +190,7 @@ export function useGalleryQuery(
     listReviewCategories()
       .then((data) => { if (!cancelled) setAvailableCategories(data); })
       .catch(silentCatch("galleryQuery:listCategories"));
-    getTrendingTemplates(8)
+    getTrendingTemplates(5)
       .then((data) => { if (!cancelled) setTrendingTemplates(data); })
       .catch(silentCatch("galleryQuery:getTrending"));
 
@@ -241,7 +241,7 @@ export function useGalleryQuery(
     listReviewCategories()
       .then(setAvailableCategories)
       .catch(silentCatch("galleryQuery:refreshCategories"));
-    getTrendingTemplates(8)
+    getTrendingTemplates(5)
       .then(setTrendingTemplates)
       .catch(silentCatch("galleryQuery:refreshTrending"));
     listDesignReviewsPaginated({ page: 0, perPage: 1 })

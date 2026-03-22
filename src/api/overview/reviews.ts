@@ -136,6 +136,10 @@ export const importDesignReview = (input: {
   category?: string | null;
 }) => invoke<PersonaDesignReview>("import_design_review", { input });
 
+/** Remove seed templates whose IDs are no longer in the catalog. */
+export const deleteStaleSeedTemplates = (seedRunId: string, activeIds: string[]) =>
+  invoke<number>("delete_stale_seed_templates", { seedRunId, activeIds });
+
 // ============================================================================
 // Manual Reviews
 // ============================================================================

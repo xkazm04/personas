@@ -9,6 +9,8 @@ import type { QueryResult } from '@/api/vault/database/dbSchema';
 export interface IntrospectedTable {
   table_name: string;
   table_type: string;
+  /** Human-readable label for API-based connectors (Notion, Airtable). */
+  display_label?: string;
 }
 
 export interface IntrospectedColumn {
@@ -61,10 +63,14 @@ export function getCachedColumns(credentialId: string, tableName: string): Intro
 export function parseTablesResult(result: QueryResult): IntrospectedTable[] {
   const nameIdx = result.columns.indexOf('table_name');
   const typeIdx = result.columns.indexOf('table_type');
+  const labelIdx = result.columns.indexOf('display_label');
   if (nameIdx === -1) return [];
   return result.rows.map((row) => ({
     table_name: String(row[nameIdx] ?? ''),
     table_type: String(row[typeIdx] ?? 'BASE TABLE'),
+    ...(labelIdx !== -1 && row[labelIdx] != null
+      ? { display_label: String(row[labelIdx]) }
+      : {}),
   }));
 }
 

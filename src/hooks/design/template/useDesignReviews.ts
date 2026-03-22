@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { cancelDesignReviewRun, deleteDesignReview, importDesignReview, listDesignReviews, startDesignReviewRun } from "@/api/overview/reviews";
+import { cancelDesignReviewRun, deleteDesignReview, deleteStaleSeedTemplates, importDesignReview, listDesignReviews, startDesignReviewRun } from "@/api/overview/reviews";
 
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { getSeedReviews } from '@/lib/personas/templates/seedTemplates';
+import { getActiveSeedIds, getSeedReviews, SEED_RUN_ID } from '@/lib/personas/templates/seedTemplates';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 interface ReviewStatusPayload {
@@ -68,7 +68,8 @@ export function useDesignReviews() {
 
   const seedDoneRef = useRef(false);
 
-  // Seed catalog templates into the database on first mount
+  // Seed catalog templates into the database on first mount.
+  // Also prunes templates that were renamed or deleted from the catalog.
   const seedCatalogTemplates = useCallback(async (_existingReviews: PersonaDesignReview[]) => {
     if (seedDoneRef.current) return;
     seedDoneRef.current = true;
@@ -82,7 +83,15 @@ export function useDesignReviews() {
 
     try {
       await Promise.all(seeds.map((input) => importDesignReview(input)));
-      // Re-fetch to include seeded records
+
+      // Prune stale seed templates whose IDs are no longer in the catalog
+      // (e.g. renamed or deleted template files). Only affects seed rows.
+      const activeIds = getActiveSeedIds();
+      if (activeIds.length > 0) {
+        await deleteStaleSeedTemplates(SEED_RUN_ID, activeIds);
+      }
+
+      // Re-fetch to include seeded records (and reflect deletions)
       const data = await listDesignReviews();
       setReviews(data);
     } catch {

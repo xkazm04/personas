@@ -134,6 +134,7 @@ export type CommandName =
   | "delete_db_schema_table"
   | "delete_design_conversation"
   | "delete_design_review"
+  | "delete_stale_seed_templates"
   | "delete_exposed_resource"
   | "delete_group"
   | "delete_knowledge_base"

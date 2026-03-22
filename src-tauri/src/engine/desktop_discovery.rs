@@ -144,6 +144,17 @@ pub async fn discover_apps() -> Vec<DiscoveredApp> {
     results
 }
 
+/// Check whether a desktop app is installed, by connector name.
+///
+/// Returns `(installed, binary_path)`.  Used by the healthcheck engine to
+/// verify local-tool connectors without an HTTP endpoint.
+pub fn is_desktop_app_installed(connector_name: &str) -> (bool, Option<String>) {
+    match KNOWN_APPS.iter().find(|a| a.connector_name == connector_name) {
+        Some(app) => detect_binary(app),
+        None => (false, None),
+    }
+}
+
 /// Check if a binary exists on the system.
 fn detect_binary(app: &AppDetector) -> (bool, Option<String>) {
     // Check PATH first
