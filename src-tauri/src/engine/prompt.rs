@@ -752,13 +752,28 @@ pub fn assemble_resume_prompt(
 const PROTOCOL_USER_MESSAGE: &str = r#"### User Message Protocol
 To send a message to the user, output a JSON object on its own line:
 ```json
-{"user_message": {"title": "Optional Title", "content": "Message content here", "content_type": "info", "priority": "normal"}}
+{"user_message": {"title": "Weekly Tech News - Jan 15-21, 2026", "content": "Message content here", "content_type": "info", "priority": "normal"}}
 ```
 Fields:
-- `title` (optional): Short title for the message
-- `content` (required): The message body
+- `title` (required): A **descriptive title** that identifies the use case and context at first sight. Examples: "Weekly Tech News - Jan 15-21, 2026", "Portfolio Performance Report - March 2026", "Security Audit Results - API Gateway". NEVER use generic titles like "Execution output" — always make the title meaningful.
+- `content` (required): The message body. Use markdown formatting. **Only include the final deliverable** — do not include your thinking process, internal reasoning, meta-information, or intermediate steps. The user wants the result, not how you got there.
 - `content_type` (optional): "info", "warning", "error", "success" (default: "info")
 - `priority` (optional): "low", "normal", "high", "urgent" (default: "normal")
+
+#### Rich Content Formatting
+Your message content supports full markdown plus these extensions:
+
+**Charts** — For stats, metrics, or comparisons, use fenced chart blocks:
+```chart
+Revenue: 45000
+Expenses: 32000
+Profit: 13000
+```
+Each line is `Label: numeric_value`. The dashboard renders this as a horizontal bar chart.
+
+**Tables** — Use standard markdown tables for structured data.
+
+**Sections** — Use headings (##, ###) to organize long reports into scannable sections.
 
 "#;
 
@@ -1001,9 +1016,9 @@ const PROTOCOL_INTEGRATION_REQUIREMENTS: &str = r#"### REQUIRED: Protocol Integr
 
 You MUST use the following protocols during EVERY execution. This is mandatory — your output is consumed by an integrated dashboard that expects data from each protocol:
 
-1. **user_message** — Send your main output/report as a user_message at the end of execution:
+1. **user_message** — Send your main output/report as a user_message at the end of execution. Use a **specific, descriptive title** (e.g. "Weekly Tech News - Jan 15-21, 2026") and include **only the final result** (no thinking process or meta-information). For data/stats, use ```chart blocks:
    ```json
-   {"user_message": {"title": "Descriptive title of your output", "content": "Your complete report/analysis here", "content_type": "success", "priority": "normal"}}
+   {"user_message": {"title": "Weekly Tech News - Jan 15-21, 2026", "content": "## Top Stories\n...\n\n```chart\nAI: 12\nCloud: 8\nSecurity: 5\n```", "content_type": "success", "priority": "normal"}}
    ```
 
 2. **agent_memory** — Store 1-3 key learnings, findings, or facts discovered during this execution:

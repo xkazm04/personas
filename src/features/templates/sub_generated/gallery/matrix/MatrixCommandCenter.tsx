@@ -62,6 +62,8 @@ interface MatrixCommandCenterProps {
   onViewAgent?: () => void; cellBuildStates?: Record<string, string>;
   buildActivity?: string | null;
   onApplyEdits?: () => void; onDiscardEdits?: () => void;
+  /** Pre-build initial state — enlarged command hub */
+  isPreBuild?: boolean;
 }
 
 const WRAP = "flex flex-col gap-3 w-full h-full items-center justify-center";
@@ -75,7 +77,7 @@ export function MatrixCommandCenter({
   cliOutputLines = [], designQuestion, onAnswerQuestion,
   buildPhase, onStartTest, onApproveTest, onRejectTest,
   testOutputLines = [], testPassed, testError, toolTestResults = [], testSummary, onViewAgent, cellBuildStates,
-  buildActivity, onApplyEdits, onDiscardEdits,
+  buildActivity, onApplyEdits, onDiscardEdits, isPreBuild = false,
 }: MatrixCommandCenterProps) {
   const [openSection, setOpenSection] = useState<PromptSection | null>(null);
   const [localPromptText, setLocalPromptText] = useState('');
@@ -222,8 +224,8 @@ export function MatrixCommandCenter({
           <textarea value={textValue} onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && isCreation && onLaunch && !launchDisabled) { e.preventDefault(); setIsLaunching(true); onLaunch(); } }}
             placeholder={isCreation ? "Describe what your agent should do... (Enter to generate)" : "Additional instructions..."}
-            rows={isCreation ? 3 : 2} data-testid="agent-intent-input"
-            className="w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors" />
+            rows={isPreBuild ? 6 : isCreation ? 3 : 2} data-testid="agent-intent-input"
+            className={`w-full px-3 py-2 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 resize-none focus-visible:outline-none focus-visible:border-primary/30 transition-colors${isPreBuild ? ' flex-1' : ''}`} />
         )}
         {/* Import mode: workflow upload zone */}
         {inputMode === 'import' && isCreation && (
@@ -235,7 +237,7 @@ export function MatrixCommandCenter({
             <CapabilityToggle icon={Globe} label="Web Browse" active={webBrowseEnabled} onToggle={() => setWebBrowseEnabled(!webBrowseEnabled)} />
           </div>
         )}
-        <div className="flex-1 flex items-center justify-center">
+        <div className={`flex items-center justify-center ${isCreation ? 'w-1/2 self-center' : 'flex-1'}`}>
           {onLaunch && (
             <LaunchOrb onClick={() => { setIsLaunching(true); onLaunch!(); }} disabled={launchDisabled} isRunning={false}
               label={isCreation ? 'Build' : launchLabel}

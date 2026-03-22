@@ -9,13 +9,9 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText; devO
   { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'matrix', label: 'Matrix', icon: Grid3X3 },
   { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
-  { id: 'prompt', label: 'Prompt', icon: FileText },
   { id: 'lab', label: 'Lab', icon: FlaskConical, devOnly: true },
   { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
-  { id: 'design', label: 'Design', icon: Wand2 },
-  { id: 'health', label: 'Health', icon: HeartPulse },
-  { id: 'assertions', label: 'Assertions', icon: Shield },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 

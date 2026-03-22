@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { PopupIconSelector } from '@/features/shared/components/forms/PopupIconSelector';
@@ -6,6 +7,8 @@ import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { SettingsStatusBar } from './SettingsStatusBar';
+import { invoke } from '@tauri-apps/api/core';
+import { useAgentStore } from '@/stores/agentStore';
 
 interface PersonaSettingsTabProps {
   draft: PersonaDraft;
@@ -30,6 +33,22 @@ export function PersonaSettingsTab({
   isSaving,
   onDelete,
 }: PersonaSettingsTabProps) {
+  const personaId = useAgentStore((s) => s.selectedPersonaId);
+  const [retentionMonths, setRetentionMonths] = useState<number>(2);
+
+  useEffect(() => {
+    if (!personaId) return;
+    invoke<string | null>('get_setting', { key: `execution_retention_months:${personaId}` })
+      .then((val: string | null) => { if (val) setRetentionMonths(parseInt(val, 10) || 2); })
+      .catch(() => { /* use default */ });
+  }, [personaId]);
+
+  const handleRetentionChange = useCallback((months: number) => {
+    setRetentionMonths(months);
+    if (!personaId) return;
+    invoke('set_setting', { key: `execution_retention_months:${personaId}`, value: String(months) }).catch(() => { /* ignore */ });
+  }, [personaId]);
+
   return (
     <div className="max-w-3xl 3xl:max-w-4xl 4xl:max-w-5xl space-y-4">
       {/* Identity -- relative z-10 so icon/color picker popups render above cards below */}
@@ -124,6 +143,28 @@ export function PersonaSettingsTab({
                 step={10}
                 className={INPUT_FIELD}
               />
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-foreground/80 mb-1">
+              Execution Retention
+              <FieldHint
+                text="How long execution history is kept before automatic cleanup. Older executions are deleted to save disk space."
+                range="1--24 months"
+                example="2"
+              />
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={retentionMonths}
+                onChange={(e) => handleRetentionChange(parseInt(e.target.value, 10) || 2)}
+                min={1}
+                max={24}
+                className={`${INPUT_FIELD} w-20`}
+              />
+              <span className="text-sm text-muted-foreground/60">months</span>
             </div>
           </div>
 

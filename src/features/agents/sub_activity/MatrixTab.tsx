@@ -135,7 +135,7 @@ export function MatrixTab() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Grid3X3 className="w-4 h-4 text-violet-400" />
-          <h3 className="typo-heading text-foreground/90">PersonaMatrix</h3>
+          <h3 className="typo-heading text-foreground/90">Matrix</h3>
           {session && (
             <span className="text-xs text-muted-foreground/50">
               Built {formatRelativeTime(session.created_at)}

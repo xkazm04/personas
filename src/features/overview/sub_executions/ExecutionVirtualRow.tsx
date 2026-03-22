@@ -4,6 +4,9 @@ import { getStatusEntry, formatDuration, formatRelativeTime, badgeClass } from '
 import type { GlobalExecution } from '@/lib/types/types';
 import type { Persona } from '@/lib/bindings/Persona';
 
+/** Shared grid template — used by both ExecutionTable header and rows */
+export const EXECUTION_GRID_COLS = 'minmax(140px,2fr) 100px minmax(100px,1.2fr) 90px 120px 100px';
+
 // Connector icon map — maps service_type/name to icon + color
 const CONNECTOR_ICONS: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   gmail:              { icon: Mail,          color: '#ea4335', label: 'Gmail' },
@@ -75,11 +78,12 @@ export function ExecutionVirtualRow({ exec, index, start, size, onSelect, person
         transform: `translateY(${start}px)`,
         width: '100%',
         height: `${size}px`,
+        gridTemplateColumns: EXECUTION_GRID_COLS,
       }}
-      className={`flex items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+      className={`grid items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
     >
       {/* Persona */}
-      <div className="flex items-center gap-2 px-4 w-[22%] min-w-0">
+      <div className="flex items-center gap-2 px-4 min-w-0">
         <div
           className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
           style={{ backgroundColor: (exec.persona_color || '#6366f1') + '15' }}
@@ -92,7 +96,7 @@ export function ExecutionVirtualRow({ exec, index, start, size, onSelect, person
       </div>
 
       {/* Connectors */}
-      <div className="flex items-center gap-1 px-4 w-[12%]">
+      <div className="flex items-center gap-1 px-4 min-w-0">
         {connectors.length > 0 ? (
           connectors.slice(0, 4).map((c) => {
             const info = CONNECTOR_ICONS[c] || CONNECTOR_ICONS[c.split('_')[0] || ''];
@@ -115,7 +119,7 @@ export function ExecutionVirtualRow({ exec, index, start, size, onSelect, person
       </div>
 
       {/* Status */}
-      <div className="px-4 w-[18%]">
+      <div className="px-4 min-w-0">
         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-sm font-medium ${badgeClass(status)}`}>
           {status.pulse && (
             <span className="relative flex h-1.5 w-1.5">
@@ -128,21 +132,21 @@ export function ExecutionVirtualRow({ exec, index, start, size, onSelect, person
       </div>
 
       {/* Duration */}
-      <div className="px-4 w-[14%] text-right">
+      <div className="px-4 text-right">
         <span className="text-sm text-muted-foreground/90 font-mono">
           {formatDuration(exec.duration_ms)}
         </span>
       </div>
 
       {/* Started */}
-      <div className="px-4 w-[18%] text-right">
+      <div className="px-4 text-right">
         <span className="text-sm text-muted-foreground/80">
           {formatRelativeTime(exec.started_at || exec.created_at)}
         </span>
       </div>
 
       {/* ID */}
-      <div className="px-4 w-[16%] min-w-0">
+      <div className="px-4 min-w-0">
         <span className="text-sm text-muted-foreground/60 font-mono truncate block">
           {exec.id.slice(0, 8)}
         </span>

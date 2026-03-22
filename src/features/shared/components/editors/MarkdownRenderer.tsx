@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -7,6 +8,49 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+}
+
+/** Inline bar chart for ```chart code blocks. Expects label:value lines. */
+function InlineBarChart({ raw }: { raw: string }) {
+  const entries = raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const [label, ...rest] = l.split(':');
+      const val = parseFloat(rest.join(':').trim());
+      return { label: label?.trim() ?? '', value: isNaN(val) ? 0 : val };
+    })
+    .filter((e) => e.label);
+  const max = Math.max(...entries.map((e) => e.value), 1);
+
+  if (entries.length === 0) return <pre className="typo-code text-muted-foreground/60">{raw}</pre>;
+
+  return (
+    <div className="my-3 space-y-1.5 p-3 rounded-xl border border-primary/10 bg-secondary/20">
+      {entries.map((e, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <span className="text-xs text-foreground/70 w-28 truncate text-right">{e.label}</span>
+          <div className="flex-1 h-5 rounded bg-primary/[0.06] overflow-hidden">
+            <div
+              className="h-full rounded bg-gradient-to-r from-primary/40 to-primary/60 transition-all"
+              style={{ width: `${(e.value / max) * 100}%` }}
+            />
+          </div>
+          <span className="text-xs font-mono text-muted-foreground/70 w-14 text-right">{e.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Strip <thinking>, [META], and similar meta-information blocks from content. */
+function filterMetaContent(content: string): string {
+  return content
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
+    .replace(/\[META\][\s\S]*?\[\/META\]/gi, '')
+    .replace(/---\s*meta\s*---[\s\S]*?---\s*end\s*meta\s*---/gi, '')
+    .trim();
 }
 
 const components: Components = {
@@ -33,6 +77,10 @@ const components: Components = {
   ),
   code: ({ className, children, ...props }) => {
     const isBlock = className?.includes('language-');
+    const isChart = className?.includes('language-chart');
+    if (isChart) {
+      return <InlineBarChart raw={String(children).replace(/\n$/, '')} />;
+    }
     if (isBlock) {
       return (
         <code
@@ -93,6 +141,8 @@ const components: Components = {
 };
 
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+  const filtered = useMemo(() => filterMetaContent(content), [content]);
+
   return (
     <div className={className}>
       <ReactMarkdown
@@ -100,7 +150,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
         rehypePlugins={[rehypeHighlight]}
         components={components}
       >
-        {content}
+        {filtered}
       </ReactMarkdown>
     </div>
   );

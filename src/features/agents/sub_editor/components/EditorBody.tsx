@@ -192,15 +192,17 @@ export function EditorBody() {
           >
             <Suspense fallback={null}>
               {editorTab === 'activity' && <ActivityTab />}
-              {editorTab === 'matrix' && <MatrixTab />}
+              {editorTab === 'matrix' && (
+                <div className="space-y-6 max-w-[900px]">
+                  <MatrixTab />
+                  <PersonaPromptEditor />
+                </div>
+              )}
               {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
               {editorTab === 'prompt' && <PersonaPromptEditor />}
               {editorTab === 'lab' && import.meta.env.DEV && <LabTab />}
               {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
               {editorTab === 'chat' && <ChatTab />}
-              {editorTab === 'design' && <DesignTab />}
-              {editorTab === 'health' && import.meta.env.DEV && <HealthTab />}
-              {/* Assertions tab removed — assertions are now part of persona prompts */}
               {editorTab === 'settings' && (
                 <PersonaSettingsTab
                   draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}

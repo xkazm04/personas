@@ -52,7 +52,7 @@ export function PersonaUseCasesTab({ draft, patch, modelDirty, credentials, conn
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[800px]">
       {/* Persona Default Model */}
       <DefaultModelSection draft={draft} patch={patch} modelDirty={modelDirty} />
 

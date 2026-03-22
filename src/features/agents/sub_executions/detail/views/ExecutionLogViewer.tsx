@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ChevronDown, ChevronRight, FileText, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, Loader2, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getExecutionLog } from '@/api/agents/executions';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
@@ -14,6 +14,15 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
   const [logContent, setLogContent] = useState<string | null>(null);
   const [logLoading, setLogLoading] = useState(false);
   const [logError, setLogError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLog = useCallback(() => {
+    if (!logContent) return;
+    navigator.clipboard.writeText(logContent).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => { /* ignore */ });
+  }, [logContent]);
 
   const handleToggleLog = useCallback(async () => {
     if (showLog) {
@@ -36,14 +45,25 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
 
   return (
     <div>
-      <button
-        onClick={handleToggleLog}
-        className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors mb-2"
-      >
-        {showLog ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-        <FileText className="w-4 h-4" />
-        Execution Log
-      </button>
+      <div className="flex items-center gap-2 mb-2">
+        <button
+          onClick={handleToggleLog}
+          className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors"
+        >
+          {showLog ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          <FileText className="w-4 h-4" />
+          Execution Log
+        </button>
+        {showLog && logContent && (
+          <button
+            onClick={handleCopyLog}
+            className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+            title="Copy log to clipboard"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+        )}
+      </div>
       <AnimatePresence>
         {showLog && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>

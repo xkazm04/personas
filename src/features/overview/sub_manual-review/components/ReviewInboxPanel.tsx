@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { CheckSquare, Square, X, MessageSquare, PanelRightClose, PanelRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -32,6 +32,32 @@ export function ReviewInboxPanel({
 }: ReviewInboxPanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [slideOverOpen, setSlideOverOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleResizeStart = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidth ?? containerRef.current?.querySelector<HTMLElement>('[data-inbox-list]')?.offsetWidth ?? 340;
+    const containerWidth = containerRef.current?.offsetWidth ?? 1000;
+    const minW = 260;
+    const maxW = Math.min(containerWidth * 0.6, 600);
+
+    const onMove = (ev: PointerEvent) => {
+      const delta = ev.clientX - startX;
+      setSidebarWidth(Math.max(minW, Math.min(maxW, startWidth + delta)));
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }, [sidebarWidth]);
 
   const handleReviewClick = (id: string) => {
     onSelectReview(id);
@@ -78,9 +104,10 @@ export function ReviewInboxPanel({
         </div>
       )}
 
-      <div className="flex-1 flex overflow-hidden relative">
+      <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
         {/* Left: Inbox list */}
         <motion.div
+          data-inbox-list
           layout
           className={`flex-shrink-0 border-r border-primary/10 flex flex-col overflow-hidden`}
           animate={{
@@ -92,7 +119,7 @@ export function ReviewInboxPanel({
           }}
           style={
             !IS_MOBILE && viewMode === 'default'
-              ? { width: 'clamp(340px, 30%, 420px)' }
+              ? { width: sidebarWidth != null ? `${sidebarWidth}px` : 'clamp(340px, 30%, 420px)' }
               : undefined
           }
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -126,6 +153,18 @@ export function ReviewInboxPanel({
             ))}
           </div>
         </motion.div>
+
+        {/* Resize handle */}
+        {!IS_MOBILE && viewMode === 'default' && (
+          <div
+            onPointerDown={handleResizeStart}
+            className="w-1 flex-shrink-0 cursor-col-resize group relative z-10 hover:bg-primary/20 active:bg-primary/30 transition-colors"
+            title="Drag to resize"
+          >
+            <div className="absolute inset-y-0 -left-1 -right-1" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-muted-foreground/20 group-hover:bg-primary/40 transition-colors" />
+          </div>
+        )}
 
         {/* Right: Conversation thread (split mode) */}
         <AnimatePresence>

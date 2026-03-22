@@ -43,6 +43,13 @@ const FILTER_TABS: { id: ActivityType; label: string }[] = [
   { id: 'review', label: 'Reviews' },
 ];
 
+function renderImportanceStars(status: string): string {
+  const match = status.match(/(\d+)/);
+  const importance = match ? Math.min(10, Math.max(1, parseInt(match[1], 10))) : 5;
+  const filled = Math.round(importance / 2);
+  return '\u2605'.repeat(filled) + '\u2606'.repeat(5 - filled);
+}
+
 export function ActivityTab() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const [items, setItems] = useState<ActivityItem[]>([]);
@@ -200,10 +207,9 @@ export function ActivityTab() {
       ) : filtered.length === 0 ? (
         <div className="py-8 text-center text-muted-foreground/50 text-sm">No activity yet</div>
       ) : (
-        <div className="border border-primary/10 rounded-xl overflow-hidden">
+        <div className="border border-primary/10 rounded-xl overflow-hidden max-w-[800px]">
           {filtered.map((item, idx) => {
             const info = TYPE_ICONS[item.type] ?? TYPE_ICONS.execution!;
-            const Icon = info.icon;
             const statusEntry = item.type === 'execution' ? getStatusEntry(item.status) : null;
             return (
               <div
@@ -213,14 +219,28 @@ export function ActivityTab() {
                   idx > 0 ? 'border-t border-primary/[0.06]' : ''
                 }`}
               >
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${info.color}`} style={{ backgroundColor: 'currentColor', opacity: 0.08 }}>
-                  <Icon className="w-3.5 h-3.5" />
-                </div>
+                {/* Type column */}
+                <span className={`text-[10px] font-semibold uppercase tracking-wider w-16 flex-shrink-0 ${info.color}`}>
+                  {item.type}
+                </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground/85 truncate">{item.title}</span>
+                    {/* Status badges */}
                     {statusEntry ? (
                       <span className={`text-xs px-1.5 py-0.5 rounded ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>
+                    ) : item.type === 'memory' ? (
+                      <span className="text-xs text-amber-400/70 flex-shrink-0" title={`Importance: ${item.status}`}>
+                        {renderImportanceStars(item.status)}
+                      </span>
+                    ) : item.type === 'review' ? (
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                        item.status === 'approved' ? 'bg-emerald-500/15 text-emerald-400' :
+                        item.status === 'rejected' ? 'bg-red-500/15 text-red-400' :
+                        'bg-amber-500/15 text-amber-400'
+                      }`}>
+                        {item.status}
+                      </span>
                     ) : (
                       <span className="text-xs text-muted-foreground/50">{item.status}</span>
                     )}

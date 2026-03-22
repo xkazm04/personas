@@ -18,6 +18,15 @@ pub const CLI_ENGINE: &str = "cli_engine";
 /// cleanup subscription. Default: 30.
 pub const EVENT_RETENTION_DAYS: &str = "event_retention_days";
 
+/// Execution retention period in days. Executions older than this are purged
+/// by the background cleanup task. Default: 60 (two months).
+pub const EXECUTION_RETENTION_DAYS: &str = "execution_retention_days";
+
+/// Per-persona execution retention override (in months).
+/// Key format: `execution_retention_months:<persona_id>`, value: number string.
+/// When set, overrides the global retention for that persona.
+pub const EXECUTION_RETENTION_MONTHS_PREFIX: &str = "execution_retention_months:";
+
 /// Per-persona auto-rollback setting prefix. The full key is
 /// `auto_rollback:<persona_id>`, with value `"true"` or `"false"`.
 /// When enabled, the auto-rollback subscription checks whether the current

@@ -80,6 +80,7 @@ export function MatrixCellRenderer({
   onConfirmUpdate,
   onCellClick,
   isInlineEditing,
+  compact = false,
 }: {
   cell: MatrixCell;
   isEditMode: boolean;
@@ -94,6 +95,8 @@ export function MatrixCellRenderer({
   onCellClick?: () => void;
   /** Whether this cell is currently showing inline edit UI */
   isInlineEditing?: boolean;
+  /** Compact mode for pre-build state — minimized dimensions */
+  compact?: boolean;
 }) {
   // When cellBuildStatus is 'hidden' or 'revealed', render the ghosted outline
   if (cellBuildStatus === 'hidden' || cellBuildStatus === 'revealed') {
@@ -141,9 +144,10 @@ export function MatrixCellRenderer({
     : useEditRender ? 'opacity-[0.15]' : 'opacity-[0.25]';
 
   // Build outer class list -- state-machine classes override defaults when present
+  const baseSize = compact ? 'p-2.5 min-h-[80px]' : 'p-4 min-h-[200px]';
   const outerClasses = stateClasses
     ? [
-        'relative rounded-xl border p-4 min-h-[200px] transition-[opacity,transform,border-color,background-color,box-shadow] duration-300 shadow-md',
+        `relative rounded-xl border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow] duration-300 shadow-md`,
         stateClasses.bg,
         stateClasses.border,
         stateClasses.opacity,
@@ -152,7 +156,7 @@ export function MatrixCellRenderer({
         useEditRender ? 'ring-1 ring-inset ring-primary/10' : '',
       ].filter(Boolean).join(' ')
     : [
-        'relative rounded-xl border p-4 min-h-[200px] transition-[opacity,transform,border-color,background-color,box-shadow] duration-300 shadow-md',
+        `relative rounded-xl border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow] duration-300 shadow-md`,
         useEditRender
           ? 'bg-card-bg ring-1 ring-inset ring-primary/10'
           : 'bg-card-bg',
@@ -174,17 +178,17 @@ export function MatrixCellRenderer({
     >
       <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
         <div className={`absolute -right-1 -top-1 ${watermarkOpacity} transition-opacity duration-300`}>
-          <Watermark className={`w-22 h-22 ${cell.watermarkColor}`} />
+          <Watermark className={`${compact ? 'w-12 h-12' : 'w-22 h-22'} ${cell.watermarkColor}`} />
         </div>
       </div>
       {/* Header: label only (badge moved to bottom) */}
-      <div className="mb-2.5 flex items-center gap-2">
-        <span className="text-[13px] font-bold uppercase tracking-[0.15em] text-foreground/60">{cell.label}</span>
+      <div className={`${compact ? 'mb-1' : 'mb-2.5'} flex items-center gap-2`}>
+        <span className={`${compact ? 'text-[10px]' : 'text-[13px]'} font-bold uppercase tracking-[0.15em] text-foreground/60`}>{cell.label}</span>
         {cell.filled !== undefined && (
           <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${cell.filled ? 'bg-emerald-400' : 'bg-muted-foreground/20'}`} />
         )}
       </div>
-      <div className="relative flex-1 flex flex-col justify-center">
+      <div className={`relative flex-1 flex flex-col justify-center ${compact ? 'hidden' : ''}`}>
         {/* Background status icon — always visible as watermark */}
         {cellBuildStatus && (cellBuildStatus as string) !== 'hidden' && (cellBuildStatus as string) !== 'revealed' && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">

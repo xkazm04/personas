@@ -8,7 +8,7 @@
  * - Swap button = show alternative connectors the user can switch to
  */
 import { useState, useMemo } from "react";
-import { Link2, ChevronDown, KeyRound, ExternalLink, RefreshCw, ArrowLeftRight } from "lucide-react";
+import { Link2, ChevronDown, KeyRound, ExternalLink, RefreshCw, ArrowLeftRight, Database, Plug } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -29,9 +29,20 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
   const credentials = useVaultStore((s) => s.credentials);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
+  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const credList = credentials ?? [];
   const [hasChanges, setHasChanges] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
+
+  // Build a lookup map: lowercase connector name → ConnectorDefinition
+  const connDefMap = useMemo(() => {
+    const map = new Map<string, typeof connectorDefinitions[number]>();
+    for (const def of connectorDefinitions) {
+      map.set(def.name.toLowerCase(), def);
+      map.set(def.label.toLowerCase(), def);
+    }
+    return map;
+  }, [connectorDefinitions]);
 
   // Extract alternatives map from the connectors cell raw data
   const connectorsCellData = useAgentStore((s) => s.buildCellData["connectors"]);
@@ -110,16 +121,61 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
           : healthStatus === false ? "bg-amber-400"
           : "bg-amber-400"; // untested
 
+        // Look up connector definition for icon + category
+        const connDef = connDefMap.get(connector.name.toLowerCase())
+          || connDefMap.get(connector.name.replace(/[-_]/g, ' ').toLowerCase());
+        const isDatabase = connDef?.category?.toLowerCase() === 'database'
+          || connector.name.toLowerCase().includes('postgres')
+          || connector.name.toLowerCase().includes('mysql')
+          || connector.name.toLowerCase().includes('sqlite')
+          || connector.name.toLowerCase().includes('mongo')
+          || connector.name.toLowerCase().includes('redis')
+          || connector.name.toLowerCase().includes('supabase');
+
+        // Extract table name from raw cell data if available (for database connectors)
+        const rawConnectors = connectorsCellData?.raw?.connectors;
+        const rawEntry = Array.isArray(rawConnectors)
+          ? (rawConnectors as Record<string, unknown>[]).find(
+              (c) => (c.name as string)?.toLowerCase() === connector.name.toLowerCase()
+            )
+          : undefined;
+        const tableName = rawEntry
+          ? ((rawEntry.table_name ?? rawEntry.database_table ?? rawEntry.table ?? rawEntry.db_table) as string | undefined)
+          : undefined;
+
         return (
           <div key={connector.name} className="group">
-            <div className="flex items-center gap-2 min-h-[26px]">
-              {/* Status dot — reflects real credential health */}
-              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+            <div className="flex items-center gap-2 min-h-[30px]">
+              {/* Connector icon — from definition or fallback */}
+              <div
+                className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: (connDef?.color ?? '#6366f1') + '20' }}
+              >
+                {connDef?.icon_url ? (
+                  <img src={connDef.icon_url} alt="" className="w-3.5 h-3.5 object-contain" />
+                ) : isDatabase ? (
+                  <Database className="w-3 h-3" style={{ color: connDef?.color ?? '#6366f1' }} />
+                ) : (
+                  <Plug className="w-3 h-3" style={{ color: connDef?.color ?? '#6366f1' }} />
+                )}
+              </div>
+
+              {/* Health status dot */}
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
 
               {/* Connector name */}
-              <span className="text-[12px] font-medium text-foreground/75 truncate flex-1 min-w-0">
-                {connector.name}
+              <span className="text-[12px] font-medium text-foreground/75 truncate min-w-0">
+                {connDef?.label ?? connector.name}
               </span>
+
+              {/* Database table name badge */}
+              {isDatabase && tableName && (
+                <span className="text-[10px] text-muted-foreground/50 font-mono bg-secondary/30 px-1.5 py-0.5 rounded flex-shrink-0 truncate max-w-[120px]" title={tableName}>
+                  {tableName}
+                </span>
+              )}
+
+              <span className="flex-1" />
 
               {/* Swap button — shown when alternatives exist */}
               {connAlts.length > 0 && (

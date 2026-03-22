@@ -1256,7 +1256,19 @@ pub async fn run_execution(
 
     // Deliver message to persona_messages if execution produced output
     if success && !assistant_text.is_empty() {
-        let title = format!("Execution output — {}", chrono::Local::now().format("%b %d, %H:%M"));
+        // Generate a descriptive title: use the first heading, first sentence,
+        // or persona name + date range as fallback instead of generic "Execution output"
+        let title = {
+            let first_line = assistant_text.lines().next().unwrap_or("").trim();
+            // Strip markdown heading prefix
+            let clean = first_line.trim_start_matches('#').trim();
+            if clean.len() >= 8 && clean.len() <= 120 {
+                clean.to_string()
+            } else {
+                // Use persona name + date for a more descriptive fallback
+                format!("{} — {}", persona.name, chrono::Local::now().format("%b %d, %H:%M"))
+            }
+        };
         let content = if assistant_text.len() > 50_000 {
             format!("{}...\n[truncated at 50KB]", &assistant_text[..50_000])
         } else {

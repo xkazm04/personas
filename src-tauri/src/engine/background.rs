@@ -886,9 +886,14 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         Err(e) => tracing::error!("Credential audit log cleanup error: {}", e),
     }
 
-    // Execution log: 90-day retention, keep at least 50 per persona
-    match exec_repo::cleanup_old_executions(pool, 90, 50) {
-        Ok(n) if n > 0 => tracing::info!("Cleaned up {} old execution records (retention=90d, min_keep=50/persona)", n),
+    // Execution log: configurable retention (default 60 days / 2 months), keep at least 50 per persona
+    let exec_retention_days = settings::get(pool, settings_keys::EXECUTION_RETENTION_DAYS)
+        .ok()
+        .flatten()
+        .and_then(|v| v.parse::<i64>().ok())
+        .unwrap_or(60);
+    match exec_repo::cleanup_old_executions(pool, exec_retention_days, 50) {
+        Ok(n) if n > 0 => tracing::info!("Cleaned up {} old execution records (retention={}d, min_keep=50/persona)", n, exec_retention_days),
         Ok(_) => {}
         Err(e) => tracing::error!("Execution log cleanup error: {}", e),
     }

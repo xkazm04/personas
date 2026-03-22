@@ -1,6 +1,6 @@
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import type { GlobalExecution } from '@/lib/types/types';
-import { ExecutionVirtualRow } from './ExecutionVirtualRow';
+import { ExecutionVirtualRow, EXECUTION_GRID_COLS } from './ExecutionVirtualRow';
 import type { Persona } from '@/lib/bindings/Persona';
 
 interface ExecutionTableProps {
@@ -18,15 +18,15 @@ export function ExecutionTable({ executions, hasMore, onLoadMore, onSelect, pers
 
   return (
     <div ref={parentRef} className="flex-1 overflow-y-auto">
-      {/* Unified flex header — same structure as rows */}
+      {/* Grid header — matches row grid template */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10">
-        <div className="flex items-center h-9">
-          <div className={`w-[22%] ${COL} text-left`}>Persona</div>
-          <div className={`w-[12%] ${COL} text-left`}>Connectors</div>
-          <div className={`w-[18%] ${COL} text-left`}>Status</div>
-          <div className={`w-[14%] ${COL} text-right`}>Duration</div>
-          <div className={`w-[18%] ${COL} text-right`}>Started</div>
-          <div className={`w-[16%] ${COL} text-left`}>ID</div>
+        <div className="grid items-center h-9" style={{ gridTemplateColumns: EXECUTION_GRID_COLS }}>
+          <div className={`${COL} text-left`}>Persona</div>
+          <div className={`${COL} text-left`}>Connectors</div>
+          <div className={`${COL} text-left`}>Status</div>
+          <div className={`${COL} text-right`}>Duration</div>
+          <div className={`${COL} text-right`}>Started</div>
+          <div className={`${COL} text-left`}>ID</div>
         </div>
       </div>
 

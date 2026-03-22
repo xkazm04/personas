@@ -201,6 +201,9 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   const editingCellKey = useAgentStore((s) => s.editingCellKey);
   const isDraftPhase = buildPhase === 'draft_ready' || buildPhase === 'test_complete';
 
+  // Pre-build: creation mode before the build process has started — enlarge command hub, minimize dimension cells
+  const isPreBuild = isCreationMode && !hasBuildStates && !designResult && (!buildPhase || buildPhase === 'initializing');
+
   // Handle cell click for editing in draft phase
   const handleCellEditClick = (cellKey: string) => {
     if (!isCreationMode || !isDraftPhase) return;
@@ -327,7 +330,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
 
   // Creation mode is interactive (textarea + launch orb) even without mode="edit"
   const commandCenterEditMode = isEditMode || isCreationMode;
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} />);
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} isPreBuild={isPreBuild} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
   if ((!designResult && !hasBuildStates && !isCreationMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
@@ -345,13 +348,15 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
         </div>
       )}
-      <div className="grid grid-cols-[2fr_2.6fr_2fr] grid-rows-[1fr_1fr_1fr] gap-2.5 flex-1 min-h-0 w-full min-w-[1100px]">
+      <div className={`grid grid-rows-[1fr_1fr_1fr] gap-2.5 flex-1 min-h-0 w-full min-w-[1100px] ${
+        isPreBuild ? 'grid-cols-[1fr_4fr_1fr]' : 'grid-cols-[2fr_2.6fr_2fr]'
+      }`}>
         {firstFour.map((cell) => (
           <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
-            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={isDraftPhase && isCreationMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} />
+            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={isDraftPhase && isCreationMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
           </motion.div>
         ))}
-        <div className={`relative rounded-xl border border-primary/40 p-5 min-h-[200px] ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
+        <div className={`relative rounded-xl border border-primary/40 p-5 ${isPreBuild ? 'min-h-[280px]' : 'min-h-[200px]'} ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
           {/* Corner glows -- stronger at corners, thinner mid-lanes */}
           <div className="absolute inset-0 pointer-events-none matrix-center-corner-glow" />
           {/* Subtle mid-lane fill */}
@@ -361,7 +366,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         </div>
         {lastFour.map((cell) => (
           <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
-            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={isDraftPhase && isCreationMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} />
+            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={isDraftPhase && isCreationMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
           </motion.div>
         ))}
       </div>

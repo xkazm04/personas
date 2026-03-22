@@ -48,6 +48,7 @@ export default function SidebarLevel1({
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const { pendingReviewCount } = useBadgeCounts();
   const isLabRunning = useAgentStore((s) => s.isLabRunning);
+  const isExecuting = useAgentStore((s) => s.isExecuting);
   const isDev = import.meta.env.DEV;
   const tier = useTier();
 
@@ -119,6 +120,12 @@ export default function SidebarLevel1({
               {section.id === 'overview' && pendingReviewCount > 0 && (
                 <span className="absolute top-0.5 right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center typo-heading leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
                   {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
+                </span>
+              )}
+              {section.id === 'personas' && (isExecuting || isLabRunning) && (
+                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-orange-500/40 animate-ping" />
+                  <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
                 </span>
               )}
               {section.id === 'design-reviews' && (n8nTransformActive || templateAdoptActive || rebuildActive || templateTestActive) && (
