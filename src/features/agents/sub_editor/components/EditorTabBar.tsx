@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activity, HeartPulse, MessageCircle, Shield, Grid3X3 } from 'lucide-react';
+import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activity, HeartPulse, MessageCircle, Grid3X3 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from '../libs/editorTabConstants';
@@ -9,9 +9,12 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText; devO
   { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'matrix', label: 'Matrix', icon: Grid3X3 },
   { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
-  { id: 'lab', label: 'Lab', icon: FlaskConical, devOnly: true },
+  { id: 'prompt', label: 'Prompt', icon: FileText },
+  { id: 'lab', label: 'Lab', icon: FlaskConical },
   { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
+  { id: 'design', label: 'Design', icon: Wand2 },
+  { id: 'health', label: 'Health', icon: HeartPulse },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 

@@ -30,6 +30,3 @@ export const HealthTab = lazy(() =>
 export const ChatTab = lazy(() =>
   import('@/features/agents/sub_chat/ChatTab').then((m) => ({ default: m.ChatTab })),
 );
-export const AssertionsTab = lazy(() =>
-  import('@/features/agents/sub_assertions/components/AssertionPanel').then((m) => ({ default: m.AssertionPanel })),
-);

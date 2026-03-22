@@ -45,7 +45,7 @@ const FILTER_TABS: { id: ActivityType; label: string }[] = [
 
 function renderImportanceStars(status: string): string {
   const match = status.match(/(\d+)/);
-  const importance = match ? Math.min(10, Math.max(1, parseInt(match[1], 10))) : 5;
+  const importance = match?.[1] ? Math.min(10, Math.max(1, parseInt(match[1], 10))) : 5;
   const filled = Math.round(importance / 2);
   return '\u2605'.repeat(filled) + '\u2606'.repeat(5 - filled);
 }

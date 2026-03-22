@@ -200,9 +200,11 @@ export function EditorBody() {
               )}
               {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
               {editorTab === 'prompt' && <PersonaPromptEditor />}
-              {editorTab === 'lab' && import.meta.env.DEV && <LabTab />}
+              {editorTab === 'lab' && <LabTab />}
               {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
               {editorTab === 'chat' && <ChatTab />}
+              {editorTab === 'design' && <DesignTab />}
+              {editorTab === 'health' && <HealthTab />}
               {editorTab === 'settings' && (
                 <PersonaSettingsTab
                   draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}

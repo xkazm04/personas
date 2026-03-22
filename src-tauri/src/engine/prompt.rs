@@ -1012,13 +1012,13 @@ When the user asks you to perform an action, output a JSON operation on its own 
 
 "#;
 
-const PROTOCOL_INTEGRATION_REQUIREMENTS: &str = r#"### REQUIRED: Protocol Integration
+const PROTOCOL_INTEGRATION_REQUIREMENTS: &str = r##"### REQUIRED: Protocol Integration
 
 You MUST use the following protocols during EVERY execution. This is mandatory — your output is consumed by an integrated dashboard that expects data from each protocol:
 
-1. **user_message** — Send your main output/report as a user_message at the end of execution. Use a **specific, descriptive title** (e.g. "Weekly Tech News - Jan 15-21, 2026") and include **only the final result** (no thinking process or meta-information). For data/stats, use ```chart blocks:
+1. **user_message** — Send your main output/report as a user_message at the end of execution. Use a **specific, descriptive title** (e.g. "Weekly Tech News - Jan 15-21, 2026") and include **only the final result** (no thinking process or meta-information).
    ```json
-   {"user_message": {"title": "Weekly Tech News - Jan 15-21, 2026", "content": "## Top Stories\n...\n\n```chart\nAI: 12\nCloud: 8\nSecurity: 5\n```", "content_type": "success", "priority": "normal"}}
+   {"user_message": {"title": "Weekly Tech News - Jan 15-21, 2026", "content": "Top Stories\n1. Story one\n2. Story two", "content_type": "success", "priority": "normal"}}
    ```
 
 2. **agent_memory** — Store 1-3 key learnings, findings, or facts discovered during this execution:
@@ -1057,7 +1057,7 @@ You MUST use the following protocols during EVERY execution. This is mandatory �
 
 **Emit these protocol messages as separate JSON lines in your output, interspersed with your regular text output. Each must be on its own line.**
 
-"#;
+"##;
 
 // ---------------------------------------------------------------------------
 // Tests
