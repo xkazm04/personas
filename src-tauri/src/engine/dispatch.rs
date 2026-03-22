@@ -90,7 +90,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 ctx.pool,
                 CreatePersonaEventInput {
                     event_type: "persona_action".to_string(),
-                    source_type: "persona".to_string(),
+                    source_type: format!("persona:{}", ctx.persona_name),
                     source_id: Some(ctx.persona_id.to_string()),
                     target_persona_id: None,
                     project_id: Some(ctx.project_id.to_string()),
@@ -116,7 +116,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 ctx.pool,
                 CreatePersonaEventInput {
                     event_type: event_type.clone(),
-                    source_type: "persona".to_string(),
+                    source_type: format!("persona:{}", ctx.persona_name),
                     source_id: Some(ctx.persona_id.to_string()),
                     target_persona_id: None,
                     project_id: Some(ctx.project_id.to_string()),
@@ -135,20 +135,41 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             importance,
             tags,
         } => {
-            match mem_repo::create(
-                ctx.pool,
-                CreatePersonaMemoryInput {
-                    persona_id: ctx.persona_id.to_string(),
-                    source_execution_id: Some(ctx.execution_id.to_string()),
-                    title: title.clone(),
-                    content: content.clone(),
-                    category: category.clone(),
-                    importance: *importance,
-                    tags: tags.as_ref().map(|t| serde_json::json!(t).to_string()),
-                },
-            ) {
-                Ok(m) => ctx.logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
-                Err(e) => ctx.logger.log(&format!("[MEMORY] Failed to store: {e}")),
+            // Quality gate: reject error reports, stack traces, and credential failure logs
+            let title_lower = title.to_lowercase();
+            let content_lower = content.to_lowercase();
+            let cat_lower = category.as_deref().unwrap_or("").to_lowercase();
+            let is_error_content = cat_lower == "error" || cat_lower == "failure"
+                || title_lower.contains("error") || title_lower.contains("failed")
+                || title_lower.contains("blocked") || title_lower.contains("missing")
+                || title_lower.contains("timeout") || title_lower.contains("traceback")
+                || content_lower.contains("stack trace") || content_lower.contains("traceback")
+                || content_lower.contains("execution blocked") || content_lower.contains("credential")
+                || content_lower.contains("api_key") || content_lower.contains("access_token");
+
+            if is_error_content {
+                ctx.logger.log(&format!(
+                    "[MEMORY] Rejected low-quality memory (error/failure content): {}",
+                    title
+                ));
+            } else {
+                // Clamp importance to 1-10
+                let clamped_importance = importance.map(|v| v.clamp(1, 10));
+                match mem_repo::create(
+                    ctx.pool,
+                    CreatePersonaMemoryInput {
+                        persona_id: ctx.persona_id.to_string(),
+                        source_execution_id: Some(ctx.execution_id.to_string()),
+                        title: title.clone(),
+                        content: content.clone(),
+                        category: category.clone(),
+                        importance: clamped_importance,
+                        tags: tags.as_ref().map(|t| serde_json::json!(t).to_string()),
+                    },
+                ) {
+                    Ok(m) => ctx.logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
+                    Err(e) => ctx.logger.log(&format!("[MEMORY] Failed to store: {e}")),
+                }
             }
         }
         ProtocolMessage::ManualReview {
@@ -158,6 +179,26 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             context_data,
             suggested_actions,
         } => {
+            // Quality gate: reject reviews that are just error reports, not actual business decisions
+            let title_lower = title.to_lowercase();
+            let desc_lower = description.as_deref().unwrap_or("").to_lowercase();
+            let is_noise = title_lower.contains("execution blocked")
+                || title_lower.contains("credential missing")
+                || title_lower.contains("api error")
+                || title_lower.contains("configuration required")
+                || desc_lower.contains("missing credentials")
+                || desc_lower.contains("api_key not found")
+                || desc_lower.contains("access_token")
+                || desc_lower.contains("unable to connect");
+
+            if is_noise {
+                ctx.logger.log(&format!(
+                    "[REVIEW] Rejected noise review (error/config issue, not a business decision): {}",
+                    title
+                ));
+                return; // Early return from the match arm closure
+            }
+
             match review_repo::create(
                 ctx.pool,
                 CreateManualReviewInput {

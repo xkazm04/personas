@@ -90,6 +90,9 @@ const bridge: TestBridge = {
       buildCellStates: agent.buildCellStates,
       buildActivity: agent.buildActivity,
       buildOutputLineCount: agent.buildOutputLines.length,
+      buildTestPassed: agent.buildTestPassed ?? null,
+      buildTestError: agent.buildTestError ?? null,
+      buildTestOutputLines: agent.buildTestOutputLines,
       // UI state
       viewMode: sys.viewMode,
       sidebarSection: sys.sidebarSection,
@@ -217,12 +220,20 @@ const bridge: TestBridge = {
     }));
   },
 
-  /** Select an agent by name (partial match) or ID */
+  /** Refresh the persona list from the database */
+  async refreshPersonas() {
+    await useAgentStore.getState().fetchPersonas();
+    const count = useAgentStore.getState().personas.length;
+    return { success: true, count };
+  },
+
+  /** Select an agent by name (exact match first, then partial) or ID */
   selectAgent(nameOrId: string) {
     const store = useAgentStore.getState();
-    const match = store.personas.find(
-      p => p.id === nameOrId || p.name.toLowerCase().includes(nameOrId.toLowerCase()),
-    );
+    // Prefer exact ID match, then exact name match, then partial
+    const match = store.personas.find(p => p.id === nameOrId)
+      || store.personas.find(p => p.name === nameOrId)
+      || store.personas.find(p => p.name.toLowerCase().includes(nameOrId.toLowerCase()));
     if (!match) return { success: false, error: `No agent matching: ${nameOrId}` };
     store.selectPersona(match.id);
     return { success: true, id: match.id, name: match.name };
@@ -533,6 +544,71 @@ const bridge: TestBridge = {
     }
   },
 
+  /** Open the adoption modal for a template in Matrix mode.
+   *  This navigates to Templates, finds the template, and opens the adoption wizard.
+   *  Returns when the MatrixAdoptionView is mounted. */
+  async openMatrixAdoption(reviewId: string) {
+    // Navigate to templates section
+    useSystemStore.getState().setSidebarSection('design-reviews');
+    // Set the template adopt active flag — this triggers the gallery to open the modal
+    useSystemStore.getState().setTemplateAdoptActive(true);
+
+    // Find the template review and open the adoption modal
+    // We use a DOM-based approach: find the template row and click View Details, then Adopt
+    const row = document.querySelector(`[data-testid="template-row-${reviewId}"]`);
+    if (!row) return { success: false, error: `Template row not found: ${reviewId}` };
+
+    // Expand the row first
+    (row as HTMLElement).click();
+    await new Promise((r) => setTimeout(r, 500));
+
+    // Find and click the action menu button (last button in the row)
+    const btns = row.querySelectorAll('button');
+    const menuBtn = btns[btns.length - 1];
+    if (!menuBtn) return { success: false, error: 'Action menu button not found' };
+    (menuBtn as HTMLElement).style.opacity = '1';
+    (menuBtn as HTMLElement).click();
+    await new Promise((r) => setTimeout(r, 500));
+
+    // Click "View Details" from the portal menu
+    const allBtns = document.querySelectorAll('button');
+    let detailBtn: HTMLElement | null = null;
+    for (const b of allBtns) {
+      if ((b as HTMLElement).textContent?.trim() === 'View Details') {
+        detailBtn = b as HTMLElement;
+        break;
+      }
+    }
+    if (!detailBtn) return { success: false, error: 'View Details button not found' };
+    detailBtn.click();
+    await new Promise((r) => setTimeout(r, 1000));
+
+    // Click "Adopt as Persona"
+    const adoptBtn = document.querySelector('[data-testid="button-adopt-template"]') as HTMLElement;
+    if (!adoptBtn) return { success: false, error: 'Adopt button not found in detail modal' };
+    adoptBtn.click();
+    await new Promise((r) => setTimeout(r, 1000));
+
+    // Mode already defaults to 'matrix' so MatrixAdoptionView should mount automatically.
+    // Return immediately — the caller should poll /state for buildSessionId to appear.
+    return { success: true, reviewId };
+  },
+
+  /** Instant-adopt a template to create a persona directly (no AI transform). */
+  async adoptTemplate(templateName: string, designResultJson: string) {
+    try {
+      const result = await invoke('instant_adopt_template', {
+        templateName,
+        designResultJson,
+      });
+      await useAgentStore.getState().fetchPersonas();
+      return { success: true, result };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : typeof e === 'object' && e !== null ? JSON.stringify(e) : String(e);
+      return { success: false, error: msg };
+    }
+  },
+
   /** Execute a persona by ID or name. Returns the execution result. */
   async executePersona(nameOrId: string) {
     const store = useAgentStore.getState();
@@ -580,7 +656,9 @@ const bridge: TestBridge = {
    * Includes a 25s timeout to prevent bridge queue blocking.
    */
   async __exec__(id: string, method: string, params: Record<string, unknown>) {
-    const EXEC_TIMEOUT = 25000;
+    // Long-running methods like openMatrixAdoption need more time
+    const LONG_METHODS = new Set(['openMatrixAdoption', 'adoptTemplate', 'promoteBuildDraft']);
+    const EXEC_TIMEOUT = LONG_METHODS.has(method) ? 90000 : 25000;
     try {
       const fn = (this as unknown as Record<string, unknown>)[method];
       if (typeof fn !== "function") throw new Error(`Unknown method: ${method}`);

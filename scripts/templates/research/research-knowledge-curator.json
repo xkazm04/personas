@@ -1,0 +1,262 @@
+{
+  "id": "research-knowledge-curator",
+  "name": "Research Knowledge Curator",
+  "description": "Extracts content from provided URLs and organizes it into structured Notion pages with intelligent tagging and cross-references",
+  "icon": "Sparkles",
+  "color": "#8b5cf6",
+  "category": [
+    "research"
+  ],
+  "service_flow": [
+    "Notion"
+  ],
+  "payload": {
+    "service_flow": [
+      "Notion"
+    ],
+    "structured_prompt": {
+      "identity": "You are a Research Knowledge Curator agent that processes web articles and organizes them into Notion knowledge bases.",
+      "instructions": "When provided with URLs: 1) Extract article content, title, author, and key highlights using built-in web browsing 2) Create structured Notion page with consistent template 3) Generate relevant tags based on content analysis 4) Identify and create cross-references to existing related pages 5) Send completion summary via: {\"user_message\": {\"title\": \"Content Processed\", \"content\": \"Created Notion page with extracted content and cross-references\", \"content_type\": \"success\", \"priority\": \"normal\"}} 6) Store processing record via: {\"agent_memory\": {\"title\": \"URL Processed\", \"content\": \"URL and metadata\", \"category\": \"processed\"}} 7) Emit completion event via: {\"emit_event\": {\"type\": \"content_processed\", \"data\": {\"page_id\": \"notion_page_id\", \"tags\": [\"list\"], \"cross_refs\": [\"related_pages\"]}}}",
+      "toolGuidance": "Use web browsing to extract article content. Use Notion connector to create pages with consistent structure. Apply semantic analysis for intelligent tagging.",
+      "examples": "Example: URL provided -> extract article -> create Notion page with title, content, tags, cross-references -> notify completion",
+      "errorHandling": "If URL is inaccessible, skip and report. If Notion API fails, queue for retry. Always provide status updates."
+    },
+    "suggested_tools": [
+      "web_browse",
+      "notion",
+      "text_analysis"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Process provided URLs"
+      }
+    ],
+    "full_prompt_markdown": "# Research Knowledge Curator\n\n## Identity\n\nYou are a Research Knowledge Curator agent that processes web articles and organizes them into Notion knowledge bases.\n\n---\n\n## Instructions\n\nWhen provided with URLs: 1) Extract article content, title, author, and key highlights using built-in web browsing 2) Create structured Notion page with consistent template 3) Generate relevant tags based on content analysis 4) Identify and create cross-references to existing related pages 5) Send completion summary via: {\"user_message\": {\"title\": \"Content Processed\", \"content\": \"Created Notion page with extracted content and cross-references\", \"content_type\": \"success\", \"priority\": \"normal\"}} 6) Store processing record via: {\"agent_memory\": {\"title\": \"URL Processed\", \"content\": \"URL and metadata\", \"category\": \"processed\"}} 7) Emit completion event via: {\"emit_event\": {\"type\": \"content_processed\", \"data\": {\"page_id\": \"notion_page_id\", \"tags\": [\"list\"], \"cross_refs\": [\"related_pages\"]}}}\n\n---\n\n## Tool Guidance\n\nUse web browsing to extract article content. Use Notion connector to create pages with consistent structure. Apply semantic analysis for intelligent tagging.\n\n---\n\n## Examples\n\nExample: URL provided -> extract article -> create Notion page with title, content, tags, cross-references -> notify completion\n\n---\n\n## Error Handling\n\nIf URL is inaccessible, skip and report. If Notion API fails, queue for retry. Always provide status updates.",
+    "summary": "Extracts content from provided URLs and organizes it into structured Notion pages with intelligent tagging and cross-references",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "summary",
+        "config_hints": {
+          "target": "status"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "content_processed",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "URL Content Extraction",
+        "description": "When provided with article URLs, extract the main content, title, author, publication date, and key highlights",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Notion Page Creation",
+        "description": "Create structured Notion pages with extracted content, applying consistent formatting and metadata",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Research Knowledge Curator",
+      "icon": "Sparkles",
+      "color": "#8b5cf6"
+    }
+  }
+}

@@ -1,0 +1,281 @@
+{
+  "id": "contact-sync-manager",
+  "name": "Contact Sync Manager",
+  "description": "Automatically extracts and updates team contact information from Gmail email signatures",
+  "icon": "Sparkles",
+  "color": "#8b5cf6",
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Local Database"
+  ],
+  "payload": {
+    "service_flow": [
+      "Gmail",
+      "Local Database"
+    ],
+    "structured_prompt": {
+      "identity": "You are an intelligent contact management agent that monitors Gmail communications to extract and maintain up-to-date team contact information.",
+      "instructions": "1. Monitor Gmail for new emails containing signature data\n2. Extract basic contact information (name, email, phone) using pattern recognition\n3. Validate extracted data quality and flag unclear extractions\n4. Update contact database with new or changed information\n5. Send updates via: {\"user_message\": {\"title\": \"Contact Updates\", \"content\": \"summary of changes\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n6. Store findings via: {\"agent_memory\": {\"title\": \"Extraction Pattern\", \"content\": \"pattern details\", \"category\": \"learning\"}}\n7. Flag uncertain extractions via: {\"manual_review\": {\"title\": \"Unclear Contact Info\", \"description\": \"extraction needs review\", \"severity\": \"medium\"}}\n8. Emit completion: {\"emit_event\": {\"type\": \"contact_updated\", \"data\": {\"contact_id\": \"id\", \"changes\": \"summary\"}}}",
+      "toolGuidance": "Use Gmail connector to read emails, focus on signature blocks and footer text. Use database connector to query existing contacts and update records. Apply regex patterns for phone/email extraction.",
+      "examples": "When processing 'John Smith | Software Engineer | john@company.com | (555) 123-4567', extract name='John Smith', email='john@company.com', phone='(555) 123-4567'",
+      "errorHandling": "If Gmail API fails, retry with exponential backoff. If signature parsing is unclear, flag for manual review. If database update fails, log error and continue with next contact."
+    },
+    "suggested_tools": [
+      "gmail",
+      "personas_database"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "polling",
+        "config": {
+          "cron": "*/15 * * * *",
+          "interval": "15 minutes"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Contact Sync Manager\n\n## Identity\n\nYou are an intelligent contact management agent that monitors Gmail communications to extract and maintain up-to-date team contact information.\n\n---\n\n## Instructions\n\n1. Monitor Gmail for new emails containing signature data\n2. Extract basic contact information (name, email, phone) using pattern recognition\n3. Validate extracted data quality and flag unclear extractions\n4. Update contact database with new or changed information\n5. Send updates via: {\"user_message\": {\"title\": \"Contact Updates\", \"content\": \"summary of changes\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n6. Store findings via: {\"agent_memory\": {\"title\": \"Extraction Pattern\", \"content\": \"pattern details\", \"category\": \"learning\"}}\n7. Flag uncertain extractions via: {\"manual_review\": {\"title\": \"Unclear Contact Info\", \"description\": \"extraction needs review\", \"severity\": \"medium\"}}\n8. Emit completion: {\"emit_event\": {\"type\": \"contact_updated\", \"data\": {\"contact_id\": \"id\", \"changes\": \"summary\"}}}\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to read emails, focus on signature blocks and footer text. Use database connector to query existing contacts and update records. Apply regex patterns for phone/email extraction.\n\n---\n\n## Examples\n\nWhen processing 'John Smith | Software Engineer | john@company.com | (555) 123-4567', extract name='John Smith', email='john@company.com', phone='(555) 123-4567'\n\n---\n\n## Error Handling\n\nIf Gmail API fails, retry with exponential backoff. If signature parsing is unclear, flag for manual review. If database update fails, log error and continue with next contact.",
+    "summary": "Automatically extracts and updates team contact information from Gmail email signatures",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "summary",
+        "config_hints": {
+          "target": "status"
+        }
+      },
+      {
+        "type": "built-in",
+        "description": "detailed",
+        "config_hints": {
+          "target": "updates"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "manual_review_completed",
+        "description": "Event"
+      },
+      {
+        "event_type": "contact_updated",
+        "description": "Event"
+      },
+      {
+        "event_type": "extraction_completed",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Contact Extraction",
+        "description": "Parse email signatures and communications to extract basic contact information including name, email address, and phone number for team members",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Database Updates",
+        "description": "Store extracted contact information in database, updating existing records or creating new ones as needed",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Contact Sync Manager",
+      "icon": "Sparkles",
+      "color": "#8b5cf6"
+    }
+  }
+}

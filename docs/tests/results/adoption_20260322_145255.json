@@ -1,0 +1,246 @@
+{
+  "timestamp": "2026-03-22 14:51:25.348857",
+  "duration_s": 90.211478,
+  "results": {
+    "Access Request Manager": {
+      "adopt": true,
+      "persona_id": "87dcccaf-04af-47df-9e43-bd48f97068e5",
+      "persona_name": "T: Access Request Manager",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Budget Spending Monitor": {
+      "adopt": true,
+      "persona_id": "ca6ee773-f8c4-4610-9a02-80292182bf60",
+      "persona_name": "T: Budget Spending Monitor",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Contact Enrichment Agent": {
+      "adopt": true,
+      "persona_id": "eab32a39-3e87-488c-9763-b73de4b73e30",
+      "persona_name": "T: Contact Enrichment Agent",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Contact Sync Manager": {
+      "adopt": true,
+      "persona_id": "8003d5ad-2c29-450a-9578-becd3f33bc8d",
+      "persona_name": "T: Contact Sync Manager",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Content Performance Reporter": {
+      "adopt": true,
+      "persona_id": "90dc3849-fc7f-4afc-bbb0-22590da5dc93",
+      "persona_name": "T: Content Performance Reporter",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Content Schedule Manager": {
+      "adopt": true,
+      "persona_id": "cb40c9c0-b0c9-4268-aa71-fe230be409b7",
+      "persona_name": "T: Content Schedule Manager",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Daily Standup Compiler": {
+      "adopt": true,
+      "persona_id": "f47cdf35-57e5-4447-8a98-694370ef2ece",
+      "persona_name": "T: Daily Standup Compiler",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Database Performance Monitor": {
+      "adopt": true,
+      "persona_id": "a25351da-c225-4565-8464-3b7783b3a8b5",
+      "persona_name": "T: Database Performance Monitor",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Email Follow-Up Tracker": {
+      "adopt": true,
+      "persona_id": "b8b35df0-0586-4f1b-aadd-c7ff6df8d494",
+      "persona_name": "T: Email Follow-Up Tracker",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Email Lead Extractor": {
+      "adopt": true,
+      "persona_id": "0908bf53-c738-4434-af9e-e04d7bddf91f",
+      "persona_name": "T: Email Lead Extractor",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Email Task Extractor": {
+      "adopt": true,
+      "persona_id": "f29a2471-6fd6-450e-92ac-f927a19d144a",
+      "persona_name": "T: Email Task Extractor",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Expense Receipt Tracker": {
+      "adopt": true,
+      "persona_id": "70c6b6e5-cf24-41f5-89fb-09e05cf6f5fd",
+      "persona_name": "T: Expense Receipt Tracker",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Gmail Morning Digest": {
+      "adopt": true,
+      "persona_id": "eea38a78-abdf-4fdf-a987-c091aab3baad",
+      "persona_name": "T: Gmail Morning Digest",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Gmail Support Assistant": {
+      "adopt": true,
+      "persona_id": "c545b9e9-9729-49bb-92b3-a18bf56f7c2e",
+      "persona_name": "T: Gmail Support Assistant",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Idea Harvester": {
+      "adopt": true,
+      "persona_id": "3fa5a083-31fc-4dcb-bbb2-fcb6a3fdab99",
+      "persona_name": "T: Idea Harvester",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Incident Logger": {
+      "adopt": true,
+      "persona_id": "14ff2446-3202-4401-bf32-d0fca1cb854a",
+      "persona_name": "T: Incident Logger",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Invoice Tracker": {
+      "adopt": true,
+      "persona_id": "a04375b5-eba1-4655-8de6-16099a3d98d3",
+      "persona_name": "T: Invoice Tracker",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Newsletter Curator": {
+      "adopt": true,
+      "persona_id": "52023ba6-c062-42d6-8b38-726b5d1cf589",
+      "persona_name": "T: Newsletter Curator",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Notion Docs Auditor": {
+      "adopt": true,
+      "persona_id": "3e483319-55e1-4e0f-b0e5-3da95c07c3b2",
+      "persona_name": "T: Notion Docs Auditor",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Onboarding Tracker": {
+      "adopt": true,
+      "persona_id": "740a2c4f-534b-471f-85c1-44ff940142f5",
+      "persona_name": "T: Onboarding Tracker",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Research Knowledge Curator": {
+      "adopt": true,
+      "persona_id": "c21439fa-b7b3-4aea-8a82-32895e695657",
+      "persona_name": "T: Research Knowledge Curator",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Research Paper Indexer": {
+      "adopt": true,
+      "persona_id": "4b67cbcc-832e-4cef-9d61-835cae76d94c",
+      "persona_name": "T: Research Paper Indexer",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Sales Deal Analyzer": {
+      "adopt": true,
+      "persona_id": "ff7d4ea6-0b4c-474e-bd7c-fda4ee85b96e",
+      "persona_name": "T: Sales Deal Analyzer",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Sales Deal Tracker": {
+      "adopt": true,
+      "persona_id": "7599a2d2-b8f2-444e-bed4-67c7c733f357",
+      "persona_name": "T: Sales Deal Tracker",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Sales Proposal Generator": {
+      "adopt": true,
+      "persona_id": "545f9ce0-312b-46b3-ae58-5b100612e97e",
+      "persona_name": "T: Sales Proposal Generator",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Service Health Reporter": {
+      "adopt": true,
+      "persona_id": "dad26ee9-b5ca-49e5-84f8-27dd765f26eb",
+      "persona_name": "T: Service Health Reporter",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Support Email Router": {
+      "adopt": true,
+      "persona_id": "50a355b5-3eb6-40cd-b7a6-6e0359ea87f9",
+      "persona_name": "T: Support Email Router",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Survey Insights Analyzer": {
+      "adopt": true,
+      "persona_id": "6a6cde58-9459-49bf-89c8-05996f7ae070",
+      "persona_name": "T: Survey Insights Analyzer",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Technical Decision Tracker": {
+      "adopt": true,
+      "persona_id": "1d46a281-58b1-4fd1-9161-60bf9c46d79a",
+      "persona_name": "T: Technical Decision Tracker",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    },
+    "Weekly Review Reporter": {
+      "adopt": true,
+      "persona_id": "4075c8d5-2a9d-4b32-8dea-9524de050628",
+      "persona_name": "T: Weekly Review Reporter",
+      "execute": false,
+      "verify": {},
+      "matrix": false
+    }
+  }
+}

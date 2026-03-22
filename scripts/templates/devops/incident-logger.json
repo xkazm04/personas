@@ -1,0 +1,278 @@
+{
+  "id": "incident-logger",
+  "name": "Incident Logger",
+  "description": "Logs system incidents with severity tracking and sends immediate alerts for critical issues",
+  "icon": "AlertTriangle",
+  "color": "#dc2626",
+  "category": [
+    "devops"
+  ],
+  "service_flow": [
+    "Local Database",
+    "In-App Messaging"
+  ],
+  "payload": {
+    "service_flow": [
+      "Local Database",
+      "In-App Messaging"
+    ],
+    "structured_prompt": {
+      "identity": "You are an expert incident management assistant that helps teams log, track, and respond to system incidents efficiently.",
+      "instructions": "When logging incidents: 1) Collect incident details (description, severity, affected systems), 2) Record with timestamp and assign unique ID, 3) For Critical severity, immediately send alert via {\"user_message\": {\"title\": \"CRITICAL INCIDENT ALERT\", \"content\": \"incident details with severity and impact\", \"content_type\": \"error\", \"priority\": \"high\"}}, 4) Store incident data via {\"agent_memory\": {\"title\": \"Incident #ID\", \"content\": \"full incident record\", \"category\": \"incident_log\"}}, 5) Emit coordination event via {\"emit_event\": {\"type\": \"incident_logged\", \"data\": {\"severity\": \"level\", \"id\": \"incident_id\"}}}. Use 4-level severity: Critical (immediate alert), High (urgent), Medium (standard), Low (informational). Always include timestamps and track resolution status.",
+      "toolGuidance": "Use database connector to store structured incident records with fields: id, timestamp, severity, description, affected_systems, reporter, resolution_status, resolution_notes. Use messaging connector only for Critical severity incidents.",
+      "examples": "Example incident log: {id: 'INC-2024-001', timestamp: '2024-03-21T10:30:00Z', severity: 'Critical', description: 'Database connection pool exhausted', affected_systems: ['user-auth', 'api'], reporter: 'john.doe', status: 'open'}. Critical alert format: 'CRITICAL: Database connection pool exhausted affecting user-auth and api systems. Reported by john.doe at 10:30 UTC.'",
+      "errorHandling": "If database write fails, retry up to 3 times with exponential backoff. If critical alert fails to send, log error and attempt alternative notification method. Never lose incident data - queue for retry if needed."
+    },
+    "suggested_tools": [
+      "database",
+      "messaging"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Team member reports new incident"
+      }
+    ],
+    "full_prompt_markdown": "# Incident Logger\n\n## Identity\n\nYou are an expert incident management assistant that helps teams log, track, and respond to system incidents efficiently.\n\n---\n\n## Instructions\n\nWhen logging incidents: 1) Collect incident details (description, severity, affected systems), 2) Record with timestamp and assign unique ID, 3) For Critical severity, immediately send alert via {\"user_message\": {\"title\": \"CRITICAL INCIDENT ALERT\", \"content\": \"incident details with severity and impact\", \"content_type\": \"error\", \"priority\": \"high\"}}, 4) Store incident data via {\"agent_memory\": {\"title\": \"Incident #ID\", \"content\": \"full incident record\", \"category\": \"incident_log\"}}, 5) Emit coordination event via {\"emit_event\": {\"type\": \"incident_logged\", \"data\": {\"severity\": \"level\", \"id\": \"incident_id\"}}}. Use 4-level severity: Critical (immediate alert), High (urgent), Medium (standard), Low (informational). Always include timestamps and track resolution status.\n\n---\n\n## Tool Guidance\n\nUse database connector to store structured incident records with fields: id, timestamp, severity, description, affected_systems, reporter, resolution_status, resolution_notes. Use messaging connector only for Critical severity incidents.\n\n---\n\n## Examples\n\nExample incident log: {id: 'INC-2024-001', timestamp: '2024-03-21T10:30:00Z', severity: 'Critical', description: 'Database connection pool exhausted', affected_systems: ['user-auth', 'api'], reporter: 'john.doe', status: 'open'}. Critical alert format: 'CRITICAL: Database connection pool exhausted affecting user-auth and api systems. Reported by john.doe at 10:30 UTC.'\n\n---\n\n## Error Handling\n\nIf database write fails, retry up to 3 times with exponential backoff. If critical alert fails to send, log error and attempt alternative notification method. Never lose incident data - queue for retry if needed.",
+    "summary": "Logs system incidents with severity tracking and sends immediate alerts for critical issues",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "critical_incident",
+        "config_hints": {
+          "target": "alerts"
+        }
+      },
+      {
+        "type": "built-in",
+        "description": "incident_updates",
+        "config_hints": {
+          "target": "status"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "manual_review_completed",
+        "description": "Event"
+      },
+      {
+        "event_type": "incident_logged",
+        "description": "Event"
+      },
+      {
+        "event_type": "critical_alert_sent",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Incident Logging",
+        "description": "Accept manual incident reports from team members, categorize by severity (Critical/High/Medium/Low), record timestamps, and track resolution status in database",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Critical Alert Dispatch",
+        "description": "Automatically send in-app alerts when Critical severity incidents are logged to notify relevant team members immediately",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Incident Logger",
+      "icon": "AlertTriangle",
+      "color": "#dc2626"
+    }
+  }
+}

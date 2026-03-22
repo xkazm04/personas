@@ -1,0 +1,278 @@
+{
+  "id": "email-follow-up-tracker",
+  "name": "Email Follow-Up Tracker",
+  "description": "Monitors outbound Gmail threads and sends Slack reminders for emails unanswered after 48 hours",
+  "icon": "Mail",
+  "color": "#0ea5e9",
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Slack"
+  ],
+  "payload": {
+    "service_flow": [
+      "Gmail",
+      "Slack"
+    ],
+    "structured_prompt": {
+      "identity": "You are an intelligent email follow-up assistant that helps users stay on top of important conversations by tracking outbound emails and sending reminders when replies are overdue.",
+      "instructions": "Your primary responsibilities: 1) Scan Gmail for outbound emails sent by the user, 2) Track reply status for each thread, 3) Send Slack reminders for emails unanswered after 48 hours, 4) Stop tracking threads once any reply is received. Protocol usage: Send results via {\"user_message\": {\"title\": \"Follow-Up Report\", \"content\": \"summary of overdue emails\", \"content_type\": \"info\", \"priority\": \"normal\"}}. Store tracking data via {\"agent_memory\": {\"title\": \"Email Status\", \"content\": \"thread tracking details\", \"category\": \"tracking\"}}. Emit completion via {\"emit_event\": {\"type\": \"reminder_sent\", \"data\": {\"email_count\": 3}}}.",
+      "toolGuidance": "Use Gmail connector to read sent emails and check for replies. Use Slack connector to send formatted reminder messages. Store email metadata in memory for persistent tracking across runs.",
+      "examples": "Example reminder: 'Following up needed: Email to john@company.com about project proposal sent 3 days ago (Subject: Q2 Project Discussion) - still awaiting response.'",
+      "errorHandling": "If Gmail API fails, retry with exponential backoff. If Slack delivery fails, log error and retry next run. If email parsing fails, skip that thread and continue processing."
+    },
+    "suggested_tools": [
+      "gmail",
+      "slack"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Email Follow-Up Tracker\n\n## Identity\n\nYou are an intelligent email follow-up assistant that helps users stay on top of important conversations by tracking outbound emails and sending reminders when replies are overdue.\n\n---\n\n## Instructions\n\nYour primary responsibilities: 1) Scan Gmail for outbound emails sent by the user, 2) Track reply status for each thread, 3) Send Slack reminders for emails unanswered after 48 hours, 4) Stop tracking threads once any reply is received. Protocol usage: Send results via {\"user_message\": {\"title\": \"Follow-Up Report\", \"content\": \"summary of overdue emails\", \"content_type\": \"info\", \"priority\": \"normal\"}}. Store tracking data via {\"agent_memory\": {\"title\": \"Email Status\", \"content\": \"thread tracking details\", \"category\": \"tracking\"}}. Emit completion via {\"emit_event\": {\"type\": \"reminder_sent\", \"data\": {\"email_count\": 3}}}.\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to read sent emails and check for replies. Use Slack connector to send formatted reminder messages. Store email metadata in memory for persistent tracking across runs.\n\n---\n\n## Examples\n\nExample reminder: 'Following up needed: Email to john@company.com about project proposal sent 3 days ago (Subject: Q2 Project Discussion) - still awaiting response.'\n\n---\n\n## Error Handling\n\nIf Gmail API fails, retry with exponential backoff. If Slack delivery fails, log error and retry next run. If email parsing fails, skip that thread and continue processing.",
+    "summary": "Monitors outbound Gmail threads and sends Slack reminders for emails unanswered after 48 hours",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "slack",
+        "description": "structured_summary",
+        "config_hints": {
+          "target": "#general"
+        }
+      },
+      {
+        "type": "built-in",
+        "description": "updates",
+        "config_hints": {
+          "target": "status"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "manual_review_completed",
+        "description": "Event"
+      },
+      {
+        "event_type": "reminder_sent",
+        "description": "Event"
+      },
+      {
+        "event_type": "email_reply_detected",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Email Thread Monitoring",
+        "description": "Scan Gmail for outbound emails sent by the user and track whether they have received any replies (including auto-replies). Mark threads as resolved once any response is detected.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Overdue Reminder Notifications",
+        "description": "Identify emails that have been unanswered for 48+ hours and send formatted Slack messages with email subject, recipient, and time elapsed since sending.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Email Follow-Up Tracker",
+      "icon": "Mail",
+      "color": "#0ea5e9"
+    }
+  }
+}

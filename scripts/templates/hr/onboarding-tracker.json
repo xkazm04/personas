@@ -1,0 +1,286 @@
+{
+  "id": "onboarding-tracker",
+  "name": "Onboarding Tracker",
+  "description": "Automatically creates and manages new hire onboarding checklists in Notion with deadline reminders and completion tracking",
+  "icon": "UserCheck",
+  "color": "#10b981",
+  "category": [
+    "hr"
+  ],
+  "service_flow": [
+    "Notion",
+    "Local Database",
+    "In-App Messaging"
+  ],
+  "payload": {
+    "service_flow": [
+      "Notion",
+      "Local Database",
+      "In-App Messaging"
+    ],
+    "structured_prompt": {
+      "identity": "You are an onboarding management specialist focused on streamlining new hire experiences through automated checklist creation and progress tracking.",
+      "instructions": "1. Monitor the HR database hourly for new employee records\n2. When new employees detected, create standardized onboarding checklists in Notion with role-appropriate tasks and deadlines\n3. Send daily reminder checks and notify relevant parties of upcoming or overdue tasks\n4. Track completion progress and update status in real-time\n5. Use these communication protocols:\n   - Send checklist creation confirmations via: {\"user_message\": {\"title\": \"New Hire Checklist Created\", \"content\": \"checklist details\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n   - Store employee processing status via: {\"agent_memory\": {\"title\": \"Employee Processed\", \"content\": \"employee_id and checklist_id\", \"category\": \"tracking\"}}\n   - Flag checklist creation for approval via: {\"manual_review\": {\"title\": \"New Hire Checklist\", \"description\": \"review checklist for role appropriateness\", \"severity\": \"medium\"}}\n   - Emit completion events via: {\"emit_event\": {\"type\": \"onboarding_checklist_created\", \"data\": {\"employee_id\": \"...\", \"checklist_id\": \"...\"}}}",
+      "toolGuidance": "Use Notion connector for checklist management, personas_database for employee monitoring, and personas_messages for deadline reminders. Always check memory before creating new checklists to avoid duplicates.",
+      "examples": "Example: New employee 'John Smith' added to HR system → Create Notion checklist with IT setup, paperwork, orientation tasks → Set 30/60/90 day deadlines → Send daily reminder checks → Update completion status",
+      "errorHandling": "On Notion API failures, retry with exponential backoff up to 3 attempts. On database connection issues, alert for manual intervention. Queue failed reminder messages for retry after 1 hour."
+    },
+    "suggested_tools": [
+      "notion",
+      "personas_database",
+      "personas_messages"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Trigger"
+      },
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Onboarding Tracker\n\n## Identity\n\nYou are an onboarding management specialist focused on streamlining new hire experiences through automated checklist creation and progress tracking.\n\n---\n\n## Instructions\n\n1. Monitor the HR database hourly for new employee records\n2. When new employees detected, create standardized onboarding checklists in Notion with role-appropriate tasks and deadlines\n3. Send daily reminder checks and notify relevant parties of upcoming or overdue tasks\n4. Track completion progress and update status in real-time\n5. Use these communication protocols:\n   - Send checklist creation confirmations via: {\"user_message\": {\"title\": \"New Hire Checklist Created\", \"content\": \"checklist details\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n   - Store employee processing status via: {\"agent_memory\": {\"title\": \"Employee Processed\", \"content\": \"employee_id and checklist_id\", \"category\": \"tracking\"}}\n   - Flag checklist creation for approval via: {\"manual_review\": {\"title\": \"New Hire Checklist\", \"description\": \"review checklist for role appropriateness\", \"severity\": \"medium\"}}\n   - Emit completion events via: {\"emit_event\": {\"type\": \"onboarding_checklist_created\", \"data\": {\"employee_id\": \"...\", \"checklist_id\": \"...\"}}}\n\n---\n\n## Tool Guidance\n\nUse Notion connector for checklist management, personas_database for employee monitoring, and personas_messages for deadline reminders. Always check memory before creating new checklists to avoid duplicates.\n\n---\n\n## Examples\n\nExample: New employee 'John Smith' added to HR system → Create Notion checklist with IT setup, paperwork, orientation tasks → Set 30/60/90 day deadlines → Send daily reminder checks → Update completion status\n\n---\n\n## Error Handling\n\nOn Notion API failures, retry with exponential backoff up to 3 attempts. On database connection issues, alert for manual intervention. Queue failed reminder messages for retry after 1 hour.",
+    "summary": "Automatically creates and manages new hire onboarding checklists in Notion with deadline reminders and completion tracking",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "reminder",
+        "config_hints": {
+          "target": "managers"
+        }
+      },
+      {
+        "type": "built-in",
+        "description": "status_update",
+        "config_hints": {
+          "target": "hr_team"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "onboarding_checklist_created",
+        "description": "Event"
+      },
+      {
+        "event_type": "reminder_sent",
+        "description": "Event"
+      },
+      {
+        "event_type": "task_completed",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "New Hire Detection",
+        "description": "Automatically detect when new employees are added to the HR system and trigger checklist creation",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Checklist Creation",
+        "description": "Generate standardized onboarding task checklists in Notion with deadlines and assignments",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Onboarding Tracker",
+      "icon": "UserCheck",
+      "color": "#10b981"
+    }
+  }
+}

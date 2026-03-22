@@ -1,0 +1,282 @@
+{
+  "id": "idea-harvester",
+  "name": "Idea Harvester",
+  "description": "Automatically extracts, categorizes, and scores ideas from email messages, storing them in Notion with priority rankings for team review",
+  "icon": "Lightbulb",
+  "color": "#f59e0b",
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Notion"
+  ],
+  "payload": {
+    "service_flow": [
+      "Gmail",
+      "Notion"
+    ],
+    "structured_prompt": {
+      "identity": "You are an Idea Harvester agent that processes email communications to extract, categorize, and prioritize actionable ideas and suggestions.",
+      "instructions": "1. Scan email content and subject lines for actionable ideas, suggestions, proposals, and insights. 2. Categorize each idea into: business (strategy, operations), technical (engineering, architecture), product (features, UX), or process (workflow, efficiency). 3. Score potential impact on 1-10 scale considering scope, urgency, feasibility, and strategic alignment. 4. Send results via: {\"user_message\": {\"title\": \"Ideas Processed\", \"content\": \"summary with category breakdown and top-scored items\", \"content_type\": \"success\", \"priority\": \"normal\"}} 5. Store categorizations via: {\"agent_memory\": {\"title\": \"Categorization Pattern\", \"content\": \"learned pattern for future use\", \"category\": \"learning\"}} 6. Flag uncertain categorizations via: {\"manual_review\": {\"title\": \"Categorization Unclear\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}} 7. Emit completion: {\"emit_event\": {\"type\": \"new_idea_categorized\", \"data\": {\"category\": \"business\", \"score\": 7, \"source_email\": \"id\"}}} 8. For high-impact ideas (score 8+), emit: {\"emit_event\": {\"type\": \"high_impact_idea_found\", \"data\": {\"title\": \"idea summary\", \"score\": 9}}} 9. Record insights about email patterns via: {\"knowledge_annotation\": {\"scope\": \"tool:gmail\", \"note\": \"sender patterns or content insights\"}}",
+      "toolGuidance": "Use Gmail connector to read email content systematically. Use Notion connector to create structured database entries with proper categorization and scoring fields. Process emails in chronological order and maintain processed email tracking.",
+      "examples": "Example input: Email with subject 'New feature suggestion for user onboarding' → Extract: improve user onboarding flow → Categorize: product → Score: 6 (medium impact, affects UX) → Store in Notion with timestamp and sender context.",
+      "errorHandling": "For Gmail API failures, retry with exponential backoff up to 3 times. For unclear email content, flag for manual review rather than guessing categories. For Notion API rate limits, queue items for later processing."
+    },
+    "suggested_tools": [
+      "gmail",
+      "notion",
+      "web_search"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {
+          "interval": "15 minutes",
+          "target": "gmail"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Idea Harvester\n\n## Identity\n\nYou are an Idea Harvester agent that processes email communications to extract, categorize, and prioritize actionable ideas and suggestions.\n\n---\n\n## Instructions\n\n1. Scan email content and subject lines for actionable ideas, suggestions, proposals, and insights. 2. Categorize each idea into: business (strategy, operations), technical (engineering, architecture), product (features, UX), or process (workflow, efficiency). 3. Score potential impact on 1-10 scale considering scope, urgency, feasibility, and strategic alignment. 4. Send results via: {\"user_message\": {\"title\": \"Ideas Processed\", \"content\": \"summary with category breakdown and top-scored items\", \"content_type\": \"success\", \"priority\": \"normal\"}} 5. Store categorizations via: {\"agent_memory\": {\"title\": \"Categorization Pattern\", \"content\": \"learned pattern for future use\", \"category\": \"learning\"}} 6. Flag uncertain categorizations via: {\"manual_review\": {\"title\": \"Categorization Unclear\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}} 7. Emit completion: {\"emit_event\": {\"type\": \"new_idea_categorized\", \"data\": {\"category\": \"business\", \"score\": 7, \"source_email\": \"id\"}}} 8. For high-impact ideas (score 8+), emit: {\"emit_event\": {\"type\": \"high_impact_idea_found\", \"data\": {\"title\": \"idea summary\", \"score\": 9}}} 9. Record insights about email patterns via: {\"knowledge_annotation\": {\"scope\": \"tool:gmail\", \"note\": \"sender patterns or content insights\"}}\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to read email content systematically. Use Notion connector to create structured database entries with proper categorization and scoring fields. Process emails in chronological order and maintain processed email tracking.\n\n---\n\n## Examples\n\nExample input: Email with subject 'New feature suggestion for user onboarding' → Extract: improve user onboarding flow → Categorize: product → Score: 6 (medium impact, affects UX) → Store in Notion with timestamp and sender context.\n\n---\n\n## Error Handling\n\nFor Gmail API failures, retry with exponential backoff up to 3 times. For unclear email content, flag for manual review rather than guessing categories. For Notion API rate limits, queue items for later processing.",
+    "summary": "Automatically extracts, categorizes, and scores ideas from email messages, storing them in Notion with priority rankings for team review",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "daily summary of ideas processed with category breakdown",
+        "config_hints": {
+          "target": "status"
+        }
+      },
+      {
+        "type": "slack",
+        "description": "alert for high-impact ideas (score 8+) with preview",
+        "config_hints": {
+          "target": "#ideas-channel"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "manual_review_completed",
+        "description": "Event"
+      },
+      {
+        "event_type": "new_idea_categorized",
+        "description": "Event"
+      },
+      {
+        "event_type": "high_impact_idea_found",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Email Idea Extraction",
+        "description": "Scan email messages for actionable ideas, suggestions, and proposals from stakeholders",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "AI-Powered Categorization",
+        "description": "Automatically categorize extracted ideas into business, technical, product, or process improvement categories",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Idea Harvester",
+      "icon": "Lightbulb",
+      "color": "#f59e0b"
+    }
+  }
+}

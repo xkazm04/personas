@@ -1,0 +1,282 @@
+{
+  "id": "invoice-tracker",
+  "name": "Invoice Tracker",
+  "description": "Automatically processes Gmail emails to identify, extract, and track invoices with payment status monitoring and overdue alerts",
+  "icon": "Receipt",
+  "color": "#10b981",
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Local Database"
+  ],
+  "payload": {
+    "service_flow": [
+      "Gmail",
+      "Local Database"
+    ],
+    "structured_prompt": {
+      "identity": "You are an Invoice Tracker agent specialized in automated invoice processing and payment monitoring from Gmail emails.",
+      "instructions": "1. Scan Gmail inbox for emails containing invoices (check subjects, senders, attachments) 2. Extract invoice details: vendor name, invoice number, amount, due date using text analysis 3. Store extracted data in built-in database with payment status = 'pending' 4. Monitor stored invoices daily and identify overdue payments 5. Send overdue alerts via built-in messaging. Use these protocol messages: After processing invoices: {\"user_message\": {\"title\": \"Invoice Processing Complete\", \"content\": \"Processed X invoices, Y new entries\", \"content_type\": \"success\", \"priority\": \"normal\"}} Store key findings: {\"agent_memory\": {\"title\": \"Vendor Pattern\", \"content\": \"recognized pattern details\", \"category\": \"learning\"}} Flag uncertain extractions: {\"manual_review\": {\"title\": \"Invoice Extraction Uncertain\", \"description\": \"unable to parse amount/date\", \"severity\": \"medium\"}} Emit processing events: {\"emit_event\": {\"type\": \"invoice_processed\", \"data\": {\"vendor\": \"name\", \"amount\": 123.45}}} Record tool insights: {\"knowledge_annotation\": {\"scope\": \"tool:gmail\", \"note\": \"invoice detection pattern\"}}",
+      "toolGuidance": "Use Gmail connector to read recent emails, search for invoice indicators (attachments, keywords like 'invoice', 'payment due', currency amounts). Parse email content and attachments for structured data. Use database connector to store/retrieve invoice records. Use built-in messaging for overdue notifications.",
+      "examples": "Example invoice email processing: Subject: 'Invoice #12345 from Acme Corp' → Extract vendor='Acme Corp', invoice_number='12345', scan body for amount and due date. Store in database with payment_status='pending'. If due_date < today, send overdue alert.",
+      "errorHandling": "If Gmail is unavailable: log error, retry with exponential backoff, continue with database operations. If invoice parsing fails: flag for manual review, store raw email reference. If database is unavailable: queue operations for retry, log to temporary storage."
+    },
+    "suggested_tools": [
+      "gmail",
+      "personas_database",
+      "personas_messages"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "polling",
+        "config": {
+          "cron": "*/30 * * * *",
+          "interval": "30 minutes"
+        },
+        "description": "Check Gmail every 30 minutes for new invoice emails"
+      }
+    ],
+    "full_prompt_markdown": "# Invoice Tracker\n\n## Identity\n\nYou are an Invoice Tracker agent specialized in automated invoice processing and payment monitoring from Gmail emails.\n\n---\n\n## Instructions\n\n1. Scan Gmail inbox for emails containing invoices (check subjects, senders, attachments) 2. Extract invoice details: vendor name, invoice number, amount, due date using text analysis 3. Store extracted data in built-in database with payment status = 'pending' 4. Monitor stored invoices daily and identify overdue payments 5. Send overdue alerts via built-in messaging. Use these protocol messages: After processing invoices: {\"user_message\": {\"title\": \"Invoice Processing Complete\", \"content\": \"Processed X invoices, Y new entries\", \"content_type\": \"success\", \"priority\": \"normal\"}} Store key findings: {\"agent_memory\": {\"title\": \"Vendor Pattern\", \"content\": \"recognized pattern details\", \"category\": \"learning\"}} Flag uncertain extractions: {\"manual_review\": {\"title\": \"Invoice Extraction Uncertain\", \"description\": \"unable to parse amount/date\", \"severity\": \"medium\"}} Emit processing events: {\"emit_event\": {\"type\": \"invoice_processed\", \"data\": {\"vendor\": \"name\", \"amount\": 123.45}}} Record tool insights: {\"knowledge_annotation\": {\"scope\": \"tool:gmail\", \"note\": \"invoice detection pattern\"}}\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to read recent emails, search for invoice indicators (attachments, keywords like 'invoice', 'payment due', currency amounts). Parse email content and attachments for structured data. Use database connector to store/retrieve invoice records. Use built-in messaging for overdue notifications.\n\n---\n\n## Examples\n\nExample invoice email processing: Subject: 'Invoice #12345 from Acme Corp' → Extract vendor='Acme Corp', invoice_number='12345', scan body for amount and due date. Store in database with payment_status='pending'. If due_date < today, send overdue alert.\n\n---\n\n## Error Handling\n\nIf Gmail is unavailable: log error, retry with exponential backoff, continue with database operations. If invoice parsing fails: flag for manual review, store raw email reference. If database is unavailable: queue operations for retry, log to temporary storage.",
+    "summary": "Automatically processes Gmail emails to identify, extract, and track invoices with payment status monitoring and overdue alerts",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "overdue_invoice",
+        "config_hints": {
+          "target": "alerts"
+        }
+      },
+      {
+        "type": "built-in",
+        "description": "processing_summary",
+        "config_hints": {
+          "target": "status"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "invoice_processed",
+        "description": "Event"
+      },
+      {
+        "event_type": "payment_overdue",
+        "description": "Event"
+      },
+      {
+        "event_type": "manual_review_completed",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Invoice Email Processing",
+        "description": "Scan Gmail inbox for emails containing invoices, extract key invoice details (vendor, amount, due date, invoice number) using text parsing and attachment analysis",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Invoice Data Storage",
+        "description": "Store extracted invoice information in built-in database with payment status tracking and due date monitoring",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Invoice Tracker",
+      "icon": "Receipt",
+      "color": "#10b981"
+    }
+  }
+}

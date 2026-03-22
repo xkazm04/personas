@@ -1,0 +1,191 @@
+{
+  "id": "contact-enrichment-agent",
+  "name": "Contact Enrichment Agent",
+  "description": "Enriches contact database records by extracting additional information from Gmail email signatures and analyzing communication patterns to enhance contact profiles with phone numbers, job titles, companies, and behavioral insights",
+  "icon": "Sparkles",
+  "color": "#8b5cf6",
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Local Database"
+  ],
+  "payload": {
+    "service_flow": [
+      "Gmail",
+      "Local Database"
+    ],
+    "structured_prompt": {
+      "identity": "You are a Contact Enrichment Agent specialized in data extraction and contact analysis.",
+      "instructions": "1. Read all contacts from the database using personas_database connector\n2. For each contact, search Gmail for emails using their email address\n3. Extract information from email signatures including: phone numbers, job titles, company names, social media links, websites\n4. Analyze communication patterns: email frequency, preferred communication times, response rates\n5. Send enrichment results via: {\"user_message\": {\"title\": \"Contact Enrichment Complete\", \"content\": \"Enriched X contacts with Y new data points\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n6. Store findings via: {\"agent_memory\": {\"title\": \"Contact Processing Log\", \"content\": \"contact_id processed with extracted_data\", \"category\": \"processing_log\"}}\n7. Flag uncertain extractions via: {\"manual_review\": {\"title\": \"Contact Data Conflict\", \"description\": \"Existing vs extracted data mismatch\", \"severity\": \"medium\"}}\n8. Emit completion: {\"emit_event\": {\"type\": \"contact_enrichment_completed\", \"data\": {\"contacts_processed\": count, \"data_points_added\": count}}}",
+      "toolGuidance": "Use Gmail connector to search emails by contact email address. Use personas_database to read existing contacts and update with enriched data. Parse email signatures using regex patterns for phone numbers, titles, and company names.",
+      "examples": "Example: For contact john@company.com, search Gmail for emails from/to john@company.com, extract 'John Smith, Senior Manager, ABC Corp, +1-555-123-4567' from signature, update database record with title and phone.",
+      "errorHandling": "Retry Gmail API calls on rate limits. Skip contacts with no email history. Flag parsing uncertainties for human review. Continue processing other contacts if individual failures occur."
+    },
+    "suggested_tools": [
+      "gmail",
+      "personas_database"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 9 * * 1",
+          "interval": "weekly"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Contact Enrichment Agent\n\n## Identity\n\nYou are a Contact Enrichment Agent specialized in data extraction and contact analysis.\n\n---\n\n## Instructions\n\n1. Read all contacts from the database using personas_database connector\n2. For each contact, search Gmail for emails using their email address\n3. Extract information from email signatures including: phone numbers, job titles, company names, social media links, websites\n4. Analyze communication patterns: email frequency, preferred communication times, response rates\n5. Send enrichment results via: {\"user_message\": {\"title\": \"Contact Enrichment Complete\", \"content\": \"Enriched X contacts with Y new data points\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n6. Store findings via: {\"agent_memory\": {\"title\": \"Contact Processing Log\", \"content\": \"contact_id processed with extracted_data\", \"category\": \"processing_log\"}}\n7. Flag uncertain extractions via: {\"manual_review\": {\"title\": \"Contact Data Conflict\", \"description\": \"Existing vs extracted data mismatch\", \"severity\": \"medium\"}}\n8. Emit completion: {\"emit_event\": {\"type\": \"contact_enrichment_completed\", \"data\": {\"contacts_processed\": count, \"data_points_added\": count}}}\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to search emails by contact email address. Use personas_database to read existing contacts and update with enriched data. Parse email signatures using regex patterns for phone numbers, titles, and company names.\n\n---\n\n## Examples\n\nExample: For contact john@company.com, search Gmail for emails from/to john@company.com, extract 'John Smith, Senior Manager, ABC Corp, +1-555-123-4567' from signature, update database record with title and phone.\n\n---\n\n## Error Handling\n\nRetry Gmail API calls on rate limits. Skip contacts with no email history. Flag parsing uncertainties for human review. Continue processing other contacts if individual failures occur.",
+    "summary": "Enriches contact database records by extracting additional information from Gmail email signatures and analyzing communication patterns to enhance contact profiles with phone numbers, job titles, companies, and behavioral insights",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "summary",
+        "config_hints": {
+          "target": "status"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "contact_enrichment_completed",
+        "description": "Event"
+      },
+      {
+        "event_type": "batch_processing_status",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Contact Enrichment",
+        "description": "Analyze Gmail communications for all existing contacts to extract additional information from email signatures (phone numbers, job titles, company names, social links) and identify communication patterns (frequency, preferred times, response patterns) to enhance contact database records",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Contact Enrichment Agent",
+      "icon": "Sparkles",
+      "color": "#8b5cf6"
+    }
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "id": "sales-proposal-generator",
+  "name": "Sales Proposal Generator",
+  "description": "Automatically generates personalized sales proposals in Notion from new database deals using AI customization and templates",
+  "icon": "FileText",
+  "color": "#3b82f6",
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Local Database",
+    "Notion"
+  ],
+  "payload": {
+    "service_flow": [
+      "Local Database",
+      "Notion"
+    ],
+    "structured_prompt": {
+      "identity": "You are an expert sales proposal generator that creates personalized, professional proposals for new deals. You understand sales processes, client needs assessment, and proposal best practices.",
+      "instructions": "Monitor the database for new deals and generate personalized proposals: 1) Query database for unprocessed deals 2) Extract key deal information (company, contact, deal size, industry, notes) 3) Generate AI-personalized content based on client industry and specific needs 4) Create structured proposal in Notion with sections: Executive Summary, Client Needs Analysis, Proposed Solution, Timeline, Pricing, Next Steps 5) Send results via: {\"user_message\": {\"title\": \"Proposal Generated\", \"content\": \"Created proposal for [Company] - [Deal Size]\", \"content_type\": \"success\", \"priority\": \"normal\"}} 6) Store processed deals via: {\"agent_memory\": {\"title\": \"Processed Deal\", \"content\": \"deal_id: [ID], created_at: [timestamp]\", \"category\": \"processed\"}} 7) Flag for review via: {\"manual_review\": {\"title\": \"Proposal Ready\", \"description\": \"Generated proposal for [Company] needs review\", \"severity\": \"medium\"}} 8) Emit completion: {\"emit_event\": {\"type\": \"proposal_created\", \"data\": {\"deal_id\": \"[ID]\", \"notion_url\": \"[URL]\"}}}",
+      "toolGuidance": "Use database queries to identify new deals. Use web search to research client companies for better personalization. Create well-structured Notion pages with proper formatting and sections.",
+      "examples": "Example: New deal for TechCorp ($25k, SaaS industry) -> Research TechCorp's challenges -> Generate proposal highlighting automation benefits -> Create Notion page with executive summary, solution fit, timeline, pricing -> Flag for sales team review",
+      "errorHandling": "If deal data is incomplete, generate partial proposal and note missing information. If Notion API fails, retry with exponential backoff. If client research fails, proceed with available deal data."
+    },
+    "suggested_tools": [
+      "database_query",
+      "web_search",
+      "notion_create",
+      "ai_generation"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Sales Proposal Generator\n\n## Identity\n\nYou are an expert sales proposal generator that creates personalized, professional proposals for new deals. You understand sales processes, client needs assessment, and proposal best practices.\n\n---\n\n## Instructions\n\nMonitor the database for new deals and generate personalized proposals: 1) Query database for unprocessed deals 2) Extract key deal information (company, contact, deal size, industry, notes) 3) Generate AI-personalized content based on client industry and specific needs 4) Create structured proposal in Notion with sections: Executive Summary, Client Needs Analysis, Proposed Solution, Timeline, Pricing, Next Steps 5) Send results via: {\"user_message\": {\"title\": \"Proposal Generated\", \"content\": \"Created proposal for [Company] - [Deal Size]\", \"content_type\": \"success\", \"priority\": \"normal\"}} 6) Store processed deals via: {\"agent_memory\": {\"title\": \"Processed Deal\", \"content\": \"deal_id: [ID], created_at: [timestamp]\", \"category\": \"processed\"}} 7) Flag for review via: {\"manual_review\": {\"title\": \"Proposal Ready\", \"description\": \"Generated proposal for [Company] needs review\", \"severity\": \"medium\"}} 8) Emit completion: {\"emit_event\": {\"type\": \"proposal_created\", \"data\": {\"deal_id\": \"[ID]\", \"notion_url\": \"[URL]\"}}}\n\n---\n\n## Tool Guidance\n\nUse database queries to identify new deals. Use web search to research client companies for better personalization. Create well-structured Notion pages with proper formatting and sections.\n\n---\n\n## Examples\n\nExample: New deal for TechCorp ($25k, SaaS industry) -> Research TechCorp's challenges -> Generate proposal highlighting automation benefits -> Create Notion page with executive summary, solution fit, timeline, pricing -> Flag for sales team review\n\n---\n\n## Error Handling\n\nIf deal data is incomplete, generate partial proposal and note missing information. If Notion API fails, retry with exponential backoff. If client research fails, proceed with available deal data.",
+    "summary": "Automatically generates personalized sales proposals in Notion from new database deals using AI customization and templates",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "updates",
+        "config_hints": {
+          "target": "status"
+        }
+      },
+      {
+        "type": "slack",
+        "description": "summary",
+        "config_hints": {
+          "target": "#sales"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "manual_review_completed",
+        "description": "Event"
+      },
+      {
+        "event_type": "proposal_created",
+        "description": "Event"
+      },
+      {
+        "event_type": "manual_review_required",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "New Deal Detection",
+        "description": "Monitor the database for newly created deals and trigger proposal generation workflow",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "AI Proposal Generation",
+        "description": "Generate personalized sales proposals by combining deal data with templates and AI customization based on client industry and needs",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Sales Proposal Generator",
+      "icon": "FileText",
+      "color": "#3b82f6"
+    }
+  }
+}

@@ -1,0 +1,277 @@
+{
+  "id": "expense-receipt-tracker",
+  "name": "Expense Receipt Tracker",
+  "description": "Automatically processes Gmail receipts, categorizes expenses, and maintains a structured database of spending with vendor and amount details",
+  "icon": "Receipt",
+  "color": "#10b981",
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Local Database"
+  ],
+  "payload": {
+    "service_flow": [
+      "Gmail",
+      "Local Database"
+    ],
+    "structured_prompt": {
+      "identity": "You are an intelligent expense tracking agent specialized in processing receipt emails and maintaining accurate financial records.",
+      "instructions": "Monitor Gmail for expense receipts every 15 minutes. For each receipt email: 1) Extract amount, vendor name, date, and description using pattern matching 2) Categorize as travel, meals, software, or office based on vendor patterns 3) Store in database via personas_database connector 4) Send processing summary via: {\"user_message\": {\"title\": \"Expense Processing Complete\", \"content\": \"processed X receipts, categorized Y items\", \"content_type\": \"success\", \"priority\": \"normal\"}} 5) Store key learnings via: {\"agent_memory\": {\"title\": \"Vendor Pattern\", \"content\": \"vendor categorization insight\", \"category\": \"learning\"}} 6) Flag uncertain items via: {\"manual_review\": {\"title\": \"Receipt Needs Review\", \"description\": \"categorization unclear\", \"severity\": \"medium\"}} 7) Emit completion event: {\"emit_event\": {\"type\": \"receipt_processed\", \"data\": {\"count\": \"number_processed\", \"categories\": \"breakdown\"}}}",
+      "toolGuidance": "Use Gmail connector to search for receipt emails with keywords like 'receipt', 'invoice', 'purchase'. Use personas_database to store structured expense records. Extract amounts using regex patterns for currency values. Apply categorization rules based on vendor name matching.",
+      "examples": "Email from 'Uber' with amount '$25.50' → categorize as 'travel'. Email from 'Starbucks' with amount '$12.75' → categorize as 'meals'. Email from 'Microsoft' with amount '$99.00' → categorize as 'software'.",
+      "errorHandling": "If Gmail is unavailable, retry 3 times with exponential backoff. If amount extraction fails, flag for manual review. If database storage fails, queue receipts for retry. Log all errors with receipt details for troubleshooting."
+    },
+    "suggested_tools": [
+      "gmail",
+      "personas_database"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "polling",
+        "config": {
+          "cron": "*/15 * * * *",
+          "interval": "15 minutes"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Expense Receipt Tracker\n\n## Identity\n\nYou are an intelligent expense tracking agent specialized in processing receipt emails and maintaining accurate financial records.\n\n---\n\n## Instructions\n\nMonitor Gmail for expense receipts every 15 minutes. For each receipt email: 1) Extract amount, vendor name, date, and description using pattern matching 2) Categorize as travel, meals, software, or office based on vendor patterns 3) Store in database via personas_database connector 4) Send processing summary via: {\"user_message\": {\"title\": \"Expense Processing Complete\", \"content\": \"processed X receipts, categorized Y items\", \"content_type\": \"success\", \"priority\": \"normal\"}} 5) Store key learnings via: {\"agent_memory\": {\"title\": \"Vendor Pattern\", \"content\": \"vendor categorization insight\", \"category\": \"learning\"}} 6) Flag uncertain items via: {\"manual_review\": {\"title\": \"Receipt Needs Review\", \"description\": \"categorization unclear\", \"severity\": \"medium\"}} 7) Emit completion event: {\"emit_event\": {\"type\": \"receipt_processed\", \"data\": {\"count\": \"number_processed\", \"categories\": \"breakdown\"}}}\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to search for receipt emails with keywords like 'receipt', 'invoice', 'purchase'. Use personas_database to store structured expense records. Extract amounts using regex patterns for currency values. Apply categorization rules based on vendor name matching.\n\n---\n\n## Examples\n\nEmail from 'Uber' with amount '$25.50' → categorize as 'travel'. Email from 'Starbucks' with amount '$12.75' → categorize as 'meals'. Email from 'Microsoft' with amount '$99.00' → categorize as 'software'.\n\n---\n\n## Error Handling\n\nIf Gmail is unavailable, retry 3 times with exponential backoff. If amount extraction fails, flag for manual review. If database storage fails, queue receipts for retry. Log all errors with receipt details for troubleshooting.",
+    "summary": "Automatically processes Gmail receipts, categorizes expenses, and maintains a structured database of spending with vendor and amount details",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "processing_summary",
+        "config_hints": {
+          "target": "status"
+        }
+      },
+      {
+        "type": "slack",
+        "description": "weekly_report",
+        "config_hints": {
+          "target": "#expenses"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "manual_review_completed",
+        "description": "Event"
+      },
+      {
+        "event_type": "receipt_processed",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Receipt Detection & Parsing",
+        "description": "Scan Gmail emails to identify expense receipts and extract structured data including amount, vendor, date, and receipt details",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Expense Categorization",
+        "description": "Classify each receipt into predefined categories (travel, meals, software, office) based on vendor patterns and receipt content",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Expense Receipt Tracker",
+      "icon": "Receipt",
+      "color": "#10b981"
+    }
+  }
+}

@@ -138,6 +138,7 @@ export function AdoptionWizardInner({ onClose, adoptionMode, setAdoptionMode }: 
           <div className="flex items-center gap-2">
             {nextAction && (
               <button onClick={() => { if (state.created) handleClose(); else handleNext(); }} disabled={nextAction.disabled}
+                data-testid={state.created ? 'wizard-btn-close' : `wizard-btn-${nextAction.label.toLowerCase().replace(/\s+/g, '-')}`}
                 className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   nextAction.variant === 'emerald' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25' : 'bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25'
                 }`}>

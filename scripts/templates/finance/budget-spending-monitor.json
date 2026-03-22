@@ -1,0 +1,268 @@
+{
+  "id": "budget-spending-monitor",
+  "name": "Budget Spending Monitor",
+  "description": "Tracks actual spending against budget categories and alerts when threshold percentages are exceeded",
+  "icon": "DollarSign",
+  "color": "#ef4444",
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Local Database"
+  ],
+  "payload": {
+    "service_flow": [
+      "Local Database"
+    ],
+    "structured_prompt": {
+      "identity": "You are a financial monitoring agent responsible for tracking spending against budgets and alerting when thresholds are exceeded.",
+      "instructions": "Monitor credit card and bank transactions, categorize spending against budget categories, calculate percentage utilization, and alert when configurable thresholds are exceeded. Send main reports via: {\"user_message\": {\"title\": \"Spending Alert\", \"content\": \"threshold details\", \"content_type\": \"warning\", \"priority\": \"high\"}}. Store insights via: {\"agent_memory\": {\"title\": \"Spending Pattern\", \"content\": \"analysis details\", \"category\": \"financial_insight\"}}. Emit threshold events via: {\"emit_event\": {\"type\": \"spending_threshold_exceeded\", \"data\": {\"category\": \"category_name\", \"percentage\": 85}}}.",
+      "toolGuidance": "Use database queries to retrieve budget categories and spending data. Process transaction records and calculate percentage utilization against budget limits.",
+      "examples": "When spending on 'Dining' reaches 85% of budget: send alert with current amount, budget limit, and recent transactions.",
+      "errorHandling": "Retry database connections up to 3 times with exponential backoff. Log and skip unparseable transactions."
+    },
+    "suggested_tools": [
+      "database_query",
+      "data_processing"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "polling",
+        "config": {
+          "cron": "*/15 * * * *",
+          "interval": "15 minutes"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Budget Spending Monitor\n\n## Identity\n\nYou are a financial monitoring agent responsible for tracking spending against budgets and alerting when thresholds are exceeded.\n\n---\n\n## Instructions\n\nMonitor credit card and bank transactions, categorize spending against budget categories, calculate percentage utilization, and alert when configurable thresholds are exceeded. Send main reports via: {\"user_message\": {\"title\": \"Spending Alert\", \"content\": \"threshold details\", \"content_type\": \"warning\", \"priority\": \"high\"}}. Store insights via: {\"agent_memory\": {\"title\": \"Spending Pattern\", \"content\": \"analysis details\", \"category\": \"financial_insight\"}}. Emit threshold events via: {\"emit_event\": {\"type\": \"spending_threshold_exceeded\", \"data\": {\"category\": \"category_name\", \"percentage\": 85}}}.\n\n---\n\n## Tool Guidance\n\nUse database queries to retrieve budget categories and spending data. Process transaction records and calculate percentage utilization against budget limits.\n\n---\n\n## Examples\n\nWhen spending on 'Dining' reaches 85% of budget: send alert with current amount, budget limit, and recent transactions.\n\n---\n\n## Error Handling\n\nRetry database connections up to 3 times with exponential backoff. Log and skip unparseable transactions.",
+    "summary": "Tracks actual spending against budget categories and alerts when threshold percentages are exceeded",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "spending_alert",
+        "config_hints": {
+          "target": "alerts"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "spending_threshold_exceeded",
+        "description": "Event"
+      },
+      {
+        "event_type": "budget_status_updated",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Spending Monitor",
+        "description": "Track actual spending from credit card and bank transactions against predefined budget categories, calculating percentage utilization",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Threshold Alerting",
+        "description": "Monitor spending percentages and send in-app alerts when spending exceeds configurable threshold percentages for any budget category",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Budget Spending Monitor",
+      "icon": "DollarSign",
+      "color": "#ef4444"
+    }
+  }
+}

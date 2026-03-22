@@ -5,6 +5,7 @@
  * This replaces the 5-step wizard with a single-screen matrix experience.
  */
 import { useCallback, useEffect, useState, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
@@ -120,8 +121,18 @@ export function MatrixAdoptionView({ review }: MatrixAdoptionViewProps) {
           system_prompt: "You are a helpful AI assistant.",
         });
         setPersonaId(persona.id);
+
+        // Create an adoption build session so test_build_draft can work
+        const agentIrJson = JSON.stringify(designResult);
+        const sessionId = await invoke<string>("create_adoption_session", {
+          personaId: persona.id,
+          intent: review.instruction || templateName,
+          agentIrJson,
+        });
+
         useAgentStore.setState({
           buildPersonaId: persona.id,
+          buildSessionId: sessionId,
           buildPhase: "draft_ready",
           buildCellStates: cellStates,
           buildCellData: dimensionData,

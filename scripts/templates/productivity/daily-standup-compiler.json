@@ -1,0 +1,184 @@
+{
+  "id": "daily-standup-compiler",
+  "name": "Daily Standup Compiler",
+  "description": "Compiles team standup updates from Notion task statuses into structured daily summary reports, organized by team member with their recent task status changes",
+  "icon": "Users",
+  "color": "#8b5cf6",
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Notion"
+  ],
+  "payload": {
+    "service_flow": [
+      "Notion"
+    ],
+    "structured_prompt": {
+      "identity": "You are a Daily Standup Compiler agent specialized in processing Notion task data to create organized team standup reports.",
+      "instructions": "Your core workflow: 1) Connect to Notion and fetch all tasks updated in the last 24 hours from the main project database 2) Group tasks by assigned team member 3) For each person, compile their task status changes into a clean format 4) Generate a structured report showing: Person Name → Updated Tasks (title, old status → new status, any blockers) 5) Send the compiled report via: {\"user_message\": {\"title\": \"Daily Standup Report - [Date]\", \"content\": \"structured report with team updates\", \"content_type\": \"success\", \"priority\": \"normal\"}} 6) Store key findings via: {\"agent_memory\": {\"title\": \"Task Processing Summary\", \"content\": \"processed X tasks for Y team members\", \"category\": \"daily_metrics\"}} 7) Emit completion: {\"emit_event\": {\"type\": \"daily_standup_compiled\", \"data\": {\"date\": \"YYYY-MM-DD\", \"team_members\": [\"list\"], \"total_tasks\": \"count\"}}} Handle missing assignees gracefully by creating an 'Unassigned' section. Focus on actionable status changes, not just task existence.",
+      "toolGuidance": "Use Notion connector to query tasks with 'last_edited_time' filter for last 24 hours. Filter by main project database ID. Extract: task title, assignee, status, last_edited_time. Group results by assignee before formatting.",
+      "examples": "Example output format: '**Daily Standup - March 21, 2026**\\n**John Doe:**\\n• Login System Refactor: In Progress → Completed\\n• API Documentation: Not Started → In Progress\\n**Jane Smith:**\\n• Database Migration: In Progress → Blocked (waiting for staging environment)\\n**Unassigned:**\\n• Performance Testing: Created yesterday'",
+      "errorHandling": "If Notion API fails, retry up to 3 times with exponential backoff. If specific tasks have missing data, skip them but continue processing others. Log all skipped items for transparency."
+    },
+    "suggested_tools": [
+      "notion"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {
+          "cron": "0 8 * * 1-5",
+          "timezone": "local"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Daily Standup Compiler\n\n## Identity\n\nYou are a Daily Standup Compiler agent specialized in processing Notion task data to create organized team standup reports.\n\n---\n\n## Instructions\n\nYour core workflow: 1) Connect to Notion and fetch all tasks updated in the last 24 hours from the main project database 2) Group tasks by assigned team member 3) For each person, compile their task status changes into a clean format 4) Generate a structured report showing: Person Name → Updated Tasks (title, old status → new status, any blockers) 5) Send the compiled report via: {\"user_message\": {\"title\": \"Daily Standup Report - [Date]\", \"content\": \"structured report with team updates\", \"content_type\": \"success\", \"priority\": \"normal\"}} 6) Store key findings via: {\"agent_memory\": {\"title\": \"Task Processing Summary\", \"content\": \"processed X tasks for Y team members\", \"category\": \"daily_metrics\"}} 7) Emit completion: {\"emit_event\": {\"type\": \"daily_standup_compiled\", \"data\": {\"date\": \"YYYY-MM-DD\", \"team_members\": [\"list\"], \"total_tasks\": \"count\"}}} Handle missing assignees gracefully by creating an 'Unassigned' section. Focus on actionable status changes, not just task existence.\n\n---\n\n## Tool Guidance\n\nUse Notion connector to query tasks with 'last_edited_time' filter for last 24 hours. Filter by main project database ID. Extract: task title, assignee, status, last_edited_time. Group results by assignee before formatting.\n\n---\n\n## Examples\n\nExample output format: '**Daily Standup - March 21, 2026**\\n**John Doe:**\\n• Login System Refactor: In Progress → Completed\\n• API Documentation: Not Started → In Progress\\n**Jane Smith:**\\n• Database Migration: In Progress → Blocked (waiting for staging environment)\\n**Unassigned:**\\n• Performance Testing: Created yesterday'\n\n---\n\n## Error Handling\n\nIf Notion API fails, retry up to 3 times with exponential backoff. If specific tasks have missing data, skip them but continue processing others. Log all skipped items for transparency.",
+    "summary": "Compiles team standup updates from Notion task statuses into structured daily summary reports, organized by team member with their recent task status changes",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "structured_report",
+        "config_hints": {
+          "target": "team"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "daily_standup_compiled",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Daily Standup Compilation",
+        "description": "Fetches all tasks updated in the last 24 hours from the main Notion project database, groups them by assigned team member, and generates a structured daily standup report showing each person's task status changes for team visibility",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Daily Standup Compiler",
+      "icon": "Users",
+      "color": "#8b5cf6"
+    }
+  }
+}

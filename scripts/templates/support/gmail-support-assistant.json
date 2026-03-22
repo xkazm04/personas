@@ -1,0 +1,271 @@
+{
+  "id": "gmail-support-assistant",
+  "name": "Gmail Support Assistant",
+  "description": "Automatically processes incoming Gmail messages, matches customer questions against a knowledge base, and sends AI-generated replies with human review for uncertain cases.",
+  "icon": "Mail",
+  "color": "#3b82f6",
+  "category": [
+    "support"
+  ],
+  "service_flow": [
+    "Gmail",
+    "Local Database"
+  ],
+  "payload": {
+    "service_flow": [
+      "Gmail",
+      "Local Database"
+    ],
+    "structured_prompt": {
+      "identity": "You are a customer support AI assistant integrated with Gmail and a knowledge base. Your role is to automatically respond to customer questions with accurate, helpful information.",
+      "instructions": "1. Process all incoming Gmail messages to identify customer questions and support requests\n2. For each customer question, search the knowledge base using relevant keywords and context\n3. Generate professional, helpful email replies based on knowledge base content\n4. Send high-confidence replies automatically (confidence ≥ 0.8)\n5. Flag uncertain responses for manual review using: {\"manual_review\": {\"title\": \"Low Confidence Reply\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}}\n6. Report successful activities using: {\"user_message\": {\"title\": \"Support Activity Summary\", \"content\": \"summary of replies sent and questions handled\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n7. Store processed email IDs using: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"gmail_message_ids\", \"category\": \"tracking\"}}\n8. Emit completion events using: {\"emit_event\": {\"type\": \"email_reply_sent\", \"data\": {\"status\": \"success\", \"confidence\": \"score\"}}}",
+      "toolGuidance": "Use Gmail connector to read messages and send replies. Use personas_database connector to query knowledge base. Calculate confidence scores based on knowledge base match quality and answer completeness.",
+      "examples": "Example workflow: 1) Detect new email asking about product pricing 2) Query knowledge base for pricing information 3) Generate reply with current pricing details 4) If confidence > 0.8, send automatically; otherwise flag for review",
+      "errorHandling": "Retry Gmail API calls up to 3 times with exponential backoff. If knowledge base is unavailable, flag all questions for manual review. Log all errors and continue processing other emails."
+    },
+    "suggested_tools": [
+      "gmail",
+      "personas_database",
+      "web_search"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "polling",
+        "config": {
+          "cron": "*/3 * * * *",
+          "interval": "3 minutes"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Gmail Support Assistant\n\n## Identity\n\nYou are a customer support AI assistant integrated with Gmail and a knowledge base. Your role is to automatically respond to customer questions with accurate, helpful information.\n\n---\n\n## Instructions\n\n1. Process all incoming Gmail messages to identify customer questions and support requests\n2. For each customer question, search the knowledge base using relevant keywords and context\n3. Generate professional, helpful email replies based on knowledge base content\n4. Send high-confidence replies automatically (confidence ≥ 0.8)\n5. Flag uncertain responses for manual review using: {\"manual_review\": {\"title\": \"Low Confidence Reply\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}}\n6. Report successful activities using: {\"user_message\": {\"title\": \"Support Activity Summary\", \"content\": \"summary of replies sent and questions handled\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n7. Store processed email IDs using: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"gmail_message_ids\", \"category\": \"tracking\"}}\n8. Emit completion events using: {\"emit_event\": {\"type\": \"email_reply_sent\", \"data\": {\"status\": \"success\", \"confidence\": \"score\"}}}\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to read messages and send replies. Use personas_database connector to query knowledge base. Calculate confidence scores based on knowledge base match quality and answer completeness.\n\n---\n\n## Examples\n\nExample workflow: 1) Detect new email asking about product pricing 2) Query knowledge base for pricing information 3) Generate reply with current pricing details 4) If confidence > 0.8, send automatically; otherwise flag for review\n\n---\n\n## Error Handling\n\nRetry Gmail API calls up to 3 times with exponential backoff. If knowledge base is unavailable, flag all questions for manual review. Log all errors and continue processing other emails.",
+    "summary": "Automatically processes incoming Gmail messages, matches customer questions against a knowledge base, and sends AI-generated replies with human review for uncertain cases.",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "summary",
+        "config_hints": {
+          "target": "status"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "email_reply_sent",
+        "description": "Event"
+      },
+      {
+        "event_type": "manual_review_requested",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Email Question Processing",
+        "description": "Monitor Gmail inbox for all incoming emails, analyze content to identify customer questions and support requests",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Knowledge Base Lookup",
+        "description": "Search database knowledge base for relevant information matching customer questions and queries",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Gmail Support Assistant",
+      "icon": "Mail",
+      "color": "#3b82f6"
+    }
+  }
+}

@@ -483,6 +483,54 @@ async fn handle_execute_persona(
     eval_bridge_method_with_timeout(&state, "executePersona", &params, BRIDGE_TIMEOUT_MUTATION).await
 }
 
+#[derive(Deserialize)]
+struct AdoptTemplateRequest {
+    template_name: String,
+    design_result_json: String,
+}
+
+async fn handle_adopt_template(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<AdoptTemplateRequest>,
+) -> Result<String, (StatusCode, String)> {
+    // Direct Rust call — bypasses bridge for reliability
+    let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+    match crate::commands::design::template_adopt::instant_adopt_template_inner(
+        &app_state,
+        req.template_name.clone(),
+        req.design_result_json,
+    ) {
+        Ok(val) => {
+            // Refresh persona list in the webview
+            let _ = eval_bridge_method(&state, "navigate", &serde_json::json!({"section": "personas"})).await;
+            Ok(serde_json::json!({"success": true, "result": val}).to_string())
+        }
+        Err(e) => {
+            tracing::error!(template = %req.template_name, error = %e, "adopt_template failed");
+            Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string())
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct OpenMatrixAdoptionRequest {
+    review_id: String,
+}
+
+async fn handle_open_matrix_adoption(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<OpenMatrixAdoptionRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let params = serde_json::json!({ "reviewId": req.review_id });
+    eval_bridge_method_with_timeout(&state, "openMatrixAdoption", &params, 90).await
+}
+
+async fn handle_refresh_personas(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method_with_timeout(&state, "refreshPersonas", &serde_json::json!({}), BRIDGE_TIMEOUT_MUTATION).await
+}
+
 async fn handle_health() -> &'static str {
     r#"{"status":"ok","server":"personas-test-automation","version":"0.2.0"}"#
 }
@@ -523,6 +571,9 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses) {
         .route("/delete-agent", post(handle_delete_agent))
         .route("/promote-build", post(handle_promote_build))
         .route("/execute-persona", post(handle_execute_persona))
+        .route("/adopt-template", post(handle_adopt_template))
+        .route("/open-matrix-adoption", post(handle_open_matrix_adoption))
+        .route("/refresh-personas", post(handle_refresh_personas))
         .with_state(state);
 
     tauri::async_runtime::spawn(async move {

@@ -52,6 +52,36 @@ pub async fn start_build_session(
     Ok(session_id)
 }
 
+/// Create a build session record from a pre-built design result (template adoption).
+/// Does NOT spawn CLI — just inserts the session with agent_ir so test_build_draft works.
+#[tauri::command]
+pub async fn create_adoption_session(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    intent: String,
+    agent_ir_json: String,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let conn = state.db.get()?;
+    conn.execute(
+        "INSERT INTO build_sessions (id, persona_id, phase, resolved_cells, intent, agent_ir, created_at, updated_at)
+         VALUES (?1, ?2, 'draft_ready', '{}', ?3, ?4, ?5, ?5)",
+        rusqlite::params![session_id, persona_id, intent, agent_ir_json, now],
+    )?;
+
+    tracing::info!(
+        session_id = %session_id,
+        persona_id = %persona_id,
+        "create_adoption_session: created session for template adoption testing"
+    );
+
+    Ok(session_id)
+}
+
 /// Send a user answer to a pending question in a build session.
 #[tauri::command]
 pub async fn answer_build_question(
@@ -222,7 +252,9 @@ pub async fn promote_build_draft_inner(
 
     let ir_name = agent_ir.get("name").and_then(|v| v.as_str());
     let ir_description = agent_ir.get("description").and_then(|v| v.as_str());
-    let ir_system_prompt = agent_ir.get("system_prompt").and_then(|v| v.as_str());
+    let ir_system_prompt = agent_ir.get("system_prompt")
+        .or_else(|| agent_ir.get("full_prompt_markdown"))
+        .and_then(|v| v.as_str());
     let ir_structured_prompt = agent_ir.get("structured_prompt");
     let ir_icon = agent_ir.get("icon").and_then(|v| v.as_str());
     let ir_color = agent_ir.get("color").and_then(|v| v.as_str());
@@ -240,9 +272,10 @@ pub async fn promote_build_draft_inner(
     // Step 1: Build structured DesignUseCase[] from agent_ir
     // ================================================================
     let ir_use_cases = agent_ir.get("use_cases").and_then(|v| v.as_array());
-    let ir_triggers = agent_ir.get("triggers").and_then(|v| v.as_array());
-    let ir_events = agent_ir.get("events").and_then(|v| v.as_array());
-    let ir_messages = agent_ir.get("messages");
+    let ir_triggers = agent_ir.get("triggers").or_else(|| agent_ir.get("suggested_triggers")).and_then(|v| v.as_array());
+    let ir_events = agent_ir.get("events").or_else(|| agent_ir.get("suggested_event_subscriptions")).and_then(|v| v.as_array());
+    let ir_messages = agent_ir.get("messages")
+        .or_else(|| agent_ir.get("suggested_notification_channels"));
 
     let mut structured_use_cases: Vec<serde_json::Value> = Vec::new();
     let mut use_case_ids: Vec<String> = Vec::new();
@@ -302,7 +335,7 @@ pub async fn promote_build_draft_inner(
     // ================================================================
     let mut tool_names: Vec<String> = Vec::new();
 
-    if let Some(tools) = agent_ir.get("tools").and_then(|v| v.as_array()) {
+    if let Some(tools) = agent_ir.get("tools").or_else(|| agent_ir.get("suggested_tools")).and_then(|v| v.as_array()) {
         for tool_json in tools {
             // Handle both string tool names ("web_search") and object definitions ({name, ...})
             let name = if let Some(s) = tool_json.as_str() {

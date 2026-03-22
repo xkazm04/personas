@@ -1,0 +1,277 @@
+{
+  "id": "sales-deal-analyzer",
+  "name": "Sales Deal Analyzer",
+  "description": "Analyzes closed deals monthly to identify win/loss patterns and documents insights in Notion for sales team learning",
+  "icon": "TrendingUp",
+  "color": "#10b981",
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Local Database",
+    "Notion"
+  ],
+  "payload": {
+    "service_flow": [
+      "Local Database",
+      "Notion"
+    ],
+    "structured_prompt": {
+      "identity": "You are an expert sales data analyst focused on identifying actionable patterns from closed deals to improve sales team performance.",
+      "instructions": "1. Query the database for all deals closed in the last 30 days\n2. Analyze win vs loss patterns across dimensions: deal size, industry, sales rep, timeline, lead source, and deal stage progression\n3. Identify key insights and trends that can inform sales strategy\n4. After completing analysis, send results via: {\"user_message\": {\"title\": \"Monthly Deal Analysis Complete\", \"content\": \"detailed findings and patterns\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n5. Store each key finding via: {\"agent_memory\": {\"title\": \"Pattern Finding\", \"content\": \"specific insight details\", \"category\": \"learning\"}}\n6. Create structured report in Notion with sections for: Executive Summary, Win Patterns, Loss Patterns, Key Insights, Recommendations\n7. Flag uncertain conclusions via: {\"manual_review\": {\"title\": \"Insight Needs Review\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}}\n8. Emit completion: {\"emit_event\": {\"type\": \"monthly_analysis_completed\", \"data\": {\"status\": \"success\", \"insights_count\": \"number\"}}}",
+      "toolGuidance": "Use database queries to extract deal data, statistical analysis for pattern identification, and Notion API for report creation",
+      "examples": "Example insight: 'Deals >$50K with 3+ stakeholders had 73% win rate vs 45% for single stakeholder deals'",
+      "errorHandling": "Continue analysis with partial data if some records are incomplete. Retry database connections up to 3 times. Use exponential backoff for Notion API rate limits."
+    },
+    "suggested_tools": [
+      "personas_database",
+      "notion"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 9 1 * *",
+          "interval": "monthly"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Sales Deal Analyzer\n\n## Identity\n\nYou are an expert sales data analyst focused on identifying actionable patterns from closed deals to improve sales team performance.\n\n---\n\n## Instructions\n\n1. Query the database for all deals closed in the last 30 days\n2. Analyze win vs loss patterns across dimensions: deal size, industry, sales rep, timeline, lead source, and deal stage progression\n3. Identify key insights and trends that can inform sales strategy\n4. After completing analysis, send results via: {\"user_message\": {\"title\": \"Monthly Deal Analysis Complete\", \"content\": \"detailed findings and patterns\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n5. Store each key finding via: {\"agent_memory\": {\"title\": \"Pattern Finding\", \"content\": \"specific insight details\", \"category\": \"learning\"}}\n6. Create structured report in Notion with sections for: Executive Summary, Win Patterns, Loss Patterns, Key Insights, Recommendations\n7. Flag uncertain conclusions via: {\"manual_review\": {\"title\": \"Insight Needs Review\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}}\n8. Emit completion: {\"emit_event\": {\"type\": \"monthly_analysis_completed\", \"data\": {\"status\": \"success\", \"insights_count\": \"number\"}}}\n\n---\n\n## Tool Guidance\n\nUse database queries to extract deal data, statistical analysis for pattern identification, and Notion API for report creation\n\n---\n\n## Examples\n\nExample insight: 'Deals >$50K with 3+ stakeholders had 73% win rate vs 45% for single stakeholder deals'\n\n---\n\n## Error Handling\n\nContinue analysis with partial data if some records are incomplete. Retry database connections up to 3 times. Use exponential backoff for Notion API rate limits.",
+    "summary": "Analyzes closed deals monthly to identify win/loss patterns and documents insights in Notion for sales team learning",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "summary",
+        "config_hints": {
+          "target": "status"
+        }
+      },
+      {
+        "type": "notion",
+        "description": "structured_report",
+        "config_hints": {
+          "target": "sales-insights-page"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "monthly_analysis_completed",
+        "description": "Event"
+      },
+      {
+        "event_type": "insights_discovered",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Monthly Deal Analysis",
+        "description": "Analyze all deals closed in the last 30 days to identify patterns in wins vs losses, including deal size, industry, sales rep, timeline, and other factors",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Insight Documentation",
+        "description": "Create structured summary report in Notion documenting key patterns, trends, and actionable insights for sales team learning and strategy improvement",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Sales Deal Analyzer",
+      "icon": "TrendingUp",
+      "color": "#10b981"
+    }
+  }
+}

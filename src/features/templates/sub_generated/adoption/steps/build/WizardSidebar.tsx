@@ -54,6 +54,7 @@ export function WizardSidebar({
                 if (!disabled && isCompleted) onStepClick(step.key);
               }}
               title={STEP_DESCRIPTIONS[step.key]}
+              data-testid={`wizard-step-${step.key}`}
               className={`
                 relative flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors
                 ${isActive ? 'border-l-2 border-violet-500 bg-violet-500/10' : 'border-l-2 border-transparent'}

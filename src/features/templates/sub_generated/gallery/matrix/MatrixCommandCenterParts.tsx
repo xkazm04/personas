@@ -405,6 +405,7 @@ export function CreationPostGeneration({
             value={refineText}
             onChange={(e) => setRefineText(e.target.value)}
             placeholder="Adjust anything..."
+            data-testid="agent-refine-input"
             className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
             onKeyDown={(e) => { if (e.key === 'Enter' && refineText.trim()) { onRefine(refineText.trim()); setRefineText(''); } }}
           />
@@ -568,6 +569,7 @@ export function TestResultsPanel({
           <button
             type="button"
             onClick={onApprove}
+            data-testid="agent-approve-btn"
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -578,6 +580,7 @@ export function TestResultsPanel({
           <button
             type="button"
             onClick={onReject}
+            data-testid="agent-reject-btn"
             className={`${didPass ? 'flex-1' : 'w-full'} flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-primary/15 text-foreground/70 hover:bg-primary/5 transition-colors`}
           >
             <RotateCcw className="w-3.5 h-3.5" />

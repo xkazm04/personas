@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-03-22 15:04:30.387070",
+  "duration_s": 150.624231,
+  "results": {
+    "Access Request Manager": {
+      "adopt": true,
+      "persona_id": "5e1a102f-a4af-4cec-95f6-9f7a1585c76e",
+      "persona_name": "T: Access Request Manager",
+      "execute": true,
+      "verify": {
+        "executions": true,
+        "messages": true,
+        "memories": false,
+        "events": false,
+        "reviews": false
+      },
+      "matrix": true
+    },
+    "Budget Spending Monitor": {
+      "adopt": true,
+      "persona_id": "f8d31598-d8be-495d-8320-8d37e89ddfec",
+      "persona_name": "T: Budget Spending Monitor",
+      "execute": true,
+      "verify": {
+        "executions": true,
+        "messages": true,
+        "memories": true,
+        "events": true,
+        "reviews": true
+      },
+      "matrix": true
+    },
+    "Contact Enrichment Agent": {
+      "adopt": true,
+      "persona_id": "1a8cefe3-eb78-4669-bca5-75ce1540ef97",
+      "persona_name": "T: Contact Enrichment Agent",
+      "execute": true,
+      "verify": {
+        "executions": true,
+        "messages": true,
+        "memories": false,
+        "events": false,
+        "reviews": false
+      },
+      "matrix": true
+    },
+    "Contact Sync Manager": {
+      "adopt": true,
+      "persona_id": "7150ec2d-e61d-4503-b8c4-f222cedb01f4",
+      "persona_name": "T: Contact Sync Manager",
+      "execute": true,
+      "verify": {
+        "executions": true,
+        "messages": true,
+        "memories": false,
+        "events": false,
+        "reviews": false
+      },
+      "matrix": true
+    },
+    "Content Performance Reporter": {
+      "adopt": true,
+      "persona_id": "3753f336-f979-4421-974d-75379a172aac",
+      "persona_name": "T: Content Performance Reporter",
+      "execute": true,
+      "verify": {
+        "executions": true,
+        "messages": true,
+        "memories": false,
+        "events": false,
+        "reviews": true
+      },
+      "matrix": true
+    }
+  }
+}

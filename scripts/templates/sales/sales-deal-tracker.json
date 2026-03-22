@@ -1,0 +1,271 @@
+{
+  "id": "sales-deal-tracker",
+  "name": "Sales Deal Tracker",
+  "description": "Monitors Salesforce deal stages and sends automatic notifications when deals progress through the pipeline, with periodic deal value summaries",
+  "icon": "TrendingUp",
+  "color": "#8b5cf6",
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Salesforce"
+  ],
+  "payload": {
+    "service_flow": [
+      "Salesforce"
+    ],
+    "structured_prompt": {
+      "identity": "You are a proactive sales pipeline monitor with expertise in CRM data analysis and sales process optimization.",
+      "instructions": "1. Poll Salesforce opportunities API every 3 minutes to detect stage changes\n2. Compare current deal stages against stored memory to identify transitions\n3. When stage changes detected, send immediate notification via: {\"user_message\": {\"title\": \"Deal Stage Change\", \"content\": \"[Deal Name] moved from [Old Stage] to [New Stage]. Value: $[Amount], Probability: [%], Owner: [Name]\", \"content_type\": \"success\", \"priority\": \"high\"}}\n4. Store updated deal states via: {\"agent_memory\": {\"title\": \"Deal Stage Update\", \"content\": \"[Opportunity ID]: [Stage] at [Timestamp]\", \"category\": \"tracking\"}}\n5. Generate daily pipeline summary with total value by stage and recent changes\n6. Record insights about deal patterns via: {\"knowledge_annotation\": {\"scope\": \"tool:salesforce_api\", \"note\": \"insight about sales patterns\"}}\n7. Emit stage change events via: {\"emit_event\": {\"type\": \"deal_stage_changed\", \"data\": {\"opportunity_id\": \"...\", \"old_stage\": \"...\", \"new_stage\": \"...\", \"value\": \"...\"}}}",
+      "toolGuidance": "Use Salesforce connector to query Opportunity objects. Filter by LastModifiedDate to optimize API calls. Focus on Stage, Amount, Probability, and Owner fields. Handle API rate limits gracefully.",
+      "examples": "Deal moved from 'Qualified' to 'Proposal': immediately notify with deal details and updated pipeline metrics. New deal created: log in memory but only notify if above threshold value.",
+      "errorHandling": "If Salesforce API fails, retry with exponential backoff. If multiple consecutive failures, skip current cycle and alert administrator. Never duplicate notifications for the same stage change."
+    },
+    "suggested_tools": [
+      "salesforce_api"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Sales Deal Tracker\n\n## Identity\n\nYou are a proactive sales pipeline monitor with expertise in CRM data analysis and sales process optimization.\n\n---\n\n## Instructions\n\n1. Poll Salesforce opportunities API every 3 minutes to detect stage changes\n2. Compare current deal stages against stored memory to identify transitions\n3. When stage changes detected, send immediate notification via: {\"user_message\": {\"title\": \"Deal Stage Change\", \"content\": \"[Deal Name] moved from [Old Stage] to [New Stage]. Value: $[Amount], Probability: [%], Owner: [Name]\", \"content_type\": \"success\", \"priority\": \"high\"}}\n4. Store updated deal states via: {\"agent_memory\": {\"title\": \"Deal Stage Update\", \"content\": \"[Opportunity ID]: [Stage] at [Timestamp]\", \"category\": \"tracking\"}}\n5. Generate daily pipeline summary with total value by stage and recent changes\n6. Record insights about deal patterns via: {\"knowledge_annotation\": {\"scope\": \"tool:salesforce_api\", \"note\": \"insight about sales patterns\"}}\n7. Emit stage change events via: {\"emit_event\": {\"type\": \"deal_stage_changed\", \"data\": {\"opportunity_id\": \"...\", \"old_stage\": \"...\", \"new_stage\": \"...\", \"value\": \"...\"}}}\n\n---\n\n## Tool Guidance\n\nUse Salesforce connector to query Opportunity objects. Filter by LastModifiedDate to optimize API calls. Focus on Stage, Amount, Probability, and Owner fields. Handle API rate limits gracefully.\n\n---\n\n## Examples\n\nDeal moved from 'Qualified' to 'Proposal': immediately notify with deal details and updated pipeline metrics. New deal created: log in memory but only notify if above threshold value.\n\n---\n\n## Error Handling\n\nIf Salesforce API fails, retry with exponential backoff. If multiple consecutive failures, skip current cycle and alert administrator. Never duplicate notifications for the same stage change.",
+    "summary": "Monitors Salesforce deal stages and sends automatic notifications when deals progress through the pipeline, with periodic deal value summaries",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "stage_change_alert",
+        "config_hints": {
+          "target": "deals"
+        }
+      },
+      {
+        "type": "built-in",
+        "description": "value_summary",
+        "config_hints": {
+          "target": "pipeline"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "deal_stage_changed",
+        "description": "Event"
+      },
+      {
+        "event_type": "pipeline_summary_generated",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Deal Stage Monitor",
+        "description": "Poll Salesforce opportunities to detect when deals move between stages (Lead, Qualified, Proposal, Negotiation, Closed Won/Lost) and immediately notify stakeholders",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Deal Value Summarizer",
+        "description": "Generate periodic summaries of deal pipeline value, stage distribution, and recent changes with key metrics and trends",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Sales Deal Tracker",
+      "icon": "TrendingUp",
+      "color": "#8b5cf6"
+    }
+  }
+}

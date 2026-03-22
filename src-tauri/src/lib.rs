@@ -814,6 +814,7 @@ pub fn run() {
             commands::design::build_sessions::list_build_sessions,
             commands::design::build_sessions::test_build_draft,
             commands::design::build_sessions::promote_build_draft,
+            commands::design::build_sessions::create_adoption_session,
             // Design -- Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,

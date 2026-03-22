@@ -52,6 +52,7 @@ export function RowActionMenu({
               setOpen(false);
               onViewDetails();
             }}
+            data-testid="menu-view-details"
             className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-foreground/80 hover:bg-primary/5 transition-colors text-left"
           >
             <Eye className="w-4 h-4" />

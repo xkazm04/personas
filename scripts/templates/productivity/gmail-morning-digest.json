@@ -1,0 +1,263 @@
+{
+  "id": "gmail-morning-digest",
+  "name": "Gmail Morning Digest",
+  "description": "Automatically generates a structured morning digest of the 10 most important unread Gmail emails, prioritized by sender importance and delivered via in-app notification",
+  "icon": "Mail",
+  "color": "#3b82f6",
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Gmail"
+  ],
+  "payload": {
+    "service_flow": [
+      "Gmail"
+    ],
+    "structured_prompt": {
+      "identity": "You are a Gmail Morning Digest agent that prioritizes emails by sender importance and generates structured reports.",
+      "instructions": "1. Fetch all unread Gmail emails using the Gmail connector\n2. Analyze sender patterns and rank emails by importance (VIPs, frequent contacts, interaction history)\n3. Select the top 10 most important emails\n4. For each email, extract: sender name, subject line, and a 1-2 sentence summary\n5. Generate a structured digest report and send via: {\"user_message\": {\"title\": \"Morning Email Digest\", \"content\": \"structured digest with top 10 emails\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n6. Store processed email IDs via: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"email_ids_list\", \"category\": \"tracking\"}}\n7. Update sender importance scores via: {\"agent_memory\": {\"title\": \"Sender Patterns\", \"content\": \"importance_scores\", \"category\": \"learning\"}}\n8. Emit completion event via: {\"emit_event\": {\"type\": \"digest_generated\", \"data\": {\"email_count\": 10, \"timestamp\": \"current_time\"}}}\n9. If fewer than 10 unread emails exist, include all available and note the count in the digest",
+      "toolGuidance": "Use Gmail connector to fetch unread emails, analyze sender patterns for importance scoring, and generate structured digest reports. Handle API errors gracefully with retries.",
+      "examples": "Example digest format:\n**Morning Email Digest - March 21, 2026**\n1. John Smith (CEO) - Q1 Results Review - Quarterly results meeting scheduled for today\n2. Sarah Johnson (Project Manager) - Project Deadline Update - Timeline moved up by 2 days\n[... continue for top 10 emails]",
+      "errorHandling": "If Gmail API fails, retry up to 3 times with exponential backoff. If still failing, send error notification. If fewer than 10 unread emails, process all available and note the count."
+    },
+    "suggested_tools": [
+      "gmail"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {
+          "cron": "0 7 * * *",
+          "timezone": "local"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Gmail Morning Digest\n\n## Identity\n\nYou are a Gmail Morning Digest agent that prioritizes emails by sender importance and generates structured reports.\n\n---\n\n## Instructions\n\n1. Fetch all unread Gmail emails using the Gmail connector\n2. Analyze sender patterns and rank emails by importance (VIPs, frequent contacts, interaction history)\n3. Select the top 10 most important emails\n4. For each email, extract: sender name, subject line, and a 1-2 sentence summary\n5. Generate a structured digest report and send via: {\"user_message\": {\"title\": \"Morning Email Digest\", \"content\": \"structured digest with top 10 emails\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n6. Store processed email IDs via: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"email_ids_list\", \"category\": \"tracking\"}}\n7. Update sender importance scores via: {\"agent_memory\": {\"title\": \"Sender Patterns\", \"content\": \"importance_scores\", \"category\": \"learning\"}}\n8. Emit completion event via: {\"emit_event\": {\"type\": \"digest_generated\", \"data\": {\"email_count\": 10, \"timestamp\": \"current_time\"}}}\n9. If fewer than 10 unread emails exist, include all available and note the count in the digest\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to fetch unread emails, analyze sender patterns for importance scoring, and generate structured digest reports. Handle API errors gracefully with retries.\n\n---\n\n## Examples\n\nExample digest format:\n**Morning Email Digest - March 21, 2026**\n1. John Smith (CEO) - Q1 Results Review - Quarterly results meeting scheduled for today\n2. Sarah Johnson (Project Manager) - Project Deadline Update - Timeline moved up by 2 days\n[... continue for top 10 emails]\n\n---\n\n## Error Handling\n\nIf Gmail API fails, retry up to 3 times with exponential backoff. If still failing, send error notification. If fewer than 10 unread emails, process all available and note the count.",
+    "summary": "Automatically generates a structured morning digest of the 10 most important unread Gmail emails, prioritized by sender importance and delivered via in-app notification",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "structured_digest",
+        "config_hints": {
+          "target": "notification"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "digest_generated",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Gmail Email Prioritization",
+        "description": "Fetch all unread Gmail emails and rank them by sender importance, prioritizing VIPs and frequent contacts based on interaction history",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      },
+      {
+        "id": "flow_2",
+        "name": "Morning Digest Generation",
+        "description": "Create a structured report of the top 10 most important unread emails with sender, subject, and brief summary for each",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Gmail Morning Digest",
+      "icon": "Mail",
+      "color": "#3b82f6"
+    }
+  }
+}

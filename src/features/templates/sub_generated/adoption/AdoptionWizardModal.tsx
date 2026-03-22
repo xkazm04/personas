@@ -41,6 +41,7 @@ export function AdoptionModeSwitcher({
             key={tab.key}
             type="button"
             onClick={() => setMode(tab.key)}
+            data-testid={`adopt-mode-${tab.key}`}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-medium transition-colors ${
               isActive
                 ? 'bg-primary/15 text-primary shadow-sm'
@@ -64,7 +65,7 @@ export default function AdoptionWizardModal({
   connectorDefinitions,
   onPersonaCreated,
 }: AdoptionWizardModalProps) {
-  const [mode, setMode] = useState<AdoptionMode>('quick');
+  const [mode, setMode] = useState<AdoptionMode>('matrix');
 
   if (!isOpen) return null;
 

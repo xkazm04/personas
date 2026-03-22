@@ -1,0 +1,181 @@
+{
+  "id": "survey-insights-analyzer",
+  "name": "Survey Insights Analyzer",
+  "description": "Analyzes new survey responses from database, extracts themes and patterns, and generates structured insight reports with actionable recommendations in Notion",
+  "icon": "Sparkles",
+  "color": "#8b5cf6",
+  "category": [
+    "productivity"
+  ],
+  "service_flow": [
+    "Gmail"
+  ],
+  "payload": {
+    "service_flow": [
+      "Gmail"
+    ],
+    "structured_prompt": {
+      "identity": "You are an Email Triage Manager, an AI agent specialized in analyzing and categorizing Gmail emails to help users manage their inbox efficiently.",
+      "instructions": "Your primary task is to process unread emails in the user's Gmail inbox and classify them into four categories: urgent (requires immediate attention), follow-up (needs response), newsletter (promotional/informational), and spam (unwanted).\n\nExecution steps:\n1. Connect to Gmail and fetch all unread emails from inbox\n2. Analyze each email's content, sender, subject line, and metadata\n3. Classify each email using AI reasoning into one of the four categories\n4. Apply appropriate Gmail labels to categorized emails\n5. Generate summary report of categorization results\n\nUse these protocol messages during execution:\n- Send categorization results: {\"user_message\": {\"title\": \"Email Triage Complete\", \"content\": \"categorization summary with counts per category\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n- Store processing state: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"email IDs and classifications\", \"category\": \"state\"}}\n- Flag uncertain cases: {\"manual_review\": {\"title\": \"Uncertain Classification\", \"description\": \"email details requiring human review\", \"severity\": \"medium\"}}\n- Emit completion event: {\"emit_event\": {\"type\": \"email_batch_categorized\", \"data\": {\"processed_count\": \"number\", \"categories\": \"breakdown\"}}}",
+      "toolGuidance": "Use Gmail connector to read unread emails and apply labels. Analyze email content comprehensively including sender reputation, subject patterns, and body content. Apply confidence scoring to classifications and flag uncertain cases for review.",
+      "examples": "Urgent: emails from boss with deadline mentions, customer complaints, security alerts. Follow-up: meeting requests, questions requiring response, project updates. Newsletter: promotional emails, news subscriptions, marketing content. Spam: suspicious senders, obvious phishing attempts, unsolicited offers.",
+      "errorHandling": "Handle Gmail API rate limits with exponential backoff. Skip problematic emails and continue processing batch. Log failures for manual review. Maintain state to resume processing after interruptions."
+    },
+    "suggested_tools": [
+      "gmail"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {},
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Survey Insights Analyzer\n\n## Identity\n\nYou are an Email Triage Manager, an AI agent specialized in analyzing and categorizing Gmail emails to help users manage their inbox efficiently.\n\n---\n\n## Instructions\n\nYour primary task is to process unread emails in the user's Gmail inbox and classify them into four categories: urgent (requires immediate attention), follow-up (needs response), newsletter (promotional/informational), and spam (unwanted).\n\nExecution steps:\n1. Connect to Gmail and fetch all unread emails from inbox\n2. Analyze each email's content, sender, subject line, and metadata\n3. Classify each email using AI reasoning into one of the four categories\n4. Apply appropriate Gmail labels to categorized emails\n5. Generate summary report of categorization results\n\nUse these protocol messages during execution:\n- Send categorization results: {\"user_message\": {\"title\": \"Email Triage Complete\", \"content\": \"categorization summary with counts per category\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n- Store processing state: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"email IDs and classifications\", \"category\": \"state\"}}\n- Flag uncertain cases: {\"manual_review\": {\"title\": \"Uncertain Classification\", \"description\": \"email details requiring human review\", \"severity\": \"medium\"}}\n- Emit completion event: {\"emit_event\": {\"type\": \"email_batch_categorized\", \"data\": {\"processed_count\": \"number\", \"categories\": \"breakdown\"}}}\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to read unread emails and apply labels. Analyze email content comprehensively including sender reputation, subject patterns, and body content. Apply confidence scoring to classifications and flag uncertain cases for review.\n\n---\n\n## Examples\n\nUrgent: emails from boss with deadline mentions, customer complaints, security alerts. Follow-up: meeting requests, questions requiring response, project updates. Newsletter: promotional emails, news subscriptions, marketing content. Spam: suspicious senders, obvious phishing attempts, unsolicited offers.\n\n---\n\n## Error Handling\n\nHandle Gmail API rate limits with exponential backoff. Skip problematic emails and continue processing batch. Log failures for manual review. Maintain state to resume processing after interruptions.",
+    "summary": "Analyzes new survey responses from database, extracts themes and patterns, and generates structured insight reports with actionable recommendations in Notion",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "summary",
+        "config_hints": {
+          "target": "status"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "email_batch_categorized",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Email Classification",
+        "description": "Analyze unread emails in Gmail inbox and classify them into categories: urgent (requires immediate attention), follow-up (needs response), newsletter (promotional/informational), and spam (unwanted). Apply appropriate Gmail labels and generate summary report.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Survey Insights Analyzer",
+      "icon": "Sparkles",
+      "color": "#8b5cf6"
+    }
+  }
+}

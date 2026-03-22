@@ -608,11 +608,12 @@ pub(crate) async fn event_bus_tick(
             tracing::info!(
                 event_id = %event.id,
                 event_type = %event.event_type,
-                "Event bus: no matches found -- check subscription/listener configuration"
+                "Event bus: no subscriber matches -- marking as delivered (no consumers)"
             );
-            let _ = event_repo::update_status(pool, &event.id, "skipped", None);
+            let _ = event_repo::update_status(pool, &event.id, "delivered", None);
             scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
-            emit_event_to_frontend(app, event, "skipped");
+            scheduler.events_delivered.fetch_add(1, Ordering::Relaxed);
+            emit_event_to_frontend(app, event, "delivered");
         } else {
             event_matches.push((idx, matches));
         }

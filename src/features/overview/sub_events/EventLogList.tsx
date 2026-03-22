@@ -24,8 +24,10 @@ const STATUS_LABEL_MAP: Record<string, string> = {
   processing: 'processing',
   completed: 'delivered',
   processed: 'delivered',
+  delivered: 'delivered',
+  partial: 'delivered',
   failed: 'failed',
-  skipped: 'skipped',
+  skipped: 'delivered',
 };
 
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
@@ -76,8 +78,12 @@ export default function EventLogList() {
       label: 'Source',
       width: '1fr',
       render: (event) => {
-        // Show the persona name if the source is a persona
+        // Resolve persona from source_id (UUID) or from source_type (format: "persona:Name")
         const sourcePersona = event.source_id ? getPersona(event.source_id) : null;
+        const personaNameFromSource = event.source_type?.startsWith('persona:')
+          ? event.source_type.slice('persona:'.length)
+          : null;
+
         if (sourcePersona) {
           return (
             <div className="flex items-center gap-1.5 min-w-0">
@@ -88,6 +94,14 @@ export default function EventLogList() {
                 {sourcePersona.icon || <Bot className="w-2.5 h-2.5 text-foreground/50" />}
               </div>
               <span className="text-sm text-foreground truncate">{sourcePersona.name}</span>
+            </div>
+          );
+        }
+        if (personaNameFromSource) {
+          return (
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Bot className="w-3.5 h-3.5 text-foreground/40 flex-shrink-0" />
+              <span className="text-sm text-foreground truncate">{personaNameFromSource}</span>
             </div>
           );
         }

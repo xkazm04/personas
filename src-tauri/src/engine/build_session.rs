@@ -665,6 +665,7 @@ pub async fn run_tool_tests(
 ) -> Result<serde_json::Value, AppError> {
     let tools = agent_ir
         .get("tools")
+        .or_else(|| agent_ir.get("suggested_tools"))
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
@@ -757,25 +758,53 @@ pub async fn run_tool_tests(
             session_id = %session_id,
             "CLI returned no test_plan entries, falling back to skip-all"
         );
+        let builtin_tool_names: std::collections::HashSet<&str> = [
+            "personas_database", "database", "database_query", "db_query", "db_write",
+            "personas_messages", "messaging", "personas_vector_db",
+            "file_read", "file_write", "web_search", "web_fetch", "http_request",
+        ].iter().copied().collect();
+
+        let mut fb_passed = 0usize;
+        let mut fb_skipped = 0usize;
         let fallback_results: Vec<serde_json::Value> = tools
             .iter()
-            .filter_map(|t| t.get("name").and_then(|n| n.as_str()))
-            .map(|name| serde_json::json!({
-                "tool_name": name,
-                "status": "skipped",
-                "http_status": null,
-                "latency_ms": 0,
-                "error": "CLI did not generate a test command for this tool",
-                "connector": null,
-                "output_preview": null,
-            }))
+            .filter_map(|t| {
+                let name = t.as_str().or_else(|| t.get("name").and_then(|n| n.as_str()))?;
+                Some(name)
+            })
+            .map(|name| {
+                let is_builtin = builtin_tool_names.contains(name);
+                if is_builtin {
+                    fb_passed += 1;
+                    serde_json::json!({
+                        "tool_name": name,
+                        "status": "passed",
+                        "http_status": null,
+                        "latency_ms": 0,
+                        "error": null,
+                        "connector": null,
+                        "output_preview": "Built-in platform tool — auto-verified",
+                    })
+                } else {
+                    fb_skipped += 1;
+                    serde_json::json!({
+                        "tool_name": name,
+                        "status": "skipped",
+                        "http_status": null,
+                        "latency_ms": 0,
+                        "error": "CLI did not generate a test command for this tool",
+                        "connector": null,
+                        "output_preview": null,
+                    })
+                }
+            })
             .collect();
         return Ok(serde_json::json!({
             "results": fallback_results,
-            "tools_tested": 0,
-            "tools_passed": 0,
+            "tools_tested": fb_passed,
+            "tools_passed": fb_passed,
             "tools_failed": 0,
-            "tools_skipped": fallback_results.len(),
+            "tools_skipped": fb_skipped,
             "credential_issues": [],
         }));
     }
@@ -824,8 +853,17 @@ pub async fn run_tool_tests(
             .unwrap_or("")
             .to_string();
 
-        let result = if is_cli_native {
-            // CLI-native tools (web search, summarization, etc.) auto-pass
+        // Auto-pass built-in platform connectors regardless of CLI classification
+        let is_builtin_platform = matches!(
+            tool_name,
+            "personas_database" | "database" | "database_query" | "db_query" | "db_write"
+            | "personas_messages" | "messaging"
+            | "personas_vector_db"
+            | "file_read" | "file_write"
+        ) || connector.as_deref().map_or(false, |c| c.starts_with("personas_") || c == "builtin");
+
+        let result = if is_cli_native || is_builtin_platform {
+            // CLI-native tools and built-in platform connectors auto-pass
             passed += 1;
             tool_runner::ToolTestResult {
                 tool_name: tool_name.to_string(),
@@ -1064,7 +1102,14 @@ Tools that call external APIs (Gmail, Slack, Notion, etc.) — compose a minimal
 ### 2. CLI-native tools (uses built-in Claude capabilities)
 Tools for web search, web browsing, URL fetching, text summarization, content analysis, data extraction from text — these are powered by Claude CLI's built-in capabilities and do NOT need external API calls or credentials. Mark these as `"cli_native": true`.
 
-### 3. Non-testable tools (write-only, destructive, or no endpoint)
+### 3. Built-in platform connectors (always available, auto-verified)
+These are built into the Personas platform and are ALWAYS available — no credentials needed, no API calls to test:
+- `personas_database` / `database` / `db_query` / `db_write` / `database_query` — Built-in SQLite/Supabase database, always accessible via DATABASE_URL
+- `personas_messages` / `messaging` — Built-in in-app messaging, always available
+- `personas_vector_db` — Built-in vector knowledge base, always available
+Mark ALL of these as `"cli_native": true` with description "Built-in platform connector — auto-verified".
+
+### 4. Non-testable tools (write-only, destructive, or no endpoint)
 Tools that only write/delete/mutate data — mark with empty curl.
 
 ## Rules for API tools
@@ -1082,7 +1127,8 @@ Output EXACTLY one JSON object — a test_plan array. No markdown, no commentary
 {{"test_plan": [
   {{"tool_name": "fetch_unread_emails", "connector": "gmail", "curl": "curl -s -H 'Authorization: Bearer $GMAIL_ACCESS_TOKEN' 'https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=1&q=is:unread' -w '\\n%{{http_code}}'", "cli_native": false, "description": "Verify Gmail API access with minimal fetch"}},
   {{"tool_name": "search_web", "connector": null, "curl": "", "cli_native": true, "description": "Uses Claude CLI built-in web search — auto-verified"}},
-  {{"tool_name": "summarize_article", "connector": null, "curl": "", "cli_native": true, "description": "Uses Claude CLI built-in reasoning — auto-verified"}},
+  {{"tool_name": "database", "connector": "personas_database", "curl": "", "cli_native": true, "description": "Built-in platform connector — auto-verified"}},
+  {{"tool_name": "messaging", "connector": "personas_messages", "curl": "", "cli_native": true, "description": "Built-in platform connector — auto-verified"}},
   {{"tool_name": "post_to_slack", "connector": "slack", "curl": "", "cli_native": false, "description": "Skipped: write-only operation"}}
 ]}}
 

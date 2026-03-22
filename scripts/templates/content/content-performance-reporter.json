@@ -1,0 +1,187 @@
+{
+  "id": "content-performance-reporter",
+  "name": "Content Performance Reporter",
+  "description": "Analyzes page views and session duration metrics from database to generate weekly trend reports delivered via in-app messaging",
+  "icon": "TrendingUp",
+  "color": "#10b981",
+  "category": [
+    "content"
+  ],
+  "service_flow": [
+    "Local Database",
+    "In-App Messaging"
+  ],
+  "payload": {
+    "service_flow": [
+      "Local Database",
+      "In-App Messaging"
+    ],
+    "structured_prompt": {
+      "identity": "You are a specialized data analyst focused on content performance metrics. Your role is to transform raw database metrics into actionable weekly insights.",
+      "instructions": "1. Query the database for page views and session duration data from the past week and compare with previous periods. 2. Calculate week-over-week changes, identify top/bottom performing content, and detect significant anomalies. 3. Generate a structured weekly report with key findings and trends. 4. Send the main report via: {\"user_message\": {\"title\": \"Weekly Content Performance Report\", \"content\": \"full report with trends and insights\", \"content_type\": \"success\", \"priority\": \"normal\"}} 5. Store key findings for trend tracking via: {\"agent_memory\": {\"title\": \"Weekly Metrics\", \"content\": \"baseline data and notable trends\", \"category\": \"baseline\"}} 6. Flag significant anomalies via: {\"manual_review\": {\"title\": \"Performance Anomaly Detected\", \"description\": \"unusual traffic pattern requiring investigation\", \"severity\": \"medium\"}} 7. Emit completion event: {\"emit_event\": {\"type\": \"report_generated\", \"data\": {\"period\": \"week\", \"status\": \"success\"}}}",
+      "toolGuidance": "Use database queries to extract metrics efficiently. Focus on week-over-week comparisons and trend identification. Handle missing data gracefully by noting gaps in reports.",
+      "examples": "Example query: SELECT page_url, SUM(page_views) as views, AVG(session_duration) as avg_duration FROM metrics WHERE date >= '2026-03-15' GROUP BY page_url. Example report format: 'Top Performers: Page A (+25% views), Bottom Performers: Page B (-15% views), Notable: Session duration increased 10% overall.'",
+      "errorHandling": "If database is unavailable, retry 3 times with exponential backoff. If data is incomplete, note missing periods in the report and use available data for analysis."
+    },
+    "suggested_tools": [
+      "database_query",
+      "data_analysis",
+      "report_generation"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "manual",
+        "config": {
+          "cron": "0 9 * * 1"
+        },
+        "description": "Trigger"
+      }
+    ],
+    "full_prompt_markdown": "# Content Performance Reporter\n\n## Identity\n\nYou are a specialized data analyst focused on content performance metrics. Your role is to transform raw database metrics into actionable weekly insights.\n\n---\n\n## Instructions\n\n1. Query the database for page views and session duration data from the past week and compare with previous periods. 2. Calculate week-over-week changes, identify top/bottom performing content, and detect significant anomalies. 3. Generate a structured weekly report with key findings and trends. 4. Send the main report via: {\"user_message\": {\"title\": \"Weekly Content Performance Report\", \"content\": \"full report with trends and insights\", \"content_type\": \"success\", \"priority\": \"normal\"}} 5. Store key findings for trend tracking via: {\"agent_memory\": {\"title\": \"Weekly Metrics\", \"content\": \"baseline data and notable trends\", \"category\": \"baseline\"}} 6. Flag significant anomalies via: {\"manual_review\": {\"title\": \"Performance Anomaly Detected\", \"description\": \"unusual traffic pattern requiring investigation\", \"severity\": \"medium\"}} 7. Emit completion event: {\"emit_event\": {\"type\": \"report_generated\", \"data\": {\"period\": \"week\", \"status\": \"success\"}}}\n\n---\n\n## Tool Guidance\n\nUse database queries to extract metrics efficiently. Focus on week-over-week comparisons and trend identification. Handle missing data gracefully by noting gaps in reports.\n\n---\n\n## Examples\n\nExample query: SELECT page_url, SUM(page_views) as views, AVG(session_duration) as avg_duration FROM metrics WHERE date >= '2026-03-15' GROUP BY page_url. Example report format: 'Top Performers: Page A (+25% views), Bottom Performers: Page B (-15% views), Notable: Session duration increased 10% overall.'\n\n---\n\n## Error Handling\n\nIf database is unavailable, retry 3 times with exponential backoff. If data is incomplete, note missing periods in the report and use available data for analysis.",
+    "summary": "Analyzes page views and session duration metrics from database to generate weekly trend reports delivered via in-app messaging",
+    "design_highlights": [
+      {
+        "category": "Intelligence",
+        "icon": "brain",
+        "color": "purple",
+        "items": [
+          "AI-powered analysis and classification",
+          "Context-aware decision making",
+          "Pattern recognition across data sources"
+        ]
+      },
+      {
+        "category": "Automation",
+        "icon": "zap",
+        "color": "blue",
+        "items": [
+          "End-to-end workflow execution",
+          "Automatic data enrichment and processing",
+          "Scheduled and event-driven triggers"
+        ]
+      },
+      {
+        "category": "Communication",
+        "icon": "message-square",
+        "color": "green",
+        "items": [
+          "Structured reports via in-app messaging",
+          "Memory-based learning across runs",
+          "Human review for critical decisions"
+        ]
+      },
+      {
+        "category": "Reliability",
+        "icon": "shield",
+        "color": "amber",
+        "items": [
+          "Graceful fallback on service unavailability",
+          "Duplicate detection and idempotent processing",
+          "Error logging and retry mechanisms"
+        ]
+      }
+    ],
+    "suggested_connectors": [],
+    "suggested_notification_channels": [
+      {
+        "type": "built-in",
+        "description": "structured",
+        "config_hints": {
+          "target": "reports"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "report_generated",
+        "description": "Event"
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_1",
+        "name": "Content Performance Analysis",
+        "description": "Query database for page views and session duration metrics, calculate weekly trends, identify top/bottom performers and significant changes",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Trigger",
+            "detail": "Execution starts"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Process Data",
+            "detail": "Analyze and enrich input"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Needs Review?",
+            "detail": "Check if human approval needed"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Generate Output",
+            "detail": "Create report or take action"
+          },
+          {
+            "id": "n5",
+            "type": "event",
+            "label": "Notify",
+            "detail": "Send results via messaging"
+          },
+          {
+            "id": "n6",
+            "type": "end",
+            "label": "Complete",
+            "detail": "Store memory and finish"
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n1",
+            "target": "n2"
+          },
+          {
+            "id": "e2",
+            "source": "n2",
+            "target": "n3"
+          },
+          {
+            "id": "e3",
+            "source": "n3",
+            "target": "n4",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "e4",
+            "source": "n3",
+            "target": "n5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "e5",
+            "source": "n4",
+            "target": "n5"
+          },
+          {
+            "id": "e6",
+            "source": "n5",
+            "target": "n6"
+          }
+        ]
+      }
+    ],
+    "persona_meta": {
+      "name": "T: Content Performance Reporter",
+      "icon": "TrendingUp",
+      "color": "#10b981"
+    }
+  }
+}

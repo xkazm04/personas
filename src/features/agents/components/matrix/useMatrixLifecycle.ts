@@ -106,14 +106,15 @@ export function useMatrixLifecycle({
     if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return;
 
     const sessionId = state.buildSessionId;
-    if (!sessionId || !personaId) return;
+    const effectivePersonaId = personaId || state.buildPersonaId;
+    if (!sessionId || !effectivePersonaId) return;
 
     // Optimistic: transition to testing immediately
     const testId = `test_${Date.now()}`;
     useAgentStore.getState().handleStartTest(testId);
 
     try {
-      const report = await testBuildDraft(sessionId, personaId);
+      const report = await testBuildDraft(sessionId, effectivePersonaId);
 
       // Store full results and summary
       const store = useAgentStore.getState();
@@ -173,7 +174,8 @@ export function useMatrixLifecycle({
       return emptyResult;
     }
 
-    if (!personaId) {
+    const effectivePid = personaId || state.buildPersonaId;
+    if (!effectivePid) {
       return emptyResult;
     }
 
@@ -188,7 +190,7 @@ export function useMatrixLifecycle({
 
       if (hasRichDraft) {
         // New path: use atomic promote that creates entities from agent_ir
-        const result: PromoteBuildResult = await promoteBuildDraft(sessionId, personaId);
+        const result: PromoteBuildResult = await promoteBuildDraft(sessionId, effectivePid);
 
         // Transition to promoted
         useAgentStore.getState().handleBuildSessionStatus({
@@ -217,7 +219,7 @@ export function useMatrixLifecycle({
           description: (agentIR?.description as string) ?? undefined,
         });
 
-        await updatePersona(personaId, input);
+        await updatePersona(effectivePid, input);
 
         useAgentStore.getState().handleBuildSessionStatus({
           type: "session_status",

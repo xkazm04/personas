@@ -428,98 +428,133 @@ pub fn instant_adopt_template(
     design_result_json: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
+    instant_adopt_template_inner(&state, template_name, design_result_json)
+}
+
+/// Inner function callable from both Tauri command and test automation.
+/// Uses create_persona_atomically to create persona + tools + triggers in one transaction.
+pub fn instant_adopt_template_inner(
+    state: &Arc<AppState>,
+    template_name: String,
+    design_result_json: String,
+) -> Result<serde_json::Value, AppError> {
+    use super::n8n_transform::types::{N8nPersonaOutput, N8nToolDraft, N8nTriggerDraft, N8nConnectorRef};
+
     tracing::info!(template_id = %template_name, "instant_adopt_template: start");
     if design_result_json.trim().is_empty() {
-        return Err(AppError::Validation(
-            "Design result JSON cannot be empty".into(),
-        ));
+        return Err(AppError::Validation("Design result JSON cannot be empty".into()));
     }
 
     let design: serde_json::Value = serde_json::from_str(&design_result_json)
         .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;
 
-    let full_prompt = design
-        .get("full_prompt_markdown")
+    let full_prompt = design.get("full_prompt_markdown")
         .and_then(|v| v.as_str())
         .unwrap_or("You are a helpful AI assistant.")
         .to_string();
 
-    let summary = design
-        .get("summary")
+    let summary = design.get("summary")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .or_else(|| Some(format!("Adopted from template: {template_name}")));
 
-    // Normalize structured_prompt: ensure customSections use "title" as the canonical heading field
-    let structured_prompt = design.get("structured_prompt").map(|v| {
-        let mut sp = v.clone();
-        if let Some(sections) = sp.get_mut("customSections").and_then(|v| v.as_array_mut()) {
-            for section in sections.iter_mut() {
-                if section.get("title").and_then(|v| v.as_str()).unwrap_or("").is_empty() {
-                    let heading = section.get("label").cloned()
-                        .or_else(|| section.get("name").cloned())
-                        .or_else(|| section.get("key").cloned());
-                    if let Some(heading_val) = heading {
-                        if let Some(obj) = section.as_object_mut() {
-                            obj.insert("title".into(), heading_val);
-                        }
-                    }
-                }
-            }
-        }
-        sp.to_string()
-    });
+    // Normalize structured_prompt
+    let structured_prompt = design.get("structured_prompt").cloned();
 
-    // Extract optional persona metadata from design result
     let persona_meta = design.get("persona_meta");
-    let icon = persona_meta
-        .and_then(|m| m.get("icon"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
-    let color = persona_meta
-        .and_then(|m| m.get("color"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
-    let model_profile = persona_meta
-        .and_then(|m| m.get("model_profile"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
+    let icon = persona_meta.and_then(|m| m.get("icon")).and_then(|v| v.as_str()).map(|s| s.to_string());
+    let color = persona_meta.and_then(|m| m.get("color")).and_then(|v| v.as_str()).map(|s| s.to_string());
+    let model_profile = persona_meta.and_then(|m| m.get("model_profile")).and_then(|v| v.as_str()).map(|s| s.to_string());
     let persona_name = persona_meta
-        .and_then(|m| m.get("name"))
-        .and_then(|v| v.as_str())
+        .and_then(|m| m.get("name")).and_then(|v| v.as_str())
         .filter(|n| !n.trim().is_empty())
         .map(|s| s.to_string())
         .unwrap_or(template_name.clone());
 
-    let persona = persona_repo::create(
+    // Build tools from suggested_tools
+    let tools: Option<Vec<N8nToolDraft>> = design.get("suggested_tools")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(|t| {
+            let name = t.as_str().map(|s| s.to_string())
+                .or_else(|| t.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()))?;
+            Some(N8nToolDraft {
+                name: name.clone(),
+                category: t.get("category").and_then(|v| v.as_str()).unwrap_or("api").to_string(),
+                description: t.get("description").and_then(|v| v.as_str()).unwrap_or(&name).to_string(),
+                requires_credential_type: t.get("requires_credential_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                input_schema: t.get("input_schema").cloned(),
+                implementation_guide: t.get("implementation_guide").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            })
+        }).collect());
+
+    // Build triggers from suggested_triggers
+    let triggers: Option<Vec<N8nTriggerDraft>> = design.get("suggested_triggers")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(|t| {
+            Some(N8nTriggerDraft {
+                trigger_type: t.get("trigger_type").and_then(|v| v.as_str()).unwrap_or("manual").to_string(),
+                config: t.get("config").cloned(),
+                description: t.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                use_case_id: None,
+            })
+        }).collect());
+
+    // Build required_connectors from suggested_connectors
+    let required_connectors: Option<Vec<N8nConnectorRef>> = design.get("suggested_connectors")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(|c| {
+            let name = c.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if name.is_empty() { return None; }
+            Some(N8nConnectorRef {
+                name: name.clone(),
+                n8n_credential_type: c.get("auth_type").and_then(|v| v.as_str()).unwrap_or("api_key").to_string(),
+                has_credential: true,
+            })
+        }).collect());
+
+    let notification_channels = design.get("suggested_notification_channels")
+        .map(|v| serde_json::to_string(v).unwrap_or_default());
+
+    // Build the N8nPersonaOutput draft
+    let draft = N8nPersonaOutput {
+        name: Some(persona_name),
+        description: summary,
+        system_prompt: full_prompt,
+        structured_prompt,
+        icon,
+        color,
+        model_profile,
+        max_budget_usd: None,
+        max_turns: None,
+        design_context: Some(design_result_json.clone()),
+        notification_channels,
+        triggers,
+        tools,
+        required_connectors,
+    };
+
+    let draft = super::n8n_transform::types::normalize_n8n_persona_draft(draft, &template_name);
+
+    // Atomic create: persona + tools + triggers in one transaction
+    let (response, _import_result) = super::n8n_transform::confirmation::create_persona_atomically(
         &state.db,
-        CreatePersonaInput {
-            name: persona_name,
-            system_prompt: full_prompt,
-            project_id: None,
-            description: summary,
-            structured_prompt,
-            icon,
-            color,
-            enabled: Some(true),
-            max_concurrent: None,
-            timeout_ms: None,
-            model_profile,
-            max_budget_usd: None,
-            max_turns: None,
-            design_context: Some(design_result_json),
-            group_id: None,
-            notification_channels: None,
-        },
+        &draft,
+        None,
     )?;
 
-    // Track adoption count for the source template (with audit log)
-    if let Err(e) = reviews_repo::increment_adoption_count(&state.db, &template_name, Some(&persona.id)) {
+    // Track adoption count
+    let created_persona_id = response.get("persona").and_then(|p| p.get("id")).and_then(|v| v.as_str());
+    if let Err(e) = reviews_repo::increment_adoption_count(&state.db, &template_name, created_persona_id) {
         tracing::warn!(template = %template_name, error = %e, "Failed to increment adoption count");
     }
 
-    tracing::info!(template_id = %template_name, persona_id = %persona.id, outcome = "success", "instant_adopt_template: completed");
-    Ok(json!({ "persona": persona }))
+    tracing::info!(
+        template_id = %template_name,
+        persona_id = %created_persona_id.unwrap_or("?"),
+        outcome = "success",
+        "instant_adopt_template: completed with tools + triggers"
+    );
+    Ok(response)
 }
 
 // -- Question Generation (fallback for direct calls) -------------

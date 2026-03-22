@@ -188,6 +188,7 @@ export function TemplateDetailModal({
                   size="sm"
                   icon={<Download className="w-4 h-4" />}
                   className="bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 shadow-lg shadow-violet-500/5"
+                  data-testid="button-adopt-template"
                 >
                   Adopt as Persona
                 </Button>
