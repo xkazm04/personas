@@ -1,5 +1,6 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useMemo, useState, useCallback, lazy, Suspense } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import {
   CalendarClock, RefreshCw, Pause, Plus, Calendar,
 } from 'lucide-react';
@@ -62,6 +63,22 @@ export default function ScheduleTimeline() {
         .catch(silentCatch("ScheduleTimeline:refreshSchedulerStatus"));
     }, 30_000);
     return () => { cancelled = true; clearInterval(interval); };
+  }, [fetchCronAgents]);
+
+  // Immediate refresh when backend fires overdue triggers (startup sweep or recovery)
+  useEffect(() => {
+    let cancelled = false;
+    const unlisten = listen<{ recovered: number; timestamp: string }>(
+      'overdue-triggers-fired',
+      () => {
+        if (cancelled) return;
+        fetchCronAgents();
+        getSchedulerStatus()
+          .then((d) => { if (!cancelled) setSchedulerStats(d); })
+          .catch(silentCatch("ScheduleTimeline:overdueTriggersRefresh"));
+      },
+    );
+    return () => { cancelled = true; unlisten.then((fn) => fn()); };
   }, [fetchCronAgents]);
 
   // Parse all agents into schedule entries

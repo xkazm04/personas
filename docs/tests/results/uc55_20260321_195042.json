@@ -1,0 +1,204 @@
+{
+  "timestamp": "2026-03-21T19:49:14.728775",
+  "duration_s": 87.742606,
+  "personas": {
+    "2": {
+      "name": "Email Draft Assistant",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Email Draft Assistant' sp=True sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.175, duration=57342ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/4 checks passed"
+        }
+      },
+      "persona_id": "7be3389a-0d61-42b3-a28f-33ed0566c158"
+    },
+    "3": {
+      "name": "Email-to-Task Extractor",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "fill-intent failed: {'success': False, 'error': 'Field not found: agent-intent-input'}"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    },
+    "4": {
+      "name": "Newsletter Summarizer",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "fill-intent failed: {'success': False, 'error': 'Field not found: agent-intent-input'}"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    },
+    "5": {
+      "name": "Daily Email Digest",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "fill-intent failed: {'success': False, 'error': 'Field not found: agent-intent-input'}"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    },
+    "6": {
+      "name": "Email Attachment Cataloger",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "fill-intent failed: {'success': False, 'error': 'Field not found: agent-intent-input'}"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    },
+    "7": {
+      "name": "Follow-Up Reminder Agent",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "fill-intent failed: {'success': False, 'error': 'Field not found: agent-intent-input'}"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    },
+    "8": {
+      "name": "Phishing Alert Agent",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "fill-intent failed: {'success': False, 'error': 'Field not found: agent-intent-input'}"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    },
+    "9": {
+      "name": "Meeting Notes Organizer",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "fill-intent failed: {'success': False, 'error': 'Field not found: agent-intent-input'}"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    },
+    "10": {
+      "name": "Personal Knowledge Base",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "fill-intent failed: {'success': False, 'error': 'Field not found: agent-intent-input'}"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    }
+  }
+}

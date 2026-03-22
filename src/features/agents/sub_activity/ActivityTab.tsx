@@ -1,0 +1,312 @@
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { Activity, Play, Zap, Brain, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useAgentStore } from '@/stores/agentStore';
+import { listExecutions } from '@/api/agents/executions';
+import { listMemories } from '@/api/overview/memories';
+import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
+import { listEvents } from '@/api/overview/events';
+import { formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import type { PersonaEvent } from '@/lib/types/types';
+import type { PersonaMemory } from '@/lib/types/types';
+import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
+import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
+import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
+import { ExecutionDetail } from '@/features/agents/sub_executions/detail/ExecutionDetail';
+import { EventDetailModal } from '@/features/overview/sub_events/EventDetailModal';
+import MemoryDetailModal from '@/features/overview/sub_memories/components/MemoryDetailModal';
+
+type ActivityType = 'all' | 'execution' | 'event' | 'memory' | 'review';
+
+interface ActivityItem {
+  type: 'execution' | 'event' | 'memory' | 'review';
+  id: string;
+  title: string;
+  subtitle: string;
+  status: string;
+  timestamp: string;
+  raw: PersonaExecution | PersonaEvent | PersonaMemory | PersonaManualReview;
+}
+
+const TYPE_ICONS: Record<string, { icon: React.ElementType; color: string }> = {
+  execution: { icon: Play, color: 'text-blue-400' },
+  event: { icon: Zap, color: 'text-amber-400' },
+  memory: { icon: Brain, color: 'text-violet-400' },
+  review: { icon: AlertTriangle, color: 'text-rose-400' },
+};
+
+const FILTER_TABS: { id: ActivityType; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'execution', label: 'Executions' },
+  { id: 'event', label: 'Events' },
+  { id: 'memory', label: 'Memories' },
+  { id: 'review', label: 'Reviews' },
+];
+
+export function ActivityTab() {
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const [items, setItems] = useState<ActivityItem[]>([]);
+  const [filter, setFilter] = useState<ActivityType>('all');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Detail modal state
+  const [selectedExecution, setSelectedExecution] = useState<PersonaExecution | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
+  const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
+  const [selectedReview, setSelectedReview] = useState<PersonaManualReview | null>(null);
+  const [reviewProcessing, setReviewProcessing] = useState(false);
+
+  const personaId = selectedPersona?.id;
+
+  const loadData = useCallback(async () => {
+    if (!personaId) return;
+    setIsLoading(true);
+    try {
+      const [executions, events, memories, reviews] = await Promise.all([
+        listExecutions(personaId, 50).catch(() => [] as PersonaExecution[]),
+        listEvents(100).catch(() => [] as PersonaEvent[]),
+        listMemories(personaId, undefined, undefined, 50).catch(() => [] as PersonaMemory[]),
+        listManualReviews(personaId).catch(() => [] as PersonaManualReview[]),
+      ]);
+
+      // Filter events to this persona
+      const personaEvents = events.filter(
+        (e) => e.source_id === personaId || e.target_persona_id === personaId
+      );
+
+      const allItems: ActivityItem[] = [
+        ...executions.map((e): ActivityItem => ({
+          type: 'execution',
+          id: e.id,
+          title: `Execution ${e.status}`,
+          subtitle: e.output_data?.slice(0, 80) || 'No output',
+          status: e.status,
+          timestamp: e.started_at || e.created_at,
+          raw: e,
+        })),
+        ...personaEvents.map((e): ActivityItem => ({
+          type: 'event',
+          id: e.id,
+          title: e.event_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          subtitle: e.source_type || 'System',
+          status: e.status === 'pending' ? 'delivered' : e.status,
+          timestamp: e.created_at,
+          raw: e,
+        })),
+        ...memories.map((m): ActivityItem => ({
+          type: 'memory',
+          id: m.id,
+          title: m.title,
+          subtitle: m.category,
+          status: `importance: ${m.importance}`,
+          timestamp: m.created_at,
+          raw: m,
+        })),
+        ...reviews.map((r): ActivityItem => ({
+          type: 'review',
+          id: r.id,
+          title: r.title,
+          subtitle: r.description?.slice(0, 80) || '',
+          status: r.status,
+          timestamp: r.created_at,
+          raw: r,
+        })),
+      ];
+
+      allItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setItems(allItems);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [personaId]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const filtered = useMemo(() => {
+    if (filter === 'all') return items;
+    return items.filter((i) => i.type === filter);
+  }, [items, filter]);
+
+  const counts = useMemo(() => {
+    const c: Record<ActivityType, number> = { all: items.length, execution: 0, event: 0, memory: 0, review: 0 };
+    for (const item of items) c[item.type]++;
+    return c;
+  }, [items]);
+
+  const handleRowClick = (item: ActivityItem) => {
+    switch (item.type) {
+      case 'execution': setSelectedExecution(item.raw as PersonaExecution); break;
+      case 'event': setSelectedEvent(item.raw as PersonaEvent); break;
+      case 'memory': setSelectedMemory(item.raw as PersonaMemory); break;
+      case 'review': setSelectedReview(item.raw as PersonaManualReview); break;
+    }
+  };
+
+  const handleReviewAction = async (status: ManualReviewStatus, notes?: string) => {
+    if (!selectedReview) return;
+    setReviewProcessing(true);
+    try {
+      await updateManualReviewStatus(selectedReview.id, status, notes);
+      setSelectedReview(null);
+      loadData();
+    } finally {
+      setReviewProcessing(false);
+    }
+  };
+
+  if (!selectedPersona) return null;
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-blue-400" />
+          <h3 className="typo-heading text-foreground/90">Activity</h3>
+          <span className="text-xs text-muted-foreground/60">{items.length} items</span>
+        </div>
+        <button
+          onClick={loadData}
+          className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
+          title="Refresh"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1 border-b border-primary/10 pb-0">
+        {FILTER_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setFilter(tab.id)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors ${
+              filter === tab.id
+                ? 'bg-primary/10 text-primary border-b-2 border-primary'
+                : 'text-muted-foreground/70 hover:text-foreground'
+            }`}
+          >
+            {tab.label}
+            {counts[tab.id] > 0 && (
+              <span className="ml-1.5 text-muted-foreground/50">({counts[tab.id]})</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Activity list */}
+      {isLoading ? (
+        <div className="py-8 text-center text-muted-foreground/50 text-sm">Loading activity...</div>
+      ) : filtered.length === 0 ? (
+        <div className="py-8 text-center text-muted-foreground/50 text-sm">No activity yet</div>
+      ) : (
+        <div className="border border-primary/10 rounded-xl overflow-hidden">
+          {filtered.map((item, idx) => {
+            const info = TYPE_ICONS[item.type] ?? TYPE_ICONS.execution!;
+            const Icon = info.icon;
+            const statusEntry = item.type === 'execution' ? getStatusEntry(item.status) : null;
+            return (
+              <div
+                key={`${item.type}-${item.id}`}
+                onClick={() => handleRowClick(item)}
+                className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-white/[0.04] ${
+                  idx > 0 ? 'border-t border-primary/[0.06]' : ''
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${info.color}`} style={{ backgroundColor: 'currentColor', opacity: 0.08 }}>
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground/85 truncate">{item.title}</span>
+                    {statusEntry ? (
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50">{item.status}</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground/60 truncate">{item.subtitle}</p>
+                </div>
+                <span className="text-xs text-muted-foreground/50 flex-shrink-0 whitespace-nowrap">
+                  {formatRelativeTime(item.timestamp)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Detail modals — reusing Overview components */}
+      {selectedExecution && (
+        <DetailModal
+          title={`${selectedPersona.name} - Execution`}
+          subtitle={`ID: ${selectedExecution.id}`}
+          onClose={() => setSelectedExecution(null)}
+        >
+          <ExecutionDetail execution={selectedExecution} />
+        </DetailModal>
+      )}
+
+      {selectedEvent && (
+        <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      )}
+
+      {selectedMemory && (
+        <MemoryDetailModal
+          memory={selectedMemory}
+          personaName={selectedPersona.name}
+          personaColor={selectedPersona.color || '#6366f1'}
+          onClose={() => setSelectedMemory(null)}
+          onDelete={() => { setSelectedMemory(null); loadData(); }}
+        />
+      )}
+
+      {selectedReview && (
+        <DetailModal
+          title={`Review: ${selectedReview.title}`}
+          subtitle={`Severity: ${selectedReview.severity} · Status: ${selectedReview.status}`}
+          onClose={() => setSelectedReview(null)}
+        >
+          <div className="p-4 space-y-3">
+            {selectedReview.description && (
+              <div>
+                <div className="text-xs font-mono text-muted-foreground/50 uppercase mb-1">Description</div>
+                <p className="text-sm text-foreground/80 whitespace-pre-wrap">{selectedReview.description}</p>
+              </div>
+            )}
+            {selectedReview.context_data && (
+              <div>
+                <div className="text-xs font-mono text-muted-foreground/50 uppercase mb-1">Context</div>
+                <pre className="text-xs text-foreground/60 bg-secondary/30 rounded-lg p-2 overflow-x-auto">{selectedReview.context_data}</pre>
+              </div>
+            )}
+            {selectedReview.status === 'pending' && (
+              <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
+                <button
+                  onClick={() => handleReviewAction('approved')}
+                  disabled={reviewProcessing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => handleReviewAction('rejected')}
+                  disabled={reviewProcessing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                >
+                  Reject
+                </button>
+              </div>
+            )}
+            {selectedReview.reviewer_notes && (
+              <div>
+                <div className="text-xs font-mono text-muted-foreground/50 uppercase mb-1">Reviewer Notes</div>
+                <p className="text-sm text-foreground/70 italic">{selectedReview.reviewer_notes}</p>
+              </div>
+            )}
+          </div>
+        </DetailModal>
+      )}
+    </div>
+  );
+}

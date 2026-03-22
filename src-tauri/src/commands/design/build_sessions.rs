@@ -196,7 +196,15 @@ pub async fn promote_build_draft(
     persona_id: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
+    promote_build_draft_inner(&state, session_id, persona_id).await
+}
 
+/// Inner promote logic — callable from both Tauri command and test automation.
+pub async fn promote_build_draft_inner(
+    state: &Arc<AppState>,
+    session_id: String,
+    persona_id: String,
+) -> Result<serde_json::Value, AppError> {
     let session = build_session_repo::get_by_id(&state.db, &session_id)?
         .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
 
@@ -218,6 +226,15 @@ pub async fn promote_build_draft(
     let ir_structured_prompt = agent_ir.get("structured_prompt");
     let ir_icon = agent_ir.get("icon").and_then(|v| v.as_str());
     let ir_color = agent_ir.get("color").and_then(|v| v.as_str());
+
+    tracing::info!(
+        persona_id = %persona_id,
+        has_name = ir_name.is_some(),
+        has_system_prompt = ir_system_prompt.is_some(),
+        system_prompt_len = ir_system_prompt.map(|s| s.len()).unwrap_or(0),
+        has_structured_prompt = ir_structured_prompt.is_some(),
+        "promote_build_draft: extracted IR fields"
+    );
 
     // ================================================================
     // Step 1: Build structured DesignUseCase[] from agent_ir
@@ -509,8 +526,24 @@ pub async fn promote_build_draft(
         ..Default::default()
     };
 
-    if let Err(e) = persona_repo::update(&state.db, &persona_id, persona_update) {
-        entity_errors.push(serde_json::json!({"entity_type": "persona", "entity_name": ir_name.unwrap_or("persona"), "error": e.to_string()}));
+    match persona_repo::update(&state.db, &persona_id, persona_update) {
+        Ok(updated) => {
+            tracing::info!(
+                persona_id = %persona_id,
+                name = %updated.name,
+                prompt_is_default = updated.system_prompt == "You are a helpful AI assistant.",
+                has_structured_prompt = updated.structured_prompt.is_some(),
+                "promote_build_draft: persona update succeeded"
+            );
+        }
+        Err(e) => {
+            tracing::error!(
+                persona_id = %persona_id,
+                error = %e,
+                "promote_build_draft: persona update FAILED"
+            );
+            entity_errors.push(serde_json::json!({"entity_type": "persona", "entity_name": ir_name.unwrap_or("persona"), "error": e.to_string()}));
+        }
     }
 
     // ================================================================

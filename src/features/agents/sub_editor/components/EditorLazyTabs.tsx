@@ -1,5 +1,11 @@
 import { lazy } from 'react';
 
+export const ActivityTab = lazy(() =>
+  import('@/features/agents/sub_activity/ActivityTab').then((m) => ({ default: m.ActivityTab })),
+);
+export const MatrixTab = lazy(() =>
+  import('@/features/agents/sub_activity/MatrixTab').then((m) => ({ default: m.MatrixTab })),
+);
 export const PersonaPromptEditor = lazy(() =>
   import('@/features/agents/sub_prompt').then((m) => ({ default: m.PersonaPromptEditor })),
 );

@@ -5,9 +5,10 @@ use crate::db::models::{GlobalExecutionRow, PersonaExecution};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as repo;
 use crate::db::repos::resources::automations as automation_repo;
-use crate::db::repos::resources::tools as tool_repo;
+use crate::db::repos::resources::{tools as tool_repo, triggers as trigger_repo};
 use crate::engine::automation_runner::automation_to_virtual_tool;
 use crate::engine::failover::CircuitBreakerStatus;
+use crate::engine::scheduler as sched_logic;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged, require_privileged_sync};
 use crate::AppState;
@@ -169,6 +170,19 @@ pub async fn execute_persona(
 
     pipeline.complete_stage();
     pipeline.log_summary();
+
+    // 8. If this execution was triggered manually for a specific trigger,
+    //    advance the trigger's schedule so it moves out of "overdue" state.
+    //    This handles both "Run now" and "Recover" actions from the frontend.
+    if let Some(ref tid) = execution.trigger_id {
+        if let Ok(trigger) = trigger_repo::get_by_id(&state.db, tid) {
+            let cfg = trigger.parse_config();
+            let next = sched_logic::compute_next_from_config(&cfg, chrono::Utc::now());
+            if let Err(e) = trigger_repo::advance_schedule(&state.db, tid, next) {
+                tracing::warn!(trigger_id = %tid, error = %e, "Failed to advance trigger schedule after manual execution");
+            }
+        }
+    }
 
     // 9. Return the execution record (frontend uses the ID for event filtering)
     repo::get_by_id(&state.db, &execution.id)

@@ -5,17 +5,25 @@ import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 
-// -- Importance dots ----------------------------------------------------------
+// -- Importance dots (1-10 scale) ---------------------------------------------
 export function ImportanceDots({ value }: { value: number }) {
-  const label = `Importance: ${value} of 5`;
+  const maxScale = 10;
+  const label = `Importance: ${value} of ${maxScale}`;
   return (
     <div className="flex items-center gap-1" title={label} aria-label={label}>
-      <div className="flex items-center gap-0.5">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className={`w-1.5 h-1.5 rounded-full ${i <= value ? 'bg-amber-400' : 'bg-muted-foreground/15'}`} />
+      <div className="flex items-center gap-[2px]">
+        {Array.from({ length: maxScale }, (_, i) => i + 1).map((i) => (
+          <div
+            key={i}
+            className={`w-1.5 h-1.5 rounded-full transition-colors ${
+              i <= value
+                ? value >= 8 ? 'bg-red-400' : value >= 5 ? 'bg-amber-400' : 'bg-emerald-400'
+                : 'bg-muted-foreground/15'
+            }`}
+          />
         ))}
       </div>
-      <span className="text-sm text-muted-foreground/80">({value}/5)</span>
+      <span className="text-xs text-muted-foreground/70 tabular-nums">({value}/{maxScale})</span>
     </div>
   );
 }

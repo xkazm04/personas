@@ -421,7 +421,53 @@ async fn handle_delete_agent(
 async fn handle_promote_build(
     AxumState(state): AxumState<ServerState>,
 ) -> Result<String, (StatusCode, String)> {
-    eval_bridge_method_with_timeout(&state, "promoteBuildDraft", &serde_json::json!({}), BRIDGE_TIMEOUT_MUTATION).await
+    // Direct promote via Tauri command — bypasses bridge store dependency.
+    // Gets session_id from the WebView store, then resolves persona_id from DB.
+    let state_json = eval_bridge_method(&state, "getState", &serde_json::json!({})).await?;
+    let state_val: serde_json::Value = serde_json::from_str(&state_json)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse state: {e}")))?;
+
+    let session_id = state_val.get("buildSessionId")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| (StatusCode::BAD_REQUEST, "No buildSessionId in state".to_string()))?
+        .to_string();
+
+    // Resolve persona_id: prefer store value, fall back to DB lookup
+    let persona_id = state_val.get("buildPersonaId")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            // DB lookup via build_sessions table
+            let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+            let conn = app_state.db.get().ok()?;
+            conn.query_row(
+                "SELECT persona_id FROM build_sessions WHERE id = ?1",
+                rusqlite::params![session_id],
+                |row| row.get::<_, String>(0),
+            ).ok()
+        })
+        .ok_or_else(|| (StatusCode::BAD_REQUEST, format!("No persona_id for session {session_id}")))?;
+
+    tracing::info!(session_id = %session_id, persona_id = %persona_id, "test_automation: promote_build via direct invoke");
+
+    // Call the promote command directly
+    let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+    let result = crate::commands::design::build_sessions::promote_build_draft_inner(
+        &app_state, session_id.clone(), persona_id.clone()
+    ).await;
+
+    match result {
+        Ok(val) => {
+            // Refresh the persona list in the WebView
+            let _ = eval_bridge_method(&state, "navigate", &serde_json::json!({"section": "personas"})).await;
+            Ok(serde_json::json!({"success": true, "result": val, "personaId": persona_id}).to_string())
+        }
+        Err(e) => {
+            tracing::error!(error = %e, "test_automation: promote_build failed");
+            Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string())
+        }
+    }
 }
 
 #[derive(Deserialize)]

@@ -14,6 +14,7 @@ import { OnboardingBanner } from '@/features/agents/components/onboarding/Onboar
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
+  ActivityTab, MatrixTab,
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
   PersonaConnectorsTab, DesignTab, LabTab, HealthTab, ChatTab, AssertionsTab,
 } from './EditorLazyTabs';
@@ -191,6 +192,8 @@ export function EditorBody() {
             transition={{ duration: 0.15 }}
           >
             <Suspense fallback={null}>
+              {editorTab === 'activity' && <ActivityTab />}
+              {editorTab === 'matrix' && <MatrixTab />}
               {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
               {editorTab === 'prompt' && <PersonaPromptEditor />}
               {editorTab === 'lab' && <LabTab />}

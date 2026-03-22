@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-03-21T19:46:28.403681",
+  "duration_s": 134.581165,
+  "personas": {
+    "1": {
+      "name": "Email Triage Assistant",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "Exception: 'charmap' codec can't encode character '\\u2192' in position 30: character maps to <undefined>"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Email Triage Assistant' sp=True sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.175, duration=57342ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "5/5 checks passed"
+        }
+      },
+      "persona_id": "7be3389a-0d61-42b3-a28f-33ed0566c158"
+    }
+  }
+}

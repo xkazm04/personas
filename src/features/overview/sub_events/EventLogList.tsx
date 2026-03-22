@@ -10,15 +10,30 @@ import { EventDetailModal } from './EventDetailModal';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All statuses' },
-  { value: 'pending', label: 'Pending' },
+  { value: 'pending', label: 'Queued' },
   { value: 'processing', label: 'Processing' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'processed', label: 'Processed' },
+  { value: 'completed', label: 'Delivered' },
+  { value: 'processed', label: 'Delivered' },
   { value: 'failed', label: 'Failed' },
   { value: 'skipped', label: 'Skipped' },
 ];
 
+/** Map raw status to user-friendly labels */
+const STATUS_LABEL_MAP: Record<string, string> = {
+  pending: 'delivered',    // Events in the bus are delivered by definition
+  processing: 'processing',
+  completed: 'delivered',
+  processed: 'delivered',
+  failed: 'failed',
+  skipped: 'skipped',
+};
+
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
+
+/** Humanize event type names: "task_completed" → "Task Completed" */
+function humanizeEventType(type: string): string {
+  return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 export default function EventLogList() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -53,16 +68,31 @@ export default function EventLogList() {
       onFilterChange: setTypeFilter,
       render: (event) => {
         const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
-        return <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>;
+        return <span className={`typo-heading truncate ${typeColor}`} title={event.event_type}>{humanizeEventType(event.event_type)}</span>;
       },
     },
     {
       key: 'source',
       label: 'Source',
       width: '1fr',
-      render: (event) => (
-        <span className="text-sm text-foreground truncate">{event.source_type}</span>
-      ),
+      render: (event) => {
+        // Show the persona name if the source is a persona
+        const sourcePersona = event.source_id ? getPersona(event.source_id) : null;
+        if (sourcePersona) {
+          return (
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div
+                className="w-4 h-4 rounded flex items-center justify-center text-[10px] border border-primary/10 flex-shrink-0"
+                style={{ backgroundColor: (sourcePersona.color || '#6366f1') + '15' }}
+              >
+                {sourcePersona.icon || <Bot className="w-2.5 h-2.5 text-foreground/50" />}
+              </div>
+              <span className="text-sm text-foreground truncate">{sourcePersona.name}</span>
+            </div>
+          );
+        }
+        return <span className="text-sm text-foreground/70 truncate">{event.source_type || 'System'}</span>;
+      },
     },
     {
       key: 'persona',
@@ -104,8 +134,11 @@ export default function EventLogList() {
       filterValue: statusFilter,
       onFilterChange: setStatusFilter,
       render: (event) => {
-        const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-        const statusIcon = event.status === 'completed' || event.status === 'processed'
+        const displayStatus = STATUS_LABEL_MAP[event.status] ?? event.status;
+        // Use 'completed' colors for 'delivered' status
+        const colorKey = displayStatus === 'delivered' ? 'completed' : event.status;
+        const statusStyle = EVENT_STATUS_COLORS[colorKey] ?? defaultStatus;
+        const statusIcon = displayStatus === 'delivered'
           ? <CheckCircle2 className="w-3 h-3" />
           : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
           : event.status === 'processing' ? <LoadingSpinner size="xs" />
@@ -113,7 +146,7 @@ export default function EventLogList() {
         return (
           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
             {statusIcon}
-            {event.status}
+            {displayStatus}
           </span>
         );
       },

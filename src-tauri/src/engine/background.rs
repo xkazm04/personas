@@ -73,6 +73,14 @@ pub struct SubscriptionCrashEvent {
     pub timestamp: String,
 }
 
+/// Tauri event emitted when overdue triggers are fired (startup sweep or recovery).
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OverdueTriggersEvent {
+    pub recovered: u32,
+    pub timestamp: String,
+}
+
 /// Runtime state for the scheduler, shared across threads.
 pub struct SchedulerState {
     running: AtomicBool,
@@ -453,6 +461,21 @@ pub fn start_loops(
     let handles = subscription::spawn_subscriptions(subscriptions, scheduler.clone(), app.clone());
     scheduler.store_subscription_handles(handles);
 
+    // -- Startup overdue sweep ------------------------------------------------
+    // Fire all overdue triggers immediately on startup (before waiting for the
+    // first subscription tick). This ensures missed schedules from app-offline
+    // periods are caught up within milliseconds of launch.
+    {
+        let recovered = trigger_scheduler_tick_counted(&scheduler, &pool);
+        if recovered > 0 {
+            tracing::info!(count = recovered, "Startup overdue sweep: fired {recovered} overdue trigger(s)");
+            let _ = app.emit("overdue-triggers-fired", OverdueTriggersEvent {
+                recovered,
+                timestamp: chrono::Utc::now().to_rfc3339(),
+            });
+        }
+    }
+
     // Smee.io relay (long-lived SSE connection, not a reactive subscription)
     tokio::spawn({
         let pool = pool.clone();
@@ -738,15 +761,22 @@ pub(crate) async fn event_bus_tick(
 
 /// One tick of the trigger scheduler: fetch due triggers, evaluate, publish events.
 pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) {
+    trigger_scheduler_tick_counted(scheduler, pool);
+}
+
+/// Same as `trigger_scheduler_tick` but returns the number of triggers fired.
+/// Used by the startup overdue sweep to know how many were recovered.
+pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool) -> u32 {
     let now = chrono::Utc::now();
     let now_str = now.to_rfc3339();
+    let mut fired: u32 = 0;
 
     // 1. Get due triggers
     let triggers = match trigger_repo::get_due(pool, &now_str) {
         Ok(t) => t,
         Err(e) => {
             tracing::error!("Trigger poll error: {}", e);
-            return;
+            return 0;
         }
     };
 
@@ -822,12 +852,15 @@ pub(crate) fn trigger_scheduler_tick(scheduler: &SchedulerState, pool: &DbPool) 
             Ok(_) => {
                 tracing::debug!(trigger_id = %trigger.id, "Trigger fired, event published");
                 scheduler.triggers_fired.fetch_add(1, Ordering::Relaxed);
+                fired += 1;
             }
             Err(e) => {
                 tracing::error!(trigger_id = %trigger.id, "Failed to publish trigger event: {}", e);
             }
         }
     }
+
+    fired
 }
 
 /// One tick of the cleanup subscription: delete old processed events.

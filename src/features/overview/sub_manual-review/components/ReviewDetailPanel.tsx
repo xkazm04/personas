@@ -1,8 +1,7 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Check, X, Send, Bot, User, Zap, Cloud, ExternalLink } from 'lucide-react';
-import { useAgentStore } from '@/stores/agentStore';
+import { Check, X, Send, Bot, User, Cloud, ExternalLink } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -57,14 +56,22 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
     } finally { setIsSending(false); }
   }, [input, isSending, review.id]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
-  }, [handleSend]);
-
   const suggestedActions = useMemo(
     () => parseSuggestedActions(review.suggested_actions),
     [review],
   );
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    // Number keys 1-9 select suggested actions when input is empty
+    if (!input.trim() && e.key >= '1' && e.key <= '9') {
+      const idx = parseInt(e.key) - 1;
+      if (idx < suggestedActions.length) {
+        e.preventDefault();
+        setInput(suggestedActions[idx] ?? '');
+      }
+    }
+  }, [handleSend, input, suggestedActions]);
 
   const contextData = review.context_data;
   const isPending = review.status === 'pending';
@@ -90,9 +97,11 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             </div>
           </div>
           <button
-            onClick={() => { useAgentStore.getState().selectPersona(review.persona_id); useSystemStore.getState().setEditorTab('use-cases'); }}
+            onClick={() => {
+              useSystemStore.getState().setSidebarSection('overview');
+            }}
             className="inline-flex items-center gap-1 text-xs text-blue-400/70 hover:text-blue-400 transition-colors"
-            title="View execution"
+            title={review.execution_id ? `Execution ${review.execution_id.slice(0, 8)}` : 'View executions'}
           >
             <ExternalLink className="w-3 h-3" /> Execution
           </button>
@@ -120,10 +129,11 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               </div>
             )}
             {suggestedActions.length > 0 && isPending && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-col gap-1">
                 {suggestedActions.map((action, i) => (
-                  <button key={i} onClick={() => setInput(action)} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg typo-caption bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15 transition-colors">
-                    <Zap className="w-3 h-3" />{action}
+                  <button key={i} onClick={() => setInput(action)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-amber-500/[0.06] text-amber-300 border border-amber-500/15 hover:bg-amber-500/[0.12] hover:border-amber-500/25 transition-colors text-left">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-amber-500/15 text-amber-400 text-xs font-mono font-bold flex-shrink-0">{i + 1}</span>
+                    {action}
                   </button>
                 ))}
               </div>

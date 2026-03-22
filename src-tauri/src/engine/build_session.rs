@@ -1390,8 +1390,8 @@ The agent runs on a platform with built-in communication protocols. When composi
 
 1. **user_message** — Agent sends its main output/report. Map from the "messages" dimension. Example instruction: "After completing analysis, send results via: {{"user_message": {{"title": "Report Title", "content": "full report", "content_type": "success", "priority": "normal"}}}}"
 2. **agent_memory** — Agent stores key findings for future runs. Map from the "memory" dimension. Example: "Store each key finding via: {{"agent_memory": {{"title": "Finding", "content": "details", "category": "learning"}}}}"
-3. **manual_review** — Agent flags items needing human approval. Map from the "human-review" dimension. Example: "Flag uncertain items via: {{"manual_review": {{"title": "Needs Review", "description": "why", "severity": "medium"}}}}"
-4. **emit_event** — Agent emits events for inter-agent coordination. Map from the "events" dimension. Example: "Emit completion: {{"emit_event": {{"type": "task_completed", "data": {{"status": "success"}}}}}}"
+3. **manual_review** — Agent flags items needing human approval. Map from the "human-review" dimension. **ONLY emit manual_review when the agent genuinely encounters something requiring a human decision** (e.g., ambiguous data, high-risk actions, policy violations). Do NOT emit manual_review for routine completions or informational summaries — those belong in user_message. Example: "Flag uncertain items via: {{"manual_review": {{"title": "Needs Review", "description": "why", "severity": "medium"}}}}"
+4. **emit_event** — Agent emits events for inter-agent coordination. Map from the "events" dimension. Event type names MUST be specific and prefixed with the agent's domain to avoid ambiguity (e.g., "invoice_scan_completed" not "task_completed", "sentiment_alert_triggered" not "alert_sent"). Example: "Emit completion: {{"emit_event": {{"type": "email_digest_published", "data": {{"status": "success", "items_processed": 5}}}}}}"
 5. **knowledge_annotation** — Agent records tool/API insights. Example: "Record insights via: {{"knowledge_annotation": {{"scope": "tool:web_search", "note": "insight"}}}}"
 6. **execution_flow** — Agent declares its execution steps. Example: "Declare steps via: {{"execution_flow": {{"flows": [{{"step": 1, "action": "research", "status": "completed"}}]}}}}"
 
@@ -1404,6 +1404,8 @@ The structured_prompt.instructions MUST reference at least user_message, agent_m
 4. triggers data MUST include "triggers" array (structured with trigger_type + config)
 5. {rule5}
 6. Resolve dimensions you can reason about. If tasks + connectors are clear, messages/review/memory/errors follow logically — resolve them too
+7. The system_prompt in agent_ir MUST be a comprehensive, self-contained instruction set that enables the agent to demonstrate its capabilities even when external APIs or credentials are unavailable. Include fallback behavior: "If the required service (e.g., Gmail, database) is not accessible, generate realistic sample data to demonstrate the complete workflow and output format."
+8. The structured_prompt MUST contain detailed, actionable instructions in each section (identity, instructions, toolGuidance, examples, errorHandling) — never leave sections empty or with placeholder text
 
 {template_context}
 

@@ -43,7 +43,7 @@ export default function MemoryDetailModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
+        className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -69,7 +69,7 @@ export default function MemoryDetailModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="px-6 py-5 space-y-4 max-h-[75vh] overflow-y-auto">
           {/* Title */}
           <div>
             <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Title</div>

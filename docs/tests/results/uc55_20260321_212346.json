@@ -1,0 +1,556 @@
+{
+  "timestamp": "2026-03-21T20:30:22.967187",
+  "duration_s": 3203.702671,
+  "personas": {
+    "1": {
+      "name": "Email Triage Manager",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Email Triage Manager' sp=True sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.158, duration=30288ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/5 checks passed"
+        }
+      },
+      "persona_id": "040961be-52e4-4f4a-8b7a-80501d9e2770"
+    },
+    "2": {
+      "name": "Email Draft Assistant",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Email Draft Assistant' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.289, duration=104404ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/4 checks passed"
+        }
+      },
+      "persona_id": "d680668e-8f72-4478-8b31-cafba45c08f7"
+    },
+    "3": {
+      "name": "Email-to-Task Extractor",
+      "phases": {
+        "build": {
+          "status": "FAIL",
+          "detail": "fill-intent failed: {'success': False, 'error': 'Field not found: agent-intent-input'}"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    },
+    "4": {
+      "name": "Newsletter Digest Manager",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Newsletter Digest Manager' sp=False sys=True"
+        },
+        "execute": {
+          "status": "FAIL",
+          "detail": "Execution status=failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Execute failed"
+        }
+      },
+      "persona_id": "70c44739-7739-448f-946a-174ab016ecd3"
+    },
+    "5": {
+      "name": "Gmail Morning Digest",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Gmail Morning Digest' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.222, duration=78904ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/4 checks passed"
+        }
+      },
+      "persona_id": "2ce7c402-a128-4a9a-a03f-98d4d6956569"
+    },
+    "6": {
+      "name": "Gmail Attachment Cataloger",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Gmail Attachment Cataloger' sp=False sys=True"
+        },
+        "execute": {
+          "status": "FAIL",
+          "detail": "Execution status=failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Execute failed"
+        }
+      },
+      "persona_id": "28fa422f-0141-4eae-8ba0-e7248c96aea4"
+    },
+    "7": {
+      "name": "Email Follow-Up Tracker",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Email Follow-Up Tracker' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.267, duration=78030ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "5/5 checks passed"
+        }
+      },
+      "persona_id": "69bb7293-335b-44e7-ba36-1323cb974103"
+    },
+    "8": {
+      "name": "Email Security Scanner",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Email Security Scanner' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.165, duration=54556ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/4 checks passed"
+        }
+      },
+      "persona_id": "4631c450-a844-47c3-b25d-62f139e48ca6"
+    },
+    "9": {
+      "name": "Meeting Transcript Processor",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Meeting Transcript Processor' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.152, duration=27021ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "5/5 checks passed"
+        }
+      },
+      "persona_id": "9cf34ad1-b1fd-493f-aca0-5ec0fc691c39"
+    },
+    "10": {
+      "name": "Research Knowledge Curator",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Research Knowledge Curator' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.154, duration=27744ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "5/5 checks passed"
+        }
+      },
+      "persona_id": "18f8f761-2e14-4f26-96e7-bcbcc157b2ae"
+    },
+    "11": {
+      "name": "Research Paper Indexer",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Research Paper Indexer' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.171, duration=66964ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "5/5 checks passed"
+        }
+      },
+      "persona_id": "a1911cab-cea4-425d-a588-be54aa6a7a17"
+    },
+    "12": {
+      "name": "Study Note Organizer",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Study Note Organizer' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.127, duration=12063ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/5 checks passed"
+        }
+      },
+      "persona_id": "1148e27d-3605-401b-a144-7cc5f3dc58ad"
+    },
+    "13": {
+      "name": "Reading List Manager",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Reading List Manager' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.173, duration=47083ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/4 checks passed"
+        }
+      },
+      "persona_id": "d132dc6d-3742-4844-b747-ff0e4429c896"
+    },
+    "14": {
+      "name": "Technical Decision Tracker",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Technical Decision Tracker' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.075, duration=13807ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/5 checks passed"
+        }
+      },
+      "persona_id": "b4193b7f-23e3-4aab-a2b8-d9e3591eb45a"
+    },
+    "15": {
+      "name": "Idea Harvester",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Idea Harvester' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.073, duration=14257ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/5 checks passed"
+        }
+      },
+      "persona_id": "f1a7bfed-8ccc-4ff0-a80e-2dd0da24109d"
+    },
+    "16": {
+      "name": "Domain Glossary Builder",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Domain Glossary Builder' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.120, duration=37074ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "5/5 checks passed"
+        }
+      },
+      "persona_id": "a0454269-5a77-4041-85ec-ff0305ceb42b"
+    },
+    "17": {
+      "name": "Support Email Router",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Support Email Router' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.200, duration=57489ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/4 checks passed"
+        }
+      },
+      "persona_id": "aa545d7f-4ce8-400f-b9a8-16d842b5d775"
+    },
+    "18": {
+      "name": "Email Sentiment Tracker",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Email Sentiment Tracker' sp=False sys=True"
+        },
+        "execute": {
+          "status": "FAIL",
+          "detail": "Execution status=failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Execute failed"
+        }
+      },
+      "persona_id": "4706a1af-3cf9-489a-a693-1a31001be5fb"
+    },
+    "19": {
+      "name": "Gmail Support Assistant",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Gmail Support Assistant' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.145, duration=25577ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/5 checks passed"
+        }
+      },
+      "persona_id": "f2aa5299-4a4e-43a6-8e3a-ae2b96d22115"
+    },
+    "20": {
+      "name": "Email Sentiment Escalator",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Email Sentiment Escalator' sp=False sys=True"
+        },
+        "execute": {
+          "status": "FAIL",
+          "detail": "Execution status=failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Execute failed"
+        }
+      },
+      "persona_id": "91d2253c-4520-49f1-9ba6-d86bb6a11a94"
+    },
+    "21": {
+      "name": "Welcome Email Sequencer",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Welcome Email Sequencer' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.134, duration=20051ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/5 checks passed"
+        }
+      },
+      "persona_id": "9478f8c8-8e86-4c3e-9233-893429114fd1"
+    },
+    "22": {
+      "name": "NPS Survey Processor",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'NPS Survey Processor' sp=False sys=True"
+        },
+        "execute": {
+          "status": "FAIL",
+          "detail": "Execution timeout (7.5 min)"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Execute failed"
+        }
+      },
+      "persona_id": "03f5f27d-8ca6-4d99-8e04-4d4ad9162941"
+    },
+    "23": {
+      "name": "Content Schedule Manager",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Content Schedule Manager' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.177, duration=42538ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/4 checks passed"
+        }
+      },
+      "persona_id": "0145f2c6-77c1-4b0b-a731-1d69c45fb82b"
+    },
+    "24": {
+      "name": "Email Campaign Tracker",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Email Campaign Tracker' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.668, duration=209489ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/4 checks passed"
+        }
+      },
+      "persona_id": "ab5c83a9-8e1e-4f66-a672-8c8a0eeca62a"
+    },
+    "25": {
+      "name": "Blog Outline Generator",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "PASS",
+          "detail": "'Blog Outline Generator' sp=False sys=True"
+        },
+        "execute": {
+          "status": "PASS",
+          "detail": "cost=$0.071, duration=10140ms, has_output=True"
+        },
+        "verify": {
+          "status": "PASS",
+          "detail": "4/5 checks passed"
+        }
+      },
+      "persona_id": "84b21370-d1cc-4562-95c9-f1108b4515da"
+    }
+  }
+}

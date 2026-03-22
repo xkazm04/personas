@@ -1,37 +1,36 @@
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import type { GlobalExecution } from '@/lib/types/types';
 import { ExecutionVirtualRow } from './ExecutionVirtualRow';
+import type { Persona } from '@/lib/bindings/Persona';
 
 interface ExecutionTableProps {
   executions: GlobalExecution[];
   hasMore: boolean;
   onLoadMore: () => void;
   onSelect: (exec: GlobalExecution) => void;
+  personas?: Persona[];
 }
 
-export function ExecutionTable({ executions, hasMore, onLoadMore, onSelect }: ExecutionTableProps) {
+const COL = "text-[11px] text-muted-foreground/70 uppercase tracking-wider font-medium px-4 py-2.5";
+
+export function ExecutionTable({ executions, hasMore, onLoadMore, onSelect, personas }: ExecutionTableProps) {
   const { parentRef, virtualizer } = useVirtualList(executions, 44);
 
   return (
     <div ref={parentRef} className="flex-1 overflow-y-auto">
-      <table className="w-full border-collapse">
-        <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-          <tr className="border-b border-primary/10">
-            <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</th>
-            <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</th>
-            <th className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Duration</th>
-            <th className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Started</th>
-            <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">ID</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style={{ height: `${virtualizer.getTotalSize()}px` }} aria-hidden>
-            <td colSpan={5} className="p-0" />
-          </tr>
-        </tbody>
-      </table>
+      {/* Unified flex header — same structure as rows */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10">
+        <div className="flex items-center h-9">
+          <div className={`w-[22%] ${COL} text-left`}>Persona</div>
+          <div className={`w-[12%] ${COL} text-left`}>Connectors</div>
+          <div className={`w-[18%] ${COL} text-left`}>Status</div>
+          <div className={`w-[14%] ${COL} text-right`}>Duration</div>
+          <div className={`w-[18%] ${COL} text-right`}>Started</div>
+          <div className={`w-[16%] ${COL} text-left`}>ID</div>
+        </div>
+      </div>
 
-      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', marginTop: `-${virtualizer.getTotalSize()}px` }}>
+      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
         {virtualizer.getVirtualItems().map((virtualRow) => {
           const exec = executions[virtualRow.index]!;
           return (
@@ -42,6 +41,7 @@ export function ExecutionTable({ executions, hasMore, onLoadMore, onSelect }: Ex
               start={virtualRow.start}
               size={virtualRow.size}
               onSelect={onSelect}
+              personas={personas}
             />
           );
         })}

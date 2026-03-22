@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-03-21T19:42:22.594220",
+  "duration_s": 78.928253,
+  "personas": {
+    "1": {
+      "name": "Email Triage Agent",
+      "phases": {
+        "build": {
+          "status": "PASS",
+          "detail": "phase=draft_ready, progress=100%"
+        },
+        "promote": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "execute": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        },
+        "verify": {
+          "status": "SKIP",
+          "detail": "Build failed"
+        }
+      },
+      "persona_id": ""
+    }
+  }
+}

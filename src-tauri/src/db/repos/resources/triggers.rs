@@ -463,6 +463,28 @@ pub fn mark_triggered(
     Ok(rows > 0)
 }
 
+/// Unconditionally advance a trigger's schedule after a manual execution.
+///
+/// Unlike `mark_triggered` (which uses CAS to prevent double-fire from
+/// concurrent scheduler ticks), this always updates. Used when the user
+/// manually runs or recovers an overdue trigger so it moves out of the
+/// "overdue" state.
+pub fn advance_schedule(
+    pool: &DbPool,
+    id: &str,
+    next_trigger_at: Option<String>,
+) -> Result<(), AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_triggers
+         SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1
+         WHERE id = ?3",
+        params![now, next_trigger_at, id],
+    )?;
+    Ok(())
+}
+
 /// Atomically update the content hash and advance the schedule in a single
 /// compare-and-swap (CAS) operation.
 ///

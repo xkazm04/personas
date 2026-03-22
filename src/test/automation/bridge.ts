@@ -360,13 +360,19 @@ const bridge: TestBridge = {
     return { success: true, personaId };
   },
 
+  /** Set buildSessionId directly */
+  setBuildSessionId(sessionId: string) {
+    useAgentStore.setState({ buildSessionId: sessionId });
+    return { success: true, sessionId };
+  },
+
   /** Simulate build state for testing (sets Zustand store directly) */
-  simulateBuild(phase: string, personaId: string, cells: Record<string, string>) {
+  simulateBuild(phase: string, personaId: string, cells: Record<string, string>, sessionId?: string) {
     useAgentStore.setState({
       buildPhase: phase as never,
       buildPersonaId: personaId,
       buildCellStates: cells as never,
-      buildSessionId: "test-session-sim",
+      buildSessionId: sessionId ?? "test-session-sim",
     });
     if (phase === "analyzing" || phase === "resolving") {
       useSystemStore.getState().setIsCreatingPersona(true);
@@ -488,23 +494,40 @@ const bridge: TestBridge = {
   /** Promote the current build draft — applies structured_prompt, tools, design context to persona. */
   async promoteBuildDraft() {
     const state = useAgentStore.getState();
-    if (!state.buildSessionId || !state.buildPersonaId) {
-      return { success: false, error: 'No active build session' };
+    const sessionId = state.buildSessionId;
+    if (!sessionId) {
+      return { success: false, error: 'No active build session (no sessionId)' };
     }
     if (state.buildPhase !== 'draft_ready' && state.buildPhase !== 'test_complete') {
       return { success: false, error: `Cannot promote in phase: ${state.buildPhase}` };
     }
+    // Resolve personaId: DB lookup is authoritative since buildPersonaId is often null
+    let personaId = state.buildPersonaId;
+    if (!personaId) {
+      // Query backend for the persona_id linked to this build session
+      try {
+        const session = await invoke('get_active_build_session', { personaId: '' }) as { persona_id?: string } | null;
+        personaId = session?.persona_id ?? null;
+      } catch {
+        // noop — try next fallback
+      }
+    }
+    if (!personaId && state.personas.length > 0) {
+      // Fallback: most recently created persona
+      personaId = state.personas[state.personas.length - 1]?.id ?? null;
+    }
+    if (!personaId) {
+      return { success: false, error: `No personaId found for session ${sessionId}` };
+    }
     try {
       const result = await invoke('promote_build_draft', {
-        sessionId: state.buildSessionId,
-        personaId: state.buildPersonaId,
+        sessionId,
+        personaId,
       });
       // Refresh persona in store after promote
       await useAgentStore.getState().fetchPersonas();
-      if (state.buildPersonaId) {
-        useAgentStore.getState().selectPersona(state.buildPersonaId);
-      }
-      return { success: true, result };
+      useAgentStore.getState().selectPersona(personaId);
+      return { success: true, result, personaId };
     } catch (e: unknown) {
       return { success: false, error: e instanceof Error ? e.message : String(e) };
     }

@@ -89,7 +89,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   homeTab: "welcome" as HomeTab,
   templateTab: "generated" as TemplateTab,
   agentTab: "all" as AgentTab,
-  editorTab: "use-cases" as EditorTab,
+  editorTab: "activity" as EditorTab,
   cloudTab: "unified" as CloudTab,
   settingsTab: "account" as SettingsTab,
   rerunInputData: null,

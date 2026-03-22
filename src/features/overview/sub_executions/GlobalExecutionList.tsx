@@ -139,6 +139,7 @@ export default function GlobalExecutionList() {
                 hasMore={globalExecutionsOffset < globalExecutionsTotal}
                 onLoadMore={() => fetchGlobalExecutions(false, filter === 'all' ? undefined : filter)}
                 onSelect={setSelectedExec}
+                personas={personas}
               />
             )}
           </ContentBody>

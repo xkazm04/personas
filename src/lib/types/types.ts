@@ -228,7 +228,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 export type SidebarSection = "home" | "overview" | "personas" | "workflows" | "events" | "credentials" | "design-reviews" | "team" | "cloud" | "settings" | "dev-tools";
 export type HomeTab = "welcome" | "system-check";
-export type EditorTab = "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design" | "health" | "chat" | "assertions";
+export type EditorTab = "activity" | "matrix" | "use-cases" | "prompt" | "lab" | "connectors" | "settings" | "design" | "health" | "chat" | "assertions";
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "schedules" | "health";
 export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab" | "unified";
