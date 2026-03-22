@@ -30,7 +30,7 @@ export function RotationPolicyControls({
   const [isRotating, setIsRotating] = useState(false);
   const [isRemovingPolicy, setIsRemovingPolicy] = useState(false);
   const [isEnablingPolicy, setIsEnablingPolicy] = useState(false);
-  const [rotationDays, setRotationDays] = useState(rotationStatus.rotation_interval_days ?? 90);
+  const [rotationDays, setRotationDays] = useState(rotationStatus.rotation_interval_days ?? (isOAuth ? 1 : 90));
   const [isEditingPeriod, setIsEditingPeriod] = useState(false);
   if (rotationStatus.has_policy) {
     return (
@@ -41,7 +41,9 @@ export function RotationPolicyControls({
             <div className="text-sm">
               <span className={rotationStatus.policy_enabled ? `${ROTATION_STATUS.color} font-medium` : 'text-muted-foreground/90'}>
                 {rotationStatus.policy_enabled
-                  ? (isOAuth ? 'OAuth token refresh active' : 'Auto-rotation active')
+                  ? (isOAuth
+                    ? `OAuth token refresh active${rotationStatus.policy_type === 'oauth_keepalive' ? ' (auto)' : ''}`
+                    : 'Auto-rotation active')
                   : 'Rotation paused'}
               </span>
             </div>
@@ -174,7 +176,7 @@ export function RotationPolicyControls({
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground/80">Rotate every</span>
         <div className="flex items-center gap-1">
-          {[30, 60, 90, 180].map((d) => (
+          {(isOAuth ? [1, 7, 30, 90] : [30, 60, 90, 180]).map((d) => (
             <Button
               key={d}
               variant={rotationDays === d ? 'accent' : 'ghost'}

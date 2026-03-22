@@ -24,6 +24,79 @@ pub async fn oauth_refresh_tick(pool: &DbPool) {
     }
 }
 
+/// Startup sweep: immediately refresh all OAuth credentials whose access tokens
+/// have already expired or will expire within 5 minutes. This catches tokens
+/// that expired while the app was closed (e.g., Google's 1-hour access tokens).
+///
+/// Returns `(refreshed, failed)` counts.
+pub async fn startup_oauth_sweep(pool: &DbPool) -> (u32, u32) {
+    let all_creds = match cred_repo::get_all(pool) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(error = %e, "Startup OAuth sweep: failed to list credentials");
+            return (0, 0);
+        }
+    };
+
+    let now = chrono::Utc::now();
+    // Wider window on startup: refresh anything expiring within 5 minutes or already expired
+    let startup_threshold_secs: i64 = 300;
+    let mut refreshed: u32 = 0;
+    let mut failed: u32 = 0;
+
+    for cred in &all_creds {
+        let meta: Option<serde_json::Value> = cred
+            .metadata
+            .as_deref()
+            .and_then(|s| serde_json::from_str(s).ok());
+
+        let expires_at = meta
+            .as_ref()
+            .and_then(|m| m.get("oauth_token_expires_at"))
+            .and_then(|v| v.as_str())
+            .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok());
+
+        let Some(expires_at) = expires_at else {
+            continue;
+        };
+
+        let remaining = expires_at.signed_duration_since(now);
+        // Refresh if expired (up to 7 days old) or expiring within threshold
+        if remaining.num_seconds() > startup_threshold_secs || remaining.num_seconds() < -604800 {
+            continue;
+        }
+
+        tracing::info!(
+            credential_id = %cred.id,
+            credential_name = %cred.name,
+            expires_in_secs = remaining.num_seconds(),
+            "Startup OAuth sweep: refreshing expired/expiring token"
+        );
+
+        match refresh_single_credential(pool, cred).await {
+            Ok(_) => refreshed += 1,
+            Err(e) => {
+                failed += 1;
+                tracing::warn!(
+                    credential_id = %cred.id,
+                    error = %e,
+                    "Startup OAuth sweep: failed to refresh token"
+                );
+            }
+        }
+    }
+
+    if refreshed > 0 || failed > 0 {
+        tracing::info!(
+            refreshed,
+            failed,
+            "Startup OAuth sweep: complete"
+        );
+    }
+
+    (refreshed, failed)
+}
+
 async fn refresh_expiring_tokens(pool: &DbPool) -> Result<(), AppError> {
     let all_creds = cred_repo::get_all(pool)?;
     let now = chrono::Utc::now();

@@ -446,7 +446,7 @@ pub fn start_loops(
         // Context rule engine: subscribes to the context stream and evaluates
         // persona-defined rules for proactive actions.
         let stream_rx = {
-            let ctx = ambient_ctx.blocking_lock();
+            let ctx = ambient_ctx.try_lock().expect("ambient_ctx lock should be uncontested during startup");
             ctx.subscribe()
         };
         subscriptions.push(Box::new(ContextRuleSubscription {
@@ -475,6 +475,22 @@ pub fn start_loops(
             });
         }
     }
+
+    // -- Startup OAuth refresh sweep ------------------------------------------
+    // Immediately refresh all expired/expiring OAuth tokens on startup, before
+    // waiting for the OAuthRefreshSubscription's first tick. Google access tokens
+    // expire in ~1 hour, so any app-offline period >1h leaves tokens dead.
+    tokio::spawn({
+        let pool = pool.clone();
+        async move {
+            let (refreshed, failed) = super::oauth_refresh::startup_oauth_sweep(&pool).await;
+            if refreshed > 0 || failed > 0 {
+                tracing::info!(refreshed, failed, "Startup OAuth sweep complete");
+            }
+            // Also auto-provision rotation policies for OAuth credentials that don't have one
+            super::rotation::auto_provision_oauth_rotation_policies(&pool);
+        }
+    });
 
     // Smee.io relay (long-lived SSE connection, not a reactive subscription)
     tokio::spawn({

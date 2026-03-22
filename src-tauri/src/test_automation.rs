@@ -420,25 +420,38 @@ async fn handle_delete_agent(
 
 async fn handle_promote_build(
     AxumState(state): AxumState<ServerState>,
+    body: Option<Json<serde_json::Value>>,
 ) -> Result<String, (StatusCode, String)> {
     // Direct promote via Tauri command — bypasses bridge store dependency.
-    // Gets session_id from the WebView store, then resolves persona_id from DB.
-    let state_json = eval_bridge_method(&state, "getState", &serde_json::json!({})).await?;
-    let state_val: serde_json::Value = serde_json::from_str(&state_json)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse state: {e}")))?;
+    // Accepts optional JSON body with session_id and persona_id to skip bridge getState.
+    let (session_id, persona_id) = if let Some(Json(ref b)) = body {
+        let sid = b.get("session_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let pid = b.get("persona_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+        if sid.is_some() {
+            (sid, pid)
+        } else {
+            (None, None)
+        }
+    } else {
+        (None, None)
+    };
 
-    let session_id = state_val.get("buildSessionId")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| (StatusCode::BAD_REQUEST, "No buildSessionId in state".to_string()))?
-        .to_string();
+    // If not provided in body, get from WebView store
+    let session_id = if let Some(sid) = session_id {
+        sid
+    } else {
+        let state_json = eval_bridge_method(&state, "getState", &serde_json::json!({})).await?;
+        let state_val: serde_json::Value = serde_json::from_str(&state_json)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse state: {e}")))?;
+        state_val.get("buildSessionId")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| (StatusCode::BAD_REQUEST, "No buildSessionId in state".to_string()))?
+            .to_string()
+    };
 
-    // Resolve persona_id: prefer store value, fall back to DB lookup
-    let persona_id = state_val.get("buildPersonaId")
-        .and_then(|v| v.as_str())
-        .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
+    // Resolve persona_id: prefer body, then DB lookup
+    let persona_id = persona_id
         .or_else(|| {
-            // DB lookup via build_sessions table
             let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
             let conn = app_state.db.get().ok()?;
             conn.query_row(

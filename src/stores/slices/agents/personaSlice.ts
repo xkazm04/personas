@@ -10,6 +10,7 @@ import type { PartialPersonaUpdate, PersonaOperation } from "@/api/agents/person
 import { buildUpdateInput, operationToPartial } from "@/api/agents/personas";
 import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
 import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPersonaSummaries, listPersonas, updatePersona } from "@/api/agents/personas";
+import { trackRecentAgent, removeRecentAgent } from "@/hooks/agents/useRecentAgents";
 
 
 // -- Error categorization for structured degradation events ------------------
@@ -219,6 +220,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     set({ error: null });
     try {
       await deletePersona(id);
+      removeRecentAgent(id);
       // Invalidate any in-flight fetchDetail for this persona so it can't
       // resurrect the deleted persona in state after the delete completes.
       if (get().selectedPersonaId === id) ++fetchDetailSeq;
@@ -238,7 +240,11 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     useSystemStore.getState().setEditorTab("use-cases");
     if (id) useSystemStore.setState({ sidebarSection: "personas" });
     useSystemStore.setState({ isCreatingPersona: false, resumeDraftId: null });
-    if (id) get().fetchDetail(id);
-    else set({ selectedPersona: null });
+    if (id) {
+      get().fetchDetail(id);
+      trackRecentAgent(id);
+    } else {
+      set({ selectedPersona: null });
+    }
   },
 });

@@ -65,6 +65,10 @@ pub fn create_credential(
     let cred = repo::create_with_fields(&state.db, db_input, &field_map)?;
 
     let _ = audit_log::insert(&state.db, &cred.id, &name, "create", None, None, None);
+
+    // Auto-provision a keepalive rotation policy for OAuth credentials
+    crate::engine::rotation::auto_provision_single(&state.db, &cred.id);
+
     Ok(cred)
 }
 
@@ -115,6 +119,12 @@ pub fn update_credential(
 
     let detail = if has_data_change { "credential data changed" } else { "metadata updated" };
     let _ = audit_log::insert(&state.db, &id, &cred.name, "update", None, None, Some(detail));
+
+    // Auto-provision a keepalive rotation policy if this is now an OAuth credential
+    if has_data_change {
+        crate::engine::rotation::auto_provision_single(&state.db, &id);
+    }
+
     Ok(cred)
 }
 

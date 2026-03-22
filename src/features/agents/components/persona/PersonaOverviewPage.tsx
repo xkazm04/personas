@@ -215,7 +215,6 @@ export default function PersonaOverviewPage() {
   }, [isBuilding, isDraft, selectPersona, setIsCreatingPersona]);
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Delete this agent? This cannot be undone.')) return;
     try {
       await deletePersona(id);
       setSelectedIds((prev) => {
@@ -230,8 +229,6 @@ export default function PersonaOverviewPage() {
 
   const handleBatchDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    const count = selectedIds.size;
-    if (!confirm(`Delete ${count} agent${count !== 1 ? 's' : ''}? This cannot be undone.`)) return;
     const ids = [...selectedIds];
     setSelectedIds(new Set());
     for (const id of ids) {

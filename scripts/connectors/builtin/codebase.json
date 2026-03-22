@@ -1,0 +1,29 @@
+{
+  "id": "builtin-codebase",
+  "name": "codebase",
+  "label": "Codebase",
+  "color": "#6366F1",
+  "icon_url": "/icons/connectors/codebase.svg",
+  "category": "integration",
+  "fields": [],
+  "healthcheck_config": null,
+  "services": [
+    { "toolName": "read_file", "label": "Read File" },
+    { "toolName": "list_files", "label": "List Files" },
+    { "toolName": "search_code", "label": "Search Code" }
+  ],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "is_builtin": true,
+    "always_active": true,
+    "connection_mode": "desktop_bridge",
+    "min_tier": "builder",
+    "summary": "Access local codebases registered in Dev Tools. Enables agents to read, search, and analyze project files for implementation tasks, impact analysis, and code review.",
+    "auth_type": "builtin",
+    "auth_type_label": "Project",
+    "auth_methods": [
+      { "id": "project", "label": "Dev Tools Project", "type": "credential", "is_default": true }
+    ]
+  }
+}

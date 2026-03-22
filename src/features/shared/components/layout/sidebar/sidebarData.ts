@@ -51,6 +51,7 @@ export function filterByTier<T extends { minTier?: Tier; simpleHidden?: boolean 
 
 export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> = [
   { id: 'welcome', icon: Compass, label: 'Welcome' },
+  { id: 'roadmap', icon: Map, label: 'Roadmap' },
   ...(import.meta.env.DEV ? [{ id: 'system-check' as HomeTab, icon: Monitor, label: 'System Check' }] : []),
 ];
 

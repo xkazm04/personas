@@ -198,8 +198,10 @@ export function MatrixCellRenderer({
               <CheckCircle2 className="w-20 h-20 text-amber-400/10" />
             ) : cellBuildStatus === 'highlighted' ? (
               <HelpCircle className="w-20 h-20 text-primary/10 animate-pulse" />
-            ) : cellBuildStatus === 'filling' || cellBuildStatus === 'pending' ? (
+            ) : cellBuildStatus === 'pending' ? (
               <Loader2 className="w-20 h-20 text-primary/8 animate-spin" />
+            ) : cellBuildStatus === 'filling' ? (
+              <CheckCircle2 className="w-20 h-20 text-cyan-400/10" />
             ) : cellBuildStatus === 'error' ? (
               <AlertCircle className="w-20 h-20 text-red-400/10" />
             ) : null}
@@ -261,10 +263,16 @@ export function MatrixCellRenderer({
               {questionCount}Q
             </span>
           )}
-          {(cellBuildStatus === 'pending' || cellBuildStatus === 'filling') && (
+          {cellBuildStatus === 'pending' && (
             <span className="flex items-center gap-1 text-[10px] text-cyan-400/70">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               Analyzing
+            </span>
+          )}
+          {cellBuildStatus === 'filling' && (
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400/70">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              Answered
             </span>
           )}
           {cellBuildStatus === 'resolved' && (

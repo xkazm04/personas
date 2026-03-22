@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
+import { CodebaseProjectPicker } from '@/features/vault/sub_forms/CodebaseProjectPicker';
 import { McpPrefilledForm } from '@/features/vault/sub_schemas/McpPrefilledForm';
 import { Button } from '@/features/shared/components/buttons';
 import type { ConnectorDefinition, CredentialTemplateField, ConnectorAuthMethod } from '@/lib/types/types';
@@ -129,7 +130,12 @@ export function CredentialTemplateForm({
         onMethodChange={handleAuthMethodChange}
       />
 
-      {activeMethod?.type === 'mcp' ? (
+      {selectedConnector.name === 'codebase' ? (
+        <CodebaseProjectPicker
+          onSave={(data) => onCreateCredential(data)}
+          onCancel={onCancel}
+        />
+      ) : activeMethod?.type === 'mcp' ? (
         <McpPrefilledForm
           connector={selectedConnector}
           authMethod={activeMethod}

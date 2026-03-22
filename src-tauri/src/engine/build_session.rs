@@ -136,7 +136,13 @@ impl BuildSessionManager {
             .collect();
         let connector_summary: Vec<String> = connectors
             .iter()
-            .map(|c| format!("- {} (category: {})", c.name, c.category))
+            .map(|c| {
+                if c.name == "codebase" {
+                    format!("- {} (category: {}) — local codebase access for code analysis, impact assessment, and implementation tasks via Dev Tools projects", c.name, c.category)
+                } else {
+                    format!("- {} (category: {})", c.name, c.category)
+                }
+            })
             .collect();
 
         // Find similar templates for reference context
@@ -1354,7 +1360,7 @@ fn build_session_prompt(
     };
 
     let result = format!(
-r##"You are a senior AI agent architect. The user wants:
+r###"You are a senior AI agent architect. The user wants:
 
 "{intent}"{lang_preamble}
 
@@ -1384,10 +1390,12 @@ data format: {{"items": ["Human-readable description of task 1"], "use_cases": [
 
 ### 2. connectors — WHICH services
 **IMPORTANT:** This agent runs on Claude CLI which has **built-in web search and web browsing capabilities**. For use cases involving web search, news fetching, or URL reading, use the built-in capability — do NOT suggest a separate web browser/search connector. Only suggest external connectors for services requiring API authentication (Gmail, Slack, Notion, etc.).
+**DATABASE RULE:** When the agent needs to store data in a database, ALWAYS use the "personas_database" connector (built-in SQLite). NEVER suggest external databases like Supabase, Firebase, PlanetScale, or any cloud database. The personas_database supports CREATE TABLE, INSERT, SELECT, UPDATE, DELETE via the execute_sql tool. It is always available — no credentials needed.
 Each connector needs structured data so the UI can render interactive cards:
 data format: {{"items": ["Gmail (google) — reading emails"], "connectors": [{{"name": "gmail", "service_type": "google", "purpose": "reading and filtering emails", "has_credential": true}}], "alternatives": {{"gmail": ["outlook", "yahoo_mail"]}}}}
 - Check Available Credentials below to set has_credential correctly
 - Always include 1-2 alternatives per connector (similar services the user could swap to)
+- For tasks involving codebase analysis, code review, impact assessment, or implementation work, suggest the "codebase" connector (service_type: "codebase", category: "integration"). This connects to local project files registered in Dev Tools. Set has_credential to true if a codebase credential exists in Available Credentials. When the codebase connector is used, the agent's structured_prompt MUST include instructions to: (a) read project files via the codebase tool, (b) analyze the actual code for impact, (c) reference specific files/functions in human-review items. Generic reviews without codebase evidence are not acceptable.
 
 ### 3. triggers — WHEN it runs
 Each trigger needs structured data so the UI can render config cards:
@@ -1400,9 +1408,13 @@ data format: {{"items": ["Slack: post to #channel"], "channels": [{{"channel": "
 
 ### 5. human-review — WHAT needs approval
 Any action with external consequences (sending, posting, modifying) should be flagged. Read-only is safe.
+When the codebase connector is used, human-review items MUST reference specific files, functions, or code patterns found in the codebase — never generic statements.
 
 ### 6. memory — WHAT to remember between runs
-Deduplication IDs, learned patterns, state tracking. Follows from tasks.
+Memory is for tracking USER DECISIONS and learning from them — NOT for storing informational findings (those belong in messages/user_message).
+Correct memory examples: "User accepted backlog item X — prioritize similar items", "User rejected low-severity security alerts — raise threshold", "User preferred grouped format over individual items".
+WRONG memory examples: "API returned error X" (that's error-handling), "Found 12 news items" (that's a message), "Table created successfully" (that's execution flow).
+Memory MUST track: which manual_review items were accepted/rejected, user preferences learned from decisions, patterns for future better evaluation.
 
 ### 7. error-handling — WHAT can go wrong
 Per-service retry policies and fallbacks. Follows from connectors.
@@ -1434,8 +1446,8 @@ When ALL 8 are resolved, also emit agent_ir:
 
 The agent runs on a platform with built-in communication protocols. When composing structured_prompt.instructions, you MUST include explicit guidance for the agent to use these JSON protocol messages during execution:
 
-1. **user_message** — Agent sends its main output/report. The title MUST be descriptive and identify the use case at first sight (e.g. "Weekly Tech News - Jan 15-21, 2026", NOT "Execution output"). Content should be the final deliverable only -- no thinking process or meta-information. Map from the "messages" dimension. Example instruction: "After completing analysis, send results via: {{"user_message": {{"title": "Weekly Tech Digest - Jan 15-21", "content": "full report content here", "content_type": "success", "priority": "normal"}}}}"
-2. **agent_memory** — Agent stores key findings for future runs. Map from the "memory" dimension. Example: "Store each key finding via: {{"agent_memory": {{"title": "Finding", "content": "details", "category": "learning"}}}}"
+1. **user_message** — Agent sends its main output/report. The title MUST be descriptive and identify the use case at first sight (e.g. "Weekly Tech News - Jan 15-21, 2026", NOT "Execution output"). Content should be the **final deliverable only** — no thinking process or meta-information. For stats/metrics, use ```chart blocks (label: value per line). Map from the "messages" dimension. Example instruction: "After completing analysis, send results via: {{"user_message": {{"title": "Weekly Tech Digest - Jan 15-21", "content": "## Headlines\n...\n\n```chart\nAI: 12\nCloud: 8\n```", "content_type": "success", "priority": "normal"}}}}"
+2. **agent_memory** — Agent stores USER DECISIONS and learned preferences for future runs (NOT informational findings — those go in user_message). Map from the "memory" dimension. Example: "After each manual_review decision, store the outcome: {{"agent_memory": {{"title": "Review Decision: [item]", "content": "User accepted/rejected — reason and future implication", "category": "decision"}}}}"
 3. **manual_review** — Agent flags items needing human approval. Map from the "human-review" dimension. **ONLY emit manual_review when the agent genuinely encounters something requiring a human decision** (e.g., ambiguous data, high-risk actions, policy violations). Do NOT emit manual_review for routine completions or informational summaries — those belong in user_message. Example: "Flag uncertain items via: {{"manual_review": {{"title": "Needs Review", "description": "why", "severity": "medium"}}}}"
 4. **emit_event** — Agent emits events for inter-agent coordination. Map from the "events" dimension. Event type names MUST be specific and prefixed with the agent's domain to avoid ambiguity (e.g., "invoice_scan_completed" not "task_completed", "sentiment_alert_triggered" not "alert_sent"). Example: "Emit completion: {{"emit_event": {{"type": "email_digest_published", "data": {{"status": "success", "items_processed": 5}}}}}}"
 5. **knowledge_annotation** — Agent records tool/API insights. Example: "Record insights via: {{"knowledge_annotation": {{"scope": "tool:web_search", "note": "insight"}}}}"
@@ -1450,13 +1462,13 @@ The structured_prompt.instructions MUST reference at least user_message, agent_m
 4. triggers data MUST include "triggers" array (structured with trigger_type + config)
 5. {rule5}
 6. Resolve dimensions you can reason about. If tasks + connectors are clear, messages/review/memory/errors follow logically — resolve them too
-7. The system_prompt in agent_ir MUST be a comprehensive, self-contained instruction set that enables the agent to demonstrate its capabilities even when external APIs or credentials are unavailable. Include fallback behavior: "If the required service (e.g., Gmail, database) is not accessible, generate realistic sample data to demonstrate the complete workflow and output format."
-8. The structured_prompt MUST contain detailed, actionable instructions in each section (identity, instructions, toolGuidance, examples, errorHandling) — never leave sections empty or with placeholder text
-9. agent_ir.icon MUST match the dominant connector service_type (gmail, slack, github, notion, postgres, personas_database, personas_messages). If no connector dominates, use Bot, Search, Globe, or FileText
+7. The system_prompt in agent_ir MUST be a comprehensive, self-contained instruction set that enables the agent to demonstrate its capabilities even when external APIs or credentials are unavailable. Include MANDATORY fallback behavior in the system_prompt: "CRITICAL: If any required service (e.g., Gmail, database) is not accessible or returns auth errors, you MUST generate realistic sample data and continue the FULL workflow — creating tables, emitting all protocol messages (user_message, agent_memory, manual_review, emit_event), and completing every step. NEVER stop or report 'blocked'. The workflow must complete end-to-end with sample data."
+8. The structured_prompt MUST contain detailed, actionable instructions in each section (identity, instructions, toolGuidance, examples, errorHandling) — never leave sections empty or with placeholder text. The instructions MUST explicitly require emitting ALL protocol messages during every execution: user_message (final report), agent_memory (decision tracking), manual_review (items needing approval), and emit_event (completion event). Include the exact JSON format for each
+9. agent_ir.icon MUST be a valid Lucide icon name (PascalCase). Map from the dominant connector: gmail→Mail, slack→MessageSquare, github→GitBranch, notion→FileText, postgres→Database, personas_database→Database, codebase→Code2, personas_messages→Bell. If no connector dominates, use Bot, Search, Globe, or FileText. NEVER use plain text descriptions — only Lucide icon component names
 
 {template_context}
 
-Analyze the intent now:"##
+Analyze the intent now:"###
     );
 
     result

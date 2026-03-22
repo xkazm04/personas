@@ -490,7 +490,7 @@ impl ReactiveSubscription for OAuthRefreshSubscription {
     }
 
     fn initial_delay(&self) -> Duration {
-        Duration::from_secs(45) // Let the app fully start
+        Duration::from_secs(10) // Startup sweep handles immediate refresh; first tick follows shortly
     }
 
     async fn tick(&self) {

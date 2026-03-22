@@ -178,12 +178,32 @@ export const en = {
     sla: "SLA",
     cron_agents: "Cron Agents",
     schedules: "Schedules",
+    // "Health" = agent and system health overview
+    health: "Health",
+
+    // Sub-nav items under "Events" (event bus)
+    live_stream: "Live Stream",
+    // "Throttling" = rate limiting controls for event processing
+    throttling: "Throttling",
+    test: "Test",
+    // "Local Relay" = Smee.io webhook forwarding for local development
+    local_relay: "Local Relay",
+    // "Cloud Events" = cloud-originated webhook events
+    cloud_events: "Cloud Events",
+
+    // Sub-nav items under "Home"
+    roadmap: "Roadmap",
 
     // Sub-nav items under "Keys" (vault)
     credentials: "Credentials",
     databases: "Databases",
     catalog: "Catalog",
+    // "Graph" = credential dependency graph visualization
+    graph: "Graph",
     add_new: "Add new",
+
+    // Top-level Plugins section
+    plugins: "Plugins",
 
     // Sub-nav items under "Templates"
     n8n_import: "n8n Import",
@@ -203,6 +223,27 @@ export const en = {
     byom: "BYOM",
     data: "Data",
     admin: "Admin",
+
+    // Agent sidebar sub-nav
+    create: "Create",
+    all_agents: "All Agents",
+    favorites: "Favorites",
+    recent: "Recent",
+
+    // Plugin sidebar sub-nav
+    browse: "Browse",
+    dev_tools: "Dev Tools",
+    active_project: "Active Project",
+    // Dev tools sub-items
+    projects: "Projects",
+    context_map: "Context Map",
+    idea_scanner: "Idea Scanner",
+    idea_triage: "Idea Triage",
+    task_runner: "Task Runner",
+
+    // Settings sub-nav
+    // "Network" = network proxy and connectivity settings
+    network: "Network",
 
     // Tooltip shown on disabled nav items (feature not yet available)
     coming_soon: "Coming soon",
@@ -239,6 +280,59 @@ export const en = {
     quick_navigation: "Quick Navigation",
     // Shown in the footer area of the home page
     platform_label: "personas platform",
+    // Roadmap section (fetched from cloud, displayed on home page)
+    roadmap: {
+      title: "Product Roadmap",
+      subtitle: "What we're building now and what comes next.",
+      unavailable: "Roadmap unavailable",
+      unavailable_hint: "Could not load the product roadmap. Check your connection and try again.",
+      // Status labels
+      status_in_progress: "In Progress",
+      status_next: "Next",
+      status_planned: "Planned",
+      status_completed: "Completed",
+      // Priority labels
+      priority_now: "Now",
+      priority_next: "Next",
+      priority_later: "Later",
+      // Summary pills -- {count} = number of items in that status
+      in_progress_count: "{count} In Progress",
+      next_count: "{count} Next",
+    },
+    // First-use setup cards (role picker, tool picker, goal input)
+    setup: {
+      choose_role: "Choose your role",
+      choose_role_hint: "We'll tailor the experience to match how you work.",
+      pick_tool: "Pick your favorite tool",
+      pick_tool_hint: "This will be your first connector integration.",
+      describe_goal: "What do you want to automate?",
+      describe_goal_hint: "Describe your first automation goal — we'll help you set it up.",
+      goal_placeholder: "e.g. Automatically sync new Jira tickets to a Slack channel...",
+      ready_to_save: "Ready to save",
+      // Setup card step labels
+      step_role: "Your Role",
+      step_role_hint: "Tell us your role so we can tailor the experience.",
+      step_tool: "Favorite Tool",
+      step_tool_hint: "Pick the first connector you want to integrate.",
+      step_goal: "Automation Goal",
+      step_goal_hint: "Describe what you would like to automate first.",
+      // Gate messages
+      select_role_first: "Select a role first to unlock tool options.",
+      select_tool_first: "Select a tool first to set your goal.",
+      // Navigation
+      get_started: "Get Started",
+      // Role definitions
+      role_office_rat: "Office Rat",
+      role_office_rat_hint: "Non-technical user",
+      role_developer: "Developer",
+      role_developer_hint: "Technical user",
+      role_manager: "Manager",
+      role_manager_hint: "Planning & coordination",
+      // Progress labels
+      role: "Role",
+      tool: "Tool",
+      goal: "Goal",
+    },
     nav: {
       overview: {
         label: "Overview",
@@ -390,6 +484,38 @@ export const en = {
     // Screen-reader label for agent cards in the grid
     // {name}, {status}, {lastRun}, {triggerCount} are injected
     sr_card: "{name}, {status}",
+
+    // Agent overview page -- filters and batch actions
+    filters: {
+      all: "All",
+      all_agents: "All Agents",
+      favorites: "Favorites",
+      recent: "Recent",
+      status_all: "All",
+      status_active: "Active",
+      status_disabled: "Disabled",
+      status_drafts: "Drafts",
+      health_all: "All Health",
+      health_healthy: "Healthy",
+      health_degraded: "Degraded",
+      health_failing: "Failing",
+      last_run: "Last Run",
+      never: "Never",
+      // {count} = number of selected agents
+      selected: "{count} selected",
+      remove_from_favorites: "Remove from favorites",
+      add_to_favorites: "Add to favorites",
+    },
+
+    // Agent status labels (shown in overview grid and cards)
+    status: {
+      draft: "Draft",
+      disabled: "Disabled",
+      healthy: "Healthy",
+      degraded: "Degraded",
+      failing: "Failing",
+      building: "Building",
+    },
   },
 
   // -------------------------------------------------------------------
@@ -443,6 +569,61 @@ export const en = {
         rotate_every: "Rotate every",
         days: "days",
         no_policy: "No rotation policy configured.",
+        // Active policy status labels
+        oauth_refresh_active: "OAuth token refresh active",
+        oauth_refresh_active_auto: "OAuth token refresh active (auto)",
+        auto_rotation_active: "Auto-rotation active",
+        rotation_paused: "Rotation paused",
+        // Action buttons
+        rotate_now: "Rotate Now",
+        enable_rotation: "Enable Rotation",
+        enabling: "Enabling...",
+        remove_policy_tooltip: "Remove rotation policy",
+        // Period editor
+        save: "Save",
+        cancel: "Cancel",
+        // Rotation failed error prefix
+        rotation_failed: "Rotation failed: {error}",
+        remove_failed: "Failed to remove policy: {error}",
+        update_failed: "Failed to update rotation period: {error}",
+        enable_failed: "Failed to enable rotation: {error}",
+        // Last rotation info -- {time} is relative (e.g. "2 hours ago")
+        last_rotated: "Last rotated {time}",
+      },
+      // Anomaly scoring panel
+      anomaly: {
+        // Remediation level labels
+        healthy: "Healthy",
+        transient_issues: "Transient Issues",
+        degrading: "Degrading",
+        permanent_errors: "Permanent Errors",
+        critical: "Critical",
+        stale: "stale",
+        // {count} = number of healthcheck samples
+        samples: "{count} samples",
+        // Error classification labels
+        permanent: "Permanent: {rate}",
+        transient: "Transient: {rate}",
+        tolerance: "Tolerance: {rate}",
+      },
+      // Rotation insight badge (compact header badge)
+      rotation_badge: {
+        disabled: "Disabled",
+        perm_errors: "Perm Errors",
+        degrading: "Degrading",
+        backoff: "Backoff",
+      },
+      // Audit log table
+      audit: {
+        empty: "No audit entries yet. Operations will be logged as they occur.",
+        // Operation labels
+        op_decrypted: "Decrypted",
+        op_created: "Created",
+        op_updated: "Updated",
+        op_deleted: "Deleted",
+        op_healthcheck: "Healthcheck",
+        // Filter labels (includes "all" + operation types)
+        filter_all: "all",
       },
       intelligence: {
         operation: "Operation",
@@ -488,6 +669,215 @@ export const en = {
       mark_complete: "Mark step complete",
       completed: "Completed",
     },
+    // Credential card components (cards shown in the vault list)
+    card: {
+      // Scope mismatch banner
+      scope_mismatch: "Scope mismatch",
+      // {count} = number of missing scopes
+      scope_missing_one: "{count} requested scope not granted: ",
+      scope_missing_other: "{count} requested scopes not granted: ",
+      reauthorize: "Reauthorize",
+    },
+    // Credential forms (auth method picker, healthcheck display, etc.)
+    forms: {
+      // Auth method tab labels
+      auth_oauth: "OAuth",
+      auth_api_key: "API Key",
+      auth_mcp: "MCP",
+      // Healthcheck result display
+      healthcheck_passed: "Healthcheck passed",
+      healthcheck_failed: "Healthcheck failed",
+      healthcheck_running: "Running healthcheck...",
+      technical_details: "Technical details",
+      // Setup guide section
+      // {label} = connector name (e.g. "GitHub", "Slack")
+      how_to_get: "How to get",
+      how_to_get_suffix: "credentials",
+      // Template form header
+      back_to_catalog: "Back to catalog",
+      new_credential: "New Credential",
+      configure_mcp: "Configure MCP server connection",
+      configure_fields: "Configure credential fields",
+      detect: "Detect",
+      auto_add: "Auto Add",
+    },
+    // Credential type picker (shown in vault "Add Credential" flow)
+    type_picker: {
+      title: "Add Credential",
+      subtitle: "Choose the type of connection",
+      // Type options
+      ai_built: "AI-Built Connector",
+      ai_built_hint: "Describe what you want to connect to and AI creates the setup for you -- no configuration needed.",
+      ai_built_use: "Use this for: Slack, GitHub, Notion, Linear, Jira",
+      most_popular: "Most popular",
+      mcp_server: "AI Tool Server",
+      mcp_server_hint: "Connect to an AI tool server -- paste the address and you're done.",
+      mcp_server_use: "Use this for: MCP-compatible tool servers and plugins",
+      web_service: "Web Service",
+      web_service_hint: "Connect to any web service -- we'll guide you through the login details step by step.",
+      web_service_use: "Use this for: REST APIs, webhooks, or services not in the catalog",
+      database: "Database",
+      database_hint: "Connect to your database -- just paste the connection details and pick your tables.",
+      database_use: "Use this for: PostgreSQL, MySQL, SQLite, MongoDB",
+      desktop_app: "Desktop App",
+      desktop_app_hint: "Link apps already on your computer like VS Code, Docker, or Obsidian in one click.",
+      desktop_app_use: "Use this for: VS Code, Docker, Obsidian, local CLI tools",
+      ai_wizard: "AI Setup Wizard",
+      ai_wizard_hint: "Let AI find your services and set everything up automatically -- just follow along.",
+      ai_wizard_recommended: "Recommended for beginners",
+      ai_wizard_use: "Use this for: first-time setup or when you're not sure what to pick",
+      ai_wizard_cta: "Not sure? Start here",
+      workspace_connect: "Workspace Connect",
+      workspace_connect_hint: "One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically",
+      auto_discover: "Auto-Discover Credentials",
+      auto_discover_hint: "Scan your filesystem for existing API keys, AWS profiles, env vars, and more",
+    },
+    // Credential card body (Google OAuth section)
+    body: {
+      // {name} = service name (e.g. "Google")
+      authorizing: "Authorizing with {name}...",
+      authorize_with: "Authorize with {name}",
+      authorize_hint: "Launches app-managed {name} consent and updates refresh token after approval.",
+      // {time} = timestamp when consent was completed
+      consent_completed: "{name} consent completed at {time}",
+      update_failed: "Failed to update credential",
+      delete_credential: "Delete credential",
+    },
+    // Credential list / connector cards
+    connector: {
+      // Category filter labels
+      filter_all: "All",
+      filter_connected: "Connected",
+      filter_available: "Available",
+    },
+    // Auto-credential provisioning (browser automation)
+    auto_cred: {
+      // Consent step
+      guided_setup: "Guided Setup",
+      auto_setup: "Auto-Setup",
+      guided_consent_body: "Claude will guide you step-by-step through creating credentials. URLs will open in your browser automatically.",
+      auto_consent_body: "Claude designed the credential schema. Now Playwright will open a browser to create the actual credential on your behalf.",
+      what_will_happen: "What will happen:",
+      log_in_first: "Log in first.",
+      // {label} = service name
+      log_in_hint: "Make sure you are already registered and logged in to {label} in your browser before starting. This allows the automation to access your account settings directly.",
+      your_consent: "Your consent is required.",
+      guided_consent_hint: "Nothing is saved without your explicit approval. You will create the credential yourself following guided instructions.",
+      auto_consent_hint: "Nothing is saved without your explicit approval. If a login page or CAPTCHA appears, the browser will pause for you to handle manually.",
+      view_docs: "View credential docs",
+      start_guided: "Start Guided Setup",
+      start_browser: "Start Browser Session",
+      // Browser error step
+      browser_error_title: "Auto-Setup Failed",
+      setup_manually: "Set Up Manually",
+      retry: "Retry",
+      // Error display
+      what_happened: "What happened",
+      // {seconds} = session duration
+      session_duration: "Session ran for {seconds}s",
+      // {count} = number of browser actions
+      actions_performed_one: "{count} browser action performed",
+      actions_performed_other: "{count} browser actions performed",
+      last_url: "Last URL: {url}",
+      captcha_encountered: "A login/CAPTCHA prompt was encountered",
+      last_actions: "Last actions:",
+      // {count} = number of log entries
+      session_log: "Session log ({count} entries)",
+      // Card step states
+      step_confirmed: "Step confirmed -- waiting for detection",
+      action_required: "Action Required",
+      open_in_browser: "Open in Browser",
+      completed_step: "I've completed this",
+      input_requested: "Input Requested",
+    },
+    // Vector knowledge base
+    vector: {
+      documents_tab: "Documents",
+      search_tab: "Search",
+      settings_tab: "Settings",
+      ingest_title: "Ingest Documents",
+      ingest_hint: "Drop files here or click to browse",
+      ingest_drop: "Drop files to ingest",
+      ingest_supported: "Supported: txt, md, html, csv, json, yaml, code files",
+      starting_ingestion: "Starting ingestion...",
+      no_valid_files: "No valid file paths found. Try dropping individual files.",
+      no_documents: "No documents yet",
+      no_documents_hint: "Drop files here, paste text, or scan a directory to start building your knowledge base.",
+      refresh: "Refresh",
+      paste_text: "Paste Text",
+      directory: "Directory",
+      delete_document: "Delete document",
+      // {count} = number of documents
+      document_count_one: "{count} document",
+      document_count_other: "{count} documents",
+      // Search result card
+      show_full: "Show full chunk",
+      show_less: "Show less",
+      copy_content: "Copy content",
+      // Settings tab
+      kb_info: "Knowledge Base Info",
+      embedding_model: "Embedding Model",
+      dimensions: "Dimensions",
+      chunk_size: "Chunk Size",
+      chunk_overlap: "Chunk Overlap",
+      statistics: "Statistics",
+      documents: "Documents",
+      chunks: "Chunks",
+      local_embedding: "Local Embedding",
+      // {model} = embedding model name, {dims} = dimension count
+      local_embedding_hint: "Embeddings are generated locally using {model} ({dims}-dim). No data leaves your machine. The model (~23MB) is downloaded on first use and cached locally.",
+    },
+    // Credential design modal (AI-guided credential creation)
+    design_modal: {
+      title: "Design Credential",
+      error_title: "Something went wrong",
+      // Error phase suggestions
+      error_unexpected: "An unexpected error occurred.",
+      error_parse_failed: "The AI could not generate a valid connector from your description.",
+      error_timeout: "The request took too long and was stopped. This can happen with very broad requests.",
+      error_cli_missing: "Claude CLI is not installed on this system.",
+      error_env_conflict: "A conflicting environment variable is blocking the CLI. Restart the app to fix this automatically.",
+      error_backend: "The AI backend returned an unexpected error.",
+      technical_details: "Technical details",
+      how_to_fix: "How to fix this",
+      original_request: "Your original request (preserved):",
+      start_over: "Start over",
+      try_again_with: "Try again with your request",
+    },
+    // Desktop app cards
+    desktop: {
+      installed: "Installed",
+      running: "Running",
+      not_installed: "Not installed",
+    },
+    // Dependency graph
+    graph: {
+      no_dependencies: "No dependencies",
+      // {count} = number of connections
+      connection_count_one: "{count} connection",
+      connection_count_other: "{count} connections",
+      // {count} = number of dependents
+      dep_count_one: "{count} dep",
+      dep_count_other: "{count} deps",
+      // Health labels
+      not_tested: "Not tested",
+      healthy: "Healthy",
+      unhealthy: "Unhealthy",
+    },
+    // Wizard detect grid (auto-discovery)
+    wizard: {
+      // {count} = number of items in each section
+      detected: "Detected ({count})",
+      available: "Available ({count})",
+      already_added: "Already added ({count})",
+      // {search} = search query
+      no_match: "No services match \"{search}\"",
+      // Connector row labels
+      already_added_badge: "Already added",
+      local: "Local",
+      cli_auth: "CLI auth",
+      session: "Session",
+    },
     playground: {
       // Credential playground modal -- tabs for exploring a credential
       tab_overview: "Overview",
@@ -503,6 +893,19 @@ export const en = {
       request_body: "Request Body",
       path_placeholder: "/api/v1/resource",
       sending: "Sending...",
+      // MCP Tools tab
+      mcp_input_schema: "Input Schema",
+      mcp_run: "Run",
+      mcp_error: "Error",
+      mcp_success: "Success",
+      mcp_empty: "(empty)",
+      mcp_discover: "Discover MCP server tools",
+      mcp_discover_hint: "Connect to the MCP server to discover available tools and test them.",
+      mcp_discover_button: "Discover Tools",
+      // Response viewer
+      response_empty: "(empty response)",
+      header: "Header",
+      value: "Value",
       path_parameters: "Path Parameters",
       query_parameters: "Query Parameters",
       headers: "Headers",
@@ -1094,6 +1497,51 @@ export const en = {
       triggers_header: "Triggers ({count})",
     },
 
+    // PersonaMatrix build phases (AI-guided agent building in the gallery)
+    matrix: {
+      // Build phase labels
+      preparing: "Preparing build...",
+      analyzing: "Analyzing your intent...",
+      building: "Building agent dimensions...",
+      waiting_input: "Waiting for your input...",
+      draft_ready: "Draft ready for review",
+      testing: "Testing agent...",
+      test_complete: "Test complete",
+      promoted: "Agent promoted",
+      build_failed: "Build failed",
+      // Cell dimension labels
+      dim_tasks: "Tasks",
+      dim_apps: "Apps & Services",
+      dim_schedule: "When It Runs",
+      dim_review: "Human Review",
+      dim_memory: "Memory",
+      dim_errors: "Error Handling",
+      dim_messages: "Messages",
+      dim_events: "Events",
+      // Build progress
+      generating: "Generating...",
+      continue_build: "Continue Build",
+      all_resolved: "All Dimensions Resolved",
+      // {count} = number of answers ready
+      answers_ready: "{count} answer(s) ready -- click Continue",
+      input_needed: "Your input needed",
+      // {answered}/{remaining} = question counts
+      answer_progress: "{answered} answered, {remaining} remaining",
+      // Cell badges
+      cell_edit: "Edit",
+      cell_done: "Done",
+      // Testing controls
+      cancel_test: "Cancel Test",
+      test_agent: "Test Agent",
+      starting_test: "Starting Test...",
+      // Review actions
+      apply_changes: "Apply Changes",
+      discard: "Discard",
+      build_complete: "Build Complete",
+      adjust_placeholder: "Adjust anything...",
+      answer_placeholder: "Your answer...",
+    },
+
     // Sandbox/trust warning banners
     sandbox: {
       // Sandbox restriction labels
@@ -1139,6 +1587,204 @@ export const en = {
     type_label: "Trigger Type",
     // Quick templates section
     quick_templates: "Quick Templates",
+
+    // Trigger type display labels (shown in trigger rows and summaries)
+    type_schedule: "Schedule",
+    type_webhook: "Webhook",
+    type_polling: "Polling",
+    type_event_listener: "Event Listener",
+    type_file_watcher: "File Watcher",
+    type_clipboard: "Clipboard",
+    type_app_focus: "App Focus",
+    type_composite: "Composite",
+
+    // Trigger status summary (collapsed row config badges)
+    webhook_listener: "webhook listener",
+    custom_endpoint: "custom endpoint",
+    // {interval} = human-readable interval (e.g. "5 minutes")
+    every_interval: "every {interval}",
+    // {source} = event source filter
+    from_source: "from {source}",
+
+    // Schedule config form
+    schedule: {
+      interval_label: "Interval",
+      // Interval preset labels
+      preset_1m: "1 min",
+      preset_5m: "5 min",
+      preset_15m: "15 min",
+      preset_1h: "1 hour",
+      preset_6h: "6 hours",
+      preset_24h: "24 hours",
+      custom: "Custom",
+      // Schedule mode toggle
+      mode_interval: "Interval",
+      mode_cron: "Cron",
+      // Cron config
+      cron_label: "Cron Expression",
+      cron_placeholder: "0 9 * * 1-5",
+      cron_loading: "Previewing...",
+      // Cron presets
+      cron_weekday_9am: "Weekdays 9am",
+      cron_every_hour: "Every hour",
+      cron_daily_midnight: "Daily midnight",
+      cron_weekly_monday: "Weekly Monday",
+      // Schedule preview
+      next_runs: "Next runs",
+      invalid_cron: "Invalid cron expression",
+    },
+
+    // Trigger add form
+    add: {
+      create_trigger: "Create Trigger",
+      creating: "Creating...",
+    },
+
+    // Trigger detail drawer
+    detail: {
+      // Action buttons
+      test_fire: "Test Fire",
+      test_firing: "Firing...",
+      validate_and_fire: "Validate trigger config, then fire",
+      validating: "Validating...",
+      dry_run: "Dry Run",
+      dry_running: "Running...",
+      simulate_hint: "Simulate trigger without executing",
+      simulating: "Simulating...",
+      delete: "Delete",
+      delete_confirm: "Confirm delete",
+      delete_trigger: "Delete trigger",
+      // Activity log section
+      activity_log: "Activity Log",
+      no_activity: "No activity recorded yet",
+      // Webhook details
+      webhook_url: "Webhook URL",
+      webhook_secret: "HMAC Secret",
+      copied: "Copied!",
+      copy_curl: "Copy sample curl",
+      // Execution history section
+      last_fired: "Last fired",
+      never_fired: "Never fired",
+      // {count} = number of times trigger has fired
+      fire_count_one: "Fired {count} time",
+      fire_count_other: "Fired {count} times",
+    },
+
+    // Trigger list (main list view)
+    list: {
+      empty_title: "No triggers configured yet",
+      empty_hint: "Triggers let your agents react to events automatically -- schedules, webhooks, file changes, and more.",
+      create_first: "Create Your First Trigger",
+      // Section header
+      event_triggers: "Event Triggers",
+      // Trigger row
+      budget_unavailable: "Budget data unavailable",
+      unknown_budget: "Unknown Budget",
+      budget_exceeded: "Monthly budget exceeded -- trigger paused",
+      budget: "Budget",
+    },
+
+    // Trigger config panel (within agent editor)
+    config: {
+      no_persona: "No persona selected",
+      title: "Triggers",
+      add_trigger: "Add Trigger",
+      empty: "No triggers configured. Add one to automate this persona.",
+    },
+
+    // Trigger countdown (time until next fire)
+    countdown: {
+      due_now: "Due now",
+      // {time} = relative countdown (e.g. "5m", "2h 30m")
+      fires_in: "Fires in {time}",
+    },
+
+    // Polling trigger config
+    polling: {
+      endpoint_label: "Endpoint URL",
+      endpoint_placeholder: "https://api.example.com/status",
+      // {interval} = polling interval
+      check_interval: "Check every {interval}",
+      content_hash: "Content hash diffing",
+    },
+
+    // Webhook trigger config
+    webhook: {
+      url_label: "Webhook URL",
+      secret_label: "HMAC Secret (optional)",
+      secret_placeholder: "Signing secret for payload verification",
+    },
+
+    // File watcher trigger config
+    file_watcher: {
+      paths_label: "Watch Paths",
+      path_placeholder: "/path/to/watch",
+      add_path: "Add path",
+      events_label: "File Events",
+      event_modify: "Modify",
+      event_create: "Create",
+      event_delete: "Delete",
+      recursive: "Recursive",
+      glob_filter: "Glob Filter",
+      glob_placeholder: "*.json",
+    },
+
+    // Clipboard trigger config
+    clipboard: {
+      content_type: "Content Type",
+      type_text: "Text",
+      type_image: "Image",
+      pattern_label: "Match Pattern (regex)",
+      pattern_placeholder: "e.g. https?://.*",
+      interval_label: "Check Interval (seconds)",
+    },
+
+    // App focus trigger config
+    app_focus: {
+      app_names_label: "Application Names",
+      app_placeholder: "e.g. Chrome, Firefox",
+      add_app: "Add app",
+      title_pattern: "Window Title Pattern",
+      title_placeholder: "e.g. .*GitHub.*",
+      interval_label: "Check Interval (seconds)",
+    },
+
+    // Event listener trigger config
+    event_listener: {
+      event_type_label: "Event Type",
+      event_type_placeholder: "e.g. persona.execution.completed",
+      source_filter_label: "Source Filter",
+      source_filter_placeholder: "e.g. persona:abc123",
+    },
+
+    // Composite trigger config
+    composite: {
+      conditions_label: "Conditions",
+      add_condition: "Add condition",
+      operator_all: "All conditions (AND)",
+      operator_any: "Any condition (OR)",
+      window_label: "Time Window (seconds)",
+    },
+
+    // Rate limit controls
+    rate_limit: {
+      title: "Rate Limiting",
+      max_fires: "Max fires",
+      per_window: "Per window",
+      window_seconds: "{seconds}s",
+      window_minutes: "{minutes}m",
+      window_hours: "{hours}h",
+      currently_limited: "Currently rate-limited",
+    },
+
+    // Dry run result display
+    dry_run: {
+      title: "Dry Run Result",
+      would_fire: "Would fire",
+      would_not_fire: "Would not fire",
+      matched_conditions: "Matched conditions",
+      payload_preview: "Payload preview",
+    },
   },
 
   // -------------------------------------------------------------------

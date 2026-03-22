@@ -3,6 +3,8 @@ import type { ThemedSelectOption } from '@/features/shared/components/forms/Them
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { getPurposeForConnector, PURPOSE_GROUPS } from '@/lib/credentials/connectorRoles';
 import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
+import { isTierVisible, type Tier } from '@/lib/constants/uiModes';
+import { useSystemStore } from '@/stores/systemStore';
 import { CredentialPickerFilters } from './CredentialPickerFilters';
 import { ConnectorCard } from './ConnectorCard';
 import { ROLE_PRESETS, type RolePreset } from './catalogRolePresets';
@@ -20,7 +22,16 @@ function capitalize(s: string) {
   return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-export function CredentialPicker({ connectors, credentials, onPickType, searchTerm }: CredentialPickerProps) {
+export function CredentialPicker({ connectors: rawConnectors, credentials, onPickType, searchTerm }: CredentialPickerProps) {
+  const viewMode = useSystemStore((s) => s.viewMode);
+
+  // Filter out connectors gated behind a higher tier than the user's current mode
+  const connectors = useMemo(() => rawConnectors.filter((c) => {
+    const meta = (c.metadata ?? {}) as Record<string, unknown>;
+    const minTier = meta.min_tier as Tier | undefined;
+    return !minTier || isTierVisible(minTier, viewMode);
+  }), [rawConnectors, viewMode]);
+
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activePurpose, setActivePurpose] = useState<string | null>(null);
   const [activeLicense, setActiveLicense] = useState<string | null>(null);

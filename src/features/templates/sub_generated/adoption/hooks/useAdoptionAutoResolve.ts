@@ -40,7 +40,7 @@ export function useAdoptionAutoResolve({
   const autoSwapRanRef = useRef(false);
   useEffect(() => {
     if (state.step !== 'choose' || autoSwapRanRef.current || !requiredConnectors.length) return;
-    const BUILTIN = new Set(['personas_messages', 'personas_database', 'personas_vector_db']);
+    const BUILTIN = new Set(['personas_messages', 'personas_database', 'personas_vector_db', 'codebase']);
     const credServiceTypes = new Set(liveCredentials.map((c) => c.service_type));
 
     const swaps: Array<{ original: string; replacement: string }> = [];

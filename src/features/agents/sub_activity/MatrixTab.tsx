@@ -85,36 +85,67 @@ export function MatrixTab() {
         } catch { /* ignore */ }
       }
 
-      // Parse last_design_result for connectors, triggers, etc.
+      // Parse last_design_result — may contain resolved dimension data or suggested_* fields
       if (p.last_design_result) {
         try {
           const dr = JSON.parse(p.last_design_result);
-          if (dr.suggested_connectors?.length) {
+
+          // Check if last_design_result contains resolved dimension data directly (from build session)
+          for (const dimKey of DIMENSION_ORDER) {
+            if (dr[dimKey] && !designCells[dimKey]) {
+              const dim = dr[dimKey];
+              if (dim.items && Array.isArray(dim.items)) {
+                designCells[dimKey] = { items: dim.items, ...dim };
+              }
+            }
+          }
+
+          // Fallback: parse suggested_* fields (legacy format)
+          if (!designCells['connectors'] && dr.suggested_connectors?.length) {
             designCells['connectors'] = {
-              items: dr.suggested_connectors.map((c: { name?: string; purpose?: string }) =>
-                `${c.name || 'connector'}${c.purpose ? ` — ${c.purpose}` : ''}`
+              items: dr.suggested_connectors.map((c: { name?: string; purpose?: string } | string) =>
+                typeof c === 'string' ? c : `${c.name || 'connector'}${c.purpose ? ` — ${c.purpose}` : ''}`
               ),
             };
           }
-          if (dr.suggested_triggers?.length) {
+          if (!designCells['triggers'] && dr.suggested_triggers?.length) {
             designCells['triggers'] = {
-              items: dr.suggested_triggers.map((t: { description?: string; trigger_type?: string }) =>
-                t.description || t.trigger_type || 'trigger'
+              items: dr.suggested_triggers.map((t: { description?: string; trigger_type?: string } | string) =>
+                typeof t === 'string' ? t : (t.description || t.trigger_type || 'trigger')
               ),
             };
           }
-          if (dr.suggested_notification_channels) {
+          if (!designCells['messages'] && dr.suggested_notification_channels) {
             const ch = dr.suggested_notification_channels;
             const channels = ch.channels || ch.items || (Array.isArray(ch) ? ch : []);
             if (channels.length) {
               designCells['messages'] = { items: channels.map((c: { channel?: string; target?: string } | string) => typeof c === 'string' ? c : `${c.channel || ''}${c.target ? `: ${c.target}` : ''}`) };
             }
           }
-          if (dr.suggested_event_subscriptions) {
+          if (!designCells['events'] && dr.suggested_event_subscriptions) {
             const ev = dr.suggested_event_subscriptions;
             const evArr = ev.subscriptions || ev.items || (Array.isArray(ev) ? ev : []);
             if (evArr.length) {
               designCells['events'] = { items: evArr.map((e: { event_type?: string } | string) => typeof e === 'string' ? e : e.event_type || 'event') };
+            }
+          }
+          // Extract remaining dimensions from structured_prompt if available
+          if (dr.structured_prompt) {
+            const sp = dr.structured_prompt;
+            if (!designCells['human-review'] && sp.instructions) {
+              const reviewMatch = sp.instructions.match(/manual[_\s]?review/i);
+              if (reviewMatch) {
+                designCells['human-review'] = { items: ['Configured via structured prompt'] };
+              }
+            }
+            if (!designCells['memory'] && sp.instructions) {
+              const memMatch = sp.instructions.match(/agent[_\s]?memory/i);
+              if (memMatch) {
+                designCells['memory'] = { items: ['Configured via structured prompt'] };
+              }
+            }
+            if (!designCells['error-handling'] && sp.errorHandling) {
+              designCells['error-handling'] = { items: [sp.errorHandling.substring(0, 200)] };
             }
           }
         } catch { /* ignore */ }

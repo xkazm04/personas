@@ -351,16 +351,9 @@ export function CreationPostGeneration({
 
   return (
     <div className="flex flex-col items-center gap-3 w-full h-full justify-center">
-      <CompletenessRing value={completeness} />
-
       <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">
         {editingCellKey ? `Editing: ${CELL_FRIENDLY_NAMES[editingCellKey] ?? editingCellKey}` : 'Draft Ready'}
       </span>
-
-      {/* Inline edit hint */}
-      {!editDirty && !editingCellKey && (
-        <p className="text-[10px] text-muted-foreground/40 text-center">Click any cell to adjust</p>
-      )}
 
       {/* Apply/Discard bar when edits are pending */}
       {editDirty && onApplyEdits && (
@@ -400,20 +393,20 @@ export function CreationPostGeneration({
 
       {onRefine && !editDirty && (
         <div className="w-full flex gap-1.5">
-          <input
-            type="text"
+          <textarea
             value={refineText}
             onChange={(e) => setRefineText(e.target.value)}
             placeholder="Adjust anything..."
             data-testid="agent-refine-input"
-            className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
-            onKeyDown={(e) => { if (e.key === 'Enter' && refineText.trim()) { onRefine(refineText.trim()); setRefineText(''); } }}
+            rows={3}
+            className="flex-1 px-2.5 py-1.5 rounded-lg border border-primary/15 bg-card-bg text-sm text-foreground/80 placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:border-primary/30 transition-colors resize-none"
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && refineText.trim()) { e.preventDefault(); onRefine(refineText.trim()); setRefineText(''); } }}
           />
           <button
             type="button"
             onClick={() => { if (refineText.trim()) { onRefine(refineText.trim()); setRefineText(''); } }}
             disabled={!refineText.trim()}
-            className="p-1.5 rounded-lg text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors"
+            className="p-1.5 rounded-lg text-primary/70 hover:text-primary hover:bg-primary/10 disabled:text-muted-foreground/20 transition-colors self-end"
           >
             <Send className="w-3.5 h-3.5" />
           </button>

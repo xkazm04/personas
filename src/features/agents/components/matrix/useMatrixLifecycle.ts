@@ -102,12 +102,18 @@ export function useMatrixLifecycle({
   // Calls testBuildDraft which executes each tool against real APIs
 
   const handleStartTest = useCallback(async () => {
+    // Always read fresh from the store — closure `personaId` can be stale
+    // when the component remounts (React Suspense / lazy) while the Zustand
+    // store already holds the correct ids from the running session.
     const state = useAgentStore.getState();
-    if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return;
-
+    const effectivePersonaId = state.buildPersonaId || personaId;
     const sessionId = state.buildSessionId;
-    const effectivePersonaId = personaId || state.buildPersonaId;
-    if (!sessionId || !effectivePersonaId) return;
+
+    if (!sessionId || !effectivePersonaId) {
+      console.warn("[handleStartTest] Cannot start test: missing sessionId or personaId",
+        { sessionId, storePersonaId: state.buildPersonaId, closurePersonaId: personaId, buildPhase: state.buildPhase });
+      return;
+    }
 
     // Optimistic: transition to testing immediately
     const testId = `test_${Date.now()}`;

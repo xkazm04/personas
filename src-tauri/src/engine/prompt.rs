@@ -1012,7 +1012,7 @@ When the user asks you to perform an action, output a JSON operation on its own 
 
 "#;
 
-const PROTOCOL_INTEGRATION_REQUIREMENTS: &str = r##"### REQUIRED: Protocol Integration
+const PROTOCOL_INTEGRATION_REQUIREMENTS: &str = r###"### REQUIRED: Protocol Integration
 
 You MUST use the following protocols during EVERY execution. This is mandatory â€” your output is consumed by an integrated dashboard that expects data from each protocol:
 
@@ -1057,7 +1057,7 @@ You MUST use the following protocols during EVERY execution. This is mandatory â
 
 **Emit these protocol messages as separate JSON lines in your output, interspersed with your regular text output. Each must be on its own line.**
 
-"##;
+"###;
 
 // ---------------------------------------------------------------------------
 // Tests

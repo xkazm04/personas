@@ -787,11 +787,12 @@ pub fn get_rotation_status(
     let history = rotation_repo::get_history(pool, credential_id, Some(10))?;
     let credential = cred_repo::get_by_id(pool, credential_id)?;
 
-    let active_policy = policies.iter().find(|p| p.enabled && p.policy_type == "scheduled");
+    let active_policy = policies.iter().find(|p| p.enabled && (p.policy_type == "scheduled" || p.policy_type == "oauth_keepalive"));
 
     let next_rotation_at = active_policy.and_then(|p| p.next_rotation_at.clone());
     let last_rotated_at = active_policy.and_then(|p| p.last_rotated_at.clone());
     let rotation_interval_days = active_policy.map(|p| p.rotation_interval_days);
+    let policy_type = active_policy.map(|p| p.policy_type.clone());
     let has_policy = !policies.is_empty();
     let policy_enabled = active_policy.is_some();
 
@@ -822,6 +823,7 @@ pub fn get_rotation_status(
         next_rotation_at,
         last_rotated_at,
         last_status,
+        policy_type,
         anomaly_detected,
         consecutive_failures,
         recent_history: history,
@@ -839,6 +841,8 @@ pub struct RotationStatus {
     pub next_rotation_at: Option<String>,
     pub last_rotated_at: Option<String>,
     pub last_status: Option<RotationEntryStatus>,
+    /// The policy type: "scheduled", "oauth_keepalive", etc.
+    pub policy_type: Option<String>,
     pub anomaly_detected: bool,
     pub consecutive_failures: u32,
     pub recent_history: Vec<crate::db::models::CredentialRotationEntry>,
@@ -1059,3 +1063,151 @@ fn parse_event_config(config: Option<&str>) -> serde_json::Value {
 // ---------------------------------------------------------------------------
 
 // `has_refresh_token` logic is now handled by each strategy's `is_oauth()` method.
+
+// ---------------------------------------------------------------------------
+// Auto-provisioning of rotation policies for OAuth credentials
+// ---------------------------------------------------------------------------
+
+/// Default rotation interval for auto-provisioned OAuth keepalive policies (1 day).
+const OAUTH_KEEPALIVE_INTERVAL_DAYS: i32 = 1;
+
+/// Auto-provision rotation policies for all OAuth credentials that don't have one.
+///
+/// Scans all credentials, identifies those with a `refresh_token` field (OAuth),
+/// and creates a 1-day scheduled rotation policy (type `"oauth_keepalive"`) if no
+/// policy exists yet. Called once at app startup from `background::start_loops`.
+///
+/// This ensures Google OAuth (and other OAuth) connections are automatically kept
+/// alive without requiring the user to manually enable rotation.
+pub fn auto_provision_oauth_rotation_policies(pool: &DbPool) {
+    let all_creds = match cred_repo::get_all(pool) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(error = %e, "OAuth auto-provision: failed to list credentials");
+            return;
+        }
+    };
+
+    let mut provisioned: u32 = 0;
+
+    for cred in &all_creds {
+        // Check if this credential is OAuth by looking for refresh_token in metadata
+        // or attempting to check the credential fields
+        if !is_oauth_credential(pool, cred) {
+            continue;
+        }
+
+        // Check if a rotation policy already exists
+        let policies = rotation_repo::get_policies_by_credential(pool, &cred.id)
+            .unwrap_or_default();
+        if !policies.is_empty() {
+            continue;
+        }
+
+        // Auto-create a 1-day rotation policy
+        let input = crate::db::models::CreateRotationPolicyInput {
+            credential_id: cred.id.clone(),
+            rotation_interval_days: Some(OAUTH_KEEPALIVE_INTERVAL_DAYS),
+            policy_type: Some("oauth_keepalive".to_string()),
+            enabled: Some(true),
+        };
+
+        match rotation_repo::create_policy(pool, input) {
+            Ok(policy) => {
+                provisioned += 1;
+                tracing::info!(
+                    credential_id = %cred.id,
+                    credential_name = %cred.name,
+                    policy_id = %policy.id,
+                    interval_days = OAUTH_KEEPALIVE_INTERVAL_DAYS,
+                    "OAuth auto-provision: created keepalive rotation policy"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(
+                    credential_id = %cred.id,
+                    error = %e,
+                    "OAuth auto-provision: failed to create rotation policy"
+                );
+            }
+        }
+    }
+
+    if provisioned > 0 {
+        tracing::info!(
+            provisioned,
+            "OAuth auto-provision: complete"
+        );
+    }
+}
+
+/// Auto-provision a rotation policy for a single credential if it's OAuth and has no policy.
+///
+/// Called after credential creation/update to immediately set up keepalive
+/// without waiting for the next startup sweep.
+pub fn auto_provision_single(pool: &DbPool, credential_id: &str) {
+    let cred = match cred_repo::get_by_id(pool, credential_id) {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+
+    if !is_oauth_credential(pool, &cred) {
+        return;
+    }
+
+    let policies = rotation_repo::get_policies_by_credential(pool, credential_id)
+        .unwrap_or_default();
+    if !policies.is_empty() {
+        return;
+    }
+
+    let input = crate::db::models::CreateRotationPolicyInput {
+        credential_id: credential_id.to_string(),
+        rotation_interval_days: Some(OAUTH_KEEPALIVE_INTERVAL_DAYS),
+        policy_type: Some("oauth_keepalive".to_string()),
+        enabled: Some(true),
+    };
+
+    match rotation_repo::create_policy(pool, input) {
+        Ok(policy) => {
+            tracing::info!(
+                credential_id = %credential_id,
+                credential_name = %cred.name,
+                policy_id = %policy.id,
+                "OAuth auto-provision: created keepalive rotation policy for new credential"
+            );
+        }
+        Err(e) => {
+            tracing::warn!(
+                credential_id = %credential_id,
+                error = %e,
+                "OAuth auto-provision: failed to create rotation policy for new credential"
+            );
+        }
+    }
+}
+
+/// Check if a credential is OAuth-based (has a refresh_token in its stored fields).
+fn is_oauth_credential(pool: &DbPool, cred: &crate::db::models::PersonaCredential) -> bool {
+    // First check metadata for oauth_type hint
+    if let Some(ref meta_str) = cred.metadata {
+        if let Ok(meta) = serde_json::from_str::<serde_json::Value>(meta_str) {
+            // Check for oauth_token_expires_at (set by the OAuth refresh engine)
+            if meta.get("oauth_token_expires_at").is_some() {
+                return true;
+            }
+            // Check for oauth_last_refresh_at
+            if meta.get("oauth_last_refresh_at").is_some() {
+                return true;
+            }
+        }
+    }
+
+    // Fall back to checking credential fields for refresh_token
+    match cred_repo::get_fields(pool, &cred.id) {
+        Ok(fields) => fields.iter().any(|f| {
+            f.field_key == "refresh_token" || f.field_key == "refreshToken"
+        }),
+        Err(_) => false,
+    }
+}

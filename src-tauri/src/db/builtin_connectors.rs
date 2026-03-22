@@ -180,6 +180,17 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             metadata: Some(r#"{"template_enabled":true,"summary":"Cloudflare CDN, DNS, Workers, and security services.","auth_type":"api_token","auth_type_label":"API Token","docs_url":"https://dash.cloudflare.com/profile/api-tokens","setup_guide":"1. Go to dash.cloudflare.com/profile/api-tokens\n2. Click 'Create Token'\n3. Choose a template or create a custom token with needed permissions\n4. Click 'Continue to summary' then 'Create Token'\n5. Copy the token value and paste it here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
+            id: r#"builtin-codebase"#,
+            name: r#"codebase"#,
+            label: r#"Codebase"#,
+            color: r#"#6366F1"#,
+            icon_url: r#"/icons/connectors/codebase.svg"#,
+            category: r#"integration"#,
+            fields: r#"[]"#,
+            healthcheck_config: None,
+            metadata: Some(r#"{"template_enabled":true,"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge","min_tier":"builder","summary":"Access local codebases registered in Dev Tools. Enables agents to read, search, and analyze project files for implementation tasks, impact analysis, and code review.","auth_type":"builtin","auth_type_label":"Project","auth_methods":[{"id":"project","label":"Dev Tools Project","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
             id: r#"builtin-confluence"#,
             name: r#"confluence"#,
             label: r#"Confluence"#,

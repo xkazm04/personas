@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Users, Sparkles, Plus, List, Star, Bot, ChevronDown, Cloud, Wrench, Puzzle } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Star, Bot, ChevronDown, Cloud, Wrench, Puzzle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
@@ -10,6 +10,7 @@ import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 
 import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/useFavoriteAgents';
+import { useRecentAgents } from '@/hooks/agents/useRecentAgents';
 import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';
 import {
@@ -211,6 +212,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
   const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const [favoritesCollapsed, setFavoritesCollapsed] = useState(false);
+  const [recentsCollapsed, setRecentsCollapsed] = useState(false);
   const isDev = import.meta.env.DEV;
 
   const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
@@ -221,6 +223,16 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
   const favoritePersonas = useMemo(
     () => personas.filter((p) => favorites.has(p.id)),
     [personas, favorites],
+  );
+
+  // Recent personas from localStorage
+  const { recentIds } = useRecentAgents();
+  const recentPersonas = useMemo(
+    () => recentIds
+      .filter((id) => !favorites.has(id)) // exclude already-favorited
+      .map((id) => personas.find((p) => p.id === id))
+      .filter(Boolean) as typeof personas,
+    [personas, recentIds, favorites],
   );
 
   return (
@@ -308,6 +320,48 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                       title="Remove from favorites"
                     >
                       <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Recent section */}
+        {recentPersonas.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-primary/10">
+            <button
+              onClick={() => setRecentsCollapsed(!recentsCollapsed)}
+              className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-blue-400/60 hover:text-blue-400/80 transition-colors"
+            >
+              <Clock className="w-3 h-3" />
+              Recent
+              <span className="text-[10px] font-mono text-blue-400/40 ml-0.5">{recentPersonas.length}</span>
+              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${recentsCollapsed ? '-rotate-90' : ''}`} />
+            </button>
+            {!recentsCollapsed && (
+              <div className="mt-1 space-y-0.5">
+                {recentPersonas.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => selectPersona(p.id)}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group"
+                  >
+                    <Bot
+                      className="w-4 h-4 flex-shrink-0"
+                      style={{ color: p.color ?? 'var(--primary)' }}
+                    />
+                    <span className="text-foreground/70 truncate text-[13px] min-w-0">{p.name}</span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
+                      className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
+                      title="Add to favorites"
+                    >
+                      <Star className="w-3 h-3 text-muted-foreground/40" />
                     </span>
                   </button>
                 ))}
