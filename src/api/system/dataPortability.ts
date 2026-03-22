@@ -32,5 +32,5 @@ export const previewCompetitiveImport = () =>
 export const exportCredentials = (passphrase: string) =>
   invoke<boolean>("export_credentials", { passphrase });
 
-export const importCredentials = (passphrase: string) =>
-  invoke<CredentialImportResult | null>("import_credentials", { passphrase });
+export const importCredentials = (passphrase: string, resolutionsJson?: string) =>
+  invoke<CredentialImportResult | null>("import_credentials", { passphrase, resolutionsJson: resolutionsJson ?? null });

@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::net::IpAddr;
+use std::time::Duration;
 
+use tokio::process::Command;
+use tokio::time::timeout;
 use tracing;
 
 use crate::db::repos::resources::audit_log;
@@ -11,12 +14,198 @@ use crate::error::AppError;
 use crate::utils::sanitization::sanitize_secrets;
 
 use super::connector_strategy;
+use super::desktop_discovery;
 
 /// Result of a credential healthcheck.
 #[derive(Debug, serde::Serialize)]
 pub struct HealthcheckResult {
     pub success: bool,
     pub message: String,
+}
+
+// ---------------------------------------------------------------------------
+// CLI-based healthcheck for locally-installed tools
+// ---------------------------------------------------------------------------
+
+/// CLI probe definition for healthcheck purposes.
+struct CliHealthProbe {
+    service_type: &'static str,
+    cmd: &'static str,
+    args: &'static [&'static str],
+    tool_name: &'static str,
+}
+
+/// Known CLI tools that can be probed to verify installation and authentication.
+/// Mirrors the detection probes in `auth_detect.rs`.
+const CLI_HEALTH_PROBES: &[CliHealthProbe] = &[
+    CliHealthProbe {
+        service_type: "github",
+        cmd: "gh",
+        args: &["auth", "status"],
+        tool_name: "GitHub CLI (gh)",
+    },
+    CliHealthProbe {
+        service_type: "aws",
+        cmd: "aws",
+        args: &["sts", "get-caller-identity", "--output", "text", "--query", "Arn"],
+        tool_name: "AWS CLI (aws)",
+    },
+    CliHealthProbe {
+        service_type: "google_cloud",
+        cmd: "gcloud",
+        args: &["auth", "list", "--filter=status:ACTIVE", "--format=value(account)"],
+        tool_name: "Google Cloud CLI (gcloud)",
+    },
+    CliHealthProbe {
+        service_type: "azure",
+        cmd: "az",
+        args: &["account", "show", "--query", "user.name", "-o", "tsv"],
+        tool_name: "Azure CLI (az)",
+    },
+    CliHealthProbe {
+        service_type: "docker",
+        cmd: "docker",
+        args: &["info", "--format", "{{.ID}}"],
+        tool_name: "Docker CLI (docker)",
+    },
+    CliHealthProbe {
+        service_type: "kubernetes",
+        cmd: "kubectl",
+        args: &["config", "current-context"],
+        tool_name: "Kubernetes CLI (kubectl)",
+    },
+    CliHealthProbe {
+        service_type: "heroku",
+        cmd: "heroku",
+        args: &["auth:whoami"],
+        tool_name: "Heroku CLI (heroku)",
+    },
+    CliHealthProbe {
+        service_type: "vercel",
+        cmd: "vercel",
+        args: &["whoami"],
+        tool_name: "Vercel CLI (vercel)",
+    },
+    CliHealthProbe {
+        service_type: "netlify",
+        cmd: "netlify",
+        args: &["status"],
+        tool_name: "Netlify CLI (netlify)",
+    },
+];
+
+/// Try a CLI-based healthcheck for services that have local CLI tools.
+///
+/// Returns `Some(result)` if a CLI probe exists for this service type,
+/// `None` if no probe is defined (caller should fall back to skip behaviour).
+async fn try_cli_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
+    let probe = CLI_HEALTH_PROBES.iter().find(|p| p.service_type == service_type)?;
+
+    tracing::debug!(
+        service_type = %service_type,
+        cmd = %probe.cmd,
+        "running CLI healthcheck probe"
+    );
+
+    let result = timeout(Duration::from_secs(5), async {
+        Command::new(probe.cmd)
+            .args(probe.args)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .ok()?
+            .wait_with_output()
+            .await
+            .ok()
+    })
+    .await;
+
+    match result {
+        Ok(Some(output)) => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let combined = format!("{}\n{}", stdout, stderr).trim().to_string();
+
+            if output.status.success() && !combined.is_empty() {
+                Some(HealthcheckResult {
+                    success: true,
+                    message: format!("{} is installed and authenticated", probe.tool_name),
+                })
+            } else if combined.is_empty() && !output.status.success() {
+                // Command found but returned error with no output — not authenticated
+                Some(HealthcheckResult {
+                    success: false,
+                    message: format!(
+                        "{} is installed but not authenticated — run `{} auth` or equivalent",
+                        probe.tool_name, probe.cmd,
+                    ),
+                })
+            } else {
+                // Command ran but exited non-zero — likely not authenticated
+                Some(HealthcheckResult {
+                    success: false,
+                    message: format!(
+                        "{} is installed but not authenticated — run `{} auth` or equivalent",
+                        probe.tool_name, probe.cmd,
+                    ),
+                })
+            }
+        }
+        Ok(None) => {
+            // spawn() returned None — command not found on PATH
+            Some(HealthcheckResult {
+                success: false,
+                message: format!("{} is not installed — install it and try again", probe.tool_name),
+            })
+        }
+        Err(_) => {
+            // Timeout
+            Some(HealthcheckResult {
+                success: false,
+                message: format!("{} timed out — the tool may be unresponsive", probe.tool_name),
+            })
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Desktop-app healthcheck (binary presence detection)
+// ---------------------------------------------------------------------------
+
+/// Desktop connector names that map to `desktop_discovery` app entries.
+const DESKTOP_CONNECTOR_MAP: &[(&str, &str)] = &[
+    ("desktop_vscode", "VS Code"),
+    ("desktop_docker", "Docker"),
+    ("desktop_obsidian", "Obsidian"),
+    ("desktop_terminal", "Terminal"),
+    ("desktop_browser", "Browser (Chrome/Edge)"),
+];
+
+/// Try a desktop-app-based healthcheck by verifying the app binary is installed.
+///
+/// Returns `Some(result)` if the service_type is a known desktop connector,
+/// `None` otherwise.
+fn try_desktop_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
+    let (connector_name, label) = DESKTOP_CONNECTOR_MAP
+        .iter()
+        .find(|(name, _)| *name == service_type)?;
+
+    let (installed, binary_path) = desktop_discovery::is_desktop_app_installed(connector_name);
+
+    if installed {
+        let path_info = binary_path
+            .map(|p| format!(" ({})", p))
+            .unwrap_or_default();
+        Some(HealthcheckResult {
+            success: true,
+            message: format!("{label} is installed{path_info}"),
+        })
+    } else {
+        Some(HealthcheckResult {
+            success: false,
+            message: format!("{label} is not installed — install it and try again"),
+        })
+    }
 }
 
 /// Run a healthcheck for a stored credential.
@@ -39,12 +228,30 @@ pub async fn run_healthcheck(
 
     let (connector, hc_config) = resolve_connector_healthcheck(pool, &cred.service_type, Some(&fields))?;
 
-    // If the matched variant says to skip healthcheck, return success
+    // If the matched variant says to skip HTTP healthcheck, try CLI probe instead
     if hc_config.skip {
+        if let Some(cli_result) = try_cli_healthcheck(&cred.service_type).await {
+            tracing::debug!(
+                credential_id = %credential_id,
+                service_type = %cred.service_type,
+                success = cli_result.success,
+                "healthcheck via CLI probe"
+            );
+            return Ok(cli_result);
+        }
+        if let Some(desktop_result) = try_desktop_healthcheck(&cred.service_type) {
+            tracing::debug!(
+                credential_id = %credential_id,
+                service_type = %cred.service_type,
+                success = desktop_result.success,
+                "healthcheck via desktop app detection"
+            );
+            return Ok(desktop_result);
+        }
         tracing::debug!(
             credential_id = %credential_id,
             service_type = %cred.service_type,
-            "healthcheck skipped: connection type does not support HTTP healthcheck"
+            "healthcheck skipped: no HTTP, CLI, or desktop healthcheck available"
         );
         return Ok(HealthcheckResult {
             success: true,
@@ -70,11 +277,27 @@ pub async fn run_healthcheck_with_fields(
 ) -> Result<HealthcheckResult, AppError> {
     let (connector, hc_config) = resolve_connector_healthcheck(pool, service_type, Some(fields))?;
 
-    // If the matched variant says to skip healthcheck, return success
+    // If the matched variant says to skip HTTP healthcheck, try CLI probe instead
     if hc_config.skip {
+        if let Some(cli_result) = try_cli_healthcheck(service_type).await {
+            tracing::debug!(
+                service_type = %service_type,
+                success = cli_result.success,
+                "healthcheck via CLI probe"
+            );
+            return Ok(cli_result);
+        }
+        if let Some(desktop_result) = try_desktop_healthcheck(service_type) {
+            tracing::debug!(
+                service_type = %service_type,
+                success = desktop_result.success,
+                "healthcheck via desktop app detection"
+            );
+            return Ok(desktop_result);
+        }
         tracing::debug!(
             service_type = %service_type,
-            "healthcheck skipped: connection type does not support HTTP healthcheck"
+            "healthcheck skipped: no HTTP, CLI, or desktop healthcheck available"
         );
         return Ok(HealthcheckResult {
             success: true,

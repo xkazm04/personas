@@ -118,6 +118,25 @@ export function useDataPortability() {
     }
   }, [credImportPassphrase]);
 
+  const handleCredImportWithResolutions = useCallback(async (resolutions: Record<string, string>) => {
+    setCredImportStatus('loading');
+    setErrorMsg('');
+    try {
+      const result = await importCredentials(credImportPassphrase, JSON.stringify(resolutions));
+      if (result) {
+        setCredImportResult(result);
+        setCredImportStatus('success');
+        setShowCredImportInput(false);
+        setCredImportPassphrase('');
+      } else {
+        setCredImportStatus('idle');
+      }
+    } catch (e) {
+      setErrorMsg(String(e));
+      setCredImportStatus('error');
+    }
+  }, [credImportPassphrase]);
+
   return {
     stats,
     statsStatus,
@@ -140,5 +159,6 @@ export function useDataPortability() {
     handleImport,
     handleCredExport,
     handleCredImport,
+    handleCredImportWithResolutions,
   };
 }

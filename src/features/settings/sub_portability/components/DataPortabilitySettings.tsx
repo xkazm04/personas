@@ -80,6 +80,7 @@ export default function DataPortabilitySettings() {
             setShowCredImportInput={dp.setShowCredImportInput}
             onCredExport={dp.handleCredExport}
             onCredImport={dp.handleCredImport}
+            onCredImportWithResolutions={dp.handleCredImportWithResolutions}
           />
 
           {/* Error display */}

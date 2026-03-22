@@ -1221,7 +1221,19 @@ struct CredentialExportEnvelope {
 #[ts(export)]
 pub struct CredentialImportResult {
     pub created: u32,
+    pub skipped: u32,
+    pub replaced: u32,
     pub warnings: Vec<String>,
+    /// Non-empty when conflicts detected — frontend should show resolution UI
+    pub conflicts: Vec<CredentialConflict>,
+}
+
+#[derive(Debug, Serialize, Deserialize, TS, Clone)]
+#[ts(export)]
+pub struct CredentialConflict {
+    pub name: String,
+    pub service_type: String,
+    pub existing_id: String,
 }
 
 /// Derive a 32-byte key from a passphrase using PBKDF2-HMAC-SHA256.
@@ -1331,6 +1343,7 @@ pub async fn import_credentials(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
     passphrase: String,
+    resolutions_json: Option<String>,
 ) -> Result<Option<CredentialImportResult>, AppError> {
     require_privileged(&state, "import_credentials").await?;
 
@@ -1392,14 +1405,79 @@ pub async fn import_credentials(
         .map_err(|e| AppError::Validation(format!("Invalid inner data: {e}")))?;
 
     let pool = &state.db;
+
+    // Parse resolutions from frontend (second pass after conflict detection)
+    let resolutions: std::collections::HashMap<String, String> = resolutions_json
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or_default();
+    let has_resolutions = !resolutions.is_empty();
+
+    // Load existing credentials for conflict detection
+    let existing = cred_repo::get_all(pool).unwrap_or_default();
+    let existing_names: std::collections::HashMap<String, String> = existing
+        .iter()
+        .map(|c| (c.name.to_lowercase(), c.id.clone()))
+        .collect();
+
     let mut result = CredentialImportResult {
         created: 0,
+        skipped: 0,
+        replaced: 0,
         warnings: Vec::new(),
+        conflicts: Vec::new(),
     };
 
+    // First pass: if conflicts exist and no resolutions provided, return conflicts for UI
+    if !has_resolutions {
+        for entry in &bundle.credentials {
+            let conflict_key = entry.name.to_lowercase();
+            if existing_names.contains_key(&conflict_key) {
+                result.conflicts.push(CredentialConflict {
+                    name: entry.name.clone(),
+                    service_type: entry.service_type.clone(),
+                    existing_id: existing_names.get(&conflict_key).cloned().unwrap_or_default(),
+                });
+            }
+        }
+        if !result.conflicts.is_empty() {
+            return Ok(Some(result));
+        }
+    }
+
     for entry in &bundle.credentials {
+        let conflict_key = entry.name.to_lowercase();
+
+        // Determine action based on resolution
+        let resolution = resolutions.get(&entry.name);
+        match resolution.map(|s| s.as_str()) {
+            Some("skip") => {
+                result.skipped += 1;
+                continue;
+            }
+            Some("replace") => {
+                // Delete existing, import with original name
+                if let Some(existing_id) = existing_names.get(&conflict_key) {
+                    let _ = cred_repo::delete(pool, existing_id);
+                }
+                result.replaced += 1;
+            }
+            Some("keep_both") => {
+                // Import with "(imported)" suffix — fall through to create with modified name
+            }
+            _ => {
+                // No conflict or no resolution needed — use original name
+            }
+        }
+
+        let final_name = if resolution == Some(&"keep_both".to_string()) {
+            format!("{} (imported)", entry.name)
+        } else {
+            entry.name.clone()
+        };
+
         let input = crate::db::models::CreateCredentialInput {
-            name: format!("{} (imported)", entry.name),
+            name: final_name,
             service_type: entry.service_type.clone(),
             encrypted_data: String::new(),
             iv: String::new(),
