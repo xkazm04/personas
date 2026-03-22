@@ -3,10 +3,10 @@
 /**
  * Canonical health level for a persona, derived from recent execution outcomes.
  *
- * - `healthy`  — all recent executions succeeded (or no failures)
- * - `degraded` — some recent executions failed (failure rate < 60%)
- * - `failing`  — majority of recent executions failed (failure rate >= 60%)
- * - `dormant`  — no recent executions at all
+ * - `healthy`  â€” all recent executions succeeded (or no failures)
+ * - `degraded` â€” some recent executions failed (failure rate < 60%)
+ * - `failing`  â€” majority of recent executions failed (failure rate >= 60%)
+ * - `dormant`  â€” no recent executions at all
  */
 export type PersonaHealth = { 
 /**
@@ -18,7 +18,7 @@ status: string,
  */
 recentStatuses: Array<string>, 
 /**
- * Success rate from recent executions (0.0–1.0)
+ * Success rate from recent executions (0.0â€“1.0)
  */
 successRate: number, 
 /**

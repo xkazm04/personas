@@ -127,6 +127,12 @@ pub struct DesktopApprovalStore {
     approved: RwLock<HashMap<String, HashSet<DesktopCapability>>>,
 }
 
+impl Default for DesktopApprovalStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DesktopApprovalStore {
     pub fn new() -> Self {
         Self {

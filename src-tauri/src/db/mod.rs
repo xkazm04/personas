@@ -11,7 +11,7 @@ pub mod settings_keys;
 use r2d2::{CustomizeConnection, Pool};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::params;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::error::AppError;
 
@@ -39,7 +39,7 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for SqlitePragma
 }
 
 /// Initialize the database: create file, enable WAL + foreign keys, run migrations, seed data.
-pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
+pub fn init_db(app_data_dir: &Path) -> Result<DbPool, AppError> {
     std::fs::create_dir_all(app_data_dir)?;
     restrict_dir_permissions(app_data_dir);
     let db_path = app_data_dir.join("personas.db");
@@ -82,7 +82,7 @@ pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
 
 /// Initialize the user-facing database: a separate SQLite file (`personas_data.db`)
 /// that agents and users can freely read/write without risk to the internal app database.
-pub fn init_user_db(app_data_dir: &PathBuf) -> Result<UserDbPool, AppError> {
+pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
     let db_path = app_data_dir.join("personas_data.db");
 
     tracing::info!(path = %db_path.display(), "Initializing user data database");

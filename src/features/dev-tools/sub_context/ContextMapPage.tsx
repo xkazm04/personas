@@ -225,10 +225,10 @@ function GroupColorPicker({
 
 export default function ContextMapPage() {
   const store = usePersonaStore.getState();
-  const fetchContextMap = (store as any).fetchContextMap as (() => Promise<void>) | undefined;
-  const createContextGroup = (store as any).createContextGroup as ((data: any) => Promise<void>) | undefined;
-  // const createContext = (store as any).createContext -- wired later
-  const runCodebaseScan = (store as any).runCodebaseScan as (() => Promise<void>) | undefined;
+  const fetchContextMap = (store as unknown as Record<string, unknown>).fetchContextMap as (() => Promise<void>) | undefined;
+  const createContextGroup = (store as unknown as Record<string, unknown>).createContextGroup as ((data: Record<string, unknown>) => Promise<void>) | undefined;
+  // const createContext = (store as unknown).createContext -- wired later
+  const runCodebaseScan = (store as unknown as Record<string, unknown>).runCodebaseScan as (() => Promise<void>) | undefined;
 
   const [groups, _setGroups] = useState<ContextGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());

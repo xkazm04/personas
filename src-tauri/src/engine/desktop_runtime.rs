@@ -78,6 +78,12 @@ pub struct DesktopRuntime {
     results: RwLock<HashMap<String, PlanExecutionResult>>,
 }
 
+impl Default for DesktopRuntime {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DesktopRuntime {
     pub fn new() -> Self {
         Self {

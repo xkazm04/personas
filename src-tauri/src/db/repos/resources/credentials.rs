@@ -349,10 +349,10 @@ pub fn record_usage(pool: &DbPool, credential_id: &str) -> Result<(), AppError> 
         .unwrap_or(serde_json::json!({}));
 
     let count = meta.get("usage_count").and_then(|v| v.as_u64()).unwrap_or(0);
-    meta.as_object_mut().map(|obj| {
+    if let Some(obj) = meta.as_object_mut() {
         obj.insert("usage_count".to_string(), serde_json::json!(count + 1));
         obj.insert("last_used_at".to_string(), serde_json::json!(now));
-    });
+    }
 
     let meta_str = serde_json::to_string(&meta).ok();
     conn.execute(

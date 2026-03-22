@@ -8,6 +8,7 @@ use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn create_template_feedback(
     state: State<'_, Arc<AppState>>,
     review_id: String,

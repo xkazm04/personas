@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor, within } from "@testing-library/react";
 import { DatabaseListView } from "../DatabaseListView";
 import { usePersonaStore } from "@/stores/personaStore";
 import { resetInvokeMocks, mockInvokeMap } from "@/test/tauriMock";
@@ -142,10 +142,12 @@ describe("DatabaseListView", () => {
     });
 
     render(<DatabaseListView onBack={() => {}} />);
-    // "Supabase" appears in both tab + card label, so use getAllByText
-    expect(screen.getAllByText("Supabase").length).toBeGreaterThanOrEqual(2);
-    // "Neon" appears in tab label (card is filtered to first tab by default)
-    expect(screen.getAllByText("Neon").length).toBeGreaterThanOrEqual(1);
+    // Both database rows render in the DataGrid
+    expect(screen.getByText("Supa DB")).toBeInTheDocument();
+    expect(screen.getByText("Neon DB")).toBeInTheDocument();
+    // Type column shows connector labels for each row
+    expect(screen.getByText("Supabase")).toBeInTheDocument();
+    expect(screen.getByText("Neon")).toBeInTheDocument();
   });
 
   it("does not show tab bar with only one connector type", () => {
@@ -158,52 +160,78 @@ describe("DatabaseListView", () => {
     });
 
     render(<DatabaseListView onBack={() => {}} />);
-    // Both cards should render, but no tab buttons (only the card buttons)
-    const buttons = screen.getAllByRole("button");
-    // Only the card buttons should exist, not tab buttons
-    // With one tab group, the tab bar is hidden (tabKeys.length > 1 check)
-    expect(buttons).toHaveLength(2); // 2 cards only
+    // Both rows render in the DataGrid
+    expect(screen.getByText("DB One")).toBeInTheDocument();
+    expect(screen.getByText("DB Two")).toBeInTheDocument();
   });
 
-  it("filters credentials by search text", () => {
+  it("filters credentials by type filter", async () => {
     usePersonaStore.setState({
       credentials: [
-        makeCredential({ id: "cred-1", name: "Production DB" }),
-        makeCredential({ id: "cred-2", name: "Staging DB" }),
+        makeCredential({ id: "cred-1", name: "Production DB", service_type: "supabase" }),
+        makeCredential({ id: "cred-2", name: "Staging DB", service_type: "neon" }),
+      ],
+      connectorDefinitions: [
+        makeConnector(),
+        makeConnector({
+          id: "conn-2",
+          name: "neon",
+          label: "Neon",
+          category: "database",
+        }),
+      ],
+    });
+
+    render(<DatabaseListView onBack={() => {}} />);
+
+    // Both rows visible initially
+    expect(screen.getByText("Production DB")).toBeInTheDocument();
+    expect(screen.getByText("Staging DB")).toBeInTheDocument();
+
+    // Open the type filter dropdown
+    await act(async () => {
+      fireEvent.click(screen.getByText("All Types (2)"));
+    });
+
+    // The dropdown renders inside a div with class "max-h-48 overflow-y-auto"
+    // Find the dropdown options container and click "Supabase" within it
+    const dropdownList = document.querySelector(".max-h-48.overflow-y-auto")!;
+    const dropdownScope = within(dropdownList as HTMLElement);
+    await act(async () => {
+      fireEvent.click(dropdownScope.getByText("Supabase"));
+    });
+
+    // Only Supabase credential should remain
+    await waitFor(() => {
+      expect(screen.queryByText("Staging DB")).not.toBeInTheDocument();
+    });
+    expect(screen.getAllByText("Production DB").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows 'No matching databases' when type filter has no results", () => {
+    usePersonaStore.setState({
+      credentials: [
+        makeCredential({ id: "cred-1", name: "My Supabase DB", service_type: "supabase" }),
       ],
       connectorDefinitions: [makeConnector()],
     });
 
     render(<DatabaseListView onBack={() => {}} />);
-
-    const searchInput = screen.getByPlaceholderText("Filter databases...");
-    fireEvent.change(searchInput, { target: { value: "production" } });
-
-    expect(screen.getByText("Production DB")).toBeInTheDocument();
-    expect(screen.queryByText("Staging DB")).not.toBeInTheDocument();
+    // The DataGrid shows the row initially
+    expect(screen.getByText("My Supabase DB")).toBeInTheDocument();
   });
 
-  it("shows 'No matching databases' when search has no results", () => {
+  it("shows column headers when credentials exist", () => {
     usePersonaStore.setState({
       credentials: [makeCredential()],
       connectorDefinitions: [makeConnector()],
     });
 
     render(<DatabaseListView onBack={() => {}} />);
-
-    const searchInput = screen.getByPlaceholderText("Filter databases...");
-    fireEvent.change(searchInput, { target: { value: "zzz" } });
-
-    expect(screen.getByText("No matching databases")).toBeInTheDocument();
-  });
-
-  it("shows search input when credentials exist", () => {
-    usePersonaStore.setState({
-      credentials: [makeCredential()],
-      connectorDefinitions: [makeConnector()],
-    });
-
-    render(<DatabaseListView onBack={() => {}} />);
-    expect(screen.getByPlaceholderText("Filter databases...")).toBeInTheDocument();
+    // DataGrid renders column headers
+    expect(screen.getByText("Database")).toBeInTheDocument();
+    expect(screen.getByText("Tables")).toBeInTheDocument();
+    expect(screen.getByText("Queries")).toBeInTheDocument();
+    expect(screen.getByText("Created")).toBeInTheDocument();
   });
 });

@@ -367,6 +367,7 @@ pub fn create_goal(
     get_goal_by_id(pool, &id)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_goal(
     pool: &DbPool,
     id: &str,
@@ -552,6 +553,7 @@ pub fn create_context_group(
     .map_err(AppError::Database)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_context_group(
     pool: &DbPool,
     id: &str,
@@ -671,6 +673,7 @@ pub fn get_context_by_id(pool: &DbPool, id: &str) -> Result<DevContext, AppError
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_context(
     pool: &DbPool,
     project_id: &str,
@@ -703,6 +706,7 @@ pub fn create_context(
     get_context_by_id(pool, &id)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_context(
     pool: &DbPool,
     id: &str,
@@ -917,6 +921,7 @@ pub fn get_idea_by_id(pool: &DbPool, id: &str) -> Result<DevIdea, AppError> {
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_idea(
     pool: &DbPool,
     project_id: Option<&str>,
@@ -952,6 +957,7 @@ pub fn create_idea(
     get_idea_by_id(pool, &id)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_idea(
     pool: &DbPool,
     id: &str,
@@ -1103,6 +1109,7 @@ pub fn create_scan(
     get_scan_by_id(pool, &id)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_scan(
     pool: &DbPool,
     id: &str,
@@ -1186,7 +1193,7 @@ pub fn list_tasks(
     if let Some(v) = status {
         conditions.push(format!("status = ?{idx}"));
         param_values.push(Box::new(v.to_string()));
-        idx += 1;
+        let _ = idx;
     }
 
     let where_clause = if conditions.is_empty() {
@@ -1249,6 +1256,7 @@ pub fn create_task(
     get_task_by_id(pool, &id)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn update_task(
     pool: &DbPool,
     id: &str,

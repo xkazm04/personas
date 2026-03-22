@@ -6,7 +6,7 @@
 // Provider
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type ProviderName = 'claude' | 'gemini' | 'copilot';
+export type ProviderName = 'claude' | 'gemini';
 
 export interface ModelSpec {
   id: string;
@@ -22,11 +22,6 @@ export const PROVIDER_MODELS: Record<ProviderName, ModelSpec[]> = {
   ],
   gemini: [
     { id: 'gemini-2.5-flash-lite', label: 'Flash Lite 3.1', tier: 'budget' },
-  ],
-  copilot: [
-    { id: 'gpt-5.1-codex-mini', label: 'GPT-5.1 Codex Mini', tier: 'budget' },
-    { id: 'claude-sonnet-4.6', label: 'Claude Sonnet 4.6', tier: 'standard' },
-    { id: 'gpt-5.4', label: 'GPT-5.4', tier: 'premium' },
   ],
 };
 

@@ -321,13 +321,13 @@ function GoalBoard({
 export default function ProjectManagerPage() {
   // Store bindings (will be wired when devToolsSlice is ready)
   const store = usePersonaStore.getState();
-  const fetchProjects = (store as any).fetchProjects as (() => Promise<void>) | undefined;
-  const createProject = (store as any).createProject as ((data: any) => Promise<void>) | undefined;
-  const setActiveProject = (store as any).setActiveProject as ((id: string) => void) | undefined;
-  const fetchGoals = (store as any).fetchGoals as ((projectId: string) => Promise<void>) | undefined;
-  const createGoal = (store as any).createGoal as ((data: any) => Promise<void>) | undefined;
-  const updateGoal = (store as any).updateGoal as ((id: string, data: any) => Promise<void>) | undefined;
-  const deleteGoal = (store as any).deleteGoal as ((id: string) => Promise<void>) | undefined;
+  const fetchProjects = (store as unknown as Record<string, unknown>).fetchProjects as (() => Promise<void>) | undefined;
+  const createProject = (store as unknown as Record<string, unknown>).createProject as ((data: Record<string, unknown>) => Promise<void>) | undefined;
+  const setActiveProject = (store as unknown as Record<string, unknown>).setActiveProject as ((id: string) => void) | undefined;
+  const fetchGoals = (store as unknown as Record<string, unknown>).fetchGoals as ((projectId: string) => Promise<void>) | undefined;
+  const createGoal = (store as unknown as Record<string, unknown>).createGoal as ((data: Record<string, unknown>) => Promise<void>) | undefined;
+  const updateGoal = (store as unknown as Record<string, unknown>).updateGoal as ((id: string, data: Record<string, unknown>) => Promise<void>) | undefined;
+  const deleteGoal = (store as unknown as Record<string, unknown>).deleteGoal as ((id: string) => Promise<void>) | undefined;
 
   // Local state (until slice provides it)
   const [projects] = useState<Project[]>([]);

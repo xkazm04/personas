@@ -16,6 +16,7 @@ const MAX_MESSAGE_SIZE: u32 = 16 * 1024 * 1024;
 
 /// Top-level wire protocol message.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::enum_variant_names)]
 pub enum Message {
     /// Initial handshake from connecting peer.
     Hello {

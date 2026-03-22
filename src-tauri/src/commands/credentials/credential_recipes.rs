@@ -25,6 +25,7 @@ pub fn list_credential_recipes(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn upsert_credential_recipe(
     state: State<'_, Arc<AppState>>,
     connector_name: String,

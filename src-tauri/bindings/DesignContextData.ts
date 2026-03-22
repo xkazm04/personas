@@ -7,10 +7,10 @@ import type { DesignUseCase } from "./DesignUseCase";
  * Structured envelope for the `design_context` JSON column.
  *
  * Independent sections:
- * - `design_files` — files & references for the AI design prompt
- * - `credential_links` — connector name → credential ID mappings
- * - `use_cases` — structured workflow descriptions from design results
- * - `summary` — optional human-readable summary (legacy compat)
- * - `connector_pipeline` — chronological connector interaction sequence
+ * - `design_files` â€” files & references for the AI design prompt
+ * - `credential_links` â€” connector name â†’ credential ID mappings
+ * - `use_cases` â€” structured workflow descriptions from design results
+ * - `summary` â€” optional human-readable summary (legacy compat)
+ * - `connector_pipeline` â€” chronological connector interaction sequence
  */
 export type DesignContextData = { designFiles: DesignFilesSection | null, credentialLinks: { [key in string]?: string } | null, useCases: Array<DesignUseCase> | null, summary: string | null, connectorPipeline: Array<ConnectorPipelineStep> | null, };

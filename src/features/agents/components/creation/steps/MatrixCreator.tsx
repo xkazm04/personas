@@ -53,9 +53,9 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel }: MatrixC
 
     const capabilities = [
       ...(reviewPolicy !== 'never'
-        ? [{ type: 'manual_review' as const, context: reviewPolicy, source_node: '' }]
+        ? [{ type: 'manual_review' as const, label: 'Manual Review', context: reviewPolicy, source_node: '' }]
         : []),
-      { type: 'agent_memory' as const, context: 'Persistent cross-run memory', source_node: '' },
+      { type: 'agent_memory' as const, label: 'Agent Memory', context: 'Persistent cross-run memory', source_node: '' },
     ];
 
     const channels = state.channels.map((ch) => ({
@@ -116,8 +116,8 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel }: MatrixC
         id: uc.id,
         name: uc.title,
         description: uc.description,
-        category: uc.category || 'automation',
-        steps: [],
+        nodes: [],
+        edges: [],
       })),
     [state.useCases],
   );
@@ -191,8 +191,6 @@ export function MatrixCreator({ state, dispatch, onContinue, onCancel }: MatrixC
 
   // ── Check readiness ──────────────────────────────────────────────
 
-  const externalConnectors = requiredConnectors.filter((rc) => !BUILTIN.has(rc.activeName));
-  const allMatched = externalConnectors.every((rc) => !!connectorCredentialMap[rc.activeName]);
   const canContinue = state.components.length > 0 || state.useCases.length > 0;
 
   return (

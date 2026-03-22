@@ -4,5 +4,29 @@
  * A single knowledge entry extracted from execution history.
  * Accumulates structured intelligence about tool sequences, failure patterns,
  * cost-quality tradeoffs, data flows, and model performance.
+ *
+ * Extended with annotation support: agents and users can annotate knowledge
+ * with scoping (persona, tool, connector, global) to enable cross-persona
+ * knowledge sharing.
  */
-export type ExecutionKnowledge = { id: string, persona_id: string, use_case_id: string | null, knowledge_type: string, pattern_key: string, pattern_data: string, success_count: number, failure_count: number, avg_cost_usd: number, avg_duration_ms: number, confidence: number, last_execution_id: string | null, created_at: string, updated_at: string, };
+export type ExecutionKnowledge = { id: string, persona_id: string, use_case_id: string | null, knowledge_type: string, pattern_key: string, pattern_data: string, success_count: number, failure_count: number, avg_cost_usd: number, avg_duration_ms: number, confidence: number, last_execution_id: string | null, created_at: string, updated_at: string, 
+/**
+ * Scope type for knowledge sharing: "persona", "tool", "connector", "global"
+ */
+scope_type: string, 
+/**
+ * The scoped entity ID (tool name, connector service_type, etc.)
+ */
+scope_id: string | null, 
+/**
+ * Human/agent-readable annotation text
+ */
+annotation_text: string | null, 
+/**
+ * Who created the annotation: "agent", "user", "system"
+ */
+annotation_source: string | null, 
+/**
+ * Whether a user has verified the annotation's accuracy
+ */
+is_verified: boolean, };

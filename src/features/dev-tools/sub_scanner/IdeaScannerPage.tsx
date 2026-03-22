@@ -217,7 +217,7 @@ function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
 
 export default function IdeaScannerPage() {
   const store = usePersonaStore.getState();
-  const runScan = (store as any).runIdeaScan as ((agentKeys: string[]) => Promise<void>) | undefined;
+  const runScan = (store as unknown as Record<string, unknown>).runIdeaScan as ((agentKeys: string[]) => Promise<void>) | undefined;
 
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
   const [isRunning, setIsRunning] = useState(false);

@@ -30,6 +30,7 @@ pub struct ConnectionManager {
     local_peer_id: String,
     local_display_name: String,
     connections: RwLock<HashMap<String, PeerConnection>>,
+    #[allow(dead_code)]
     max_retries: u32,
 }
 

@@ -1,5 +1,4 @@
 import { useRef, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { CompactRow } from './CompactRow';
 import { ComfortableRow } from './ComfortableRow';

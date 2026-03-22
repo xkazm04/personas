@@ -118,6 +118,7 @@ pub fn dev_tools_create_goal(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_goal(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -224,6 +225,7 @@ pub fn dev_tools_create_context_group(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_context_group(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -284,6 +286,7 @@ pub fn dev_tools_get_context(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_create_context(
     state: State<'_, Arc<AppState>>,
     project_id: String,
@@ -315,6 +318,7 @@ pub fn dev_tools_create_context(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_context(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -427,6 +431,7 @@ pub fn dev_tools_get_idea(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_create_idea(
     state: State<'_, Arc<AppState>>,
     project_id: Option<String>,
@@ -462,6 +467,7 @@ pub fn dev_tools_create_idea(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_idea(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -541,6 +547,7 @@ pub fn dev_tools_create_scan(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_scan(
     state: State<'_, Arc<AppState>>,
     id: String,
@@ -606,6 +613,7 @@ pub fn dev_tools_create_task(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_task(
     state: State<'_, Arc<AppState>>,
     id: String,

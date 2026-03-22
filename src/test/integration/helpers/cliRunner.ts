@@ -43,15 +43,7 @@ const PROVIDERS: Record<ProviderName, ProviderSpec> = {
     autoApproveArgs: ['--yolo'],
     modelFlag: '-m',
   },
-  copilot: {
-    command: 'copilot',
-    baseArgs: [],
-    promptDelivery: 'flag',
-    promptFlag: '-p',
-    outputFormatArgs: ['--output-format', 'json'],
-    autoApproveArgs: ['--yolo'],
-    modelFlag: '--model',
-  },
+  // copilot provider removed — no longer in scope
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -328,7 +320,7 @@ export async function runCli(config: CliRunnerConfig): Promise<CliRunResult> {
   let spawnArgs = args;
   if (IS_WIN) {
     spawnCommand = 'cmd';
-    spawnArgs = ['/C', `${spec.command}.cmd`, ...args];
+    spawnArgs = ['/C', spec.command, ...args];
   }
   const child = spawn(spawnCommand, spawnArgs, {
     cwd: config.cwd,
@@ -431,7 +423,7 @@ export async function runCli(config: CliRunnerConfig): Promise<CliRunResult> {
     sessionId,
     // Claude sends complete text blocks (join with newline).
     // Gemini and Copilot send deltas (join without separator to reconstruct).
-    assistantText: config.provider === 'gemini' || config.provider === 'copilot'
+    assistantText: config.provider === 'gemini'
       ? assistantTextParts.join('')
       : assistantTextParts.join('\n'),
     toolsUsed,

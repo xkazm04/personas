@@ -260,10 +260,10 @@ function TaskCard({
 
 export default function TaskRunnerPage() {
   const store = usePersonaStore.getState();
-  const createTask = (store as any).createRunnerTask as ((data: any) => Promise<void>) | undefined;
-  const batchFromAccepted = (store as any).batchFromAcceptedIdeas as (() => Promise<void>) | undefined;
-  const startBatch = (store as any).startBatch as (() => Promise<void>) | undefined;
-  const cancelAll = (store as any).cancelAllTasks as (() => Promise<void>) | undefined;
+  const createTask = (store as unknown as Record<string, unknown>).createRunnerTask as ((data: Record<string, unknown>) => Promise<void>) | undefined;
+  const batchFromAccepted = (store as unknown as Record<string, unknown>).batchFromAcceptedIdeas as (() => Promise<void>) | undefined;
+  const startBatch = (store as unknown as Record<string, unknown>).startBatch as (() => Promise<void>) | undefined;
+  const cancelAll = (store as unknown as Record<string, unknown>).cancelAllTasks as (() => Promise<void>) | undefined;
 
   const [tasks] = useState<RunnerTask[]>([]);
   const [showModal, setShowModal] = useState(false);

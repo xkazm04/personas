@@ -225,8 +225,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-muted-foreground',
         render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designResult, flows, isEditMode, onNavigateCatalog,
+  }, [designResult, flows, isEditMode, onNavigateCatalog, // deps intentionally limited
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
   const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={isEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} />);

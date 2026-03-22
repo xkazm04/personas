@@ -172,8 +172,8 @@ function SwipeCard({
 
 export default function IdeaTriagePage() {
   const store = usePersonaStore.getState();
-  const triageIdea = (store as any).triageIdea as ((id: string, decision: 'accepted' | 'rejected') => Promise<void>) | undefined;
-  const deleteIdea = (store as any).deleteIdea as ((id: string) => Promise<void>) | undefined;
+  const triageIdea = (store as unknown as Record<string, unknown>).triageIdea as ((id: string, decision: 'accepted' | 'rejected') => Promise<void>) | undefined;
+  const deleteIdea = (store as unknown as Record<string, unknown>).deleteIdea as ((id: string) => Promise<void>) | undefined;
 
   const [ideas, setIdeas] = useState<TriageIdea[]>([]);
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');

@@ -249,7 +249,7 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
     try {
       const peers = await discoveryApi.getDiscoveredPeers();
       set({ discoveredPeers: peers });
-    } catch (err) {
+    } catch {
       // Silently fail — network may not be running yet
     }
   },
@@ -311,7 +311,7 @@ export const createNetworkSlice: StateCreator<PersonaStore, [], [], NetworkSlice
     try {
       const status = await discoveryApi.getNetworkStatus();
       set({ networkStatus: status });
-    } catch (err) {
+    } catch {
       // Silently fail
     }
   },

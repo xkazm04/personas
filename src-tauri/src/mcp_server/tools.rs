@@ -448,34 +448,29 @@ fn handle_list_templates(args: &Value, pool: &McpDbPool) -> Result<String, Strin
 
     let mut stmt = conn.prepare(sql).map_err(|e| format!("Query error: {e}"))?;
 
-    let rows = if let Some(cat) = category {
-        stmt.query_map(rusqlite::params![cat, limit], |row| {
-            Ok(json!({
-                "id": row.get::<_, String>(0)?,
-                "name": row.get::<_, String>(1)?,
-                "instruction": row.get::<_, String>(2)?,
-                "status": row.get::<_, String>(3)?,
-                "structural_score": row.get::<_, Option<i32>>(4)?,
-                "semantic_score": row.get::<_, Option<i32>>(5)?,
-                "adoption_count": row.get::<_, i32>(6)?,
-                "category": row.get::<_, Option<String>>(7)?,
-            }))
-        }).map_err(|e| format!("Query error: {e}"))?
-    } else {
-        stmt.query_map(rusqlite::params![limit], |row| {
-            Ok(json!({
-                "id": row.get::<_, String>(0)?,
-                "name": row.get::<_, String>(1)?,
-                "instruction": row.get::<_, String>(2)?,
-                "status": row.get::<_, String>(3)?,
-                "structural_score": row.get::<_, Option<i32>>(4)?,
-                "semantic_score": row.get::<_, Option<i32>>(5)?,
-                "adoption_count": row.get::<_, i32>(6)?,
-                "category": row.get::<_, Option<String>>(7)?,
-            }))
-        }).map_err(|e| format!("Query error: {e}"))?
+    let row_mapper = |row: &rusqlite::Row| {
+        Ok(json!({
+            "id": row.get::<_, String>(0)?,
+            "name": row.get::<_, String>(1)?,
+            "instruction": row.get::<_, String>(2)?,
+            "status": row.get::<_, String>(3)?,
+            "structural_score": row.get::<_, Option<i32>>(4)?,
+            "semantic_score": row.get::<_, Option<i32>>(5)?,
+            "adoption_count": row.get::<_, i32>(6)?,
+            "category": row.get::<_, Option<String>>(7)?,
+        }))
     };
 
-    let templates: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
+    let templates: Vec<Value> = if let Some(cat) = category {
+        stmt.query_map(rusqlite::params![cat, limit], row_mapper)
+            .map_err(|e| format!("Query error: {e}"))?
+            .filter_map(|r| r.ok())
+            .collect()
+    } else {
+        stmt.query_map(rusqlite::params![limit], row_mapper)
+            .map_err(|e| format!("Query error: {e}"))?
+            .filter_map(|r| r.ok())
+            .collect()
+    };
     serde_json::to_string_pretty(&templates).map_err(|e| format!("Serialize error: {e}"))
 }

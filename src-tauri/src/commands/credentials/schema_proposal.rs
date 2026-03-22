@@ -346,7 +346,7 @@ fn build_prompt(
         for t in existing_tables {
             prompt.push_str(&format!("- {t}\n"));
         }
-        prompt.push_str("\n");
+        prompt.push('\n');
     }
 
     if !schema_context.is_empty() {

@@ -32,13 +32,7 @@ const PROVIDER_CONFIGS: Array<{
     defaultModel: 'gemini-2.5-flash-lite',
     versionCmd: 'gemini --version',
   },
-  {
-    name: 'copilot',
-    displayName: 'Copilot CLI',
-    defaultModel: 'gpt-5.1-codex-mini',
-    versionCmd: 'copilot --version',
-    versionPattern: /copilot|github/i,
-  },
+  // copilot provider removed — no longer in scope
 ];
 
 let cachedProviders: ProviderInfo[] | null = null;

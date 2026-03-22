@@ -28,7 +28,7 @@ export default function CliOutputPanel({
   runId,
   lines,
   idleText = 'No CLI output yet.',
-  waitingText = 'Waiting for Claude CLI outputâ€¦',
+  waitingText = 'Waiting for Claude CLI output\u2026',
   maxHeightClassName = 'max-h-64',
   healingStrip,
   operation,
