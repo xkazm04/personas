@@ -63,3 +63,6 @@ scripts/templates/_debug/
 
 # Planning docs (GSD)
 .planning/
+
+# Test results (generated, not needed in repo)
+docs/tests/results/
