@@ -496,6 +496,21 @@ class TemplateScenario:
     def _step_execute(self):
         t0 = time.time()
 
+        # Record execution count BEFORE clicking, so we can verify a NEW execution was created
+        pre_exec_count = 0
+        try:
+            rows = db_query(
+                "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?",
+                (self.persona_id,)
+            )
+            if rows:
+                pre_exec_count = rows[0][0]
+        except Exception:
+            pass
+
+        # Record timestamp before execution to scope artifact verification
+        self._exec_started_at = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
+
         # Ensure we're on the Matrix tab with the Quick Execute button visible
         api_post("/open-editor-tab", {"tab": "matrix"})
         time.sleep(2)
@@ -508,23 +523,32 @@ class TemplateScenario:
             self.timings["execute"] = time.time() - t0
             return
 
-        # Poll DB for execution completion (up to 10 minutes, matching engine default)
+        # Poll DB for a NEW execution (count must increase) with completed/failed status
         for attempt in range(120):
             time.sleep(5)
             try:
                 rows = db_query(
-                    "SELECT status FROM persona_executions "
+                    "SELECT id, status, error_message FROM persona_executions "
                     "WHERE persona_id = ? ORDER BY created_at DESC LIMIT 1",
                     (self.persona_id,)
                 )
                 if rows:
-                    status = rows[0][0]
+                    current_count_rows = db_query(
+                        "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?",
+                        (self.persona_id,)
+                    )
+                    current_count = current_count_rows[0][0] if current_count_rows else 0
+                    if current_count <= pre_exec_count:
+                        continue  # No new execution yet
+
+                    exec_id, status, err_msg = rows[0]
+                    self._last_exec_id = exec_id  # Track for artifact verification
                     if status in ("completed", "partial"):
                         self.scores[4] = 1
                         self.timings["execute"] = time.time() - t0
                         return
                     if status == "failed":
-                        self.errors.append("Execution completed with status=failed")
+                        self.errors.append(f"Execution failed: {(err_msg or '')[:100]}")
                         self.scores[4] = 0
                         self.timings["execute"] = time.time() - t0
                         return
@@ -535,10 +559,12 @@ class TemplateScenario:
         self.scores[4] = 0
         self.timings["execute"] = time.time() - t0
 
-    # ── Steps 20-21: Verify Artifacts ────────────────────────────────
+    # ── Steps 20-21: Verify Artifacts from THIS execution only ───────
 
     def _step_verify_artifacts(self):
         t0 = time.time()
+        exec_id = getattr(self, '_last_exec_id', None)
+        started_at = getattr(self, '_exec_started_at', None)
 
         if not self.persona_id:
             for c in (5, 6, 7, 8):
@@ -547,42 +573,62 @@ class TemplateScenario:
             self.timings["verify_artifacts"] = time.time() - t0
             return
 
-        counts = api_post("/overview-counts", {"persona_id": self.persona_id})
-        if counts.get("error"):
-            # Fallback: query DB directly for counts
-            counts = self._db_artifact_counts()
+        # Only count artifacts linked to THIS execution or created after it started
+        pid = self.persona_id
+        time_filter = started_at or "2000-01-01"
 
-        # Criterion 4 (execution populated) — re-check via overview-counts
-        if self.scores.get(4) is None:
-            self.scores[4] = 1 if counts.get("executions", 0) >= 1 else 0
+        try:
+            msg_count = db_query(
+                "SELECT COUNT(*) FROM persona_messages WHERE persona_id = ? AND created_at >= ?",
+                (pid, time_filter)
+            )
+            review_count = db_query(
+                "SELECT COUNT(*) FROM persona_manual_reviews WHERE persona_id = ? AND created_at >= ?",
+                (pid, time_filter)
+            )
+            event_count = db_query(
+                "SELECT COUNT(*) FROM persona_events WHERE source_id = ? AND created_at >= ?",
+                (pid, time_filter)
+            )
+            memory_count = db_query(
+                "SELECT COUNT(*) FROM persona_memories WHERE persona_id = ? AND created_at >= ?",
+                (pid, time_filter)
+            )
 
-        # Criterion 5: Message populated
-        self.scores[5] = 1 if counts.get("messages", 0) >= 1 else 0
+            msgs = msg_count[0][0] if msg_count else 0
+            reviews = review_count[0][0] if review_count else 0
+            events = event_count[0][0] if event_count else 0
+            memories = memory_count[0][0] if memory_count else 0
+        except Exception as e:
+            self.errors.append(f"DB artifact query failed: {e}")
+            msgs = reviews = events = memories = 0
 
-        # Criterion 6: Human review
+        # Criterion 5: Message populated from THIS execution
+        self.scores[5] = 1 if msgs >= 1 else 0
+
+        # Criterion 6: Human review from THIS execution
         if self.slug in NO_MANUAL_REVIEW:
-            self.scores[6] = 1  # Auto-point — template has no manual_review dimension
+            self.scores[6] = 1  # Auto-point
         else:
-            self.scores[6] = 1 if counts.get("reviews", 0) >= 1 else 0
+            self.scores[6] = 1 if reviews >= 1 else 0
 
-        # Criterion 7: Event created (all templates define emit_event)
-        self.scores[7] = 1 if counts.get("events", 0) >= 1 else 0
+        # Criterion 7: Event created from THIS execution
+        self.scores[7] = 1 if events >= 1 else 0
 
-        # Criterion 8: Memory generated (all templates define agent_memory)
-        self.scores[8] = 1 if counts.get("memories", 0) >= 1 else 0
-
-        # Validate memory content doesn't contain negative scenarios
+        # Criterion 8: Memory from THIS execution (no negative scenarios)
+        self.scores[8] = 1 if memories >= 1 else 0
         if self.scores[8] == 1:
             try:
-                memories = db_query(
-                    "SELECT title, content FROM persona_memories WHERE persona_id = ?",
-                    (self.persona_id,)
+                mem_rows = db_query(
+                    "SELECT title, content FROM persona_memories "
+                    "WHERE persona_id = ? AND created_at >= ?",
+                    (pid, time_filter)
                 )
                 negative_keywords = [
                     "missing credential", "technical error",
-                    "failed to", "unable to connect",
+                    "no credentials", "unable to authenticate",
                 ]
-                for title, content in memories:
+                for title, content in (mem_rows or []):
                     text = f"{title or ''} {content or ''}".lower()
                     if any(kw in text for kw in negative_keywords):
                         self.scores[8] = 0
@@ -627,11 +673,12 @@ class TemplateScenario:
             self.scores[9] = 0
             return
 
+        time_filter = getattr(self, '_exec_started_at', '2000-01-01')
         try:
             rows = db_query(
                 "SELECT content FROM persona_messages "
-                "WHERE persona_id = ? ORDER BY created_at DESC LIMIT 1",
-                (self.persona_id,)
+                "WHERE persona_id = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1",
+                (self.persona_id, time_filter)
             )
             if not rows:
                 self.scores[9] = 0
@@ -687,6 +734,14 @@ class TemplateScenario:
 
             time.sleep(1)
 
+            # Record execution count before Haiku run
+            haiku_pre_count = 0
+            try:
+                rows = db_query("SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?", (self.persona_id,))
+                if rows: haiku_pre_count = rows[0][0]
+            except Exception: pass
+            haiku_started = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
+
             # Re-execute via Matrix Quick Execute button
             api_post("/open-editor-tab", {"tab": "matrix"})
             time.sleep(2)
@@ -697,9 +752,15 @@ class TemplateScenario:
                 self.timings["haiku_regression"] = time.time() - t0
                 return
 
-            # Wait for completion (up to 10 minutes)
+            # Wait for a NEW execution to complete (count must increase)
             for attempt in range(120):
                 time.sleep(5)
+                try:
+                    count_rows = db_query("SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?", (self.persona_id,))
+                    if count_rows and count_rows[0][0] <= haiku_pre_count:
+                        continue  # No new execution yet
+                except Exception: continue
+
                 rows = db_query(
                     "SELECT status, id FROM persona_executions "
                     "WHERE persona_id = ? ORDER BY created_at DESC LIMIT 1",
@@ -710,11 +771,11 @@ class TemplateScenario:
 
                 status = rows[0][0]
                 if status in ("completed", "partial"):
-                    # Check if a meaningful message was produced
+                    # Check if a meaningful message was produced from this execution
                     msg_rows = db_query(
                         "SELECT content FROM persona_messages "
-                        "WHERE persona_id = ? ORDER BY created_at DESC LIMIT 1",
-                        (self.persona_id,)
+                        "WHERE persona_id = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1",
+                        (self.persona_id, haiku_started)
                     )
                     if msg_rows and msg_rows[0] and len(msg_rows[0][0] or "") > 30:
                         self.scores[10] = 1
