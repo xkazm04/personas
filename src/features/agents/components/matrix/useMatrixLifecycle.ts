@@ -192,7 +192,13 @@ export function useMatrixLifecycle({
 
     try {
       const agentIR = state.buildDraft as Record<string, unknown> | null;
-      const hasRichDraft = agentIR?.system_prompt || agentIR?.tools || agentIR?.triggers;
+      // Check for rich draft data OR the presence of a build session (which stores
+      // agent_ir on the Rust side even when buildDraft is null in the frontend).
+      // Template adoptions via bridge don't populate buildDraft but DO create
+      // a session with agent_ir — the Rust promote reads from agent_ir directly.
+      const hasRichDraft = agentIR?.system_prompt || agentIR?.tools || agentIR?.triggers
+        || agentIR?.structured_prompt || agentIR?.suggested_tools || agentIR?.suggested_triggers
+        || sessionId;  // Always use Rust promote path when a session exists
 
       if (hasRichDraft) {
         // New path: use atomic promote that creates entities from agent_ir

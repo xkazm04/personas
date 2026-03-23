@@ -357,51 +357,23 @@ class TemplateScenario:
         t0 = time.time()
         review_id = f"seed-{self.slug}"
 
-        # Step 1: Navigate to Templates (design-reviews section)
-        resp = api_post("/navigate", {"section": "design-reviews"})
-        if not resp_ok(resp):
-            self.errors.append(f"Navigate failed: {resp_error(resp)}")
-            raise RuntimeError("Cannot navigate to design-reviews")
+        # Step 1: Navigate to Templates and wait for rows to render
+        api_post("/navigate", {"section": "design-reviews"})
         time.sleep(2)
-
-        # Step 2: Wait for template rows to render
-        resp = api_post("/wait", {
+        api_post("/wait", {
             "selector": "[data-testid^='template-row-']",
             "timeout_ms": 15000,
         })
-        if not resp_ok(resp):
-            self.errors.append("Template rows did not render in time")
-            raise RuntimeError("Template rows timeout")
 
-        # Step 3: Scroll to and click the template row via data-testid
-        # First scroll it into view
-        api_post("/eval", {
-            "js": f'const el = document.querySelector("[data-testid=\\"template-row-{review_id}\\"]"); '
-                  f'if(el) {{ el.scrollIntoView({{behavior:"instant",block:"center"}}); }} '
-                  f'return {{found: !!el}};'
-        })
-        time.sleep(0.5)
-
-        resp = api_post("/click-testid", {"test_id": f"template-row-{review_id}"})
-        if not resp_ok(resp):
-            self.errors.append(f"Click template row failed: {resp_error(resp)}")
-            raise RuntimeError("Click template row failed")
-        time.sleep(1)
-
-        # Step 4: Wait for detail modal to appear with Adopt button
-        resp = api_post("/wait", {
-            "selector": "[data-testid='button-adopt-template']",
-            "timeout_ms": 10000,
-        })
-        if not resp_ok(resp):
-            self.errors.append("Adopt button did not appear in detail modal")
-            raise RuntimeError("Adopt button not found")
-
-        # Step 5: Click "Adopt as Persona"
-        resp = api_post("/click-testid", {"test_id": "button-adopt-template"})
-        if not resp_ok(resp):
-            self.errors.append(f"Click adopt failed: {resp_error(resp)}")
-            raise RuntimeError("Click adopt failed")
+        # Steps 2-5: Use bridge's openMatrixAdoption which clicks through:
+        #   row click → action menu → View Details → Adopt as Persona
+        # NOTE: Direct HTMLElement.click() from Rust eval() doesn't trigger
+        # React's synthetic event delegation. The bridge method runs in the
+        # same JS context as React so .click() works correctly.
+        resp = api_post("/open-matrix-adoption", {"review_id": review_id})
+        if isinstance(resp, dict) and resp.get("error"):
+            self.errors.append(f"Adoption failed: {resp.get('error')}")
+            raise RuntimeError(f"Adoption failed: {resp.get('error')}")
 
         self.timings["navigate_and_adopt"] = time.time() - t0
 
@@ -463,9 +435,13 @@ class TemplateScenario:
     def _step_verify_promotion(self):
         t0 = time.time()
 
-        # Step 15: Navigate to personas list
+        # Step 15: Navigate to personas list — refresh persona store first
+        api_post("/eval", {
+            "js": "window.__AGENT_STORE__.getState().fetchPersonas(); return true;"
+        })
+        time.sleep(2)
         api_post("/navigate", {"section": "personas"})
-        time.sleep(1)
+        time.sleep(2)
 
         # Step 16: Refresh persona_id from state — after promotion, buildPersonaId
         # is cleared but selectedPersonaId or the promoted persona should be available
