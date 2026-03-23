@@ -271,9 +271,15 @@ pub async fn promote_build_draft_inner(
     // ================================================================
     // Step 1: Build structured DesignUseCase[] from agent_ir
     // ================================================================
-    let ir_use_cases = agent_ir.get("use_cases").and_then(|v| v.as_array());
-    let ir_triggers = agent_ir.get("triggers").or_else(|| agent_ir.get("suggested_triggers")).and_then(|v| v.as_array());
-    let ir_events = agent_ir.get("events").or_else(|| agent_ir.get("suggested_event_subscriptions")).and_then(|v| v.as_array());
+    let ir_use_cases = agent_ir.get("use_cases")
+        .or_else(|| agent_ir.get("use_case_flows"))
+        .and_then(|v| v.as_array());
+    let ir_triggers = agent_ir.get("triggers")
+        .or_else(|| agent_ir.get("suggested_triggers"))
+        .and_then(|v| v.as_array());
+    let ir_events = agent_ir.get("events")
+        .or_else(|| agent_ir.get("suggested_event_subscriptions"))
+        .and_then(|v| v.as_array());
     let ir_messages = agent_ir.get("messages")
         .or_else(|| agent_ir.get("suggested_notification_channels"));
 
@@ -305,10 +311,14 @@ pub async fn promote_build_draft_inner(
                     "description": t.get("description").and_then(|v| v.as_str()).unwrap_or(""),
                 }));
 
-            // Link event subscriptions
+            // Link event subscriptions — include all events (template payloads
+            // don't have direction field; agent_ir events may have direction="subscribe")
             let event_subs: Vec<serde_json::Value> = ir_events
                 .map(|events| events.iter()
-                    .filter(|e| e.get("direction").and_then(|v| v.as_str()) == Some("subscribe"))
+                    .filter(|e| {
+                        let dir = e.get("direction").and_then(|v| v.as_str());
+                        dir.is_none() || dir == Some("subscribe")
+                    })
                     .map(|e| serde_json::json!({
                         "event_type": e.get("event_type").and_then(|v| v.as_str()).unwrap_or(""),
                         "source_filter": e.get("source_filter").and_then(|v| v.as_str()),
@@ -516,14 +526,36 @@ pub async fn promote_build_draft_inner(
     // ================================================================
     // Step 6: Build AgentIR-compatible last_design_result
     // ================================================================
+    // Build connectors list from tools + service_flow (templates may not have suggested_connectors)
+    let connectors = agent_ir.get("required_connectors")
+        .or_else(|| agent_ir.get("suggested_connectors"))
+        .cloned()
+        .unwrap_or_else(|| {
+            // Derive from service_flow if available
+            let service_flow = agent_ir.get("service_flow").and_then(|v| v.as_array());
+            if let Some(services) = service_flow {
+                serde_json::Value::Array(services.iter().filter_map(|s| {
+                    let name = s.as_str()?;
+                    if name == "Local Database" || name == "In-App Messaging" { return None; }
+                    Some(serde_json::json!({"name": name.to_lowercase().replace(' ', "_"), "service_type": name.to_lowercase().replace(' ', "_")}))
+                }).collect())
+            } else {
+                serde_json::Value::Array(vec![])
+            }
+        });
+
     let design_result = serde_json::json!({
         "suggested_tools": tool_names,
-        "suggested_connectors": agent_ir.get("required_connectors").cloned().unwrap_or(serde_json::Value::Array(vec![])),
-        "suggested_triggers": agent_ir.get("triggers").cloned().unwrap_or(serde_json::Value::Array(vec![])),
+        "suggested_connectors": connectors,
+        "suggested_triggers": ir_triggers.cloned().unwrap_or_default(),
         "structured_prompt": agent_ir.get("structured_prompt").cloned(),
-        "full_prompt_markdown": agent_ir.get("system_prompt").and_then(|v| v.as_str()),
-        "suggested_event_subscriptions": agent_ir.get("events").cloned(),
+        "full_prompt_markdown": agent_ir.get("system_prompt")
+            .or_else(|| agent_ir.get("full_prompt_markdown"))
+            .and_then(|v| v.as_str()),
+        "suggested_event_subscriptions": ir_events.cloned().unwrap_or_default(),
         "suggested_notification_channels": ir_messages.cloned(),
+        "use_case_flows": ir_use_cases.cloned().unwrap_or_default(),
+        "service_flow": agent_ir.get("service_flow").cloned(),
     });
 
     // ================================================================

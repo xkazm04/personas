@@ -78,7 +78,13 @@
         ]
       }
     ],
-    "suggested_connectors": [],
+    "suggested_connectors": [
+      {
+        "name": "notion",
+        "service_type": "notion",
+        "purpose": "Access Notion pages and databases for documentation audit"
+      }
+    ],
     "suggested_notification_channels": [
       {
         "type": "built-in",

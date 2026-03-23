@@ -194,17 +194,24 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             context_data,
             suggested_actions,
         } => {
-            // Quality gate: reject reviews that are just error reports, not actual business decisions
+            // Quality gate: reject reviews that are operational errors, not business decisions.
+            // Manual reviews should flag situations needing human judgment (e.g. "Should we
+            // approve this invoice?"), NOT infrastructure problems ("No pages shared").
             let title_lower = title.to_lowercase();
             let desc_lower = description.as_deref().unwrap_or("").to_lowercase();
-            let is_noise = title_lower.contains("execution blocked")
-                || title_lower.contains("credential missing")
-                || title_lower.contains("api error")
-                || title_lower.contains("configuration required")
-                || desc_lower.contains("missing credentials")
-                || desc_lower.contains("api_key not found")
-                || desc_lower.contains("access_token")
-                || desc_lower.contains("unable to connect");
+            let combined = format!("{} {}", title_lower, desc_lower);
+            let is_noise = combined.contains("execution blocked")
+                || combined.contains("credential missing") || combined.contains("missing credentials")
+                || combined.contains("api error") || combined.contains("api_key")
+                || combined.contains("configuration required") || combined.contains("not configured")
+                || combined.contains("unable to connect") || combined.contains("access_token")
+                // Operational: no data, no access, connectivity issues
+                || combined.contains("no pages shared") || combined.contains("no page access")
+                || combined.contains("cannot proceed") || combined.contains("audit cannot")
+                || combined.contains("cannot be performed") || combined.contains("audit blocked")
+                || combined.contains("no data available") || combined.contains("no results found")
+                || combined.contains("workspace is empty") || combined.contains("has no")
+                || combined.contains("not shared with") || combined.contains("integration has no");
 
             if is_noise {
                 ctx.logger.log(&format!(

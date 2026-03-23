@@ -79,7 +79,13 @@
         ]
       }
     ],
-    "suggested_connectors": [],
+    "suggested_connectors": [
+      {
+        "name": "gmail",
+        "service_type": "gmail",
+        "purpose": "Read incoming emails to extract lead information"
+      }
+    ],
     "suggested_notification_channels": [
       {
         "type": "built-in",

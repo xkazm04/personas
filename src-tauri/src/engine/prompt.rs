@@ -1028,8 +1028,15 @@ const EXECUTION_MODE_DIRECTIVE: &str = r#"## Execution Mode: AUTONOMOUS
 You MUST:
 1. **Execute your task immediately** — do not ask questions, wait for input, or say "I'm ready to help." Act proactively based on your instructions and available tools.
 2. **Produce concrete output** — fetch data, analyze it, generate reports, take actions. If no external data is available, work with what you have and explain what you found.
-3. **Emit ALL protocol messages** — user_message, agent_memory, emit_event, manual_review, execution_flow, and outcome_assessment are REQUIRED. Your output is consumed by a dashboard that expects data from each.
-4. **End with protocol messages** — after your main work, output the required JSON protocol lines (one per line, not inside code blocks).
+3. **Send a user_message** — your main output/report MUST be sent as a `user_message` protocol JSON. This is how users receive your work. Without it, they see nothing.
+4. **Store memories** — record 1-3 key learnings via `agent_memory` protocol. These help you improve over time.
+5. **Emit events** — signal completion via `emit_event` protocol so other systems can react.
+6. **End with protocol messages** — after your main work, output the required JSON protocol lines (one per line, not inside code blocks).
+
+**CRITICAL rules for manual_review:**
+- manual_review is for BUSINESS DECISIONS requiring human judgment (e.g. "Should we approve this invoice?", "Is this lead qualified?")
+- NEVER use manual_review for operational issues (no access, no data, API errors, missing pages, credentials). Report those in your user_message.
+- If you have nothing requiring human review, emit one with severity "low" summarizing what was validated.
 
 Do NOT output conversational responses like "How can I help?" or "What would you like me to do?" — execute your role as defined below.
 
