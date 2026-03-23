@@ -3,8 +3,10 @@ import { invoke } from '@tauri-apps/api/core';
 import { useAgentStore } from '@/stores/agentStore';
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
 import { answerBuildQuestion, testBuildDraft } from '@/api/agents/buildSession';
-import { RefreshCw } from 'lucide-react';
+import { executePersona, listExecutions } from '@/api/agents/executions';
+import { RefreshCw, Play, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import type { CellBuildStatus } from '@/lib/types/buildTypes';
+import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 
 interface BuildSessionSummary {
   id: string;
@@ -99,6 +101,51 @@ export function MatrixTab() {
     }
   }, [session?.id, selectedPersona?.id]);
 
+  // Quick Execute handler — run the persona and show result inline
+  const [execState, setExecState] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
+  const [lastExecution, setLastExecution] = useState<PersonaExecution | null>(null);
+
+  // Load latest execution on mount
+  useEffect(() => {
+    if (!selectedPersona?.id) return;
+    listExecutions(selectedPersona.id, 1)
+      .then((execs) => {
+        if (execs.length > 0) setLastExecution(execs[0]!);
+      })
+      .catch(() => {});
+  }, [selectedPersona?.id]);
+
+  const handleQuickExecute = useCallback(async () => {
+    if (!selectedPersona?.id || execState === 'running') return;
+    setExecState('running');
+    setLastExecution(null);
+    try {
+      await executePersona(selectedPersona.id);
+      // Poll for completion
+      const pid = selectedPersona.id;
+      const pollInterval = setInterval(async () => {
+        try {
+          const execs = await listExecutions(pid, 1);
+          const latest = execs[0];
+          if (latest && (latest.status === 'completed' || latest.status === 'partial')) {
+            clearInterval(pollInterval);
+            setLastExecution(latest);
+            setExecState('completed');
+          } else if (latest && latest.status === 'failed') {
+            clearInterval(pollInterval);
+            setLastExecution(latest);
+            setExecState('failed');
+          }
+        } catch { /* polling error, continue */ }
+      }, 5000);
+      // Safety timeout: stop polling after 10 min
+      setTimeout(() => clearInterval(pollInterval), 600000);
+    } catch (err) {
+      console.error('Quick execute failed:', err);
+      setExecState('failed');
+    }
+  }, [selectedPersona?.id, execState]);
+
   // Save version handler — creates a full persona snapshot
   const handleSaveVersion = useCallback(async () => {
     if (!selectedPersona?.id) return;
@@ -155,6 +202,44 @@ export function MatrixTab() {
         onSaveVersion={handleSaveVersion}
         hideHeader
       />
+
+      {/* Quick Execute — run persona directly from Matrix view */}
+      <div className="mt-4 flex items-center gap-3 px-4 py-3 border-t border-primary/10">
+        <button
+          data-testid="matrix-quick-execute-btn"
+          onClick={handleQuickExecute}
+          disabled={execState === 'running'}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
+        >
+          {execState === 'running' ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Play className="w-3.5 h-3.5" />
+          )}
+          {execState === 'running' ? 'Executing...' : 'Quick Execute'}
+        </button>
+
+        {lastExecution && execState !== 'running' && (
+          <div
+            data-testid="matrix-execution-result"
+            className={`flex items-center gap-2 text-sm ${
+              lastExecution.status === 'completed' || lastExecution.status === 'partial'
+                ? 'text-emerald-400'
+                : 'text-red-400'
+            }`}
+          >
+            {lastExecution.status === 'completed' || lastExecution.status === 'partial' ? (
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            ) : (
+              <XCircle className="w-3.5 h-3.5" />
+            )}
+            <span>
+              {lastExecution.status === 'completed' ? 'Completed' : lastExecution.status === 'partial' ? 'Partial' : 'Failed'}
+              {lastExecution.duration_ms ? ` (${Math.round(lastExecution.duration_ms / 1000)}s)` : ''}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -355,28 +355,53 @@ class TemplateScenario:
 
     def _step_navigate_and_adopt(self):
         t0 = time.time()
+        review_id = f"seed-{self.slug}"
 
-        # Pre-navigate to design-reviews and wait for template rows to render
-        api_post("/navigate", {"section": "design-reviews"})
+        # Step 1: Navigate to Templates (design-reviews section)
+        resp = api_post("/navigate", {"section": "design-reviews"})
+        if not resp_ok(resp):
+            self.errors.append(f"Navigate failed: {resp_error(resp)}")
+            raise RuntimeError("Cannot navigate to design-reviews")
         time.sleep(2)
-        api_post("/wait", {
+
+        # Step 2: Wait for template rows to render
+        resp = api_post("/wait", {
             "selector": "[data-testid^='template-row-']",
             "timeout_ms": 15000,
         })
+        if not resp_ok(resp):
+            self.errors.append("Template rows did not render in time")
+            raise RuntimeError("Template rows timeout")
 
-        # Use the composite open-matrix-adoption endpoint which:
-        # 1. Navigates to design-reviews (already there)
-        # 2. Clicks the template row
-        # 3. Opens the action menu and clicks View Details
-        # 4. Clicks "Adopt as Persona" in the detail modal
-        # 5. Waits for MatrixAdoptionView to mount
-        #
-        # The review ID format is "seed-{slug}" in the gallery.
-        review_id = f"seed-{self.slug}"
-        resp = api_post("/open-matrix-adoption", {"review_id": review_id})
-        if isinstance(resp, dict) and resp.get("error"):
-            self.errors.append(f"Open matrix adoption failed: {resp.get('error')}")
-            raise RuntimeError(f"Adoption failed: {resp.get('error')}")
+        # Step 3: Scroll to and click the template row via data-testid
+        # First scroll it into view
+        api_post("/eval", {
+            "js": f'const el = document.querySelector("[data-testid=\\"template-row-{review_id}\\"]"); '
+                  f'if(el) {{ el.scrollIntoView({{behavior:"instant",block:"center"}}); }} '
+                  f'return {{found: !!el}};'
+        })
+        time.sleep(0.5)
+
+        resp = api_post("/click-testid", {"test_id": f"template-row-{review_id}"})
+        if not resp_ok(resp):
+            self.errors.append(f"Click template row failed: {resp_error(resp)}")
+            raise RuntimeError("Click template row failed")
+        time.sleep(1)
+
+        # Step 4: Wait for detail modal to appear with Adopt button
+        resp = api_post("/wait", {
+            "selector": "[data-testid='button-adopt-template']",
+            "timeout_ms": 10000,
+        })
+        if not resp_ok(resp):
+            self.errors.append("Adopt button did not appear in detail modal")
+            raise RuntimeError("Adopt button not found")
+
+        # Step 5: Click "Adopt as Persona"
+        resp = api_post("/click-testid", {"test_id": "button-adopt-template"})
+        if not resp_ok(resp):
+            self.errors.append(f"Click adopt failed: {resp_error(resp)}")
+            raise RuntimeError("Click adopt failed")
 
         self.timings["navigate_and_adopt"] = time.time() - t0
 
@@ -461,44 +486,48 @@ class TemplateScenario:
             err = result.get("error", "unknown") if isinstance(result, dict) else "bad response"
             self.errors.append(f"Could not select persona: {err}")
 
-        # Step 17: Open Matrix tab and verify container
-        api_post("/open-editor-tab", {"tab": "matrix"})
-        time.sleep(2)
+        # Step 17: Click the Matrix tab button via its data-testid
+        resp = api_post("/click-testid", {"test_id": "editor-tab-matrix"})
+        if not resp_ok(resp):
+            # Fallback to openEditorTab
+            api_post("/open-editor-tab", {"tab": "matrix"})
+        time.sleep(3)
 
-        # Check if matrix tab rendered: either the full matrix container or the
-        # "No matrix data" empty state. Both confirm the tab is accessible.
+        # Verify the matrix-tab-container is present (persona has design data)
         query_result = api_post("/query", {
             "selector": "[data-testid='matrix-tab-container']"
         })
-        has_full_matrix = isinstance(query_result, list) and len(query_result) > 0
+        has_matrix_container = isinstance(query_result, list) and len(query_result) > 0
 
-        if not has_full_matrix:
-            # Fallback: check if the matrix tab rendered at all (even empty state)
-            time.sleep(1)
-            empty_check = api_post("/find-text", {"text": "No matrix data"})
-            matrix_text = api_post("/find-text", {"text": "matrix"})
-            has_tab = (isinstance(empty_check, list) and len(empty_check) > 0) or \
-                      (isinstance(matrix_text, list) and len(matrix_text) > 0)
-            if has_tab:
-                has_full_matrix = True  # Tab is accessible, even if data is missing
+        # Also check for the Quick Execute button — proves the full matrix rendered
+        exec_btn = api_post("/query", {
+            "selector": "[data-testid='matrix-quick-execute-btn']"
+        })
+        has_exec_btn = isinstance(exec_btn, list) and len(exec_btn) > 0
 
-        if has_full_matrix:
+        if has_matrix_container and has_exec_btn:
             self.scores[3] = 1
+        elif has_matrix_container:
+            self.scores[3] = 1  # Container exists even if button didn't render yet
         else:
             self.scores[3] = 0
-            self.errors.append("Matrix tab not accessible after promotion")
+            self.errors.append("Matrix tab container not found — persona may lack design data")
 
         self.timings["verify_promotion"] = time.time() - t0
 
-    # ── Steps 18-19: Execute ─────────────────────────────────────────
+    # ── Steps 18-19: Execute via Matrix Quick Execute button ─────────
 
     def _step_execute(self):
         t0 = time.time()
 
-        name_or_id = self.persona_name or self.persona_id or self.name
-        result = api_post("/execute-persona", {"name_or_id": name_or_id})
-        if not result.get("success", False) and result.get("error"):
-            self.errors.append(f"Execute failed: {result.get('error')}")
+        # Ensure we're on the Matrix tab with the Quick Execute button visible
+        api_post("/open-editor-tab", {"tab": "matrix"})
+        time.sleep(2)
+
+        # Click the Quick Execute button
+        resp = api_post("/click-testid", {"test_id": "matrix-quick-execute-btn"})
+        if not resp_ok(resp):
+            self.errors.append(f"Click Quick Execute failed: {resp_error(resp)}")
             self.scores[4] = 0
             self.timings["execute"] = time.time() - t0
             return
@@ -682,12 +711,13 @@ class TemplateScenario:
 
             time.sleep(1)
 
-            # Re-execute
-            name_or_id = self.persona_name or self.persona_id
-            result = api_post("/execute-persona", {"name_or_id": name_or_id})
-            if not result.get("success", False) and result.get("error"):
+            # Re-execute via Matrix Quick Execute button
+            api_post("/open-editor-tab", {"tab": "matrix"})
+            time.sleep(2)
+            resp = api_post("/click-testid", {"test_id": "matrix-quick-execute-btn"})
+            if not resp_ok(resp):
                 self.scores[10] = 0
-                self.errors.append(f"Haiku re-execute failed: {result.get('error')}")
+                self.errors.append(f"Haiku Quick Execute click failed: {resp_error(resp)}")
                 self.timings["haiku_regression"] = time.time() - t0
                 return
 
