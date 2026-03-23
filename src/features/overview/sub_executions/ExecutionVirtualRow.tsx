@@ -80,6 +80,7 @@ export function ExecutionVirtualRow({ exec, index, start, size, onSelect, person
         height: `${size}px`,
         gridTemplateColumns: EXECUTION_GRID_COLS,
       }}
+      data-testid={`execution-row-${exec.id}`}
       className={`grid items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
     >
       {/* Persona */}

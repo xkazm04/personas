@@ -142,17 +142,19 @@ export function MatrixTab() {
   }
 
   return (
-    <PersonaMatrix
-      variant="saved"
-      designResult={designResult}
-      cellBuildStates={cellBuildStates}
-      hasDesignResult={!!designResult}
-      buildPhase={(session?.phase as 'draft_ready') || 'draft_ready'}
-      completeness={100}
-      onRefine={session ? handleRefine : undefined}
-      onStartTest={session ? handleTest : undefined}
-      onSaveVersion={handleSaveVersion}
-      hideHeader
-    />
+    <div data-testid="matrix-tab-container">
+      <PersonaMatrix
+        variant="saved"
+        designResult={designResult}
+        cellBuildStates={cellBuildStates}
+        hasDesignResult={!!designResult}
+        buildPhase={(session?.phase as 'draft_ready') || 'draft_ready'}
+        completeness={100}
+        onRefine={session ? handleRefine : undefined}
+        onStartTest={session ? handleTest : undefined}
+        onSaveVersion={handleSaveVersion}
+        hideHeader
+      />
+    </div>
   );
 }

@@ -54,6 +54,7 @@ export function SearchChipInput({
       })}
 
       <input
+        data-testid="template-search-input"
         type="text" value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={(e) => {

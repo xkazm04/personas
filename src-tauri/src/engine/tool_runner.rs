@@ -474,16 +474,39 @@ pub struct ToolTestResult {
     pub output_preview: Option<String>,
 }
 
-/// Construct a temporary `PersonaToolDefinition` from an agent_ir tool JSON object.
+/// Construct a temporary `PersonaToolDefinition` from an agent_ir tool JSON entry.
 ///
-/// The agent_ir `tools[]` entries have: name, category, description,
-/// requires_credential_type, implementation_guide. We fill in defaults for
-/// fields not present in the IR (id, script_path, etc.).
+/// Handles two formats:
+/// 1. **Object**: `{ "name": "notion", "category": "api", ... }` — full tool definition
+/// 2. **String**: `"notion"` — shorthand tool name, common in template payloads
+///
+/// For string entries, the name is used as both the tool name and
+/// `requires_credential_type` so credential resolution can match it to a connector.
 pub fn tool_def_from_ir(tool_json: &serde_json::Value) -> Option<PersonaToolDefinition> {
+    // Handle plain string tool names (e.g. "notion", "gmail", "slack")
+    if let Some(name_str) = tool_json.as_str() {
+        let name = name_str.to_string();
+        return Some(PersonaToolDefinition {
+            id: format!("test_{}", name),
+            name: name.clone(),
+            category: "api".to_string(),
+            description: String::new(),
+            script_path: String::new(),
+            input_schema: None,
+            output_schema: None,
+            requires_credential_type: Some(name),
+            implementation_guide: None,
+            is_builtin: false,
+            created_at: String::new(),
+            updated_at: String::new(),
+        });
+    }
+
+    // Handle object tool definitions
     let name = tool_json.get("name")?.as_str()?.to_string();
     Some(PersonaToolDefinition {
         id: format!("test_{}", name),
-        name,
+        name: name.clone(),
         category: tool_json
             .get("category")
             .and_then(|v| v.as_str())
@@ -500,7 +523,8 @@ pub fn tool_def_from_ir(tool_json: &serde_json::Value) -> Option<PersonaToolDefi
         requires_credential_type: tool_json
             .get("requires_credential_type")
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
+            .map(|s| s.to_string())
+            .or_else(|| Some(name)),
         implementation_guide: tool_json
             .get("implementation_guide")
             .and_then(|v| v.as_str())

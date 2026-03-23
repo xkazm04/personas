@@ -67,6 +67,7 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
   return (
     <button
       onClick={onClick}
+      data-testid={`review-row-${review.id}`}
       className={`w-full text-left px-3 py-2.5 border-b border-primary/[0.06] transition-colors group ${
         isActive ? 'bg-primary/[0.08] border-l-2 border-l-primary' : 'border-l-2 border-l-transparent hover:bg-white/[0.04]'
       }`}

@@ -975,7 +975,7 @@ function formatErrorForUser(error: string, httpStatus?: number): string {
 /** Promotion success indicator -- checkmark with emerald glow. */
 export function PromotionSuccessIndicator({ onViewAgent }: { onViewAgent?: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 py-2">
+    <div data-testid="promotion-success" className="flex flex-col items-center gap-3 py-2">
       <div className="relative w-12 h-12 flex items-center justify-center">
         <span className="absolute inset-0 rounded-full border-2 border-emerald-400/30 shadow-[0_0_16px_rgba(52,211,153,0.2)] animate-emerald-flash" />
         <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-400/15" />

@@ -9,6 +9,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { useOverviewStore } from "@/stores/overviewStore";
+import { useVaultStore } from "@/stores/vaultStore";
 import { sections as sidebarSections } from "@/features/shared/components/layout/sidebar/sidebarData";
 import { isTierVisible, TIERS, type Tier } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";
@@ -241,7 +243,7 @@ const bridge: TestBridge = {
 
   /** Navigate to a specific editor tab for the currently selected agent */
   openEditorTab(tab: string) {
-    const validTabs = ["use-cases", "prompt", "lab", "connectors", "chat", "design", "health", "settings"];
+    const validTabs = ["activity", "matrix", "use-cases", "prompt", "lab", "connectors", "chat", "design", "health", "settings"];
     if (!validTabs.includes(tab)) {
       return { success: false, error: `Invalid tab: ${tab}. Valid: ${validTabs.join(", ")}` };
     }
@@ -650,6 +652,53 @@ const bridge: TestBridge = {
     }
   },
 
+  /** Get artifact counts for a persona across all overview modules. */
+  async getOverviewCounts(personaId: string) {
+    try {
+      const [execs, memories, reviews] = await Promise.all([
+        invoke<unknown[]>('list_executions', { personaId, limit: 500 }),
+        invoke<unknown[]>('list_memories', { personaId }),
+        invoke<unknown[]>('list_manual_reviews', { personaId }),
+      ]);
+      // Messages and events need filtering by persona
+      const [msgs, events] = await Promise.all([
+        invoke<unknown[]>('list_messages', { limit: 500, offset: 0 }),
+        invoke<unknown[]>('list_events', { limit: 500 }),
+      ]);
+      const filteredMsgs = (msgs as Array<{ persona_id: string }>).filter(m => m.persona_id === personaId);
+      const filteredEvents = (events as Array<{ source_id?: string; target_persona_id?: string }>).filter(
+        e => e.source_id === personaId || e.target_persona_id === personaId,
+      );
+      return {
+        success: true,
+        executions: (execs as unknown[]).length,
+        messages: filteredMsgs.length,
+        memories: (memories as unknown[]).length,
+        events: filteredEvents.length,
+        reviews: (reviews as unknown[]).length,
+      };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /** List available credential service types from the vault. */
+  listCredentials() {
+    const creds = useVaultStore.getState().credentials;
+    const connectorDefs = useVaultStore.getState().connectorDefinitions;
+    const serviceTypes = creds.map(c => {
+      const def = connectorDefs.find(d => d.name === c.service_type);
+      return {
+        id: c.id,
+        name: c.name,
+        serviceType: c.service_type,
+        label: def?.label ?? c.service_type,
+        category: def?.category ?? 'unknown',
+      };
+    });
+    return { success: true, credentials: serviceTypes };
+  },
+
   /**
    * Dispatcher called from Rust via eval().
    * Executes a bridge method and sends the result back via Tauri IPC.
@@ -683,4 +732,6 @@ const bridge: TestBridge = {
 // Expose stores for direct state manipulation in e2e tests
 (window as unknown as Record<string, unknown>).__AGENT_STORE__ = useAgentStore;
 (window as unknown as Record<string, unknown>).__SYSTEM_STORE__ = useSystemStore;
+(window as unknown as Record<string, unknown>).__OVERVIEW_STORE__ = useOverviewStore;
+(window as unknown as Record<string, unknown>).__VAULT_STORE__ = useVaultStore;
 console.log("[test-automation] Bridge loaded — window.__TEST__ ready");

@@ -35,6 +35,7 @@ export function UseCaseListPanel({ useCases, selectedId, onSelect }: UseCaseList
         return (
           <button
             key={uc.id || i}
+            data-testid={`use-case-row-${uc.id}`}
             onClick={() => onSelect(uc.id)}
             className={`w-full text-left p-2.5 rounded-xl border transition-all ${
               isSelected

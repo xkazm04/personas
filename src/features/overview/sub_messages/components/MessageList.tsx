@@ -158,7 +158,7 @@ export default function MessageList() {
                   const message = filteredMessages[virtualRow.index]!;
                   const priority = priorityConfig[message.priority] ?? defaultPriority;
                   return (
-                    <div key={message.id} role="row" tabIndex={0} onClick={() => handleRowClick(message)}
+                    <div key={message.id} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
                       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
                       style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
                       className="grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"

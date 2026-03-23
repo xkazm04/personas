@@ -544,6 +544,32 @@ async fn handle_refresh_personas(
     eval_bridge_method_with_timeout(&state, "refreshPersonas", &serde_json::json!({}), BRIDGE_TIMEOUT_MUTATION).await
 }
 
+// ── Overview & credential helpers ───────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct OverviewCountsRequest {
+    persona_id: String,
+}
+
+async fn handle_overview_counts(
+    AxumState(state): AxumState<ServerState>,
+    Json(body): Json<OverviewCountsRequest>,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method_with_timeout(
+        &state,
+        "getOverviewCounts",
+        &serde_json::json!({ "personaId": body.persona_id }),
+        BRIDGE_TIMEOUT_MUTATION,
+    )
+    .await
+}
+
+async fn handle_list_credentials(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    eval_bridge_method_with_timeout(&state, "listCredentials", &serde_json::json!({}), BRIDGE_TIMEOUT_DEFAULT).await
+}
+
 async fn handle_health() -> &'static str {
     r#"{"status":"ok","server":"personas-test-automation","version":"0.2.0"}"#
 }
@@ -587,6 +613,9 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses) {
         .route("/adopt-template", post(handle_adopt_template))
         .route("/open-matrix-adoption", post(handle_open_matrix_adoption))
         .route("/refresh-personas", post(handle_refresh_personas))
+        // Overview & credential helpers
+        .route("/overview-counts", post(handle_overview_counts))
+        .route("/list-credentials", get(handle_list_credentials))
         .with_state(state);
 
     tauri::async_runtime::spawn(async move {

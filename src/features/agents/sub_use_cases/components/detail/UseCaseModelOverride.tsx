@@ -106,7 +106,7 @@ export function UseCaseModelOverride({ useCase, defaultModelProfile, onUpdate }:
   const selectedLabel = hasOverride ? profileToLabel(useCase.model_override) : null;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="use-case-model-section">
       <h5 className="flex items-center gap-2 text-sm font-semibold text-foreground/90">
         <Cpu className="w-3.5 h-3.5" />
         Model
