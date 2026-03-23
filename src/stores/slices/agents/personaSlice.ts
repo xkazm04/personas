@@ -11,18 +11,7 @@ import { buildUpdateInput, operationToPartial } from "@/api/agents/personas";
 import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
 import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPersonaSummaries, listPersonas, updatePersona } from "@/api/agents/personas";
 import { trackRecentAgent, removeRecentAgent } from "@/hooks/agents/useRecentAgents";
-
-
-// -- Error categorization for structured degradation events ------------------
-type DegradationCategory = 'network' | 'timeout' | 'validation' | 'unknown';
-
-function categorizeError(err: unknown): DegradationCategory {
-  const msg = err instanceof Error ? err.message : String(err);
-  if (/network|fetch|connection|ECONNREFUSED|ERR_NETWORK/i.test(msg)) return 'network';
-  if (/timeout|timed out|deadline|ETIMEDOUT/i.test(msg)) return 'timeout';
-  if (/validation|invalid|malformed|parse/i.test(msg)) return 'validation';
-  return 'unknown';
-}
+import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
 
 const DEGRADATION_THRESHOLD = 3;
 
@@ -108,12 +97,12 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       });
     } catch (err) {
       const failures = get().summaryConsecutiveFailures + 1;
-      const category = categorizeError(err);
-      console.warn(`[personaSlice] fetchPersonaSummaries failed (${category}, attempt ${failures})`, err);
+      const category = classifyUnknownError(err);
+      console.warn(`[personaSlice] fetchPersonaSummaries failed (${categoryLabel(category)}, attempt ${failures})`, err);
       set({
         summaryConsecutiveFailures: failures,
         degradationError: failures >= DEGRADATION_THRESHOLD
-          ? `Sidebar data unavailable (${category} error, ${failures} consecutive failures)`
+          ? `Sidebar data unavailable (${categoryLabel(category)} error, ${failures} consecutive failures)`
           : get().degradationError,
       });
     }
@@ -138,8 +127,8 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     } catch (err) {
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
       const failures = get().detailConsecutiveFailures + 1;
-      const category = categorizeError(err);
-      console.warn(`[personaSlice] fetchDetail(${id}) failed (${category}, attempt ${failures})`, err);
+      const category = classifyUnknownError(err);
+      console.warn(`[personaSlice] fetchDetail(${id}) failed (${categoryLabel(category)}, attempt ${failures})`, err);
       // Clear stale selection so the editor doesn't render with missing data
       set({
         error: errMsg(err, "Failed to fetch persona"),
@@ -148,7 +137,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         selectedPersona: null,
         detailConsecutiveFailures: failures,
         degradationError: failures >= DEGRADATION_THRESHOLD
-          ? `Persona loading degraded (${category} error, ${failures} consecutive failures)`
+          ? `Persona loading degraded (${categoryLabel(category)} error, ${failures} consecutive failures)`
           : get().degradationError,
       });
     }

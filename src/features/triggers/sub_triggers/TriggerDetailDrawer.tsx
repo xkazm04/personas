@@ -74,43 +74,52 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
         )}
 
         {/* Actions row */}
-        <div className="flex items-center gap-1.5 pt-1">
-          <button
-            onClick={detail.handleTestFire}
-            disabled={detail.testing}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-primary/70 hover:text-primary hover:bg-primary/10 rounded-xl transition-colors disabled:opacity-50"
-            title="Validate trigger config, then fire"
-          >
-            {detail.testing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
-            {detail.testing ? 'Validating...' : 'Test fire'}
-          </button>
+        <div className="flex items-center gap-2 pt-1">
+          {/* Testing actions group */}
+          <div className="flex items-center gap-0.5 rounded-xl bg-secondary/20 p-1">
+            <button
+              onClick={detail.handleTestFire}
+              disabled={detail.testing}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-primary/70 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50"
+              title="Validate trigger config, then fire"
+            >
+              {detail.testing ? <LoadingSpinner size="sm" /> : <Play className="w-4 h-4" />}
+              {detail.testing ? 'Validating...' : 'Test fire'}
+            </button>
 
-          <button
-            onClick={detail.handleDryRun}
-            disabled={detail.dryRunning || detail.testing}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-colors disabled:opacity-50"
-            title="Simulate trigger without executing"
-          >
-            {detail.dryRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
-            {detail.dryRunning ? 'Simulating...' : 'Dry run'}
-          </button>
+            <button
+              onClick={detail.handleDryRun}
+              disabled={detail.dryRunning || detail.testing}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors disabled:opacity-50"
+              title="Simulate trigger without executing"
+            >
+              {detail.dryRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-4 h-4" />}
+              {detail.dryRunning ? 'Simulating...' : 'Dry run'}
+            </button>
+          </div>
 
           <div className="flex-1" />
 
-          {detail.confirmingDelete ? (
-            <div className="flex items-center gap-1">
-              <button onClick={() => detail.confirmDelete(onDelete)} className="p-1.5 bg-red-500/15 hover:bg-red-500/25 rounded-lg transition-colors" title="Confirm delete">
-                <Check className="w-3.5 h-3.5 text-red-400" />
+          {/* Divider */}
+          <div className="h-6 w-px bg-primary/10" />
+
+          {/* Destructive actions group */}
+          <div className="flex items-center rounded-xl bg-red-500/5 p-1">
+            {detail.confirmingDelete ? (
+              <div className="flex items-center gap-1">
+                <button onClick={() => detail.confirmDelete(onDelete)} className="p-2 bg-red-500/15 hover:bg-red-500/25 rounded-lg transition-colors" title="Confirm delete">
+                  <Check className="w-4 h-4 text-red-400" />
+                </button>
+                <button onClick={detail.cancelDelete} className="p-2 hover:bg-secondary/60 rounded-lg transition-colors" title="Cancel">
+                  <X className="w-4 h-4 text-muted-foreground/90" />
+                </button>
+              </div>
+            ) : (
+              <button onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Delete trigger">
+                <Trash2 className="w-4 h-4" />Delete
               </button>
-              <button onClick={detail.cancelDelete} className="p-1.5 hover:bg-secondary/60 rounded-lg transition-colors" title="Cancel">
-                <X className="w-3.5 h-3.5 text-muted-foreground/90" />
-              </button>
-            </div>
-          ) : (
-            <button onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors" title="Delete trigger">
-              <Trash2 className="w-3.5 h-3.5" />Delete
-            </button>
-          )}
+            )}
+          </div>
         </div>
 
         {trigger.trigger_type === 'webhook' && (

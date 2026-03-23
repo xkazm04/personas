@@ -1,4 +1,5 @@
 import { Plus, X } from 'lucide-react';
+import { TriggerFieldGroup } from './TriggerFieldGroup';
 
 export interface AppFocusConfigProps {
   appNames: string[];
@@ -15,10 +16,11 @@ export function AppFocusConfig({
 }: AppFocusConfigProps) {
   return (
     <div className="space-y-3">
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          App Names <span className="text-muted-foreground/50">(optional filter)</span>
-        </label>
+      <TriggerFieldGroup
+        label="App Names"
+        optional
+        helpText="Leave empty to trigger on any app focus change"
+      >
         {appNames.map((name, i) => (
           <div key={i} className="flex items-center gap-1.5 mb-1.5">
             <input
@@ -42,12 +44,10 @@ export function AppFocusConfig({
         <button type="button" onClick={() => setAppNames([...appNames, ''])} className="flex items-center gap-1 text-sm text-indigo-400/80 hover:text-indigo-400 transition-colors">
           <Plus className="w-3.5 h-3.5" /> Add app
         </button>
-        <p className="text-sm text-muted-foreground/80 mt-1">Leave empty to trigger on any app focus change</p>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Window Title Pattern <span className="text-muted-foreground/50">(optional regex)</span>
-        </label>
+      </TriggerFieldGroup>
+      <TriggerFieldGroup
+        label={<>Window Title Pattern <span className="text-muted-foreground/50">(optional regex)</span></>}
+      >
         <input
           type="text"
           value={titlePattern}
@@ -55,11 +55,8 @@ export function AppFocusConfig({
           placeholder="e.g. .*\\.rs$ or Project - Visual Studio"
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
         />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Poll Interval (seconds)
-        </label>
+      </TriggerFieldGroup>
+      <TriggerFieldGroup label="Poll Interval (seconds)">
         <input
           type="number"
           value={appFocusInterval}
@@ -67,7 +64,7 @@ export function AppFocusConfig({
           min="2"
           className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus-ring transition-all"
         />
-      </div>
+      </TriggerFieldGroup>
     </div>
   );
 }

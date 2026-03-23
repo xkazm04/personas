@@ -76,7 +76,7 @@ export default function AnalyticsDashboard() {
       />
 
       <ContentBody>
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Error banner */}
           {metrics.observabilityError && (
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">

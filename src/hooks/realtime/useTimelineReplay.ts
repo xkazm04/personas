@@ -177,8 +177,8 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     ).toISOString();
 
     try {
-      const events = await listEventsInRange(start, end);
-      const sorted = [...events].sort(
+      const result = await listEventsInRange(start, end);
+      const sorted = [...result.events].sort(
         (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
       );
       const limited = sorted.length > MAX_REPLAY_EVENTS

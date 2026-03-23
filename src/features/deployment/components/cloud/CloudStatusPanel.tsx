@@ -1,5 +1,6 @@
 import { RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { motion, useMotionValueEvent, useSpring, useTransform } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { ExecutionProgressBar } from '../ExecutionProgressBar';
@@ -53,9 +54,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
 
       {/* Worker counts */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-3">
-          Workers
-        </h3>
+        <SectionHeading className="mb-3">Workers</SectionHeading>
         <div className="flex flex-wrap gap-3">
           <WorkerBadge label="Idle" count={workers.idle} color="emerald" />
           <WorkerBadge label="Executing" count={workers.executing} color="blue" />
@@ -65,9 +64,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
 
       {/* Stats */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-3">
-          Activity
-        </h3>
+        <SectionHeading className="mb-3">Activity</SectionHeading>
         <div className="grid grid-cols-2 3xl:grid-cols-4 gap-3">
           <ActivityGauge
             label="Queue Length"
@@ -87,18 +84,14 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
       {/* Active execution progress */}
       {activeExecutionId && (
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-3">
-            Active Execution
-          </h3>
+          <SectionHeading className="mb-3">Active Execution</SectionHeading>
           <ExecutionProgressBar executionId={activeExecutionId} />
         </div>
       )}
 
       {/* Claude token indicator */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-3">
-          Claude Token
-        </h3>
+        <SectionHeading className="mb-3">Claude Token</SectionHeading>
         <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30 border border-primary/10">
           {status.hasClaudeToken ? (
             <>

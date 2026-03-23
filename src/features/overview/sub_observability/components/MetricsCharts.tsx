@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useId, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   AreaChart, Area, PieChart, Pie, Cell, Legend, ReferenceLine,
@@ -25,6 +25,7 @@ export interface MetricsChartsProps {
 }
 
 export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, annotations = [], onFailureBarClick }: MetricsChartsProps) {
+  const costGradId = useId();
   const visibleAnnotations = useMemo(() => {
     const chartDates = new Set(chartData.map((point) => point.date));
     return annotations.filter((annotation) => chartDates.has(annotation.date));
@@ -41,7 +42,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
             <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `$${v}`} />
             <Tooltip content={<ChartTooltip />} />
-            <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="url(#costGradient)" strokeWidth={2} />
+            <Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${costGradId})`} strokeWidth={2} />
             {visibleAnnotations.map((annotation, index) => (
               <ReferenceLine
                 key={`cost-annotation-${annotation.date}-${annotation.type}-${index}`}
@@ -61,7 +62,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
               />
             ))}
             <defs>
-              <linearGradient id="costGradient" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={costGradId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
                 <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
               </linearGradient>

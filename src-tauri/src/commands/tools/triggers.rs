@@ -44,6 +44,24 @@ fn validate_config_json(config: Option<&str>) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Webhook triggers require a non-empty `webhook_secret` for HMAC signature
+/// verification. Reject creation/update if the secret is missing.
+fn validate_webhook_secret(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
+    if trigger_type != "webhook" {
+        return Ok(());
+    }
+    let has_secret = config
+        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
+        .and_then(|v| v.get("webhook_secret")?.as_str().map(|s| !s.is_empty()))
+        .unwrap_or(false);
+    if !has_secret {
+        return Err(AppError::Validation(
+            "Webhook triggers require an HMAC secret. Provide a webhook_secret in the config.".into(),
+        ));
+    }
+    Ok(())
+}
+
 /// If the trigger is a polling type, validate that any configured URL does not
 /// point to a private/internal address (SSRF protection).
 fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
@@ -94,6 +112,7 @@ pub fn create_trigger(
 ) -> Result<PersonaTrigger, AppError> {
     require_auth_sync(&state)?;
     validate_config_json(input.config.as_deref())?;
+    validate_webhook_secret(&input.trigger_type, input.config.as_deref())?;
     validate_polling_url(&input.trigger_type, input.config.as_deref())?;
     validate_chain_cycle(
         &state.db,
@@ -127,6 +146,7 @@ pub fn update_trigger(
     if input.trigger_type.is_some() || input.config.is_some() {
         let trigger_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
         let config = input.config.as_deref().or(existing.config.as_deref());
+        validate_webhook_secret(trigger_type, config)?;
         validate_polling_url(trigger_type, config)?;
         validate_chain_cycle(&state.db, trigger_type, config, &existing.persona_id, Some(&id))?;
     }

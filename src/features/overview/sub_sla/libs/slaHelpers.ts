@@ -17,8 +17,12 @@ export function formatMtbf(seconds: number): string {
   return `${(seconds / 86400).toFixed(1)}d`;
 }
 
+import { rateToHealth, type HealthStatus } from '@/lib/design/statusTokens';
+
+const HEALTH_TO_SLA_COLOR: Record<HealthStatus, string> = {
+  healthy: 'emerald', warning: 'amber', critical: 'red', info: 'blue', neutral: 'blue',
+};
+
 export function slaColor(rate: number): string {
-  if (rate >= 0.99) return 'emerald';
-  if (rate >= 0.95) return 'amber';
-  return 'red';
+  return HEALTH_TO_SLA_COLOR[rateToHealth(rate)];
 }

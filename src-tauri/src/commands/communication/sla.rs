@@ -94,7 +94,7 @@ pub fn get_sla_dashboard(
     require_auth_sync(&state)?;
     let pool = &state.db;
     let conn = pool.get()?;
-    let days = days.unwrap_or(30);
+    let days = days.unwrap_or(30).clamp(1, 365);
     let date_filter = format!("-{} days", days);
 
     // -- Per-persona aggregates ------------------------------------------
@@ -140,73 +140,150 @@ pub fn get_sla_dashboard(
                 total_cost: row.get(7)?,
             })
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
-    // -- P95 duration per persona (separate query for percentile) --------
-    let mut p95_stmt = conn.prepare(
-        "SELECT duration_ms FROM persona_executions
-         WHERE persona_id = ?1
-           AND created_at >= datetime('now', ?2)
-           AND status IN ('completed', 'failed')
-           AND duration_ms IS NOT NULL
-         ORDER BY duration_ms ASC",
-    )?;
+    // Collect persona IDs for batch queries
+    let persona_ids: Vec<&str> = raw_personas.iter().map(|rp| rp.persona_id.as_str()).collect();
 
-    // -- MTBF per persona: timestamps of failures ------------------------
-    let mut fail_ts_stmt = conn.prepare(
-        "SELECT created_at FROM persona_executions
-         WHERE persona_id = ?1
-           AND created_at >= datetime('now', ?2)
-           AND status = 'failed'
-         ORDER BY created_at ASC",
-    )?;
+    // -- Batch P95 durations (1 query instead of N) ----------------------
+    let durations_map: std::collections::HashMap<String, Vec<f64>> = if persona_ids.is_empty() {
+        std::collections::HashMap::new()
+    } else {
+        let placeholders: Vec<String> = persona_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+        let sql = format!(
+            "SELECT persona_id, duration_ms FROM persona_executions
+             WHERE persona_id IN ({})
+               AND created_at >= datetime('now', ?{})
+               AND status IN ('completed', 'failed')
+               AND duration_ms IS NOT NULL
+             ORDER BY persona_id, duration_ms ASC",
+            placeholders.join(", "),
+            persona_ids.len() + 1
+        );
+        let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = persona_ids
+            .iter()
+            .map(|s| Box::new(s.to_string()) as Box<dyn rusqlite::types::ToSql>)
+            .collect();
+        params_vec.push(Box::new(date_filter.clone()));
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
+        })?;
+        let mut map: std::collections::HashMap<String, Vec<f64>> = std::collections::HashMap::new();
+        for r in rows {
+            let (pid, dur) = r?;
+            map.entry(pid).or_default().push(dur);
+        }
+        map
+    };
 
-    // -- Consecutive failures per persona --------------------------------
-    let mut consec_stmt = conn.prepare(
-        "SELECT status FROM persona_executions
-         WHERE persona_id = ?1
-         ORDER BY created_at DESC
-         LIMIT 20",
-    )?;
+    // -- Batch MTBF: failure timestamps (1 query instead of N) -----------
+    let fail_ts_map: std::collections::HashMap<String, Vec<String>> = if persona_ids.is_empty() {
+        std::collections::HashMap::new()
+    } else {
+        let placeholders: Vec<String> = persona_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+        let sql = format!(
+            "SELECT persona_id, created_at FROM persona_executions
+             WHERE persona_id IN ({})
+               AND created_at >= datetime('now', ?{})
+               AND status = 'failed'
+             ORDER BY persona_id, created_at ASC",
+            placeholders.join(", "),
+            persona_ids.len() + 1
+        );
+        let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = persona_ids
+            .iter()
+            .map(|s| Box::new(s.to_string()) as Box<dyn rusqlite::types::ToSql>)
+            .collect();
+        params_vec.push(Box::new(date_filter.clone()));
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
+        let mut map: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+        for r in rows {
+            let (pid, ts) = r?;
+            map.entry(pid).or_default().push(ts);
+        }
+        map
+    };
 
-    // -- Auto-healed count per persona -----------------------------------
-    let mut healed_stmt = conn.prepare(
-        "SELECT COUNT(*) FROM persona_healing_issues
-         WHERE persona_id = ?1 AND auto_fixed = 1",
-    )?;
+    // -- Batch consecutive failures: last 20 statuses per persona --------
+    // Uses a window function to rank rows, then filters to top-20 per persona.
+    let consec_map: std::collections::HashMap<String, i64> = if persona_ids.is_empty() {
+        std::collections::HashMap::new()
+    } else {
+        let placeholders: Vec<String> = persona_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+        let sql = format!(
+            "SELECT persona_id, status FROM (
+                SELECT persona_id, status,
+                       ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC) AS rn
+                FROM persona_executions
+                WHERE persona_id IN ({})
+             ) WHERE rn <= 20
+             ORDER BY persona_id, rn ASC",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
+        // Group statuses by persona, then count leading failures
+        let mut statuses_map: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+        for r in rows {
+            let (pid, status) = r?;
+            statuses_map.entry(pid).or_default().push(status);
+        }
+        statuses_map
+            .into_iter()
+            .map(|(pid, statuses)| {
+                let count = statuses.iter().take_while(|s| s.as_str() == "failed").count() as i64;
+                (pid, count)
+            })
+            .collect()
+    };
 
+    // -- Batch auto-healed count (1 query instead of N) ------------------
+    let healed_map: std::collections::HashMap<String, i64> = if persona_ids.is_empty() {
+        std::collections::HashMap::new()
+    } else {
+        let placeholders: Vec<String> = persona_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+        let sql = format!(
+            "SELECT persona_id, COUNT(*) FROM persona_healing_issues
+             WHERE persona_id IN ({}) AND auto_fixed = 1
+             GROUP BY persona_id",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?;
+        rows.collect::<Result<std::collections::HashMap<_, _>, _>>()?
+    };
+
+    // -- Assemble per-persona stats from batch results -------------------
     let mut persona_stats: Vec<PersonaSlaStats> = Vec::new();
 
     for rp in &raw_personas {
-        // P95
-        let durations: Vec<f64> = p95_stmt
-            .query_map(params![rp.persona_id, date_filter], |row| row.get(0))?
-            .filter_map(|r| r.ok())
-            .collect();
-        let p95 = percentile(&durations, 95.0);
-
-        // MTBF
-        let fail_times: Vec<String> = fail_ts_stmt
-            .query_map(params![rp.persona_id, date_filter], |row| row.get(0))?
-            .filter_map(|r| r.ok())
-            .collect();
-        let mtbf = compute_mtbf(&fail_times);
-
-        // Consecutive failures
-        let recent_statuses: Vec<String> = consec_stmt
-            .query_map(params![rp.persona_id], |row| row.get(0))?
-            .filter_map(|r| r.ok())
-            .collect();
-        let consecutive_failures = recent_statuses
-            .iter()
-            .take_while(|s| s.as_str() == "failed")
-            .count() as i64;
-
-        // Auto-healed
-        let auto_healed: i64 = healed_stmt
-            .query_row(params![rp.persona_id], |row| row.get(0))
-            .unwrap_or(0);
+        let p95 = percentile(
+            durations_map.get(&rp.persona_id).map(|v| v.as_slice()).unwrap_or(&[]),
+            95.0,
+        );
+        let mtbf = compute_mtbf(
+            fail_ts_map.get(&rp.persona_id).map(|v| v.as_slice()).unwrap_or(&[]),
+        );
+        let consecutive_failures = consec_map.get(&rp.persona_id).copied().unwrap_or(0);
+        let auto_healed = healed_map.get(&rp.persona_id).copied().unwrap_or(0);
 
         let success_rate = if rp.total > 0 {
             rp.successful as f64 / rp.total as f64
@@ -326,8 +403,7 @@ pub fn get_sla_dashboard(
                 },
             })
         })?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(SlaDashboardData {
         persona_stats,

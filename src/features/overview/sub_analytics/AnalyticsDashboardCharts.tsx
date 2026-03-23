@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
@@ -56,6 +57,8 @@ export function AnalyticsDashboardCharts({
   barData,
   handleFailureBarClick,
 }: AnalyticsDashboardChartsProps) {
+  const costGradId = useId();
+
   return (
     <>
       {/* Charts -- 2 column grid */}
@@ -70,9 +73,9 @@ export function AnalyticsDashboardCharts({
             {compareEnabled && (
               <Area type="monotone" dataKey="prev_cost" name="Prev Cost" stroke="#6366f1" fill="none" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
             )}
-            <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="url(#analyticsCostGrad)" strokeWidth={2} />
+            <Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${costGradId})`} strokeWidth={2} />
             <defs>
-              <linearGradient id="analyticsCostGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={costGradId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
                 <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
               </linearGradient>

@@ -47,12 +47,7 @@ export function CodebaseProjectPicker({ onSave, onCancel }: CodebaseProjectPicke
   };
 
   const goToDevTools = () => {
-    useSystemStore.getState().setSidebarSection('personas');
-    // Navigate to plugins > dev-tools
-    setTimeout(() => {
-      useSystemStore.getState().setSidebarSection('plugins' as never);
-      (useSystemStore.getState() as Record<string, unknown>).setPluginTab?.('dev-tools');
-    }, 100);
+    useSystemStore.getState().setSidebarSection('plugins' as never);
   };
 
   if (loading) {

@@ -1,16 +1,18 @@
 import { Activity, AlertTriangle, Clock, ChevronDown, ChevronUp, Zap, TrendingUp, TrendingDown, Wrench } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { PersonaSlaStats } from '@/api/overview/sla';
 import { formatPercent, formatDuration, formatMtbf } from '../libs/slaHelpers';
+import { rateToHealth, healthClasses, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
 
 export function SlaCard({ label, value, sub, color, icon }: {
   label: string; value: string; sub: string; color: string; icon: React.ReactNode;
 }) {
   const colorMap: Record<string, string> = {
-    emerald: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-    amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-    red: 'text-red-400 bg-red-500/10 border-red-500/20',
-    blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-    violet: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
+    emerald: healthClasses('healthy'),
+    amber: healthClasses('warning'),
+    red: healthClasses('critical'),
+    blue: healthClasses('info'),
+    violet: `text-violet-400 bg-violet-500/10 border-violet-500/20`,
   };
   const cls = colorMap[color] || colorMap['emerald'];
 
@@ -29,8 +31,9 @@ export function SlaCard({ label, value, sub, color, icon }: {
 export function PersonaRow({ stats, expanded, onToggle }: {
   stats: PersonaSlaStats; expanded: boolean; onToggle: () => void;
 }) {
-  const rateColor = stats.success_rate >= 0.99 ? 'text-emerald-400' : stats.success_rate >= 0.95 ? 'text-amber-400' : 'text-red-400';
-  const rateBg = stats.success_rate >= 0.99 ? 'bg-emerald-500/10 border-emerald-500/20' : stats.success_rate >= 0.95 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20';
+  const rateHealth = HEALTH_STATUS_TOKEN[rateToHealth(stats.success_rate)];
+  const rateColor = rateHealth.text;
+  const rateBg = `${rateHealth.bg} ${rateHealth.border}`;
 
   return (
     <div>
@@ -73,19 +76,26 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
+const barSpring = { type: 'spring' as const, stiffness: 200, damping: 20 };
+
 export function DailyTrendChart({ points }: { points: { date: string; success_rate: number; total: number }[] }) {
   if (points.length === 0) return null;
   const maxTotal = Math.max(...points.map((p) => p.total), 1);
   const barWidth = Math.max(4, Math.min(16, Math.floor(600 / points.length)));
 
   return (
-    <div className="flex items-end gap-px h-24 overflow-x-auto">
+    <div className="flex items-end gap-px h-24 overflow-x-auto overflow-y-hidden">
       {points.map((p, i) => {
         const h = Math.max(2, (p.total / maxTotal) * 80);
-        const color = p.success_rate >= 0.99 ? 'bg-emerald-500/60' : p.success_rate >= 0.95 ? 'bg-amber-500/60' : 'bg-red-500/60';
+        const color = `${HEALTH_STATUS_TOKEN[rateToHealth(p.success_rate)].icon}/60`;
         return (
           <div key={i} className="flex flex-col items-center justify-end flex-shrink-0" style={{ width: barWidth }} title={`${p.date}: ${formatPercent(p.success_rate)} (${p.total} runs)`}>
-            <div className={`w-full rounded-t-sm ${color}`} style={{ height: h }} />
+            <motion.div
+              className={`w-full rounded-t-sm ${color}`}
+              initial={{ height: 0 }}
+              animate={{ height: h }}
+              transition={{ ...barSpring, delay: i * 0.015 }}
+            />
           </div>
         );
       })}

@@ -24,6 +24,13 @@ pub struct PersonaEvent {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+pub struct PaginatedEvents {
+    pub events: Vec<PersonaEvent>,
+    pub has_more: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct CreatePersonaEventInput {
     pub event_type: String,
     pub source_type: String,

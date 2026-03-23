@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::repos::core::personas;
-use crate::db::repos::resources::{credentials as cred_repo, tools};
+use crate::db::repos::resources::{audit_log, credentials as cred_repo, tools};
 use crate::error::AppError;
 use crate::gitlab;
 use crate::gitlab::client::GitLabClient;
@@ -70,6 +70,7 @@ pub async fn gitlab_connect_from_vault(
 
     let credential = cred_repo::get_by_id(&state.db, &credential_id)?;
     let fields = cred_repo::get_decrypted_fields(&state.db, &credential)?;
+    let _ = audit_log::log_decrypt(&state.db, &credential.id, &credential.name, "gitlab:connect_from_vault", None, None);
 
     let token = fields
         .get("personal_access_token")

@@ -1,5 +1,6 @@
 import { Activity, Zap, AlertCircle, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
+import { DASHBOARD_GRID_SPAN_MAJOR } from '@/features/overview/utils/dashboardGrid';
 
 interface Execution {
   id: string;
@@ -15,7 +16,7 @@ interface RecentActivityListProps {
 
 export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityListProps) {
   return (
-    <div className="lg:col-span-2 2xl:col-span-3 space-y-4">
+    <div className={`${DASHBOARD_GRID_SPAN_MAJOR} space-y-4`}>
       <div className="flex items-center justify-between px-1">
         <h3 className="typo-label text-muted-foreground/80 flex items-center gap-2">
           <Clock className="w-4 h-4" />

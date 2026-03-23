@@ -154,7 +154,7 @@ export function CloudWebhooksTab() {
         {/* Status banner */}
         <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-blue-500/5 border border-blue-500/15">
           <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${relay.connected ? 'bg-emerald-400' : 'bg-muted-foreground/40'}`} />
+            <div className={`w-2 h-2 rounded-full ${relay.connected ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/40'}`} />
             <span className="text-sm text-foreground/80">
               {relay.connected ? 'Cloud relay active' : 'Connecting...'}
             </span>

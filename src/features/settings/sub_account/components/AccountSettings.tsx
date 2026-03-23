@@ -1,4 +1,5 @@
 import { Chrome, LogOut, User, Check, Sparkles, LayoutGrid, Wrench, AlertCircle, RefreshCw } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useAuthStore } from '@/stores/authStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { TIERS, TIER_CYCLE } from '@/lib/constants/uiModes';
@@ -30,10 +31,7 @@ export default function AccountSettings() {
         <div className="space-y-6">
         {/* Interface mode */}
         <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-violet-400" />
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Interface Mode</h2>
-          </div>
+          <SectionHeading title="Interface Mode" icon={<Sparkles className="text-violet-400" />} />
           <div className="grid grid-cols-3 gap-3">
             {([
               { mode: TIERS.STARTER, icon: Sparkles, label: 'Starter', desc: 'Clean, focused UI', color: 'violet' },

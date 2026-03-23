@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Network, ArrowRight } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -129,9 +130,12 @@ export function CredentialRelationshipGraph() {
 
   if (credentials.length === 0) {
     return (
-      <div className="text-center py-10 text-muted-foreground/60 text-sm">
-        No credentials to graph.
-      </div>
+      <EmptyIllustration
+        icon={Network}
+        heading="No credentials to graph"
+        description="Add credentials to visualize their relationships and dependencies."
+        className="py-10"
+      />
     );
   }
 
@@ -242,12 +246,13 @@ export function CredentialRelationshipGraph() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="rounded-xl border border-primary/10 bg-secondary/20 p-6 text-center"
+                className="rounded-xl border border-primary/10 bg-secondary/20 p-6"
               >
-                <Network className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground/50">
-                  Select a credential to see its blast radius and dependencies
-                </p>
+                <EmptyIllustration
+                  icon={Network}
+                  heading="No credential selected"
+                  description="Select a credential to see its blast radius and dependencies."
+                />
               </motion.div>
             )}
           </AnimatePresence>

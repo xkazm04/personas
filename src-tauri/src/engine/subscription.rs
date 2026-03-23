@@ -103,6 +103,7 @@ pub struct FileWatcherSubscription {
     pub state: Arc<tokio::sync::Mutex<super::file_watcher::FileWatcherState>>,
     pub tx: tokio::sync::mpsc::Sender<super::file_watcher::RawFsEvent>,
     pub rx: Arc<tokio::sync::Mutex<tokio::sync::mpsc::Receiver<super::file_watcher::RawFsEvent>>>,
+    pub dropped: Arc<std::sync::atomic::AtomicU64>,
     #[allow(dead_code)]
     pub ambient_ctx: super::ambient_context::AmbientContextHandle,
 }
@@ -303,7 +304,7 @@ impl ReactiveSubscription for FileWatcherSubscription {
             0usize
         };
         let _ = events_before;
-        super::file_watcher::file_watcher_tick(&self.pool, &self.state, &self.tx, &self.rx).await;
+        super::file_watcher::file_watcher_tick(&self.pool, &self.state, &self.tx, &self.rx, &self.dropped).await;
     }
 }
 

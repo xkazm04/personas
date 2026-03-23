@@ -10,6 +10,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
@@ -47,12 +48,14 @@ pub fn create_file_watcher() -> (
     Arc<Mutex<FileWatcherState>>,
     tokio::sync::mpsc::Sender<RawFsEvent>,
     Arc<Mutex<tokio::sync::mpsc::Receiver<RawFsEvent>>>,
+    Arc<AtomicU64>,
 ) {
-    let (tx, rx) = tokio::sync::mpsc::channel(512);
+    let (tx, rx) = tokio::sync::mpsc::channel(4096);
     (
         Arc::new(Mutex::new(FileWatcherState::new())),
         tx,
         Arc::new(Mutex::new(rx)),
+        Arc::new(AtomicU64::new(0)),
     )
 }
 
@@ -62,7 +65,18 @@ pub async fn file_watcher_tick(
     state: &Arc<Mutex<FileWatcherState>>,
     tx: &tokio::sync::mpsc::Sender<RawFsEvent>,
     rx: &Arc<Mutex<tokio::sync::mpsc::Receiver<RawFsEvent>>>,
+    dropped: &Arc<AtomicU64>,
 ) {
+    // Report dropped events from channel overflow since last tick
+    let dropped_count = dropped.swap(0, Ordering::Relaxed);
+    if dropped_count > 0 {
+        tracing::warn!(
+            dropped_count,
+            "file_watcher dropped {dropped_count} event(s) due to channel overflow — \
+             consider reducing FS churn or check trigger polling interval"
+        );
+    }
+
     // Load enabled file_watcher triggers once (SQL-filtered)
     let triggers = match trigger_repo::get_enabled_by_type(pool, "file_watcher") {
         Ok(t) => t,
@@ -73,7 +87,7 @@ pub async fn file_watcher_tick(
     };
 
     // Phase 1: Reconcile watches using the pre-fetched triggers
-    if let Err(e) = reconcile_watches(&triggers, state, tx).await {
+    if let Err(e) = reconcile_watches(&triggers, state, tx, dropped).await {
         tracing::warn!("file_watcher reconcile error: {e}");
     }
 
@@ -184,16 +198,26 @@ async fn reconcile_watches(
     triggers: &[crate::db::models::PersonaTrigger],
     state: &Arc<Mutex<FileWatcherState>>,
     tx: &tokio::sync::mpsc::Sender<RawFsEvent>,
+    dropped: &Arc<AtomicU64>,
 ) -> Result<(), String> {
     let mut state = state.lock().await;
 
-    // Remove stale registrations
     let wanted_ids: HashSet<String> = triggers.iter().map(|t| t.id.clone()).collect();
-    state.registered.retain(|k, _| wanted_ids.contains(k));
+
+    // Drop watcher entirely when no triggers remain
+    if triggers.is_empty() {
+        if state.watcher.is_some() {
+            state.watcher = None;
+            state.registered.clear();
+            tracing::debug!("file_watcher: all triggers removed, watcher dropped");
+        }
+        return Ok(());
+    }
 
     // Create watcher if needed
-    if state.watcher.is_none() && !triggers.is_empty() {
+    if state.watcher.is_none() {
         let tx = tx.clone();
+        let dropped = Arc::clone(dropped);
         let watcher = notify::recommended_watcher(move |res: Result<Event, notify::Error>| {
             if let Ok(event) = res {
                 let kind_str = match event.kind {
@@ -206,10 +230,12 @@ async fn reconcile_watches(
                     .filter_map(|p| p.to_str().map(String::from))
                     .collect();
                 if !paths.is_empty() {
-                    let _ = tx.blocking_send(RawFsEvent {
+                    if tx.try_send(RawFsEvent {
                         kind: kind_str.into(),
                         paths,
-                    });
+                    }).is_err() {
+                        dropped.fetch_add(1, Ordering::Relaxed);
+                    }
                 }
             }
         })
@@ -218,8 +244,9 @@ async fn reconcile_watches(
         state.watcher = Some(watcher);
     }
 
-    // Collect registrations to apply
+    // Collect registrations to apply, tracking changed triggers for stale-path diffing
     let mut to_register: Vec<(String, HashSet<String>, RecursiveMode)> = Vec::new();
+    let mut changed_triggers: Vec<(String, HashSet<String>)> = Vec::new();
     for trigger in triggers {
         let config = trigger.parse_config();
         if let TriggerConfig::FileWatcher { watch_paths: Some(ref paths), recursive, .. } = config {
@@ -230,14 +257,33 @@ async fn reconcile_watches(
             };
             let path_set: HashSet<String> = paths.iter().cloned().collect();
             if state.registered.get(&trigger.id) != Some(&path_set) {
+                changed_triggers.push((trigger.id.clone(), path_set.clone()));
                 to_register.push((trigger.id.clone(), path_set, mode));
             }
         }
     }
 
-    // Apply registrations -- take watcher out temporarily to avoid double-borrow
-    if !to_register.is_empty() {
+    // Compute which old paths are truly stale (not needed by any remaining trigger)
+    let stale_paths = compute_stale_paths(&state.registered, &wanted_ids, &changed_triggers);
+
+    // Remove stale registrations from HashMap
+    state.registered.retain(|k, _| wanted_ids.contains(k));
+
+    // Apply unwatches and new registrations
+    if !stale_paths.is_empty() || !to_register.is_empty() {
         if let Some(mut watcher) = state.watcher.take() {
+            // Unwatch stale paths first
+            for path in &stale_paths {
+                let p = PathBuf::from(path);
+                if let Err(e) = watcher.unwatch(&p) {
+                    tracing::debug!(path = %path, "Unwatch (non-critical): {e}");
+                }
+            }
+            if !stale_paths.is_empty() {
+                tracing::debug!(count = stale_paths.len(), "file_watcher: unwatched stale paths");
+            }
+
+            // Apply new registrations
             for (trigger_id, path_set, mode) in to_register {
                 for path in &path_set {
                     let p = PathBuf::from(path);
@@ -254,6 +300,48 @@ async fn reconcile_watches(
     }
 
     Ok(())
+}
+
+/// Compute which previously-watched paths are no longer needed by any trigger.
+///
+/// Returns the set of paths that should be `unwatch()`-ed. A path is stale when:
+/// - Its owning trigger was deleted (`removed_trigger_paths`)
+/// - Its owning trigger changed watch_paths (`changed_trigger_old_paths`)
+/// …AND the path is not still required by another trigger in `active_paths`.
+fn compute_stale_paths(
+    registered: &HashMap<String, HashSet<String>>,
+    wanted_ids: &HashSet<String>,
+    changed_triggers: &[(String, HashSet<String>)],
+) -> HashSet<String> {
+    let mut stale: HashSet<String> = HashSet::new();
+
+    // Paths from triggers that no longer exist
+    for (trigger_id, paths) in registered {
+        if !wanted_ids.contains(trigger_id) {
+            stale.extend(paths.iter().cloned());
+        }
+    }
+
+    // Old paths from triggers whose path set changed
+    for (trigger_id, _new_paths) in changed_triggers {
+        if let Some(old_paths) = registered.get(trigger_id) {
+            stale.extend(old_paths.iter().cloned());
+        }
+    }
+
+    // Build active set: paths still registered (after retain) + new paths from changes
+    let mut active: HashSet<String> = HashSet::new();
+    for (trigger_id, paths) in registered {
+        if wanted_ids.contains(trigger_id) {
+            active.extend(paths.iter().cloned());
+        }
+    }
+    for (_, new_paths) in changed_triggers {
+        active.extend(new_paths.iter().cloned());
+    }
+
+    stale.retain(|p| !active.contains(p));
+    stale
 }
 
 /// Simple glob matching for file name filters.
@@ -299,5 +387,76 @@ mod tests {
     fn test_simple_glob_exact() {
         assert!(simple_glob_match("Dockerfile", "Dockerfile"));
         assert!(!simple_glob_match("Dockerfile", "Makefile"));
+    }
+
+    #[test]
+    fn test_stale_paths_trigger_removed() {
+        let mut registered = HashMap::new();
+        registered.insert("t1".into(), HashSet::from(["/a".into(), "/b".into()]));
+        registered.insert("t2".into(), HashSet::from(["/c".into()]));
+
+        // t1 deleted, t2 remains
+        let wanted = HashSet::from(["t2".into()]);
+        let stale = compute_stale_paths(&registered, &wanted, &[]);
+        assert!(stale.contains("/a"));
+        assert!(stale.contains("/b"));
+        assert!(!stale.contains("/c"));
+    }
+
+    #[test]
+    fn test_stale_paths_shared_path_not_unwatched() {
+        let mut registered = HashMap::new();
+        registered.insert("t1".into(), HashSet::from(["/shared".into(), "/only_t1".into()]));
+        registered.insert("t2".into(), HashSet::from(["/shared".into()]));
+
+        // t1 deleted, t2 remains — /shared must NOT be stale
+        let wanted = HashSet::from(["t2".into()]);
+        let stale = compute_stale_paths(&registered, &wanted, &[]);
+        assert!(stale.contains("/only_t1"));
+        assert!(!stale.contains("/shared"));
+    }
+
+    #[test]
+    fn test_stale_paths_trigger_paths_changed() {
+        let mut registered = HashMap::new();
+        registered.insert("t1".into(), HashSet::from(["/old_a".into(), "/keep".into()]));
+
+        // t1 changes paths: /old_a → /new_a, keeps /keep
+        let wanted = HashSet::from(["t1".into()]);
+        let changed = vec![("t1".into(), HashSet::from(["/new_a".into(), "/keep".into()]))];
+        let stale = compute_stale_paths(&registered, &wanted, &changed);
+        assert!(stale.contains("/old_a"));
+        assert!(!stale.contains("/keep"));
+        assert!(!stale.contains("/new_a"));
+    }
+
+    #[test]
+    fn test_stale_paths_no_changes() {
+        let mut registered = HashMap::new();
+        registered.insert("t1".into(), HashSet::from(["/a".into()]));
+
+        let wanted = HashSet::from(["t1".into()]);
+        let stale = compute_stale_paths(&registered, &wanted, &[]);
+        assert!(stale.is_empty());
+    }
+
+    #[test]
+    fn test_stale_paths_all_removed() {
+        let mut registered = HashMap::new();
+        registered.insert("t1".into(), HashSet::from(["/a".into()]));
+        registered.insert("t2".into(), HashSet::from(["/b".into()]));
+
+        let wanted = HashSet::new();
+        let stale = compute_stale_paths(&registered, &wanted, &[]);
+        assert_eq!(stale.len(), 2);
+        assert!(stale.contains("/a"));
+        assert!(stale.contains("/b"));
+    }
+
+    #[test]
+    fn test_watcher_state_new() {
+        let state = FileWatcherState::new();
+        assert!(state.watcher.is_none());
+        assert!(state.registered.is_empty());
     }
 }

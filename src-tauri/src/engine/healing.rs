@@ -1,17 +1,12 @@
 //! Healing engine: error classification, diagnosis, and auto-fix logic.
 //!
 //! Pure functions -- no DB or async dependencies -- for testability.
+//!
+//! Error classification is delegated to the unified [`super::error_taxonomy`]
+//! module. This module re-exports the shared types for backwards compatibility.
 
-/// Broad failure category derived from error strings and flags.
-#[derive(Debug, Clone, PartialEq)]
-pub enum FailureCategory {
-    RateLimit,
-    SessionLimit,
-    Timeout,
-    CliNotFound,
-    CredentialError,
-    Unknown,
-}
+pub use super::error_taxonomy::ErrorCategory as FailureCategory;
+pub use super::error_taxonomy::{classify_error, is_auto_fixable};
 
 /// Recommended action for a diagnosed failure.
 #[derive(Debug, Clone, PartialEq)]
@@ -35,63 +30,6 @@ pub struct HealingDiagnosis {
     /// "config" | "external" | "prompt" | "tool"
     pub db_category: String,
     pub suggested_fix: Option<String>,
-}
-
-// ---------------------------------------------------------------------------
-// Classification
-// ---------------------------------------------------------------------------
-
-/// Classify an error into a [`FailureCategory`].
-///
-/// Flags (`timed_out`, `session_limit`) take priority over string matching so
-/// that the caller can pass pre-parsed booleans from [`ExecutionResult`].
-pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> FailureCategory {
-    if session_limit {
-        return FailureCategory::SessionLimit;
-    }
-    if timed_out {
-        return FailureCategory::Timeout;
-    }
-
-    let lower = error.to_lowercase();
-
-    if lower.contains("rate limit")
-        || lower.contains("too many requests")
-        || lower.contains("429")
-    {
-        return FailureCategory::RateLimit;
-    }
-
-    if lower.contains("timed out") || lower.contains("timeout") {
-        return FailureCategory::Timeout;
-    }
-
-    if lower.contains("not found")
-        || lower.contains("enoent")
-        || lower.contains("is not recognized")
-    {
-        return FailureCategory::CliNotFound;
-    }
-
-    if lower.contains("decrypt")
-        || lower.contains("credential")
-        || lower.contains("api key")
-        || lower.contains("unauthorized")
-        || lower.contains("401")
-        || lower.contains("403")
-    {
-        return FailureCategory::CredentialError;
-    }
-
-    FailureCategory::Unknown
-}
-
-/// Returns `true` for categories that can be automatically retried.
-pub fn is_auto_fixable(category: &FailureCategory) -> bool {
-    matches!(
-        category,
-        FailureCategory::RateLimit | FailureCategory::Timeout
-    )
 }
 
 // ---------------------------------------------------------------------------
@@ -148,7 +86,7 @@ pub fn diagnose(
 
             if retry_count >= MAX_RETRY_COUNT || kb_escalate {
                 return HealingDiagnosis {
-                    category: category.clone(),
+                    category: *category,
                     action: HealingAction::CreateIssue,
                     title: "Rate limit retries exhausted".into(),
                     description: format!(
@@ -171,7 +109,7 @@ pub fn diagnose(
                 .map(|kb_delay| std::cmp::min(kb_delay, MAX_BACKOFF_SECS))
                 .unwrap_or(computed_delay);
             HealingDiagnosis {
-                category: category.clone(),
+                category: *category,
                 action: HealingAction::RetryWithBackoff { delay_secs: delay },
                 title: "Rate limit hit".into(),
                 description: format!(
@@ -185,7 +123,7 @@ pub fn diagnose(
             }
         }
         FailureCategory::SessionLimit => HealingDiagnosis {
-            category: category.clone(),
+            category: *category,
             action: HealingAction::CreateIssue,
             title: "Session limit reached".into(),
             description: format!(
@@ -206,7 +144,7 @@ pub fn diagnose(
             if consecutive_failures >= 1 || retry_count >= MAX_RETRY_COUNT || kb_escalate {
                 // Already retried once, retry limit exhausted, or KB escalation -- escalate to manual issue
                 HealingDiagnosis {
-                    category: category.clone(),
+                    category: *category,
                     action: HealingAction::CreateIssue,
                     title: "Repeated timeout".into(),
                     description: format!(
@@ -223,7 +161,7 @@ pub fn diagnose(
             } else {
                 let new_timeout = std::cmp::min(current_timeout_ms.saturating_mul(2), MAX_TIMEOUT_MS);
                 HealingDiagnosis {
-                    category: category.clone(),
+                    category: *category,
                     action: HealingAction::RetryWithTimeout { new_timeout_ms: new_timeout },
                     title: "Execution timed out".into(),
                     description: format!(
@@ -240,8 +178,8 @@ pub fn diagnose(
                 }
             }
         }
-        FailureCategory::CliNotFound => HealingDiagnosis {
-            category: category.clone(),
+        FailureCategory::ProviderNotFound => HealingDiagnosis {
+            category: *category,
             action: HealingAction::CreateIssue,
             title: "Claude CLI not found".into(),
             description: format!(
@@ -255,7 +193,7 @@ pub fn diagnose(
             ),
         },
         FailureCategory::CredentialError => HealingDiagnosis {
-            category: category.clone(),
+            category: *category,
             action: HealingAction::CreateIssue,
             title: "Credential / auth error".into(),
             description: format!(
@@ -268,8 +206,64 @@ pub fn diagnose(
                 "Check that the API key or credential is valid and not expired.".into(),
             ),
         },
+        FailureCategory::Network => HealingDiagnosis {
+            category: *category,
+            action: HealingAction::CreateIssue,
+            title: "Network error".into(),
+            description: format!(
+                "A network-level failure was detected. Error: {}",
+                truncate(error, 200),
+            ),
+            severity: "medium".into(),
+            db_category: "external".into(),
+            suggested_fix: Some(
+                "Check network connectivity and firewall settings.".into(),
+            ),
+        },
+        FailureCategory::ToolError => HealingDiagnosis {
+            category: *category,
+            action: HealingAction::CreateIssue,
+            title: "Tool call failure".into(),
+            description: format!(
+                "A tool call failed during execution. Error: {}",
+                truncate(error, 200),
+            ),
+            severity: "medium".into(),
+            db_category: "tool".into(),
+            suggested_fix: Some(
+                "Review tool configuration and add error recovery instructions.".into(),
+            ),
+        },
+        FailureCategory::ApiError => HealingDiagnosis {
+            category: *category,
+            action: HealingAction::CreateIssue,
+            title: "API server error".into(),
+            description: format!(
+                "An API server error was detected. Error: {}",
+                truncate(error, 200),
+            ),
+            severity: "high".into(),
+            db_category: "external".into(),
+            suggested_fix: Some(
+                "API provider may be experiencing issues. Retry later or check status page.".into(),
+            ),
+        },
+        FailureCategory::Validation => HealingDiagnosis {
+            category: *category,
+            action: HealingAction::CreateIssue,
+            title: "Validation error".into(),
+            description: format!(
+                "Input validation or parsing failed. Error: {}",
+                truncate(error, 200),
+            ),
+            severity: "low".into(),
+            db_category: "prompt".into(),
+            suggested_fix: Some(
+                "Check input data format and prompt structure.".into(),
+            ),
+        },
         FailureCategory::Unknown => HealingDiagnosis {
-            category: category.clone(),
+            category: *category,
             action: HealingAction::CreateIssue,
             title: "Execution failed".into(),
             description: format!(
@@ -360,15 +354,15 @@ mod tests {
     fn test_classify_cli_not_found() {
         assert_eq!(
             classify_error("Claude CLI not found", false, false),
-            FailureCategory::CliNotFound,
+            FailureCategory::ProviderNotFound,
         );
         assert_eq!(
             classify_error("ENOENT: no such file", false, false),
-            FailureCategory::CliNotFound,
+            FailureCategory::ProviderNotFound,
         );
         assert_eq!(
             classify_error("'claude' is not recognized as an internal command", false, false),
-            FailureCategory::CliNotFound,
+            FailureCategory::ProviderNotFound,
         );
     }
 
@@ -476,7 +470,7 @@ mod tests {
         assert!(is_auto_fixable(&FailureCategory::RateLimit));
         assert!(is_auto_fixable(&FailureCategory::Timeout));
         assert!(!is_auto_fixable(&FailureCategory::SessionLimit));
-        assert!(!is_auto_fixable(&FailureCategory::CliNotFound));
+        assert!(!is_auto_fixable(&FailureCategory::ProviderNotFound));
         assert!(!is_auto_fixable(&FailureCategory::CredentialError));
         assert!(!is_auto_fixable(&FailureCategory::Unknown));
     }

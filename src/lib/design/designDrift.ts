@@ -1,4 +1,5 @@
 import type { AgentIR } from '@/lib/types/designTypes';
+import { classifyError, type ErrorCategory } from '@/lib/errorTaxonomy';
 
 // -- Types -------------------------------------------------------
 
@@ -86,55 +87,61 @@ export function detectDesignDrift(
 
   // 1. Error pattern detection -- failed execution with error message
   if (exec.status === 'failed' && exec.errorMessage) {
-    const errorLower = exec.errorMessage.toLowerCase();
-    const isToolError = /tool.*fail|tool.*error|tool_use|function.*error/i.test(errorLower);
-    const isTimeoutError = /timeout|timed out|deadline/i.test(errorLower);
-    const isApiError = /api.*error|rate.?limit|401|403|429|500|502|503/i.test(errorLower);
+    const category: ErrorCategory = classifyError(exec.errorMessage);
 
-    if (isToolError) {
-      events.push({
-        ...base,
-        id: makeId(),
-        kind: 'tool_mismatch',
-        severity: 'high',
-        title: 'Tool call failure detected',
-        description: `Execution failed with tool error: "${truncate(exec.errorMessage, 120)}"`,
-        suggestion: 'Update toolGuidance to add error recovery instructions or remove the failing tool.',
-        targetSection: 'toolGuidance',
-      });
-    } else if (isTimeoutError) {
-      events.push({
-        ...base,
-        id: makeId(),
-        kind: 'timeout',
-        severity: 'medium',
-        title: 'Execution timeout detected',
-        description: `Agent timed out: "${truncate(exec.errorMessage, 120)}"`,
-        suggestion: 'Increase timeout_ms or simplify instructions to reduce processing time.',
-        targetSection: 'instructions',
-      });
-    } else if (isApiError) {
-      events.push({
-        ...base,
-        id: makeId(),
-        kind: 'error_pattern',
-        severity: 'high',
-        title: 'API error pattern detected',
-        description: `API-related failure: "${truncate(exec.errorMessage, 120)}"`,
-        suggestion: 'Add rate limiting guidance or retry instructions to errorHandling section.',
-        targetSection: 'errorHandling',
-      });
-    } else {
-      events.push({
-        ...base,
-        id: makeId(),
-        kind: 'error_pattern',
-        severity: 'medium',
-        title: 'Execution failure detected',
-        description: `Failed with: "${truncate(exec.errorMessage, 120)}"`,
-        suggestion: 'Review errorHandling section and add handling for this failure pattern.',
-        targetSection: 'errorHandling',
-      });
+    // Map unified ErrorCategory to drift event
+    switch (category) {
+      case 'tool_error':
+        events.push({
+          ...base,
+          id: makeId(),
+          kind: 'tool_mismatch',
+          severity: 'high',
+          title: 'Tool call failure detected',
+          description: `Execution failed with tool error: "${truncate(exec.errorMessage, 120)}"`,
+          suggestion: 'Update toolGuidance to add error recovery instructions or remove the failing tool.',
+          targetSection: 'toolGuidance',
+        });
+        break;
+      case 'timeout':
+        events.push({
+          ...base,
+          id: makeId(),
+          kind: 'timeout',
+          severity: 'medium',
+          title: 'Execution timeout detected',
+          description: `Agent timed out: "${truncate(exec.errorMessage, 120)}"`,
+          suggestion: 'Increase timeout_ms or simplify instructions to reduce processing time.',
+          targetSection: 'instructions',
+        });
+        break;
+      case 'rate_limit':
+      case 'session_limit':
+      case 'api_error':
+      case 'credential_error':
+        events.push({
+          ...base,
+          id: makeId(),
+          kind: 'error_pattern',
+          severity: 'high',
+          title: 'API error pattern detected',
+          description: `API-related failure (${category}): "${truncate(exec.errorMessage, 120)}"`,
+          suggestion: 'Add rate limiting guidance or retry instructions to errorHandling section.',
+          targetSection: 'errorHandling',
+        });
+        break;
+      default:
+        events.push({
+          ...base,
+          id: makeId(),
+          kind: 'error_pattern',
+          severity: 'medium',
+          title: 'Execution failure detected',
+          description: `Failed with: "${truncate(exec.errorMessage, 120)}"`,
+          suggestion: 'Review errorHandling section and add handling for this failure pattern.',
+          targetSection: 'errorHandling',
+        });
+        break;
     }
   }
 

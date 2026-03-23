@@ -46,7 +46,7 @@ export function TypewriterBullets({ items, speed = 150 }: { items: string[]; spe
 interface MatrixCommandCenterProps {
   designResult: AgentIR | null; isEditMode: boolean; isRunning?: boolean;
   onLaunch?: () => void; launchDisabled?: boolean; launchLabel?: string;
-  variant?: 'adoption' | 'creation';
+  variant?: 'adoption' | 'creation' | 'saved';
   questions?: TransformQuestionResponse[] | null; userAnswers?: Record<string, string>;
   onAnswerUpdated?: (questionId: string, answer: string) => void; onSubmitAnswers?: () => void;
   buildCompleted?: boolean; phaseLabel?: string;
@@ -62,6 +62,8 @@ interface MatrixCommandCenterProps {
   onViewAgent?: () => void; cellBuildStates?: Record<string, string>;
   buildActivity?: string | null;
   onApplyEdits?: () => void; onDiscardEdits?: () => void;
+  /** Save current state as new version (saved variant) */
+  onSaveVersion?: () => void;
   /** Pre-build initial state — enlarged command hub */
   isPreBuild?: boolean;
 }
@@ -77,7 +79,7 @@ export function MatrixCommandCenter({
   cliOutputLines = [], designQuestion, onAnswerQuestion,
   buildPhase, onStartTest, onApproveTest, onRejectTest,
   testOutputLines = [], testPassed, testError, toolTestResults = [], testSummary, onViewAgent, cellBuildStates,
-  buildActivity, onApplyEdits, onDiscardEdits, isPreBuild = false,
+  buildActivity, onApplyEdits, onDiscardEdits, onSaveVersion, isPreBuild = false,
 }: MatrixCommandCenterProps) {
   const [openSection, setOpenSection] = useState<PromptSection | null>(null);
   const [localPromptText, setLocalPromptText] = useState('');
@@ -108,6 +110,7 @@ export function MatrixCommandCenter({
   const textValue = variant === 'creation' && intentText !== undefined ? intentText : localPromptText;
   const handleTextChange = variant === 'creation' && onIntentChange ? onIntentChange : setLocalPromptText;
   const isCreation = variant === 'creation';
+  const isSaved = variant === 'saved';
 
   const sections = useMemo<PromptSection[]>(() => {
     if (!designResult?.structured_prompt) return [];
@@ -186,7 +189,9 @@ export function MatrixCommandCenter({
     // Adoption: Build completed
     if (!isCreation && buildCompleted) return (<div className={WRAP}><BuildCompletedIndicator /></div>);
     // Creation: Post-generation
-    if (isCreation && hasDesignResult) return (<div className={WRAP}><CreationPostGeneration completeness={completeness} onRefine={onRefine} onStartTest={onStartTest} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} /></div>);
+    if (isCreation && hasDesignResult) return (<div className={WRAP}><CreationPostGeneration completeness={completeness} onRefine={onRefine} onStartTest={onStartTest} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} /></div>);
+    // Saved: Show refine + test command center
+    if (isSaved && hasDesignResult) return (<div className={WRAP}><CreationPostGeneration completeness={completeness} onRefine={onRefine} onStartTest={onStartTest} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} /></div>);
     // Pre-build / Pre-generation
     return (
       <div className="flex flex-col gap-3 w-full h-full items-center">

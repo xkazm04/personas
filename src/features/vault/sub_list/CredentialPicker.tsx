@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
+import { SearchX } from 'lucide-react';
 import type { ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { getPurposeForConnector, PURPOSE_GROUPS } from '@/lib/credentials/connectorRoles';
 import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
 import { isTierVisible, type Tier } from '@/lib/constants/uiModes';
@@ -208,9 +210,12 @@ export function CredentialPicker({ connectors: rawConnectors, credentials, onPic
       </div>
 
       {filteredConnectors.length === 0 && (
-        <div className="py-6 text-center text-sm text-muted-foreground/90 border border-dashed border-primary/15 rounded-lg">
-          No connectors found
-        </div>
+        <EmptyIllustration
+          icon={SearchX}
+          heading="No connectors found"
+          description="Try adjusting your filters or search term."
+          className="py-6"
+        />
       )}
     </div>
   );

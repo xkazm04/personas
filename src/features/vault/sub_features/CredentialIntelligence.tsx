@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Activity, Users, Clock, Shield, AlertTriangle } from 'lucide-react';
+import { Activity, Users, Clock, Shield, AlertTriangle, Link2 } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { formatTimestamp } from '@/lib/utils/formatters';
 import {
   getCredentialAuditLog,
@@ -136,9 +137,12 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
       {tab === 'dependents' && (
         <div className="space-y-1.5">
           {dependents.length === 0 ? (
-            <div className="text-sm text-muted-foreground/80 py-3 text-center">
-              No known dependents. Changes to this credential are low-risk.
-            </div>
+            <EmptyIllustration
+              icon={Link2}
+              heading="No known dependents"
+              description="Changes to this credential are low-risk."
+              className="py-6"
+            />
           ) : (
             <>
               <div className="text-sm text-muted-foreground/80 pb-1">

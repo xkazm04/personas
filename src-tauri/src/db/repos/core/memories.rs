@@ -178,6 +178,33 @@ pub fn get_all(
     Ok(results)
 }
 
+/// Bulk-fetch all memories for multiple persona IDs in a single query.
+pub fn get_all_by_persona_ids(
+    pool: &DbPool,
+    persona_ids: &[String],
+) -> Result<Vec<PersonaMemory>, AppError> {
+    if persona_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+    let placeholders: Vec<String> = persona_ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let sql = format!(
+        "SELECT * FROM persona_memories WHERE persona_id IN ({}) ORDER BY created_at DESC",
+        placeholders.join(", ")
+    );
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_ref.as_slice(), row_to_memory)?;
+    Ok(collect_rows(rows, "memories::get_all_by_persona_ids"))
+}
+
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaMemory, AppError> {
     let conn = pool.get()?;
     conn.query_row(

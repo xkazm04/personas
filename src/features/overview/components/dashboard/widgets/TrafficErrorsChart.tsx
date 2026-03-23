@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { TrendingUp } from 'lucide-react';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
@@ -18,6 +19,10 @@ interface TrafficErrorsChartProps {
 }
 
 export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: TrafficErrorsChartProps) {
+  const id = useId();
+  const trafficGradId = `${id}-traffic`;
+  const errorGradId = `${id}-error`;
+
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm p-4 space-y-4 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
@@ -46,11 +51,11 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
-                  <linearGradient id="trafficGrad" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id={trafficGradId} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
                     <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="errorGrad" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id={errorGradId} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.25} />
                     <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
                   </linearGradient>
@@ -59,8 +64,8 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
                 <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 9 }} tickFormatter={(v: string) => v.slice(5)} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 9 }} width={24} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="traffic" name="Traffic" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill="url(#trafficGrad)" />
-                <Area type="monotone" dataKey="errors" name="Errors" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#errorGrad)" />
+                <Area type="monotone" dataKey="traffic" name="Traffic" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill={`url(#${trafficGradId})`} />
+                <Area type="monotone" dataKey="errors" name="Errors" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill={`url(#${errorGradId})`} />
               </AreaChart>
             </ResponsiveContainer>
           </ChartErrorBoundary>

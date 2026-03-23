@@ -1,5 +1,6 @@
 import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, AlertTriangle, Bell } from 'lucide-react';
 import { useState } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -99,16 +100,27 @@ export default function ObservabilityDashboard() {
       </div>
 
       {/* Alert Rules & History */}
-      {showAlerts && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
-            <AlertRulesPanel />
-          </div>
-          <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
-            <AlertHistoryPanel />
-          </div>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {showAlerts && (
+          <motion.div
+            key="alerts-panel"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
+                <AlertRulesPanel />
+              </div>
+              <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
+                <AlertHistoryPanel />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Charts */}
       <MetricsCharts

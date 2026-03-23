@@ -8,6 +8,7 @@ import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import { getCachedDesignResult } from './reviewParseCache';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
+import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 
 export function ReviewExpandedDetail({
   review,
@@ -60,9 +61,7 @@ export function ReviewExpandedDetail({
       {/* 3.5. Use Case Flows Preview */}
       {flows.length > 0 && onViewDiagram && (
         <div>
-          <h4 className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wide mb-2">
-            Use Case Flows
-          </h4>
+          <SectionLabel>Use Case Flows</SectionLabel>
           <div className="flex items-center gap-3 flex-wrap">
             {flows.map((flow) => (
               <button

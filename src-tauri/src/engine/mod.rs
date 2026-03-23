@@ -18,6 +18,7 @@ pub mod credential_negotiator;
 pub mod cron;
 pub mod crypto;
 pub mod design;
+pub mod error_taxonomy;
 pub mod eval;
 pub mod failover;
 pub mod google_oauth;

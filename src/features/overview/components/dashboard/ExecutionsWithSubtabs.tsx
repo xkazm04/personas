@@ -1,10 +1,11 @@
-import { lazy, Suspense, useState, startTransition } from 'react';
+import { Suspense, useState, startTransition } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Workflow } from 'lucide-react';
 import GlobalExecutionList from '@/features/overview/sub_executions/components/GlobalExecutionList';
+import { lazyRetry } from '@/lib/lazyRetry';
 
 // History is the default -- keep eager. Workflows is heavy and lazy-loaded.
-const WorkflowsDashboard = lazy(() => import('@/features/overview/sub_workflows/components/WorkflowsDashboard'));
+const WorkflowsDashboard = lazyRetry(() => import('@/features/overview/sub_workflows/components/WorkflowsDashboard'));
 
 type ExecutionSubtab = 'history' | 'workflows';
 

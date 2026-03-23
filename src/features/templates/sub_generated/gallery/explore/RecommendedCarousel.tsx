@@ -1,5 +1,6 @@
 import { Sparkles, Download } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 
@@ -18,9 +19,9 @@ export function RecommendedCarousel({
     <div className="px-4 py-3 border-b border-primary/10 flex-shrink-0">
       <div className="flex items-center gap-2 mb-2.5">
         <Sparkles className="w-4 h-4 text-amber-400/70" />
-        <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide">
+        <SectionLabel as="span" className="mb-0">
           Recommended for You
-        </span>
+        </SectionLabel>
         <span className="text-sm text-muted-foreground/60">
           Based on your connectors
         </span>

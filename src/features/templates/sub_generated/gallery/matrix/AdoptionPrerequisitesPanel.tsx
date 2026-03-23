@@ -10,6 +10,7 @@ import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/di
 import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
 import type { ConnectorReadinessStatus, AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 
 // -- Types ------------------------------------------------------------
 
@@ -74,9 +75,7 @@ export function AdoptionPrerequisitesPanel({
       {/* Header */}
       <div className="flex items-center gap-2">
         <Plug className="w-4 h-4 text-muted-foreground/70" />
-        <h4 className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide">
-          Prerequisites
-        </h4>
+        <SectionLabel className="mb-0">Prerequisites</SectionLabel>
         <OverallBadge overall={overall} total={items.length} ready={items.filter((i) => i.status.health === 'ready').length} />
       </div>
 

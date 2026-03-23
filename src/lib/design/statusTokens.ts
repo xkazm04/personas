@@ -118,3 +118,69 @@ export const SEVERITY_ACCENTS: Record<'error' | 'warning' | 'info' | 'success', 
   info:    { border: 'border-l-[3px] border-l-blue-500',    bg: 'bg-blue-500/5',    text: STATUS_PALETTE.info.text },
   success: { border: 'border-l-[3px] border-l-emerald-500', bg: 'bg-emerald-500/5', text: STATUS_PALETTE.success.text },
 };
+
+// -- StatusColorScale: unified health indicator colors --------------------
+
+export type HealthStatus = 'healthy' | 'warning' | 'critical' | 'info' | 'neutral';
+
+/** Maps semantic health levels to StatusToken entries from STATUS_PALETTE. */
+export const HEALTH_STATUS_TOKEN: Record<HealthStatus, StatusToken> = {
+  healthy:  STATUS_PALETTE.success,
+  warning:  STATUS_PALETTE.warning,
+  critical: STATUS_PALETTE.error,
+  info:     STATUS_PALETTE.info,
+  neutral:  STATUS_PALETTE.neutral,
+};
+
+/** Multi-variant class set for a health status indicator. */
+export interface StatusColorScale {
+  text: string;
+  bg: string;
+  border: string;
+  dot: string;
+  line: string;
+}
+
+/** Derive a full StatusColorScale from a HealthStatus. */
+export function healthScale(status: HealthStatus): StatusColorScale {
+  const t = HEALTH_STATUS_TOKEN[status];
+  return { text: t.text, bg: t.bg, border: t.border, dot: t.icon, line: `${t.icon}/30` };
+}
+
+/** Combined `text + bg + border` classes for a health status (card / badge shorthand). */
+export function healthClasses(status: HealthStatus): string {
+  const t = HEALTH_STATUS_TOKEN[status];
+  return `${t.text} ${t.bg} ${t.border}`;
+}
+
+// -- Threshold mappers ----------------------------------------------------
+
+/** Map a success rate (0–1) to a HealthStatus. Thresholds: >=0.99 healthy, >=0.95 warning. */
+export function rateToHealth(rate: number): HealthStatus {
+  if (rate >= 0.99) return 'healthy';
+  if (rate >= 0.95) return 'warning';
+  return 'critical';
+}
+
+/** Map a latency in ms to a HealthStatus. Thresholds: <50 healthy, <200 info, <1000 warning. */
+export function latencyToHealth(ms: number): HealthStatus {
+  if (ms < 50) return 'healthy';
+  if (ms < 200) return 'info';
+  if (ms < 1000) return 'warning';
+  return 'critical';
+}
+
+/** Map a healing outcome status string to a HealthStatus. */
+export function outcomeToHealth(status: string | null): HealthStatus {
+  switch (status) {
+    case 'auto_healed':
+    case 'resolved':
+      return 'healthy';
+    case 'circuit_breaker':
+      return 'critical';
+    case 'retrying':
+      return 'warning';
+    default:
+      return 'warning';
+  }
+}

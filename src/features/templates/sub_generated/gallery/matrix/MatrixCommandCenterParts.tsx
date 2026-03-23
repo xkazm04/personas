@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Play, X, HelpCircle, CheckCircle2, Send, RefreshCw,
+  Play, X, HelpCircle, CheckCircle2, Send, RefreshCw, Save,
   XCircle, Eye, RotateCcw, FileText, AlertTriangle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -324,7 +324,7 @@ export function CompletenessRing({ value, size = 56 }: { value: number; size?: n
 
 /** Post-generation state for creation mode. */
 export function CreationPostGeneration({
-  completeness, onRefine, onStartTest, onApplyEdits, onDiscardEdits,
+  completeness: _completeness, onRefine, onStartTest, onApplyEdits, onDiscardEdits, onSaveVersion,
 }: {
   completeness: number;
   onRefine?: (feedback: string) => void;
@@ -333,6 +333,8 @@ export function CreationPostGeneration({
   onApplyEdits?: () => void;
   /** Discard inline cell edits */
   onDiscardEdits?: () => void;
+  /** Save current state as a new persona version (saved variant) */
+  onSaveVersion?: () => void;
 }) {
   const [refineText, setRefineText] = useState('');
   const [isTesting, setIsTesting] = useState(false);
@@ -388,6 +390,18 @@ export function CreationPostGeneration({
         >
           {isTesting ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
           {isTesting ? 'Starting Test...' : 'Test Agent'}
+        </button>
+      )}
+
+      {onSaveVersion && !editDirty && (
+        <button
+          type="button"
+          onClick={onSaveVersion}
+          data-testid="save-version-btn"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30"
+        >
+          <Save className="w-3.5 h-3.5" />
+          Save Version
         </button>
       )}
 

@@ -61,8 +61,8 @@ interface PersonaMatrixBaseProps {
   buildCompleted?: boolean;
   /** User-facing build phase label */
   phaseLabel?: string;
-  /** 'adoption' (template) or 'creation' (agent creation) flow */
-  variant?: 'adoption' | 'creation';
+  /** 'adoption' (template), 'creation' (agent creation), or 'saved' (existing persona edit) flow */
+  variant?: 'adoption' | 'creation' | 'saved';
   /** Creation mode: controlled intent text */
   intentText?: string;
   onIntentChange?: (text: string) => void;
@@ -119,6 +119,8 @@ interface PersonaMatrixBaseProps {
   onDiscardEdits?: () => void;
   /** Submit all collected answers to CLI */
   onSubmitAllAnswers?: () => void;
+  /** Save current state as new version (saved variant) */
+  onSaveVersion?: () => void;
 }
 
 interface PersonaMatrixViewProps extends PersonaMatrixBaseProps { mode?: 'view'; }
@@ -135,7 +137,7 @@ export type PersonaMatrixProps = PersonaMatrixViewProps | PersonaMatrixEditProps
 // -- Main Component ---------------------------------------------------
 
 export function PersonaMatrix(props: PersonaMatrixProps) {
-  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion, buildPhase, onStartTest, onApproveTest, onRejectTest, testOutputLines, testPassed, testError, toolTestResults, testSummary, onViewAgent, buildActivity, onApplyEdits, onDiscardEdits, onSubmitAllAnswers } = props;
+  const { designResult, flows = [], hideHeader = false, onLaunch, launchDisabled, launchLabel, isRunning, onNavigateCatalog, buildLocked = false, questions, userAnswers, onAnswerUpdated, onSubmitAnswers, buildCompleted, phaseLabel, variant, intentText, onIntentChange, completeness, hasDesignResult, onContinue, onRefine, onCreateAgent, agentName, onAgentNameChange, cliOutputLines, designQuestion, onAnswerQuestion, cellBuildStates, pendingQuestions, onAnswerBuildQuestion, buildPhase, onStartTest, onApproveTest, onRejectTest, testOutputLines, testPassed, testError, toolTestResults, testSummary, onViewAgent, buildActivity, onApplyEdits, onDiscardEdits, onSubmitAllAnswers, onSaveVersion } = props;
   const isEditMode = props.mode === 'edit';
 
   // Track which question modal is currently open (only one at a time)
@@ -162,6 +164,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   // When cellBuildStates is provided (build mode), we create skeleton cells even without designResult
   const hasBuildStates = cellBuildStates && Object.keys(cellBuildStates).length > 0;
   const isCreationMode = variant === 'creation';
+  const isSavedMode = variant === 'saved';
 
   // Build draft data for enhanced cell rendering (connectors, protocol badges)
   const buildDraft = useAgentStore((s) => s.buildDraft) as Record<string, unknown> | null;
@@ -282,7 +285,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     }
 
     if (!designResult) return [];
-    const connectorNames = designResult.suggested_connectors?.map((c) => c.name) ?? [];
+    const connectorNames = designResult.suggested_connectors?.map((c: unknown) => typeof c === 'string' ? c : (c as Record<string, unknown>)?.name as string).filter(Boolean) ?? [];
     const archCategories = deriveArchCategories(connectorNames);
     const triggers = extractTriggers(designResult.suggested_triggers ?? []);
     const review = extractHumanReview(designResult.protocol_capabilities);
@@ -329,11 +332,11 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
   // Creation mode is interactive (textarea + launch orb) even without mode="edit"
-  const commandCenterEditMode = isEditMode || isCreationMode;
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} isPreBuild={isPreBuild} />);
+  const commandCenterEditMode = isEditMode || isCreationMode || isSavedMode;
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} isPreBuild={isPreBuild} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
-  if ((!designResult && !hasBuildStates && !isCreationMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
+  if ((!designResult && !hasBuildStates && !isCreationMode && !isSavedMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
 
   const firstFour = cells.slice(0, 4);
   const lastFour = cells.slice(4);
@@ -353,7 +356,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       }`}>
         {firstFour.map((cell) => (
           <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
-            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={isDraftPhase && isCreationMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
+            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={(isDraftPhase && isCreationMode) || isSavedMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
           </motion.div>
         ))}
         <div className={`relative rounded-xl border border-primary/40 p-5 ${isPreBuild ? 'min-h-[280px]' : 'min-h-[200px]'} ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
@@ -366,7 +369,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         </div>
         {lastFour.map((cell) => (
           <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
-            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={isDraftPhase && isCreationMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
+            <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={(isDraftPhase && isCreationMode) || isSavedMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
           </motion.div>
         ))}
       </div>

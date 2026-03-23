@@ -8,7 +8,7 @@ import { BaseModal } from '../../shared/BaseModal';
 interface RebuildModalProps {
   isOpen: boolean;
   onClose: () => void;
-  review: PersonaDesignReview;
+  review: PersonaDesignReview | null;
   /** Externally managed rebuild state */
   phase: RebuildPhase;
   lines: string[];
@@ -40,12 +40,12 @@ export function RebuildModal({
     if (isOpen) {
       setUserDirection('');
     }
-  }, [isOpen, review.id]);
+  }, [isOpen, review?.id]);
 
   // Determine display phase: if hook phase is idle/input, show input form
   const displayPhase = phase === 'idle' ? 'input' : phase;
 
-  if (!isOpen) return null;
+  if (!isOpen || !review) return null;
 
   return (
     <BaseModal

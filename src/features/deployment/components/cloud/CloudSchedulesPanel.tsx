@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Plus } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { Button } from '@/features/shared/components/buttons';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import {
   cloudListTriggers,
   cloudUpdateTrigger,
@@ -95,9 +96,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-medium text-muted-foreground/90 uppercase tracking-wider">
-          Cloud Triggers ({triggers.length})
-        </h3>
+        <SectionHeading className="text-xs">Cloud Triggers ({triggers.length})</SectionHeading>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"

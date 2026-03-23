@@ -140,7 +140,7 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
                     let entry = label_counts.entry(label).or_insert((0, 0));
                     if rating == "positive" {
                         entry.0 += 1;
-                    } else {
+                    } else if rating == "negative" {
                         entry.1 += 1;
                     }
                 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, XCircle, Ban } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useAgentStore } from "@/stores/agentStore";
 import { cloudListExecutions, cloudExecutionStats } from '@/api/system/cloud';
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
@@ -143,9 +144,7 @@ export function CloudHistoryPanel() {
       {/* Top errors */}
       {stats && stats.top_errors.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-xs font-medium text-muted-foreground/90 uppercase tracking-wider">
-            Top Errors
-          </h3>
+          <SectionHeading className="text-xs">Top Errors</SectionHeading>
           {stats.top_errors.map((err, i) => (
             <div key={i} className="flex items-center gap-2 text-xs p-2 rounded-lg bg-red-500/5 border border-red-500/10">
               <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
@@ -163,9 +162,7 @@ export function CloudHistoryPanel() {
         </p>
       ) : (
         <div className="space-y-1">
-          <h3 className="text-xs font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
-            Execution History ({executions.length})
-          </h3>
+          <SectionHeading className="text-xs mb-2">Execution History ({executions.length})</SectionHeading>
           {executions.map((exec) => {
             const isExpanded = expandedId === exec.id;
 

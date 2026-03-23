@@ -4,7 +4,8 @@ use tauri::State;
 
 use crate::commands::core::personas::BlastRadiusItem;
 use crate::db::models::{
-    CreateCredentialEventInput, CreateCredentialInput, CredentialEvent, PersonaCredential,
+    CreateCredentialEventInput, CreateCredentialInput,
+    CredentialEvent, PersonaCredential,
     UpdateCredentialEventInput, UpdateCredentialInput,
 };
 use crate::db::repos::resources::audit_log;
@@ -404,3 +405,6 @@ pub fn update_credential_field(
     );
     Ok(true)
 }
+
+// ============================================================================
+// Audit Log — moved to intelligence.rs to avoid duplicate tauri::command definitions

@@ -72,12 +72,21 @@ pub async fn create_knowledge_base(
         )?;
     }
 
-    // Create vector index table
+    // Create vector index table — if this fails, clean up the orphaned DB records
     let vs = state
         .vector_store
         .as_ref()
         .ok_or_else(|| AppError::Internal("Vector store not initialized".into()))?;
-    vs.create_index(&id, dims as usize)?;
+    if let Err(e) = vs.create_index(&id, dims as usize) {
+        tracing::error!(error = %e, kb_id = %id, "Vector index creation failed, cleaning up orphaned records");
+        if let Ok(conn) = state.user_db.get() {
+            let _ = conn.execute("DELETE FROM knowledge_bases WHERE id = ?1", params![id]);
+        }
+        if let Ok(conn) = state.db.get() {
+            let _ = conn.execute("DELETE FROM persona_credentials WHERE id = ?1", params![credential_id]);
+        }
+        return Err(e);
+    }
 
     kb_ingest::get_kb(&state.user_db, &id)
 }

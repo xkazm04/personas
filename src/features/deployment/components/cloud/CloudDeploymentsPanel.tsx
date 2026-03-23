@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Rocket, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { Button } from '@/features/shared/components/buttons';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { BUDGET_PRESETS } from './cloudDeploymentHelpers';
@@ -68,9 +69,7 @@ export function CloudDeploymentsPanel({
       {/* Deploy new persona */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className={`text-sm font-medium text-muted-foreground/90 uppercase tracking-wider ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
-            Deploy Persona
-          </h3>
+          <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>Deploy Persona</SectionHeading>
           <Button
             variant="secondary"
             size="xs"
@@ -151,9 +150,7 @@ export function CloudDeploymentsPanel({
         </p>
       ) : (
         <div className="space-y-3">
-          <h3 className={`text-sm font-medium text-muted-foreground/90 uppercase tracking-wider ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
-            Active Deployments ({deployments.length})
-          </h3>
+          <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>Active Deployments ({deployments.length})</SectionHeading>
 
           {deployments.map((d) => (
             <DeploymentCard

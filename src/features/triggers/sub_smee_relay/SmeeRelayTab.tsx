@@ -126,7 +126,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         }`}>
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${
-              activeCount > 0 ? 'bg-emerald-400' : 'bg-muted-foreground/30'
+              activeCount > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/30'
             }`} />
             <span className="text-sm text-foreground/80">
               {activeCount > 0
@@ -311,7 +311,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                       <div className="flex items-center gap-2 mb-1">
                         {/* Status dot */}
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          isActive ? 'bg-emerald-400' : isPaused ? 'bg-amber-400' : 'bg-red-400'
+                          isActive ? 'bg-emerald-400 animate-pulse' : isPaused ? 'bg-amber-400' : 'bg-red-400'
                         }`} />
                         <span className="text-sm font-semibold text-foreground/90 truncate">
                           {relay.label}

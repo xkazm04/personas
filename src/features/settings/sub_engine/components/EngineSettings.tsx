@@ -1,4 +1,5 @@
 import { Cpu, RotateCcw, AlertTriangle, Check, Minus, Lock } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useEngineCapabilities } from '@/hooks/utility/data/useEngineCapabilities';
 import { CLI_OPERATIONS, PROVIDERS } from '../libs/engineCapabilities';
@@ -45,18 +46,18 @@ export default function EngineSettings() {
         <div className="space-y-4">
           {/* Capability matrix */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-                Operation Capability Map
-              </h2>
-              <button
-                onClick={resetToDefaults}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Reset to defaults
-              </button>
-            </div>
+            <SectionHeading
+              title="Operation Capability Map"
+              action={
+                <button
+                  onClick={resetToDefaults}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Reset to defaults
+                </button>
+              }
+            />
 
             {/* Matrix grid */}
             <div className="overflow-x-auto">
@@ -106,7 +107,7 @@ export default function EngineSettings() {
 
           {/* Legend */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-2">
-            <h3 className="text-sm font-mono text-muted-foreground/70 uppercase tracking-wider">Legend</h3>
+            <SectionHeading title="Legend" />
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground/70">
               <span className="flex items-center gap-1.5">
                 <span className="w-4 h-4 rounded bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">

@@ -45,6 +45,8 @@ export interface DataGridProps<T> {
   emptyIcon?: React.ComponentType<{ className?: string }>;
   emptyTitle?: string;
   emptyDescription?: string;
+  /** Optional per-row className (e.g. highlight animations) */
+  getRowClassName?: (row: T) => string;
   /** Optional className for the outer container */
   className?: string;
   /** When true, hides column filters and reduces page size to 5. */
@@ -92,6 +94,7 @@ export function DataGrid<T>({
   emptyIcon: EmptyIcon,
   emptyTitle = 'No data',
   emptyDescription,
+  getRowClassName,
   className,
   simplified = false,
   selectAll,
@@ -231,13 +234,14 @@ export function DataGrid<T>({
       >
         {pageData.map((row, idx) => {
           const accent = getRowAccent?.(row) ?? '';
+          const rowCls = getRowClassName?.(row) ?? '';
           return (
             <motion.div
               key={getRowKey(row)}
               variants={rowVariants}
               {...(idx >= STAGGER_CAP ? { transition: { duration: 0.01 } } : {})}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={`grid gap-0 transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${accent} ${
+              className={`grid gap-0 transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${accent} ${rowCls} ${
                 onRowClick ? 'cursor-pointer' : ''
               } ${idx % 2 === 0 ? 'bg-white/[0.04]' : ''}`}
               style={{ gridTemplateColumns: gridTemplate }}

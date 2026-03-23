@@ -1,3 +1,5 @@
+import { TriggerFieldGroup } from './TriggerFieldGroup';
+
 export interface ClipboardConfigProps {
   clipboardContentType: string;
   setClipboardContentType: (v: string) => void;
@@ -14,8 +16,7 @@ export function ClipboardConfig({
 }: ClipboardConfigProps) {
   return (
     <div className="space-y-3">
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">Content Type</label>
+      <TriggerFieldGroup label="Content Type">
         <div className="flex gap-1.5">
           {(['text', 'image', 'any'] as const).map((ct) => (
             <button
@@ -32,11 +33,11 @@ export function ClipboardConfig({
             </button>
           ))}
         </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Text Pattern <span className="text-muted-foreground/50">(optional regex)</span>
-        </label>
+      </TriggerFieldGroup>
+      <TriggerFieldGroup
+        label={<>Text Pattern <span className="text-muted-foreground/50">(optional regex)</span></>}
+        helpText="Only fires when clipboard text matches this pattern"
+      >
         <input
           type="text"
           value={clipboardPattern}
@@ -44,12 +45,8 @@ export function ClipboardConfig({
           placeholder="e.g. https?://.* or error|exception"
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
         />
-        <p className="text-sm text-muted-foreground/80 mt-1">Only fires when clipboard text matches this pattern</p>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Poll Interval (seconds)
-        </label>
+      </TriggerFieldGroup>
+      <TriggerFieldGroup label="Poll Interval (seconds)">
         <input
           type="number"
           value={clipboardInterval}
@@ -57,7 +54,7 @@ export function ClipboardConfig({
           min="2"
           className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus-ring transition-all"
         />
-      </div>
+      </TriggerFieldGroup>
     </div>
   );
 }

@@ -53,6 +53,52 @@ fn clear_backoff(trigger_id: &str) {
     }
 }
 
+/// Remove backoff entries for trigger IDs that no longer exist in the database.
+/// Called once per poll cycle to prevent unbounded growth when triggers are deleted.
+fn purge_stale_backoff(pool: &DbPool) {
+    let ids: Vec<String> = {
+        let Ok(map) = backoff_map().lock() else { return };
+        if map.is_empty() {
+            return;
+        }
+        map.keys().cloned().collect()
+    };
+
+    // Check which IDs still exist with a single query
+    let existing: std::collections::HashSet<String> = match (|| -> Result<_, crate::error::AppError> {
+        let conn = pool.get()?;
+        let placeholders: Vec<String> = ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+        let sql = format!(
+            "SELECT id FROM persona_triggers WHERE id IN ({})",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| row.get::<_, String>(0))?;
+        let set = rows.filter_map(|r| r.ok()).collect();
+        Ok(set)
+    })() {
+        Ok(set) => set,
+        Err(e) => {
+            tracing::warn!("Failed to check backoff map staleness: {}", e);
+            return;
+        }
+    };
+
+    let stale: Vec<String> = ids.into_iter().filter(|id| !existing.contains(id)).collect();
+    if stale.is_empty() {
+        return;
+    }
+
+    if let Ok(mut map) = backoff_map().lock() {
+        for id in &stale {
+            map.remove(id);
+        }
+    }
+    tracing::debug!(count = stale.len(), "Purged stale backoff entries for deleted triggers");
+}
+
 /// Run one polling cycle: fetch all enabled polling triggers that are due,
 /// GET their configured endpoints, compare content hashes, and fire events
 /// when content changes.
@@ -61,6 +107,9 @@ pub async fn poll_due_triggers(
     scheduler: &SchedulerState,
     http: &reqwest::Client,
 ) {
+    // Sweep backoff entries for triggers that were deleted since the last cycle
+    purge_stale_backoff(pool);
+
     let now = chrono::Utc::now();
     let now_str = now.to_rfc3339();
 

@@ -3,6 +3,7 @@ import type { BuilderState, DryRunResult, DryRunIssue, DryRunProposal } from './
 import { toDesignContext } from './builderReducer';
 import { testDesignFeasibility, type FeasibilityResult } from '@/api/templates/design';
 import { useVaultStore } from "@/stores/vaultStore";
+import { inferIssueSeverity } from "@/lib/errorTaxonomy";
 
 // -- Public interface ------------------------------------------------
 
@@ -97,16 +98,8 @@ function generateProposal(
   return null; // Manual action needed
 }
 
-function inferSeverity(issueText: string, overall: string): DryRunIssue['severity'] {
-  const lower = issueText.toLowerCase();
-  if (overall === 'blocked' || lower.includes('missing') || lower.includes('required') || lower.includes('must')) {
-    return 'error';
-  }
-  if (lower.includes('recommend') || lower.includes('consider') || lower.includes('optional') || lower.includes('suggest')) {
-    return 'info';
-  }
-  return 'warning';
-}
+/** @see {@link inferIssueSeverity} — unified implementation in errorTaxonomy */
+const inferSeverity = inferIssueSeverity;
 
 function mapOverallStatus(overall: string): DryRunResult['status'] {
   const o = overall.toLowerCase();

@@ -138,6 +138,8 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
         cloudOAuthStatus: null,
         cloudPendingOAuthState: null,
         cloudError: null,
+        cloudDeployments: [],
+        cloudBaseUrl: null,
       });
     } catch (err) {
       set({ cloudError: translateCloudError(err) });
@@ -195,11 +197,12 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
   cloudCompleteOAuth: async (code: string, state: string) => {
     try {
       await cloudOAuthCallback(code, state);
-      clearPendingOAuthTimeout();
       set({ cloudPendingOAuthState: null });
       await get().cloudFetchOAuthStatus();
     } catch (err) {
       set({ cloudError: translateCloudError(err) });
+    } finally {
+      clearPendingOAuthTimeout();
     }
   },
 

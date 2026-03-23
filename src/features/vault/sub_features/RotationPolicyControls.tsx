@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Pencil, RotateCw, ShieldCheck, Clock, Plus } from 'lucide-react';
+import { Trash2, Pencil, RotateCw, ShieldCheck, Plus } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { listRotationPolicies } from "@/api/vault/rotation";
 
@@ -9,6 +9,79 @@ import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
 
 const ROTATION_STATUS = STATUS_COLORS.rotation!;
+
+const RING_SIZE = 36;
+const RING_STROKE = 2.5;
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+function RotationCountdownRing({
+  countdown,
+  nextRotationAt,
+  intervalDays,
+}: {
+  countdown: string;
+  nextRotationAt: string;
+  intervalDays: number;
+}) {
+  const totalSeconds = intervalDays * 86400;
+  const remainingSeconds = Math.max(0, (new Date(nextRotationAt).getTime() - Date.now()) / 1000);
+  const fraction = Math.min(1, remainingSeconds / totalSeconds);
+  const dashoffset = RING_CIRCUMFERENCE * (1 - fraction);
+  const cx = RING_SIZE / 2;
+  const cy = RING_SIZE / 2;
+
+  return (
+    <svg
+      width={RING_SIZE}
+      height={RING_SIZE}
+      className="shrink-0"
+      role="img"
+      aria-label={`Rotation in ${countdown}`}
+    >
+      {/* Track */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={RING_RADIUS}
+        fill="none"
+        stroke="currentColor"
+        className="text-cyan-500/10"
+        strokeWidth={RING_STROKE}
+      />
+      {/* Progress arc — starts from 12 o'clock */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={RING_RADIUS}
+        fill="none"
+        stroke="currentColor"
+        className="text-cyan-400"
+        strokeWidth={RING_STROKE}
+        strokeLinecap="round"
+        strokeDasharray={RING_CIRCUMFERENCE}
+        strokeDashoffset={dashoffset}
+        style={{
+          transform: 'rotate(-90deg)',
+          transformOrigin: 'center',
+          transition: 'stroke-dashoffset 0.6s ease',
+        }}
+      />
+      {/* Countdown text centered inside the ring */}
+      <text
+        x={cx}
+        y={cy}
+        textAnchor="middle"
+        dominantBaseline="central"
+        className="fill-muted-foreground/90"
+        style={{ fontSize: '9px', fontFamily: 'ui-monospace, monospace' }}
+      >
+        {countdown}
+      </text>
+    </svg>
+  );
+}
+
 interface RotationPolicyControlsProps {
   credentialId: string;
   rotationStatus: RotationStatus;
@@ -49,11 +122,12 @@ export function RotationPolicyControls({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {rotationCountdown && rotationStatus.policy_enabled && (
-              <span className="flex items-center gap-1 text-sm text-muted-foreground/90 font-mono">
-                <Clock className="w-3 h-3" />
-                {rotationCountdown}
-              </span>
+            {rotationCountdown && rotationStatus.policy_enabled && rotationStatus.next_rotation_at && rotationStatus.rotation_interval_days && (
+              <RotationCountdownRing
+                countdown={rotationCountdown}
+                nextRotationAt={rotationStatus.next_rotation_at}
+                intervalDays={rotationStatus.rotation_interval_days}
+              />
             )}
             <Button
               variant="accent"

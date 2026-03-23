@@ -1,4 +1,5 @@
 import { HardDriveDownload, AlertTriangle } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useDataPortability } from '../libs/useDataPortability';
@@ -30,9 +31,7 @@ export default function DataPortabilitySettings() {
         <div className="space-y-6">
           {/* Workspace overview */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-              Workspace Overview
-            </h2>
+            <SectionHeading title="Workspace Overview" />
 
             {dp.statsStatus === 'loading' && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground/70">

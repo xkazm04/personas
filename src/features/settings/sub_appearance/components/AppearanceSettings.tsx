@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Check, Globe, Palette, Type } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore, THEMES, TEXT_SCALES, customThemeDef } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -123,7 +124,7 @@ export default function AppearanceSettings() {
         <div className="space-y-6">
           {/* Dark themes */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Dark</h2>
+            <SectionHeading title="Dark" />
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {darkWithCustom.map((t) => (
                 <ThemeSwatch
@@ -138,7 +139,7 @@ export default function AppearanceSettings() {
 
           {/* Light themes */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Light</h2>
+            <SectionHeading title="Light" />
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {lightWithCustom.map((t) => (
                 <ThemeSwatch
@@ -156,10 +157,7 @@ export default function AppearanceSettings() {
 
           {/* Text sizing */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <Type className="w-4 h-4 text-muted-foreground/70" />
-              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Text Size</h2>
-            </div>
+            <SectionHeading title="Text Size" icon={<Type />} />
             <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-3">
               {TEXT_SCALES.map((scale) => {
                 const isActive = textScale === scale.id;
@@ -202,10 +200,7 @@ export default function AppearanceSettings() {
 
           {/* Timezone */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <Globe className="w-4 h-4 text-muted-foreground/70" />
-              <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Timezone</h2>
-            </div>
+            <SectionHeading title="Timezone" icon={<Globe />} />
             <p className="text-xs text-muted-foreground/60">
               Controls how schedule times and cron expressions are displayed throughout the app.
             </p>

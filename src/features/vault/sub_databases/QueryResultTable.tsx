@@ -2,7 +2,8 @@ import { useState, useCallback, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 import { silentCatch } from "@/lib/silentCatch";
-import { AlertTriangle, Clock, Copy, Check } from 'lucide-react';
+import { AlertTriangle, Clock, Copy, Check, CheckCircle2 } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 
 const ROW_HEIGHT = 32;
 
@@ -42,9 +43,12 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
 
   if (result.columns.length === 0 && result.rows.length === 0) {
     return (
-      <div className="text-center py-8 text-sm text-muted-foreground/50">
-        Query executed successfully. No rows returned.
-      </div>
+      <EmptyIllustration
+        icon={CheckCircle2}
+        heading="Query executed successfully"
+        description="No rows returned."
+        className="py-8"
+      />
     );
   }
 

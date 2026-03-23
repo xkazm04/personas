@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight as ChevronRightIcon, ScrollText } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { CredentialAuditEntry } from '@/lib/bindings/CredentialAuditEntry';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
@@ -39,8 +40,13 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
 
   if (auditLog.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground/80 py-3 text-center" data-testid="audit-log-empty">
-        No audit entries yet. Operations will be logged as they occur.
+      <div data-testid="audit-log-empty">
+        <EmptyIllustration
+          icon={ScrollText}
+          heading="No audit entries yet"
+          description="Operations will be logged as they occur."
+          className="py-6"
+        />
       </div>
     );
   }

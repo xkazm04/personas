@@ -4,6 +4,7 @@ import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/di
 import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
+import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 
 interface TemplateCardPreviewProps {
   reviewId: string;
@@ -53,9 +54,7 @@ export function TemplateCardPreview({
             {/* Use Cases with Descriptions */}
             {displayFlows.length > 0 && (
               <div>
-                <h5 className="text-xs uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
-                  Use Cases
-                </h5>
+                <SectionLabel as="h5">Use Cases</SectionLabel>
                 <div className="space-y-2">
                   {displayFlows.map((flow) => (
                     <div key={flow.id} className="flex items-start gap-2">
@@ -79,9 +78,7 @@ export function TemplateCardPreview({
             {/* Connector Configuration Status */}
             {connectors.length > 0 && (
               <div>
-                <h5 className="text-xs uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
-                  Connectors
-                </h5>
+                <SectionLabel as="h5">Connectors</SectionLabel>
                 <div className="space-y-1.5">
                   {connectors.map((c) => {
                     const meta = getConnectorMeta(c);
@@ -113,10 +110,10 @@ export function TemplateCardPreview({
             {/* System Prompt Preview */}
             {systemPromptPreview && (
               <div>
-                <h5 className="text-xs uppercase tracking-wider text-muted-foreground/50 font-medium mb-2 flex items-center gap-1.5">
+                <SectionLabel as="h5" className="flex items-center gap-1.5">
                   <FileText className="w-3 h-3" />
                   System Prompt
-                </h5>
+                </SectionLabel>
                 <p className="text-xs text-muted-foreground/60 leading-relaxed bg-primary/3 rounded-lg px-2.5 py-2 font-mono">
                   {systemPromptPreview}
                 </p>

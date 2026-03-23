@@ -911,6 +911,7 @@ pub fn run() {
             commands::credentials::crud::migrate_plaintext_credentials,
             commands::credentials::crud::list_credential_fields,
             commands::credentials::crud::update_credential_field,
+            // Credentials -- Audit Log (registered via intelligence module)
             // Credentials -- Connectors
             commands::credentials::connectors::list_connectors,
             commands::credentials::connectors::get_connector,

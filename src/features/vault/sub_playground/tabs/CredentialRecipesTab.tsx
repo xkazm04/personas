@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Plus, Sparkles } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Button } from '@/features/shared/components/buttons';
 import { AnimatePresence } from 'framer-motion';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
@@ -152,24 +153,22 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
         )}
 
         {recipes.length === 0 && !creating ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 mb-3">
-              <BookOpen className="w-5 h-5 text-primary/60" />
-            </div>
-            <h4 className="text-sm font-medium text-foreground/80 mb-1">No recipes yet</h4>
-            <p className="text-sm text-muted-foreground/60 max-w-[280px]">
-              Create your first recipe by describing what you want to automate with this credential.
-            </p>
-            <Button
-              variant="primary"
-              size="sm"
-              icon={<Sparkles className="w-3.5 h-3.5" />}
-              onClick={() => setCreating(true)}
-              className="mt-4"
-            >
-              Create First Recipe
-            </Button>
-          </div>
+          <EmptyIllustration
+            icon={BookOpen}
+            heading="No recipes yet"
+            description="Create your first recipe by describing what you want to automate with this credential."
+            cta={
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<Sparkles className="w-3.5 h-3.5" />}
+                onClick={() => setCreating(true)}
+              >
+                Create First Recipe
+              </Button>
+            }
+            className="py-16"
+          />
         ) : (
           <div className="space-y-2">
             {recipes.map((recipe) => (

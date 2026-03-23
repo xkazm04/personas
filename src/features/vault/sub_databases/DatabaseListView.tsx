@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Database, Table2, Code2 } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -176,15 +177,13 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center py-20 text-center"
       >
-        <div className="w-14 h-14 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
-          <Database className="w-7 h-7 text-blue-400/60" />
-        </div>
-        <h3 className="text-sm font-medium text-foreground/80 mb-1">No database credentials</h3>
-        <p className="text-sm text-muted-foreground/60 max-w-xs">
-          Add database credentials from the Catalog to manage schemas and run queries.
-        </p>
+        <EmptyIllustration
+          icon={Database}
+          heading="No database credentials"
+          description="Add database credentials from the Catalog to manage schemas and run queries."
+          className="py-20"
+        />
       </motion.div>
     );
   }

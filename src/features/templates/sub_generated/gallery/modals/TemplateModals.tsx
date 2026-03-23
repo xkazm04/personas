@@ -87,12 +87,13 @@ export function TemplateModals({
         <RebuildModal
           isOpen
           onClose={() => modals.close('rebuild')}
-          review={modals.find('rebuild')!.review}
+          review={modals.find('rebuild')?.review ?? null}
           phase={rebuild.phase}
           lines={rebuild.lines}
           error={rebuild.error}
           onStartRebuild={(dir) => {
-            const r = modals.find('rebuild')!.review;
+            const r = modals.find('rebuild')?.review;
+            if (!r) return;
             rebuild.startRebuild(r.id, r.test_case_name, dir);
           }}
           onCancel={() => rebuild.cancelCurrentRebuild()}

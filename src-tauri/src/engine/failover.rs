@@ -43,23 +43,15 @@ const TRANSITION_HISTORY_CAPACITY: usize = 50;
 const TRIP_COUNT_WINDOW: Duration = Duration::from_secs(3600);
 
 // =============================================================================
-// Error classification
+// Error classification (delegated to unified error_taxonomy)
 // =============================================================================
 
-/// Classifies an execution error to determine if failover should be attempted.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FailoverReason {
-    /// Provider binary not found (ENOENT).
-    ProviderNotFound,
-    /// Rate limit / session limit / quota exceeded.
-    RateLimited,
-    /// Execution timed out.
-    Timeout,
-}
+use super::error_taxonomy::{self, ErrorCategory};
+
+/// Legacy alias — use [`ErrorCategory`] directly in new code.
+pub type FailoverReason = ErrorCategory;
 
 /// Counter for errors that did not match any known failover pattern.
-/// Gives operators a signal about how many errors are falling through
-/// classification without needing an external metrics crate.
 static FAILOVER_UNCLASSIFIED_ERRORS: AtomicU64 = AtomicU64::new(0);
 
 /// Returns the cumulative count of errors that `classify_error` could not
@@ -70,38 +62,23 @@ pub fn unclassified_error_count() -> u64 {
 }
 
 /// Check if an error message indicates a retryable failure that should trigger failover.
-pub fn classify_error(error: &str) -> Option<FailoverReason> {
-    let lower = error.to_lowercase();
+///
+/// Returns `Some(ErrorCategory)` for failover-eligible errors, `None` otherwise.
+pub fn classify_error(error: &str) -> Option<ErrorCategory> {
+    let category = error_taxonomy::classify_error_str(error);
 
-    // Binary not found
-    if lower.contains("not found") && (lower.contains("install") || lower.contains("spawn")) {
-        return Some(FailoverReason::ProviderNotFound);
+    if error_taxonomy::is_failover_eligible(&category) {
+        return Some(category);
     }
 
-    // Rate / session / quota limits
-    if lower.contains("rate limit")
-        || lower.contains("session limit")
-        || lower.contains("usage limit")
-        || lower.contains("quota exceeded")
-        || lower.contains("too many requests")
-        || lower.contains("429")
-    {
-        return Some(FailoverReason::RateLimited);
-    }
-
-    // Timeout
-    if lower.contains("timed out") {
-        return Some(FailoverReason::Timeout);
-    }
-
-    // No known pattern matched — log for observability so operators can
-    // identify new error categories that should be added.
+    // No known failover pattern matched — log for observability.
     let count = FAILOVER_UNCLASSIFIED_ERRORS.fetch_add(1, Ordering::Relaxed) + 1;
     tracing::debug!(
         event = "failover.unclassified_error",
         error = %error,
+        category = ?category,
         cumulative_count = count,
-        "Unclassified error — failover will not be attempted",
+        "Error not eligible for failover",
     );
 
     None
@@ -659,26 +636,26 @@ mod tests {
     fn test_classify_error_not_found() {
         assert_eq!(
             classify_error("Claude Code not found. Please install it or select a different engine in Settings."),
-            Some(FailoverReason::ProviderNotFound),
+            Some(ErrorCategory::ProviderNotFound),
         );
         assert_eq!(
             classify_error("Failed to spawn CLI: not found"),
-            Some(FailoverReason::ProviderNotFound),
+            Some(ErrorCategory::ProviderNotFound),
         );
     }
 
     #[test]
     fn test_classify_error_rate_limit() {
-        assert_eq!(classify_error("rate limit exceeded"), Some(FailoverReason::RateLimited));
-        assert_eq!(classify_error("Session limit reached"), Some(FailoverReason::RateLimited));
-        assert_eq!(classify_error("Usage Limit: quota exceeded"), Some(FailoverReason::RateLimited));
-        assert_eq!(classify_error("Too many requests, slow down"), Some(FailoverReason::RateLimited));
-        assert_eq!(classify_error("HTTP 429: rate limited"), Some(FailoverReason::RateLimited));
+        assert_eq!(classify_error("rate limit exceeded"), Some(ErrorCategory::RateLimit));
+        assert_eq!(classify_error("Session limit reached"), Some(ErrorCategory::SessionLimit));
+        assert_eq!(classify_error("Usage Limit: quota exceeded"), Some(ErrorCategory::RateLimit));
+        assert_eq!(classify_error("Too many requests, slow down"), Some(ErrorCategory::RateLimit));
+        assert_eq!(classify_error("HTTP 429: rate limited"), Some(ErrorCategory::RateLimit));
     }
 
     #[test]
     fn test_classify_error_timeout() {
-        assert_eq!(classify_error("Execution timed out after 300s"), Some(FailoverReason::Timeout));
+        assert_eq!(classify_error("Execution timed out after 300s"), Some(ErrorCategory::Timeout));
     }
 
     #[test]
@@ -690,10 +667,9 @@ mod tests {
     #[test]
     fn test_unclassified_error_counter_increments() {
         let before = unclassified_error_count();
-        classify_error("503 service unavailable");
-        classify_error("billing suspended");
+        classify_error("some billing issue suspended");
         let after = unclassified_error_count();
-        assert!(after >= before + 2, "unclassified counter should increment for unknown patterns");
+        assert!(after >= before + 1, "unclassified counter should increment for unknown patterns");
     }
 
     #[test]

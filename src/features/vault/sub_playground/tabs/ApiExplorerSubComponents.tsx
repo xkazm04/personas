@@ -1,4 +1,5 @@
 import { Upload, FileText, Globe, X, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { RequestBuilder } from '../RequestBuilder';
@@ -10,34 +11,33 @@ import type { ApiEndpoint, ApiProxyResponse } from '@/api/system/apiProxy';
 
 export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPaste: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 space-y-4">
-      <Globe className="w-10 h-10 text-muted-foreground/50" />
-      <div className="text-center space-y-1">
-        <p className="text-sm text-muted-foreground/70">No API endpoints loaded</p>
-        <p className="text-sm text-muted-foreground/50">
-          Upload an OpenAPI/Swagger spec to explore and test API endpoints.
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="accent"
-          size="sm"
-          icon={<Upload className="w-3.5 h-3.5" />}
-          onClick={onUpload}
-          className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
-        >
-          Upload Spec File
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={<FileText className="w-3.5 h-3.5" />}
-          onClick={onPaste}
-        >
-          Paste OpenAPI
-        </Button>
-      </div>
-    </div>
+    <EmptyIllustration
+      icon={Globe}
+      heading="No API endpoints loaded"
+      description="Upload an OpenAPI/Swagger spec to explore and test API endpoints."
+      cta={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="accent"
+            size="sm"
+            icon={<Upload className="w-3.5 h-3.5" />}
+            onClick={onUpload}
+            className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
+          >
+            Upload Spec File
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<FileText className="w-3.5 h-3.5" />}
+            onClick={onPaste}
+          >
+            Paste OpenAPI
+          </Button>
+        </div>
+      }
+      className="py-16"
+    />
   );
 }
 

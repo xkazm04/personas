@@ -6,6 +6,7 @@ import { TRIGGER_ICONS } from './templateCardTypes';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
+import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 
 interface TemplateCardBodyProps {
   connectors: string[];
@@ -51,9 +52,7 @@ export function TemplateCardBody({
       <div className="hidden md:grid px-4 py-4 md:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 border-t border-primary/5">
         {/* Use Cases */}
         <div className="min-w-0">
-          <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
-            Use Cases
-          </h4>
+          <SectionLabel>Use Cases</SectionLabel>
           {displayFlows.length > 0 ? (
             <div className="space-y-1.5">
               {displayFlows.slice(0, 4).map((flow) => (
@@ -84,9 +83,7 @@ export function TemplateCardBody({
 
         {/* Connectors */}
         <div className="min-w-0">
-          <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
-            Connectors
-          </h4>
+          <SectionLabel>Connectors</SectionLabel>
           {connectors.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {connectors.map((c) => {
@@ -115,9 +112,7 @@ export function TemplateCardBody({
 
         {/* Triggers */}
         <div className="min-w-0">
-          <h4 className="text-sm uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
-            Triggers
-          </h4>
+          <SectionLabel>Triggers</SectionLabel>
           {(triggerTypes.length > 0 || suggestedTriggers.length > 0) ? (
             <div className="space-y-1.5">
               {(suggestedTriggers.length > 0 ? suggestedTriggers : triggerTypes.map((t) => ({ trigger_type: t, description: t, config: {} }))).slice(0, 3).map((trigger, i) => {

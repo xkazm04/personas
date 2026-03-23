@@ -1,20 +1,10 @@
-import { lazy, Suspense, useState, startTransition } from 'react';
+import { Suspense, useState, startTransition } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, BarChart3, Radio } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import DashboardHome from '@/features/overview/components/dashboard/DashboardHome';
-
-/** Lazy with one automatic retry — handles transient network / HMR failures. */
-function lazyRetry<T extends { default: React.ComponentType<any> }>(
-  importFn: () => Promise<T>,
-): React.LazyExoticComponent<T['default']> {
-  return lazy(() =>
-    importFn().catch(() =>
-      new Promise<T>((resolve) => setTimeout(() => resolve(importFn()), 1500))
-    )
-  );
-}
+import { lazyRetry } from '@/lib/lazyRetry';
 
 // DashboardHome is the default view -- keep it eager for instant first paint.
 // Analytics (recharts-heavy) and Realtime (d3/svg-heavy) are lazy.
@@ -71,12 +61,14 @@ export default function DashboardWithSubtabs() {
           className="flex-1 min-h-0 flex flex-col"
         >
           {subtab === 'overview' ? (
-            <DashboardHome />
+            <ErrorBoundary name="Dashboard/overview">
+              <DashboardHome />
+            </ErrorBoundary>
           ) : (
             <ErrorBoundary name={`Dashboard/${subtab}`}>
-            <Suspense fallback={null}>
-              {subtab === 'analytics' ? <AnalyticsDashboard /> : <RealtimeVisualizerPage />}
-            </Suspense>
+              <Suspense fallback={null}>
+                {subtab === 'analytics' ? <AnalyticsDashboard /> : <RealtimeVisualizerPage />}
+              </Suspense>
             </ErrorBoundary>
           )}
         </motion.div>

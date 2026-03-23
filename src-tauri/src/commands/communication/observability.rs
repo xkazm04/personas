@@ -28,6 +28,7 @@ pub fn get_metrics_summary(
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
     let start = std::time::Instant::now();
+    let days = days.map(|d| d.clamp(1, 365));
     let result = repo::get_summary(&state.db, days, persona_id.as_deref());
     info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_metrics_summary");
     result
@@ -42,6 +43,7 @@ pub fn get_metrics_chart_data(
 ) -> Result<MetricsChartData, AppError> {
     require_auth_sync(&state)?;
     let start = std::time::Instant::now();
+    let days = days.map(|d| d.clamp(1, 365));
     let result = repo::get_chart_data(&state.db, days, persona_id.as_deref());
     info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_metrics_chart_data");
     result
@@ -85,7 +87,7 @@ pub fn get_all_monthly_spend(
             name: row.get(3)?,
         })
     })?;
-    let result: Vec<PersonaMonthlySpend> = rows.filter_map(|r| r.ok()).collect();
+    let result: Vec<PersonaMonthlySpend> = rows.collect::<Result<Vec<_>, _>>()?;
     info!(duration_ms = start.elapsed().as_millis() as u64, rows = result.len(), "cmd::get_all_monthly_spend");
     Ok(result)
 }
@@ -105,7 +107,7 @@ pub fn get_prompt_performance(
 ) -> Result<PromptPerformanceData, AppError> {
     require_auth_sync(&state)?;
     let start = std::time::Instant::now();
-    let result = repo::get_prompt_performance(&state.db, &persona_id, days.unwrap_or(30));
+    let result = repo::get_prompt_performance(&state.db, &persona_id, days.unwrap_or(30).clamp(1, 365));
     info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_prompt_performance");
     result
 }
@@ -125,7 +127,7 @@ pub fn get_execution_dashboard(
 ) -> Result<ExecutionDashboardData, AppError> {
     require_auth_sync(&state)?;
     let start = std::time::Instant::now();
-    let result = repo::get_execution_dashboard(&state.db, days.unwrap_or(30));
+    let result = repo::get_execution_dashboard(&state.db, days.unwrap_or(30).clamp(1, 365));
     info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_execution_dashboard");
     result
 }

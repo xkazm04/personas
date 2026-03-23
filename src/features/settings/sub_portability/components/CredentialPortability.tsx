@@ -8,6 +8,7 @@ import {
   Check,
   AlertTriangle,
 } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialImportResult } from '@/api/system/dataPortability';
 
@@ -65,9 +66,7 @@ export function CredentialPortability({
 
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-      <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-        Credential Vault
-      </h2>
+      <SectionHeading title="Credential Vault" />
       <div className="flex items-start gap-2 text-sm text-muted-foreground/70">
         <ShieldCheck className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400/70" />
         <p>

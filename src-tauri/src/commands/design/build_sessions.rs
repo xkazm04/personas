@@ -580,6 +580,30 @@ pub async fn promote_build_draft_inner(
     }
 
     // ================================================================
+    // Auto-create full persona version snapshot on promote
+    // ================================================================
+    {
+        use crate::db::repos::execution::metrics::{self as metrics_repo, VersionSnapshotFields};
+        let sp_str = ir_structured_prompt.and_then(|v| serde_json::to_string(v).ok());
+        let design_ctx_str = serde_json::to_string(&design_context).ok();
+        let design_result_str = serde_json::to_string(&design_result).ok();
+        let _ = metrics_repo::create_prompt_version_with_snapshot(
+            &state.db,
+            &persona_id,
+            sp_str,
+            ir_system_prompt.map(|s| s.to_string()),
+            Some("Promoted from PersonaMatrix build".to_string()),
+            VersionSnapshotFields {
+                design_context: design_ctx_str,
+                last_design_result: design_result_str,
+                resolved_cells: Some(session.resolved_cells.clone()),
+                icon: ir_icon.map(|s| s.to_string()),
+                color: ir_color.map(|s| s.to_string()),
+            },
+        );
+    }
+
+    // ================================================================
     // Identify connectors needing credential setup
     // ================================================================
     if let Some(connectors) = agent_ir.get("required_connectors").and_then(|v| v.as_array()) {

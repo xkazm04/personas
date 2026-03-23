@@ -1,4 +1,5 @@
 import { Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import type { RoutingRule, TaskComplexity } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, COMPLEXITY_OPTIONS } from '../libs/byomHelpers';
 
@@ -13,23 +14,21 @@ export function ByomRoutingRules({ rules, onAdd, onUpdate, onRemove }: ByomRouti
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-              Cost-Optimized Routing Rules
-            </h2>
-            <p className="text-sm text-muted-foreground/60 mt-1">
-              Route tasks to specific providers/models based on complexity level
-            </p>
-          </div>
-          <button
-            onClick={onAdd}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Rule
-          </button>
-        </div>
+        <SectionHeading
+          title="Cost-Optimized Routing Rules"
+          action={
+            <button
+              onClick={onAdd}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Rule
+            </button>
+          }
+        />
+        <p className="text-sm text-muted-foreground/60 mt-1">
+          Route tasks to specific providers/models based on complexity level
+        </p>
 
         {rules.length === 0 ? (
           <p className="text-sm text-muted-foreground/50 text-center py-6">

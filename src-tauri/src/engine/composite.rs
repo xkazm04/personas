@@ -135,8 +135,8 @@ pub fn composite_tick(pool: &DbPool) {
     // Load recent events within the max window
     let since = (Utc::now() - Duration::seconds(max_window as i64)).to_rfc3339();
     let until = Utc::now().to_rfc3339();
-    let recent_events = match event_repo::get_in_range(pool, &since, &until) {
-        Ok(events) => events,
+    let recent_events = match event_repo::get_in_range(pool, &since, &until, None) {
+        Ok((events, _)) => events,
         Err(_) => return,
     };
 

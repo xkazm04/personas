@@ -522,14 +522,21 @@ pub async fn execute_api_request(
 
     let start = Instant::now();
 
-    let mut request = match method.to_uppercase().as_str() {
+    let upper_method = method.to_uppercase();
+    let mut request = match upper_method.as_str() {
+        "GET" => client.get(&full_url),
         "POST" => client.post(&full_url),
         "PUT" => client.put(&full_url),
         "PATCH" => client.patch(&full_url),
         "DELETE" => client.delete(&full_url),
         "HEAD" => client.head(&full_url),
         "OPTIONS" => client.request(reqwest::Method::OPTIONS, &full_url),
-        _ => client.get(&full_url),
+        other => {
+            return Err(AppError::Validation(format!(
+                "Unsupported HTTP method '{}'. Supported methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS",
+                other,
+            )));
+        }
     };
 
     // Apply custom headers, validating names and blocking sensitive ones

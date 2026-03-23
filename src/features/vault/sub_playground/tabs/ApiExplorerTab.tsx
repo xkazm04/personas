@@ -1,4 +1,5 @@
-import { Upload, FileText, Globe, Search, X, PlayCircle, Square } from 'lucide-react';
+import { Upload, FileText, Globe, Search, SearchX, X, PlayCircle, Square } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Button } from '@/features/shared/components/buttons';
 import { EndpointRow } from '../EndpointRow';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
@@ -143,9 +144,12 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
                 />
               ))}
               {state.filtered.length === 0 && (
-                <p className="text-sm text-muted-foreground/60 text-center py-4">
-                  No endpoints match "{state.search}"
-                </p>
+                <EmptyIllustration
+                  icon={SearchX}
+                  heading={`No endpoints match "${state.search}"`}
+                  description="Try a different search term or clear your filter."
+                  className="py-4"
+                />
               )}
             </div>
 

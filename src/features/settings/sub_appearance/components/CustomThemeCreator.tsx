@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Paintbrush, Sun, Moon, ChevronRight, RotateCcw } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore } from '@/stores/themeStore';
 import type { CustomThemeConfig } from '@/stores/themeStore';
 import { deriveCustomThemeVars } from '@/lib/theme/deriveCustomTheme';
@@ -93,13 +94,13 @@ export default function CustomThemeCreator() {
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-5">
       {/* Header */}
-      <div className="flex items-center gap-2.5">
-        <Paintbrush className="w-4 h-4 text-muted-foreground/70" />
-        <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">Custom Theme</h2>
-        {isActiveCustom && (
+      <SectionHeading
+        title="Custom Theme"
+        icon={<Paintbrush />}
+        action={isActiveCustom ? (
           <span className="text-[10px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">Active</span>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       <p className="text-xs text-muted-foreground/60">
         Choose a primary color to auto-derive all others, or override individual colors for full control.

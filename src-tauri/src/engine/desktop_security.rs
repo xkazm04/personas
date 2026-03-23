@@ -282,13 +282,15 @@ impl DesktopApprovalStore {
             }
         }
 
-        *self.approved.write().unwrap() = map;
+        *self.approved.write().map_err(|e| {
+            AppError::Internal(format!("Approval store RwLock poisoned on load: {e}"))
+        })? = map;
         Ok(())
     }
 
     /// Check if all required capabilities for a connector are approved.
     pub fn is_fully_approved(&self, manifest: &DesktopConnectorManifest) -> bool {
-        let guard = self.approved.read().unwrap();
+        let guard = self.approved.read().unwrap_or_else(|e| e.into_inner());
         if let Some(approved_caps) = guard.get(&manifest.connector_id) {
             manifest.capabilities.iter().all(|c| approved_caps.contains(c))
         } else {
@@ -301,7 +303,7 @@ impl DesktopApprovalStore {
         &self,
         manifest: &DesktopConnectorManifest,
     ) -> Vec<DesktopCapability> {
-        let guard = self.approved.read().unwrap();
+        let guard = self.approved.read().unwrap_or_else(|e| e.into_inner());
         let approved_caps = guard.get(&manifest.connector_id);
         manifest
             .capabilities
@@ -336,7 +338,9 @@ impl DesktopApprovalStore {
         }
 
         // Update in-memory cache
-        let mut guard = self.approved.write().unwrap();
+        let mut guard = self.approved.write().map_err(|e| {
+            AppError::Internal(format!("Approval store RwLock poisoned on approve: {e}"))
+        })?;
         let entry = guard.entry(connector_id.to_string()).or_default();
         for cap in capabilities {
             entry.insert(cap.clone());
@@ -365,7 +369,9 @@ impl DesktopApprovalStore {
         )
         .map_err(|e| AppError::Internal(format!("Failed to revoke approvals: {e}")))?;
 
-        self.approved.write().unwrap().remove(connector_id);
+        self.approved.write().map_err(|e| {
+            AppError::Internal(format!("Approval store RwLock poisoned on revoke: {e}"))
+        })?.remove(connector_id);
 
         tracing::info!(connector_id, "Desktop connector approvals revoked");
         Ok(())
@@ -512,7 +518,7 @@ pub fn check_permission(
         )));
     }
 
-    let guard = store.approved.read().unwrap();
+    let guard = store.approved.read().unwrap_or_else(|e| e.into_inner());
     let is_approved = guard
         .get(&manifest.connector_id)
         .is_some_and(|set| set.contains(capability));

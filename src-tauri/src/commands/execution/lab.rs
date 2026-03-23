@@ -583,12 +583,20 @@ pub fn lab_rollback_version(
 
     let conn = state.db.get()?;
     let now = chrono::Utc::now().to_rfc3339();
-    // Apply both fields atomically — if a field is None in the version,
-    // explicitly clear it on the persona to avoid a hybrid state where
-    // structured_prompt comes from one version and system_prompt from another.
+    // Apply full persona snapshot atomically — restores prompts, design data, icon, and color.
     conn.execute(
-        "UPDATE personas SET structured_prompt = ?1, system_prompt = COALESCE(?2, ''), updated_at = ?3 WHERE id = ?4",
-        rusqlite::params![version.structured_prompt, version.system_prompt, now, version.persona_id],
+        "UPDATE personas SET
+         structured_prompt = ?1, system_prompt = COALESCE(?2, ''),
+         design_context = COALESCE(?5, design_context),
+         last_design_result = COALESCE(?6, last_design_result),
+         icon = COALESCE(?7, icon),
+         color = COALESCE(?8, color),
+         updated_at = ?3
+         WHERE id = ?4",
+        rusqlite::params![
+            version.structured_prompt, version.system_prompt, now, version.persona_id,
+            version.design_context, version.last_design_result, version.icon, version.color,
+        ],
     )?;
 
     if let Ok(Some(current_prod)) = metrics_repo::get_production_version(&state.db, &version.persona_id) {

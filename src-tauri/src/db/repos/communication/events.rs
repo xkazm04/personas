@@ -282,15 +282,24 @@ pub fn get_in_range(
     pool: &DbPool,
     since: &str,
     until: &str,
-) -> Result<Vec<PersonaEvent>, AppError> {
+    limit: Option<i64>,
+) -> Result<(Vec<PersonaEvent>, bool), AppError> {
+    let limit = limit.unwrap_or(1000).max(1);
+    let fetch = limit + 1; // fetch one extra to detect has_more
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT * FROM persona_events
          WHERE created_at >= ?1 AND created_at <= ?2
-         ORDER BY created_at ASC",
+         ORDER BY created_at ASC
+         LIMIT ?3",
     )?;
-    let rows = stmt.query_map(params![since, until], row_to_event)?;
-    Ok(collect_rows(rows, "get_in_range"))
+    let rows = stmt.query_map(params![since, until, fetch], row_to_event)?;
+    let mut events = collect_rows(rows, "get_in_range");
+    let has_more = events.len() as i64 > limit;
+    if has_more {
+        events.truncate(limit as usize);
+    }
+    Ok((events, has_more))
 }
 
 pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppError> {
@@ -343,6 +352,33 @@ pub fn get_subscriptions_by_persona(
     )?;
     let rows = stmt.query_map(params![persona_id], row_to_subscription)?;
     Ok(collect_rows(rows, "get_subscriptions_by_persona"))
+}
+
+/// Bulk-fetch subscriptions for multiple persona IDs in a single query.
+pub fn get_subscriptions_by_persona_ids(
+    pool: &DbPool,
+    persona_ids: &[String],
+) -> Result<Vec<PersonaEventSubscription>, AppError> {
+    if persona_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+    let placeholders: Vec<String> = persona_ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let sql = format!(
+        "SELECT * FROM persona_event_subscriptions WHERE persona_id IN ({}) ORDER BY created_at DESC",
+        placeholders.join(", ")
+    );
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
+    Ok(collect_rows(rows, "get_subscriptions_by_persona_ids"))
 }
 
 pub fn get_all_subscriptions(

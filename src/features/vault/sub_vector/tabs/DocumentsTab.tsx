@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Trash2, Upload, FolderOpen, Type, RefreshCw, AlertCircle } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import type { KnowledgeBase, KbDocument } from '@/api/vault/database/vectorKb';
 import { kbListDocuments, kbDeleteDocument } from '@/api/vault/database/vectorKb';
 import { IngestDropZone } from '../ingest/IngestDropZone';
@@ -122,15 +123,12 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
 
         {!loading && documents.length === 0 && !error && (
           <IngestDropZone kbId={kb.id} onIngestStarted={handleIngestStarted}>
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-14 h-14 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
-                <Upload className="w-7 h-7 text-violet-400/60" />
-              </div>
-              <h3 className="text-sm font-medium text-foreground/80 mb-1">No documents yet</h3>
-              <p className="text-sm text-muted-foreground/60 max-w-sm">
-                Drop files here, paste text, or scan a directory to start building your knowledge base.
-              </p>
-            </div>
+            <EmptyIllustration
+              icon={Upload}
+              heading="No documents yet"
+              description="Drop files here, paste text, or scan a directory to start building your knowledge base."
+              className="py-20"
+            />
           </IngestDropZone>
         )}
 

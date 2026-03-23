@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Key, LayoutTemplate, Sparkles, Plug, ArrowRight, Globe } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -25,12 +26,12 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
       className="space-y-4"
     >
       {/* Heading */}
-      <div className="text-center pt-6 pb-2">
-        <div className="w-12 h-12 mx-auto rounded-xl bg-secondary/60 border border-primary/15 flex items-center justify-center mb-3">
-          <Key className="w-6 h-6 text-muted-foreground/90" />
-        </div>
-        <h3 className="text-sm font-medium text-foreground/90">Connect your first service</h3>
-        <p className="text-sm text-muted-foreground/80 mt-1">Choose how you want to add a credential</p>
+      <div className="pt-6 pb-2">
+        <EmptyIllustration
+          icon={Key}
+          heading="Connect your first service"
+          description="Choose how you want to add a credential"
+        />
       </div>
 
       {/* Two pathway cards */}

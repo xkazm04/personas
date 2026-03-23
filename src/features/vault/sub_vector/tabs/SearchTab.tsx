@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, FileText, Clock, ArrowRight } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import type { KnowledgeBase, VectorSearchResult } from '@/api/vault/database/vectorKb';
 import { kbSearch } from '@/api/vault/database/vectorKb';
 import { SearchResultCard } from '../search/SearchResultCard';
@@ -113,20 +114,21 @@ export function SearchTab({ kb }: SearchTabProps) {
         )}
 
         {results === null && !error && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Search className="w-10 h-10 text-violet-400/20 mb-3" />
-            <p className="text-sm text-muted-foreground/50">
-              Search your knowledge base using natural language
-            </p>
-          </div>
+          <EmptyIllustration
+            icon={Search}
+            heading="Search your knowledge base"
+            description="Use natural language to find relevant content across your documents."
+            className="py-20"
+          />
         )}
 
         {results !== null && results.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <FileText className="w-10 h-10 text-muted-foreground/20 mb-3" />
-            <p className="text-sm text-muted-foreground/50">No results found</p>
-            <p className="text-xs text-muted-foreground/40 mt-1">Try rephrasing your query</p>
-          </div>
+          <EmptyIllustration
+            icon={FileText}
+            heading="No results found"
+            description="Try rephrasing your query or using different keywords."
+            className="py-20"
+          />
         )}
 
         {results !== null && results.length > 0 && (

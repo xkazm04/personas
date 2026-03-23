@@ -41,6 +41,17 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_lab_ratings_run ON lab_user_ratings(run_id);"
     )?;
 
+    // -- Extend persona_prompt_versions with full persona snapshot fields ------
+    for col in &[
+        "ALTER TABLE persona_prompt_versions ADD COLUMN design_context TEXT;",
+        "ALTER TABLE persona_prompt_versions ADD COLUMN last_design_result TEXT;",
+        "ALTER TABLE persona_prompt_versions ADD COLUMN resolved_cells TEXT;",
+        "ALTER TABLE persona_prompt_versions ADD COLUMN icon TEXT;",
+        "ALTER TABLE persona_prompt_versions ADD COLUMN color TEXT;",
+    ] {
+        let _ = conn.execute_batch(col); // ignore "duplicate column" errors
+    }
+
     tracing::info!("Database migrations complete");
     Ok(())
 }

@@ -9,6 +9,8 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
 
+use chrono::DateTime;
+
 use crate::cloud::client::CloudClient;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
@@ -141,10 +143,21 @@ pub async fn cloud_webhook_relay_tick(
                     None => continue,
                 };
 
-                // Skip firings we've already processed
+                // Skip firings we've already processed (parse to DateTime
+                // so different ISO 8601 representations compare correctly)
                 if let Some(ref cutoff_ts) = cutoff {
-                    if fired_at <= *cutoff_ts {
-                        continue;
+                    match (
+                        DateTime::parse_from_rfc3339(&fired_at),
+                        DateTime::parse_from_rfc3339(cutoff_ts),
+                    ) {
+                        (Ok(f), Ok(c)) if f <= c => continue,
+                        (Err(_), _) | (_, Err(_)) => {
+                            // Unparseable timestamp — fall back to string comparison
+                            if fired_at <= *cutoff_ts {
+                                continue;
+                            }
+                        }
+                        _ => {} // fired_at > cutoff — process it
                     }
                 }
 

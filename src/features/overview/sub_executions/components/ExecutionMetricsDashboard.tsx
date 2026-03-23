@@ -4,6 +4,7 @@ import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRang
 import { CompareToggle } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { useExecutionMetrics } from '../libs/useExecutionMetrics';
 import { fmtCost, fmtMs } from '../libs/executionMetricsHelpers';
+import { SUMMARY_GRID } from '@/features/overview/utils/dashboardGrid';
 import { SummaryCard, AnomalyBadge } from './MetricsCards';
 import { MetricsCharts } from './MetricsCharts';
 
@@ -46,7 +47,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 md:p-6 xl:p-8 space-y-4">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6 xl:p-8 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -67,7 +68,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className={SUMMARY_GRID}>
         <SummaryCard icon={Zap} label="Total Executions" value={m.data.total_executions.toLocaleString()} color="blue" numericValue={m.data.total_executions} formatFn={(v) => Math.round(v).toLocaleString()} />
         <SummaryCard icon={DollarSign} label="Total Cost" value={fmtCost(m.data.total_cost)} color="violet" numericValue={m.data.total_cost} formatFn={fmtCost} />
         <SummaryCard icon={CheckCircle} label="Success Rate" value={`${m.overallSuccessRatePct.toFixed(1)}%`} color="emerald" numericValue={m.overallSuccessRatePct} formatFn={(v) => `${v.toFixed(1)}%`} />

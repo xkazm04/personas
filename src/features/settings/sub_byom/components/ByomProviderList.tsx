@@ -1,5 +1,6 @@
 import type { ByomPolicy, ProviderUsageStats } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, ENGINE_LABELS } from '../libs/byomHelpers';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 
 interface ByomProviderListProps {
   policy: ByomPolicy;
@@ -12,9 +13,7 @@ export function ByomProviderList({ policy, usageStats, toggleProvider }: ByomPro
     <div className="space-y-4">
       {/* Allowed providers */}
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
-        <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-          Allowed Providers
-        </h2>
+        <SectionHeading title="Allowed Providers" />
         <p className="text-sm text-muted-foreground/60">
           Select which providers your organization approves. Leave empty to allow all.
         </p>
@@ -41,9 +40,7 @@ export function ByomProviderList({ policy, usageStats, toggleProvider }: ByomPro
 
       {/* Blocked providers */}
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
-        <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-          Blocked Providers
-        </h2>
+        <SectionHeading title="Blocked Providers" />
         <p className="text-sm text-muted-foreground/60">
           Explicitly block specific providers. Takes precedence over allowed list.
         </p>
@@ -71,9 +68,7 @@ export function ByomProviderList({ policy, usageStats, toggleProvider }: ByomPro
       {/* Usage stats summary */}
       {usageStats.length > 0 && (
         <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
-          <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-            Provider Usage
-          </h2>
+          <SectionHeading title="Provider Usage" />
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {usageStats.map((stat) => (
               <div key={stat.engine_kind} className="p-3 rounded-lg border border-primary/10 bg-secondary/20">

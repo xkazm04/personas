@@ -6,7 +6,7 @@
 //! Records per-refresh metrics (predicted vs actual lifetime, fallback usage,
 //! failure rates) to the `oauth_token_metrics` table for observability.
 
-use crate::db::repos::resources::credentials as cred_repo;
+use crate::db::repos::resources::{audit_log, credentials as cred_repo};
 use crate::db::repos::resources::oauth_token_metrics as metrics_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -178,6 +178,7 @@ pub async fn refresh_single_credential(
     cred: &crate::db::models::PersonaCredential,
 ) -> Result<String, AppError> {
     let fields = cred_repo::get_decrypted_fields(pool, cred)?;
+    let _ = audit_log::log_decrypt(pool, &cred.id, &cred.name, "oauth_refresh", None, None);
 
     // Must have a refresh_token to refresh
     let has_refresh = fields.contains_key("refresh_token") || fields.contains_key("refreshToken");

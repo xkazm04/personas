@@ -1,0 +1,11 @@
+/** Shared grid class tokens for all dashboard views.
+ *  Keeps visual rhythm consistent across Home, Analytics, and Executions subtabs. */
+
+/** Standard breakpoint-aware grid for chart panels. */
+export const DASHBOARD_GRID = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4';
+
+/** Grid for stat / summary cards (compact 2-up on mobile, 4-up on md+). */
+export const SUMMARY_GRID = 'grid grid-cols-2 md:grid-cols-4 gap-3';
+
+/** Column span for the "major" child inside DASHBOARD_GRID (e.g. RecentActivityList). */
+export const DASHBOARD_GRID_SPAN_MAJOR = 'md:col-span-1 xl:col-span-2';

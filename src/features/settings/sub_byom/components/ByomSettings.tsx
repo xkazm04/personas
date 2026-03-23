@@ -1,5 +1,7 @@
-import { Network, Shield, Route, ScrollText, ToggleLeft, ToggleRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Network, Shield, Route, ScrollText } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useByomSettings } from '../libs/useByomSettings';
 import type { ByomSection } from '../libs/useByomSettings';
 import { ByomProviderList } from './ByomProviderList';
@@ -70,12 +72,11 @@ export default function ByomSettings() {
                   When enabled, provider selection follows your configured rules
                 </p>
               </div>
-              <button onClick={bm.toggleEnabled} className="text-foreground">
-                {bm.policy.enabled
-                  ? <ToggleRight className="w-8 h-8 text-emerald-400" />
-                  : <ToggleLeft className="w-8 h-8 text-muted-foreground/50" />
-                }
-              </button>
+              <AccessibleToggle
+                checked={bm.policy.enabled}
+                onChange={bm.toggleEnabled}
+                label="BYOM policy enforcement"
+              />
             </div>
           </div>
 
@@ -85,14 +86,23 @@ export default function ByomSettings() {
               <button
                 key={tab.id}
                 onClick={() => bm.setActiveSection(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-xl transition-colors ${
+                className={`relative flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-xl transition-colors ${
                   bm.activeSection === tab.id
-                    ? 'bg-primary/15 text-foreground border border-primary/20'
+                    ? 'text-foreground'
                     : 'text-muted-foreground hover:text-foreground hover:bg-primary/5'
                 }`}
               >
-                <tab.icon className="w-3.5 h-3.5" />
-                {tab.label}
+                {bm.activeSection === tab.id && (
+                  <motion.div
+                    layoutId="byom-tab-indicator"
+                    className="absolute inset-0 rounded-xl bg-primary/15 border border-primary/20"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <tab.icon className="w-3.5 h-3.5" />
+                  {tab.label}
+                </span>
               </button>
             ))}
           </div>

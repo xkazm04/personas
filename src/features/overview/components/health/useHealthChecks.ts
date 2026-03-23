@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { HealthCheckItem, HealthCheckSection } from "@/api/system/system";
 import { healthCheckAccount, healthCheckAgents, healthCheckCloud, healthCheckLocal, healthCheckSubscriptions } from "@/api/system/system";
 
@@ -44,8 +44,10 @@ export function useHealthChecks() {
   const [loading, setLoading] = useState(true);
   const [hasIssues, setHasIssues] = useState(false);
   const [ipcError, setIpcError] = useState(false);
+  const generationRef = useRef(0);
 
   const runChecks = useCallback(() => {
+    const gen = ++generationRef.current;
     setLoading(true);
     setIpcError(false);
     setSections([]);
@@ -53,14 +55,17 @@ export function useHealthChecks() {
     Promise.allSettled(CHECKS.map((check) =>
       check.fn()
         .then((section) => {
+          if (generationRef.current !== gen) return;
           setSections((prev) => sortSections([...prev.filter((s) => s.id !== section.id), section]));
         })
         .catch(() => {
+          if (generationRef.current !== gen) return;
           setIpcError(true);
           setSections((prev) => sortSections([...prev.filter((s) => s.id !== check.id), IPC_FALLBACKS[check.id]!]));
           setHasIssues(true);
         })
     )).then(() => {
+      if (generationRef.current !== gen) return;
       setSections((finalSections) => {
         const allOk = finalSections.every((s) =>
           s.items.every((i) => i.status === 'ok' || i.status === 'info' || i.status === 'inactive')

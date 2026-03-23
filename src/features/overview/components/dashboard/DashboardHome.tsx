@@ -16,6 +16,7 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import RemoteControlCard from '@/features/overview/components/dashboard/cards/RemoteControlCard';
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { DASHBOARD_GRID } from '@/features/overview/utils/dashboardGrid';
 import { DashboardHeaderBadges } from './widgets/DashboardHeaderBadges';
 import { RecentActivityList } from './widgets/RecentActivityList';
 import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
@@ -104,7 +105,7 @@ export default function DashboardHome() {
       />
 
       <ContentBody centered>
-        <div className="space-y-6 pb-6">
+        <div className="space-y-5 pb-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-2">
             <div>
               <motion.h2
@@ -125,10 +126,10 @@ export default function DashboardHome() {
           <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
           <FleetOptimizationCard />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+          <div className={DASHBOARD_GRID}>
             <RecentActivityList recentExecs={stats.recentExecs} onViewAll={() => setOverviewTab('executions')} />
 
-            <div className="space-y-6">
+            <div className="space-y-5">
               <TrafficErrorsChart chartData={chartData} totalTraffic={chartTotals.totalTraffic} totalErrors={chartTotals.totalErrors} />
               {import.meta.env.DEV && (
                 <div className="rounded-xl border-2 border-amber-500/40 p-0.5">

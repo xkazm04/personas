@@ -137,10 +137,13 @@ fn home_dir() -> Option<PathBuf> {
 
 /// Mask a credential value for safe display (show first 4 and last 4 chars).
 fn mask_value(val: &str) -> String {
-    if val.len() <= 12 {
-        return "*".repeat(val.len().min(8));
+    let char_count = val.chars().count();
+    if char_count <= 12 {
+        return "*".repeat(char_count.min(8));
     }
-    format!("{}...{}", &val[..4], &val[val.len() - 4..])
+    let prefix: String = val.chars().take(4).collect();
+    let suffix: String = val.chars().skip(char_count - 4).collect();
+    format!("{}...{}", prefix, suffix)
 }
 
 /// Scan environment variables for known credential patterns.

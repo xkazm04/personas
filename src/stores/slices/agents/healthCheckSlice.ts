@@ -8,6 +8,7 @@ import type { PersonaHealthCheck, AgentHealthDigest } from "@/features/agents/he
 import type { DryRunIssue, DryRunResult } from "@/features/agents/health/types";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { DesignContextData } from "@/lib/types/frontendTypes";
+import { inferIssueSeverity } from "@/lib/errorTaxonomy";
 
 // -- Staleness threshold ----------------------------------------------
 
@@ -37,12 +38,8 @@ export interface HealthCheckSlice {
 
 let issueSeq = 1;
 
-function inferSeverity(issueText: string, overall: string): DryRunIssue['severity'] {
-  const lower = issueText.toLowerCase();
-  if (overall === 'blocked' || lower.includes('missing') || lower.includes('required') || lower.includes('must')) return 'error';
-  if (lower.includes('recommend') || lower.includes('consider') || lower.includes('optional') || lower.includes('suggest')) return 'info';
-  return 'warning';
-}
+/** @see {@link inferIssueSeverity} — unified implementation in errorTaxonomy */
+const inferSeverity = inferIssueSeverity;
 
 function mapOverallStatus(overall: string): DryRunResult['status'] {
   const o = overall.toLowerCase();

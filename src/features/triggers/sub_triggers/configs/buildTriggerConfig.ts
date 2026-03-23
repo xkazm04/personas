@@ -50,7 +50,7 @@ export function buildTriggerConfig(s: TriggerFormState): BuildResult {
     config.interval_seconds = parsed;
     if (s.selectedEventId) { config.event_id = s.selectedEventId; } else { config.endpoint = s.endpoint; }
   } else if (s.triggerType === 'webhook') {
-    if (s.hmacSecret) config.webhook_secret = s.hmacSecret;
+    config.webhook_secret = s.hmacSecret || generateWebhookSecret();
   } else if (s.triggerType === 'event_listener') {
     if (!s.listenEventType.trim()) return { ok: false, error: 'Event type to listen for is required.' };
     config.listen_event_type = s.listenEventType.trim();
@@ -84,4 +84,11 @@ export function buildTriggerConfig(s: TriggerFormState): BuildResult {
   }
 
   return { ok: true, config };
+}
+
+/** Generate a 32-byte hex secret for webhook HMAC signing. */
+function generateWebhookSecret(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }

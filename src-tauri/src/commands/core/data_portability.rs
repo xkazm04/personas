@@ -385,6 +385,35 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
         } => (persona_ids.clone(), team_ids.clone()),
     };
 
+    // Batch-fetch all per-persona data in 5 queries instead of 5*N
+    let all_triggers = trigger_repo::get_by_persona_ids(pool, &selected_persona_ids)?;
+    let all_subscriptions = event_repo::get_subscriptions_by_persona_ids(pool, &selected_persona_ids)?;
+    let all_memories = memory_repo::get_all_by_persona_ids(pool, &selected_persona_ids)?;
+    let all_persona_tools = tool_repo::get_tools_for_personas(pool, &selected_persona_ids)?;
+    let all_test_suites = suite_repo::list_by_persona_ids(pool, &selected_persona_ids)?;
+
+    // Group by persona_id into HashMaps
+    let mut triggers_map: HashMap<String, Vec<_>> = HashMap::new();
+    for t in all_triggers {
+        triggers_map.entry(t.persona_id.clone()).or_default().push(t);
+    }
+    let mut subscriptions_map: HashMap<String, Vec<_>> = HashMap::new();
+    for s in all_subscriptions {
+        subscriptions_map.entry(s.persona_id.clone()).or_default().push(s);
+    }
+    let mut memories_map: HashMap<String, Vec<_>> = HashMap::new();
+    for m in all_memories {
+        memories_map.entry(m.persona_id.clone()).or_default().push(m);
+    }
+    let mut tools_map: HashMap<String, Vec<_>> = HashMap::new();
+    for (pid, def) in all_persona_tools {
+        tools_map.entry(pid).or_default().push(def);
+    }
+    let mut suites_map: HashMap<String, Vec<_>> = HashMap::new();
+    for s in all_test_suites {
+        suites_map.entry(s.persona_id.clone()).or_default().push(s);
+    }
+
     // Build persona exports
     let mut persona_exports = Vec::new();
     for p in &all_personas {
@@ -392,11 +421,11 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
             continue;
         }
 
-        let triggers = trigger_repo::get_by_persona_id(pool, &p.id)?;
-        let subscriptions = event_repo::get_subscriptions_by_persona(pool, &p.id)?;
-        let memories = memory_repo::get_all(pool, Some(&p.id), None, None, None, None, None, None)?;
-        let tools = tool_repo::get_tools_for_persona(pool, &p.id)?;
-        let test_suites = suite_repo::list_by_persona(pool, &p.id)?;
+        let triggers = triggers_map.remove(&p.id).unwrap_or_default();
+        let subscriptions = subscriptions_map.remove(&p.id).unwrap_or_default();
+        let memories = memories_map.remove(&p.id).unwrap_or_default();
+        let tools = tools_map.remove(&p.id).unwrap_or_default();
+        let test_suites = suites_map.remove(&p.id).unwrap_or_default();
 
         persona_exports.push(PersonaExport {
             id: p.id.clone(),

@@ -3,7 +3,7 @@ use tauri::{AppHandle, Emitter, State};
 
 use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, CreateTriggerInput,
-    PersonaEvent, PersonaEventSubscription, UpdateEventSubscriptionInput,
+    PaginatedEvents, PersonaEvent, PersonaEventSubscription, UpdateEventSubscriptionInput,
 };
 use crate::db::repos::communication::events as repo;
 use crate::db::repos::resources::triggers as trigger_repo;
@@ -27,9 +27,11 @@ pub fn list_events_in_range(
     state: State<'_, Arc<AppState>>,
     since: String,
     until: String,
-) -> Result<Vec<PersonaEvent>, AppError> {
+    limit: Option<i64>,
+) -> Result<PaginatedEvents, AppError> {
     require_auth_sync(&state)?;
-    repo::get_in_range(&state.db, &since, &until)
+    let (events, has_more) = repo::get_in_range(&state.db, &since, &until, limit)?;
+    Ok(PaginatedEvents { events, has_more })
 }
 
 #[tauri::command]

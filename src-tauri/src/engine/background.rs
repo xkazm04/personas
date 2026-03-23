@@ -418,12 +418,13 @@ pub fn start_loops(
     // Desktop-only subscriptions: file watcher, clipboard monitor, app focus, ambient context
     #[cfg(feature = "desktop")]
     {
-        let (fw_state, fw_tx, fw_rx) = super::file_watcher::create_file_watcher();
+        let (fw_state, fw_tx, fw_rx, fw_dropped) = super::file_watcher::create_file_watcher();
         subscriptions.push(Box::new(FileWatcherSubscription {
             pool: pool.clone(),
             state: fw_state,
             tx: fw_tx,
             rx: fw_rx,
+            dropped: fw_dropped,
             ambient_ctx: ambient_ctx.clone(),
         }));
         subscriptions.push(Box::new(ClipboardSubscription {

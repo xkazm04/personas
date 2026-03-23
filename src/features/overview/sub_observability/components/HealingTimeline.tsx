@@ -6,6 +6,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
+import { outcomeToHealth, healthScale } from '@/lib/design/statusTokens';
 
 interface HealingTimelineProps {
   events: HealingTimelineEvent[];
@@ -31,26 +32,17 @@ const EVENT_ICONS: Record<string, typeof AlertTriangle> = {
 };
 
 const EVENT_COLORS: Record<string, { dot: string; line: string; bg: string; text: string }> = {
-  trigger: { dot: 'bg-red-500', line: 'bg-red-500/30', bg: 'bg-red-500/10', text: 'text-red-400' },
-  classify: { dot: 'bg-amber-500', line: 'bg-amber-500/30', bg: 'bg-amber-500/10', text: 'text-amber-400' },
-  retry: { dot: 'bg-cyan-500', line: 'bg-cyan-500/30', bg: 'bg-cyan-500/10', text: 'text-cyan-400' },
-  ai_heal: { dot: 'bg-violet-500', line: 'bg-violet-500/30', bg: 'bg-violet-500/10', text: 'text-violet-400' },
-  outcome: { dot: 'bg-emerald-500', line: 'bg-emerald-500/30', bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
-  knowledge: { dot: 'bg-blue-500', line: 'bg-blue-500/30', bg: 'bg-blue-500/10', text: 'text-blue-400' },
+  trigger:   healthScale('critical'),
+  classify:  healthScale('warning'),
+  retry:     { dot: 'bg-cyan-400', line: 'bg-cyan-400/30', bg: 'bg-cyan-500/10', text: 'text-cyan-400' },
+  ai_heal:   { dot: 'bg-violet-400', line: 'bg-violet-400/30', bg: 'bg-violet-500/10', text: 'text-violet-400' },
+  outcome:   healthScale('healthy'),
+  knowledge: healthScale('info'),
 };
 
 function getOutcomeColors(status: string | null) {
-  switch (status) {
-    case 'auto_healed':
-    case 'resolved':
-      return { dot: 'bg-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-400' };
-    case 'circuit_breaker':
-      return { dot: 'bg-red-500', bg: 'bg-red-500/10', text: 'text-red-400' };
-    case 'retrying':
-      return { dot: 'bg-amber-500', bg: 'bg-amber-500/10', text: 'text-amber-400' };
-    default:
-      return { dot: 'bg-orange-500', bg: 'bg-orange-500/10', text: 'text-orange-400' };
-  }
+  const scale = healthScale(outcomeToHealth(status));
+  return { dot: scale.dot, bg: scale.bg, text: scale.text };
 }
 
 function formatTimestamp(ts: string) {

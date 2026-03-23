@@ -13,7 +13,7 @@ use crate::db::repos::core::personas as persona_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-use super::healing::FailureCategory;
+use super::error_taxonomy::ErrorCategory as FailureCategory;
 use super::types::ExecutionResult;
 
 // ---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ pub fn should_trigger_ai_healing(
     consecutive_failures: u32,
 ) -> bool {
     // Never trigger for rate limits (backoff handles it) or CLI not found
-    if matches!(category, FailureCategory::RateLimit | FailureCategory::CliNotFound) {
+    if matches!(category, FailureCategory::RateLimit | FailureCategory::ProviderNotFound) {
         return false;
     }
 
@@ -423,7 +423,7 @@ mod tests {
     #[test]
     fn test_should_not_trigger_cli_not_found() {
         assert!(!should_trigger_ai_healing(
-            &FailureCategory::CliNotFound,
+            &FailureCategory::ProviderNotFound,
             "failed",
             0,
         ));

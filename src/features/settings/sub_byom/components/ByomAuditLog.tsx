@@ -1,5 +1,6 @@
 import type { ProviderAuditEntry } from '@/api/system/byom';
 import { ENGINE_LABELS } from '../libs/byomHelpers';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 
 interface ByomAuditLogProps {
   auditLog: ProviderAuditEntry[];
@@ -9,9 +10,7 @@ export function ByomAuditLog({ auditLog }: ByomAuditLogProps) {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-3">
-        <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-          Provider Audit Log
-        </h2>
+        <SectionHeading title="Provider Audit Log" />
         <p className="text-sm text-muted-foreground/60">
           Compliance trail showing which provider handled each execution
         </p>

@@ -101,6 +101,34 @@ pub fn get_by_persona_id(
     Ok(triggers)
 }
 
+/// Bulk-fetch triggers for multiple persona IDs in a single query.
+pub fn get_by_persona_ids(
+    pool: &DbPool,
+    persona_ids: &[String],
+) -> Result<Vec<PersonaTrigger>, AppError> {
+    if persona_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+    let placeholders: Vec<String> = persona_ids
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
+    let sql = format!(
+        "SELECT * FROM persona_triggers WHERE persona_id IN ({}) ORDER BY created_at DESC",
+        placeholders.join(", ")
+    );
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+        .iter()
+        .map(|s| s as &dyn rusqlite::types::ToSql)
+        .collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
+    let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+    Ok(triggers)
+}
+
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaTrigger, AppError> {
     let conn = pool.get()?;
     conn.query_row(

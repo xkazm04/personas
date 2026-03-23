@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, SearchX } from 'lucide-react';
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import type { AuthDetection } from '@/api/auth/authDetect';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { staggerContainer } from '@/features/templates/animationPresets';
@@ -105,9 +106,12 @@ export function WizardDetectGrid({
       )}
 
       {filteredCount === 0 && (
-        <div className="text-center py-10">
-          <p className="text-sm text-muted-foreground/60">No services match "{search}"</p>
-        </div>
+        <EmptyIllustration
+          icon={SearchX}
+          heading={`No services match "${search}"`}
+          description="Try a different search term or clear your filter."
+          className="py-10"
+        />
       )}
     </div>
   );

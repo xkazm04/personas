@@ -1,5 +1,6 @@
 import { Zap } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { TriggerFieldGroup } from './TriggerFieldGroup';
 
 export interface PollingConfigProps {
   credentialEventsList: { id: string; name: string }[];
@@ -16,11 +17,11 @@ export function PollingConfig({
   return (
     <>
       {credentialEventsList.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-            <Zap className="w-3.5 h-3.5 inline mr-1 text-amber-400" />
-            Credential Event (optional)
-          </label>
+        <TriggerFieldGroup
+          label={<><Zap className="w-3.5 h-3.5 inline mr-1 text-amber-400" />Credential Event</>}
+          optional
+          helpText="Link to a credential event instead of a custom endpoint"
+        >
           <ThemedSelect
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
@@ -31,14 +32,10 @@ export function PollingConfig({
               <option key={evt.id} value={evt.id}>{evt.name}</option>
             ))}
           </ThemedSelect>
-          <p className="text-sm text-muted-foreground/80 mt-1">Link to a credential event instead of a custom endpoint</p>
-        </div>
+        </TriggerFieldGroup>
       )}
       {!selectedEventId && (
-        <div>
-          <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-            Endpoint URL
-          </label>
+        <TriggerFieldGroup label="Endpoint URL">
           <input
             type="text"
             value={endpoint}
@@ -46,7 +43,7 @@ export function PollingConfig({
             placeholder="https://api.example.com/poll"
             className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
           />
-        </div>
+        </TriggerFieldGroup>
       )}
     </>
   );

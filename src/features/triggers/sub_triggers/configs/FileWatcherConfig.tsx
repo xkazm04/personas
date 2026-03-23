@@ -1,4 +1,5 @@
 import { Plus, X } from 'lucide-react';
+import { TriggerFieldGroup } from './TriggerFieldGroup';
 
 export interface FileWatcherConfigProps {
   watchPaths: string[];
@@ -20,10 +21,7 @@ export function FileWatcherConfig({
 }: FileWatcherConfigProps) {
   return (
     <div className="space-y-3">
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Watch Paths
-        </label>
+      <TriggerFieldGroup label="Watch Paths" error={validationError} errorId="watch-paths-error">
         {watchPaths.map((path, i) => (
           <div key={i} className="flex items-center gap-1.5 mb-1.5">
             <input
@@ -52,10 +50,8 @@ export function FileWatcherConfig({
         <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 text-sm text-orange-400/80 hover:text-orange-400 transition-colors">
           <Plus className="w-3.5 h-3.5" /> Add path
         </button>
-        {validationError && <p id="watch-paths-error" className="text-sm text-red-400/80 mt-1">{validationError}</p>}
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">File Events</label>
+      </TriggerFieldGroup>
+      <TriggerFieldGroup label="File Events">
         <div className="flex flex-wrap gap-1.5">
           {(['create', 'modify', 'delete', 'rename'] as const).map((evt) => (
             <button
@@ -72,17 +68,14 @@ export function FileWatcherConfig({
             </button>
           ))}
         </div>
-      </div>
+      </TriggerFieldGroup>
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={watchRecursive} onChange={(e) => setWatchRecursive(e.target.checked)} className="rounded border-primary/30" />
           <span className="text-sm text-foreground/80">Watch subdirectories recursively</span>
         </label>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Glob Filter <span className="text-muted-foreground/50">(optional)</span>
-        </label>
+      <TriggerFieldGroup label="Glob Filter" optional>
         <input
           type="text"
           value={globFilter}
@@ -90,7 +83,7 @@ export function FileWatcherConfig({
           placeholder="e.g. *.py, *.{ts,tsx}, Dockerfile"
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm placeholder-muted-foreground/30 focus-ring transition-all"
         />
-      </div>
+      </TriggerFieldGroup>
     </div>
   );
 }

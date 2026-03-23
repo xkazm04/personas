@@ -1818,3 +1818,12 @@ input[type="number"] {
     linear-gradient(180deg, var(--primary) 0%, transparent 30%, transparent 70%, var(--primary) 100%),
     linear-gradient(90deg, var(--primary) 0%, transparent 30%, transparent 70%, var(--primary) 100%);
 }
+
+/* -- Live Stream: new-event entrance highlight -- */
+@keyframes livestream-highlight-fade {
+  from { background-color: rgb(6 182 212 / 0.1); }
+  to   { background-color: transparent; }
+}
+.livestream-highlight {
+  animation: livestream-highlight-fade 1.5s ease-out forwards;
+}

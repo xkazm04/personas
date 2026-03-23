@@ -20,6 +20,24 @@ use crate::db::DbPool;
 
 pub const SETTINGS_KEY: &str = "smee_channel_url";
 
+/// Maximum SSE buffer size (1 MB). If the buffer exceeds this without producing
+/// a complete SSE message, the connection is dropped to prevent memory exhaustion.
+const MAX_SSE_BUFFER_BYTES: usize = 1_024 * 1_024;
+
+/// Normalize SSE line endings: `\r\n` → `\n`, then bare `\r` → `\n`.
+/// The SSE spec allows `\r`, `\n`, or `\r\n` as line terminators; normalizing
+/// up-front lets the rest of the parser only look for `\n`.
+fn normalize_line_endings(text: &str) -> String {
+    text.replace("\r\n", "\n").replace('\r', "\n")
+}
+
+/// Find the first SSE message boundary (`\n\n`) and return
+/// `(message_end, delimiter_len)` so the caller can split correctly.
+/// Assumes the buffer has already been normalized via [`normalize_line_endings`].
+fn find_sse_boundary(buf: &str) -> Option<(usize, usize)> {
+    buf.find("\n\n").map(|pos| (pos, 2))
+}
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -117,12 +135,17 @@ async fn relay_sse_stream(
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| format!("Stream error: {e}"))?;
         let text = String::from_utf8_lossy(&chunk);
-        buffer.push_str(&text);
+        buffer.push_str(&normalize_line_endings(&text));
 
-        // Process complete SSE messages (separated by double newline)
-        while let Some(pos) = buffer.find("\n\n") {
+        // Guard against unbounded buffer growth from a misbehaving endpoint
+        if buffer.len() > MAX_SSE_BUFFER_BYTES {
+            return Err("SSE buffer exceeded 1 MB without a complete message — disconnecting".into());
+        }
+
+        // Process complete SSE messages (separated by \n\n)
+        while let Some((pos, delim_len)) = find_sse_boundary(&buffer) {
             let message = buffer[..pos].to_string();
-            buffer = buffer[pos + 2..].to_string();
+            buffer = buffer[pos + delim_len..].to_string();
 
             // Extract the data: line(s) from the SSE message
             let data_lines: Vec<&str> = message
@@ -260,11 +283,16 @@ async fn relay_sse_stream_for_relay(
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| format!("Stream error: {e}"))?;
         let text = String::from_utf8_lossy(&chunk);
-        buffer.push_str(&text);
+        buffer.push_str(&normalize_line_endings(&text));
 
-        while let Some(pos) = buffer.find("\n\n") {
+        // Guard against unbounded buffer growth from a misbehaving endpoint
+        if buffer.len() > MAX_SSE_BUFFER_BYTES {
+            return Err("SSE buffer exceeded 1 MB without a complete message — disconnecting".into());
+        }
+
+        while let Some((pos, delim_len)) = find_sse_boundary(&buffer) {
             let message = buffer[..pos].to_string();
-            buffer = buffer[pos + 2..].to_string();
+            buffer = buffer[pos + delim_len..].to_string();
 
             let data_lines: Vec<&str> = message
                 .lines()

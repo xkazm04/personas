@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Cloud, Radio, Unplug } from 'lucide-react';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { useAgentStore } from '@/stores/agentStore';
 import { listEvents } from '@/api/overview/events';
-import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
+import { formatRelativeTime, EVENT_STATUS_COLORS } from '@/lib/utils/formatters';
 import type { PersonaEvent } from '@/lib/types/types';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';
+import { EventTypeChip } from './EventTypeChip';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All statuses' },
@@ -28,6 +29,7 @@ export function LiveStreamTab() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const newEventIds = useRef(new Set<string>());
 
   useEffect(() => {
     let stale = false;
@@ -45,9 +47,16 @@ export function LiveStreamTab() {
       if (prev.some((e) => e.id === evt.id)) {
         return prev.map((e) => (e.id === evt.id ? evt : e));
       }
+      newEventIds.current.add(evt.id);
+      setTimeout(() => newEventIds.current.delete(evt.id), 1600);
       return [evt, ...prev].slice(0, 200);
     });
   });
+
+  const getRowClassName = useCallback(
+    (event: PersonaEvent) => newEventIds.current.has(event.id) ? 'livestream-highlight' : '',
+    [],
+  );
 
   const availableTypes = [...new Set(events.map((e) => e.event_type))].sort();
   const filteredEvents = events.filter((e) => {
@@ -72,10 +81,7 @@ export function LiveStreamTab() {
       filterOptions: typeOptions,
       filterValue: typeFilter,
       onFilterChange: setTypeFilter,
-      render: (event) => {
-        const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
-        return <span className={`text-sm font-medium truncate ${typeColor}`}>{event.event_type}</span>;
-      },
+      render: (event) => <EventTypeChip eventType={event.event_type} />,
     },
     {
       key: 'source',
@@ -146,6 +152,7 @@ export function LiveStreamTab() {
           columns={columns}
           data={filteredEvents}
           getRowKey={(e) => e.id}
+          getRowClassName={getRowClassName}
           onRowClick={setSelectedEvent}
           getRowAccent={(event) => {
             if (event.status === 'processing') return 'hover:border-l-status-processing';

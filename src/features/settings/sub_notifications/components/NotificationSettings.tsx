@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Bell, ShieldAlert, Activity } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 
 const SETTINGS_KEY = 'notification_prefs';
@@ -86,18 +87,11 @@ function WeeklyDigestToggle() {
             Weekly notification summarizing health issues across all agents with a total health score
           </p>
         </div>
-        <button
-          onClick={handleToggle}
-          className={`relative w-9 h-5 rounded-full transition-colors ${
-            enabled ? 'bg-primary/60' : 'bg-secondary/80 border border-border/30'
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 w-4 h-4 rounded-full bg-foreground/90 transition-transform ${
-              enabled ? 'left-[18px]' : 'left-0.5'
-            }`}
-          />
-        </button>
+        <AccessibleToggle
+          checked={enabled}
+          onChange={handleToggle}
+          label="Weekly health digest"
+        />
       </div>
     </div>
   );
@@ -162,18 +156,11 @@ export default function NotificationSettings() {
                     <span className={`text-sm font-medium ${color}`}>{label}</span>
                     <p className="text-sm text-muted-foreground/80">{description}</p>
                   </div>
-                  <button
-                    onClick={() => toggle(key)}
-                    className={`relative w-9 h-5 rounded-full transition-colors ${
-                      prefs[key] ? 'bg-primary/60' : 'bg-secondary/80 border border-border/30'
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 w-4 h-4 rounded-full bg-foreground/90 transition-transform ${
-                        prefs[key] ? 'left-[18px]' : 'left-0.5'
-                      }`}
-                    />
-                  </button>
+                  <AccessibleToggle
+                    checked={prefs[key]}
+                    onChange={() => toggle(key)}
+                    label={`${label} notifications`}
+                  />
                 </div>
               ))}
             </div>

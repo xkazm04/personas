@@ -8,6 +8,7 @@ import {
   Download,
   Sparkles,
 } from "lucide-react";
+import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useCredentialForaging } from "@/hooks/design/credential/useCredentialForaging";
 import { ForagingResultCard } from "./ForagingResultCard";
@@ -66,20 +67,11 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
             exit={{ opacity: 0 }}
             className="rounded-xl border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
           >
-            <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center">
-              <Radar className="w-6 h-6 text-violet-400" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-foreground/90">
-                Credential Foraging
-              </h3>
-              <p className="text-sm text-muted-foreground/60 mt-1 max-w-sm mx-auto leading-relaxed">
-                Scan your filesystem for existing credentials -- AWS profiles,
-                environment variables, .env files, Docker configs, SSH keys, and
-                more. Discovered credentials can be imported into your vault with
-                one click.
-              </p>
-            </div>
+            <EmptyIllustration
+              icon={Radar}
+              heading="Credential Foraging"
+              description="Scan your filesystem for existing credentials -- AWS profiles, environment variables, .env files, Docker configs, SSH keys, and more. Discovered credentials can be imported into your vault with one click."
+            />
             <Button
               variant="accent"
               size="sm"
@@ -161,13 +153,12 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
 
             {/* Empty state */}
             {forage.scanResult.credentials.length === 0 && (
-              <div className="rounded-xl border border-primary/15 bg-secondary/25 p-6 text-center">
-                <p className="text-sm text-muted-foreground/70">
-                  No credentials found on your filesystem.
-                </p>
-                <p className="text-sm text-muted-foreground/60 mt-1">
-                  Try setting environment variables like OPENAI_API_KEY or configure ~/.aws/credentials.
-                </p>
+              <div className="rounded-xl border border-primary/15 bg-secondary/25 p-6">
+                <EmptyIllustration
+                  icon={Radar}
+                  heading="No credentials found"
+                  description="Try setting environment variables like OPENAI_API_KEY or configure ~/.aws/credentials."
+                />
               </div>
             )}
 

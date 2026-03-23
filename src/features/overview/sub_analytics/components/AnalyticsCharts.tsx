@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useId } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
@@ -7,6 +7,7 @@ import {
 import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { CHART_COLORS, CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
+import { DASHBOARD_GRID } from '@/features/overview/utils/dashboardGrid';
 import { formatToolName } from '../libs/analyticsHelpers';
 import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
@@ -26,10 +27,12 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
   chartData, compareEnabled, areaData, allToolNames,
   pieData, latencyData, barData, handleFailureBarClick,
 }: AnalyticsChartsProps) {
+  const costGradId = useId();
+
   return (
     <>
       {/* Charts -- 2 column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
+      <div className={DASHBOARD_GRID}>
         {/* Cost Over Time */}
         <MetricChart title="Cost Over Time" height={180}>
           <AreaChart data={chartData}>
@@ -40,9 +43,9 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
             {compareEnabled && (
               <Area type="monotone" dataKey="prev_cost" name="Prev Cost" stroke="#6366f1" fill="none" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
             )}
-            <Area type="monotone" dataKey="cost" stroke="#6366f1" fill="url(#analyticsCostGrad)" strokeWidth={2} />
+            <Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${costGradId})`} strokeWidth={2} />
             <defs>
-              <linearGradient id="analyticsCostGrad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={costGradId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
                 <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
               </linearGradient>

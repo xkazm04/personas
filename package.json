@@ -39,7 +39,7 @@
     "@tauri-apps/plugin-updater": "^2.10.0",
     "@xyflow/react": "^12.10.1",
     "dompurify": "^3.3.2",
-    "framer-motion": "^12.35.1",
+    "framer-motion": "^12.38.0",
     "js-yaml": "^4.1.1",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",

@@ -1,4 +1,5 @@
 import { RefreshCw, ExternalLink, Shield, ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
@@ -129,9 +130,7 @@ export function CloudOAuthPanel({
         {/* Scopes */}
         {oauthStatus.scopes && oauthStatus.scopes.length > 0 && (
           <div>
-            <h3 className={`text-sm font-medium text-muted-foreground/90 uppercase tracking-wider ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
-              Scopes
-            </h3>
+            <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>Scopes</SectionHeading>
             <div className="flex flex-wrap gap-2">
               {oauthStatus.scopes.map((scope) => (
                 <span
@@ -148,9 +147,7 @@ export function CloudOAuthPanel({
         {/* Expiry */}
         {oauthStatus.expiresAt && (
           <div>
-            <h3 className={`text-sm font-medium text-muted-foreground/90 uppercase tracking-wider ${DEPLOYMENT_TOKENS.sectionHeadingGap}`}>
-              Expires
-            </h3>
+            <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>Expires</SectionHeading>
             <p className="text-sm text-foreground/90">
               {new Date(oauthStatus.expiresAt).toLocaleString()}
             </p>

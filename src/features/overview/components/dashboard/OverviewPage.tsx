@@ -1,20 +1,10 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
-
-/** Lazy with one automatic retry — handles transient network / HMR failures. */
-function lazyRetry<T extends { default: React.ComponentType<any> }>(
-  importFn: () => Promise<T>,
-): React.LazyExoticComponent<T['default']> {
-  return lazy(() =>
-    importFn().catch(() =>
-      new Promise<T>((resolve) => setTimeout(() => resolve(importFn()), 1500))
-    )
-  );
-}
+import { lazyRetry } from '@/lib/lazyRetry';
 
 // Lazy-load each subtab -- only the active one ships to the render tree.
 // On Desktop these become separate chunks; on Android inlineDynamicImports

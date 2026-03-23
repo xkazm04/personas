@@ -233,4 +233,15 @@ pub struct PersonaPromptVersion {
     /// Version tag: "production", "experimental", or "archived"
     pub tag: String,
     pub created_at: String,
+    // Full persona snapshot fields (added for unified matrix versioning)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub design_context: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_design_result: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolved_cells: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
 }

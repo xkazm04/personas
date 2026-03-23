@@ -4,6 +4,7 @@ import {
   PackageCheck,
   Check,
 } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PortabilityImportResult } from '@/api/system/dataPortability';
 
@@ -26,9 +27,7 @@ export function ExportSection({
 }: ExportSectionProps) {
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-      <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-        Workspace Export & Import
-      </h2>
+      <SectionHeading title="Workspace Export & Import" />
       <p className="text-sm text-muted-foreground/70">
         Export your workspace to a portable ZIP archive containing all personas, teams,
         tools, connectors, memories, and test suites. Import restores from a previously

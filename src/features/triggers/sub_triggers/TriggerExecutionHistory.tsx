@@ -1,52 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
   History, ChevronDown, ChevronRight, AlertTriangle,
-  RefreshCw, RotateCcw, CheckCircle2, XCircle, TrendingDown,
-  Clock, Activity, BarChart3,
+  RefreshCw, RotateCcw, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import type { TriggerHistoryStats } from '../hooks/useTriggerHistory';
 import { useTriggerHistory } from '../hooks/useTriggerHistory';
-
-// --- Stats Bar ------------------------------------------------------
-
-function StatsBar({ stats }: { stats: TriggerHistoryStats }) {
-  if (stats.totalRuns === 0) return null;
-
-  const rateColor = stats.successRate >= 90
-    ? 'text-emerald-400'
-    : stats.successRate >= 70
-      ? 'text-amber-400'
-      : 'text-red-400';
-
-  return (
-    <div className="flex items-center gap-3 px-2.5 py-1.5 rounded-lg bg-background/30 border border-primary/5 text-sm">
-      <div className="flex items-center gap-1 text-muted-foreground/80">
-        <BarChart3 className="w-3 h-3" />
-        <span>{stats.totalRuns} runs</span>
-      </div>
-      <div className={`flex items-center gap-1 ${rateColor}`}>
-        <Activity className="w-3 h-3" />
-        <span>{stats.successRate}%</span>
-      </div>
-      {stats.avgDurationMs > 0 && (
-        <div className="flex items-center gap-1 text-muted-foreground/70">
-          <Clock className="w-3 h-3" />
-          <span>avg {formatDuration(stats.avgDurationMs)}</span>
-        </div>
-      )}
-      {stats.recentFailures >= 3 && (
-        <div className="flex items-center gap-1 text-red-400/80 ml-auto">
-          <TrendingDown className="w-3 h-3" />
-          <span>{stats.recentFailures}/5 recent failed</span>
-        </div>
-      )}
-    </div>
-  );
-}
+import { TriggerHealthSparkline } from './TriggerHealthSparkline';
 
 // --- Payload Inspector ----------------------------------------------
 
@@ -244,7 +206,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                 </div>
               ) : (
                 <>
-                  <StatsBar stats={history.stats} />
+                  <TriggerHealthSparkline executions={history.executions} />
                   {history.executions.map((exec) => (
                     <ExecutionRow
                       key={exec.id}

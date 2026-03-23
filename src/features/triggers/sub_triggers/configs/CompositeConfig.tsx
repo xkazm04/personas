@@ -1,5 +1,6 @@
 import { Plus, X } from 'lucide-react';
 import type { CompositeCondition } from '@/lib/utils/platform/triggerConstants';
+import { TriggerFieldGroup } from './TriggerFieldGroup';
 
 export interface CompositeConfigProps {
   compositeConditions: CompositeCondition[];
@@ -20,8 +21,7 @@ export function CompositeConfig({
 }: CompositeConfigProps) {
   return (
     <div className="space-y-3">
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">Conditions</label>
+      <TriggerFieldGroup label="Conditions" error={validationError} errorId="composite-conditions-error">
         {compositeConditions.map((cond, i) => (
           <div key={i} className="flex items-center gap-1.5 mb-1.5">
             <input
@@ -62,10 +62,8 @@ export function CompositeConfig({
         <button type="button" onClick={() => setCompositeConditions([...compositeConditions, { event_type: '' }])} className="flex items-center gap-1 text-sm text-rose-400/80 hover:text-rose-400 transition-colors">
           <Plus className="w-3.5 h-3.5" /> Add condition
         </button>
-        {validationError && <p id="composite-conditions-error" className="text-sm text-red-400/80 mt-1">{validationError}</p>}
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">Operator</label>
+      </TriggerFieldGroup>
+      <TriggerFieldGroup label="Operator">
         <div className="flex gap-1.5">
           {([
             { value: 'all', label: 'ALL (AND)', desc: 'All conditions must match' },
@@ -87,11 +85,11 @@ export function CompositeConfig({
             </button>
           ))}
         </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-          Time Window (seconds)
-        </label>
+      </TriggerFieldGroup>
+      <TriggerFieldGroup
+        label="Time Window (seconds)"
+        helpText="All conditions must be met within this time window"
+      >
         <input
           type="number"
           value={windowSeconds}
@@ -100,8 +98,7 @@ export function CompositeConfig({
           placeholder="300"
           className="w-32 px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground font-mono text-sm focus-ring transition-all"
         />
-        <p className="text-sm text-muted-foreground/80 mt-1">All conditions must be met within this time window</p>
-      </div>
+      </TriggerFieldGroup>
     </div>
   );
 }

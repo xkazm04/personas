@@ -1,4 +1,5 @@
 import { Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import type { ComplianceRule } from '@/api/system/byom';
 import { PROVIDER_OPTIONS } from '../libs/byomHelpers';
 
@@ -13,23 +14,21 @@ export function ByomComplianceRules({ rules, onAdd, onUpdate, onRemove }: ByomCo
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/10 bg-card-bg p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
-              Compliance-Driven Restrictions
-            </h2>
-            <p className="text-sm text-muted-foreground/60 mt-1">
-              Restrict providers for specific workflow types (e.g., HIPAA, SOC2)
-            </p>
-          </div>
-          <button
-            onClick={onAdd}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Rule
-          </button>
-        </div>
+        <SectionHeading
+          title="Compliance-Driven Restrictions"
+          action={
+            <button
+              onClick={onAdd}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Rule
+            </button>
+          }
+        />
+        <p className="text-sm text-muted-foreground/60 mt-1">
+          Restrict providers for specific workflow types (e.g., HIPAA, SOC2)
+        </p>
 
         {rules.length === 0 ? (
           <p className="text-sm text-muted-foreground/50 text-center py-6">

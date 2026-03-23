@@ -1,5 +1,6 @@
 import { TrendingUp, Download } from 'lucide-react';
 import { DimensionRadial } from '../../shared/DimensionRadial';
+import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { getCachedDesignResult } from '../cards/reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 
@@ -18,9 +19,9 @@ export function TrendingCarousel({
     <div className="px-4 py-3 border-b border-primary/10 flex-shrink-0">
       <div className="flex items-center gap-2 mb-2.5">
         <TrendingUp className="w-4 h-4 text-emerald-400/70" />
-        <span className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide">
+        <SectionLabel as="span" className="mb-0">
           Most Adopted This Week
-        </span>
+        </SectionLabel>
       </div>
       <div className="flex gap-2.5 overflow-x-auto pb-1">
         {trendingTemplates.map((t) => (

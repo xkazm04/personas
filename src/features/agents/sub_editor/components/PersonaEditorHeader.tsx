@@ -95,7 +95,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
             onChange={handleHeaderToggle}
             label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
             disabled={!effective.enabled && !readiness.canEnable}
-            size="lg"
+            size="md"
             className={effective.enabled ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
           />
           <AnimatePresence>

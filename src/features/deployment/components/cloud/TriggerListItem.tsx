@@ -8,6 +8,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import type { CloudTrigger, CloudTriggerFiring } from '@/api/system/cloud';
 import {
   triggerTypeLabel,
@@ -105,9 +106,7 @@ export function TriggerListItem({
 
           {/* Recent firings */}
           <div>
-            <h4 className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider mb-2">
-              Recent Firings
-            </h4>
+            <SectionHeading as="h4" className="text-xs text-muted-foreground/70 mb-2">Recent Firings</SectionHeading>
             {isLoadingFirings ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground/50 py-2">
                 <LoadingSpinner size="xs" /> Loading...

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   X, RefreshCw,
@@ -33,6 +33,8 @@ export function PeerDetailDrawer({
   const syncPeerManifest = useSystemStore((s) => s.syncPeerManifest);
   const addToast = useToastStore((s) => s.addToast);
 
+  const drawerRef = useRef<HTMLDivElement>(null);
+
   const [syncing, setSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ resourceCount: number; syncedAt: string } | null>(null);
 
@@ -62,6 +64,44 @@ export function PeerDetailDrawer({
     }
   }, [peer.peer_id, isConnected]);
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  // Focus trap: keep Tab cycling within the drawer panel
+  const handleFocusTrap = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab') return;
+    const panel = drawerRef.current;
+    if (!panel) return;
+    const focusable = panel.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }, []);
+
+  // Auto-focus the drawer panel on mount
+  useEffect(() => {
+    drawerRef.current?.focus();
+  }, []);
+
   const handleSync = async () => {
     setSyncing(true);
     try {
@@ -87,17 +127,22 @@ export function PeerDetailDrawer({
   })();
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-labelledby="peer-drawer-title">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="relative w-full max-w-md bg-background border-l border-border shadow-xl flex flex-col animate-in slide-in-from-right duration-200">
+      <div
+        ref={drawerRef}
+        tabIndex={-1}
+        onKeyDown={handleFocusTrap}
+        className="relative w-full max-w-md bg-background border-l border-border shadow-xl flex flex-col animate-in slide-in-from-right duration-200 outline-none"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-foreground truncate">
+              <h2 id="peer-drawer-title" className="text-base font-semibold text-foreground truncate">
                 {peer.display_name}
               </h2>
               {isTrusted ? (
