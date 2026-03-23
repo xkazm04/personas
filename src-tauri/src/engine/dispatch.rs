@@ -142,17 +142,25 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             importance,
             tags,
         } => {
-            // Quality gate: reject stack traces and raw credential dumps.
-            // Allow genuine learnings even if they mention "error" or "missing" in context.
+            // Quality gate: reject error reports, credential failure logs, and raw dumps.
+            // Allow genuine learnings but block operational failure memories that
+            // provide no long-term value (e.g. "no credentials configured").
             let title_lower = title.to_lowercase();
             let content_lower = content.to_lowercase();
             let cat_lower = category.as_deref().unwrap_or("").to_lowercase();
+            let combined = format!("{} {}", title_lower, content_lower);
             let is_error_content = cat_lower == "error" || cat_lower == "failure"
-                || title_lower.contains("traceback") || title_lower.contains("stack trace")
-                || title_lower.contains("execution blocked")
-                || content_lower.contains("stack trace") || content_lower.contains("traceback")
-                || content_lower.contains("execution blocked")
-                || content_lower.contains("api_key=") || content_lower.contains("access_token=");
+                // Stack traces and raw dumps
+                || combined.contains("traceback") || combined.contains("stack trace")
+                || combined.contains("execution blocked")
+                || combined.contains("api_key=") || combined.contains("access_token=")
+                // Credential/auth failure patterns — these provide no learning value
+                || combined.contains("no credentials") || combined.contains("credentials missing")
+                || combined.contains("no api credentials") || combined.contains("credential not found")
+                || combined.contains("not configured in the environment")
+                || combined.contains("unable to authenticate") || combined.contains("authentication failed")
+                // Empty workspace / no data patterns that just describe setup problems
+                || (combined.contains("workspace") && combined.contains("empty") && combined.contains("no "));
 
             if is_error_content {
                 ctx.logger.log(&format!(

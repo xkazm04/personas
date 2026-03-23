@@ -294,8 +294,8 @@ class TemplateScenario:
             self.errors.append(f"Fatal: {exc}")
         return self.result()
 
-    def cleanup(self):
-        """Delete the created persona, close modals, reset build state."""
+    def cleanup(self, keep_persona: bool = True):
+        """Close modals, reset build state. Optionally keep persona for review."""
         # Navigate away from any modal/wizard to a clean section
         try:
             api_post("/navigate", {"section": "home"})
@@ -312,17 +312,19 @@ class TemplateScenario:
         except Exception:
             pass
 
-        # Delete the created persona (by ID and by name as fallback)
-        if self.persona_id:
-            try:
-                api_post("/delete-agent", {"name_or_id": self.persona_id})
-            except Exception:
-                pass
-        if self.name:
-            try:
-                api_post("/delete-agent", {"name_or_id": self.name})
-            except Exception:
-                pass
+        # Do NOT delete personas — keep them for artifact review.
+        # Only delete if explicitly requested (e.g. --clean flag).
+        if not keep_persona:
+            if self.persona_id:
+                try:
+                    api_post("/delete-agent", {"name_or_id": self.persona_id})
+                except Exception:
+                    pass
+            if self.name:
+                try:
+                    api_post("/delete-agent", {"name_or_id": self.name})
+                except Exception:
+                    pass
 
         # Reset build state and template adoption flag
         try:
@@ -501,8 +503,8 @@ class TemplateScenario:
             self.timings["execute"] = time.time() - t0
             return
 
-        # Poll DB for execution completion (up to 5 minutes)
-        for attempt in range(60):
+        # Poll DB for execution completion (up to 10 minutes, matching engine default)
+        for attempt in range(120):
             time.sleep(5)
             try:
                 rows = db_query(
@@ -524,7 +526,7 @@ class TemplateScenario:
             except Exception:
                 pass
 
-        self.errors.append("Execution timeout (5 min)")
+        self.errors.append("Execution timeout (10 min)")
         self.scores[4] = 0
         self.timings["execute"] = time.time() - t0
 
@@ -689,8 +691,8 @@ class TemplateScenario:
                 self.timings["haiku_regression"] = time.time() - t0
                 return
 
-            # Wait for completion (up to 5 minutes)
-            for attempt in range(60):
+            # Wait for completion (up to 10 minutes)
+            for attempt in range(120):
                 time.sleep(5)
                 rows = db_query(
                     "SELECT status, id FROM persona_executions "

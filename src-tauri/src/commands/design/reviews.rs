@@ -847,6 +847,28 @@ pub fn update_manual_review_status(
                 status: review.status.as_str().to_string(),
             },
         );
+
+        // Create a memory from the review decision so the persona can learn over time.
+        // The memory records the review title, decision, and any reviewer notes.
+        let decision = review.status.as_str();
+        let notes = review.reviewer_notes.as_deref().unwrap_or("No notes provided");
+        let memory_content = format!(
+            "Review decision: {decision}\nReview: {}\n{}\nReviewer notes: {notes}",
+            review.title,
+            review.description.as_deref().unwrap_or(""),
+        );
+        let _ = crate::db::repos::core::memories::create(
+            &state.db,
+            crate::db::models::CreatePersonaMemoryInput {
+                persona_id: review.persona_id.clone(),
+                source_execution_id: Some(review.execution_id.clone()),
+                title: format!("Review {decision}: {}", review.title),
+                content: memory_content,
+                category: Some("review_decision".to_string()),
+                importance: Some(6),
+                tags: Some(serde_json::json!(["review", decision]).to_string()),
+            },
+        );
     }
 
     Ok(review)

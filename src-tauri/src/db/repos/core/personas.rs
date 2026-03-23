@@ -859,6 +859,15 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<Persona, AppError> {
 #[instrument(skip(pool))]
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
+
+    // Clean up records that lack ON DELETE CASCADE foreign keys.
+    // Tables with CASCADE (persona_tools, persona_triggers, persona_executions,
+    // persona_event_subscriptions, etc.) are handled automatically by SQLite.
+    conn.execute("DELETE FROM persona_memories WHERE persona_id = ?1", params![id])?;
+    conn.execute("DELETE FROM persona_messages WHERE persona_id = ?1", params![id])?;
+    conn.execute("DELETE FROM persona_events WHERE source_id = ?1 OR target_persona_id = ?1", params![id, id])?;
+    conn.execute("DELETE FROM persona_healing_issues WHERE persona_id = ?1", params![id])?;
+
     let rows = conn.execute("DELETE FROM personas WHERE id = ?1", params![id])?;
     Ok(rows > 0)
 }
