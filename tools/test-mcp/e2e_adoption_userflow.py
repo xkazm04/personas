@@ -387,12 +387,31 @@ class TemplateScenario:
             self.errors.append("Timeout waiting for draft_ready")
             raise RuntimeError("draft_ready timeout")
 
-        # Step 9: Get persona_id from state (buildPersonaId or selectedPersonaId)
-        state = api_get("/state")
-        if isinstance(state, dict):
-            self.persona_id = state.get("buildPersonaId") or state.get("selectedPersonaId")
+        # Step 9: Get persona_id — MUST be buildPersonaId (the newly created persona),
+        # NOT selectedPersonaId (which may be stale from previous test).
+        # Poll until buildPersonaId appears (MatrixAdoptionView sets it asynchronously).
+        for _ in range(10):
+            state = api_get("/state")
+            if isinstance(state, dict) and state.get("buildPersonaId"):
+                self.persona_id = state["buildPersonaId"]
+                break
+            time.sleep(1)
+
         if not self.persona_id:
-            self.errors.append("No persona_id in state after draft_ready")
+            # Last resort: check DB for the most recently created persona matching this name
+            try:
+                rows = db_query(
+                    "SELECT id FROM personas WHERE name = ? ORDER BY created_at DESC LIMIT 1",
+                    (self.name,)
+                )
+                if rows:
+                    self.persona_id = rows[0][0]
+            except Exception:
+                pass
+
+        if not self.persona_id:
+            self.errors.append("No persona_id found after draft_ready")
+            raise RuntimeError("No persona_id")
 
         # Step 10: Click Test button
         resp = api_post("/click-testid", {"test_id": "agent-test-btn"})
@@ -435,7 +454,7 @@ class TemplateScenario:
     def _step_verify_promotion(self):
         t0 = time.time()
 
-        # Step 15: Navigate to personas list — refresh persona store first
+        # Step 15: Refresh persona store and navigate to personas
         api_post("/eval", {
             "js": "window.__AGENT_STORE__.getState().fetchPersonas(); return true;"
         })
@@ -443,24 +462,19 @@ class TemplateScenario:
         api_post("/navigate", {"section": "personas"})
         time.sleep(2)
 
-        # Step 16: Refresh persona_id from state — after promotion, buildPersonaId
-        # is cleared but selectedPersonaId or the promoted persona should be available
-        state = api_get("/state")
-        if isinstance(state, dict):
-            pid = state.get("buildPersonaId") or state.get("selectedPersonaId")
-            if pid:
-                self.persona_id = pid
-
-        # Try to select the persona by id or name
-        name_or_id = self.persona_id or self.name
-        result = api_post("/select-agent", {"name_or_id": name_or_id})
-        if isinstance(result, dict) and result.get("success"):
-            self.persona_name = result.get("name", self.name)
-            if result.get("id"):
-                self.persona_id = result["id"]
+        # Step 16: Select this persona by ID (NOT by name, to avoid matching duplicates)
+        if self.persona_id:
+            result = api_post("/select-agent", {"name_or_id": self.persona_id})
+            if isinstance(result, dict) and result.get("success"):
+                self.persona_name = result.get("name", self.name)
+            else:
+                err = result.get("error", "unknown") if isinstance(result, dict) else "bad response"
+                self.errors.append(f"Could not select persona by ID: {err}")
         else:
-            err = result.get("error", "unknown") if isinstance(result, dict) else "bad response"
-            self.errors.append(f"Could not select persona: {err}")
+            self.errors.append("No persona_id — cannot verify promotion")
+            self.scores[3] = 0
+            self.timings["verify_promotion"] = time.time() - t0
+            return
 
         # Step 17: Click the Matrix tab button via its data-testid
         resp = api_post("/click-testid", {"test_id": "editor-tab-matrix"})
