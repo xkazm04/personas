@@ -302,6 +302,17 @@ pub fn get_in_range(
     Ok((events, has_more))
 }
 
+/// Count events by source persona ID (used for post-mortem dedup check).
+pub fn count_by_source(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
+    let conn = pool.get()?;
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM persona_events WHERE source_id = ?1",
+        params![persona_id],
+        |row| row.get(0),
+    )?;
+    Ok(count)
+}
+
 pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppError> {
     let days = older_than_days.unwrap_or(30);
     let conn = pool.get()?;

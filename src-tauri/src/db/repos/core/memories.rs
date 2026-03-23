@@ -250,6 +250,17 @@ pub fn get_by_execution(
     Ok(results)
 }
 
+/// Count memories linked to a specific execution (used for post-mortem dedup check).
+pub fn count_by_execution(pool: &DbPool, execution_id: &str) -> Result<i64, AppError> {
+    let conn = pool.get()?;
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM persona_memories WHERE source_execution_id = ?1",
+        params![execution_id],
+        |row| row.get(0),
+    )?;
+    Ok(count)
+}
+
 pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaMemory, AppError> {
     let title = strip_html_tags(&input.title);
     let content = strip_html_tags(&input.content);

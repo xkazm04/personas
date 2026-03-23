@@ -1102,10 +1102,53 @@ pub async fn run_execution(
     logger.log(&format!("Duration: {duration_ms}ms"));
     logger.log("=== Persona Execution Finished ===");
 
-    // Post-mortem: extract execution flows only.
-    // Manual reviews and agent memories are already processed mid-stream
-    // via extract_protocol_message, so skip them here to avoid duplicates.
+    // Post-mortem: extract execution flows and any protocol messages that were
+    // missed during streaming (e.g. because they spanned multiple streaming deltas).
     let execution_flows = parser::extract_execution_flows(&assistant_text);
+
+    // Post-mortem protocol extraction: catch emit_event and agent_memory messages
+    // that were missed during streaming (e.g. because they spanned multiple deltas).
+    // Check DB first to avoid duplicating messages that were already dispatched.
+    {
+        use crate::db::repos::communication::events as event_repo_check;
+        use crate::db::repos::core::memories as mem_repo_check;
+
+        let existing_events = event_repo_check::count_by_source(&pool, &persona.id).unwrap_or(0);
+        let existing_memories = mem_repo_check::count_by_execution(&pool, &execution_id).unwrap_or(0);
+
+        let need_events = existing_events == 0;
+        let need_memories = existing_memories == 0;
+
+        if need_events || need_memories {
+            let notif_ref = persona.notification_channels.as_deref();
+            let mut dispatch_ctx = super::dispatch::DispatchContext {
+                app: &app,
+                pool: &pool,
+                execution_id: &execution_id,
+                persona_id: &persona.id,
+                project_id: &persona.project_id,
+                persona_name: &persona.name,
+                notification_channels: notif_ref,
+                logger: &mut logger,
+            };
+            for line in assistant_text.split('\n') {
+                let trimmed = line.trim();
+                if trimmed.starts_with('{') {
+                    if let Some(protocol_msg) = parser::extract_protocol_message(trimmed) {
+                        match &protocol_msg {
+                            ProtocolMessage::EmitEvent { .. } if need_events => {
+                                super::dispatch::dispatch(&mut dispatch_ctx, &protocol_msg);
+                            }
+                            ProtocolMessage::AgentMemory { .. } if need_memories => {
+                                super::dispatch::dispatch(&mut dispatch_ctx, &protocol_msg);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // Record tool usage
     let tool_counts = parser::count_tool_usage(&tool_use_lines);

@@ -135,17 +135,17 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             importance,
             tags,
         } => {
-            // Quality gate: reject error reports, stack traces, and credential failure logs
+            // Quality gate: reject stack traces and raw credential dumps.
+            // Allow genuine learnings even if they mention "error" or "missing" in context.
             let title_lower = title.to_lowercase();
             let content_lower = content.to_lowercase();
             let cat_lower = category.as_deref().unwrap_or("").to_lowercase();
             let is_error_content = cat_lower == "error" || cat_lower == "failure"
-                || title_lower.contains("error") || title_lower.contains("failed")
-                || title_lower.contains("blocked") || title_lower.contains("missing")
-                || title_lower.contains("timeout") || title_lower.contains("traceback")
+                || title_lower.contains("traceback") || title_lower.contains("stack trace")
+                || title_lower.contains("execution blocked")
                 || content_lower.contains("stack trace") || content_lower.contains("traceback")
-                || content_lower.contains("execution blocked") || content_lower.contains("credential")
-                || content_lower.contains("api_key") || content_lower.contains("access_token");
+                || content_lower.contains("execution blocked")
+                || content_lower.contains("api_key=") || content_lower.contains("access_token=");
 
             if is_error_content {
                 ctx.logger.log(&format!(

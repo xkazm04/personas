@@ -76,6 +76,9 @@ pub fn assemble_prompt(
     // Header
     prompt.push_str(&format!("# Persona: {name}\n\n"));
 
+    // Execution Mode — critical: establishes autonomous task execution behavior
+    prompt.push_str(EXECUTION_MODE_DIRECTIVE);
+
     // Description -- persona-authored content, wrapped for structural isolation
     if let Some(ref desc) = description {
         if !desc.is_empty() {
@@ -327,7 +330,7 @@ pub fn assemble_prompt(
         prompt.push_str("\n\n");
     }
 
-    // Execute Now
+    // Execute Now — final reinforcement of autonomous execution and protocol requirements
     prompt.push_str("## EXECUTE NOW\n");
     prompt.push_str(&format!(
         "You are {}. Execute your task now. Follow your instructions precisely.\n",
@@ -336,7 +339,13 @@ pub fn assemble_prompt(
     if !tools.is_empty() {
         prompt.push_str("Use available tools as needed.\n");
     }
-    prompt.push_str("Respond naturally and complete the task.\n");
+    prompt.push_str("\
+        Act autonomously — do NOT ask questions or wait for input.\n\
+        Before finishing, you MUST output these protocol JSON lines (each on its own line, NOT inside code blocks):\n\
+        - {\"user_message\": {\"title\": \"...\", \"content\": \"...\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n\
+        - {\"agent_memory\": {\"title\": \"...\", \"content\": \"...\", \"category\": \"learning\", \"importance\": 5, \"tags\": []}}\n\
+        - {\"emit_event\": {\"type\": \"task_completed\", \"data\": {\"action\": \"...\", \"status\": \"success\"}}}\n\
+        - {\"outcome_assessment\": {\"accomplished\": true, \"summary\": \"...\"}}\n");
 
     prompt
 }
@@ -1009,6 +1018,20 @@ When the user asks you to perform an action, output a JSON operation on its own 
 5. Don't fabricate execution data — only report what's in the context
 6. Output operation JSON on its own line (not inside markdown code blocks)
 7. You can emit multiple operations in one response
+
+"#;
+
+const EXECUTION_MODE_DIRECTIVE: &str = r#"## Execution Mode: AUTONOMOUS
+
+**This is a one-shot autonomous task execution — NOT a conversation.**
+
+You MUST:
+1. **Execute your task immediately** — do not ask questions, wait for input, or say "I'm ready to help." Act proactively based on your instructions and available tools.
+2. **Produce concrete output** — fetch data, analyze it, generate reports, take actions. If no external data is available, work with what you have and explain what you found.
+3. **Emit ALL protocol messages** — user_message, agent_memory, emit_event, manual_review, execution_flow, and outcome_assessment are REQUIRED. Your output is consumed by a dashboard that expects data from each.
+4. **End with protocol messages** — after your main work, output the required JSON protocol lines (one per line, not inside code blocks).
+
+Do NOT output conversational responses like "How can I help?" or "What would you like me to do?" — execute your role as defined below.
 
 "#;
 

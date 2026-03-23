@@ -91,6 +91,8 @@ def api_get(path: str):
     except httpx.ConnectError:
         print(f"  [ERROR] Cannot connect to test server at {BASE_URL}")
         return {"error": "connection_failed"}
+    except (httpx.ReadTimeout, httpx.WriteTimeout, httpx.PoolTimeout):
+        return {"error": f"timeout on {path}"}
     except httpx.HTTPStatusError as exc:
         return {"error": f"HTTP {exc.response.status_code}", "detail": exc.response.text}
     except json.JSONDecodeError:
@@ -122,6 +124,8 @@ def api_post(path: str, body: dict):
     except httpx.ConnectError:
         print(f"  [ERROR] Cannot connect to test server at {BASE_URL}")
         return {"error": "connection_failed"}
+    except (httpx.ReadTimeout, httpx.WriteTimeout, httpx.PoolTimeout):
+        return {"error": f"timeout on {path}"}
     except httpx.HTTPStatusError as exc:
         return {"error": f"HTTP {exc.response.status_code}", "detail": exc.response.text}
     except json.JSONDecodeError:
@@ -874,8 +878,15 @@ def main():
         sys.exit(1)
     print(f"  Server: {health.get('server', 'ok')} | Status: {health.get('status', 'unknown')}")
 
-    # Navigate to home to trigger store initialization
-    api_post("/navigate", {"section": "home"})
+    # Navigate to home to trigger store initialization (retry if bridge not ready)
+    for attempt in range(3):
+        try:
+            resp = api_post("/navigate", {"section": "home"})
+            if resp_ok(resp):
+                break
+        except Exception:
+            pass
+        time.sleep(5)
     time.sleep(2)
 
     # Discover templates
