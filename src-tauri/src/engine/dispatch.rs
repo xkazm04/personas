@@ -112,11 +112,18 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             }
         }
         ProtocolMessage::EmitEvent { event_type, data } => {
+            // Sanitize persona name for source_type: replace spaces with underscores,
+            // keep only alphanumeric, underscore, hyphen, dot, colon, forward-slash.
+            let safe_name: String = ctx.persona_name
+                .replace(' ', "_")
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-' || *c == '.' || *c == ':' || *c == '/')
+                .collect();
             match event_repo::publish(
                 ctx.pool,
                 CreatePersonaEventInput {
                     event_type: event_type.clone(),
-                    source_type: format!("persona:{}", ctx.persona_name),
+                    source_type: format!("persona:{}", safe_name),
                     source_id: Some(ctx.persona_id.to_string()),
                     target_persona_id: None,
                     project_id: Some(ctx.project_id.to_string()),
