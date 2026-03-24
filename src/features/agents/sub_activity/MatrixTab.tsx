@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAgentStore } from '@/stores/agentStore';
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
@@ -104,6 +104,16 @@ export function MatrixTab() {
   // Quick Execute handler — run the persona and show result inline
   const [execState, setExecState] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
   const [lastExecution, setLastExecution] = useState<PersonaExecution | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    };
+  }, []);
 
   // Load latest execution on mount
   useEffect(() => {
@@ -117,29 +127,39 @@ export function MatrixTab() {
 
   const handleQuickExecute = useCallback(async () => {
     if (!selectedPersona?.id || execState === 'running') return;
+
+    // Clear any leaked interval from a previous run
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+
     setExecState('running');
     setLastExecution(null);
     try {
       await executePersona(selectedPersona.id);
       // Poll for completion
       const pid = selectedPersona.id;
-      const pollInterval = setInterval(async () => {
+      pollIntervalRef.current = setInterval(async () => {
         try {
           const execs = await listExecutions(pid, 1);
           const latest = execs[0];
           if (latest && (latest.status === 'completed' || latest.status === 'partial')) {
-            clearInterval(pollInterval);
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
             setLastExecution(latest);
             setExecState('completed');
           } else if (latest && latest.status === 'failed') {
-            clearInterval(pollInterval);
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
             setLastExecution(latest);
             setExecState('failed');
           }
         } catch { /* polling error, continue */ }
       }, 5000);
       // Safety timeout: stop polling after 10 min
-      setTimeout(() => clearInterval(pollInterval), 600000);
+      pollTimeoutRef.current = setTimeout(() => {
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }, 600000);
     } catch (err) {
       console.error('Quick execute failed:', err);
       setExecState('failed');
