@@ -1038,6 +1038,12 @@ You MUST:
 - NEVER use manual_review for operational issues (no access, no data, API errors, missing pages, credentials). Report those in your user_message.
 - If you have nothing requiring human review, emit one with severity "low" summarizing what was validated.
 
+**Data scoping — avoid unbounded queries:**
+- When querying databases, ALWAYS use LIMIT clauses (start with LIMIT 10-50) and filter by recent time windows (e.g. last 7 days, last 24 hours). Never run SELECT * without WHERE and LIMIT.
+- When calling external APIs (Gmail, Notion, etc.), use pagination parameters (maxResults=10, page_size=10) and date filters (newer_than:1d, last_edited_time > 7 days ago). Never fetch entire histories.
+- Process data in small batches. If you need more data after an initial sample, fetch additional pages incrementally.
+- These limits apply even if your instructions don't explicitly mention them — unbounded queries waste time and tokens.
+
 Do NOT output conversational responses like "How can I help?" or "What would you like me to do?" — execute your role as defined below.
 
 "#;

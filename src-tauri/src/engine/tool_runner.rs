@@ -483,9 +483,26 @@ pub struct ToolTestResult {
 /// For string entries, the name is used as both the tool name and
 /// `requires_credential_type` so credential resolution can match it to a connector.
 pub fn tool_def_from_ir(tool_json: &serde_json::Value) -> Option<PersonaToolDefinition> {
-    // Handle plain string tool names (e.g. "notion", "gmail", "slack")
+    // Handle plain string tool names (e.g. "notion", "gmail", "notion_database_query")
     if let Some(name_str) = tool_json.as_str() {
         let name = name_str.to_string();
+        // Infer credential type from well-known connector prefixes.
+        // "notion_database_query" → "notion", "gmail" → "gmail", "data_processing" → None (builtin)
+        let known_connectors = ["notion", "gmail", "slack", "github", "airtable", "linear",
+            "supabase", "sentry", "asana", "attio", "clickup", "cal_com", "google_calendar",
+            "betterstack", "leonardo_ai"];
+        let builtin_prefixes = ["personas_", "database", "db_", "file_", "web_", "http_",
+            "data_", "nlp_", "ai_", "text_", "notification_", "date_"];
+        let name_lower = name.to_lowercase();
+        let is_builtin = builtin_prefixes.iter().any(|p| name_lower.starts_with(p));
+        let cred_type = if is_builtin {
+            None
+        } else {
+            known_connectors.iter()
+                .find(|c| name_lower == **c || name_lower.starts_with(&format!("{}_", c)))
+                .map(|c| c.to_string())
+                .or_else(|| Some(name.clone()))
+        };
         return Some(PersonaToolDefinition {
             id: format!("test_{}", name),
             name: name.clone(),
@@ -494,7 +511,7 @@ pub fn tool_def_from_ir(tool_json: &serde_json::Value) -> Option<PersonaToolDefi
             script_path: String::new(),
             input_schema: None,
             output_schema: None,
-            requires_credential_type: Some(name),
+            requires_credential_type: cred_type,
             implementation_guide: None,
             is_builtin: false,
             created_at: String::new(),

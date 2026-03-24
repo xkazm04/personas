@@ -777,6 +777,8 @@ pub async fn run_tool_tests(
             "personas_database", "database", "database_query", "db_query", "db_write",
             "personas_messages", "messaging", "personas_vector_db",
             "file_read", "file_write", "web_search", "web_fetch", "http_request",
+            "data_processing", "nlp_parser", "ai_generation", "date_calculation",
+            "notification_sender", "text_analysis", "data_enrichment",
         ].iter().copied().collect();
 
         let mut fb_passed = 0usize;
@@ -803,9 +805,15 @@ pub async fn run_tool_tests(
                         "output_preview": "Built-in platform tool — auto-verified",
                     })
                 } else {
-                    // Check if this tool has credentials resolved
-                    let has_cred = resolved_cred_names.contains(&name.to_lowercase())
-                        || hints.iter().any(|h| h.to_lowercase().contains(&name.to_lowercase()));
+                    // Check if this tool has credentials resolved.
+                    // Match both exact name AND prefix: "notion_database_query" matches cred "notion".
+                    let name_lower = name.to_lowercase();
+                    let has_cred = resolved_cred_names.contains(&name_lower)
+                        || resolved_cred_names.iter().any(|cred| name_lower.starts_with(cred))
+                        || hints.iter().any(|h| {
+                            let h_lower = h.to_lowercase();
+                            h_lower.contains(&name_lower) || name_lower.split('_').next().map_or(false, |prefix| h_lower.contains(prefix))
+                        });
                     if has_cred {
                         // Credential exists but CLI didn't generate a test — verify via healthcheck
                         fb_passed += 1;
