@@ -765,3 +765,138 @@ therefore receive an automatic point for criterion 6:
 
 No templates are missing `user_message`, `agent_memory`, or `emit_event`
 dimensions, so criteria 5, 7, and 8 never receive auto-points.
+
+---
+
+## 6. Lessons Learned (Session 2026-03-23/24)
+
+### Critical Bugs Found and Fixed
+
+#### A. Promote Path for Template Adoptions
+**File:** `src/features/agents/components/matrix/useMatrixLifecycle.ts`
+
+The `handlePromote` function checked `hasRichDraft` by looking for agent_ir keys
+(`system_prompt`, `tools`, `triggers`) but template payloads use different names
+(`structured_prompt`, `suggested_tools`, `suggested_triggers`). When the check
+failed, promote used a minimal fallback that only set `enabled=true` without
+saving `last_design_result` or `structured_prompt`. Fix: also check for
+`sessionId` existence -- when a build session exists, always use the Rust
+promote path which reads from the session's `agent_ir`.
+
+#### B. Design Result Dimension Population
+**File:** `src-tauri/src/commands/design/build_sessions.rs`
+
+The Rust `promote_build_draft_inner` had key mismatches:
+- Read `use_cases` but templates have `use_case_flows`
+- Filtered events by `direction == "subscribe"` but template events have no `direction` field
+- Constructed `design_result` from `required_connectors` but templates use `suggested_connectors`
+- Didn't include `use_case_flows`, `service_flow`, or `suggested_event_subscriptions` in `design_result`
+
+Fix: Added fallback keys for all template payload formats and included all
+dimension data in the constructed `design_result`.
+
+#### C. String Tool Names in tool_def_from_ir
+**File:** `src-tauri/src/engine/tool_runner.rs`
+
+Template payloads use string tool names (`["notion", "gmail"]`) but
+`tool_def_from_ir` only handled JSON objects with `"name"` field. String tools
+were silently dropped, preventing credential resolution. Fix: handle both
+string and object formats, set `requires_credential_type` to the tool name.
+
+#### D. Event source_type Validation
+**File:** `src-tauri/src/engine/dispatch.rs`
+
+`emit_event` dispatch used `format!("persona:{}", persona_name)` as `source_type`
+but persona names with spaces (e.g. "Budget Spending Monitor") failed the
+validator which only allows alphanumeric, underscore, hyphen, dot, colon, slash.
+Fix: sanitize persona name (replace spaces with underscores, filter invalid chars).
+
+#### E. Post-mortem Protocol Extraction
+**File:** `src-tauri/src/engine/runner.rs`
+
+Protocol messages (`emit_event`, `agent_memory`) that spanned multiple streaming
+deltas were missed by the mid-stream parser. Fix: added post-mortem scan of
+accumulated `assistant_text` after CLI process exits, with dedup checks to avoid
+double-creating records already dispatched during streaming.
+
+### Quality Issues Found and Fixed
+
+#### F. Manual Review Contains Operational Errors
+Reviews like "No pages shared with integration" are infrastructure problems,
+not business decisions. Fix: expanded the review quality gate in `dispatch.rs`
+to reject reviews containing operational error patterns ("no pages shared",
+"no page access", "audit blocked", "has no", "not shared with").
+
+#### G. Memory Contains Negative Scenarios
+Memories like "No Notion API credentials available" provide no learning value.
+Fix: tightened the memory quality filter to reject content about credential
+failures, authentication issues, and empty workspace problems.
+
+#### H. Execution Mode Directive
+The LLM treated executions as conversations ("I'm ready to help..."). Fix:
+added `EXECUTION_MODE_DIRECTIVE` constant at prompt start establishing
+autonomous one-shot execution, with explicit rules about manual_review
+(business decisions only, not operational issues) and protocol requirements.
+
+#### I. Review-to-Memory Link
+When a manual review is resolved (approved/rejected), a memory is now
+automatically created recording the decision for the persona to learn from.
+
+### Test Infrastructure Issues
+
+#### J. Persona ID Cross-Contamination
+The test script read `selectedPersonaId` from Zustand state which persisted
+across test runs. Fix: poll for `buildPersonaId` specifically (the newly
+created persona), with DB fallback query by template name.
+
+#### K. Stale Artifact Counts
+Test scored C5-C9 by counting ALL artifacts for a persona_id including from
+previous runs. Fix: record `_exec_started_at` timestamp, scope all artifact
+queries to `created_at >= timestamp`.
+
+#### L. Persona Deletion Cascade
+Deleting a persona left orphaned records in `persona_memories`,
+`persona_messages`, `persona_events`, `persona_healing_issues`. Fix: explicit
+cleanup in `personas.rs` delete function for tables lacking ON DELETE CASCADE.
+
+### Running Templates 11-30
+
+When continuing the test run for templates 11-30, be aware of:
+
+1. **API Rate Limits**: Running many templates back-to-back may exhaust the
+   Anthropic API quota. Each template requires 2 executions (Sonnet + Haiku).
+   If you see "You've hit your limit" in execution logs, wait for the rate
+   limit window to reset before continuing.
+
+2. **Template Slugs**: Two templates have mismatched slugs in the gallery:
+   - `email-morning-digest` -- gallery row uses `seed-email-morning-digest`
+     but the template ID may differ. Check the gallery data-testid.
+   - `email-support-assistant` -- same issue.
+
+3. **Credential Validation**: The build test now properly fails when tools
+   lack credentials. Templates blocked by this (0/10 with "Build test failed")
+   need their connector credential added in the Keys section, or the template
+   needs alternative tool definitions.
+
+4. **Execution Timeout**: The test polls for 10 minutes (120 iterations x 5s).
+   Some heavy executions (e.g. database-performance-monitor querying all
+   Supabase tables) may exceed this. If C4 fails with "Execution timeout",
+   the execution may still be running in the background.
+
+5. **Quality Audit**: After each template completes, audit the actual content
+   in the database -- not just artifact counts. Check:
+   - Messages have substantive content (not just "I'm ready to help")
+   - Reviews are business decisions (not operational errors)
+   - Memories are genuine learnings (not "missing credentials")
+   - Events match the template's defined event types
+
+### Validated Templates (10/10 confirmed with quality audit)
+
+| # | Template | Connectors | Key Quality Markers |
+|---|----------|------------|---------------------|
+| 1 | Incident Logger | Local DB, Messaging | Structured incident records in messages, low-severity audit reviews, procedure learnings in memories, incident_logged events |
+
+### Templates Pending Retest (previous results invalidated)
+
+Templates 2-10 from Tier 0-2 need retesting with the fixed pipeline.
+Templates 11-30 have never been tested with the correct methodology.
