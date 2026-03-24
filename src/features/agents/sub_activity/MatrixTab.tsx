@@ -173,7 +173,7 @@ export function MatrixTab() {
       await invoke('lab_create_version_snapshot', { personaId: selectedPersona.id });
       // Refresh persona data
       useAgentStore.getState().fetchPersonas();
-    } catch (err) {
+    } catch {
       // Fallback: try the standard version creation path
       try {
         const persona = selectedPersona;

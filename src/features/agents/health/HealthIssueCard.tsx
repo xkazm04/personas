@@ -5,7 +5,6 @@ import {
   Info,
   Wrench,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import type { DryRunIssue } from './types';
 
@@ -37,24 +36,20 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
 
   if (issue.resolved) {
     return (
-      <motion.div
-        initial={{ opacity: 0.5 }}
-        animate={{ opacity: 1 }}
-        className={`flex items-start gap-2.5 px-3 py-2.5 rounded-xl ${SEVERITY_STYLES.success.border} ${SEVERITY_STYLES.success.bg}`}
+      <div
+        className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2.5 rounded-xl ${SEVERITY_STYLES.success.border} ${SEVERITY_STYLES.success.bg}`}
       >
         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
         <span className="text-sm text-muted-foreground/50 line-through leading-relaxed">
           {issue.description}
         </span>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`px-3 py-2.5 rounded-xl ${style.border} ${style.bg}`}
+    <div
+      className={`animate-fade-slide-in px-3 py-2.5 rounded-xl ${style.border} ${style.bg}`}
     >
       <div className="flex items-start gap-2.5">
         <Icon className={`w-3.5 h-3.5 ${style.text} mt-0.5 shrink-0`} />
@@ -78,6 +73,6 @@ export function HealthIssueCard({ issue, onApplyFix, onResolved }: HealthIssueCa
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

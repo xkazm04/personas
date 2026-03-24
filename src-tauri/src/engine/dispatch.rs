@@ -6,6 +6,7 @@
 
 use tauri::{AppHandle, Emitter};
 
+use super::event_registry::event_name;
 use crate::db::models::{
     CreateManualReviewInput, CreateMessageInput, CreatePersonaEventInput, CreatePersonaMemoryInput,
 };
@@ -70,7 +71,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         m.title.as_deref().unwrap_or("untitled"),
                         m.id
                     ));
-                    let _ = ctx.app.emit("message-created", &m);
+                    let _ = ctx.app.emit(event_name::MESSAGE_CREATED, &m);
                     crate::notifications::notify_new_message(
                         ctx.app,
                         ctx.persona_name,

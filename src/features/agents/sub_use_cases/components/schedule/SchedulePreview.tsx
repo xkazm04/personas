@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { CalendarClock } from 'lucide-react';
 import type { CronPreview } from '@/api/pipeline/triggers';
 import { formatRunTime } from '../../libs/scheduleHelpers';
@@ -18,12 +17,8 @@ export function NextRunsPreview({ preview }: { preview: CronPreview }) {
   if (totalSpan <= 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.2 }}
-      className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10"
+    <div
+      className="animate-fade-slide-in p-3 rounded-xl bg-amber-500/5 border border-amber-500/10"
     >
       {/* Description */}
       <div className="flex items-center gap-2 mb-2.5">
@@ -45,12 +40,9 @@ export function NextRunsPreview({ preview }: { preview: CronPreview }) {
         {runs.map((run, i) => {
           const pct = Math.min(((run.getTime() - now) / totalSpan) * 100, 100);
           return (
-            <motion.div
+            <div
               key={i}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: i * 0.06, type: 'spring', stiffness: 500, damping: 25 }}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
+              className="animate-fade-slide-in absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
               style={{ left: `${pct}%` }}
             >
               <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-amber-400' : 'bg-amber-400/40'} ring-2 ring-amber-400/10`} />
@@ -59,7 +51,7 @@ export function NextRunsPreview({ preview }: { preview: CronPreview }) {
               }`}>
                 {formatRunTime(run)}
               </span>
-            </motion.div>
+            </div>
           );
         })}
       </div>
@@ -72,6 +64,6 @@ export function NextRunsPreview({ preview }: { preview: CronPreview }) {
           </span>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }

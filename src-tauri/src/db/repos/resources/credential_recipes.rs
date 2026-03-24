@@ -1,28 +1,14 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{CreateCredentialRecipeInput, CredentialRecipe};
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn row_to_recipe(row: &Row) -> rusqlite::Result<CredentialRecipe> {
-    Ok(CredentialRecipe {
-        id: row.get("id")?,
-        connector_name: row.get("connector_name")?,
-        connector_label: row.get("connector_label")?,
-        category: row.get("category")?,
-        color: row.get("color")?,
-        oauth_type: row.get("oauth_type")?,
-        fields_json: row.get("fields_json")?,
-        healthcheck_json: row.get("healthcheck_json")?,
-        setup_instructions: row.get("setup_instructions")?,
-        summary: row.get("summary")?,
-        docs_url: row.get("docs_url")?,
-        source: row.get("source")?,
-        usage_count: row.get("usage_count")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_recipe -> CredentialRecipe {
+    id, connector_name, connector_label, category, color,
+    oauth_type, fields_json, healthcheck_json, setup_instructions,
+    summary, docs_url, source, usage_count, created_at, updated_at,
+});
 
 /// Look up a recipe by connector name. Returns None if not cached.
 pub fn get_by_connector(pool: &DbPool, connector_name: &str) -> Result<Option<CredentialRecipe>, AppError> {

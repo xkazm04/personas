@@ -1571,3 +1571,161 @@ pub fn delete_triage_rule(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let rows = conn.execute("DELETE FROM dev_triage_rules WHERE id = ?1", params![id])?;
     Ok(rows > 0)
 }
+
+// ============================================================================
+// Pipelines (Idea-to-Execution)
+// ============================================================================
+
+use crate::db::models::{DevPipeline, ContextHealthSnapshot};
+
+fn row_to_pipeline(row: &Row) -> rusqlite::Result<DevPipeline> {
+    Ok(DevPipeline {
+        id: row.get("id")?,
+        project_id: row.get("project_id")?,
+        idea_id: row.get("idea_id")?,
+        task_id: row.get("task_id")?,
+        stage: row.get("stage")?,
+        auto_execute: row.get::<_, i32>("auto_execute")? != 0,
+        verify_after: row.get::<_, i32>("verify_after")? != 0,
+        verification_scan_id: row.get("verification_scan_id")?,
+        error: row.get("error")?,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+pub fn create_pipeline(
+    pool: &DbPool,
+    project_id: &str,
+    idea_id: &str,
+    auto_execute: bool,
+    verify_after: bool,
+) -> Result<DevPipeline, AppError> {
+    let conn = pool.get()?;
+    let id = uuid::Uuid::new_v4().to_string();
+    conn.execute(
+        "INSERT INTO dev_pipelines (id, project_id, idea_id, stage, auto_execute, verify_after)
+         VALUES (?1, ?2, ?3, 'triaged', ?4, ?5)",
+        params![id, project_id, idea_id, auto_execute as i32, verify_after as i32],
+    )?;
+    get_pipeline_by_id(pool, &id)
+}
+
+pub fn get_pipeline_by_id(pool: &DbPool, id: &str) -> Result<DevPipeline, AppError> {
+    let conn = pool.get()?;
+    conn.query_row(
+        "SELECT * FROM dev_pipelines WHERE id = ?1",
+        params![id],
+        row_to_pipeline,
+    )
+    .map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Pipeline not found: {id}")),
+        other => AppError::from(other),
+    })
+}
+
+pub fn list_pipelines(
+    pool: &DbPool,
+    project_id: &str,
+    stage: Option<&str>,
+) -> Result<Vec<DevPipeline>, AppError> {
+    let conn = pool.get()?;
+    if let Some(s) = stage {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM dev_pipelines WHERE project_id = ?1 AND stage = ?2 ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map(params![project_id, s], row_to_pipeline)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
+    } else {
+        let mut stmt = conn.prepare(
+            "SELECT * FROM dev_pipelines WHERE project_id = ?1 ORDER BY created_at DESC"
+        )?;
+        let rows = stmt.query_map(params![project_id], row_to_pipeline)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
+    }
+}
+
+pub fn advance_pipeline_stage(
+    pool: &DbPool,
+    id: &str,
+    new_stage: &str,
+    task_id: Option<&str>,
+    error: Option<&str>,
+) -> Result<DevPipeline, AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE dev_pipelines SET stage = ?2, task_id = COALESCE(?3, task_id), error = ?4, updated_at = datetime('now') WHERE id = ?1",
+        params![id, new_stage, task_id, error],
+    )?;
+    get_pipeline_by_id(pool, id)
+}
+
+pub fn delete_pipeline(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let rows = conn.execute("DELETE FROM dev_pipelines WHERE id = ?1", params![id])?;
+    Ok(rows > 0)
+}
+
+// ============================================================================
+// Context Health Snapshots
+// ============================================================================
+
+fn row_to_health_snapshot(row: &Row) -> rusqlite::Result<ContextHealthSnapshot> {
+    Ok(ContextHealthSnapshot {
+        id: row.get("id")?,
+        project_id: row.get("project_id")?,
+        group_id: row.get("group_id")?,
+        group_name: row.get("group_name")?,
+        overall_score: row.get("overall_score")?,
+        security_score: row.get("security_score")?,
+        quality_score: row.get("quality_score")?,
+        coverage_score: row.get("coverage_score")?,
+        debt_score: row.get("debt_score")?,
+        issues_found: row.get("issues_found")?,
+        issues_json: row.get("issues_json")?,
+        recommendations: row.get("recommendations")?,
+        scanned_at: row.get("scanned_at")?,
+    })
+}
+
+pub fn insert_health_snapshot(pool: &DbPool, snap: &ContextHealthSnapshot) -> Result<ContextHealthSnapshot, AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO context_health_snapshots (id, project_id, group_id, group_name, overall_score, security_score, quality_score, coverage_score, debt_score, issues_found, issues_json, recommendations, scanned_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+        params![
+            snap.id, snap.project_id, snap.group_id, snap.group_name,
+            snap.overall_score, snap.security_score, snap.quality_score,
+            snap.coverage_score, snap.debt_score, snap.issues_found,
+            snap.issues_json, snap.recommendations, snap.scanned_at,
+        ],
+    )?;
+    get_health_snapshot_by_id(pool, &snap.id)
+}
+
+pub fn get_health_snapshot_by_id(pool: &DbPool, id: &str) -> Result<ContextHealthSnapshot, AppError> {
+    let conn = pool.get()?;
+    conn.query_row(
+        "SELECT * FROM context_health_snapshots WHERE id = ?1",
+        params![id],
+        row_to_health_snapshot,
+    )
+    .map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Health snapshot not found: {id}")),
+        other => AppError::from(other),
+    })
+}
+
+pub fn list_health_snapshots(
+    pool: &DbPool,
+    project_id: &str,
+    limit: Option<i32>,
+) -> Result<Vec<ContextHealthSnapshot>, AppError> {
+    let conn = pool.get()?;
+    let lim = limit.unwrap_or(50);
+    let mut stmt = conn.prepare(
+        "SELECT * FROM context_health_snapshots WHERE project_id = ?1 ORDER BY scanned_at DESC LIMIT ?2"
+    )?;
+    let rows = stmt.query_map(params![project_id, lim], row_to_health_snapshot)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
+}

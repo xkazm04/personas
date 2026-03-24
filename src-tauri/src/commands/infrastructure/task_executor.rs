@@ -14,6 +14,7 @@ use tokio_util::sync::CancellationToken;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::repos::dev_tools as repo;
+use crate::engine::event_registry::event_name;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
 use crate::engine::types::StreamLineType;
@@ -30,8 +31,8 @@ struct TaskExecExtra;
 
 static TASK_EXEC_JOBS: BackgroundJobManager<TaskExecExtra> = BackgroundJobManager::new(
     "task-executor lock poisoned",
-    "task-exec-status",
-    "task-exec-output",
+    event_name::TASK_EXEC_STATUS,
+    event_name::TASK_EXEC_OUTPUT,
 );
 
 // =============================================================================
@@ -122,7 +123,7 @@ pub async fn dev_tools_execute_task(
         .as_deref()
         .and_then(|goal_id| repo::get_goal_by_id(&state.db, goal_id).ok())
         .map(|goal| {
-            let mut s = format!("{}", goal.title);
+            let mut s = goal.title.to_string();
             if let Some(desc) = &goal.description {
                 s.push_str(&format!(": {desc}"));
             }
@@ -218,7 +219,7 @@ pub async fn dev_tools_execute_task(
                 );
                 TASK_EXEC_JOBS.set_status(&app_handle, &task_id_for_spawn, "completed", None);
                 let _ = app_handle.emit(
-                    "task-exec-complete",
+                    event_name::TASK_EXEC_COMPLETE,
                     json!({ "task_id": task_id_for_spawn, "output_lines": line_count }),
                 );
                 crate::notifications::send(
@@ -371,7 +372,7 @@ pub async fn dev_tools_start_batch(
                 .as_deref()
                 .and_then(|goal_id| repo::get_goal_by_id(&pool, goal_id).ok())
                 .map(|goal| {
-                    let mut s = format!("{}", goal.title);
+                    let mut s = goal.title.to_string();
                     if let Some(desc) = &goal.description {
                         s.push_str(&format!(": {desc}"));
                     }
@@ -463,7 +464,7 @@ pub async fn dev_tools_start_batch(
                     );
                     TASK_EXEC_JOBS.set_status(&app_handle, &tid, "completed", None);
                     let _ = app_handle.emit(
-                        "task-exec-complete",
+                        event_name::TASK_EXEC_COMPLETE,
                         json!({ "task_id": tid, "output_lines": line_count }),
                     );
 
@@ -642,7 +643,7 @@ async fn run_task_execution(
 
                 // Update progress estimate based on output lines
                 if output_lines % 10 == 0 {
-                    let progress = (output_lines.min(90) as i32).min(95);
+                    let progress = output_lines.min(90).min(95);
                     let _ = repo::update_task(
                         pool,
                         task_id,

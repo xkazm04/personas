@@ -6,9 +6,8 @@ use tokio_util::sync::CancellationToken;
 use std::sync::Arc;
 
 use crate::background_job::BackgroundJobManager;
-use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::communication::reviews as reviews_repo;
-use crate::db::models::CreatePersonaInput;
+use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -38,8 +37,8 @@ struct AdoptSnapshotExtras {
 
 static ADOPT_JOBS: BackgroundJobManager<AdoptExtra> = BackgroundJobManager::new(
     "template adopt job lock poisoned",
-    "template-adopt-status",
-    "template-adopt-output",
+    event_name::TEMPLATE_ADOPT_STATUS,
+    event_name::TEMPLATE_ADOPT_OUTPUT,
 );
 
 /// 10-minute TTL for completed adopt jobs, max 50 entries.
@@ -166,6 +165,24 @@ pub async fn start_template_adopt_background(
     validate_optional_json_field("previous_draft_json", &previous_draft_json)?;
     validate_optional_json_field("user_answers_json", &user_answers_json)?;
     validate_optional_json_field("connector_swaps_json", &connector_swaps_json)?;
+
+    // Backend integrity check: verify the design result against the embedded manifest.
+    let integrity = crate::engine::template_checksums::verify_template(
+        &template_name,
+        &design_result_json,
+    );
+    if integrity.is_known_template && !integrity.valid {
+        tracing::warn!(
+            template = %template_name,
+            expected = ?integrity.expected_hash,
+            actual = %integrity.actual_hash,
+            "SECURITY: Template integrity check failed during adoption — content may have been tampered with"
+        );
+        return Err(AppError::Validation(
+            "Template integrity verification failed: content does not match the expected checksum. \
+             The template may have been tampered with.".into(),
+        ));
+    }
 
     let cancel_token = CancellationToken::new();
     ADOPT_JOBS.insert_running(adopt_id.clone(), cancel_token.clone(), AdoptExtra::default())?;
@@ -445,6 +462,25 @@ pub fn instant_adopt_template_inner(
         return Err(AppError::Validation("Design result JSON cannot be empty".into()));
     }
 
+    // Backend integrity check: verify the design result against the embedded manifest.
+    // This catches tampered templates even if the frontend checksums were bypassed.
+    let integrity = crate::engine::template_checksums::verify_template(
+        &template_name,
+        &design_result_json,
+    );
+    if integrity.is_known_template && !integrity.valid {
+        tracing::warn!(
+            template = %template_name,
+            expected = ?integrity.expected_hash,
+            actual = %integrity.actual_hash,
+            "SECURITY: Template integrity check failed during adoption — content may have been tampered with"
+        );
+        return Err(AppError::Validation(
+            "Template integrity verification failed: content does not match the expected checksum. \
+             The template may have been tampered with.".into(),
+        ));
+    }
+
     let design: serde_json::Value = serde_json::from_str(&design_result_json)
         .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;
 
@@ -490,13 +526,13 @@ pub fn instant_adopt_template_inner(
     // Build triggers from suggested_triggers
     let triggers: Option<Vec<N8nTriggerDraft>> = design.get("suggested_triggers")
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|t| {
-            Some(N8nTriggerDraft {
+        .map(|arr| arr.iter().map(|t| {
+            N8nTriggerDraft {
                 trigger_type: t.get("trigger_type").and_then(|v| v.as_str()).unwrap_or("manual").to_string(),
                 config: t.get("config").cloned(),
                 description: t.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 use_case_id: None,
-            })
+            }
         }).collect());
 
     // Build required_connectors from suggested_connectors
@@ -1267,8 +1303,8 @@ struct GenSnapshotExtras {
 
 static GEN_JOBS: BackgroundJobManager<GenExtra> = BackgroundJobManager::new(
     "template gen job lock poisoned",
-    "template-generate-status",
-    "template-generate-output",
+    event_name::TEMPLATE_GENERATE_STATUS,
+    event_name::TEMPLATE_GENERATE_OUTPUT,
 );
 
 #[tauri::command]
@@ -1634,5 +1670,54 @@ async fn run_template_adopt_job(
 
     tracing::info!(adopt_id = %adopt_id, template_id = %template_name, outcome = "success", "run_template_adopt_job (adjustment re-run): completed");
     Ok(draft)
+}
+
+// -- Template integrity verification (backend trust boundary) --------
+
+/// Verify a single template's content integrity against the embedded Rust manifest.
+/// This provides defense-in-depth: even if the frontend bundle is tampered with,
+/// the native binary's embedded checksums remain authoritative.
+#[tauri::command]
+pub fn verify_template_integrity(
+    state: State<'_, Arc<AppState>>,
+    path: String,
+    content: String,
+) -> Result<crate::engine::template_checksums::TemplateIntegrityResult, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::engine::template_checksums::verify_template(&path, &content))
+}
+
+/// Input for batch template verification.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TemplateVerifyEntry {
+    pub path: String,
+    pub content: String,
+}
+
+/// Verify a batch of templates against the embedded Rust manifest.
+/// Called during catalog initialization to validate all built-in templates
+/// at the backend trust boundary.
+#[tauri::command]
+pub fn verify_template_integrity_batch(
+    state: State<'_, Arc<AppState>>,
+    templates: Vec<TemplateVerifyEntry>,
+) -> Result<crate::engine::template_checksums::BatchIntegrityResult, AppError> {
+    require_auth_sync(&state)?;
+    let pairs: Vec<(String, String)> = templates
+        .into_iter()
+        .map(|t| (t.path, t.content))
+        .collect();
+    Ok(crate::engine::template_checksums::verify_templates_batch(&pairs))
+}
+
+/// Get the count of templates in the backend's embedded checksum manifest.
+/// Useful for the frontend to detect manifest staleness.
+#[tauri::command]
+pub fn get_template_manifest_count(
+    state: State<'_, Arc<AppState>>,
+) -> Result<usize, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::engine::template_checksums::manifest_entry_count())
 }
 

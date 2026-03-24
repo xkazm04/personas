@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, ChevronRight, LayoutTemplate } from 'lucide-react';
 import type { PipelineTemplate } from './pipelineTemplateTypes';
 import { EDGE_COLORS, NODE_ROLE_FILLS } from './pipelineTemplateTypes';
@@ -35,12 +34,9 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
           const isExpanded = expandedId === tpl.id;
 
           return (
-            <motion.div
+            <div
               key={tpl.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04, duration: 0.2 }}
-              className="relative group"
+              className="animate-fade-slide-in relative group"
             >
               <div
                 className={`rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden ${
@@ -85,14 +81,9 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                 </div>
 
                 {/* Expanded details */}
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
+                {isExpanded && (
+                    <div
+                      className="animate-fade-slide-in overflow-hidden"
                     >
                       <div className="px-3 pb-3 pt-1 border-t border-primary/8">
                         {/* Node list */}
@@ -144,11 +135,10 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                           <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>

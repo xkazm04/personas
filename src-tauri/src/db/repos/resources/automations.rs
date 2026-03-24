@@ -9,6 +9,7 @@ use crate::db::DbPool;
 use crate::engine::lifecycle::AutomationDeployStatus;
 use crate::error::AppError;
 
+// row_to_automation uses custom conversions (unwrap_or_default, unwrap_or_else, FromStr), stays manual.
 fn row_to_automation(row: &Row) -> rusqlite::Result<PersonaAutomation> {
     Ok(PersonaAutomation {
         id: row.get("id")?,
@@ -40,22 +41,11 @@ fn row_to_automation(row: &Row) -> rusqlite::Result<PersonaAutomation> {
     })
 }
 
-fn row_to_run(row: &Row) -> rusqlite::Result<AutomationRun> {
-    Ok(AutomationRun {
-        id: row.get("id")?,
-        automation_id: row.get("automation_id")?,
-        execution_id: row.get("execution_id")?,
-        status: row.get("status")?,
-        input_data: row.get("input_data")?,
-        output_data: row.get("output_data")?,
-        platform_run_id: row.get("platform_run_id")?,
-        platform_logs_url: row.get("platform_logs_url")?,
-        duration_ms: row.get("duration_ms")?,
-        error_message: row.get("error_message")?,
-        started_at: row.get("started_at")?,
-        completed_at: row.get("completed_at")?,
-    })
-}
+row_mapper!(row_to_run -> AutomationRun {
+    id, automation_id, execution_id, status, input_data, output_data,
+    platform_run_id, platform_logs_url, duration_ms, error_message,
+    started_at, completed_at,
+});
 
 // -- Automation CRUD --------------------------------------------------
 
@@ -69,20 +59,7 @@ pub fn get_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<PersonaAuto
     Ok(items)
 }
 
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaAutomation, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_automations WHERE id = ?1",
-        params![id],
-        row_to_automation,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("Automation {id}"))
-        }
-        other => AppError::Database(other),
-    })
-}
+crud_get_by_id!(PersonaAutomation, "persona_automations", "Automation", row_to_automation);
 
 pub fn create(pool: &DbPool, input: CreateAutomationInput) -> Result<PersonaAutomation, AppError> {
     if input.name.trim().is_empty() {
@@ -207,11 +184,7 @@ pub fn update(
     get_by_id(pool, id)
 }
 
-pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM persona_automations WHERE id = ?1", params![id])?;
-    Ok(rows > 0)
-}
+crud_delete!("persona_automations");
 
 /// Returns a summary of resources affected by deleting this automation.
 pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {

@@ -1,0 +1,88 @@
+import { useI18nStore, type Language } from '@/stores/i18nStore';
+import type { Translations } from './en';
+
+// Lazy-load translation bundles so only the active language is in memory.
+// Non-English bundles are partial — missing keys fall back to English at runtime.
+// The `as Translations` cast is safe because `useTranslation()` merges with `en`.
+const loaders: Record<Language, () => Promise<Translations>> = {
+  en: () => import('./en').then(m => m.en),
+  zh: () => import('./zh').then(m => m.zh as unknown as Translations),
+  ar: () => import('./ar').then(m => m.ar as unknown as Translations),
+  hi: () => import('./hi').then(m => m.hi as unknown as Translations),
+  ru: () => import('./ru').then(m => m.ru as unknown as Translations),
+  id: () => import('./id').then(m => m.id as unknown as Translations),
+  es: () => import('./es').then(m => m.es as unknown as Translations),
+  fr: () => import('./fr').then(m => m.fr as unknown as Translations),
+  bn: () => import('./bn').then(m => m.bn as unknown as Translations),
+  ja: () => import('./ja').then(m => m.ja as unknown as Translations),
+  vi: () => import('./vi').then(m => m.vi as unknown as Translations),
+  de: () => import('./de').then(m => m.de as unknown as Translations),
+  ko: () => import('./ko').then(m => m.ko as unknown as Translations),
+  cs: () => import('./cs').then(m => m.cs as unknown as Translations),
+};
+
+// Cache loaded bundles so we don't re-import on every render.
+const cache = new Map<Language, Translations>();
+
+// English is always available synchronously as the fallback.
+import { en } from './en';
+cache.set('en', en);
+
+/** Eagerly load a language bundle into cache (fire-and-forget). */
+function preload(lang: Language) {
+  if (cache.has(lang)) return;
+  loaders[lang]().then(bundle => {
+    cache.set(lang, bundle);
+    // Notify React via a micro state bump so hooks re-render.
+    listeners.forEach(fn => fn());
+  });
+}
+
+// Tiny pub-sub so React hooks re-render when a bundle finishes loading.
+const listeners = new Set<() => void>();
+
+/**
+ * Interpolate `{variable}` placeholders in a translation string.
+ *
+ * @example
+ *   interpolate("You have {count} agents", { count: 3 })
+ *   // => "You have 3 agents"
+ */
+export function interpolate(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) =>
+    vars[key] !== undefined ? String(vars[key]) : `{${key}}`
+  );
+}
+
+/**
+ * Primary translation hook. Returns the full translation tree for the
+ * active language and a helper `tx()` for variable interpolation.
+ *
+ * Usage:
+ *   const { t, tx, language } = useTranslation();
+ *   t.common.save             // "Save"
+ *   tx(t.common.agent_count_other, { count: 5 })  // "5 agents"
+ */
+export function useTranslation() {
+  const { language } = useI18nStore();
+
+  // Trigger preload if the bundle isn't cached yet.
+  if (!cache.has(language)) {
+    preload(language);
+  }
+
+  // Fall back to English while async bundle loads.
+  const bundle = cache.get(language) ?? en;
+
+  return {
+    /** Full translation tree for the active language. */
+    t: bundle,
+    /** Active language code (e.g. "en", "zh", "es"). */
+    language,
+    /**
+     * Interpolate variables into a translation string.
+     * @example tx(t.common.agent_count_other, { count: 5 })
+     */
+    tx: interpolate,
+  };
+}

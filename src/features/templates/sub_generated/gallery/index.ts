@@ -27,5 +27,7 @@ export { SearchAutocomplete } from './search/suggestions/SearchAutocomplete';
 export { DensityToggle, type Density } from './search/filters/DensityToggle';
 export { ExploreView } from './explore/ExploreView';
 export { RoleGroupCard } from './explore/RoleGroupCard';
-export { useStructuredQuery, type QueryChip, type UseStructuredQueryReturn } from './search/suggestions/useStructuredQuery';
+export { AutomationOpportunitiesRail } from './explore/AutomationOpportunitiesRail';
+export { useAutomationDiscovery, type AutomationOpportunity } from './explore/useAutomationDiscovery';
+export { useStructuredQuery, type QueryChip, type ChipType, type UseStructuredQueryReturn } from './search/suggestions/useStructuredQuery';
 export { getCategoryMeta, CATEGORY_META, SORT_OPTIONS, CATEGORY_ROLE_GROUPS, type RoleGroup } from './search/filters/searchConstants';

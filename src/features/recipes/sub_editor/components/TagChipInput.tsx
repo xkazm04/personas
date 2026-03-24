@@ -1,7 +1,5 @@
 import { useState, useCallback, useRef, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-
 interface TagChipInputProps {
   tags: string[];
   onChange: (tags: string[]) => void;
@@ -37,16 +35,10 @@ export function TagChipInput({ tags, onChange }: TagChipInputProps) {
       className="flex flex-wrap items-center gap-1.5 min-h-[38px] w-full rounded-xl border border-border/60 bg-background/50 px-3 py-1.5 cursor-text"
       onClick={() => inputRef.current?.focus()}
     >
-      <AnimatePresence mode="popLayout">
-        {tags.map((tag, i) => (
-          <motion.span
+      {tags.map((tag, i) => (
+          <span
             key={tag}
-            layout
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.15 }}
-            className="inline-flex items-center gap-1 rounded-lg bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium"
+            className="animate-fade-slide-in inline-flex items-center gap-1 rounded-lg bg-primary/10 text-primary px-2 py-0.5 text-xs font-medium"
           >
             {tag}
             <button
@@ -56,9 +48,8 @@ export function TagChipInput({ tags, onChange }: TagChipInputProps) {
             >
               <X className="w-3 h-3" />
             </button>
-          </motion.span>
+          </span>
         ))}
-      </AnimatePresence>
       <input
         ref={inputRef}
         type="text"

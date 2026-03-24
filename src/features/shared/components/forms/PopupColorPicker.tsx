@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Palette } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
@@ -46,23 +45,17 @@ export function PopupColorPicker({ value, onChange, size = 'sm' }: PopupColorPic
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute top-full mt-1 left-0 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 p-3 min-w-[280px]"
+      {open && (
+          <div
+            className="animate-fade-slide-in absolute top-full mt-1 left-0 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 p-3 min-w-[280px]"
           >
             <ColorPicker
               value={value}
               onChange={handlePresetChange}
               size={size}
             />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

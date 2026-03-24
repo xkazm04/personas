@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Key } from 'lucide-react';
 import { getAppSetting, setAppSetting } from "@/api/system/settings";
 import { useToastStore } from '@/stores/toastStore';
@@ -91,11 +90,8 @@ export function ConfigurationPopup({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-background border border-primary/20 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+      <div
+        className="animate-fade-slide-in bg-background border border-primary/20 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
       >
         <div className="px-4 py-4 border-b border-primary/10">
           <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
@@ -148,17 +144,14 @@ export function ConfigurationPopup({
             </button>
           </div>
           {!hasAnyValue && !saving && loaded && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.15 }}
-              className="text-muted-foreground text-xs mt-1.5 text-right"
+            <p
+              className="animate-fade-slide-in text-muted-foreground text-xs mt-1.5 text-right"
             >
               Fill in at least one field to save
-            </motion.p>
+            </p>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

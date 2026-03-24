@@ -1,5 +1,4 @@
 import { Trash2, ArrowRight, FileInput, FileOutput } from 'lucide-react';
-import { motion } from 'framer-motion';
 import type { ExamplePair } from '../wizard/ExamplePairCollector';
 
 interface PairItemProps {
@@ -19,13 +18,9 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
     : null;
 
   return (
-    <motion.div
+    <div
       key={pair.id}
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.15 }}
-      className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.02] overflow-hidden"
+      className="animate-fade-slide-in rounded-xl border border-emerald-500/15 bg-emerald-500/[0.02] overflow-hidden"
     >
       <div className="flex items-center gap-2 px-3 py-2">
         <button onClick={() => onToggleCollapse(pair.id)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
@@ -72,6 +67,6 @@ export function PairItem({ pair, index, isCollapsed, disabled, onToggleCollapse,
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

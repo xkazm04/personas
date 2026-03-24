@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import { EventName } from '@/lib/eventRegistry';
 
 type Subscriber = (message: PersonaMessage) => void;
 
@@ -13,7 +14,7 @@ function ensureListener() {
   if (setupPromise) return;
   setupInFlight = true;
   setupPromise = (async () => {
-    const unlisten = await listen<PersonaMessage>('message-created', (event) => {
+    const unlisten = await listen<PersonaMessage>(EventName.MESSAGE_CREATED, (event) => {
       const message = event.payload;
       for (const callback of subscribers) {
         callback(message);

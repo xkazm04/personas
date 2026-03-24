@@ -78,6 +78,27 @@ export const zh = {
     none: "无",
   },
 
+  chrome: {
+    app_title: "Personas",
+    skip_to_content: "跳转到内容",
+    minimize: "最小化",
+    restore: "还原",
+    maximize: "最大化",
+    close_window: "关闭",
+    update_available: "有可用更新: v{version}",
+    install_and_restart: "安装并重启",
+    installing: "安装中...",
+    expand_sidebar: "展开侧栏",
+    collapse_sidebar: "收起侧栏",
+    network_settings: "网络设置",
+    dark: "深色",
+    light: "浅色",
+    sign_in_google: "使用 Google 登录",
+    signed_in: "已登录",
+    sign_out: "退出登录",
+    offline: "离线",
+  },
+
   sidebar: {
     home: "首页",
     overview: "概览",

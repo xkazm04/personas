@@ -1,5 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { AlertRule } from "@/lib/bindings/AlertRule";
+import type { FiredAlert } from "@/lib/bindings/FiredAlert";
 import type { MetricsChartData } from "@/lib/bindings/MetricsChartData";
 import type { MetricsSummary } from "@/lib/bindings/MetricsSummary";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
@@ -82,3 +84,52 @@ export const runPromptAbTest = (
     versionBId,
     testInput: testInput,
   });
+
+// ============================================================================
+// Alert Rules (backend-persisted)
+// ============================================================================
+
+export const listAlertRules = () =>
+  invoke<AlertRule[]>("list_alert_rules");
+
+export const createAlertRule = (input: {
+  name: string;
+  metric: string;
+  operator: string;
+  threshold: number;
+  severity: string;
+  persona_id: string | null;
+  enabled: boolean;
+}) => invoke<AlertRule>("create_alert_rule", { input });
+
+export const updateAlertRule = (id: string, input: {
+  name?: string;
+  metric?: string;
+  operator?: string;
+  threshold?: number;
+  severity?: string;
+  persona_id?: string | null;
+  enabled?: boolean;
+}) => invoke<AlertRule>("update_alert_rule", { id, input });
+
+export const deleteAlertRule = (id: string) =>
+  invoke<void>("delete_alert_rule", { id });
+
+export const toggleAlertRule = (id: string) =>
+  invoke<AlertRule>("toggle_alert_rule", { id });
+
+// ============================================================================
+// Fired Alerts (backend-persisted history)
+// ============================================================================
+
+export const listFiredAlerts = (limit?: number) =>
+  invoke<FiredAlert[]>("list_fired_alerts", { limit });
+
+export const createFiredAlert = (alert: FiredAlert) =>
+  invoke<void>("create_fired_alert", { alert });
+
+export const dismissFiredAlert = (id: string) =>
+  invoke<void>("dismiss_fired_alert", { id });
+
+export const clearFiredAlerts = () =>
+  invoke<void>("clear_fired_alerts");

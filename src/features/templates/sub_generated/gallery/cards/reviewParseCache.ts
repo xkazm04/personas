@@ -1,6 +1,7 @@
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
+import type { TemplateVerification } from '@/lib/types/templateTypes';
 
 // -- Cached review field parsing --------------------------------------
 // WeakMap keyed by review object identity -- entries are GC'd when the
@@ -10,6 +11,8 @@ export interface CachedReviewFields {
   connectors: string[];
   flowCount: number;
   designResult?: AgentIR | null; // undefined = not yet parsed
+  verification?: TemplateVerification; // undefined = not yet computed
+  readinessScore?: number; // undefined = not yet computed
 }
 
 const reviewParseCache = new WeakMap<PersonaDesignReview, CachedReviewFields>();
@@ -34,6 +37,46 @@ export function getCachedDesignResult(review: PersonaDesignReview): AgentIR | nu
     cached.designResult = parseJsonSafe<AgentIR | null>(review.design_result, null);
   }
   return cached.designResult;
+}
+
+/** Lazily compute & cache template verification -- only called on expansion/hover. */
+export function getCachedVerification(
+  review: PersonaDesignReview,
+  verify: (params: {
+    testCaseId: string;
+    testRunId: string;
+    isDesignGenerated: boolean;
+    designResultJson: string | null;
+  }) => TemplateVerification,
+): TemplateVerification {
+  const cached = getCachedLightFields(review);
+  if (cached.verification === undefined) {
+    cached.verification = verify({
+      testCaseId: review.test_case_id,
+      testRunId: review.test_run_id,
+      isDesignGenerated: !review.test_run_id.startsWith('seed-'),
+      designResultJson: review.design_result,
+    });
+  }
+  return cached.verification;
+}
+
+/** Lazily compute & cache adoption readiness -- only called on expansion/hover. */
+export function getCachedReadinessScore(
+  review: PersonaDesignReview,
+  compute: (
+    review: PersonaDesignReview,
+    installed: Set<string>,
+    creds: Set<string>,
+  ) => number,
+  installedConnectorNames: Set<string>,
+  credentialServiceTypes: Set<string>,
+): number {
+  const cached = getCachedLightFields(review);
+  if (cached.readinessScore === undefined) {
+    cached.readinessScore = compute(review, installedConnectorNames, credentialServiceTypes);
+  }
+  return cached.readinessScore;
 }
 
 export type { TemplateViewMode as ViewMode } from '@/lib/constants/uiModes';

@@ -1,40 +1,17 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
+import type { AlertRule } from "@/lib/bindings/AlertRule";
+import type { FiredAlert } from "@/lib/bindings/FiredAlert";
+import * as api from "@/api/overview/observability";
 
-// -- Alert Rule Types --------------------------------------------------
+// -- Alert metric / severity display helpers (frontend-only constants) --------
 
 export type AlertMetric = 'error_rate' | 'success_rate' | 'cost' | 'cost_spike' | 'executions';
 export type AlertOperator = '>' | '<' | '>=' | '<=';
 export type AlertSeverity = 'info' | 'warning' | 'critical';
 
-export interface AlertRule {
-  id: string;
-  name: string;
-  metric: AlertMetric;
-  operator: AlertOperator;
-  threshold: number;
-  severity: AlertSeverity;
-  /** null = global rule, string = persona-specific */
-  personaId: string | null;
-  enabled: boolean;
-  createdAt: string;
-}
-
-export interface FiredAlert {
-  id: string;
-  ruleId: string;
-  ruleName: string;
-  metric: AlertMetric;
-  severity: AlertSeverity;
-  message: string;
-  value: number;
-  threshold: number;
-  personaId: string | null;
-  firedAt: string;
-  dismissed: boolean;
-}
-
-// -- Alert metric display helpers --------------------------------------
+export { type AlertRule } from "@/lib/bindings/AlertRule";
+export { type FiredAlert } from "@/lib/bindings/FiredAlert";
 
 export const ALERT_METRIC_OPTIONS: { value: AlertMetric; label: string; unit: string }[] = [
   { value: 'error_rate', label: 'Error Rate', unit: '%' },
@@ -52,7 +29,7 @@ export const ALERT_SEVERITY_OPTIONS: { value: AlertSeverity; label: string; colo
 
 export const MAX_ALERT_HISTORY = 200;
 
-// -- Evaluation Engine -------------------------------------------------
+// -- Evaluation Engine (client-side, fires alerts to backend) ----------------
 
 interface MetricsSnapshot {
   totalExecutions: number;
@@ -107,45 +84,42 @@ function formatAlertMessage(rule: AlertRule, value: number): string {
   return `${label} is ${fmtValue} (threshold: ${rule.operator} ${fmtThreshold})`;
 }
 
-// -- Evaluation Health -------------------------------------------------
+// -- Evaluation Health -------------------------------------------------------
 
 export interface AlertEvalHealth {
-  /** ISO timestamp of last successful evaluation */
   lastEvalAt: string | null;
-  /** Duration of last evaluation in ms */
   lastEvalDurationMs: number | null;
-  /** Number of rules evaluated in last pass */
   rulesEvaluated: number;
-  /** Number of rules that triggered in last pass */
   rulesTriggered: number;
-  /** Last evaluation error message, null if healthy */
   lastError: string | null;
-  /** Total evaluation failures since session start */
   totalFailures: number;
 }
 
-// -- Slice -------------------------------------------------------------
+// -- Slice -------------------------------------------------------------------
 
 export interface AlertSlice {
-  // State
+  // State (fetched from backend)
   alertRules: AlertRule[];
   alertHistory: FiredAlert[];
-  /** Cooldown map: ruleId -> timestamp of last fire (persisted via Zustand) */
+  alertRulesLoading: boolean;
+  alertHistoryLoading: boolean;
+
+  // Ephemeral client-side state
   alertFiredCooldowns: Record<string, number>;
-  /** Alerts that are currently showing as toasts */
   activeToasts: FiredAlert[];
-  /** Health telemetry for the alert evaluation pipeline */
   alertEvalHealth: AlertEvalHealth;
 
-  // Rule CRUD
-  addAlertRule: (rule: Omit<AlertRule, 'id' | 'createdAt'>) => void;
-  updateAlertRule: (id: string, updates: Partial<Omit<AlertRule, 'id' | 'createdAt'>>) => void;
-  deleteAlertRule: (id: string) => void;
-  toggleAlertRule: (id: string) => void;
+  // Backend CRUD
+  fetchAlertRules: () => Promise<void>;
+  fetchAlertHistory: () => Promise<void>;
+  addAlertRule: (rule: Omit<AlertRule, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updateAlertRule: (id: string, updates: Partial<Omit<AlertRule, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>;
+  deleteAlertRule: (id: string) => Promise<void>;
+  toggleAlertRule: (id: string) => Promise<void>;
 
   // Alert history
-  dismissAlert: (alertId: string) => void;
-  clearAlertHistory: () => void;
+  dismissAlert: (alertId: string) => Promise<void>;
+  clearAlertHistory: () => Promise<void>;
   dismissToast: (alertId: string) => void;
 
   // Evaluation
@@ -158,6 +132,8 @@ const FIRED_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> = (set, get) => ({
   alertRules: [],
   alertHistory: [],
+  alertRulesLoading: false,
+  alertHistoryLoading: false,
   alertFiredCooldowns: {},
   activeToasts: [],
   alertEvalHealth: {
@@ -169,51 +145,111 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
     totalFailures: 0,
   },
 
-  addAlertRule: (rule) => {
-    const newRule: AlertRule = {
-      ...rule,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-    };
-    set((state) => ({ alertRules: [...state.alertRules, newRule] }));
+  fetchAlertRules: async () => {
+    set({ alertRulesLoading: true });
+    try {
+      const rules = await api.listAlertRules();
+      set({ alertRules: rules, alertRulesLoading: false });
+    } catch {
+      set({ alertRulesLoading: false });
+    }
   },
 
-  updateAlertRule: (id, updates) => {
-    set((state) => {
-      const rules = state.alertRules.map(r => r.id === id ? { ...r, ...updates } : r);
-      const { [id]: _, ...rest } = state.alertFiredCooldowns;
-      return { alertRules: rules, alertFiredCooldowns: rest };
-    });
+  fetchAlertHistory: async () => {
+    set({ alertHistoryLoading: true });
+    try {
+      const history = await api.listFiredAlerts(MAX_ALERT_HISTORY);
+      set({ alertHistory: history, alertHistoryLoading: false });
+    } catch {
+      set({ alertHistoryLoading: false });
+    }
   },
 
-  deleteAlertRule: (id) => {
-    set((state) => {
-      const rules = state.alertRules.filter(r => r.id !== id);
-      const { [id]: _, ...rest } = state.alertFiredCooldowns;
-      return { alertRules: rules, alertFiredCooldowns: rest };
-    });
+  addAlertRule: async (rule) => {
+    try {
+      const created = await api.createAlertRule({
+        name: rule.name,
+        metric: rule.metric,
+        operator: rule.operator,
+        threshold: rule.threshold,
+        severity: rule.severity,
+        persona_id: rule.persona_id,
+        enabled: rule.enabled,
+      });
+      set((state) => ({ alertRules: [created, ...state.alertRules] }));
+    } catch {
+      // Silently fail; user can retry
+    }
   },
 
-  toggleAlertRule: (id) => {
-    set((state) => {
-      const rules = state.alertRules.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r);
-      const toggled = rules.find(r => r.id === id);
-      if (toggled && !toggled.enabled) {
+  updateAlertRule: async (id, updates) => {
+    try {
+      const updated = await api.updateAlertRule(id, {
+        name: updates.name,
+        metric: updates.metric,
+        operator: updates.operator,
+        threshold: updates.threshold,
+        severity: updates.severity,
+        persona_id: updates.persona_id,
+        enabled: updates.enabled,
+      });
+      set((state) => {
+        const rules = state.alertRules.map(r => r.id === id ? updated : r);
         const { [id]: _, ...rest } = state.alertFiredCooldowns;
         return { alertRules: rules, alertFiredCooldowns: rest };
-      }
-      return { alertRules: rules };
-    });
+      });
+    } catch {
+      // Silently fail
+    }
   },
 
-  dismissAlert: (alertId) => {
-    set((state) => ({
-      alertHistory: state.alertHistory.map(a => a.id === alertId ? { ...a, dismissed: true } : a),
-    }));
+  deleteAlertRule: async (id) => {
+    try {
+      await api.deleteAlertRule(id);
+      set((state) => {
+        const rules = state.alertRules.filter(r => r.id !== id);
+        const { [id]: _, ...rest } = state.alertFiredCooldowns;
+        return { alertRules: rules, alertFiredCooldowns: rest };
+      });
+    } catch {
+      // Silently fail
+    }
   },
 
-  clearAlertHistory: () => {
-    set({ alertHistory: [] });
+  toggleAlertRule: async (id) => {
+    try {
+      const toggled = await api.toggleAlertRule(id);
+      set((state) => {
+        const rules = state.alertRules.map(r => r.id === id ? toggled : r);
+        if (!toggled.enabled) {
+          const { [id]: _, ...rest } = state.alertFiredCooldowns;
+          return { alertRules: rules, alertFiredCooldowns: rest };
+        }
+        return { alertRules: rules };
+      });
+    } catch {
+      // Silently fail
+    }
+  },
+
+  dismissAlert: async (alertId) => {
+    try {
+      await api.dismissFiredAlert(alertId);
+      set((state) => ({
+        alertHistory: state.alertHistory.map(a => a.id === alertId ? { ...a, dismissed: true } : a),
+      }));
+    } catch {
+      // Silently fail
+    }
+  },
+
+  clearAlertHistory: async () => {
+    try {
+      await api.clearFiredAlerts();
+      set({ alertHistory: [] });
+    } catch {
+      // Silently fail
+    }
   },
 
   dismissToast: (alertId) => {
@@ -233,12 +269,10 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       const summary = metrics.summary;
       const chartData = metrics.chartData.chart_points;
 
-      // Compute average daily cost for cost_spike comparison
       const avgDailyCost = chartData.length > 0
         ? chartData.reduce((sum, p) => sum + p.cost, 0) / chartData.length
         : 0;
 
-      // Today's cost (last data point) for spike detection
       const todayCost = chartData.length > 0 ? chartData[chartData.length - 1]!.cost : 0;
 
       const snapshot: MetricsSnapshot = {
@@ -256,7 +290,6 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       for (const rule of state.alertRules) {
         if (!rule.enabled) continue;
 
-        // Check cooldown
         const firedTs = cooldowns[rule.id];
         if (firedTs != null) {
           if (now - firedTs < FIRED_COOLDOWN_MS) continue;
@@ -265,7 +298,6 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
 
         rulesEvaluated++;
 
-        // For cost_spike, override snapshot to use today vs average
         const evalSnapshot = rule.metric === 'cost_spike'
           ? { ...snapshot, totalCostUsd: todayCost }
           : snapshot;
@@ -276,15 +308,15 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
           cooldowns[rule.id] = now;
           const alert: FiredAlert = {
             id: crypto.randomUUID(),
-            ruleId: rule.id,
-            ruleName: rule.name,
+            rule_id: rule.id,
+            rule_name: rule.name,
             metric: rule.metric,
             severity: rule.severity,
             message: formatAlertMessage(rule, value),
             value,
             threshold: rule.threshold,
-            personaId: rule.personaId,
-            firedAt: new Date().toISOString(),
+            persona_id: rule.persona_id,
+            fired_at: new Date().toISOString(),
             dismissed: false,
           };
           newAlerts.push(alert);
@@ -294,6 +326,11 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       const durationMs = Math.round(performance.now() - startMs);
 
       if (newAlerts.length > 0) {
+        // Persist each fired alert to backend (fire-and-forget)
+        for (const alert of newAlerts) {
+          api.createFiredAlert(alert).catch(() => {});
+        }
+
         set((state) => {
           const history = [...newAlerts, ...state.alertHistory].slice(0, MAX_ALERT_HISTORY);
           return {

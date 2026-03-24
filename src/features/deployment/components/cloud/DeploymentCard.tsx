@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign } from 'lucide-react';
+import { Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign, FlaskConical, X } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { statusColor, timeAgo, budgetUtilization, budgetColor, formatCost } from './cloudDeploymentHelpers';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import type { TestResult } from '../../hooks/useDeploymentTest';
+import { ApiPlayground } from './ApiPlayground';
 
 interface DeploymentCardProps {
   deployment: CloudDeployment;
@@ -13,6 +15,10 @@ interface DeploymentCardProps {
   onPause: (id: string) => Promise<void>;
   onResume: (id: string) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
+  testRunning?: boolean;
+  testResult?: TestResult | null;
+  onTest?: (deploymentId: string, personaId: string) => void;
+  onDismissTest?: (deploymentId: string) => void;
 }
 
 export function DeploymentCard({
@@ -22,6 +28,10 @@ export function DeploymentCard({
   onPause,
   onResume,
   onRemove,
+  testRunning,
+  testResult,
+  onTest,
+  onDismissTest,
 }: DeploymentCardProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -56,6 +66,18 @@ export function DeploymentCard({
 
         {/* Actions */}
         <div className="flex items-center gap-1">
+          {d.status === 'active' && onTest && (
+            <button
+              type="button"
+              title="Test deployment"
+              onClick={() => onTest(d.id, d.persona_id)}
+              disabled={isBusy || testRunning}
+              className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-blue-400
+                         hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer"
+            >
+              {testRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
+            </button>
+          )}
           {d.status === 'active' && (
             <button
               type="button"
@@ -146,6 +168,58 @@ export function DeploymentCard({
         <span>Last called: <span className="text-foreground/80">{timeAgo(d.last_invoked_at)}</span></span>
         <span>Created: <span className="text-foreground/80">{timeAgo(d.created_at)}</span></span>
       </div>
+
+      {/* Inline test result */}
+      {testResult && (
+        <div
+          className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${
+            testResult.status === 'pass'
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-red-500/10 border-red-500/20 text-red-400'
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="font-medium shrink-0">
+              {testResult.status === 'pass' ? 'PASS' : 'FAIL'}
+            </span>
+            {testResult.durationMs != null && (
+              <span className="text-muted-foreground/70">
+                {testResult.durationMs < 1000
+                  ? `${testResult.durationMs}ms`
+                  : `${(testResult.durationMs / 1000).toFixed(1)}s`}
+              </span>
+            )}
+            {testResult.costUsd > 0 && (
+              <span className="text-muted-foreground/70">
+                ${testResult.costUsd.toFixed(4)}
+              </span>
+            )}
+            {testResult.error && (
+              <span className="truncate text-red-400/80" title={testResult.error}>
+                {testResult.error}
+              </span>
+            )}
+          </div>
+          {onDismissTest && (
+            <button
+              type="button"
+              onClick={() => onDismissTest(d.id)}
+              className="p-0.5 rounded hover:bg-primary/10 transition-colors shrink-0 cursor-pointer"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* API Playground - only for active deployments */}
+      {d.status === 'active' && (
+        <ApiPlayground
+          slug={d.slug}
+          personaId={d.persona_id}
+          endpointUrl={endpointUrl}
+        />
+      )}
     </div>
   );
 }

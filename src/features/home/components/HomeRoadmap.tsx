@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Rocket, RefreshCw, WifiOff } from 'lucide-react';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://pvfwxilvzjzzjhdcpucu.supabase.co';
@@ -94,11 +93,8 @@ function RoadmapCard({ item, index, total }: { item: RoadmapItem; index: number;
   const priority = priorityConfig[item.priority];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex gap-5"
+    <div
+      className="animate-fade-slide-in relative flex gap-5"
     >
       {/* Timeline spine */}
       <div className="relative flex flex-col items-center pt-1.5">
@@ -150,7 +146,7 @@ function RoadmapCard({ item, index, total }: { item: RoadmapItem; index: number;
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -184,10 +180,7 @@ export default function HomeRoadmap() {
       <div className="flex-1 overflow-y-auto relative z-10">
         <div className="w-full max-w-2xl mx-auto px-6 py-6 space-y-6">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          <div className="animate-fade-slide-in"
           >
             <div className="flex items-center gap-3 mb-1">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/15 ring-1 ring-cyan-500/20">
@@ -198,7 +191,7 @@ export default function HomeRoadmap() {
             <p className="typo-body text-muted-foreground/50 ml-11">
               What we're building now and what comes next.
             </p>
-          </motion.div>
+          </div>
 
           {/* Loading */}
           {loading && (
@@ -214,11 +207,8 @@ export default function HomeRoadmap() {
           {!loading && !error && items.length > 0 && (
             <>
               {/* Summary pills */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.15, duration: 0.3 }}
-                className="flex flex-wrap gap-3"
+              <div
+                className="animate-fade-slide-in flex flex-wrap gap-3"
               >
                 <div className="flex items-center gap-2 rounded-full border border-cyan-500/15 bg-cyan-500/5 px-3 py-1.5">
                   <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_4px_rgba(6,182,212,0.6)]" />
@@ -230,7 +220,7 @@ export default function HomeRoadmap() {
                     <span className="text-[11px] font-mono font-medium text-purple-400/70">{nextCount} Next</span>
                   </div>
                 )}
-              </motion.div>
+              </div>
 
               {/* Timeline */}
               <div className="pt-2">

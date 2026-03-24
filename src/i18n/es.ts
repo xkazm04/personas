@@ -77,6 +77,27 @@ export const es = {
     none: "Ninguno",
   },
 
+  chrome: {
+    app_title: "Personas",
+    skip_to_content: "Saltar al contenido",
+    minimize: "Minimizar",
+    restore: "Restaurar",
+    maximize: "Maximizar",
+    close_window: "Cerrar",
+    update_available: "Actualizacion disponible: v{version}",
+    install_and_restart: "Instalar y reiniciar",
+    installing: "Instalando...",
+    expand_sidebar: "Expandir barra lateral",
+    collapse_sidebar: "Contraer barra lateral",
+    network_settings: "Configuracion de red",
+    dark: "Oscuro",
+    light: "Claro",
+    sign_in_google: "Iniciar sesion con Google",
+    signed_in: "Sesion iniciada",
+    sign_out: "Cerrar sesion",
+    offline: "Sin conexion",
+  },
+
   sidebar: {
     home: "Inicio",
     overview: "Resumen",

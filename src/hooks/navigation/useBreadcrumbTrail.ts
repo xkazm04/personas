@@ -187,6 +187,12 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
           trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setPluginTab('browse') });
           trail.push({ label: 'Dev Tools', onClick: () => setSidebarSection('plugins') });
           trail.push({ label: tabLabel });
+        } else if (pluginTab === 'doc-signing') {
+          trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setPluginTab('browse') });
+          trail.push({ label: 'Doc Signing' });
+        } else if (pluginTab === 'ocr') {
+          trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setPluginTab('browse') });
+          trail.push({ label: 'OCR' });
         } else {
           trail.push({ label: sectionLabel });
         }

@@ -3,6 +3,7 @@ import { getConnectorMeta } from '@/features/shared/components/display/Connector
 import { useVaultStore } from "@/stores/vaultStore";
 import { deleteDesignReview, cleanupDuplicateReviews, backfillServiceFlow, backfillRelatedTools } from '@/api/overview/reviews';
 import { computeAdoptionReadiness } from '../../shared/adoptionReadiness';
+import { computeDifficulty, computeSetupLevel } from '../../shared/templateComplexity';
 import { deriveArchCategories } from '../matrix/architecturalCategories';
 import { getCachedDesignResult, getCachedLightFields } from './reviewParseCache';
 import type { CredentialModalTarget } from '../modals/TemplateModals';
@@ -23,6 +24,8 @@ export function useGalleryActions(
   unfilteredTotal?: number,
   coverageFilter = 'all',
   componentFilter: string[] = [],
+  difficultyFilter: string[] = [],
+  setupFilter: string[] = [],
 ) {
   // -- Readiness scoring --------------------------------------------
   const installedConnectorNames = useMemo(
@@ -75,6 +78,9 @@ export function useGalleryActions(
     [componentFilter],
   );
 
+  const difficultyFilterSet = useMemo(() => new Set(difficultyFilter), [difficultyFilter]);
+  const setupFilterSet = useMemo(() => new Set(setupFilter), [setupFilter]);
+
   const displayItems = useMemo(() => {
     let filtered = allItems;
 
@@ -97,6 +103,16 @@ export function useGalleryActions(
       });
     }
 
+    // Difficulty filter
+    if (difficultyFilterSet.size > 0) {
+      filtered = filtered.filter((item) => difficultyFilterSet.has(computeDifficulty(item)));
+    }
+
+    // Setup filter
+    if (setupFilterSet.size > 0) {
+      filtered = filtered.filter((item) => setupFilterSet.has(computeSetupLevel(item)));
+    }
+
     if (!isReadinessSort) return filtered;
     return [...filtered].sort((a, b) => {
       const sa = readinessScores.get(a.id) ?? 0;
@@ -104,7 +120,7 @@ export function useGalleryActions(
       if (sb !== sa) return sb - sa;
       return b.adoption_count - a.adoption_count;
     });
-  }, [isReadinessSort, allItems, readinessScores, coverageFilter, componentFilterSet]);
+  }, [isReadinessSort, allItems, readinessScores, coverageFilter, componentFilterSet, difficultyFilterSet, setupFilterSet]);
 
   // -- Credential modal ---------------------------------------------
   const [credentialModalTarget, setCredentialModalTarget] = useState<CredentialModalTarget | null>(null);

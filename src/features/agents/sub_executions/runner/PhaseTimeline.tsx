@@ -1,5 +1,4 @@
 import { ChevronDown, ChevronRight, Zap } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatElapsed } from '@/lib/utils/formatters';
 import type { PhaseEntry } from '../runnerTypes';
@@ -53,14 +52,9 @@ export function PhaseTimeline({
         {showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         Phases
       </button>
-      <AnimatePresence>
-        {showPhases && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {showPhases && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2.5">
               <div className="flex w-full h-7 rounded-lg overflow-hidden gap-px" data-testid="phase-timeline-bar">
@@ -72,10 +66,9 @@ export function PhaseTimeline({
 
                   return (
                     <Tooltip content={`${phase.label}: ${formatElapsed(duration)}${phase.toolCalls.length > 0 ? ` -- ${phase.toolCalls.length} tool call${phase.toolCalls.length > 1 ? 's' : ''}` : ''}`} placement="bottom">
-                    <motion.div
+                    <div
                       key={`${phase.id}-${i}`}
-                      layout
-                      className={`relative flex items-center justify-center gap-1.5 px-2 overflow-hidden transition-colors ${
+                      className={`animate-fade-in relative flex items-center justify-center gap-1.5 px-2 overflow-hidden transition-colors ${
                         isActive
                           ? 'bg-primary/20 text-primary/90'
                           : phase.id === 'error'
@@ -85,14 +78,12 @@ export function PhaseTimeline({
                       style={{ flexGrow: Math.max(duration, minGrow) }}
                     >
                       {isActive && (
-                        <motion.div
-                          className="absolute inset-0 pointer-events-none"
+                        <div
+                          className="animate-fade-in absolute inset-0 pointer-events-none"
                           style={{
                             background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.12), transparent)',
                             width: '60%',
                           }}
-                          animate={{ left: ['-60%', '100%'] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                         />
                       )}
                       {/* Tool-call activity dots */}
@@ -122,15 +113,14 @@ export function PhaseTimeline({
                           {formatElapsed(duration)}
                         </span>
                       )}
-                    </motion.div>
+                    </div>
                     </Tooltip>
                   );
                 })}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

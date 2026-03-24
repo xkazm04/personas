@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{
     ConnectorDefinition, CreateConnectorDefinitionInput, UpdateConnectorDefinitionInput,
@@ -6,56 +6,16 @@ use crate::db::models::{
 use crate::db::DbPool;
 use crate::error::AppError;
 
-// ============================================================================
-// Row mapper
-// ============================================================================
+row_mapper!(row_to_connector -> ConnectorDefinition {
+    id, name, label, icon_url, color, category, fields,
+    healthcheck_config, services, events, metadata,
+    is_builtin [bool],
+    created_at, updated_at,
+});
 
-fn row_to_connector(row: &Row) -> rusqlite::Result<ConnectorDefinition> {
-    Ok(ConnectorDefinition {
-        id: row.get("id")?,
-        name: row.get("name")?,
-        label: row.get("label")?,
-        icon_url: row.get("icon_url")?,
-        color: row.get("color")?,
-        category: row.get("category")?,
-        fields: row.get("fields")?,
-        healthcheck_config: row.get("healthcheck_config")?,
-        services: row.get("services")?,
-        events: row.get("events")?,
-        metadata: row.get("metadata")?,
-        is_builtin: row.get::<_, i32>("is_builtin")? != 0,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
-
-// ============================================================================
-// CRUD
-// ============================================================================
-
-pub fn get_all(pool: &DbPool) -> Result<Vec<ConnectorDefinition>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM connector_definitions ORDER BY is_builtin DESC, name",
-    )?;
-    let rows = stmt.query_map([], row_to_connector)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-}
-
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<ConnectorDefinition, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM connector_definitions WHERE id = ?1",
-        params![id],
-        row_to_connector,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("Connector definition {id}"))
-        }
-        other => AppError::Database(other),
-    })
-}
+crud_get_by_id!(ConnectorDefinition, "connector_definitions", "Connector definition", row_to_connector);
+crud_get_all!(ConnectorDefinition, "connector_definitions", row_to_connector, "is_builtin DESC, name");
+crud_delete!("connector_definitions");
 
 pub fn get_by_name(pool: &DbPool, name: &str) -> Result<Option<ConnectorDefinition>, AppError> {
     let conn = pool.get()?;
@@ -146,13 +106,11 @@ pub fn update(
         }
     }
 
-    // Verify exists
     get_by_id(pool, id)?;
 
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
 
-    // Build dynamic SET clause
     let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
     let mut param_idx = 2u32;
 
@@ -175,36 +133,16 @@ pub fn update(
 
     let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-    if let Some(ref v) = input.name {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.label {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.icon_url {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.color {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.category {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.fields {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.healthcheck_config {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.services {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.events {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.metadata {
-        param_values.push(Box::new(v.clone()));
-    }
+    if let Some(ref v) = input.name { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.label { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.icon_url { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.category { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.fields { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.healthcheck_config { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.services { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.events { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.metadata { param_values.push(Box::new(v.clone())); }
     param_values.push(Box::new(id.to_string()));
 
     let params_ref: Vec<&dyn rusqlite::types::ToSql> =
@@ -212,15 +150,6 @@ pub fn update(
     conn.execute(&sql, params_ref.as_slice())?;
 
     get_by_id(pool, id)
-}
-
-pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "DELETE FROM connector_definitions WHERE id = ?1",
-        params![id],
-    )?;
-    Ok(rows > 0)
 }
 
 #[cfg(test)]

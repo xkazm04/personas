@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
+import { EventName } from '@/lib/eventRegistry';
 
 // ---------------------------------------------------------------------------
 // Singleton Tauri listener
@@ -21,7 +22,7 @@ function ensureListener() {
   if (setupPromise) return;
   setupInFlight = true;
   setupPromise = (async () => {
-    const unlisten = await listen<PersonaEvent>('event-bus', (tauriEvent) => {
+    const unlisten = await listen<PersonaEvent>(EventName.EVENT_BUS, (tauriEvent) => {
       const payload = tauriEvent.payload;
       for (const cb of subscribers) {
         cb(payload);

@@ -1,11 +1,10 @@
-import { motion } from 'framer-motion';
 import { LayoutDashboard } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { useMemo, useEffect } from 'react';
-import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
+import { useMemo } from 'react';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -24,41 +23,43 @@ import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
 export default function DashboardHome() {
   const user = useAuthStore((s) => s.user);
   const personas = useAgentStore((s) => s.personas);
-  const globalExecutions = useOverviewStore((s) => s.globalExecutions);
-  const globalExecutionsTotal = useOverviewStore((s) => s.globalExecutionsTotal);
-  const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
-  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
-  const fetchGlobalExecutions = useOverviewStore((s) => s.fetchGlobalExecutions);
-  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
-  const memoryActions = useOverviewStore((s) => s.memoryActions);
-  const dismissMemoryAction = useOverviewStore((s) => s.dismissMemoryAction);
+  const {
+    globalExecutions, globalExecutionsTotal, pendingReviewCount,
+    unreadMessageCount, memoryActions, executionDashboard,
+  } = useOverviewStore(useShallow((s) => ({
+    globalExecutions: s.globalExecutions,
+    globalExecutionsTotal: s.globalExecutionsTotal,
+    pendingReviewCount: s.pendingReviewCount,
+    unreadMessageCount: s.unreadMessageCount,
+    memoryActions: s.memoryActions,
+    executionDashboard: s.executionDashboard,
+  })));
+  const {
+    setOverviewTab, dismissMemoryAction,
+  } = useOverviewStore(useShallow((s) => ({
+    setOverviewTab: s.setOverviewTab,
+    dismissMemoryAction: s.dismissMemoryAction,
+  })));
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
-  const executionDashboard = useOverviewStore((s) => s.executionDashboard);
-  const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
 
   const dailyPoints = executionDashboard?.daily_points ?? [];
 
   // Note: fetchPendingReviewCount and fetchUnreadMessageCount are handled by
   // Sidebar's centralized polling (always mounted when Dashboard is visible).
-  useEffect(() => {
-    fetchGlobalExecutions(true);
-    fetchHealingIssues();
-  }, [fetchGlobalExecutions, fetchHealingIssues]);
-
-  const { filtered: personaExecs } = useFilteredCollection(globalExecutions, {
-    exact: [{ field: 'persona_id', value: selectedPersonaId || null }],
-  });
+  // All data fetches (globalExecutions, healingIssues, etc.) are centralized
+  // in useExecutionDashboardPipeline at the OverviewContent level to avoid
+  // redundant re-fetches on subtab switches.
 
   const stats = useMemo(() => {
-    const execs = personaExecs;
+    const execs = globalExecutions;
     const successCount = execs.filter(e => e.status === 'completed').length;
     const successRate = Math.round(resolveMetricPercent(
       SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions,
       { numerator: successCount, denominator: execs.length },
     ));
     return { successRate, activeAgents: personas.length, recentExecs: execs.slice(0, 12) };
-  }, [personaExecs, personas]);
+  }, [globalExecutions, personas]);
 
   const chartData = useMemo(() => {
     if (!dailyPoints.length) return [];
@@ -108,13 +109,11 @@ export default function DashboardHome() {
         <div className="space-y-5 pb-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-2">
             <div>
-              <motion.h2
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className={`${IS_MOBILE ? 'typo-heading-lg' : 'text-3xl font-bold'} bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent`}
+              <h2
+                className={`animate-fade-slide-in ${IS_MOBILE ? 'typo-heading-lg' : 'text-3xl font-bold'} bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent`}
               >
                 {greeting}, {displayName}
-              </motion.h2>
+              </h2>
               <p className="text-muted-foreground/80 mt-1">
                 You have <span className="text-primary font-medium"><AnimatedCounter value={pendingReviewCount} /> pending reviews</span> requiring attention.
               </p>

@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Check, ArrowRight } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
@@ -39,14 +38,9 @@ export function TourPanelBody({
       </div>
 
       {/* Step content */}
-      <AnimatePresence mode="wait">
-        <motion.div
+      <div
           key={currentStep.id}
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -16 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="px-4 py-4 space-y-3"
+          className="animate-fade-slide-in px-4 py-4 space-y-3"
         >
           <div className="flex items-center gap-2.5">
             <div className={`w-9 h-9 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
@@ -71,8 +65,7 @@ export function TourPanelBody({
               <p className={`typo-heading ${colors.text} leading-relaxed`}>{currentStep.hint}</p>
             </div>
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
 
       {/* Footer navigation */}
       <div className="flex items-center justify-between px-4 py-3 border-t border-primary/8 bg-secondary/5">

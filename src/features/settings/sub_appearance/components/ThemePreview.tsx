@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Mini preview — shows derived colors in a miniature app layout
+// Mini preview — shows derived colors in a miniature app
 // ---------------------------------------------------------------------------
 
 export function ThemePreview({ vars }: { vars: Record<string, string> }) {

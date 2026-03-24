@@ -28,6 +28,14 @@ export const healthCheckSubscriptions = () =>
 export const openExternalUrl = (url: string) =>
   invoke<void>("open_external_url", { url });
 
+// Claude Desktop MCP integration
+export const registerClaudeDesktopMcp = () =>
+  invoke<string>("register_claude_desktop_mcp");
+export const unregisterClaudeDesktopMcp = () =>
+  invoke<string>("unregister_claude_desktop_mcp");
+export const checkClaudeDesktopMcp = () =>
+  invoke<boolean>("check_claude_desktop_mcp");
+
 // ============================================================================
 // Crash Logs
 // ============================================================================

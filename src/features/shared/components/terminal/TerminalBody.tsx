@@ -3,8 +3,6 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { CheckCircle2, XCircle, Timer, DollarSign, ArrowDown, ChevronRight, Clock, Wifi, AlertCircle } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP, parseSummaryLine } from '@/lib/utils/terminalColors';
 import type { TerminalLineStyle } from '@/lib/utils/terminalColors';
-import { motion, AnimatePresence } from 'framer-motion';
-
 /** Terminal empty state describing the current execution context. */
 export type TerminalEmptyState =
   | 'idle'
@@ -279,21 +277,17 @@ export function TerminalBody({
 
       {/* Jump-to-bottom FAB */}
       {enableUnseenCounter && (
-        <AnimatePresence>
+        <>
           {unseenCount > 0 && (
-            <motion.button
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.15 }}
+            <button
               onClick={scrollToBottom}
-              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground typo-heading shadow-lg shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
+              className="animate-fade-slide-in absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground typo-heading shadow-lg shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
             >
               <ArrowDown className="w-3 h-3" />
               {unseenCount} new line{unseenCount !== 1 ? 's' : ''} below
-            </motion.button>
+            </button>
           )}
-        </AnimatePresence>
+        </>
       )}
     </div>
   );

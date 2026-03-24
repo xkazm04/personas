@@ -16,9 +16,11 @@ export interface CloudStatusPanelProps {
   onRefresh: () => void;
   /** Currently active cloud execution ID (if any) for progress tracking. */
   activeExecutionId?: string | null;
+  /** Timestamp from usePolling -- when non-null, auto-refresh is active. */
+  lastPolled?: number | null;
 }
 
-export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecutionId }: CloudStatusPanelProps) {
+export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecutionId, lastPolled }: CloudStatusPanelProps) {
   if (!status && isLoading) {
     return (
       <div role="status" aria-live="polite" className="flex items-center justify-center py-12 text-muted-foreground/90">
@@ -40,8 +42,17 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
 
   return (
     <div className="space-y-6">
-      {/* Refresh button */}
-      <div className="flex justify-end">
+      {/* Live indicator + Refresh button */}
+      <div className="flex items-center justify-between">
+        {lastPolled != null ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            Live
+          </div>
+        ) : <div />}
         <button
           onClick={onRefresh}
           disabled={isLoading}

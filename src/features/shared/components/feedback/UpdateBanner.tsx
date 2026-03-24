@@ -1,5 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { useAutoUpdater } from "@/hooks/utility/data/useAutoUpdater";
+import { useTranslation, interpolate } from '@/i18n/useTranslation';
 
 export default function UpdateBanner() {
   const {
@@ -9,20 +9,17 @@ export default function UpdateBanner() {
     installUpdate,
     dismissUpdate,
   } = useAutoUpdater();
+  const { t } = useTranslation();
 
   return (
-    <AnimatePresence>
+    <>
       {updateAvailable && updateInfo && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="overflow-hidden"
+        <div
+          className="animate-fade-slide-in overflow-hidden"
         >
           <div className="flex items-center gap-3 px-4 py-2 bg-accent/10 border-b border-accent/20 typo-body">
             <span className="text-accent font-medium shrink-0">
-              Update available: v{updateInfo.version}
+              {interpolate(t.chrome.update_available, { version: updateInfo.version })}
             </span>
 
             {updateInfo.body && (
@@ -38,12 +35,12 @@ export default function UpdateBanner() {
                 disabled={isInstalling}
                 className="px-3 py-1 rounded-xl bg-accent text-accent-foreground typo-heading hover:bg-accent/90 disabled:opacity-50 transition-colors"
               >
-                {isInstalling ? "Installing..." : "Install & Restart"}
+                {isInstalling ? t.chrome.installing : t.chrome.install_and_restart}
               </button>
               <button
                 onClick={dismissUpdate}
                 className="p-1 rounded hover:bg-accent/10 text-muted-foreground transition-colors"
-                aria-label="Dismiss"
+                aria-label={t.common.dismiss}
               >
                 <svg
                   width="14"
@@ -59,8 +56,8 @@ export default function UpdateBanner() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Chrome, Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore, THEMES } from '@/stores/themeStore';
@@ -7,6 +6,7 @@ import type { ThemeId } from '@/stores/themeStore';
 import { useDevMode } from '@/hooks/utility/interaction/useDevMode';
 import { useSystemStore } from '@/stores/systemStore';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Custom event name used to toggle sidebar collapse from anywhere. */
 export const SIDEBAR_TOGGLE_EVENT = 'personas:sidebar-toggle';
@@ -33,6 +33,8 @@ function AccountFooterIcon() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const { t } = useTranslation();
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -50,7 +52,7 @@ function AccountFooterIcon() {
             ? 'text-emerald-400/80 hover:bg-emerald-500/10'
             : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50'
         } ${isLoading ? 'animate-pulse' : ''}`}
-        title={isAuthenticated ? (user?.display_name ?? user?.email ?? 'Signed in') : 'Sign in with Google'}
+        title={isAuthenticated ? (user?.display_name ?? user?.email ?? t.chrome.signed_in) : t.chrome.sign_in_google}
       >
         {isAuthenticated && user?.avatar_url ? (
           <img src={user.avatar_url} alt="" className="w-5 h-5 rounded-full border border-emerald-500/30" />
@@ -63,14 +65,9 @@ function AccountFooterIcon() {
         }`} />
       </button>
 
-      <AnimatePresence>
-        {open && isAuthenticated && (
-          <motion.div
-            initial={{ opacity: 0, y: 4, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.95 }}
-            transition={{ duration: 0.12 }}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-2 z-50"
+      {open && isAuthenticated && (
+          <div
+            className="animate-fade-slide-in absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-2 z-50"
           >
             <div className="px-2 py-1.5 mb-1 border-b border-primary/10">
               <p className="typo-caption text-foreground/90 truncate">{user?.display_name ?? 'User'}</p>
@@ -81,11 +78,10 @@ function AccountFooterIcon() {
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg typo-caption text-foreground/80 hover:bg-primary/5 transition-colors"
             >
               <LogOut className="w-3 h-3" />
-              Sign out
+              {t.chrome.sign_out}
             </button>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -99,6 +95,7 @@ function ThemeFooterIcon() {
   const setTheme = useThemeStore((s) => s.setTheme);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { t: tTheme } = useTranslation();
 
   const currentTheme = THEMES.find((t) => t.id === themeId);
 
@@ -129,17 +126,12 @@ function ThemeFooterIcon() {
         </div>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 4, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.95 }}
-            transition={{ duration: 0.12 }}
-            className="absolute bottom-full left-0 mb-2 w-[220px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-3 z-50"
+      {open && (
+          <div
+            className="animate-fade-slide-in absolute bottom-full left-0 mb-2 w-[220px] rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-3 z-50"
           >
             {/* Dark themes */}
-            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/50 mb-2">Dark</p>
+            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/50 mb-2">{tTheme.chrome.dark}</p>
             <div className="grid grid-cols-4 gap-2 mb-3">
               {THEMES.filter((t) => !t.isLight).map((t) => {
                 const isActive = themeId === t.id;
@@ -171,7 +163,7 @@ function ThemeFooterIcon() {
 
             {/* Light themes */}
             <div className="border-t border-primary/10 pt-2">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/50 mb-2">Light</p>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/50 mb-2">{tTheme.chrome.light}</p>
               <div className="grid grid-cols-4 gap-2">
                 {THEMES.filter((t) => t.isLight).map((t) => {
                   const isActive = themeId === t.id;
@@ -201,9 +193,8 @@ function ThemeFooterIcon() {
                 })}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -216,6 +207,7 @@ function NetworkFooterIcon() {
   const isDevMode = useDevMode();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
+  const { t: tNet } = useTranslation();
 
   const handleClick = useCallback(() => {
     setSidebarSection('settings');
@@ -231,7 +223,7 @@ function NetworkFooterIcon() {
           ? 'text-amber-400/80 bg-amber-500/8 ring-1 ring-amber-500/30 hover:bg-amber-500/15'
           : 'text-amber-400/60 bg-amber-500/5 ring-1 ring-amber-500/20 hover:bg-amber-500/10'
       }`}
-      title="Network settings"
+      title={tNet.chrome.network_settings}
     >
       <Share2 className="w-4 h-4" />
     </button>
@@ -243,6 +235,7 @@ function NetworkFooterIcon() {
 // ---------------------------------------------------------------------------
 
 function CollapseFooterIcon() {
+  const { t: tCollapse } = useTranslation();
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('sidebar-collapsed') === '1'; } catch { return false; }
   });
@@ -267,7 +260,7 @@ function CollapseFooterIcon() {
       onClick={handleClick}
       data-testid="footer-collapse"
       className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
-      title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      title={collapsed ? tCollapse.chrome.expand_sidebar : tCollapse.chrome.collapse_sidebar}
     >
       {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
     </button>

@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
   ArrowRight,
@@ -99,13 +98,8 @@ export default function OnboardingOverlay() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <AnimatePresence mode="wait">
-          <motion.div
+        <div className="animate-fade-slide-in"
             key={onboardingStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           >
             {onboardingStep === 'discover' && (
               <DesktopDiscoveryStep
@@ -140,8 +134,7 @@ export default function OnboardingOverlay() {
                 onComplete={handleExecutionComplete}
               />
             )}
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </div>
 
       {/* Footer */}

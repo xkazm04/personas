@@ -1,26 +1,17 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{HealingKnowledge, PersonaHealingIssue};
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn row_to_healing_issue(row: &Row) -> rusqlite::Result<PersonaHealingIssue> {
-    Ok(PersonaHealingIssue {
-        id: row.get("id")?,
-        persona_id: row.get("persona_id")?,
-        execution_id: row.get("execution_id")?,
-        title: row.get("title")?,
-        description: row.get("description")?,
-        is_circuit_breaker: row.get::<_, i32>("is_circuit_breaker")? != 0,
-        severity: row.get("severity")?,
-        category: row.get("category")?,
-        suggested_fix: row.get("suggested_fix")?,
-        auto_fixed: row.get::<_, i32>("auto_fixed")? != 0,
-        status: row.get("status")?,
-        created_at: row.get("created_at")?,
-        resolved_at: row.get("resolved_at")?,
-    })
-}
+row_mapper!(row_to_healing_issue -> PersonaHealingIssue {
+    id, persona_id, execution_id, title, description,
+    is_circuit_breaker [bool], severity, category,
+    suggested_fix, auto_fixed [bool], status,
+    created_at, resolved_at,
+});
+
+crud_get_by_id!(PersonaHealingIssue, "persona_healing_issues", "PersonaHealingIssue", row_to_healing_issue);
 
 pub fn get_all(
     pool: &DbPool,
@@ -61,21 +52,6 @@ pub fn get_all(
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt.query_map(params_ref.as_slice(), row_to_healing_issue)?;
     Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_list"))
-}
-
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaHealingIssue, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_healing_issues WHERE id = ?1",
-        params![id],
-        row_to_healing_issue,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("PersonaHealingIssue {id}"))
-        }
-        other => AppError::Database(other),
-    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -221,7 +197,8 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 // Healing Knowledge Base
 // ============================================================================
 
-fn row_to_knowledge(row: &Row) -> rusqlite::Result<HealingKnowledge> {
+// row_to_knowledge uses custom logic (occurrence_count unwrap_or) -- keep manual
+fn row_to_knowledge(row: &rusqlite::Row) -> rusqlite::Result<HealingKnowledge> {
     Ok(HealingKnowledge {
         id: row.get("id")?,
         service_type: row.get("service_type")?,

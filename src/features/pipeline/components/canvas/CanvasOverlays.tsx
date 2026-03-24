@@ -1,4 +1,3 @@
-import { AnimatePresence } from 'framer-motion';
 import { Users } from 'lucide-react';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import {
@@ -76,8 +75,7 @@ export default function CanvasOverlays({
         onClick={() => dispatch({ type: 'SET_MEMORY_PANEL_OPEN', open: true })}
       />
 
-      <AnimatePresence>
-        {cs.memoryPanelOpen && (
+      {cs.memoryPanelOpen && (
           <TeamMemoryPanel
             teamId={selectedTeamId}
             memories={teamMemories}
@@ -92,7 +90,6 @@ export default function CanvasOverlays({
             onEdit={(id, title, content, category, importance) => updateTeamMemory(id, title, content, category, importance)}
           />
         )}
-      </AnimatePresence>
 
       <CanvasAssistant
         onSuggest={handleAssistantSuggest}
@@ -157,8 +154,7 @@ export default function CanvasOverlays({
         />
       )}
 
-      <AnimatePresence>
-        {cs.edgeTooltip && (
+      {cs.edgeTooltip && (
           <EdgeDeleteTooltip
             x={cs.edgeTooltip.x}
             y={cs.edgeTooltip.y}
@@ -169,7 +165,6 @@ export default function CanvasOverlays({
             onClose={() => setEdgeTooltip(null)}
           />
         )}
-      </AnimatePresence>
 
       {teamMembers.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[5]">

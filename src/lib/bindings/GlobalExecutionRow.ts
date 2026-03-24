@@ -23,6 +23,7 @@ export interface GlobalExecutionRow {
   started_at: string | null;
   completed_at: string | null;
   created_at: string;
+  execution_config: string | null;
   persona_name: string | null;
   persona_icon: string | null;
   persona_color: string | null;

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import {
   KeyRound,
   Settings2,
@@ -53,11 +52,8 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
               </div>
             )}
 
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className={`p-4 rounded-xl border ${tone.border} ${tone.bg}`}
+            <div
+              className={`animate-fade-slide-in p-4 rounded-xl border ${tone.border} ${tone.bg}`}
             >
               <label className={`block text-sm font-medium mb-2 ${tone.accent}`}>
                 {q.question}
@@ -109,7 +105,7 @@ export function N8nQuestionListView({ questions, userAnswers, onAnswerUpdated }:
                   })}
                 </div>
               )}
-            </motion.div>
+            </div>
           </div>
         );
       })}

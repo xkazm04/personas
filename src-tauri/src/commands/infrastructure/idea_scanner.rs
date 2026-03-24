@@ -17,6 +17,7 @@ use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::models::ScanAgentMeta;
 use crate::db::repos::dev_tools as repo;
+use crate::engine::event_registry::event_name;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
 use crate::engine::types::StreamLineType;
@@ -33,8 +34,8 @@ struct IdeaScanExtra;
 
 static IDEA_SCAN_JOBS: BackgroundJobManager<IdeaScanExtra> = BackgroundJobManager::new(
     "idea-scanner lock poisoned",
-    "idea-scan-status",
-    "idea-scan-output",
+    event_name::IDEA_SCAN_STATUS,
+    event_name::IDEA_SCAN_OUTPUT,
 );
 
 // =============================================================================
@@ -505,7 +506,7 @@ pub async fn dev_tools_run_scan(
                 );
                 IDEA_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "completed", None);
                 let _ = app_handle.emit(
-                    "idea-scan-complete",
+                    event_name::IDEA_SCAN_COMPLETE,
                     json!({ "scan_id": scan_id_for_task, "idea_count": idea_count }),
                 );
                 crate::notifications::send(

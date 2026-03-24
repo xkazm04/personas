@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from '@/stores/vaultStore';
@@ -277,13 +276,10 @@ export function CredentialList({
   }
 
   return (
-    <motion.div
+    <div
       key="list"
       data-testid="credential-list"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="flex flex-col min-h-0"
+      className="animate-fade-slide-in flex flex-col min-h-0"
     >
       <DataGrid<CredRow>
         columns={columns}
@@ -322,6 +318,6 @@ export function CredentialList({
           onDelete={onDelete}
         />
       )}
-    </motion.div>
+    </div>
   );
 }

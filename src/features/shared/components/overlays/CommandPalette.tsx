@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Bot, Home, BarChart3, Radio, Key, FlaskConical,
   Settings, Plus, Power, Workflow, Play, ToggleLeft, Copy, Puzzle,
@@ -321,21 +320,15 @@ export default function CommandPalette() {
   }, [items, isCommandMode, searchQuery]);
 
   return (
-    <AnimatePresence>
+    <>
       {open && (
         <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh]">
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-md"
+          <div
+            className="animate-fade-slide-in absolute inset-0 bg-black/50 backdrop-blur-md"
             onClick={() => { if (editingPersona) setEditingPersona(null); else close(); }}
           />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-lg glass-md rounded-xl shadow-elevation-4 overflow-hidden"
+          <div
+            className="animate-fade-slide-in relative w-full max-w-lg glass-md rounded-xl shadow-elevation-4 overflow-hidden"
           >
             {!editingPersona && (
               <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
@@ -387,9 +380,9 @@ export default function CommandPalette() {
                 </div>
               </>
             )}
-          </motion.div>
+          </div>
         </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

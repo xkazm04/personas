@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import type { TransformPhaseInfo } from './transformProgressTypes';
@@ -75,14 +74,9 @@ export function TransformModeView({
               </div>
             </button>
 
-            <AnimatePresence>
-              {showTerminal && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
+            {showTerminal && (
+                <div
+                  className="animate-fade-slide-in overflow-hidden"
                 >
                   <div
                     ref={terminalRef}
@@ -91,9 +85,8 @@ export function TransformModeView({
                   >
                     <TerminalBody lines={lines} />
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
           </>
         )}
       </div>

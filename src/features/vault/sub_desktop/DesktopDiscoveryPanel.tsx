@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Monitor, Download, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import {
@@ -106,11 +105,8 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
   const notInstalledApps = apps.filter((a) => !a.installed);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+    <div
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -161,14 +157,10 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
         </button>
       </div>
 
-      <AnimatePresence mode="wait">
-        {tab === 'apps' && (
-          <motion.div
+      {tab === 'apps' && (
+          <div
             key="apps"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="space-y-3"
+            className="animate-fade-slide-in space-y-3"
           >
             {scanning ? (
               <div className="flex items-center justify-center py-8 text-muted-foreground/60">
@@ -218,8 +210,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
               </>
             )}
 
-            <AnimatePresence>
-              {selectedApp && manifest && (
+            {selectedApp && manifest && (
                 <CapabilityApprovalCard
                   manifest={manifest}
                   app={apps.find((a) => a.connector_name === selectedApp)!}
@@ -228,17 +219,13 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
                   approving={approving}
                 />
               )}
-            </AnimatePresence>
-          </motion.div>
+          </div>
         )}
 
         {tab === 'mcp-import' && (
-          <motion.div
+          <div
             key="mcp"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="space-y-2"
+            className="animate-fade-slide-in space-y-2"
           >
             {importingMcp ? (
               <div className="flex items-center justify-center py-8 text-muted-foreground/60">
@@ -271,9 +258,8 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
                 </p>
               </div>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

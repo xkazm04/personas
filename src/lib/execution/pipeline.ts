@@ -144,6 +144,14 @@ export interface FinalizeStatusPayload {
 export interface FrontendCompletePayload {
   executionId: string;
   finalStatus: string;
+  /** Persona that ran the execution (needed by post-execution middleware). */
+  personaId?: string;
+  /** Duration from backend finalize_status (needed by drift/analytics middleware). */
+  durationMs?: number | null;
+  /** Cost from backend finalize_status (needed by drift/analytics middleware). */
+  costUsd?: number | null;
+  /** Error message from backend (needed by drift middleware). */
+  errorMessage?: string | null;
 }
 
 /**
@@ -161,14 +169,50 @@ export interface StagePayloadMap {
 }
 
 // =============================================================================
+// System operation types (frontend-only, not tied to executions)
+// =============================================================================
+
+/**
+ * Span types for system-wide operations that occur outside the execution
+ * pipeline but still benefit from structured tracing.
+ */
+export const SYSTEM_OPERATION_TYPES = [
+  'design_conversation',
+  'credential_design',
+  'credential_negotiation',
+  'credential_healthcheck',
+  'template_generation',
+  'template_adoption',
+  'template_review',
+  'subscription_evaluation',
+  'automation_design',
+  'kb_ingest',
+  'recipe_execution',
+  'schema_proposal',
+  'query_debug',
+  'nl_query',
+  'setup_install',
+  'context_generation',
+  'task_execution',
+] as const;
+
+export type SystemOperationType = (typeof SYSTEM_OPERATION_TYPES)[number];
+
+/** Check whether a span type is a system operation. */
+export function isSystemOperation(spanType: string): spanType is SystemOperationType {
+  return (SYSTEM_OPERATION_TYPES as readonly string[]).includes(spanType);
+}
+
+// =============================================================================
 // Unified trace model
 // =============================================================================
 
 /**
- * Span type covering both pipeline stages and backend engine span types.
- * Pipeline stages are frontend-only; SpanType values come from the Rust backend.
+ * Span type covering pipeline stages, backend engine span types, and
+ * system-wide operation types. This unified type enables a single trace
+ * viewer to render execution pipelines, engine spans, and system operations.
  */
-export type UnifiedSpanType = SpanType | PipelineStage;
+export type UnifiedSpanType = SpanType | PipelineStage | SystemOperationType;
 
 /** Check whether a span type is a pipeline stage. */
 export function isPipelineStage(spanType: UnifiedSpanType): spanType is PipelineStage {

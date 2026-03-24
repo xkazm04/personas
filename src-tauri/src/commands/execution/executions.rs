@@ -38,9 +38,10 @@ pub fn list_all_executions(
     state: State<'_, Arc<AppState>>,
     limit: Option<i64>,
     status: Option<String>,
+    persona_id: Option<String>,
 ) -> Result<Vec<GlobalExecutionRow>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_all_global(&state.db, limit, status.as_deref())
+    repo::get_all_global(&state.db, limit, status.as_deref(), persona_id.as_deref())
 }
 
 #[tauri::command]
@@ -84,6 +85,7 @@ pub async fn execute_persona(
     input_data: Option<String>,
     use_case_id: Option<String>,
     continuation: Option<crate::engine::types::Continuation>,
+    idempotency_key: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
     require_privileged(&state, "execute_persona").await?;
     use crate::engine::pipeline::{PipelineContext, PipelineStage};
@@ -123,18 +125,35 @@ pub async fn execute_persona(
     // -- Stage: CreateRecord ------------------------------------------
     pipeline.enter_stage(PipelineStage::CreateRecord);
 
-    // 4. Create execution record in DB (starts as "queued")
-    let execution = repo::create(
+    // 4. Create execution record in DB (starts as "queued").
+    //    When an idempotency_key is supplied (e.g. from a timeout-retry),
+    //    this returns the existing execution instead of creating a duplicate.
+    let execution = repo::create_with_idempotency(
         &state.db,
         &persona_id,
         trigger_id,
         input_data.clone(),
         model_used,
         use_case_id,
+        idempotency_key,
     )?;
 
     // Update pipeline context with real execution ID
     pipeline.execution_id = execution.id.clone();
+
+    // If idempotency dedup returned an already-started execution, skip the
+    // engine spawn — it's already running (or finished). Return it directly
+    // so the frontend gets the same execution ID without a duplicate spawn.
+    if execution.status != "queued" {
+        tracing::info!(
+            execution_id = %execution.id,
+            status = %execution.status,
+            "Idempotency dedup: execution already in progress, skipping engine spawn"
+        );
+        pipeline.complete_stage();
+        pipeline.log_summary();
+        return Ok(execution);
+    }
 
     // -- Stage: SpawnEngine -------------------------------------------
     pipeline.enter_stage(PipelineStage::SpawnEngine);
@@ -186,6 +205,16 @@ pub async fn execute_persona(
 
     // 9. Return the execution record (frontend uses the ID for event filtering)
     repo::get_by_id(&state.db, &execution.id)
+}
+
+#[tauri::command]
+pub fn list_executions_by_trigger(
+    state: State<'_, Arc<AppState>>,
+    trigger_id: String,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaExecution>, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_by_trigger_id(&state.db, &trigger_id, limit)
 }
 
 #[tauri::command]
@@ -287,11 +316,7 @@ pub fn get_execution_log_lines(
                     .lines()
                     .filter_map(|line| {
                         // Extract display text from log lines with [STDOUT] prefix
-                        if let Some(pos) = line.find("[STDOUT] ") {
-                            Some(line[pos + 9..].to_string())
-                        } else {
-                            None
-                        }
+                        line.find("[STDOUT] ").map(|pos| line[pos + 9..].to_string())
                     })
                     .collect();
                 Ok(lines)

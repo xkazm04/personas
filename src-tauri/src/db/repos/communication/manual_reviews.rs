@@ -1,11 +1,11 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{CreateManualReviewInput, CreateReviewMessageInput, ManualReviewStatus, PersonaManualReview, ReviewMessage};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn row_to_review(row: &Row) -> rusqlite::Result<PersonaManualReview> {
+fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaManualReview> {
     Ok(PersonaManualReview {
         id: row.get("id")?,
         execution_id: row.get("execution_id")?,
@@ -22,6 +22,12 @@ fn row_to_review(row: &Row) -> rusqlite::Result<PersonaManualReview> {
         updated_at: row.get("updated_at")?,
     })
 }
+
+row_mapper!(row_to_message -> ReviewMessage {
+    id, review_id, role, content, metadata, created_at,
+});
+
+crud_get_by_id!(PersonaManualReview, "persona_manual_reviews", "Manual review", row_to_review);
 
 pub fn create(
     pool: &DbPool,
@@ -117,21 +123,6 @@ pub fn get_by_execution(
     Ok(collect_rows(rows, "manual_reviews::get_by_execution"))
 }
 
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaManualReview, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_manual_reviews WHERE id = ?1",
-        params![id],
-        row_to_review,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("Manual review {id}"))
-        }
-        other => AppError::Database(other),
-    })
-}
-
 pub fn update_status(
     pool: &DbPool,
     id: &str,
@@ -192,17 +183,6 @@ pub fn get_pending_count(
 }
 
 // -- Review Messages ---------------------------------------------
-
-fn row_to_message(row: &Row) -> rusqlite::Result<ReviewMessage> {
-    Ok(ReviewMessage {
-        id: row.get("id")?,
-        review_id: row.get("review_id")?,
-        role: row.get("role")?,
-        content: row.get("content")?,
-        metadata: row.get("metadata")?,
-        created_at: row.get("created_at")?,
-    })
-}
 
 pub fn create_message(
     pool: &DbPool,

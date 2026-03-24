@@ -2,6 +2,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useAgentStore } from "@/stores/agentStore";
 import { useCorrelatedCliStream } from './useCorrelatedCliStream';
+import { EventName } from '@/lib/eventRegistry';
 import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/execution/pipeline';
 import { isTerminalState } from '@/lib/execution/executionState';
 import { validatePayload, ExecutionStatusSchema } from '@/lib/validation/eventPayloads';
@@ -92,8 +93,8 @@ export function usePersonaExecution() {
   }, []);
 
   const { start, cleanup } = useCorrelatedCliStream({
-    outputEvent: 'execution-output',
-    statusEvent: 'execution-status',
+    outputEvent: EventName.EXECUTION_OUTPUT,
+    statusEvent: EventName.EXECUTION_STATUS,
     idField: 'execution_id',
     onOutputLine: handleOutputLine,
     onStatusEvent: handleStatusEvent,
@@ -149,7 +150,7 @@ export function usePersonaExecution() {
         queueUnlistenRef.current = null;
       }
 
-      const unlisten = await listen<QueueStatusPayload>('queue-status', (event) => {
+      const unlisten = await listen<QueueStatusPayload>(EventName.QUEUE_STATUS, (event) => {
         if (cancelled) return;
         const payload = event.payload;
         const store = useAgentStore.getState();

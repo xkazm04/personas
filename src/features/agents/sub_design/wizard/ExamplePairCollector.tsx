@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
 import { Plus, Trash2, ArrowRight, FileInput, FileOutput } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-
 export interface ExamplePair {
   id: string;
   input: string;
@@ -58,8 +56,7 @@ export function ExamplePairCollector({
         </button>
       </div>
 
-      <AnimatePresence initial={false}>
-        {pairs.map((pair, index) => {
+      {pairs.map((pair, index) => {
           const isCollapsed = collapsed.has(pair.id);
           const hasContent = pair.input.trim() || pair.output.trim();
           const preview = hasContent
@@ -67,13 +64,9 @@ export function ExamplePairCollector({
             : null;
 
           return (
-            <motion.div
+            <div
               key={pair.id}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.15 }}
-              className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.02] overflow-hidden"
+              className="animate-fade-slide-in rounded-xl border border-emerald-500/15 bg-emerald-500/[0.02] overflow-hidden"
             >
               {/* Header */}
               <div className="flex items-center gap-2 px-3 py-2">
@@ -141,10 +134,9 @@ export function ExamplePairCollector({
                   </div>
                 </div>
               )}
-            </motion.div>
+            </div>
           );
         })}
-      </AnimatePresence>
 
       {pairs.length === 0 && (
         <button

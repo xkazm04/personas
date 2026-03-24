@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{CreateRatingInput, LabUserRating};
 use crate::db::DbPool;
@@ -6,17 +6,9 @@ use crate::error::AppError;
 
 // -- Row mapper -------------------------------------------------
 
-fn row_to_rating(row: &Row) -> rusqlite::Result<LabUserRating> {
-    Ok(LabUserRating {
-        id: row.get("id")?,
-        run_id: row.get("run_id")?,
-        result_id: row.get("result_id")?,
-        scenario_name: row.get("scenario_name")?,
-        rating: row.get("rating")?,
-        feedback: row.get("feedback")?,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_rating -> LabUserRating {
+    id, run_id, result_id, scenario_name, rating, feedback, created_at,
+});
 
 // -- CRUD -------------------------------------------------------
 

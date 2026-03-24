@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { DraftEditStep } from '@/features/shared/components/editors/draft-editor/DraftEditStep';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
@@ -62,14 +61,9 @@ export function CreateEditDetails({
         <span>Edit Details</span>
       </button>
 
-      <AnimatePresence>
-        {showEditInline && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={motionConfig.framer}
-            className="overflow-hidden"
+      {showEditInline && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="min-h-[400px] rounded-xl border border-primary/10 bg-secondary/10 p-4">
               <DraftEditStep
@@ -88,9 +82,8 @@ export function CreateEditDetails({
                 additionalTabs={additionalTabs}
               />
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

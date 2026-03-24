@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { MOTION_TIMING } from '@/features/templates/animationPresets';
 
 interface EstimatedProgressBarProps {
@@ -70,11 +69,8 @@ export function EstimatedProgressBar({
   return (
     <div role="status" aria-live="polite" aria-label={isRunning ? `Progress: ${Math.round(progress)}%` : 'Complete'} className={`space-y-1.5 ${className ?? ''}`}>
       <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
-        <motion.div
-          className="h-full rounded-full bg-primary"
-          initial={{ width: '0%' }}
-          animate={{ width: `${progress}%` }}
-          transition={MOTION_TIMING.FLOW}
+        <div
+          className="animate-fade-in h-full rounded-full bg-primary" style={{ width: `${progress}%` }}
         />
       </div>
       <div className="flex justify-between typo-body text-muted-foreground/60">

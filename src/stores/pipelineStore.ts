@@ -12,6 +12,7 @@ import { createCompositionSlice } from "./slices/pipeline/compositionSlice";
 
 export const usePipelineStore = create<PipelineStore>()((...a) => ({
   error: null,
+  errorKind: null,
   isLoading: false,
   ...createTriggerSlice(...a),
   ...createTeamSlice(...a),

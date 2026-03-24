@@ -1,5 +1,4 @@
 import { memo, useCallback, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
 import {
   Play, Pause, X, Gauge, History,
   ChevronRight, SkipBack,
@@ -95,12 +94,8 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
   const cursorTime = rangeStart + cursorMs;
 
   return (
-    <motion.div
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 20, opacity: 0 }}
-      transition={{ duration: 0.25, ease: 'easeOut' }}
-      className="flex flex-col bg-gradient-to-r from-background via-secondary/20 to-background border-t border-cyan-500/15"
+    <div
+      className="animate-fade-slide-in flex flex-col bg-gradient-to-r from-background via-secondary/20 to-background border-t border-cyan-500/15"
     >
       {/* Scrubber Track */}
       <div
@@ -195,6 +190,6 @@ export const ActiveTimelineBar = memo(function ActiveTimelineBar({
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 });

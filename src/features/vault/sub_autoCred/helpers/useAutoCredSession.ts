@@ -8,8 +8,20 @@ import type {
   AutoCredConnectorContext,
   AutoCredErrorInfo,
   ExtractionCompleteness,
+  DiscoveredField,
+  DiscoveredConnector,
 } from './types';
 import { buildConnectorContext, parseAutoCredError, checkFieldCompleteness } from './types';
+
+/** Result returned by the adapter after a browser session. */
+export interface AdapterResult {
+  values: ExtractedValues;
+  partial: boolean;
+  /** Universal mode: dynamically discovered field definitions. */
+  discoveredFields?: DiscoveredField[];
+  /** Universal mode: auto-generated connector definition. */
+  discoveredConnector?: DiscoveredConnector;
+}
 
 /**
  * Playwright MCP adapter interface.
@@ -28,7 +40,7 @@ export interface PlaywrightAdapter {
     ctx: AutoCredConnectorContext,
     onLog: (entry: BrowserLogEntry) => void,
     signal: AbortSignal,
-  ): Promise<{ values: ExtractedValues; partial: boolean }>;
+  ): Promise<AdapterResult>;
 }
 
 // -- Hook ----------------------------------------------------------------
@@ -55,6 +67,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   const [healthResult, setHealthResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
+  const [discoveredFields, setDiscoveredFields] = useState<DiscoveredField[] | null>(null);
+  const [discoveredConnector, setDiscoveredConnector] = useState<DiscoveredConnector | null>(null);
 
   /** Initialize a session from a design result */
   const init = useCallback((result: CredentialDesignResult) => {
@@ -68,6 +82,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setIsPartial(false);
     setHealthResult(null);
     setIsSaving(false);
+    setDiscoveredFields(null);
+    setDiscoveredConnector(null);
   }, []);
 
   /** User consented -- start browser automation */
@@ -96,7 +112,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
 
     try {
       const ctx = buildConnectorContext(designResult);
-      const { values, partial } = await adapter.run(
+      const { values, partial, discoveredFields: df, discoveredConnector: dc } = await adapter.run(
         ctx,
         (entry) => setLogs((prev) => {
           // Deduplicate: skip if the last message is identical or a near-duplicate
@@ -123,6 +139,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       );
       setExtractedValues(values);
       setIsPartial(partial);
+      if (df) setDiscoveredFields(df);
+      if (dc) setDiscoveredConnector(dc);
       setPhase('review');
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -202,6 +220,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setIsPartial(false);
     setHealthResult(null);
     setIsSaving(false);
+    setDiscoveredFields(null);
+    setDiscoveredConnector(null);
   }, [cancelBrowser]);
 
   return {
@@ -215,6 +235,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     completeness,
     healthResult,
     isSaving,
+    discoveredFields,
+    discoveredConnector,
 
     init,
     startBrowser,

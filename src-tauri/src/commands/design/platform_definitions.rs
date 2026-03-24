@@ -49,5 +49,6 @@ pub fn get_platform_definition(
 ) -> Result<PlatformDefinition, AppError> {
     require_auth_sync(&state)?;
     platform_rules::get_builtin(&id)
+        .cloned()
         .ok_or_else(|| AppError::NotFound(format!("Platform definition '{id}'")))
 }

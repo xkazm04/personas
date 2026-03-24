@@ -129,6 +129,7 @@ pub struct Persona {
     pub trust_level: String,
     pub trust_origin: String,
     pub trust_verified_at: Option<String>,
+    pub trust_score: f64,
     pub created_at: String,
     pub updated_at: String,
 }

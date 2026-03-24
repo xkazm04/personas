@@ -690,6 +690,15 @@ pub fn build_cli_args(
     // Provider env
     if let Some(profile) = model_profile {
         apply_provider_env(&mut cli_args, profile);
+
+        // Prompt cache policy: pass as env var for the execution runtime
+        if let Some(ref policy) = profile.prompt_cache_policy {
+            if policy != "none" && !policy.is_empty() {
+                cli_args
+                    .env_overrides
+                    .push(("PROMPT_CACHE_POLICY".to_string(), policy.clone()));
+            }
+        }
     }
 
     cli_args.env_removals.push("CLAUDECODE".to_string());

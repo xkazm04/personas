@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { getExecutionLog } from '@/api/agents/executions';
 import { useToastStore } from '@/stores/toastStore';
 import { diffLines } from './comparisonHelpers';
@@ -63,13 +62,9 @@ export function OutputDiffSection({
         )}
       </button>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-2 overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in mt-2 overflow-hidden"
           >
             {loading ? (
               <div className="flex items-center gap-2 py-4 typo-body text-muted-foreground/60">
@@ -113,9 +108,8 @@ export function OutputDiffSection({
                 ).elements}
               </div>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Settings, Code, Sparkles } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { DraftPromptTab } from './DraftPromptTab';
@@ -140,17 +139,12 @@ export function DraftEditStep({
 
       {/* Tab content */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
+        <div
             key={activeTab}
             role="tabpanel"
             id={`draft-panel-${activeTab}`}
             aria-labelledby={`draft-tab-${activeTab}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="h-full"
+            className="animate-fade-slide-in h-full"
           >
           {activeTab === 'prompt' && (
             <DraftPromptTab draft={draft} disabled={disabled} updateDraft={updateDraft} />
@@ -187,8 +181,7 @@ export function DraftEditStep({
               }}
             />
           )}
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </div>
 
       {/* Adjustment request panel (hidden when a dedicated tab handles it) */}

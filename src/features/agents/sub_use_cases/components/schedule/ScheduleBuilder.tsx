@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { Clock, Zap, ChevronDown, Sparkles, Code2, CalendarClock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion } from 'framer-motion';
 import { previewCronSchedule, type CronPreview } from '@/api/pipeline/triggers';
 import {
   DAYS, TIMEZONES,
@@ -82,11 +80,9 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
         })}
       </div>
 
-      <AnimatePresence mode="wait">
-        {mode === 'presets' && <PresetPanel cronExpression={cronExpression} onSelect={handlePresetSelect} />}
+      {mode === 'presets' && <PresetPanel cronExpression={cronExpression} onSelect={handlePresetSelect} />}
         {mode === 'visual' && <VisualPanel selectedDays={selectedDays} hour={hour} minute={minute} onToggleDay={handleToggleDay} onHourChange={setHour} onMinuteChange={setMinute} />}
         {mode === 'cron' && <CronPanel cronExpression={cronExpression} onCronChange={setCronExpression} cronPreview={cronPreview} cronLoading={cronLoading} />}
-      </AnimatePresence>
 
       {mode !== 'cron' && cronExpression && (
         <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/20 border border-primary/10">
@@ -102,9 +98,8 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
           <ChevronDown className={`w-3 h-3 transition-transform ${showTimezone ? 'rotate-180' : ''}`} />
         </button>
       </div>
-      <AnimatePresence>
-        {showTimezone && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+      {showTimezone && (
+          <div className="animate-fade-slide-in overflow-hidden">
             <div className="flex flex-wrap gap-1 pb-1">
               {TIMEZONES.map((tz) => (
                 <button key={tz.value} type="button" onClick={() => { setTimezone(tz.value); setShowTimezone(false); }}
@@ -113,11 +108,10 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
                 </button>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>{cronPreview?.valid && cronPreview.next_runs.length > 0 && <NextRunsPreview preview={cronPreview} />}</AnimatePresence>
+      {cronPreview?.valid && cronPreview.next_runs.length > 0 && <NextRunsPreview preview={cronPreview} />}
 
       <button onClick={handleActivate} disabled={isActivating || !isValid}
         className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed bg-amber-500/12 text-amber-300 border-amber-500/25 hover:bg-amber-500/20">

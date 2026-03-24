@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { useVaultStore } from "@/stores/vaultStore";
 import type { BuilderComponent, ComponentRole } from '../../steps/builder/types';
 import { COMPONENT_ROLES } from '../../steps/builder/types';
@@ -79,8 +78,7 @@ export function ComponentsPicker({ components, onAdd, onRemove, onSetWatchedTabl
         ))}
       </div>
 
-      <AnimatePresence>
-        {assignRole && (
+      {assignRole && (
           <AssignModal
             role={assignRole}
             existingIds={existingIdsForRole}
@@ -96,17 +94,14 @@ export function ComponentsPicker({ components, onAdd, onRemove, onSetWatchedTabl
             onClose={() => setAssignRole(null)}
           />
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
-        {tableSelectorComp && onSetWatchedTables && (
+      {tableSelectorComp && onSetWatchedTables && (
           <TableSelectorModal
             component={tableSelectorComp}
             onSetWatchedTables={onSetWatchedTables}
             onClose={() => setTableSelectorCompId(null)}
           />
         )}
-      </AnimatePresence>
     </div>
   );
 }

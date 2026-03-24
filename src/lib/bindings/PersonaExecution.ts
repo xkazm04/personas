@@ -8,4 +8,8 @@ retry_of_execution_id: string | null,
 /**
  * Number of retries attempted (0 = original execution).
  */
-retry_count: number, started_at: string | null, completed_at: string | null, created_at: string, };
+retry_count: number, started_at: string | null, completed_at: string | null, created_at: string,
+/**
+ * Frozen ExecutionConfig JSON snapshot assembled at execution start.
+ */
+execution_config: string | null, };

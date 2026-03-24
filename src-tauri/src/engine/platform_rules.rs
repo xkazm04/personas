@@ -5,7 +5,17 @@
 //! Make) is defined as a JSON config that can be loaded from the database
 //! or from built-in defaults.
 
+use std::sync::LazyLock;
+
 use crate::db::models::{PlatformDefinition, PlatformFormat};
+
+// ============================================================================
+// Cached built-in platform definitions (built once, reused on every IPC call)
+// ============================================================================
+
+static BUILTIN_DEFS: LazyLock<Vec<PlatformDefinition>> = LazyLock::new(|| {
+    vec![builtin_n8n(), builtin_zapier(), builtin_make()]
+});
 
 // ============================================================================
 // Built-in platform definitions
@@ -296,14 +306,14 @@ pub fn builtin_make() -> PlatformDefinition {
     }
 }
 
-/// Get all built-in platform definitions.
-pub fn builtin_definitions() -> Vec<PlatformDefinition> {
-    vec![builtin_n8n(), builtin_zapier(), builtin_make()]
+/// Get all built-in platform definitions (cached after first call).
+pub fn builtin_definitions() -> &'static [PlatformDefinition] {
+    &BUILTIN_DEFS
 }
 
-/// Look up a platform definition by ID from the builtins.
-pub fn get_builtin(platform_id: &str) -> Option<PlatformDefinition> {
-    builtin_definitions().into_iter().find(|d| d.id == platform_id)
+/// Look up a platform definition by ID from the builtins (cached).
+pub fn get_builtin(platform_id: &str) -> Option<&'static PlatformDefinition> {
+    BUILTIN_DEFS.iter().find(|d| d.id == platform_id)
 }
 
 // ============================================================================

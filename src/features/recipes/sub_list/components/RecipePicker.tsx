@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
 import { X, BookOpen, Search, Plus } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 
@@ -36,12 +35,8 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.96 }}
-        transition={{ duration: 0.15 }}
-        className="relative flex flex-col w-[500px] max-h-[70vh] rounded-xl border border-border/60 bg-background shadow-2xl overflow-hidden"
+      <div
+        className="animate-fade-slide-in relative flex flex-col w-[500px] max-h-[70vh] rounded-xl border border-border/60 bg-background shadow-2xl overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40">
@@ -101,7 +96,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

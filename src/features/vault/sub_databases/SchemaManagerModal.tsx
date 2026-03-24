@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Table2, Code2, Terminal } from 'lucide-react';
+import { X, Table2, Code2, Terminal, MessageSquare } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -8,10 +8,12 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 import { TablesTab } from './tabs/TablesTab';
 import { QueriesTab } from './tabs/QueriesTab';
 import { ConsoleTab } from './tabs/ConsoleTab';
+import { ChatTab } from './tabs/ChatTab';
 
-type SchemaTab = 'tables' | 'queries' | 'console';
+type SchemaTab = 'chat' | 'tables' | 'queries' | 'console';
 
 const TABS: { id: SchemaTab; label: string; icon: typeof Table2 }[] = [
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'tables', label: 'Tables', icon: Table2 },
   { id: 'queries', label: 'Queries', icon: Code2 },
   { id: 'console', label: 'Console', icon: Terminal },
@@ -24,9 +26,9 @@ interface SchemaManagerModalProps {
 }
 
 export function SchemaManagerModal({ credential, connector, onClose }: SchemaManagerModalProps) {
-  const [activeTab, setActiveTab] = useState<SchemaTab>('tables');
+  const [activeTab, setActiveTab] = useState<SchemaTab>('chat');
   // Track which tabs have been visited -- mount lazily, keep mounted
-  const [visited, setVisited] = useState<Set<SchemaTab>>(() => new Set(['tables']));
+  const [visited, setVisited] = useState<Set<SchemaTab>>(() => new Set(['chat']));
   const fetchDbSchemaTables = useVaultStore((s) => s.fetchDbSchemaTables);
   const fetchDbSavedQueries = useVaultStore((s) => s.fetchDbSavedQueries);
 
@@ -103,6 +105,11 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
 
       {/* Content -- lazy mount on first visit, keep mounted to preserve state */}
       <div className="flex-1 min-h-0 relative">
+        {visited.has('chat') && (
+          <div className={`absolute inset-0 transition-opacity duration-150 ${activeTab === 'chat' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+            <ChatTab credentialId={credential.id} language={queryLanguage} serviceType={credential.service_type} />
+          </div>
+        )}
         {visited.has('tables') && (
           <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-150 ${activeTab === 'tables' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
             <TablesTab credentialId={credential.id} serviceType={credential.service_type} />

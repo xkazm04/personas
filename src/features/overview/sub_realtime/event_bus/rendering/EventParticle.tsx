@@ -1,5 +1,4 @@
 import { memo, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 
 interface Props {
@@ -55,9 +54,7 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
       style={{ cursor: 'pointer' }}
     >
       {/* Invisible hit-area for easier clicking */}
-      <motion.circle
-        animate={{ cx: position.cx, cy: position.cy }}
-        transition={{ duration: 0.8, ease: 'easeInOut' }}
+      <circle className="animate-fade-in"
         r={HIT_AREA_R}
         fill="transparent"
       />
@@ -66,17 +63,8 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
       {TRAIL_COUNT > 0 && event._phase !== 'done' && (
         <>
           {Array.from({ length: TRAIL_COUNT }).map((_, i) => (
-            <motion.circle
+            <circle className="animate-fade-in"
               key={`trail-${i}`}
-              animate={{
-                cx: position.cx,
-                cy: position.cy,
-              }}
-              transition={{
-                duration: 0.8,
-                delay: (i + 1) * 0.08,
-                ease: 'easeOut',
-              }}
               r={PARTICLE_R - (i + 1)}
               fill={particleColor}
               opacity={0.15 - i * 0.05}
@@ -86,36 +74,14 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
       )}
 
       {/* Main particle */}
-      <motion.circle
-        animate={{
-          cx: position.cx,
-          cy: position.cy,
-          opacity: event._phase === 'done' ? 0 : 1,
-          scale: event._phase === 'done' ? 0 : 1,
-        }}
-        transition={{
-          cx: { duration: 0.8, ease: 'easeInOut' },
-          cy: { duration: 0.8, ease: 'easeInOut' },
-          opacity: { duration: 0.3 },
-          scale: { duration: 0.3 },
-        }}
+      <circle className="animate-fade-in"
         r={PARTICLE_R}
         fill={particleColor}
         filter="url(#particleGlow)"
       />
 
       {/* Inner dot */}
-      <motion.circle
-        animate={{
-          cx: position.cx,
-          cy: position.cy,
-          opacity: event._phase === 'done' ? 0 : 0.8,
-        }}
-        transition={{
-          cx: { duration: 0.8, ease: 'easeInOut' },
-          cy: { duration: 0.8, ease: 'easeInOut' },
-          opacity: { duration: 0.3 },
-        }}
+      <circle className="animate-fade-in"
         r={PARTICLE_R * 0.4}
         fill="white"
         opacity={0.8}
@@ -123,10 +89,7 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
 
       {/* Burst ring on deliver */}
       {showBurst && (
-        <motion.circle
-          initial={{ r: PARTICLE_R, opacity: 0.6 }}
-          animate={{ r: PARTICLE_R * 4, opacity: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
+        <circle className="animate-fade-slide-in"
           cx={position.cx}
           cy={position.cy}
           fill="none"

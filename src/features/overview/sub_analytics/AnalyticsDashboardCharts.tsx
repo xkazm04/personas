@@ -67,7 +67,7 @@ export function AnalyticsDashboardCharts({
         <MetricChart title="Cost Over Time" height={180}>
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+            <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
             <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `$${v}`} />
             <Tooltip content={<ChartTooltip />} />
             {compareEnabled && (
@@ -87,7 +87,7 @@ export function AnalyticsDashboardCharts({
         <MetricChart title="Execution Health" height={180}>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+            <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
             <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
             <Tooltip content={<ChartTooltip />} cursor={false} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -116,7 +116,7 @@ export function AnalyticsDashboardCharts({
           <MetricChart title="Tool Usage Over Time" height={180}>
             <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+              <XAxis dataKey="dateLabel" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
               <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} allowDecimals={false} />
               <Tooltip content={<ChartTooltip />} />
               {allToolNames.map((toolName, idx) => (
@@ -152,7 +152,7 @@ export function AnalyticsDashboardCharts({
           <MetricChart title="Latency (p50 / p95 / p99)" height={180}>
             <LineChart data={latencyData}>
               <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+              <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
               <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`} />
               <Tooltip content={<ChartTooltip />} />
               <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
@@ -167,7 +167,7 @@ export function AnalyticsDashboardCharts({
       {/* Tool Invocations -- full width horizontal bar */}
       {barData.length > 0 && (
         <MetricChart title="Tool Invocations" height={Math.max(200, barData.length * 40)}>
-          <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
+          <BarChart data={barData} margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
             <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis dataKey="name" type="category" width={120} tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />

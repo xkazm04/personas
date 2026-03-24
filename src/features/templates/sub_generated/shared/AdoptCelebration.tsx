@@ -1,14 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-
 /* -- AI-generated celebration illustration ------------------------ */
 export function CelebrationIllustration({ icon: _icon, color: _color }: { icon: string; color: string }) {
   return (
-    <motion.div
-      className="w-40 h-30 mx-auto flex items-center justify-center"
-      initial={{ y: -20, opacity: 0, scale: 0.9 }}
-      animate={{ y: 0, opacity: 1, scale: 1 }}
-      transition={{ delay: 0.1, type: 'spring', damping: 14, stiffness: 200 }}
+    <div
+      className="animate-fade-slide-in w-40 h-30 mx-auto flex items-center justify-center"
     >
       <img
         src="/illustrations/adopt-celebration.png"
@@ -18,7 +13,7 @@ export function CelebrationIllustration({ icon: _icon, color: _color }: { icon: 
         height={120}
         style={{ objectFit: 'contain' }}
       />
-    </motion.div>
+    </div>
   );
 }
 

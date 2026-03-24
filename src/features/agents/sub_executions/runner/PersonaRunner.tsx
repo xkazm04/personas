@@ -1,16 +1,16 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useElapsedTimer } from '@/hooks';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
+import { useExecutionStream } from '@/hooks/execution/useExecutionStream';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { Play, Clock } from 'lucide-react';
 import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ExecutionTerminal } from '@/features/agents/sub_executions/runner/ExecutionTerminal';
 import type { TerminalEmptyState } from '@/features/shared/components/terminal/TerminalBody';
-import { listExecutions } from "@/api/agents/executions";
+import { useExecutionList } from '../libs/useExecutionList';
 import { useActivityMonitor } from '@/hooks/execution/useActivityMonitor';
 import { useFileChanges } from '@/hooks/execution/useFileChanges';
 import { FileChangesPanel } from './FileChangesPanel';
@@ -32,24 +32,26 @@ export function PersonaRunner() {
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
   const isExecuting = useAgentStore((state) => state.isExecuting);
   const activeExecutionId = useAgentStore((state) => state.activeExecutionId);
-  const executionOutput = useAgentStore((state) => state.executionOutput);
-  const executionPersonaId = useAgentStore((state) => state.executionPersonaId);
   const rerunInputData = useSystemStore((state) => state.rerunInputData);
   const setRerunInputData = useSystemStore((state) => state.setRerunInputData);
   const queuePosition = useAgentStore((s) => s.queuePosition);
   const queueDepth = useAgentStore((s) => s.queueDepth);
   const cloudConfig = useSystemStore((s) => s.cloudConfig);
 
+  const personaId = selectedPersona?.id || '';
+
+  // Shared execution stream — ownership check + output subscription
+  const { lines: executionLines, isOwner: isThisPersonasExecution } = useExecutionStream(personaId);
+
   const runnerRef = useRef<HTMLDivElement>(null);
+  // Shared execution list — provides typicalDurationMs derived from store data
+  const { typicalDurationMs } = useExecutionList(personaId);
+
   const [inputData, setInputData] = useState('{}');
   const [showInputEditor, setShowInputEditor] = useState(false);
   const [outputLines, setOutputLines] = useState<string[]>([]);
   const [jsonError, setJsonError] = useState<string | null>(null);
-  const [typicalDurationMs, setTypicalDurationMs] = useState<number | null>(null);
   const elapsedMs = useElapsedTimer(isExecuting, 500);
-
-  const personaId = selectedPersona?.id || '';
-  const isThisPersonasExecution = executionPersonaId === personaId && personaId !== '';
 
   const [healingNotification, setHealingNotification] = useState<HealingEventPayload | null>(null);
   const aiHealing = useAiHealingStream(personaId);
@@ -77,22 +79,8 @@ export function PersonaRunner() {
     return 'connecting';
   }, [isExecuting, queuePosition, queueDepth]);
 
-  const fetchTypicalDuration = useCallback(async (pId: string) => {
-    try {
-      const execs = await listExecutions(pId, 20);
-      const durations: number[] = execs
-        .filter((e): e is typeof e & { duration_ms: number } =>
-          e.status === 'completed' && typeof e.duration_ms === 'number' && e.duration_ms > 0)
-        .map((e) => e.duration_ms);
-      if (durations.length > 0) {
-        durations.sort((a, b) => a - b);
-        setTypicalDurationMs(durations[Math.floor(durations.length / 2)] ?? null);
-      } else { setTypicalDurationMs(null); }
-    } catch (err) { console.warn('[PersonaRunner] Failed to fetch typical duration:', err); setTypicalDurationMs(null); }
-  }, []);
-
   const { handleExecute, handleStop, handleResume } = useRunnerActions({
-    personaId, inputData, outputLines, setOutputLines, setJsonError, elapsedMs, executionSummary, fetchTypicalDuration,
+    personaId, inputData, outputLines, setOutputLines, setJsonError, elapsedMs, executionSummary, fetchTypicalDuration: () => {},
   });
 
   // Pre-warm budget data when persona is selected so it's fresh before user clicks Run
@@ -101,11 +89,11 @@ export function PersonaRunner() {
     if (personaId) void fetchBudgetSpend();
   }, [personaId, fetchBudgetSpend]);
 
-  // Sync store output to local lines
+  // Sync shared execution stream to local lines (local state needed for useRunnerActions mutations)
   useEffect(() => {
-    if (isThisPersonasExecution && executionOutput.length > 0) setOutputLines(executionOutput);
+    if (executionLines.length > 0) setOutputLines(executionLines);
     else if (!isThisPersonasExecution) setOutputLines([]);
-  }, [executionOutput, isThisPersonasExecution]);
+  }, [executionLines, isThisPersonasExecution]);
 
   // Listen for healing events
   useEffect(() => {
@@ -161,11 +149,9 @@ export function PersonaRunner() {
         <ExecutionSummaryCard executionSummary={executionSummary} onResume={handleResume} />
       )}
 
-      <AnimatePresence>
-        {healingNotification && !isExecuting && isThisPersonasExecution && (
+      {healingNotification && !isExecuting && isThisPersonasExecution && (
           <HealingCard notification={healingNotification} onDismiss={() => setHealingNotification(null)} />
         )}
-      </AnimatePresence>
 
       {import.meta.env.DEV && aiHealing.phase !== 'idle' && (
         <TerminalStrip
@@ -176,14 +162,12 @@ export function PersonaRunner() {
         />
       )}
 
-      <AnimatePresence>
-        {!(isThisPersonasExecution && (isExecuting || outputLines.length > 0)) && (
+      {!(isThisPersonasExecution && (isExecuting || outputLines.length > 0)) && (
           <RunnerEmptyState persona={selectedPersona} />
         )}
-      </AnimatePresence>
 
       {isThisPersonasExecution && (isExecuting || outputLines.length > 0) && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="animate-fade-slide-in">
           <ExecutionTerminal
             lines={outputLines} isRunning={isExecuting} onStop={handleStop}
             label={activeExecutionId ? `exec:${activeExecutionId.slice(0, 8)}` : undefined}
@@ -208,7 +192,7 @@ export function PersonaRunner() {
             <PhaseTimeline phases={phases} isExecuting={isExecuting} elapsedMs={elapsedMs}
               showPhases={showPhases} onTogglePhases={() => setShowPhases(!showPhases)} />
           </ExecutionTerminal>
-        </motion.div>
+        </div>
       )}
     </div>
   );

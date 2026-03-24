@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Sparkles, Check } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -29,12 +28,8 @@ export default function OnboardingProgressBar() {
   const progressPct = (completedCount / STEP_ORDER.length) * 100;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="mx-3 mb-2"
+    <div
+      className="animate-fade-slide-in mx-3 mb-2"
     >
       <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-3 space-y-2.5">
         {/* Header */}
@@ -46,11 +41,8 @@ export default function OnboardingProgressBar() {
 
         {/* Progress bar */}
         <div className="w-full h-1.5 bg-violet-500/10 rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-violet-500 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPct}%` }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          <div
+            className="animate-fade-in h-full bg-violet-500 rounded-full" style={{ width: `${progressPct}%` }}
           />
         </div>
 
@@ -89,6 +81,6 @@ export default function OnboardingProgressBar() {
           })}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

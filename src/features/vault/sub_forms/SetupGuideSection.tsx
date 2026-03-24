@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
 interface SetupGuideSectionProps {
@@ -26,14 +25,9 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
           How to get {connectorLabel} credentials
         </span>
       </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {open && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3.5 pb-3 space-y-2">
               {steps.map((line, i) => {
@@ -48,9 +42,8 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
                 );
               })}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

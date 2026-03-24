@@ -24,6 +24,7 @@ import {
   INFLIGHT_TIMEOUT_MS,
   waitForPersonaInStore,
 } from '../state/asyncTransformTypes';
+import { SystemTraceSession } from '@/lib/execution/systemTrace';
 
 interface UseConfirmSaveOptions {
   state: AdoptState;
@@ -74,8 +75,8 @@ export function useConfirmSave({
     inflight.set(idempotencyKey, autoCleanup);
 
     confirmingRef.current = true;
+    const traceSession = SystemTraceSession.start('template_adoption', `Confirm: ${state.templateName}`);
     try {
-      console.debug(`[adopt:${idempotencyKey}] confirm start`, { templateName: state.templateName });
       wizard.confirmStarted();
 
       let parsed: unknown;
@@ -113,7 +114,7 @@ export function useConfirmSave({
         const failedNames = response.entity_errors.map((e) => `${e.entity_type} "${e.entity_name}"`).join(', ');
         console.warn(`[adopt] Persona created with ${response.entity_errors.length} entity errors: ${failedNames}`);
       }
-      console.debug(`[adopt:${idempotencyKey}] confirm complete`, { personaId: response.persona.id, entityErrors: response.entity_errors?.length ?? 0 });
+      traceSession.complete();
       wizard.confirmCompleted();
 
       if (state.backgroundAdoptId) {
@@ -126,7 +127,7 @@ export function useConfirmSave({
       onPersonaCreated();
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Failed to create persona.';
-      console.debug(`[adopt:${idempotencyKey}] confirm fail`, { error: errMsg });
+      traceSession.complete(errMsg);
       wizard.confirmFailed(errMsg);
     } finally {
       confirmingRef.current = false;

@@ -25,6 +25,7 @@ pub const EXECUTION_RETENTION_DAYS: &str = "execution_retention_days";
 /// Per-persona execution retention override (in months).
 /// Key format: `execution_retention_months:<persona_id>`, value: number string.
 /// When set, overrides the global retention for that persona.
+#[allow(dead_code)]
 pub const EXECUTION_RETENTION_MONTHS_PREFIX: &str = "execution_retention_months:";
 
 /// Per-persona auto-rollback setting prefix. The full key is
@@ -32,3 +33,30 @@ pub const EXECUTION_RETENTION_MONTHS_PREFIX: &str = "execution_retention_months:
 /// When enabled, the auto-rollback subscription checks whether the current
 /// prompt version's error rate exceeds 2x the previous version's rate.
 pub const AUTO_ROLLBACK_PREFIX: &str = "auto_rollback:";
+
+/// Global default model profile (JSON-encoded ModelProfile).
+/// Used as the lowest-priority fallback in the hierarchical config cascade:
+/// global → workspace → agent.
+pub const GLOBAL_MODEL_PROFILE: &str = "global_model_profile";
+
+/// File watcher debounce window in milliseconds. Events for the same path
+/// are suppressed for this duration after the first trigger match, reducing
+/// CPU spikes during FS bursts (IDE auto-save, git operations). Default: 500.
+#[allow(dead_code)]
+pub const FILE_WATCHER_DEBOUNCE_MS: &str = "file_watcher_debounce_ms";
+
+/// Per-persona auto-optimization setting prefix. Key: `auto_optimize:<persona_id>`.
+/// Value: JSON `{"enabled":true,"cron":"0 2 * * 0","min_score":80,"models":["sonnet"]}`.
+/// When enabled, a weekly arena test runs and auto-improves the prompt if scores are below min_score.
+pub const AUTO_OPTIMIZE_PREFIX: &str = "auto_optimize:";
+
+/// Per-persona health watch setting prefix. Key: `health_watch:<persona_id>`.
+/// Value: JSON `{"enabled":true,"interval_hours":6,"error_threshold":30}`.
+/// When enabled, periodic health checks run and send notifications on degradation.
+pub const HEALTH_WATCH_PREFIX: &str = "health_watch:";
+
+/// Claude CLI fallback scheduling flag. Key: `claude_cli_fallback:<persona_id>`.
+/// Value: JSON `{"enabled":true,"cron":"..."}`.
+/// When enabled, provides a generated `claude -p` command for external cron scheduling.
+#[allow(dead_code)]
+pub const CLAUDE_CLI_FALLBACK_PREFIX: &str = "claude_cli_fallback:";

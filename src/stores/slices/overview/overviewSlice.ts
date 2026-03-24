@@ -1,8 +1,8 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
-import { useAgentStore } from "../../agentStore";
-import { useSystemStore } from "../../systemStore";
+import { storeBus, AccessorKey } from "@/lib/storeBus";
+import type { Persona } from "@/lib/types/types";
 import type {
   OverviewTab,
   GlobalExecution,
@@ -22,6 +22,7 @@ import { log } from "@/lib/log";
 import { classifyError, ApiError, withRetry } from "@/lib/utils/apiError";
 import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
 import { measureStoreAction } from "@/lib/utils/storePerf";
+import { sanitizeCloudReview } from "@/lib/utils/sanitizers/sanitizeCloudReview";
 
 export interface OverviewSlice {
   // State -- navigation
@@ -54,7 +55,7 @@ export interface OverviewSlice {
 
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
-  fetchGlobalExecutions: (reset?: boolean, status?: string) => Promise<void>;
+  fetchGlobalExecutions: (reset?: boolean, status?: string, personaId?: string) => Promise<void>;
   fetchManualReviews: (status?: string) => Promise<void>;
   updateManualReview: (id: string, updates: { status?: ManualReviewStatus; reviewer_notes?: string }) => Promise<void>;
   fetchPendingReviewCount: () => Promise<void>;
@@ -117,7 +118,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
 
   setOverviewTab: (tab) => set({ overviewTab: tab }),
 
-  fetchGlobalExecutions: async (reset = false, status?: string) => {
+  fetchGlobalExecutions: async (reset = false, status?: string, personaId?: string) => {
     const seq = ++fetchGlobalSeq;
     try {
       const prevLimit = get().globalExecutionsLimit;
@@ -127,7 +128,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       set({ globalExecutionsLimit: limit });
 
       const statusFilter = status === 'running' ? 'running' : status;
-      const rows = await listAllExecutions(limit, statusFilter);
+      const rows = await listAllExecutions(limit, statusFilter, personaId);
 
       if (seq !== fetchGlobalSeq) return; // superseded by a newer request
 
@@ -162,7 +163,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   fetchManualReviews: async (status?: string) => {
     try {
       const raw = await listManualReviews(undefined, status);
-      const { personas } = useAgentStore.getState();
+      const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS);
       const shaped = raw.map((r) => ({
         id: r.id,
         persona_id: r.persona_id,
@@ -207,7 +208,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   }),
 
   fetchCloudReviews: async () => {
-    const { cloudConfig } = useSystemStore.getState();
+    const cloudConfig = storeBus.get<{ is_connected?: boolean } | null>(AccessorKey.SYSTEM_CLOUD_CONFIG);
     if (!cloudConfig?.is_connected) {
       set({ cloudReviews: [] });
       return;
@@ -215,24 +216,28 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     set({ isLoadingCloudReviews: true });
     try {
       const raw = await cloudListPendingReviews();
-      const { personas } = useAgentStore.getState();
+      const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS);
       // Transform CloudReviewRequest -> ManualReviewItem shape
-      const shaped = raw.map((r) => ({
-        id: r.review_id,
-        persona_id: r.persona_id,
-        execution_id: r.execution_id,
-        review_type: 'info',
-        content: typeof r.payload === 'string' ? r.payload : JSON.stringify(r.payload ?? ''),
-        severity: 'info',
-        status: r.status === 'pending' ? 'pending' : r.status,
-        reviewer_notes: r.response_message,
-        context_data: null,
-        suggested_actions: null,
-        title: typeof r.payload === 'string' ? r.payload.slice(0, 100) : 'Cloud Review',
-        created_at: safeTimestampToISO(r.created_at) ?? new Date().toISOString(),
-        resolved_at: safeTimestampToISO(r.resolved_at),
-        source: 'cloud' as const,
-      }));
+      // Sanitize at the trust boundary: cloud payloads are external input.
+      const shaped = raw.map((r) => {
+        const sanitized = sanitizeCloudReview(r.payload, r.response_message);
+        return {
+          id: r.review_id,
+          persona_id: r.persona_id,
+          execution_id: r.execution_id,
+          review_type: 'info',
+          content: sanitized.content,
+          severity: 'info',
+          status: r.status === 'pending' ? 'pending' : r.status,
+          reviewer_notes: sanitized.reviewerNotes,
+          context_data: null,
+          suggested_actions: null,
+          title: sanitized.title,
+          created_at: safeTimestampToISO(r.created_at) ?? new Date().toISOString(),
+          resolved_at: safeTimestampToISO(r.resolved_at),
+          source: 'cloud' as const,
+        };
+      });
       const items: ManualReviewItem[] = enrichWithPersona(shaped, personas);
       set({ cloudReviews: items, isLoadingCloudReviews: false });
     } catch (err) {

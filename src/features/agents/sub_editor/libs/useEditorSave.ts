@@ -68,12 +68,14 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     const prevBaseline = { ...baselineRef.current };
 
     let profile: string | null;
+    const cachePolicy = d.promptCachePolicy !== 'none' ? d.promptCachePolicy : undefined;
     const ollamaPreset = getOllamaPreset(d.selectedModel);
     if (ollamaPreset) {
       profile = JSON.stringify({
         model: ollamaPreset.modelId,
         provider: 'ollama',
         base_url: OLLAMA_CLOUD_BASE_URL,
+        prompt_cache_policy: cachePolicy,
       } satisfies ModelProfile);
     } else if (d.selectedModel === 'custom') {
       profile = JSON.stringify({
@@ -81,11 +83,13 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
         provider: d.selectedProvider,
         base_url: d.baseUrl || undefined,
         auth_token: d.authToken || undefined,
+        prompt_cache_policy: cachePolicy,
       } satisfies ModelProfile);
     } else {
       profile = JSON.stringify({
         model: d.selectedModel,
         provider: 'anthropic',
+        prompt_cache_policy: cachePolicy,
       } satisfies ModelProfile);
     }
 
@@ -96,7 +100,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
       max_turns: d.maxTurns === '' ? null : d.maxTurns,
     };
     await applyPersonaOp(selectedPersona.id, op);
-    setBaseline((prev) => ({ ...prev, selectedModel: d.selectedModel, selectedProvider: d.selectedProvider, baseUrl: d.baseUrl, authToken: d.authToken, customModelName: d.customModelName, maxBudget: d.maxBudget, maxTurns: d.maxTurns }));
+    setBaseline((prev) => ({ ...prev, selectedModel: d.selectedModel, selectedProvider: d.selectedProvider, baseUrl: d.baseUrl, authToken: d.authToken, customModelName: d.customModelName, maxBudget: d.maxBudget, maxTurns: d.maxTurns, promptCachePolicy: d.promptCachePolicy }));
     pushUndo(makeUndoEntry(op, prevBaseline, MODEL_KEYS));
   }, [selectedPersona, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
@@ -130,7 +134,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     save: saveModelSettings,
     mode: 'debounced',
     delay: 800,
-    deps: [draft.selectedModel, draft.selectedProvider, draft.baseUrl, draft.authToken, draft.customModelName, draft.maxBudget, draft.maxTurns],
+    deps: [draft.selectedModel, draft.selectedProvider, draft.baseUrl, draft.authToken, draft.customModelName, draft.maxBudget, draft.maxTurns, draft.promptCachePolicy],
     enabled: !!selectedPersona && !pendingPersonaId,
   });
 

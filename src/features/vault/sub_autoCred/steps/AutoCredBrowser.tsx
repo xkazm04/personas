@@ -1,16 +1,24 @@
 import { useRef, useCallback, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { MonitorX, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { BrowserLogEntry, AutoCredMode } from '../helpers/types';
 import { openExternalUrl } from '@/api/system/system';
 import {
   deriveSessionState, STATE_CONFIG, useElapsed, groupLogEntries,
+  deriveEntryPhase, PHASE_LABELS,
+  type SessionState, type GroupedEntry,
 } from '../helpers/autoCredHelpers';
 import {
   ActionBlock, WaitingCard, UrlCard, InputRequestCard,
   ErrorLine, CopyLogButton,
 } from '../display/AutoCredLogEntries';
+
+const DIVIDER_COLORS: Record<SessionState, { text: string; line: string }> = {
+  connecting: { text: 'text-muted-foreground/30', line: 'bg-primary/8' },
+  working: { text: 'text-cyan-400/30', line: 'bg-cyan-500/10' },
+  action_required: { text: 'text-amber-400/30', line: 'bg-amber-500/10' },
+  opening_url: { text: 'text-blue-400/30', line: 'bg-blue-500/10' },
+};
 
 interface AutoCredBrowserProps {
   logs: BrowserLogEntry[];
@@ -54,22 +62,43 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
     return last;
   }, [groupedEntries]);
 
+  const prevGroupCountRef = useRef(0);
+
+  const annotatedItems = useMemo(() => {
+    const items: (
+      | { kind: 'divider'; phase: SessionState; label: string; id: string }
+      | { kind: 'entry'; group: GroupedEntry; gi: number; delay: number }
+    )[] = [];
+    let currentPhase: SessionState | null = null;
+    let newCounter = 0;
+
+    for (let gi = 0; gi < groupedEntries.length; gi++) {
+      const group = groupedEntries[gi]!;
+      const phase = deriveEntryPhase(group);
+
+      if (phase !== currentPhase) {
+        currentPhase = phase;
+        items.push({ kind: 'divider', phase, label: PHASE_LABELS[phase], id: `phase-before-${gi}` });
+      }
+
+      const isNew = gi >= prevGroupCountRef.current;
+      items.push({ kind: 'entry', group, gi, delay: isNew ? Math.min(newCounter, 8) * 0.08 : 0 });
+      if (isNew) newCounter++;
+    }
+
+    return items;
+  }, [groupedEntries]);
+
+  useEffect(() => { prevGroupCountRef.current = groupedEntries.length; });
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-3"
+    <div
+      className="animate-fade-slide-in space-y-3"
     >
       {/* Dynamic status banner */}
-      <AnimatePresence mode="wait">
-        <motion.div
+      <div
           key={sessionState}
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 4 }}
-          transition={{ duration: 0.2 }}
-          className={`flex items-center gap-3 p-3 rounded-xl border ${config.borderColor} ${config.bgColor}`}
+          className={`animate-fade-slide-in flex items-center gap-3 p-3 rounded-xl border ${config.borderColor} ${config.bgColor}`}
         >
           <div className="relative">
             {sessionState === 'connecting' || sessionState === 'working' ? (
@@ -98,8 +127,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
               <LoadingSpinner className={`${config.color} opacity-60`} />
             )}
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
 
       {/* Browser hands-off warning (playwright mode only) */}
       {!isGuided && (sessionState === 'connecting' || sessionState === 'working') && (
@@ -117,16 +145,40 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
         ref={scrollRef}
         className="max-h-[40rem] overflow-y-auto rounded-xl border border-primary/10 bg-black/20 p-3 space-y-2"
       >
-        {groupedEntries.map((group, gi) => {
-          if (group.kind === 'action_block') {
-            return <ActionBlock key={gi} entries={group.entries} onUrlClick={handleUrlClick} />;
+        {annotatedItems.map((item) => {
+          if (item.kind === 'divider') {
+            const colors = DIVIDER_COLORS[item.phase];
+            return (
+              <div
+                key={item.id}
+                className="animate-fade-slide-in flex items-center gap-2 py-1.5"
+              >
+                <div className={`flex-1 h-px ${colors.line}`} />
+                <span className={`text-[10px] uppercase tracking-widest font-medium shrink-0 ${colors.text}`}>
+                  {item.label}
+                </span>
+                <div className={`flex-1 h-px ${colors.line}`} />
+              </div>
+            );
           }
-          const entry = group.entry;
-          if (entry.type === 'warning') return <WaitingCard key={gi} entry={entry} isLatest={gi === lastWarningIndex} />;
-          if (entry.type === 'url') return <UrlCard key={gi} entry={entry} onUrlClick={handleUrlClick} />;
-          if (entry.type === 'input_request') return <InputRequestCard key={gi} entry={entry} />;
-          if (entry.type === 'error') return <ErrorLine key={gi} entry={entry} />;
-          return null;
+          const { group, gi, delay } = item;
+          return (
+            <div className="animate-fade-slide-in"
+              key={`entry-${gi}`}
+            >
+              {group.kind === 'action_block' ? (
+                <ActionBlock entries={group.entries} onUrlClick={handleUrlClick} />
+              ) : group.entry.type === 'warning' ? (
+                <WaitingCard entry={group.entry} isLatest={gi === lastWarningIndex} />
+              ) : group.entry.type === 'url' ? (
+                <UrlCard entry={group.entry} onUrlClick={handleUrlClick} />
+              ) : group.entry.type === 'input_request' ? (
+                <InputRequestCard entry={group.entry} />
+              ) : group.entry.type === 'error' ? (
+                <ErrorLine entry={group.entry} />
+              ) : null}
+            </div>
+          );
         })}
 
         {visibleLogs.length === 0 && (
@@ -149,6 +201,6 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
           Cancel Session
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

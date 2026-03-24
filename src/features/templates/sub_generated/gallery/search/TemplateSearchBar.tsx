@@ -21,7 +21,11 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
     onAiSearchSubmit, aiCliLog, hasRecommendations, onOpenRecommended,
   } = props;
 
-  const query = useStructuredQuery(onCategoryFilterChange, onSearchChange);
+  const { onDifficultyFilterChange, onSetupFilterChange } = props;
+  const query = useStructuredQuery(onCategoryFilterChange, onSearchChange, {
+    onDifficultyFilterChange,
+    onSetupFilterChange,
+  });
   const selectedCategory: string | null = categoryFilter[0] ?? null;
 
   const showAiSuggestion = useMemo(() => {

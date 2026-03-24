@@ -21,9 +21,11 @@ export const TemplateCard = memo(function TemplateCard({
 }: TemplateCardProps) {
   const { motion: MOTION, prefersReducedMotion } = useTemplateMotion();
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = useCallback(() => {
+    setHasInteracted(true);
     hoverTimerRef.current = setTimeout(() => setPreviewOpen(true), PREVIEW_DELAY_MS);
   }, []);
 
@@ -46,7 +48,9 @@ export const TemplateCard = memo(function TemplateCard({
     tier,
     verification,
     systemPromptPreview,
-  } = useTemplateCardData(review, installedConnectorNames, credentialServiceTypes);
+    difficultyMeta,
+    setupMeta,
+  } = useTemplateCardData(review, installedConnectorNames, credentialServiceTypes, hasInteracted);
 
   return (
     <div
@@ -67,6 +71,8 @@ export const TemplateCard = memo(function TemplateCard({
           motionCss={MOTION.snappy.css}
           onViewDetails={onViewDetails}
           onDelete={onDelete}
+          difficultyMeta={difficultyMeta}
+          setupMeta={setupMeta}
         />
 
         <TemplateCardBody

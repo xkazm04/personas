@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { Activity, Orbit, ArrowRightLeft } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -114,9 +113,7 @@ export default function RealtimeVisualizerPage() {
         {variant === 'lanes' && (
           <SwimLaneVisualization events={displayEvents} personas={personaInfos} droppedCount={timeline.active ? 0 : droppedCount} onSelectEvent={selectEvent} />
         )}
-        <AnimatePresence>
-          {selectedEvent && <EventDetailDrawer event={selectedEvent} onClose={() => selectEvent(null)} />}
-        </AnimatePresence>
+        {selectedEvent && <EventDetailDrawer event={selectedEvent} onClose={() => selectEvent(null)} />}
       </div>
 
       <TimelinePlayer {...timeline} onEnterReplay={timeline.enterReplay} onExitReplay={timeline.exitReplay} onTogglePlay={timeline.togglePlay} onSetSpeed={timeline.setSpeed} onSeek={timeline.seekTo} />

@@ -1,17 +1,35 @@
 import { useMemo } from 'react';
 import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
 import { computeAdoptionReadiness, readinessTier } from '../../shared/adoptionReadiness';
-import { verifyTemplate } from '@/lib/templates/templateVerification';
-import { getCachedDesignResult, getCachedLightFields } from './reviewParseCache';
+import { computeDifficulty, computeSetupLevel, DIFFICULTY_META, SETUP_META } from '../../shared/templateComplexity';
+import { verifyTemplate, detectTemplateOrigin, deriveTrustLevel, getSandboxPolicy } from '@/lib/templates/templateVerification';
+import { getCachedDesignResult, getCachedLightFields, getCachedVerification, getCachedReadinessScore } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 
+/**
+ * Cheap verification that skips the content-hash computation.
+ * Returns the correct trustLevel/origin without hashing the design_result JSON.
+ */
+function verifyTemplateLight(review: PersonaDesignReview) {
+  const origin = detectTemplateOrigin({
+    testCaseId: review.test_case_id,
+    testRunId: review.test_run_id,
+    isDesignGenerated: !review.test_run_id.startsWith('seed-'),
+  });
+  const integrityValid = origin === 'builtin' || origin === 'generated';
+  const trustLevel = deriveTrustLevel(origin, integrityValid);
+  const sandboxPolicy = getSandboxPolicy(trustLevel);
+  return { origin, trustLevel, contentHash: null, integrityValid, sandboxPolicy };
+}
+
 export function useTemplateCardData(
   review: PersonaDesignReview,
   installedConnectorNames: Set<string>,
   credentialServiceTypes: Set<string>,
+  isActive = false,
 ) {
   const parsedData = useMemo(() => {
     const { connectors } = getCachedLightFields(review);
@@ -41,24 +59,30 @@ export function useTemplateCardData(
     [designResult?.suggested_connectors, installedConnectorNames, credentialServiceTypes],
   );
 
-  const readinessScore = useMemo(
-    () => computeAdoptionReadiness(review, installedConnectorNames, credentialServiceTypes),
-    [review, installedConnectorNames, credentialServiceTypes],
-  );
-  const tier = readinessTier(readinessScore);
+  // Deferred: only compute full verification (with content hash) on hover/expand.
+  // Until then, use the cheap origin-only check (same trustLevel, no hash).
+  const verification = useMemo(() => {
+    if (!isActive) return verifyTemplateLight(review);
+    return getCachedVerification(review, verifyTemplate);
+  }, [isActive, review.test_case_id, review.test_run_id, review.design_result]);
 
-  const verification = useMemo(() => verifyTemplate({
-    testCaseId: review.test_case_id,
-    testRunId: review.test_run_id,
-    isDesignGenerated: !review.test_run_id.startsWith('seed-'),
-    designResultJson: review.design_result,
-  }), [review.test_case_id, review.test_run_id, review.design_result]);
+  // Deferred: only compute adoption readiness score on hover/expand.
+  const readinessScore = useMemo(() => {
+    if (!isActive) return -1;
+    return getCachedReadinessScore(review, computeAdoptionReadiness, installedConnectorNames, credentialServiceTypes);
+  }, [isActive, review, installedConnectorNames, credentialServiceTypes]);
+  const tier = readinessScore >= 0 ? readinessTier(readinessScore) : null;
 
   const systemPromptPreview = useMemo(() => {
     if (!designResult?.structured_prompt) return null;
     const identity = designResult.structured_prompt.identity || '';
     return identity.length > 200 ? identity.slice(0, 200) + '...' : identity;
   }, [designResult]);
+
+  const difficulty = useMemo(() => computeDifficulty(review), [review.connectors_used, review.use_case_flows, review.trigger_types]);
+  const difficultyMeta = DIFFICULTY_META[difficulty];
+  const setupLevel = useMemo(() => computeSetupLevel(review), [review.connectors_used, review.trigger_types]);
+  const setupMeta = SETUP_META[setupLevel];
 
   return {
     connectors,
@@ -67,9 +91,13 @@ export function useTemplateCardData(
     displayFlows,
     suggestedTriggers,
     readinessStatuses,
-    readinessScore,
+    readinessScore: readinessScore >= 0 ? readinessScore : null,
     tier,
     verification,
     systemPromptPreview,
+    difficulty,
+    difficultyMeta,
+    setupLevel,
+    setupMeta,
   };
 }

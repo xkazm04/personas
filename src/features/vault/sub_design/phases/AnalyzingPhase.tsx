@@ -1,5 +1,4 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Check, Circle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useStepProgress } from '@/hooks/useStepProgress';
@@ -64,12 +63,9 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
   const progress = Math.min((derivedIdx / STAGE_DEFS.length) * 100, 100);
 
   return (
-    <motion.div
+    <div
       key="analyzing"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Time estimate + elapsed (hidden for first 5s to reduce anxiety) */}
       <div className="flex items-center justify-between px-1">
@@ -86,11 +82,8 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
 
       {/* Progress bar */}
       <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
-        <motion.div
-          className="h-full rounded-full bg-primary"
-          initial={{ width: '0%' }}
-          animate={{ width: `${progress}%` }}
-          transition={MOTION_TIMING.FLOW}
+        <div
+          className="animate-fade-in h-full rounded-full bg-primary" style={{ width: `${progress}%` }}
         />
       </div>
 
@@ -99,12 +92,9 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
         {sp.steps.map((step, i) => {
           const def = STAGE_DEFS[i]!;
           return (
-            <motion.div
+            <div
               key={i}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ ...MOTION_TIMING.SNAP, delay: i * 0.05 }}
-              className="flex items-center gap-3 py-1.5"
+              className="animate-fade-slide-in flex items-center gap-3 py-1.5"
             >
               {/* Status icon */}
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
@@ -133,7 +123,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
                   <span className="ml-2 text-sm text-muted-foreground/90">{def.description}</span>
                 )}
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>
@@ -159,6 +149,6 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
           Cancel
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -246,6 +246,70 @@ pub struct ExecutionResult {
     pub tool_steps: Option<String>,
     /// Trace ID for this execution (used for chain trace propagation).
     pub trace_id: Option<String>,
+    /// Frozen config snapshot assembled at the validate stage.
+    pub execution_config: Option<String>,
+}
+
+// =============================================================================
+// ExecutionConfig -- immutable config snapshot assembled once per execution
+// =============================================================================
+
+/// Immutable execution configuration assembled once at the validate stage from
+/// all config sources (persona fields, workspace defaults, global settings,
+/// model profile, credential hints). Passed as a frozen reference through the
+/// entire pipeline and persisted alongside results for post-mortem debugging.
+///
+/// Sensitive fields (auth tokens, credential values) are intentionally excluded;
+/// only the resolved *shape* of the config is captured.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExecutionConfig {
+    /// Resolved model profile (after persona → workspace → global cascade).
+    /// Auth tokens are redacted before storage.
+    pub model_profile: Option<RedactedModelProfile>,
+    /// CLI engine used for this execution (e.g. "claude_code", "codex_cli").
+    pub engine: String,
+    /// Resolved max budget in USD (from persona → workspace cascade).
+    pub max_budget_usd: Option<f64>,
+    /// Resolved max turns (from persona → workspace cascade).
+    pub max_turns: Option<i32>,
+    /// Execution timeout in milliseconds.
+    pub timeout_ms: i32,
+    /// Whether workspace shared instructions were injected.
+    pub has_workspace_instructions: bool,
+    /// Workspace (group) ID, if any.
+    pub workspace_id: Option<String>,
+    /// Names of tools available to the execution.
+    pub tool_names: Vec<String>,
+    /// Credential connector names that were resolved (no secret values).
+    pub credential_connectors: Vec<String>,
+    /// BYOM routing rule that was applied, if any.
+    pub routing_rule: Option<String>,
+    /// BYOM compliance rule that was applied, if any.
+    pub compliance_rule: Option<String>,
+    /// Continuation mode used ("none", "prompt_hint", "session_resume").
+    pub continuation_mode: String,
+    /// Timestamp when this config was assembled.
+    pub assembled_at: String,
+}
+
+/// Model profile with auth tokens redacted for safe persistence.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RedactedModelProfile {
+    pub model: Option<String>,
+    pub provider: Option<String>,
+    pub base_url: Option<String>,
+    pub prompt_cache_policy: Option<String>,
+}
+
+impl RedactedModelProfile {
+    pub fn from_profile(profile: &ModelProfile) -> Self {
+        Self {
+            model: profile.model.clone(),
+            provider: profile.provider.clone(),
+            base_url: profile.base_url.clone(),
+            prompt_cache_policy: profile.prompt_cache_policy.clone(),
+        }
+    }
 }
 
 /// Accumulated execution metrics
@@ -265,6 +329,10 @@ pub struct ModelProfile {
     pub provider: Option<String>,
     pub base_url: Option<String>,
     pub auth_token: Option<String>,
+    /// Prompt caching policy: "none", "short" (5 min), or "long" (1 hr).
+    /// Controls Anthropic prompt caching for system prompt reuse across executions.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prompt_cache_policy: Option<String>,
 }
 
 /// Well-known provider identifiers used in ModelProfile.provider.
@@ -371,6 +439,7 @@ impl EphemeralPersona {
             trust_level: "verified".to_string(),
             trust_origin: "builtin".to_string(),
             trust_verified_at: None,
+            trust_score: 1.0,
             created_at: now.clone(),
             updated_at: now,
         };

@@ -49,6 +49,7 @@ const TRIP_COUNT_WINDOW: Duration = Duration::from_secs(3600);
 use super::error_taxonomy::{self, ErrorCategory};
 
 /// Legacy alias — use [`ErrorCategory`] directly in new code.
+#[allow(dead_code)]
 pub type FailoverReason = ErrorCategory;
 
 /// Counter for errors that did not match any known failover pattern.

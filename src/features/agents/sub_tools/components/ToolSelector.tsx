@@ -1,5 +1,4 @@
 import { Undo2 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { ToolSearchFilter } from './ToolSearchFilter';
 import { ToolCategoryList } from './ToolCategoryList';
 import { useToolSelectorPersona } from '../libs/useToolSelectorPersona';
@@ -58,14 +57,9 @@ export function ToolSelector() {
         onAddCredential={actions.handleAddCredential}
       />
 
-      <AnimatePresence>
-        {actions.undoToast && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.2 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 bg-secondary/95 backdrop-blur-sm border border-primary/20 rounded-xl shadow-xl"
+      {actions.undoToast && (
+          <div
+            className="animate-fade-slide-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 bg-secondary/95 backdrop-blur-sm border border-primary/20 rounded-xl shadow-xl"
           >
             <span className="text-sm text-foreground/80">
               Removed <span className="font-medium text-foreground/90">{actions.undoToast.toolName}</span>
@@ -77,9 +71,8 @@ export function ToolSelector() {
               <Undo2 className="w-3 h-3" />
               Undo
             </button>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

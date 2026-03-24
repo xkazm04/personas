@@ -6,7 +6,9 @@ import type { ComplianceRule } from "@/lib/bindings/ComplianceRule";
 import type { ByomPolicy } from "@/lib/bindings/ByomPolicy";
 import type { ProviderAuditEntry } from "@/lib/bindings/ProviderAuditEntry";
 import type { ProviderUsageStats } from "@/lib/bindings/ProviderUsageStats";
-export type { TaskComplexity, RoutingRule, ComplianceRule, ByomPolicy, ProviderAuditEntry, ProviderUsageStats };
+import type { ProviderUsageTimeseries } from "@/lib/bindings/ProviderUsageTimeseries";
+import type { ProviderConnectionResult } from "@/lib/bindings/ProviderConnectionResult";
+export type { TaskComplexity, RoutingRule, ComplianceRule, ByomPolicy, ProviderAuditEntry, ProviderUsageStats, ProviderUsageTimeseries, ProviderConnectionResult };
 
 // ============================================================================
 // BYOM Policy API
@@ -17,6 +19,9 @@ export const getByomPolicy = () =>
 
 export const setByomPolicy = (policy: ByomPolicy) =>
   invoke<void>("set_byom_policy", { policy });
+
+export const validateByomPolicy = (policy: ByomPolicy) =>
+  invoke<string[]>("validate_byom_policy", { policy });
 
 export const deleteByomPolicy = () =>
   invoke<void>("delete_byom_policy");
@@ -36,3 +41,13 @@ export const listProviderAuditByPersona = (personaId: string, limit?: number) =>
 
 export const getProviderUsageStats = () =>
   invoke<ProviderUsageStats[]>("get_provider_usage_stats");
+
+export const getProviderUsageTimeseries = (days?: number) =>
+  invoke<ProviderUsageTimeseries[]>("get_provider_usage_timeseries", { days });
+
+// ============================================================================
+// Provider Connection Test
+// ============================================================================
+
+export const testProviderConnection = (providerId: string) =>
+  invoke<ProviderConnectionResult>("test_provider_connection", { providerId });

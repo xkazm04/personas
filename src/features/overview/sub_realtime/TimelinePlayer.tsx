@@ -1,4 +1,3 @@
-import { AnimatePresence } from 'framer-motion';
 import type { TimeRange, PlaybackSpeed, TimelineReplayState } from '@/hooks/realtime/useTimelineReplay';
 import { ReplayEntryBar } from './ReplayEntryBar';
 import { ActiveTimelineBar } from './ActiveTimelineBar';
@@ -13,7 +12,7 @@ interface Props extends TimelineReplayState {
 
 export default function TimelinePlayer(props: Props) {
   return (
-    <AnimatePresence mode="wait">
+    <>
       {props.active ? (
         <ActiveTimelineBar key="active" {...props} />
       ) : (
@@ -23,6 +22,6 @@ export default function TimelinePlayer(props: Props) {
           onEnterReplay={props.onEnterReplay}
         />
       )}
-    </AnimatePresence>
+    </>
   );
 }

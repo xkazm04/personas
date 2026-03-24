@@ -111,6 +111,20 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             .map_err(|_| AppError::Internal(self.lock_error_msg.into()))
     }
 
+    /// Acquire the lock, recovering from mutex poisoning with a warning log.
+    /// Use this for read/poll paths where silently returning empty would hide
+    /// all job state from the frontend.
+    fn lock_or_recover(&self) -> MutexGuard<'_, HashMap<String, JobEntry<E>>> {
+        self.jobs().lock().unwrap_or_else(|poisoned| {
+            tracing::warn!(
+                manager = self.lock_error_msg,
+                "background job mutex was poisoned — recovering inner data; \
+                 a thread previously panicked while holding this lock"
+            );
+            poisoned.into_inner()
+        })
+    }
+
     /// Remove non-running entries older than 30 minutes.
     pub fn evict_stale(&self, jobs: &mut HashMap<String, JobEntry<E>>) {
         let cutoff = Duration::from_secs(JOB_TTL_SECS);
@@ -224,7 +238,8 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         status: &str,
         error: Option<String>,
     ) {
-        if let Ok(mut jobs) = self.lock() {
+        {
+            let mut jobs = self.lock_or_recover();
             let entry = jobs
                 .entry(job_id.to_string())
                 .or_insert_with(JobEntry::default);
@@ -245,7 +260,8 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     /// Append a line to the job's output buffer and emit a Tauri output event.
     pub fn emit_line(&self, app: &tauri::AppHandle, job_id: &str, line: impl Into<String>) {
         let line = line.into();
-        if let Ok(mut jobs) = self.lock() {
+        {
+            let mut jobs = self.lock_or_recover();
             let entry = jobs
                 .entry(job_id.to_string())
                 .or_insert_with(JobEntry::default);
@@ -265,17 +281,16 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
 
     /// Mutate the extra state of a job entry.
     pub fn update_extra(&self, job_id: &str, f: impl FnOnce(&mut E)) {
-        if let Ok(mut jobs) = self.lock() {
-            let entry = jobs
-                .entry(job_id.to_string())
-                .or_insert_with(JobEntry::default);
-            f(&mut entry.extra);
-        }
+        let mut jobs = self.lock_or_recover();
+        let entry = jobs
+            .entry(job_id.to_string())
+            .or_insert_with(JobEntry::default);
+        f(&mut entry.extra);
     }
 
     /// Read a value from the extra state of a job entry.
     pub fn read_extra<R>(&self, job_id: &str, f: impl FnOnce(&E) -> R) -> Option<R> {
-        let jobs = self.lock().ok()?;
+        let jobs = self.lock_or_recover();
         jobs.get(job_id).map(|entry| f(&entry.extra))
     }
 
@@ -348,7 +363,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     /// The caller can extend this with job-specific extra fields.
     /// Also sweeps stale running jobs at poll time.
     pub fn get_snapshot(&self, job_id: &str) -> Option<JobSnapshot> {
-        let mut jobs = self.lock().ok()?;
+        let mut jobs = self.lock_or_recover();
         self.sweep_stale_running(&mut jobs);
         self.evict_stale(&mut jobs);
         jobs.get(job_id).map(|job| JobSnapshot {
@@ -367,7 +382,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     /// List all jobs as snapshots (for the workflows overview).
     /// Also sweeps stale running jobs at poll time.
     pub fn list_snapshots(&self) -> Vec<JobSnapshot> {
-        let Ok(mut jobs) = self.lock() else { return Vec::new() };
+        let mut jobs = self.lock_or_recover();
         self.sweep_stale_running(&mut jobs);
         self.evict_stale(&mut jobs);
         jobs.iter()
@@ -392,7 +407,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         job_id: &str,
         f: impl FnOnce(&str, &JobEntry<E>) -> R,
     ) -> Option<R> {
-        let mut jobs = self.lock().ok()?;
+        let mut jobs = self.lock_or_recover();
         self.sweep_stale_running(&mut jobs);
         self.evict_stale(&mut jobs);
         jobs.get(job_id).map(|job| f(job_id, job))
@@ -406,7 +421,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         job_id: &str,
         map_extras: impl FnOnce(&E) -> T,
     ) -> Option<BackgroundTaskSnapshot<T>> {
-        let mut jobs = self.lock().ok()?;
+        let mut jobs = self.lock_or_recover();
         self.sweep_stale_running(&mut jobs);
         self.evict_stale(&mut jobs);
         jobs.get(job_id).map(|job| BackgroundTaskSnapshot {

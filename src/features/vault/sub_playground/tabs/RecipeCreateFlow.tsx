@@ -1,6 +1,5 @@
 import { Sparkles, X, Save } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { AnimatePresence, motion } from 'framer-motion';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import { EstimatedProgressBar } from '@/features/shared/components/progress/EstimatedProgressBar';
@@ -32,12 +31,8 @@ export function RecipeCreateFlow({
   onCancel,
 }: RecipeCreateFlowProps) {
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: 'auto' }}
-        exit={{ opacity: 0, height: 0 }}
-        className="overflow-hidden"
+    <div
+        className="animate-fade-slide-in overflow-hidden"
       >
         <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 mb-4 space-y-3">
           <div className="flex items-center justify-between">
@@ -174,7 +169,6 @@ export function RecipeCreateFlow({
             </div>
           )}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }

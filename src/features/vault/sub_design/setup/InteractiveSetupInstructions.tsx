@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, useEffect, useId } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -98,12 +97,10 @@ export function InteractiveSetupInstructions({
             />
           )}
 
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.15 }}
+          <div className="animate-fade-in"
           >
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/80" />
-          </motion.div>
+          </div>
         </button>
 
         {/* Open setup page shortcut */}
@@ -122,15 +119,10 @@ export function InteractiveSetupInstructions({
       </div>
 
       {/* Expandable content -- animated height */}
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
+      {isOpen && (
+          <div
             key="setup-body"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="overflow-hidden"
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-4 pb-3">
               {/* Preamble (non-step content before the numbered list) */}
@@ -158,16 +150,14 @@ export function InteractiveSetupInstructions({
 
                   {/* All-done message */}
                   {completedCount === totalSteps && totalSteps > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-2 px-3 py-2 mt-1 rounded-xl bg-emerald-500/10 border border-emerald-500/15"
+                    <div
+                      className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 mt-1 rounded-xl bg-emerald-500/10 border border-emerald-500/15"
                     >
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
                       <span className="text-sm text-emerald-300/80">
                         All steps complete -- fill in the fields below and test your connection.
                       </span>
-                    </motion.div>
+                    </div>
                   )}
                 </div>
               ) : (
@@ -179,9 +169,8 @@ export function InteractiveSetupInstructions({
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

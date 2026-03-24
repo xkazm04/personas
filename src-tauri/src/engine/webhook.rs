@@ -52,9 +52,59 @@ pub async fn start_webhook_server(
         .route("/webhook/{trigger_id}", get(webhook_info))
         .route("/health", get(health))
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
-        .with_state(Arc::new(state));
+        .with_state(Arc::new(state))
+        .merge(super::share_link::share_link_router());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 9420));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 9420));
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    tracing::info!("Webhook server listening on http://{}", addr);
+
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async move {
+            let _ = shutdown_rx.changed().await;
+            tracing::info!("Webhook server shutting down");
+        })
+        .await?;
+
+    Ok(())
+}
+
+/// Start the webhook HTTP server with management API routes on port 9420.
+///
+/// The management API adds /api/* routes for persona execution, lab operations,
+/// and version management — used by the Personas MCP server for Claude Desktop.
+pub async fn start_webhook_server_with_management(
+    pool: DbPool,
+    rate_limiter: Arc<RateLimiter>,
+    tier_config: Arc<std::sync::Mutex<TierConfig>>,
+    app_handle: tauri::AppHandle,
+    process_registry: Arc<crate::ActiveProcessRegistry>,
+    mut shutdown_rx: watch::Receiver<bool>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let webhook_state = WebhookState {
+        pool: pool.clone(),
+        rate_limiter,
+        tier_config,
+    };
+
+    let mgmt_state = super::management_api::ManagementState {
+        pool,
+        app: app_handle,
+        process_registry,
+    };
+
+    const MAX_BODY_BYTES: usize = 1024 * 1024;
+
+    let app = Router::new()
+        .route("/webhook/{trigger_id}", post(handle_webhook))
+        .route("/webhook/{trigger_id}", get(webhook_info))
+        .route("/health", get(health))
+        .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
+        .with_state(Arc::new(webhook_state))
+        .merge(super::management_api::management_router(mgmt_state))
+        .merge(super::share_link::share_link_router());
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], 9420));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!("Webhook server listening on http://{}", addr);
 
@@ -288,6 +338,19 @@ async fn process_webhook(
                 },
             );
         }
+    }
+
+    // 3b. Active window gate
+    if !trigger.is_within_active_window(chrono::Utc::now()) {
+        tracing::debug!(trigger_id = %trigger_id, "Webhook received outside active window, rejecting");
+        return (
+            StatusCode::OK,
+            WebhookResponse {
+                accepted: false,
+                event_id: None,
+                error: Some("Trigger is outside its active hours window".into()),
+            },
+        );
     }
 
     // 4. Parse body as JSON payload (or use raw string)

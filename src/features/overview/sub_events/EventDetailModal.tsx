@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { HighlightedJson } from './HighlightedJson';
@@ -15,8 +14,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
   const [copiedPayload, setCopiedPayload] = useState(false);
 
   return (
-    <AnimatePresence>
-      <DetailModal
+    <DetailModal
         title={`Event: ${event.event_type}`}
         subtitle={`Status: ${event.status}`}
         onClose={() => { onClose(); setCopiedPayload(false); }}
@@ -97,6 +95,5 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           )}
         </div>
       </DetailModal>
-    </AnimatePresence>
   );
 }

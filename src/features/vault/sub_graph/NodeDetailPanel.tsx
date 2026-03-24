@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import type { GraphNode } from './credentialGraph';
 import { KIND_ICONS } from './graphConstants';
@@ -22,11 +21,8 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
   }).filter((c) => c.node != null);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-      className="rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
+    <div
+      className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
@@ -64,6 +60,6 @@ export function NodeDetailPanel({ node, edges, allNodes, onClose, onNodeClick }:
           })}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -30,7 +30,9 @@ const EventsPage = lazy(() => import('@/features/triggers/sub_eventbus/EventsPag
 const CloudDeployPanel = lazy(() => import('@/features/deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
-const DevToolsPage = lazy(() => import('@/features/dev-tools/DevToolsPage'));
+const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPage'));
+const DocSigningPage = lazy(() => import('@/features/plugins/doc-signing/DocSigningPage'));
+const OcrPage = lazy(() => import('@/features/plugins/ocr/OcrPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
@@ -88,6 +90,8 @@ export default function PersonasPage() {
       if (failed.length > 0) {
         setError(`Startup failed -- ${failed.join(', ')} could not be loaded`);
       }
+      // Auto-reconnect GitLab if a vault credential exists (non-blocking)
+      void useSystemStore.getState().gitlabInitialize();
     }).catch(() => {
       setPersonasFetched(true);
     });
@@ -206,6 +210,12 @@ export default function PersonasPage() {
     if (sidebarSection === 'plugins') {
       if (pluginTab === 'dev-tools') {
         return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
+      }
+      if (pluginTab === 'doc-signing') {
+        return <ErrorBoundary name="DocSigning"><Suspense fallback={SectionFallback}><DocSigningPage /></Suspense></ErrorBoundary>;
+      }
+      if (pluginTab === 'ocr') {
+        return <ErrorBoundary name="OCR"><Suspense fallback={SectionFallback}><OcrPage /></Suspense></ErrorBoundary>;
       }
       // Default browse view — placeholder for future plugin marketplace
       return (

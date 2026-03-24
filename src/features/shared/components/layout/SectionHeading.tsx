@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 interface SectionHeadingProps {
-  /** Simple string title — renders the icon/action layout variant. */
+  /** Simple string title — renders the icon/action variant. */
   title?: string;
   icon?: ReactNode;
   action?: ReactNode;

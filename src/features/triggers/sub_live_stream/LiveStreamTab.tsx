@@ -30,11 +30,13 @@ export function LiveStreamTab() {
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const newEventIds = useRef(new Set<string>());
+  const eventIdIndex = useRef(new Set<string>());
 
   useEffect(() => {
     let stale = false;
     listEvents(100).then((recentEvents) => {
       if (!stale) {
+        eventIdIndex.current = new Set(recentEvents.map((e) => e.id));
         setEvents(recentEvents);
         setIsLoading(false);
       }
@@ -44,12 +46,18 @@ export function LiveStreamTab() {
 
   useEventBusListener((evt: PersonaEvent) => {
     setEvents((prev) => {
-      if (prev.some((e) => e.id === evt.id)) {
+      if (eventIdIndex.current.has(evt.id)) {
         return prev.map((e) => (e.id === evt.id ? evt : e));
       }
+      eventIdIndex.current.add(evt.id);
       newEventIds.current.add(evt.id);
       setTimeout(() => newEventIds.current.delete(evt.id), 1600);
-      return [evt, ...prev].slice(0, 200);
+      const next = [evt, ...prev];
+      if (next.length > 200) {
+        eventIdIndex.current.delete(next[200]!.id);
+        return next.slice(0, 200);
+      }
+      return next;
     });
   });
 

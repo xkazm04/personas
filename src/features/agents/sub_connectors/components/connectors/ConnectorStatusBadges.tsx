@@ -1,5 +1,4 @@
 import { Star, ArrowLeftRight, AlertCircle, X, CheckCircle2, XCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
@@ -16,11 +15,9 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
   const otherCreds = credentials.filter((c) => c.service_type !== status.name);
 
   return (
-    <AnimatePresence>
+    <>
       {isLinking && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden"
+        <div className="animate-fade-slide-in overflow-hidden"
         >
           <div className="mt-3 border border-primary/10 rounded-lg bg-background/40 max-h-48 overflow-y-auto">
             {matchingCreds.length > 0 && (
@@ -56,9 +53,9 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
               </>
             )}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 
@@ -72,11 +69,9 @@ interface SwapPickerProps {
 
 export function SwapPicker({ swapOpen, alternatives, statusName, onSwap, onClose }: SwapPickerProps) {
   return (
-    <AnimatePresence>
+    <>
       {swapOpen && alternatives.length > 0 && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden"
+        <div className="animate-fade-slide-in overflow-hidden"
         >
           <div className="mt-3 border border-sky-500/15 rounded-lg bg-background/40">
             <p className="px-3 py-1.5 text-[11px] font-semibold text-sky-400/50 uppercase tracking-wider border-b border-sky-500/10">Swap to alternative</p>
@@ -88,9 +83,9 @@ export function SwapPicker({ swapOpen, alternatives, statusName, onSwap, onClose
               </button>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 
@@ -106,11 +101,9 @@ export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
 
   return (
     <>
-      <AnimatePresence>
+      <>
         {status.linkError && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden"
+          <div className="animate-fade-slide-in overflow-hidden"
           >
             <div className="mt-2.5 px-3 py-2 rounded-xl text-sm bg-amber-500/5 border border-amber-500/15 text-amber-400 flex items-start gap-1.5">
               <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
@@ -121,9 +114,9 @@ export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
                 </button>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </>
 
       {status.result && !status.testing && (
         <div className={`mt-2.5 px-3 py-2 rounded-xl text-sm ${

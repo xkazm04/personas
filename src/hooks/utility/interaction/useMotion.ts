@@ -1,5 +1,20 @@
-import { useMemo } from 'react';
-import { useReducedMotion, type Transition } from 'framer-motion';
+import { useMemo, useSyncExternalStore } from 'react';
+
+const MQ = typeof window !== 'undefined'
+  ? window.matchMedia('(prefers-reduced-motion: reduce)')
+  : null;
+
+function subscribe(cb: () => void) {
+  MQ?.addEventListener('change', cb);
+  return () => MQ?.removeEventListener('change', cb);
+}
+
+function getSnapshot() { return MQ?.matches ?? false; }
+
+/** Drop-in replacement for framer-motion's `useReducedMotion`. */
+function useReducedMotion(): boolean {
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
+}
 
 export interface MotionConfig {
   /** Whether animations should play. `false` when user prefers reduced motion. */
@@ -9,7 +24,7 @@ export interface MotionConfig {
   /** Spring config -- instant tween when reduced motion is preferred. */
   spring: { type: 'spring'; stiffness: number; damping: number } | { type: 'tween'; duration: number };
   /** Standard transition object usable in Framer Motion `transition` props. */
-  transition: Transition;
+  transition: Record<string, unknown>;
   /** Stagger delay for list/grid children. */
   staggerDelay: number;
 }

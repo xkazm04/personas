@@ -1,5 +1,4 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Plug, ArrowLeft, Bot, MessageSquare, Monitor } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
@@ -55,10 +54,8 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
   // Desktop bridge connectors should not use online auto-setup
   if (isDesktopBridge(connector)) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-secondary/40 backdrop-blur-sm border border-orange-500/15 rounded-xl p-6 space-y-4"
+      <div
+        className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-orange-500/15 rounded-xl p-6 space-y-4"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center border bg-orange-500/10 border-orange-500/20">
@@ -79,7 +76,7 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
             Back
           </button>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
@@ -158,12 +155,9 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
   }, [phase, design, onCancel]);
 
   return (
-    <motion.div
+    <div
       key="auto-setup"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-6 space-y-4"
+      className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-6 space-y-4"
     >
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -217,6 +211,6 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
           onCancel={handleCancel}
         />
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -3,7 +3,6 @@ import {
   ArrowLeftRight, Play, Square, ChevronDown, AlertCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import type { ModelTestConfig } from '@/api/agents/tests';
 import { silentCatch } from "@/lib/silentCatch";
@@ -90,14 +89,9 @@ export function ModelABCompare() {
         <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="pt-1 space-y-3">
               {/* Selector row */}
@@ -174,9 +168,8 @@ export function ModelABCompare() {
                 <ComparisonResults modelA={optA!} modelB={optB!} metricsA={metricsA} metricsB={metricsB} results={lastResults!} />
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

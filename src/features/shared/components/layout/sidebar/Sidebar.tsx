@@ -1,5 +1,4 @@
 import { silentCatch } from "@/lib/silentCatch";
-import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
@@ -16,6 +15,8 @@ import { sections } from './sidebarData';
 import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/components/layout/DesktopFooter';
 import SidebarLevel1 from './SidebarLevel1';
 import SidebarLevel2 from './SidebarLevel2';
+import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(() => {
@@ -126,6 +127,9 @@ export default function Sidebar() {
     document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
   }, [collapsed]);
 
+  const labelOf = useSidebarLabels();
+  const { t, tx } = useTranslation();
+
   const handleMobileDrawerToggle = useCallback((section: SidebarSection) => {
     if (sidebarSection === section) {
       setMobileDrawerOpen((o) => !o);
@@ -146,9 +150,9 @@ export default function Sidebar() {
 
       {/* Screen-reader announcements for badge count changes */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {pendingReviewCount > 0 && `${pendingReviewCount} pending review${pendingReviewCount !== 1 ? 's' : ''}.`}
-        {unreadMessageCount > 0 && ` ${unreadMessageCount} unread message${unreadMessageCount !== 1 ? 's' : ''}.`}
-        {pendingEventCount > 0 && ` ${pendingEventCount} pending event${pendingEventCount !== 1 ? 's' : ''}.`}
+        {pendingReviewCount > 0 && tx(pendingReviewCount === 1 ? t.sidebar.pending_reviews_sr : t.sidebar.pending_reviews_sr_other, { count: pendingReviewCount }) + '.'}
+        {unreadMessageCount > 0 && ' ' + tx(unreadMessageCount === 1 ? t.sidebar.unread_messages_sr : t.sidebar.unread_messages_sr_other, { count: unreadMessageCount }) + '.'}
+        {pendingEventCount > 0 && ' ' + tx(pendingEventCount === 1 ? t.sidebar.pending_events_sr : t.sidebar.pending_events_sr_other, { count: pendingEventCount }) + '.'}
       </div>
 
       {/* Level 2: Item list */}
@@ -167,22 +171,16 @@ export default function Sidebar() {
           }>
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
               <h2 className="typo-label text-muted-foreground/90">
-                {sections.find((s) => s.id === sidebarSection)?.label || 'Overview'}
+                {labelOf(sidebarSection, sections.find((s) => s.id === sidebarSection)?.label ?? t.sidebar.overview)}
               </h2>
             </div>
             <div className="relative flex-1 min-h-0">
               <div ref={level2ScrollRef} className="h-full overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-primary/15 scrollbar-track-transparent">
-                <AnimatePresence mode="wait">
-                  <motion.div
+                <div className="animate-fade-slide-in"
                     key={sidebarSection}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
                   >
                     <SidebarLevel2 onCreatePersona={handleCreatePersona} />
-                  </motion.div>
-                </AnimatePresence>
+                  </div>
               </div>
               <div
                 className={`absolute top-0 inset-x-0 h-6 pointer-events-none z-[1] transition-opacity duration-200 ${l2ScrollUp ? 'opacity-100' : 'opacity-0'}`}

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Wand2, X } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
@@ -106,14 +105,11 @@ export function BuilderActionBar({
             Continue
           </button>
           {!hasIntent && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.15 }}
-              className="text-muted-foreground text-xs mt-1.5"
+            <p
+              className="animate-fade-slide-in text-muted-foreground text-xs mt-1.5"
             >
               Describe what your agent should do
-            </motion.p>
+            </p>
           )}
         </div>
       </div>

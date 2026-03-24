@@ -4,7 +4,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { pivotToolUsageOverTime } from '@/features/overview/sub_usage/libs/pivotToolUsage';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
-import { formatToolName } from './analyticsHelpers';
+import { formatToolName, formatDateTick } from './analyticsHelpers';
 import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
 
 /**
@@ -26,8 +26,8 @@ export function useChartSeries() {
   const rawChartData = backendChartData?.chart_points ?? [];
 
   const chartData = useMemo(() => {
-    if (!compareEnabled || rawChartData.length === 0) return rawChartData;
-    return mergePreviousPeriod(rawChartData, effectiveDays, ['cost', 'executions', 'success', 'failed']);
+    const base = (!compareEnabled || rawChartData.length === 0) ? rawChartData : mergePreviousPeriod(rawChartData, effectiveDays, ['cost', 'executions', 'success', 'failed']);
+    return base.map(pt => ({ ...pt, dateLabel: formatDateTick(pt.date) }));
   }, [compareEnabled, rawChartData, effectiveDays]);
 
   const pieData: PieDataPoint[] = useMemo(() =>
@@ -39,7 +39,11 @@ export function useChartSeries() {
   [backendChartData?.persona_breakdown, personas]);
 
   const { areaData, allToolNames } = useMemo(() => {
-    return pivotToolUsageOverTime(toolUsageOverTime);
+    const pivot = pivotToolUsageOverTime(toolUsageOverTime);
+    return {
+      areaData: pivot.areaData.map(pt => ({ ...pt, dateLabel: formatDateTick(pt.date) })),
+      allToolNames: pivot.allToolNames,
+    };
   }, [toolUsageOverTime]);
 
   const barData = useMemo(
@@ -58,6 +62,7 @@ export function useChartSeries() {
     if (!executionDashboard) return [];
     return executionDashboard.daily_points.map((pt) => ({
       date: pt.date,
+      dateLabel: formatDateTick(pt.date),
       p50: pt.p50_duration_ms,
       p95: pt.p95_duration_ms,
       p99: pt.p99_duration_ms,

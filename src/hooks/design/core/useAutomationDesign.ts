@@ -1,5 +1,6 @@
 import { startAutomationDesign, cancelAutomationDesign } from '@/api/agents/automations';
 import { useAiArtifactTask } from './useAiArtifactTask';
+import { EventName } from '@/lib/eventRegistry';
 
 export type AutomationDesignPhase = 'idle' | 'analyzing' | 'preview' | 'error';
 
@@ -23,12 +24,13 @@ export interface AutomationDesignResult {
 export function useAutomationDesign() {
   const task = useAiArtifactTask<[string, string], AutomationDesignResult>({
     progressEvent: 'automation-design-output',
-    statusEvent: 'automation-design-status',
+    statusEvent: EventName.AUTOMATION_DESIGN_STATUS,
     runningPhase: 'analyzing',
     completedPhase: 'preview',
     startFn: startAutomationDesign,
     cancelFn: cancelAutomationDesign,
     errorMessage: 'Automation design failed',
+    traceOperation: 'automation_design',
   });
 
   return {

@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::PersonaToolUsage;
 use crate::db::DbPool;
@@ -28,16 +28,9 @@ fn internal_tools_exclusion(col: &str) -> String {
     format!("{} NOT IN ({})", col, placeholders.join(", "))
 }
 
-fn row_to_usage(row: &Row) -> rusqlite::Result<PersonaToolUsage> {
-    Ok(PersonaToolUsage {
-        id: row.get("id")?,
-        execution_id: row.get("execution_id")?,
-        persona_id: row.get("persona_id")?,
-        tool_name: row.get("tool_name")?,
-        invocation_count: row.get("invocation_count")?,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_usage -> PersonaToolUsage {
+    id, execution_id, persona_id, tool_name, invocation_count, created_at,
+});
 
 pub fn record(
     pool: &DbPool,

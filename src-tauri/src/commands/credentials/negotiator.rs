@@ -13,12 +13,13 @@ use super::ai_artifact_flow::{
     AiArtifactMessages, AiArtifactParams, run_ai_artifact_task, run_claude_prompt,
 };
 use super::shared::build_credential_task_cli_args;
+use crate::engine::event_registry::event_name;
 
 // -- Negotiation messages ----------------------------------------
 
 const NEGOTIATION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
-    status_event: "credential-negotiation-status",
-    progress_event: "credential-negotiation-progress",
+    status_event: event_name::CREDENTIAL_NEGOTIATION_STATUS,
+    progress_event: event_name::CREDENTIAL_NEGOTIATION_PROGRESS,
     id_field: "negotiation_id",
     initial_status: "planning",
     init_progress: "Analyzing developer portal...",

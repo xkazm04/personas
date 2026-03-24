@@ -5,6 +5,7 @@ import {
   HealingOutputSchema,
   HealingStatusSchema,
 } from '@/lib/validation/eventPayloads';
+import { EventName } from '@/lib/eventRegistry';
 
 export type AiHealingPhase =
   | 'idle'
@@ -65,11 +66,11 @@ export function useAiHealingStream(personaId: string): AiHealingState {
 
     const setup = async () => {
       const unlistenOutput = await listen<Record<string, unknown>>(
-        'ai-healing-output',
+        EventName.AI_HEALING_OUTPUT,
         (event) => {
           if (!mounted) return;
           const raw = event.payload ?? {};
-          const validated = validatePayload('ai-healing-output', raw, HealingOutputSchema);
+          const validated = validatePayload(EventName.AI_HEALING_OUTPUT, raw, HealingOutputSchema);
           if (!validated) return;
           if (validated.persona_id !== personaIdRef.current) return;
 
@@ -92,11 +93,11 @@ export function useAiHealingStream(personaId: string): AiHealingState {
       );
 
       const unlistenStatus = await listen<Record<string, unknown>>(
-        'ai-healing-status',
+        EventName.AI_HEALING_STATUS,
         (event) => {
           if (!mounted) return;
           const raw = event.payload ?? {};
-          const validated = validatePayload('ai-healing-status', raw, HealingStatusSchema);
+          const validated = validatePayload(EventName.AI_HEALING_STATUS, raw, HealingStatusSchema);
           if (!validated) return;
           if (validated.persona_id !== personaIdRef.current) return;
 

@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { GenomeBreedingResult } from '@/lib/bindings/GenomeBreedingResult';
 
@@ -101,25 +100,18 @@ export function GenerationEvolutionChart({
             >
               <div className="w-full flex items-end justify-center gap-px h-24 relative">
                 {/* Worst (background) */}
-                <motion.div
-                  className="w-2 bg-red-500/20 rounded-t-sm"
-                  initial={{ height: 0 }}
-                  animate={{ height: `${worstHeight}%` }}
-                  transition={{ duration: 0.4, delay: idx * 0.05 }}
+                <div
+                  className="animate-fade-in w-2 bg-red-500/20 rounded-t-sm" style={{ height: `${worstHeight}%` }}
                 />
                 {/* Average */}
-                <motion.div
-                  className="w-2 bg-amber-500/40 rounded-t-sm"
-                  initial={{ height: 0 }}
-                  animate={{ height: `${avgHeight}%` }}
-                  transition={{ duration: 0.4, delay: idx * 0.05 + 0.05 }}
+                <div
+                  className="animate-fade-in w-2 bg-amber-500/40 rounded-t-sm"
+                  style={{ height: `${avgHeight}%` }}
                 />
                 {/* Best */}
-                <motion.div
-                  className="w-2 bg-violet-500 rounded-t-sm group-hover:bg-violet-400 transition-colors"
-                  initial={{ height: 0 }}
-                  animate={{ height: `${bestHeight}%` }}
-                  transition={{ duration: 0.4, delay: idx * 0.05 + 0.1 }}
+                <div
+                  className="animate-fade-in w-2 bg-violet-500 rounded-t-sm group-hover:bg-violet-400 transition-colors"
+                  style={{ height: `${bestHeight}%` }}
                 />
 
                 {/* Tooltip on hover */}

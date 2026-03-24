@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Loader2, SkipForward, Plug } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
@@ -87,10 +86,8 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
   // Summary view when all done
   if (isAllDone) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-5"
+      <div
+        className="animate-fade-slide-in space-y-5"
       >
         <div className="text-center py-6">
           <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/15 flex items-center justify-center mb-3">
@@ -136,7 +133,7 @@ export function WizardBatchPhase({ connectors, onDone }: WizardBatchPhaseProps) 
             Done
           </Button>
         </div>
-      </motion.div>
+      </div>
     );
   }
 

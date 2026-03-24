@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Wand2, Cloud, LogIn, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
@@ -39,14 +38,10 @@ function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], on
   const palette = COLOR_SCHEMES[colorScheme];
 
   return (
-    <AnimatePresence>
+    <>
       {visible && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration }}
-          className="overflow-hidden"
+        <div
+          className="animate-fade-slide-in overflow-hidden"
         >
           <div className={`mx-6 my-2 rounded-xl p-3 flex items-center gap-3 ${palette.container}`}>
             {icon}
@@ -58,9 +53,9 @@ function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], on
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 

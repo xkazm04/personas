@@ -9,6 +9,7 @@
 import type { ConnectorDefinitionBase } from '@/lib/types/types';
 
 import airtable from '../../../scripts/connectors/builtin/airtable.json';
+import alphaVantage from '../../../scripts/connectors/builtin/alpha-vantage.json';
 import asana from '../../../scripts/connectors/builtin/asana.json';
 import azureDevops from '../../../scripts/connectors/builtin/azure-devops.json';
 import notion from '../../../scripts/connectors/builtin/notion.json';
@@ -89,6 +90,7 @@ export type BuiltinConnectorDef = ConnectorDefinitionBase;
 
 export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   airtable,
+  alphaVantage,
   asana,
   azureDevops,
   notion,

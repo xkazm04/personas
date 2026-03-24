@@ -1,5 +1,4 @@
 import { Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
 
 export const PLATFORM_COLORS: Record<WorkflowPlatform, string> = {
@@ -26,18 +25,12 @@ export function SelectionCheckbox({ checked, onChange }: { checked: boolean; onC
           : 'bg-secondary/40 border border-primary/20 hover:border-primary/40'
       }`}
     >
-      <AnimatePresence>
-        {checked && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 15, stiffness: 400, duration: 0.15 }}
+      {checked && (
+          <div className="animate-fade-slide-in"
           >
             <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </button>
   );
 }

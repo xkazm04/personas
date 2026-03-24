@@ -17,7 +17,7 @@ vi.mock("framer-motion", async () => {
         className,
         onClick,
         style,
-        ...rest
+        ..._rest
       }: React.HTMLAttributes<HTMLDivElement> & Record<string, unknown>) => (
         <div className={className} onClick={onClick} style={style}>
           {children}

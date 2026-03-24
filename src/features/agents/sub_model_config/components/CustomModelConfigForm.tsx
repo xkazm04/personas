@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import type { ModelProvider } from '@/lib/types/frontendTypes';
 import { LiteLLMConfigField } from './LiteLLMConfigField';
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
@@ -14,14 +13,10 @@ export function CustomModelConfigForm({
   customConfig: CustomModelConfig;
 }) {
   return (
-    <AnimatePresence>
+    <>
       {selectedModel === 'custom' && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.2 }}
-          className="overflow-hidden"
+        <div
+          className="animate-fade-slide-in overflow-hidden"
         >
           <div className="space-y-3 pt-1">
             <div>
@@ -104,8 +99,8 @@ export function CustomModelConfigForm({
 
             {customConfig.selectedProvider === 'litellm' && <LiteLLMConfigField />}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

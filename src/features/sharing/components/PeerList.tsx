@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Users, RefreshCw, Wifi, AlertTriangle } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { PeerCard } from './PeerCard';
@@ -124,15 +123,9 @@ export function PeerList() {
         <RadarEmptyState />
       ) : (
         <div className="space-y-2">
-          <AnimatePresence initial={false}>
-            {discoveredPeers.map((peer) => (
-              <motion.div
+          {discoveredPeers.map((peer) => (
+              <div className="animate-fade-slide-in"
                 key={peer.peer_id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                layout
               >
                 <PeerCard
                   peer={peer}
@@ -143,9 +136,8 @@ export function PeerList() {
                   onSelect={setSelectedPeerId}
                   connecting={connectingPeers.has(peer.peer_id)}
                 />
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
         </div>
       )}
 
@@ -228,11 +220,8 @@ function RadarEmptyState() {
   }, []);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="flex flex-col items-center gap-3 rounded-xl border border-border/50 p-6"
+    <div
+      className="animate-fade-slide-in flex flex-col items-center gap-3 rounded-xl border border-border/50 p-6"
     >
       <canvas
         ref={canvasRef}
@@ -246,7 +235,7 @@ function RadarEmptyState() {
       <span className="text-[11px] text-muted-foreground/40 text-center max-w-[260px]">
         Other Personas instances on the same LAN will appear here automatically.
       </span>
-    </motion.div>
+    </div>
   );
 }
 

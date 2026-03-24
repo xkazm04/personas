@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{CreatePersonaMemoryInput, PersonaMemory};
 use crate::db::repos::utils::collect_rows;
@@ -98,20 +98,11 @@ fn build_memory_filters(
     (where_clause, param_values)
 }
 
-fn row_to_memory(row: &Row) -> rusqlite::Result<PersonaMemory> {
-    Ok(PersonaMemory {
-        id: row.get("id")?,
-        persona_id: row.get("persona_id")?,
-        title: row.get("title")?,
-        content: row.get("content")?,
-        category: row.get("category")?,
-        source_execution_id: row.get("source_execution_id")?,
-        importance: row.get("importance")?,
-        tags: row.get("tags")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_memory -> PersonaMemory {
+    id, persona_id, title, content, category,
+    source_execution_id, importance, tags,
+    created_at, updated_at,
+});
 
 /// Map user-provided sort column to a safe SQL column name.
 fn validated_sort_column(col: Option<&str>) -> &str {
@@ -205,20 +196,7 @@ pub fn get_all_by_persona_ids(
     Ok(collect_rows(rows, "memories::get_all_by_persona_ids"))
 }
 
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaMemory, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_memories WHERE id = ?1",
-        params![id],
-        row_to_memory,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("PersonaMemory {id}"))
-        }
-        other => AppError::Database(other),
-    })
-}
+crud_get_by_id!(PersonaMemory, "persona_memories", "PersonaMemory", row_to_memory);
 
 pub fn get_by_persona(
     pool: &DbPool,
@@ -503,11 +481,7 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
     Ok(rows as i64)
 }
 
-pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM persona_memories WHERE id = ?1", params![id])?;
-    Ok(rows > 0)
-}
+crud_delete!("persona_memories");
 
 #[cfg(test)]
 mod tests {

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Heart, TrendingDown, TrendingUp, Minus, DollarSign, AlertTriangle, Clock, Wrench, ChevronDown, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { HeartbeatIndicator } from './HeartbeatIndicator';
 
@@ -66,14 +65,9 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
       </div>
 
       {/* Expandable content */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-3 pt-0">
               {/* Metrics Grid */}
@@ -130,9 +124,8 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

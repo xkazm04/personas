@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { Activity } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -123,14 +122,12 @@ export default function RealtimeVisualizerPage() {
         />
 
         {/* Event detail drawer */}
-        <AnimatePresence>
-          {selectedEvent && (
+        {selectedEvent && (
             <EventDetailDrawer
               event={selectedEvent}
               onClose={() => selectEvent(null)}
             />
           )}
-        </AnimatePresence>
       </div>
 
       {/* -- Bottom Timeline Player -- */}

@@ -7,6 +7,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use ts_rs::TS;
 
 use crate::engine::crypto::SecureString;
+use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -385,7 +386,7 @@ pub async fn login_with_google(
                 if let Err(e) = handle_auth_callback(&handle, &callback_url).await {
                     tracing::error!("OAuth callback failed: {}", e);
                     // Surface the error to the frontend so the user sees what went wrong
-                    let _ = handle.emit("auth-error", serde_json::json!({
+                    let _ = handle.emit(event_name::AUTH_ERROR, serde_json::json!({
                         "error": format!("{}", e)
                     }));
                 }
@@ -429,7 +430,7 @@ pub async fn logout(
         client.set_user_token(None).await;
     }
 
-    let _ = app.emit("auth-state-changed", AuthStateResponse {
+    let _ = app.emit(event_name::AUTH_STATE_CHANGED, AuthStateResponse {
         is_authenticated: false,
         is_offline: false,
         user: None,
@@ -496,7 +497,7 @@ pub async fn refresh_session(
                 client.set_user_token(Some(access_token.expose_secret().to_string())).await;
             }
 
-            let _ = app.emit("auth-state-changed", &response);
+            let _ = app.emit(event_name::AUTH_STATE_CHANGED, &response);
             Ok(response)
         }
         Err(e) => {
@@ -510,7 +511,7 @@ pub async fn refresh_session(
                         auth.is_offline = true;
                         auth.to_response()
                     };
-                    let _ = app.emit("auth-state-changed", &response);
+                    let _ = app.emit(event_name::AUTH_STATE_CHANGED, &response);
                     return Ok(response);
                 }
             }
@@ -611,7 +612,7 @@ pub async fn handle_auth_callback(
         client.set_user_token(Some(access_token.expose_secret().to_string())).await;
     }
 
-    let _ = app.emit("auth-state-changed", &response);
+    let _ = app.emit(event_name::AUTH_STATE_CHANGED, &response);
 
     tracing::info!(
         user_email = response.user.as_ref().map(|u| u.email.as_str()),
@@ -664,7 +665,7 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
                 auth.to_response()
             };
 
-            let _ = app.emit("auth-state-changed", &response);
+            let _ = app.emit(event_name::AUTH_STATE_CHANGED, &response);
             tracing::info!("Session restored successfully");
         }
         Err(e) => {
@@ -677,7 +678,7 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
                         auth.is_offline = true;
                         auth.to_response()
                     };
-                    let _ = app.emit("auth-state-changed", &response);
+                    let _ = app.emit(event_name::AUTH_STATE_CHANGED, &response);
                     tracing::info!("Session restored in offline mode (cached profile)");
                     return;
                 }

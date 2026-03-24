@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion, AnimatePresence } from 'framer-motion';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS } from '@/lib/utils/formatters';
@@ -51,8 +50,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
       maxWidthClass="max-w-lg"
       panelClassName="bg-background border border-primary/20 rounded-2xl shadow-2xl overflow-hidden"
     >
-      <AnimatePresence mode="wait">
-        {resolved ? (
+      {resolved ? (
           <ResolvedAnimation />
         ) : (
           <ModalContent
@@ -68,52 +66,36 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
             onCopyFix={handleCopyFix}
           />
         )}
-      </AnimatePresence>
     </BaseModal>
   );
 }
 
 function ResolvedAnimation() {
   return (
-    <motion.div
+    <div
       key="success"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      className="flex flex-col items-center justify-center py-16 px-8"
+      className="animate-fade-slide-in flex flex-col items-center justify-center py-16 px-8"
     >
       <div className="relative">
-        <motion.div
-          initial={{ scale: 0, opacity: 0.8 }}
-          animate={{ scale: 2.5, opacity: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="absolute inset-0 rounded-full border-2 border-emerald-400/40"
+        <div
+          className="animate-fade-slide-in absolute inset-0 rounded-full border-2 border-emerald-400/40"
           style={{ width: 48, height: 48, top: -4, left: -4 }}
         />
-        <motion.div
-          initial={{ scale: 0, opacity: 0.5 }}
-          animate={{ scale: 3, opacity: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut', delay: 0.05 }}
-          className="absolute inset-0 rounded-full border border-emerald-400/20"
+        <div
+          className="animate-fade-slide-in absolute inset-0 rounded-full border border-emerald-400/20"
           style={{ width: 48, height: 48, top: -4, left: -4 }}
         />
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', damping: 15, stiffness: 300 }}
+        <div className="animate-fade-scale-in"
         >
           <CheckCircle className="w-10 h-10 text-emerald-400" strokeWidth={1.5} />
-        </motion.div>
+        </div>
       </div>
-      <motion.p
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, duration: 0.3 }}
-        className="mt-4 typo-heading text-emerald-400"
+      <p
+        className="animate-fade-slide-in mt-4 typo-heading text-emerald-400"
       >
         Issue Resolved
-      </motion.p>
-    </motion.div>
+      </p>
+    </div>
   );
 }
 
@@ -130,9 +112,9 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
   onCopyFix: () => void;
 }) {
   return (
-    <motion.div key="content" exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.15 }}>
+    <div key="content">
       {/* Header */}
-      <div className="flex items-start justify-between p-4 border-b border-primary/10">
+      <div className="animate-fade-in flex items-start justify-between p-4 border-b border-primary/10">
         <div className="flex-1 min-w-0 pr-4">
           <h3 id="healing-issue-title" className="typo-heading text-foreground/90 mb-2">{issue.title}</h3>
           <div className="flex items-center gap-2 flex-wrap">
@@ -229,9 +211,9 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
         )}
         {isAutoFixed && (
           <div className="flex items-center gap-1.5 mr-auto">
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12, stiffness: 300 }}>
-              <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-            </motion.div>
+            <div>
+              <CheckCircle className="animate-fade-scale-in w-3.5 h-3.5 text-emerald-400" />
+            </div>
             <span className="text-sm text-emerald-400/60">This issue was automatically resolved</span>
           </div>
         )}
@@ -249,6 +231,6 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
           </button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

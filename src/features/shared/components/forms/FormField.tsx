@@ -1,6 +1,4 @@
 import { useId, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-
 /** Props injected into the render-prop children for accessible input binding. */
 export interface FormFieldInputProps {
   id: string;
@@ -75,26 +73,20 @@ export function FormField({
 
       {typeof children === 'function' ? children(inputProps) : children}
 
-      <AnimatePresence mode="wait">
-        {error ? (
-          <motion.p
+      {error ? (
+          <p
             key="error"
             id={errorId}
-            className="typo-body text-red-400"
+            className="animate-fade-slide-in typo-body text-red-400"
             role="alert"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
           >
             {error}
-          </motion.p>
+          </p>
         ) : helpText ? (
           <p id={helpId} className="typo-body text-muted-foreground/60">
             {helpText}
           </p>
         ) : null}
-      </AnimatePresence>
     </div>
   );
 }

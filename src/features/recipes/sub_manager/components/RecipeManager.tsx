@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BookOpen, Plus, Search, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -8,7 +7,6 @@ import { RecipeList } from '@/features/recipes/sub_list/components/RecipeList';
 import { RecipeEditor } from '@/features/recipes/sub_editor/components/RecipeEditor';
 import { RecipePlaygroundModal } from '@/features/recipes/sub_playground/components/RecipePlaygroundModal';
 import { useRecipeViewFSM } from '@/features/recipes/hooks/useRecipeViewFSM';
-import { TRANSITION_FAST, TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 
 export function RecipeManager() {
   const recipes = usePipelineStore((s) => s.recipes);
@@ -109,15 +107,10 @@ export function RecipeManager() {
       </ContentHeader>
 
       <ContentBody>
-        <AnimatePresence mode="wait">
-          {viewState.view === 'list' && (
-            <motion.div
+        {viewState.view === 'list' && (
+            <div
               key="list"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={TRANSITION_FAST}
-              className="h-full"
+              className="animate-fade-slide-in h-full"
             >
               <RecipeList
                 recipes={filteredRecipes}
@@ -126,39 +119,30 @@ export function RecipeManager() {
                 onPlayground={(id) => dispatch({ type: 'GO_PLAYGROUND', recipeId: id })}
                 onDelete={handleDelete}
               />
-            </motion.div>
+            </div>
           )}
 
           {viewState.view === 'create' && (
-            <motion.div
+            <div
               key="create"
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -12 }}
-              transition={TRANSITION_NORMAL}
-              className="h-full"
+              className="animate-fade-slide-in h-full"
             >
               <RecipeEditor recipe={null} onSaved={handleSaved} onCancel={() => dispatch({ type: 'GO_LIST' })} />
-            </motion.div>
+            </div>
           )}
 
           {viewState.view === 'edit' && editingRecipe && (
-            <motion.div
+            <div
               key={`edit-${viewState.recipeId}`}
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -12 }}
-              transition={TRANSITION_NORMAL}
-              className="h-full"
+              className="animate-fade-slide-in h-full"
             >
               <RecipeEditor
                 recipe={editingRecipe}
                 onSaved={handleSaved}
                 onCancel={() => dispatch({ type: 'GO_LIST' })}
               />
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
         {/* Playground Modal */}
         {viewState.view === 'playground' && playgroundRecipe && (

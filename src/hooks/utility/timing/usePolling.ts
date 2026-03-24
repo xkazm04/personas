@@ -8,6 +8,12 @@ export const POLLING_CONFIG = {
   cloudReviews: { interval: 15_000, maxBackoff: 60_000 },
   /** Analytics / observability auto-refresh -- slow cadence for dashboards. */
   dashboardRefresh: { interval: 30_000, maxBackoff: 120_000 },
+  /** Cloud status panel -- live ops dashboard cadence. */
+  cloudStatus: { interval: 12_000, maxBackoff: 60_000 },
+  /** Cloud history panel -- slightly slower for heavier list+stats queries. */
+  cloudHistory: { interval: 15_000, maxBackoff: 60_000 },
+  /** GitLab pipeline refresh -- fast cadence while a pipeline is running/pending. */
+  pipelineRefresh: { interval: 5_000, maxBackoff: 30_000 },
 } as const;
 
 export interface PollingOptions {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 
 export type FileChangeType = 'read' | 'write' | 'edit';
 
@@ -37,7 +38,7 @@ export function useFileChanges(executionId: string | null): {
     if (!executionId) return;
 
     let cancelled = false;
-    const unlistenPromise = listen<FileChangePayload>('execution-file-change', (event) => {
+    const unlistenPromise = listen<FileChangePayload>(EventName.EXECUTION_FILE_CHANGE, (event) => {
       if (cancelled || event.payload.execution_id !== executionId) return;
       setChanges((prev) => {
         const next = new Map(prev);

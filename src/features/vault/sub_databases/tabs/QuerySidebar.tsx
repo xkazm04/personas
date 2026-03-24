@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { Plus, Trash2, Star, Check, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useVaultStore } from "@/stores/vaultStore";
 
 interface QuerySidebarProps {
@@ -40,15 +39,10 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
   return (
     <div className="w-64 border-r border-primary/10 flex flex-col shrink-0 bg-secondary/5">
       <div className="p-3 border-b border-primary/8">
-        <AnimatePresence mode="wait">
-          {isCreating ? (
-            <motion.div
+        {isCreating ? (
+            <div
               key="create-input"
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center gap-1"
+              className="animate-fade-slide-in flex items-center gap-1"
             >
               <input
                 autoFocus
@@ -64,21 +58,17 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               <button onClick={() => setIsCreating(false)} className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground/60 hover:bg-secondary/40 transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
-            </motion.div>
+            </div>
           ) : (
-            <motion.button
+            <button
               key="create-btn"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
               onClick={() => setIsCreating(true)}
-              className="w-full flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-sm font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
+              className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-sm font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               New Query
-            </motion.button>
+            </button>
           )}
-        </AnimatePresence>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">

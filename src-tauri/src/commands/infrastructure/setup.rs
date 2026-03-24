@@ -6,6 +6,7 @@ use serde::Serialize;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
+use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::AppState;
 
@@ -89,7 +90,7 @@ fn detect_platform() -> PlatformInfo {
 
 fn emit_output(app: &tauri::AppHandle, install_id: &str, target: &SetupTarget, line: &str) {
     let _ = app.emit(
-        "setup-output",
+        event_name::SETUP_OUTPUT,
         SetupOutputEvent {
             install_id: install_id.to_string(),
             target: target.clone(),
@@ -108,7 +109,7 @@ fn emit_status(
     manual_command: Option<String>,
 ) {
     let _ = app.emit(
-        "setup-status",
+        event_name::SETUP_STATUS,
         SetupStatusEvent {
             install_id: install_id.to_string(),
             target: target.clone(),

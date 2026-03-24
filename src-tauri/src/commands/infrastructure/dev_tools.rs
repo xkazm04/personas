@@ -3,7 +3,7 @@ use tauri::State;
 
 use crate::db::models::{
     DevContext, DevContextGroup, DevContextGroupRelationship, DevGoal, DevGoalSignal, DevIdea,
-    DevProject, DevScan, DevTask, TriageRule,
+    DevPipeline, DevProject, DevScan, DevTask, ContextHealthSnapshot, TriageRule,
 };
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
@@ -911,4 +911,120 @@ fn compare_string(field_value: Option<&str>, op: &str, value: Option<&serde_json
             .unwrap_or(false),
         _ => false,
     }
+}
+
+// ============================================================================
+// Pipelines (Idea-to-Execution)
+// ============================================================================
+
+#[tauri::command]
+pub fn dev_tools_create_pipeline(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    idea_id: String,
+    auto_execute: Option<bool>,
+    verify_after: Option<bool>,
+) -> Result<DevPipeline, AppError> {
+    require_auth_sync(&state)?;
+    repo::create_pipeline(
+        &state.db,
+        &project_id,
+        &idea_id,
+        auto_execute.unwrap_or(true),
+        verify_after.unwrap_or(false),
+    )
+}
+
+#[tauri::command]
+pub fn dev_tools_list_pipelines(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    stage: Option<String>,
+) -> Result<Vec<DevPipeline>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_pipelines(&state.db, &project_id, stage.as_deref())
+}
+
+#[tauri::command]
+pub fn dev_tools_get_pipeline(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<DevPipeline, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_pipeline_by_id(&state.db, &id)
+}
+
+#[tauri::command]
+pub fn dev_tools_advance_pipeline(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    new_stage: String,
+    task_id: Option<String>,
+    error: Option<String>,
+) -> Result<DevPipeline, AppError> {
+    require_auth_sync(&state)?;
+    repo::advance_pipeline_stage(
+        &state.db,
+        &id,
+        &new_stage,
+        task_id.as_deref(),
+        error.as_deref(),
+    )
+}
+
+#[tauri::command]
+pub fn dev_tools_delete_pipeline(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_pipeline(&state.db, &id)
+}
+
+// ============================================================================
+// Context Health Snapshots
+// ============================================================================
+
+#[tauri::command]
+pub fn dev_tools_list_health_snapshots(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    limit: Option<i32>,
+) -> Result<Vec<ContextHealthSnapshot>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_health_snapshots(&state.db, &project_id, limit)
+}
+
+#[tauri::command]
+pub fn dev_tools_save_health_snapshot(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    group_id: Option<String>,
+    group_name: String,
+    overall_score: i32,
+    security_score: Option<i32>,
+    quality_score: Option<i32>,
+    coverage_score: Option<i32>,
+    debt_score: Option<i32>,
+    issues_found: i32,
+    issues_json: Option<String>,
+    recommendations: Option<String>,
+) -> Result<ContextHealthSnapshot, AppError> {
+    require_auth_sync(&state)?;
+    let snap = ContextHealthSnapshot {
+        id: uuid::Uuid::new_v4().to_string(),
+        project_id,
+        group_id,
+        group_name,
+        overall_score,
+        security_score,
+        quality_score,
+        coverage_score,
+        debt_score,
+        issues_found,
+        issues_json,
+        recommendations,
+        scanned_at: chrono::Utc::now().to_rfc3339(),
+    };
+    repo::insert_health_snapshot(&state.db, &snap)
 }

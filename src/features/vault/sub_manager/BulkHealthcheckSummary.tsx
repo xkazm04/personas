@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Clock, HeartPulse, X, XCircle } from 'lucide-react';
 import type { BulkSummary } from '@/features/vault/hooks/health/useBulkHealthcheck';
 
@@ -9,14 +8,10 @@ interface BulkHealthcheckSummaryProps {
 
 export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSummaryProps) {
   return (
-    <AnimatePresence>
+    <>
       {summary && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.2 }}
-          className="overflow-hidden"
+        <div
+          className="animate-fade-slide-in overflow-hidden"
         >
           <div className="rounded-xl border border-primary/15 bg-secondary/30 p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -89,8 +84,8 @@ export function BulkHealthcheckSummary({ summary, onDismiss }: BulkHealthcheckSu
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

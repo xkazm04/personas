@@ -54,6 +54,7 @@ pub enum ErrorCategory {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
 pub enum ErrorSeverity {
     /// Informational — no action needed.
     Info,
@@ -193,6 +194,7 @@ pub fn is_failover_eligible(category: &ErrorCategory) -> bool {
 }
 
 /// Map an [`ErrorCategory`] to its default [`ErrorSeverity`].
+#[allow(dead_code)]
 pub fn default_severity(category: &ErrorCategory) -> ErrorSeverity {
     match category {
         ErrorCategory::ProviderNotFound => ErrorSeverity::Critical,
@@ -210,6 +212,7 @@ pub fn default_severity(category: &ErrorCategory) -> ErrorSeverity {
 
 /// Map an [`ErrorCategory`] to the database category string used by healing
 /// issues (preserves backwards compatibility with existing DB records).
+#[allow(dead_code)]
 pub fn db_category(category: &ErrorCategory) -> &'static str {
     match category {
         ErrorCategory::RateLimit

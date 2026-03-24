@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
 import { errMsg, reportError } from "../../storeTypes";
-import { useAgentStore } from "../../agentStore";
+import { storeBus } from "@/lib/storeBus";
 import type { PeerIdentity, TrustedPeer } from "@/api/network/identity";
 import type { ExposedResource, ResourceProvenance } from "@/api/network/exposure";
 import type { BundleImportPreview } from "@/api/network/bundle";
@@ -68,8 +68,16 @@ export interface NetworkSlice {
 
   // Bundle actions
   exportBundle: (resourceIds: string[], savePath: string) => Promise<bundleApi.BundleExportResult>;
+  exportBundleToClipboard: (resourceIds: string[]) => Promise<bundleApi.ClipboardExportResult>;
   previewBundleImport: (filePath: string) => Promise<BundleImportPreview>;
+  previewBundleFromClipboard: (base64Data: string) => Promise<BundleImportPreview>;
   applyBundleImport: (filePath: string, options: bundleApi.BundleImportOptions) => Promise<bundleApi.BundleImportResult>;
+  applyBundleFromClipboard: (base64Data: string, options: bundleApi.BundleImportOptions) => Promise<bundleApi.BundleImportResult>;
+
+  // Share link actions
+  createShareLink: (resourceIds: string[]) => Promise<bundleApi.ShareLinkResult>;
+  previewShareLink: (url: string) => Promise<BundleImportPreview>;
+  importFromShareLink: (url: string, options: bundleApi.BundleImportOptions) => Promise<bundleApi.BundleImportResult>;
 
   // Enclave actions
   sealEnclave: (personaId: string, policy: enclaveApi.EnclavePolicy, savePath: string) => Promise<enclaveApi.EnclaveSealResult>;
@@ -246,6 +254,18 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
     }
   },
 
+  exportBundleToClipboard: async (resourceIds) => {
+    set({ networkLoading: true });
+    try {
+      const result = await bundleApi.exportBundleToClipboard(resourceIds);
+      set({ networkLoading: false });
+      return result;
+    } catch (err) {
+      reportError(err, "Failed to export bundle for clipboard", set, { stateUpdates: { networkLoading: false } });
+      throw err;
+    }
+  },
+
   previewBundleImport: async (filePath) => {
     set({ networkLoading: true });
     try {
@@ -258,17 +278,83 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
     }
   },
 
+  previewBundleFromClipboard: async (base64Data) => {
+    set({ networkLoading: true });
+    try {
+      const preview = await bundleApi.previewBundleFromClipboard(base64Data);
+      set({ networkLoading: false });
+      return preview;
+    } catch (err) {
+      reportError(err, "Failed to preview clipboard bundle", set, { stateUpdates: { networkLoading: false } });
+      throw err;
+    }
+  },
+
   applyBundleImport: async (filePath, options) => {
     set({ networkLoading: true });
     try {
       const result = await bundleApi.applyBundleImport(filePath, options);
       set({ networkLoading: false });
       // Refresh personas list after import
-      await useAgentStore.getState().fetchPersonas();
+      storeBus.emit('network:personas-changed');
       await get().fetchProvenance();
       return result;
     } catch (err) {
       reportError(err, "Failed to import bundle", set, { stateUpdates: { networkLoading: false } });
+      throw err;
+    }
+  },
+
+  applyBundleFromClipboard: async (base64Data, options) => {
+    set({ networkLoading: true });
+    try {
+      const result = await bundleApi.applyBundleFromClipboard(base64Data, options);
+      set({ networkLoading: false });
+      storeBus.emit('network:personas-changed');
+      await get().fetchProvenance();
+      return result;
+    } catch (err) {
+      reportError(err, "Failed to import clipboard bundle", set, { stateUpdates: { networkLoading: false } });
+      throw err;
+    }
+  },
+
+  // -- Share Links ----------------------------------------------------
+
+  createShareLink: async (resourceIds) => {
+    set({ networkLoading: true });
+    try {
+      const result = await bundleApi.createShareLink(resourceIds);
+      set({ networkLoading: false });
+      return result;
+    } catch (err) {
+      reportError(err, "Failed to create share link", set, { stateUpdates: { networkLoading: false } });
+      throw err;
+    }
+  },
+
+  previewShareLink: async (url) => {
+    set({ networkLoading: true });
+    try {
+      const preview = await bundleApi.previewShareLink(url);
+      set({ networkLoading: false });
+      return preview;
+    } catch (err) {
+      reportError(err, "Failed to preview share link", set, { stateUpdates: { networkLoading: false } });
+      throw err;
+    }
+  },
+
+  importFromShareLink: async (url, options) => {
+    set({ networkLoading: true });
+    try {
+      const result = await bundleApi.importFromShareLink(url, options);
+      set({ networkLoading: false });
+      storeBus.emit('network:personas-changed');
+      await get().fetchProvenance();
+      return result;
+    } catch (err) {
+      reportError(err, "Failed to import from share link", set, { stateUpdates: { networkLoading: false } });
       throw err;
     }
   },

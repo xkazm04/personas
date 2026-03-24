@@ -16,6 +16,7 @@ use super::protocol::{self, ManifestEntry, Message};
 use super::types::PeerManifestEntry;
 use crate::db::repos::resources::exposure as exposure_repo;
 use crate::db::DbPool;
+use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 
 /// Maximum manifest entries accepted from a single peer.
@@ -102,7 +103,7 @@ impl ManifestSync {
     async fn emit_sync_progress(&self, peer_id: &str, synced: usize, total: usize, resource_count: usize) {
         if let Some(app) = self.app_handle.read().await.as_ref() {
             use tauri::Emitter;
-            let _ = app.emit("p2p:manifest-sync-progress", serde_json::json!({
+            let _ = app.emit(event_name::P2P_MANIFEST_SYNC_PROGRESS, serde_json::json!({
                 "peerId": peer_id,
                 "synced": synced,
                 "total": total,

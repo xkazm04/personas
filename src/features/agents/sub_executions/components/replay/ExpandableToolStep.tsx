@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown,
   ChevronRight,
@@ -103,14 +102,9 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
       </div>
 
       {/* Expandable details */}
-      <AnimatePresence>
-        {expanded && canExpand && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {expanded && canExpand && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-3 space-y-2 border-t border-primary/10 pt-2 mx-2">
               {/* Input preview */}
@@ -155,9 +149,8 @@ export function ExpandableToolStep({ step, state, isFork, onFork }: ExpandableTo
                 </button>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

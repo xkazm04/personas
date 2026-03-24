@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Key, Wrench, Zap, ArrowRight, Shield, X, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
 import type { DepGraph, DepNode, DepNodeKind, DepBlastRadius } from '../../libs/dependencyGraph';
 import { analyzeDepBlastRadius } from '../../libs/dependencyGraph';
@@ -82,11 +81,8 @@ function GraphNodeChip({
 function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => void }) {
   const sev = SEVERITY_STYLES[blast.severity];
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-      className="rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
+    <div
+      className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">
@@ -147,7 +143,7 @@ function BlastPanel({ blast, onClose }: { blast: DepBlastRadius; onClose: () => 
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -288,20 +284,16 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
 
         {/* Right: detail / blast radius panel */}
         <div className="space-y-2">
-          <AnimatePresence mode="wait">
-            {selectedBlast ? (
+          {selectedBlast ? (
               <BlastPanel
                 key={selectedBlast.credentialId}
                 blast={selectedBlast}
                 onClose={() => setSelectedNodeId(null)}
               />
             ) : selectedNodeId ? (
-              <motion.div
+              <div
                 key={selectedNodeId}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                className="rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
+                className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
               >
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
                   <span className="text-sm font-medium text-foreground/85">Dependencies</span>
@@ -332,22 +324,18 @@ export function DependencyGraphPanel({ graph }: DependencyGraphPanelProps) {
                       );
                     })}
                 </div>
-              </motion.div>
+              </div>
             ) : (
-              <motion.div
+              <div
                 key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="rounded-xl border border-primary/10 bg-secondary/20 p-6 text-center"
+                className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-6 text-center"
               >
                 <Shield className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
                 <p className="text-xs text-muted-foreground/50">
                   Select a credential to see what breaks when it expires
                 </p>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
 
           {/* Relationships */}
           {filteredEdges.length > 0 && (

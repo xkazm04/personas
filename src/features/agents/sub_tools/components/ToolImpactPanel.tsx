@@ -2,7 +2,6 @@ import {
   Activity, AlertTriangle, CheckCircle2, DollarSign,
   GitBranch, Layers, XCircle,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
 import { TOOLS_BORDER, TOOLS_INNER_SPACE, TOOLS_SECTION_GAP } from '@/lib/utils/designTokens';
 
@@ -34,13 +33,8 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
   const hasCo = coUsedTools.length > 0;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ height: 0, opacity: 0 }}
-        animate={{ height: 'auto', opacity: 1 }}
-        exit={{ height: 0, opacity: 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="overflow-hidden"
+    <div
+        className="animate-fade-slide-in overflow-hidden"
       >
         <div className={`px-3 pb-3 pt-1 ${TOOLS_INNER_SPACE} border-t ${TOOLS_BORDER} ${TOOLS_SECTION_GAP}`}>
           <ImpactSection icon={<Layers className="w-3 h-3" />} label="Use Cases" badge={hasUseCases ? String(useCaseRefs.length) : undefined}>
@@ -131,8 +125,7 @@ export function ToolImpactPanel({ impact, isAssigned }: ToolImpactPanelProps) {
             </ImpactSection>
           )}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }
 

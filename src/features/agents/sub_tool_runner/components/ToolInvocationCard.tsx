@@ -11,7 +11,6 @@ import {
   Globe,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { ToolInvocationResult } from '@/api/agents/tools';
 
@@ -61,14 +60,9 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
       </button>
 
       {/* Expanded body */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="border-t border-primary/10 px-3.5 py-3 space-y-3">
               {tool.description && (
@@ -102,9 +96,8 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               {/* Result */}
               <ResultDisplay result={result} error={error} />
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

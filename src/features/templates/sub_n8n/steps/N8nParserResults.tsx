@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileJson, FileCode2, Sparkles, AlertTriangle } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
 import { PLATFORM_LABELS } from '@/lib/personas/parsers/workflowDetector';
@@ -61,20 +60,14 @@ export function N8nParserResults({
   return (
     <div className={`space-y-4 relative ${isAnalyzing ? 'min-h-[200px]' : ''}`}>
       {/* Analyzing overlay */}
-      <AnimatePresence>
-        {isAnalyzing && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-xl"
+      {isAnalyzing && (
+          <div
+            className="animate-fade-slide-in absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-xl"
           >
             <div className="flex flex-col items-center gap-4 p-6">
               <div className="relative">
-                <motion.div
-                  className="absolute inset-0 w-14 h-14 rounded-xl bg-violet-500/20"
-                  animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                <div
+                  className="animate-fade-in absolute inset-0 w-14 h-14 rounded-xl bg-violet-500/20"
                 />
                 <div className="w-14 h-14 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
                   <Sparkles className="w-7 h-7 text-violet-400" />
@@ -92,9 +85,8 @@ export function N8nParserResults({
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -129,11 +121,8 @@ export function N8nParserResults({
 
       {/* Platform confirmation banner */}
       {platformNeedsConfirmation && platform && platform !== 'unknown' && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5"
+        <div
+          className="animate-fade-slide-in flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5"
         >
           <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
           <p className="flex-1 text-sm text-amber-300/90">
@@ -157,7 +146,7 @@ export function N8nParserResults({
               No, re-upload
             </Button>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Selection summary */}

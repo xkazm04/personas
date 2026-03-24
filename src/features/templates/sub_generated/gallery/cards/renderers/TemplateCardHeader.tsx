@@ -1,19 +1,22 @@
 import { useState, useRef } from 'react';
-import { MoreVertical, Eye, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { MoreVertical, Eye, Trash2, CheckCircle2, XCircle, GraduationCap, Clock } from 'lucide-react';
 import { TrustBadge } from '../../../shared/TrustBadge';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import type { TemplateVerification } from '@/lib/types/templateTypes';
 import type { readinessTier } from '../../../shared/adoptionReadiness';
+import type { DifficultyMeta, SetupMeta } from '../../../shared/templateComplexity';
 
 interface TemplateCardHeaderProps {
   name: string;
   instruction: string;
   verification: TemplateVerification;
-  readinessScore: number;
-  tier: ReturnType<typeof readinessTier>;
+  readinessScore: number | null;
+  tier: ReturnType<typeof readinessTier> | null;
   motionCss: string;
   onViewDetails: () => void;
   onDelete: () => void;
+  difficultyMeta?: DifficultyMeta;
+  setupMeta?: SetupMeta;
 }
 
 export function TemplateCardHeader({
@@ -25,6 +28,8 @@ export function TemplateCardHeader({
   motionCss,
   onViewDetails,
   onDelete,
+  difficultyMeta,
+  setupMeta,
 }: TemplateCardHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -37,17 +42,41 @@ export function TemplateCardHeader({
             {name}
           </h3>
           <TrustBadge trustLevel={verification.trustLevel} compact />
-          <span
-            className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono rounded border ${tier.bgClass}`}
-            title={`${readinessScore}% of connectors ready`}
-          >
-            {readinessScore === 100 ? (
-              <CheckCircle2 className="w-2.5 h-2.5" />
-            ) : (
-              <XCircle className="w-2.5 h-2.5" />
-            )}
-            {readinessScore}%
-          </span>
+          {tier != null && readinessScore != null ? (
+            <span
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono rounded border ${tier.bgClass}`}
+              title={`${readinessScore}% of connectors ready`}
+            >
+              {readinessScore === 100 ? (
+                <CheckCircle2 className="w-2.5 h-2.5" />
+              ) : (
+                <XCircle className="w-2.5 h-2.5" />
+              )}
+              {readinessScore}%
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-mono rounded border bg-zinc-500/10 text-muted-foreground/40 border-zinc-500/15">
+              --%
+            </span>
+          )}
+          {difficultyMeta && (
+            <span
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium rounded border ${difficultyMeta.bgClass}`}
+              title={`Difficulty: ${difficultyMeta.label}`}
+            >
+              <GraduationCap className="w-2.5 h-2.5" />
+              {difficultyMeta.label}
+            </span>
+          )}
+          {setupMeta && (
+            <span
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium rounded border ${setupMeta.bgClass}`}
+              title={`Setup: ${setupMeta.label}`}
+            >
+              <Clock className="w-2.5 h-2.5" />
+              {setupMeta.label}
+            </span>
+          )}
         </div>
         <p className="text-sm text-muted-foreground/70 mt-1 line-clamp-2 leading-relaxed">
           {instruction.length > 120

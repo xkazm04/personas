@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
 
@@ -11,23 +10,18 @@ export function HealthcheckResultDisplay({ success, message }: { success: boolea
 
   if (success) {
     return (
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: [0.8, 1.08, 1], opacity: 1, boxShadow: ['0 0 0 rgba(16,185,129,0)', '0 0 12px rgba(16,185,129,0.2)', '0 0 0 rgba(16,185,129,0)'] }}
-        transition={{ duration: 0.4 }}
-        className="mt-2 flex items-start gap-2 px-3 py-2 rounded-xl text-sm bg-status-success/10 border border-status-success/20 text-status-success"
+      <div
+        className="animate-fade-slide-in mt-2 flex items-start gap-2 px-3 py-2 rounded-xl text-sm bg-status-success/10 border border-status-success/20 text-status-success"
       >
         <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
         <span>{message}</span>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      className="mt-2 rounded-xl bg-status-error/10 border border-status-error/20 overflow-hidden"
-      animate={{ x: [-4, 4, -3, 3, 0] }}
-      transition={{ duration: 0.3 }}
+    <div
+      className="animate-fade-in mt-2 rounded-xl bg-status-error/10 border border-status-error/20 overflow-hidden"
     >
       <div className="flex items-start gap-2 px-3 py-2">
         <XCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-status-error" />
@@ -55,6 +49,6 @@ export function HealthcheckResultDisplay({ success, message }: { success: boolea
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

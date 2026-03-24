@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trash2, Bot } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
@@ -57,23 +56,21 @@ export function MemoryRow({
 
   const deleteButton = (
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-      <AnimatePresence mode="wait">
-        {confirmDelete ? (
-          <motion.div key="confirm" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-1">
+      {confirmDelete ? (
+          <div key="confirm" className="animate-fade-slide-in flex items-center gap-1">
             <button onClick={onDelete} className="px-2 py-1 typo-heading rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">Confirm</button>
             <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 typo-heading rounded-lg bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors">Cancel</button>
-          </motion.div>
+          </div>
         ) : (
-          <motion.button key="trash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmDelete(true)} className="p-1 rounded hover:bg-red-500/10 text-muted-foreground/80 hover:text-red-400 transition-colors">
+          <button key="trash" onClick={() => setConfirmDelete(true)} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-muted-foreground/80 hover:text-red-400 transition-colors">
             <Trash2 className="w-3.5 h-3.5" />
-          </motion.button>
+          </button>
         )}
-      </AnimatePresence>
     </div>
   );
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} data-testid={`memory-row-${memory.id}`} className="border-b border-primary/10 hover:bg-secondary/20 transition-colors">
+    <div data-testid={`memory-row-${memory.id}`} className="animate-fade-slide-in border-b border-primary/10 hover:bg-secondary/20 transition-colors">
       {/* Desktop row */}
       <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={onSelect}>
         <div className="w-[140px] flex items-center gap-2 flex-shrink-0">{agentAvatar}<span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
@@ -97,6 +94,6 @@ export function MemoryRow({
           <span className="text-sm text-muted-foreground/80 ml-auto">{formatRelativeTime(memory.created_at)}</span>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
 import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
 import type { StandardToast, HealingToast } from '@/stores/toastStore';
@@ -81,18 +80,13 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
   const progressFraction = remaining / toast.duration;
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-      transition={{ duration: 0.2, ease: EASE_CURVE }}
+    <div
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => {
         lastTickRef.current = Date.now();
         setPaused(false);
       }}
-      className={`pointer-events-auto rounded-xl border shadow-elevation-3 backdrop-blur-md overflow-hidden ${
+      className={`animate-fade-slide-in pointer-events-auto rounded-xl border shadow-elevation-3 backdrop-blur-md overflow-hidden ${
         toast.type === 'success'
           ? 'bg-emerald-950/90 border-emerald-500/25 text-emerald-300'
           : 'bg-red-950/90 border-red-500/25 text-red-300'
@@ -121,20 +115,13 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
 
       {/* Auto-dismiss progress bar */}
       <div className="h-0.5 bg-black/20">
-        <motion.div
-          className={`h-full ${
+        <div
+          className={`animate-fade-in h-full ${
             toast.type === 'success' ? 'bg-emerald-400/50' : 'bg-red-400/50'
-          }`}
-          initial={{ width: '100%' }}
-          animate={{ width: paused ? `${progressFraction * 100}%` : '0%' }}
-          transition={
-            paused
-              ? { duration: 0 }
-              : { duration: remaining / 1000, ease: 'linear' }
-          }
+          }`} style={{ width: paused ? `${progressFraction * 100}%` : '0%' }}
         />
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -160,13 +147,8 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
   }, [toast.issueId, toast.id, onDismiss]);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-      transition={{ duration: 0.2, ease: EASE_CURVE }}
-      className={`pointer-events-auto rounded-xl border ${styles.border} bg-background/95 backdrop-blur-md shadow-elevation-3 overflow-hidden`}
+    <div
+      className={`animate-fade-slide-in pointer-events-auto rounded-xl border ${styles.border} bg-background/95 backdrop-blur-md shadow-elevation-3 overflow-hidden`}
     >
       <div className="px-3.5 py-3 space-y-2">
         {/* Header */}
@@ -215,14 +197,11 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
 
       {/* Auto-dismiss progress bar */}
       <div className="h-0.5 bg-secondary/30">
-        <motion.div
-          className={`h-full ${styles.progress}`}
-          initial={{ width: '100%' }}
-          animate={{ width: '0%' }}
-          transition={{ duration: toast.duration / 1000, ease: 'linear' }}
+        <div
+          className={`animate-fade-in h-full ${styles.progress}`}
         />
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -271,27 +250,20 @@ export function ToastContainer() {
     >
       {/* Overflow counter */}
       {overflowCount > 0 && (
-        <motion.div
-          layout
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.15, ease: EASE_CURVE }}
-          className="pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 typo-caption text-muted-foreground/70"
+        <div
+          className="animate-fade-slide-in pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 typo-caption text-muted-foreground/70"
         >
           +{overflowCount} more
-        </motion.div>
+        </div>
       )}
 
-      <AnimatePresence mode="popLayout">
-        {visible.map((toast) =>
+      {visible.map((toast) =>
           toast.kind === 'healing' ? (
             <HealingToastItem key={toast.id} toast={toast} onDismiss={handleDismiss} />
           ) : (
             <StandardToastItem key={toast.id} toast={toast} onDismiss={handleDismiss} />
           ),
         )}
-      </AnimatePresence>
     </div>
   );
 }

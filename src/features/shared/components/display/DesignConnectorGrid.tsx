@@ -185,7 +185,7 @@ function EventsTriggersSection({ designResult }: { designResult: AgentIR }) {
 // ============================================================================
 
 function MessagesNotificationsSection({ designResult }: { designResult: AgentIR }) {
-  const channels = designResult.suggested_notification_channels ?? [];
+  const channels = Array.isArray(designResult.suggested_notification_channels) ? designResult.suggested_notification_channels : [];
 
   if (channels.length === 0) return null;
 

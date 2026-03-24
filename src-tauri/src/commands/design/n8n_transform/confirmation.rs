@@ -82,6 +82,17 @@ pub fn create_persona_atomically(
         .as_ref()
         .and_then(|v| serde_json::to_string(v).ok());
 
+    // Encrypt notification channel secrets before storing
+    let encrypted_channels = match &draft.notification_channels {
+        Some(json) if !json.trim().is_empty() => {
+            match persona_repo::encrypt_notification_channels(json) {
+                Ok(enc) => Some(enc),
+                Err(_) => draft.notification_channels.clone(),
+            }
+        }
+        other => other.clone(),
+    };
+
     if let Err(e) = tx.execute(
         "INSERT INTO personas
          (id, project_id, name, description, system_prompt, structured_prompt,
@@ -106,7 +117,7 @@ pub fn create_persona_atomically(
             draft.max_turns,
             draft.design_context,
             Option::<String>::None, // group_id
-            draft.notification_channels,
+            encrypted_channels,
             now,
         ],
     ) {

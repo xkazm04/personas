@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromIntent } from '@/api/templates/design';
 import { useAgentStore } from "@/stores/agentStore";
+import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from "@/lib/silentCatch";
 import { useTauriStream } from './useTauriStream';
 import { applyDesignResult, retryFailedOperations, type ApplyDesignSelections, type FailedOperation } from '../credential/applyDesignResult';
 import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTypes';
+import { SystemTraceSession } from '@/lib/execution/systemTrace';
 
 // -- Stream outcome discriminator ------------------------------------
 // The design status event produces three outcomes (result, question, error).
@@ -31,6 +33,7 @@ export function useDesignAnalysis() {
   const designIdRef = useRef<string | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const applyingRef = useRef(false);
+  const traceSessionRef = useRef<SystemTraceSession | null>(null);
 
   // Stream option callbacks as closures capturing the local designIdRef.
   // The ref object is stable across renders so useCallback produces a stable identity.
@@ -65,7 +68,7 @@ export function useDesignAnalysis() {
   // timeout, and basic phase + error management.
   const stream = useTauriStream<DesignStreamOutcome>({
     progressEvent: 'design-output',
-    statusEvent: 'design-status',
+    statusEvent: EventName.DESIGN_STATUS,
     getLine,
     resolveStatus,
     completedPhase: '__design_done__',
@@ -82,6 +85,8 @@ export function useDesignAnalysis() {
       setDesignResult(outcome.data);
       setQuestion(null);
       setDesignPhase('preview');
+      traceSessionRef.current?.complete();
+      traceSessionRef.current = null;
     } else if (outcome.kind === 'question') {
       setQuestion(outcome.data);
       setDesignPhase('awaiting-input');
@@ -93,6 +98,8 @@ export function useDesignAnalysis() {
   useEffect(() => {
     if (stream.phase === 'error' && stream.error) {
       setDesignPhase((prev) => (prev === 'refining' ? 'preview' : 'error'));
+      traceSessionRef.current?.complete(stream.error);
+      traceSessionRef.current = null;
     }
   }, [stream.phase, stream.error]);
 
@@ -120,9 +127,10 @@ export function useDesignAnalysis() {
     setApplyWarnings([]);
     setFailedOperations([]);
 
+    traceSessionRef.current?.complete('cancelled');
+    traceSessionRef.current = SystemTraceSession.start('design_conversation', 'Design Analysis');
+
     await stream.start(() => startDesignAnalysis(instruction, personaId, clientDesignId));
-    // If start() failed internally, stream.error is set and the error effect
-    // routes designPhase to 'error'.
   }, [stream.start]);
 
   const startIntentCompilation = useCallback(async (personaId: string, intent: string) => {

@@ -12,6 +12,7 @@ use crate::db::repos::resources::{connectors as connector_repo, tools as tool_re
 use crate::engine;
 use crate::engine::compiler::{self, CompilationInput, ParseOutcome};
 use crate::engine::design;
+use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::ActiveProcessRegistry;
 use crate::error::AppError;
@@ -260,7 +261,7 @@ async fn run_design_analysis(params: DesignRunParams) {
     } = params;
     // Emit analyzing status
     let _ = app.emit(
-        "design-status",
+        event_name::DESIGN_STATUS,
         DesignStatusEvent {
             design_id: design_id.clone(),
             status: "analyzing".into(),
@@ -301,7 +302,7 @@ async fn run_design_analysis(params: DesignRunParams) {
                 format!("Failed to spawn Claude CLI: {e}")
             };
             let _ = app.emit(
-                "design-status",
+                event_name::DESIGN_STATUS,
                 DesignStatusEvent {
                     design_id,
                     status: "failed".into(),
@@ -331,7 +332,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         Some(s) => s,
         None => {
             let _ = app.emit(
-                "design-status",
+                event_name::DESIGN_STATUS,
                 DesignStatusEvent {
                     design_id,
                     status: "failed".into(),
@@ -357,7 +358,7 @@ async fn run_design_analysis(params: DesignRunParams) {
             let display_line = extract_display_text(&line);
             if let Some(ref text) = display_line {
                 let _ = app.emit(
-                    "design-output",
+                    event_name::DESIGN_OUTPUT,
                     DesignOutputEvent {
                         design_id: design_id.clone(),
                         line: text.clone(),
@@ -377,7 +378,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         let _ = child.wait().await;
         registry.clear_pid("design");
         let _ = app.emit(
-            "design-status",
+            event_name::DESIGN_STATUS,
             DesignStatusEvent {
                 design_id,
                 status: "failed".into(),
@@ -407,7 +408,7 @@ async fn run_design_analysis(params: DesignRunParams) {
             // Pipeline short-circuit: LLM needs clarification
             tracing::info!(design_id = %design_id, "Design analysis paused -- question emitted");
             let _ = app.emit(
-                "design-status",
+                event_name::DESIGN_STATUS,
                 DesignStatusEvent {
                     design_id,
                     status: "awaiting-input".into(),
@@ -433,7 +434,7 @@ async fn run_design_analysis(params: DesignRunParams) {
             ) {
                 tracing::error!(design_id = %design_id, error = %e, "Failed to save design result to DB");
                 let _ = app.emit(
-                    "design-status",
+                    event_name::DESIGN_STATUS,
                     DesignStatusEvent {
                         design_id,
                         status: "failed".into(),
@@ -449,7 +450,7 @@ async fn run_design_analysis(params: DesignRunParams) {
             registry.clear_id_if("design", &design_id);
 
             let _ = app.emit(
-                "design-status",
+                event_name::DESIGN_STATUS,
                 DesignStatusEvent {
                     design_id,
                     status: "completed".into(),
@@ -464,7 +465,7 @@ async fn run_design_analysis(params: DesignRunParams) {
             registry.clear_id_if("design", &design_id);
 
             let _ = app.emit(
-                "design-status",
+                event_name::DESIGN_STATUS,
                 DesignStatusEvent {
                     design_id,
                     status: "failed".into(),

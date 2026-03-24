@@ -1,5 +1,4 @@
 import { Timer, DollarSign, Wrench, RotateCw } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { getStatusEntry } from '@/lib/utils/formatters';
 import { StatusIcon } from '../../runnerTypes';
 
@@ -17,11 +16,8 @@ export function ExecutionSummaryCard({ executionSummary, onResume }: ExecutionSu
   const summaryPresentation = getStatusEntry(executionSummary.status);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className={`rounded-xl border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}
+    <div
+      className={`animate-fade-slide-in rounded-xl border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}
     >
       <div className="flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
@@ -67,6 +63,6 @@ export function ExecutionSummaryCard({ executionSummary, onResume }: ExecutionSu
           </button>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -1,11 +1,11 @@
 import { Trash2, X, Check, Play, Terminal, FlaskConical } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion } from 'framer-motion';
 import type { PersonaTrigger } from '@/lib/types/types';
 import type { TriggerRateLimitConfig } from '@/lib/utils/platform/triggerConstants';
-import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
+import { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlice';
 import { RateLimitControls } from './RateLimitControls';
+import { ActiveHoursSection } from './ActiveHoursSection';
 import { TriggerExecutionHistory } from './TriggerExecutionHistory';
 import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 import { ConfigSection } from './TriggerConfigSection';
@@ -16,21 +16,19 @@ import { CompositePartialMatchIndicator } from './CompositePartialMatchIndicator
 interface TriggerDetailDrawerProps {
   trigger: PersonaTrigger;
   credentialEventsList: { id: string; name: string }[];
-  detail: ReturnType<typeof useTriggerDetail>;
   onDelete: (triggerId: string) => void;
   rateLimit: TriggerRateLimitConfig;
   rateLimitState?: TriggerRateLimitState | null;
   onRateLimitChange: (updated: TriggerRateLimitConfig) => void;
+  rawConfig: Record<string, unknown>;
+  onActiveWindowChange: (updated: Record<string, unknown>) => void;
 }
 
-export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onDelete, rateLimit, rateLimitState, onRateLimitChange }: TriggerDetailDrawerProps) {
+export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, rateLimit, rateLimitState, onRateLimitChange, rawConfig, onActiveWindowChange }: TriggerDetailDrawerProps) {
+  const detail = useTriggerDetail(trigger.id, trigger.persona_id);
   return (
-    <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: 'auto', opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      transition={TRANSITION_NORMAL}
-      className="overflow-hidden"
+    <div
+      className="animate-fade-slide-in overflow-hidden"
     >
       <div className="px-3 pb-3 space-y-3">
         <div className="border-t border-primary/8" />
@@ -43,19 +41,19 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
 
         <RateLimitControls rateLimit={rateLimit} runtimeState={rateLimitState} onChange={onRateLimitChange} />
 
+        <ActiveHoursSection config={rawConfig} onChange={onActiveWindowChange} />
+
         {/* Test Result */}
         {detail.testResult && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className={`px-2.5 py-1.5 rounded-xl text-sm font-mono ${
+          <div
+            className={`animate-fade-slide-in px-2.5 py-1.5 rounded-xl text-sm font-mono ${
               detail.testResult.success
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15'
                 : 'bg-red-500/10 text-red-400 border border-red-500/15'
             }`}
           >
             {detail.testResult.success ? '\u2713' : '\u2717'} {detail.testResult.message}
-          </motion.div>
+          </div>
         )}
 
         <DryRunResultView detail={detail} />
@@ -128,6 +126,6 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, detail, onD
 
         <TriggerExecutionHistory triggerId={trigger.id} personaId={trigger.persona_id} />
       </div>
-    </motion.div>
+    </div>
   );
 }

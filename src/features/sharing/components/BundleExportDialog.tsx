@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, Check, AlertTriangle, Lock, Shield } from 'lucide-react';
+import { Package, Check, AlertTriangle, Lock, Shield, Clipboard, Link2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { save } from '@tauri-apps/plugin-dialog';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -21,6 +21,8 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
   const exposedResources = useSystemStore((s) => s.exposedResources);
   const fetchExposedResources = useSystemStore((s) => s.fetchExposedResources);
   const exportBundle = useSystemStore((s) => s.exportBundle);
+  const exportBundleToClipboard = useSystemStore((s) => s.exportBundleToClipboard);
+  const createShareLink = useSystemStore((s) => s.createShareLink);
   const sealEnclave = useSystemStore((s) => s.sealEnclave);
   const addToast = useToastStore((s) => s.addToast);
   const personas = useAgentStore((s) => s.personas);
@@ -29,6 +31,10 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
   const [mode, setMode] = useState<ExportMode>('bundle');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [creatingLink, setCreatingLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Enclave-specific state
@@ -41,6 +47,10 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     if (isOpen) {
       setSelected(new Set());
       setExporting(false);
+      setCopying(false);
+      setCopied(false);
+      setCreatingLink(false);
+      setLinkCopied(false);
       setLoading(true);
       setSelectedPersonaId('');
       setMaxCostUsd('1.00');
@@ -90,6 +100,44 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       addToast(`Failed to export bundle: ${msg}`, 'error');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    if (selected.size === 0) return;
+
+    try {
+      setCopying(true);
+      const result = await exportBundleToClipboard(Array.from(selected));
+      await navigator.clipboard.writeText(result.base64);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+      addToast(`Bundle copied: ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (${formatBytes(result.byte_size)})`, 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('[BundleExportDialog] Failed to copy bundle to clipboard', { selectedCount: selected.size, error: msg });
+      addToast(`Failed to copy bundle: ${msg}`, 'error');
+    } finally {
+      setCopying(false);
+    }
+  };
+
+  const handleCreateShareLink = async () => {
+    if (selected.size === 0) return;
+
+    try {
+      setCreatingLink(true);
+      const result = await createShareLink(Array.from(selected));
+      await navigator.clipboard.writeText(result.deep_link);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 3000);
+      addToast(`Share link copied! ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (expires in 24h, single use)`, 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('[BundleExportDialog] Failed to create share link', { selectedCount: selected.size, error: msg });
+      addToast(`Failed to create share link: ${msg}`, 'error');
+    } finally {
+      setCreatingLink(false);
     }
   };
 
@@ -231,14 +279,34 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             Cancel
           </button>
           {mode === 'bundle' ? (
-            <button
-              onClick={handleExportBundle}
-              disabled={selected.size === 0 || exporting}
-              className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-            >
-              {exporting ? <LoadingSpinner size="sm" /> : <Package className="w-3.5 h-3.5" />}
-              {exporting ? 'Exporting...' : 'Export Bundle'}
-            </button>
+            <>
+              <button
+                onClick={handleCreateShareLink}
+                disabled={selected.size === 0 || creatingLink || copying || exporting}
+                className="px-3 py-1.5 text-xs rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                title="Generate a one-time share link (expires in 24h)"
+              >
+                {creatingLink ? <LoadingSpinner size="sm" /> : linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Link2 className="w-3.5 h-3.5" />}
+                {creatingLink ? 'Creating...' : linkCopied ? 'Link Copied!' : 'Share Link'}
+              </button>
+              <button
+                onClick={handleCopyToClipboard}
+                disabled={selected.size === 0 || copying || exporting || creatingLink}
+                className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                title="Copy bundle as base64 to clipboard (max 256 KB)"
+              >
+                {copying ? <LoadingSpinner size="sm" /> : copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Clipboard className="w-3.5 h-3.5" />}
+                {copying ? 'Copying...' : copied ? 'Copied!' : 'Copy to Clipboard'}
+              </button>
+              <button
+                onClick={handleExportBundle}
+                disabled={selected.size === 0 || exporting || copying || creatingLink}
+                className="px-3 py-1.5 text-xs rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                {exporting ? <LoadingSpinner size="sm" /> : <Package className="w-3.5 h-3.5" />}
+                {exporting ? 'Exporting...' : 'Export to File'}
+              </button>
+            </>
           ) : (
             <button
               onClick={handleSealEnclave}

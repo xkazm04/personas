@@ -11,7 +11,7 @@
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{Read, Write};
 use std::sync::Mutex;
 use std::time::Instant;
@@ -111,6 +111,19 @@ pub struct BundleExportResult {
     pub byte_size: u64,
 }
 
+/// Network access scope level for an imported bundle.
+/// - `"none"` – no detected network access (green)
+/// - `"restricted"` – known domains / endpoints only (amber)
+/// - `"unrestricted"` – broad or unscoped network access (red)
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct NetworkAccessScope {
+    pub level: String,
+    pub domains: Vec<String>,
+    pub tool_integrations: Vec<String>,
+    pub api_endpoints: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct BundleImportPreview {
@@ -120,6 +133,7 @@ pub struct BundleImportPreview {
     pub signature_valid: bool,
     pub signer_trusted: bool,
     pub resources: Vec<BundleResourcePreview>,
+    pub network_scope: NetworkAccessScope,
     pub bundle_hash: String,
     pub created_at: String,
 }
@@ -296,29 +310,31 @@ pub fn preview_bundle(
     let bundle_hash = hex::encode(Sha256::digest(bundle_bytes));
     let (manifest, sig) = parse_bundle(bundle_bytes)?;
 
-    // Verify signature
-    let sig_valid = identity::verify_signature(
-        &sig.signer_public_key_b64,
-        serde_json::to_string(&manifest)?.as_bytes(),
-        &sig.signature_b64,
-    )
-    .unwrap_or(false);
+    // Verify signature against a trusted stored key (not the embedded key).
+    let manifest_bytes = serde_json::to_string(&manifest)?;
+    let (sig_valid, signer_trusted) =
+        verify_against_trusted_key(pool, &sig, manifest_bytes.as_bytes());
 
-    // Check if signer is trusted
-    let signer_trusted = crate::db::repos::resources::identity::get_trusted_peer(
-        pool,
-        &sig.signer_peer_id,
-    )
-    .map(|p| !p.trust_level.is_revoked())
-    .unwrap_or(false);
+    // Batch-fetch all persona resources in a single query for conflict detection
+    let persona_ids: Vec<String> = manifest
+        .resources
+        .iter()
+        .filter(|e| e.resource_type == "persona")
+        .map(|e| e.resource_id.clone())
+        .collect();
+    let existing_personas: HashMap<String, String> = persona_repo::get_by_ids(pool, &persona_ids)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|p| (p.id.clone(), p.name))
+        .collect();
 
     // Check for conflicts
     let mut resources = Vec::new();
     for entry in &manifest.resources {
         let (conflict, conflict_name) = if entry.resource_type == "persona" {
-            match persona_repo::get_by_id(pool, &entry.resource_id) {
-                Ok(p) => (true, Some(p.name)),
-                Err(_) => (false, None),
+            match existing_personas.get(&entry.resource_id) {
+                Some(name) => (true, Some(name.clone())),
+                None => (false, None),
             }
         } else {
             (false, None)
@@ -335,6 +351,9 @@ pub fn preview_bundle(
         });
     }
 
+    // Extract network access scope from persona data in the bundle
+    let network_scope = extract_network_scope(bundle_bytes, &manifest);
+
     let preview_id = uuid::Uuid::new_v4().to_string();
 
     // Cache the bundle bytes keyed by preview_id so apply_import can use
@@ -348,6 +367,7 @@ pub fn preview_bundle(
         signature_valid: sig_valid,
         signer_trusted,
         resources,
+        network_scope,
         bundle_hash,
         created_at: manifest.created_at,
     })
@@ -370,6 +390,11 @@ pub fn apply_import(
     let mut skipped = 0u32;
     let mut errors = Vec::new();
 
+    // Load all existing persona names once before the loop for O(1) conflict checks
+    let existing_names: HashSet<String> = persona_repo::get_all(pool)
+        .map(|ps| ps.into_iter().map(|p| p.name).collect())
+        .unwrap_or_default();
+
     for entry in &manifest.resources {
         if entry.resource_type == "persona" {
             let filename = format!("personas/{}.json", entry.resource_id);
@@ -391,9 +416,7 @@ pub fn apply_import(
                 .and_then(|v| v.as_str())
                 .unwrap_or("Imported Persona")
                 .to_string();
-            let name_exists = persona_repo::get_all(pool)
-                .map(|ps| ps.iter().any(|p| p.name == original_name))
-                .unwrap_or(false);
+            let name_exists = existing_names.contains(&original_name);
 
             if name_exists {
                 if options.skip_conflicts {
@@ -437,19 +460,10 @@ pub fn verify_bundle(
     let bundle_hash = hex::encode(Sha256::digest(bundle_bytes));
     let (manifest, sig) = parse_bundle(bundle_bytes)?;
 
-    let sig_valid = identity::verify_signature(
-        &sig.signer_public_key_b64,
-        serde_json::to_string(&manifest)?.as_bytes(),
-        &sig.signature_b64,
-    )
-    .unwrap_or(false);
-
-    let signer_trusted = crate::db::repos::resources::identity::get_trusted_peer(
-        pool,
-        &sig.signer_peer_id,
-    )
-    .map(|p| !p.trust_level.is_revoked())
-    .unwrap_or(false);
+    // Verify signature against a trusted stored key (not the embedded key).
+    let manifest_bytes = serde_json::to_string(&manifest)?;
+    let (sig_valid, signer_trusted) =
+        verify_against_trusted_key(pool, &sig, manifest_bytes.as_bytes());
 
     Ok(BundleVerification {
         signature_valid: sig_valid,
@@ -463,6 +477,60 @@ pub fn verify_bundle(
 }
 
 // -- Internal helpers ----------------------------------------------------
+
+/// Verify a bundle signature against a **stored** trusted key rather than the
+/// key embedded in the bundle.  Returns `(signature_valid, signer_trusted)`.
+///
+/// 1. Look up `signer_peer_id` in `trusted_peers`.  If found and not revoked,
+///    verify the signature against the stored public key.
+/// 2. Otherwise, check whether the signer is the local identity.  If so, use
+///    the local public key.
+/// 3. If neither lookup succeeds the signer is unknown — treat as unverifiable.
+fn verify_against_trusted_key(
+    pool: &DbPool,
+    sig: &BundleSignature,
+    manifest_bytes: &[u8],
+) -> (bool, bool) {
+    use crate::db::repos::resources::identity as identity_repo;
+
+    // 1. Try trusted_peers table
+    if let Ok(peer) = identity_repo::get_trusted_peer(pool, &sig.signer_peer_id) {
+        if peer.trust_level.is_revoked() {
+            tracing::warn!(
+                peer_id = %sig.signer_peer_id,
+                "Bundle signer is a revoked peer — treating as unverifiable"
+            );
+            return (false, false);
+        }
+        let valid = identity::verify_signature(
+            &peer.public_key_b64,
+            manifest_bytes,
+            &sig.signature_b64,
+        )
+        .unwrap_or(false);
+        return (valid, true);
+    }
+
+    // 2. Try local identity (self-signed bundle imported on the same machine)
+    if let Ok(Some(local)) = identity_repo::get_local_identity(pool) {
+        if local.peer_id == sig.signer_peer_id {
+            let valid = identity::verify_signature(
+                &local.public_key_b64,
+                manifest_bytes,
+                &sig.signature_b64,
+            )
+            .unwrap_or(false);
+            return (valid, true);
+        }
+    }
+
+    // 3. Unknown signer — unverifiable
+    tracing::info!(
+        peer_id = %sig.signer_peer_id,
+        "Bundle signer is not in trusted peers — signature unverifiable"
+    );
+    (false, false)
+}
 
 fn parse_bundle(
     bundle_bytes: &[u8],
@@ -605,5 +673,166 @@ fn record_provenance(
     };
     if let Err(e) = exposure_repo::upsert_provenance(pool, input) {
         tracing::warn!("Failed to record provenance for {}/{}: {}", resource_type, resource_id, e);
+    }
+}
+
+// -- Network scope extraction -------------------------------------------
+
+/// Simple URL regex: matches http(s)://domain paths.
+fn extract_urls(text: &str) -> Vec<String> {
+    let mut urls = Vec::new();
+    for word in text.split_whitespace() {
+        let trimmed = word.trim_matches(|c: char| c == '"' || c == '\'' || c == ',' || c == ')' || c == ']');
+        if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+            urls.push(trimmed.to_string());
+        }
+    }
+    urls
+}
+
+/// Extract domain from a URL string (e.g. "https://api.example.com/v1" -> "api.example.com").
+fn domain_from_url(url: &str) -> Option<String> {
+    let without_scheme = url
+        .strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"))?;
+    let domain = without_scheme.split('/').next()?;
+    let domain = domain.split(':').next()?; // strip port
+    if domain.is_empty() || domain == "localhost" {
+        return None;
+    }
+    Some(domain.to_string())
+}
+
+/// Patterns that indicate unrestricted / broad network access in a prompt.
+const UNRESTRICTED_PATTERNS: &[&str] = &[
+    "access any url",
+    "access any api",
+    "make http requests",
+    "make api calls to any",
+    "unrestricted network",
+    "fetch any url",
+    "curl any",
+    "any external api",
+    "arbitrary url",
+    "arbitrary endpoint",
+];
+
+/// Analyze persona data inside a bundle to determine network access scope.
+fn extract_network_scope(bundle_bytes: &[u8], manifest: &BundleManifest) -> NetworkAccessScope {
+    let mut domains: HashSet<String> = HashSet::new();
+    let mut tool_integrations: HashSet<String> = HashSet::new();
+    let mut api_endpoints: Vec<String> = Vec::new();
+    let mut has_unrestricted = false;
+
+    let mut archive = match zip::ZipArchive::new(std::io::Cursor::new(bundle_bytes)) {
+        Ok(a) => a,
+        Err(_) => {
+            return NetworkAccessScope {
+                level: "none".into(),
+                domains: vec![],
+                tool_integrations: vec![],
+                api_endpoints: vec![],
+            };
+        }
+    };
+
+    for entry in &manifest.resources {
+        if entry.resource_type != "persona" {
+            continue;
+        }
+
+        let filename = format!("personas/{}.json", entry.resource_id);
+        let persona_json = match read_zip_entry(&mut archive, &filename) {
+            Ok(data) => data,
+            Err(_) => continue,
+        };
+
+        let obj: serde_json::Value = match serde_json::from_str(&persona_json) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+
+        // Scan system_prompt and structured_prompt for URLs and unrestricted patterns
+        for field in &["system_prompt", "structured_prompt"] {
+            if let Some(text) = obj.get(field).and_then(|v| v.as_str()) {
+                let lower = text.to_lowercase();
+                for pattern in UNRESTRICTED_PATTERNS {
+                    if lower.contains(pattern) {
+                        has_unrestricted = true;
+                    }
+                }
+                for url in extract_urls(text) {
+                    if let Some(d) = domain_from_url(&url) {
+                        domains.insert(d);
+                    }
+                    api_endpoints.push(url);
+                }
+            }
+        }
+
+        // Scan design_context for connector pipeline and credential links
+        if let Some(dc_str) = obj.get("design_context").and_then(|v| v.as_str()) {
+            if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_str) {
+                // Connector pipeline entries
+                if let Some(pipeline) = dc.get("connectorPipeline").and_then(|v| v.as_array()) {
+                    for step in pipeline {
+                        if let Some(name) = step.get("connectorName").and_then(|v| v.as_str()) {
+                            tool_integrations.insert(name.to_string());
+                        }
+                    }
+                }
+                // Credential links (connector name -> credential id)
+                if let Some(links) = dc.get("credentialLinks").and_then(|v| v.as_object()) {
+                    for key in links.keys() {
+                        tool_integrations.insert(key.clone());
+                    }
+                }
+                // Design file references (URLs)
+                if let Some(df) = dc.get("designFiles") {
+                    if let Some(refs) = df.get("references").and_then(|v| v.as_array()) {
+                        for r in refs {
+                            if let Some(url) = r.as_str() {
+                                if let Some(d) = domain_from_url(url) {
+                                    domains.insert(d);
+                                }
+                                api_endpoints.push(url.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check tags for network-related keywords
+        for tag in &entry.tags {
+            let lower = tag.to_lowercase();
+            if lower.contains("api") || lower.contains("http") || lower.contains("webhook") {
+                tool_integrations.insert(tag.clone());
+            }
+        }
+    }
+
+    // Deduplicate endpoints
+    api_endpoints.sort();
+    api_endpoints.dedup();
+
+    let mut sorted_domains: Vec<String> = domains.into_iter().collect();
+    sorted_domains.sort();
+    let mut sorted_tools: Vec<String> = tool_integrations.into_iter().collect();
+    sorted_tools.sort();
+
+    let level = if has_unrestricted {
+        "unrestricted"
+    } else if !sorted_domains.is_empty() || !sorted_tools.is_empty() || !api_endpoints.is_empty() {
+        "restricted"
+    } else {
+        "none"
+    };
+
+    NetworkAccessScope {
+        level: level.into(),
+        domains: sorted_domains,
+        tool_integrations: sorted_tools,
+        api_endpoints,
     }
 }

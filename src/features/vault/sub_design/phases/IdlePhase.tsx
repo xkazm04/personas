@@ -1,5 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plug, Sparkles, Bot, Import } from 'lucide-react';
+import { Plug, Sparkles, Bot, Import, Globe } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useState } from 'react';
 import { QUICK_SERVICE_HINTS, HINT_COLORS } from '@/features/vault/sub_design/CredentialDesignHelpers';
@@ -11,6 +10,7 @@ interface IdlePhaseProps {
   onStart: () => void;
   onAutoSetup?: () => void;
   onImportFrom?: () => void;
+  onUniversalSetup?: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
   showTemplates: boolean;
   onToggleTemplates: () => void;
@@ -28,6 +28,7 @@ export function IdlePhase({
   onStart,
   onAutoSetup,
   onImportFrom,
+  onUniversalSetup,
   onKeyDown,
   showTemplates,
   onToggleTemplates,
@@ -41,12 +42,9 @@ export function IdlePhase({
   const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null);
 
   return (
-    <motion.div
+    <div
       key="input"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       <div className="text-sm text-muted-foreground/80">
         Describe the tool and credential type. Claude will generate the exact fields you need, then you can save them securely.
@@ -59,6 +57,16 @@ export function IdlePhase({
         >
           From Catalog
         </button>
+
+        {onUniversalSetup && (
+          <button
+            onClick={onUniversalSetup}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            Any Service...
+          </button>
+        )}
 
         {onImportFrom && (
           <button
@@ -144,13 +152,9 @@ export function IdlePhase({
                       )}
                     </button>
                   </div>
-                  <AnimatePresence>
-                    {expandedTemplateId === conn.id && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden border-t border-primary/10"
+                  {expandedTemplateId === conn.id && (
+                      <div
+                        className="animate-fade-slide-in overflow-hidden border-t border-primary/10"
                       >
                         <div className="px-2.5 py-2 text-sm text-muted-foreground/80">
                           {(() => {
@@ -161,9 +165,8 @@ export function IdlePhase({
                             return `${conn.fields.length} fields`;
                           })()}
                         </div>
-                      </motion.div>
+                      </div>
                     )}
-                  </AnimatePresence>
                 </div>
               ))}
             </div>
@@ -200,6 +203,6 @@ export function IdlePhase({
           Design Credential
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

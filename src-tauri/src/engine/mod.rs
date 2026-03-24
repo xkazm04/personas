@@ -1,5 +1,7 @@
 pub mod auto_rollback;
 pub mod build_session;
+pub mod event_registry;
+pub mod config_merge;
 pub mod identity;
 pub mod bundle;
 pub mod enclave;
@@ -9,6 +11,7 @@ pub mod bus;
 pub mod byom;
 pub mod chain;
 pub mod cloud_webhook_relay;
+pub mod shared_event_relay;
 pub mod compiler;
 pub mod smee_relay;
 pub mod connector_strategy;
@@ -76,10 +79,14 @@ pub mod vector_store;
 pub mod kb_ingest;
 pub mod api_proxy;
 pub mod api_definition;
+pub mod share_link;
 pub mod mcp_tools;
 pub mod automation_runner;
 pub mod cli_process;
+pub mod management_api;
+pub mod path_safety;
 pub mod platforms;
+pub mod template_checksums;
 #[cfg(feature = "desktop")]
 pub mod desktop_bridges;
 #[cfg(feature = "desktop")]
@@ -89,12 +96,13 @@ pub mod desktop_runtime;
 #[cfg(feature = "desktop")]
 pub mod desktop_security;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::Mutex;
+use tokio::sync::oneshot;
 
 use tauri::Emitter;
 
@@ -107,6 +115,7 @@ use crate::db::DbPool;
 use crate::engine::background::SchedulerState;
 use crate::error::AppError;
 
+use self::event_registry::event_name;
 use self::types::{ExecutionResult, ExecutionState, HealingEventPayload, QueueStatusEvent};
 
 use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
@@ -192,12 +201,133 @@ pub(crate) async fn persist_status_update(
 
     if let Some(app) = app {
         let _ = app.emit(
-            "healing-event",
+            event_name::HEALING_EVENT,
             HealingEventPayload {
                 issue_id: String::new(),
                 persona_id: String::new(),
                 execution_id: exec_id.into(),
                 title: "Execution result lost: DB write failed".into(),
+                action: "issue_created".into(),
+                auto_fixed: false,
+                severity: "critical".into(),
+                suggested_fix: Some(err_msg),
+                persona_name: String::new(),
+                description: None,
+                strategy: None,
+                backoff_seconds: None,
+                retry_number: None,
+                max_retries: None,
+            },
+        );
+    }
+}
+
+/// Conditional safety-net persist: only writes if the DB status is still `running`.
+///
+/// Used by `cancel_execution` so the bare cancelled status doesn't overwrite
+/// a final status that the spawned task already wrote (race fix).
+/// Returns `true` if the write was applied.
+async fn persist_status_if_running(
+    pool: &DbPool,
+    exec_id: &str,
+    update: UpdateExecutionStatus,
+) -> bool {
+    let mut backoff_ms = PERSIST_INITIAL_BACKOFF_MS;
+
+    for attempt in 0..=PERSIST_MAX_RETRIES {
+        match exec_repo::update_status_if_running(pool, exec_id, update.clone()) {
+            Ok(applied) => return applied,
+            Err(e) => {
+                tracing::error!(
+                    execution_id = %exec_id,
+                    attempt = attempt + 1,
+                    error = %e,
+                    "Conditional DB status update failed",
+                );
+                if attempt < PERSIST_MAX_RETRIES {
+                    tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+                    backoff_ms *= 2;
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Conditional persist for the spawned task's final write: only writes if the
+/// DB status is `running` or `cancelled` (bare safety-net cancel).
+///
+/// This allows the task to enrich a safety-net cancel with full metrics, but
+/// prevents overwriting a terminal status set by another completed code path.
+async fn persist_status_if_not_final(
+    pool: &DbPool,
+    app: Option<&AppHandle>,
+    exec_id: &str,
+    update: UpdateExecutionStatus,
+) {
+    let mut last_err = None;
+    let mut backoff_ms = PERSIST_INITIAL_BACKOFF_MS;
+
+    for attempt in 0..=PERSIST_MAX_RETRIES {
+        match exec_repo::update_status_if_not_final(pool, exec_id, update.clone()) {
+            Ok(applied) => {
+                if !applied {
+                    tracing::info!(
+                        execution_id = %exec_id,
+                        attempted_status = %update.status,
+                        "Final status write skipped: execution already in terminal state",
+                    );
+                }
+                return;
+            }
+            Err(e) => {
+                tracing::error!(
+                    execution_id = %exec_id,
+                    attempt = attempt + 1,
+                    max_attempts = PERSIST_MAX_RETRIES + 1,
+                    error = %e,
+                    "Conditional final status update failed",
+                );
+                last_err = Some(e);
+
+                if attempt < PERSIST_MAX_RETRIES {
+                    tokio::time::sleep(std::time::Duration::from_millis(backoff_ms)).await;
+                    backoff_ms *= 2;
+                }
+            }
+        }
+    }
+
+    // Dead-letter path (same as persist_status_update)
+    let err_msg = last_err
+        .as_ref()
+        .map(|e| format!("Conditional status persist failed after {} retries: {}", PERSIST_MAX_RETRIES + 1, e))
+        .unwrap_or_else(|| "Conditional status persist failed".into());
+
+    if !matches!(update.status, ExecutionState::Failed) {
+        let _ = exec_repo::update_status(
+            pool,
+            exec_id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                error_message: Some(err_msg.clone()),
+                duration_ms: update.duration_ms,
+                input_tokens: update.input_tokens,
+                output_tokens: update.output_tokens,
+                cost_usd: update.cost_usd,
+                ..Default::default()
+            },
+        );
+    }
+
+    if let Some(app) = app {
+        let _ = app.emit(
+            event_name::HEALING_EVENT,
+            HealingEventPayload {
+                issue_id: String::new(),
+                persona_id: String::new(),
+                execution_id: exec_id.into(),
+                title: "Execution result lost: conditional DB write failed".into(),
                 action: "issue_created".into(),
                 auto_fixed: false,
                 severity: "critical".into(),
@@ -309,6 +439,12 @@ pub struct ExecutionEngine {
     queued_contexts: Arc<Mutex<HashMap<String, QueuedExecutionContext>>>,
     /// Shared scheduler state for recording queue rejection metrics.
     scheduler: Arc<SchedulerState>,
+    /// Persona IDs currently undergoing two-phase deletion.
+    /// While a persona is in this set, new executions are rejected.
+    deleting_personas: Arc<Mutex<HashSet<String>>>,
+    /// Oneshot senders awaiting execution completion, keyed by execution ID.
+    /// Fired when the spawned task finishes (regardless of success/failure).
+    completion_waiters: Arc<Mutex<HashMap<String, Vec<oneshot::Sender<()>>>>>,
 }
 
 impl ExecutionEngine {
@@ -322,6 +458,8 @@ impl ExecutionEngine {
             circuit_breaker: Arc::new(failover::ProviderCircuitBreaker::new()),
             queued_contexts: Arc::new(Mutex::new(HashMap::new())),
             scheduler,
+            deleting_personas: Arc::new(Mutex::new(HashSet::new())),
+            completion_waiters: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -333,6 +471,53 @@ impl ExecutionEngine {
     /// Returns a reference to the concurrency tracker (for tier usage reporting).
     pub fn tracker(&self) -> &Arc<Mutex<queue::ConcurrencyTracker>> {
         &self.tracker
+    }
+
+    /// Mark a persona as "deleting" to block new executions.
+    pub async fn mark_deleting(&self, persona_id: &str) {
+        self.deleting_personas
+            .lock()
+            .await
+            .insert(persona_id.to_string());
+    }
+
+    /// Remove the "deleting" marker (called if deletion is aborted or after
+    /// successful deletion).
+    pub async fn unmark_deleting(&self, persona_id: &str) {
+        self.deleting_personas
+            .lock()
+            .await
+            .remove(persona_id);
+    }
+
+    /// Check if a persona is currently marked for deletion.
+    pub async fn is_deleting(&self, persona_id: &str) -> bool {
+        self.deleting_personas
+            .lock()
+            .await
+            .contains(persona_id)
+    }
+
+    /// Register a oneshot receiver that fires when the given execution
+    /// reaches a terminal state (completed, failed, cancelled, etc.).
+    /// Multiple callers can subscribe to the same execution.
+    pub async fn subscribe_completion(&self, execution_id: &str) -> oneshot::Receiver<()> {
+        let (tx, rx) = oneshot::channel();
+        self.completion_waiters
+            .lock()
+            .await
+            .entry(execution_id.to_string())
+            .or_default()
+            .push(tx);
+        rx
+    }
+
+    /// Check whether the engine tracker still holds any running or queued
+    /// executions for the given persona. Returns `true` when all slots are
+    /// cleared.
+    pub async fn all_slots_cleared(&self, persona_id: &str) -> bool {
+        let tracker = self.tracker.lock().await;
+        tracker.running_count(persona_id) == 0 && tracker.queue_depth(persona_id) == 0
     }
 
     /// Mark any executions left in running/queued state as failed.
@@ -422,6 +607,14 @@ impl ExecutionEngine {
         continuation: Option<types::Continuation>,
         priority: ExecutionPriority,
     ) -> Result<(), AppError> {
+        // Reject new executions for personas that are being deleted
+        if self.is_deleting(&persona.id).await {
+            return Err(AppError::Validation(format!(
+                "Persona '{}' is being deleted — new executions are blocked",
+                persona.name,
+            )));
+        }
+
         // Atomically try to run or enqueue
         let admit_result = {
             let mut tracker = self.tracker.lock().await;
@@ -453,7 +646,7 @@ impl ExecutionEngine {
                 );
                 // Emit queue status event to frontend
                 let _ = app.emit(
-                    "queue-status",
+                    event_name::QUEUE_STATUS,
                     QueueStatusEvent {
                         execution_id: execution_id.clone(),
                         persona_id: persona.id.clone(),
@@ -527,7 +720,7 @@ impl ExecutionEngine {
         )
         .await;
         let _ = app.emit(
-            "execution-status",
+            event_name::EXECUTION_STATUS,
             types::ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Running,
@@ -565,6 +758,7 @@ impl ExecutionEngine {
         let circuit_breaker_for_drain = self.circuit_breaker.clone();
         let queued_contexts = self.queued_contexts.clone();
         let scheduler_for_task = self.scheduler.clone();
+        let completion_waiters = self.completion_waiters.clone();
 
         // Clone log_dir for potential healing retries (log_dir is moved into run_execution)
         let log_dir_for_retry = log_dir.clone();
@@ -595,7 +789,11 @@ impl ExecutionEngine {
             .await;
 
             if cancelled.load(Ordering::Acquire) {
-                persist_status_update(
+                // Use conditional write: only update if status is still
+                // running or was set to cancelled by the safety-net (so we
+                // can enrich it with metrics). Won't overwrite if another
+                // code path already wrote a different terminal status.
+                persist_status_if_not_final(
                     &pool_clone,
                     Some(&app_for_healing),
                     &exec_id,
@@ -608,6 +806,7 @@ impl ExecutionEngine {
                         output_tokens: Some(result.output_tokens as i64),
                         cost_usd: Some(result.cost_usd),
                         tool_steps: result.tool_steps.clone(),
+                        execution_config: result.execution_config.clone(),
                         ..Default::default()
                     },
                 )
@@ -637,6 +836,13 @@ impl ExecutionEngine {
                 .remove_running(&persona_id, &exec_id);
             tasks.lock().await.remove(&exec_id);
             cancelled_flags.lock().await.remove(&exec_id);
+
+            // Notify any callers waiting for this execution to complete
+            if let Some(waiters) = completion_waiters.lock().await.remove(&exec_id) {
+                for tx in waiters {
+                    let _ = tx.send(());
+                }
+            }
 
             // Drain queue: promote next waiting execution for this persona
             drain_and_start_next(
@@ -699,10 +905,11 @@ impl ExecutionEngine {
             flag.store(true, Ordering::Release);
         }
 
-        // 2. Write bare cancelled status to DB as a safety net.
-        persist_status_update(
+        // 2. Write bare cancelled status to DB as a safety net, but ONLY if
+        //    the execution is still running. This prevents overwriting a final
+        //    status (completed/failed) that the spawned task already wrote.
+        persist_status_if_running(
             pool,
-            None,
             execution_id,
             UpdateExecutionStatus {
                 status: ExecutionState::Cancelled,
@@ -801,10 +1008,9 @@ impl ExecutionEngine {
             flag.store(true, Ordering::Release);
         }
 
-        // 2. Write cancelled status to DB
-        persist_status_update(
+        // 2. Write cancelled status to DB (only if still running)
+        persist_status_if_running(
             pool,
-            None,
             execution_id,
             UpdateExecutionStatus {
                 status: ExecutionState::Cancelled,
@@ -1008,7 +1214,7 @@ fn drain_and_start_next(
 
         // Emit promoted event
         let _ = app.emit(
-            "queue-status",
+            event_name::QUEUE_STATUS,
             QueueStatusEvent {
                 execution_id: exec_id.clone(),
                 persona_id: persona_id.to_string(),
@@ -1039,7 +1245,7 @@ fn drain_and_start_next(
             )
             .await;
             let _ = app.emit(
-                "execution-status",
+                event_name::EXECUTION_STATUS,
                 types::ExecutionStatusEvent {
                     execution_id: exec_id.clone(),
                     status: ExecutionState::Running,
@@ -1103,7 +1309,7 @@ fn drain_and_start_next(
                 .await;
 
                 if cancelled.load(Ordering::Acquire) {
-                    persist_status_update(
+                    persist_status_if_not_final(
                         &pool_clone,
                         Some(&app_for_healing),
                         &exec_id,
@@ -1194,8 +1400,9 @@ async fn handle_execution_result(
 ) {
     let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
 
-    // Write final status to DB
-    persist_status_update(
+    // Write final status to DB. Use conditional write to avoid overwriting
+    // a terminal status if a concurrent cancel already finalized the execution.
+    persist_status_if_not_final(
         pool,
         Some(app),
         exec_id,
@@ -1211,9 +1418,15 @@ async fn handle_execution_result(
             cost_usd: Some(result.cost_usd),
             tool_steps: result.tool_steps.clone(),
             claude_session_id: result.claude_session_id.clone(),
+            execution_config: result.execution_config.clone(),
         },
     )
     .await;
+
+    // Trust score refresh -- update graduated autonomy score from execution history
+    if let Err(e) = persona_repo::refresh_trust_score(pool, persona_id) {
+        tracing::warn!(persona_id, error = %e, "Failed to refresh trust score");
+    }
 
     // Knowledge graph extraction -- learn from every execution
     {
@@ -1251,13 +1464,13 @@ async fn handle_execution_result(
                     failed = summary.failed,
                     "Output assertions evaluated"
                 );
-                let _ = app.emit("assertion-results", &summary);
+                let _ = app.emit(event_name::ASSERTION_RESULTS, &summary);
             }
         }
     }
 
-    // OS Notification
-    notify_execution(app, pool, persona_id, status.as_str(), result.duration_ms);
+    // OS + external channel notification
+    notify_execution_rich(app, pool, persona_id, status.as_str(), result);
 
     // Budget enforcement (only on success)
     if result.success {
@@ -1327,6 +1540,28 @@ fn notify_execution(
     let channels = persona.as_ref().and_then(|p| p.notification_channels.as_deref());
     let name = persona.as_ref().map(|p| p.name.as_str()).unwrap_or("Agent");
     crate::notifications::notify_execution_completed(app, name, status, duration_ms, channels);
+}
+
+fn notify_execution_rich(
+    app: &AppHandle,
+    pool: &DbPool,
+    persona_id: &str,
+    status: &str,
+    result: &ExecutionResult,
+) {
+    let persona = persona_repo::get_by_id(pool, persona_id).ok();
+    let channels = persona.as_ref().and_then(|p| p.notification_channels.as_deref());
+    let name = persona.as_ref().map(|p| p.name.as_str()).unwrap_or("Agent");
+    crate::notifications::notify_execution_completed_rich(
+        app,
+        name,
+        status,
+        result.duration_ms,
+        channels,
+        Some(result.cost_usd),
+        result.model_used.as_deref(),
+        result.error.as_deref(),
+    );
 }
 
 /// Check if the persona has exceeded its monthly budget and create an alert.
@@ -1469,7 +1704,7 @@ fn evaluate_healing_and_retry(
     };
 
     let _ = app.emit(
-        "healing-event",
+        event_name::HEALING_EVENT,
         HealingEventPayload {
             issue_id: issue.id,
             persona_id: persona_id.into(),
@@ -1580,7 +1815,7 @@ fn check_circuit_breaker(
         Some(cb_fix),
     );
     let _ = app.emit(
-        "healing-event",
+        event_name::HEALING_EVENT,
         HealingEventPayload {
             issue_id: issue_id.into(),
             persona_id: persona_id.into(),
@@ -1750,7 +1985,7 @@ fn spawn_healing_chain(
 
         // Emit started status
         let _ = app.emit(
-            "ai-healing-status",
+            event_name::AI_HEALING_STATUS,
             serde_json::json!({
                 "execution_id": original_exec_id,
                 "persona_id": persona_id,
@@ -1765,7 +2000,7 @@ fn spawn_healing_chain(
             if !t.try_add_running(&persona_id, &exec_id, persona.max_concurrent) {
                 tracing::warn!("AI healing: no capacity, skipping");
                 let _ = app.emit(
-                    "ai-healing-status",
+                    event_name::AI_HEALING_STATUS,
                     serde_json::json!({
                         "execution_id": original_exec_id,
                         "persona_id": persona_id,
@@ -1801,7 +2036,7 @@ fn spawn_healing_chain(
 
         // Emit diagnosing phase
         let _ = app.emit(
-            "ai-healing-status",
+            event_name::AI_HEALING_STATUS,
             serde_json::json!({
                 "execution_id": original_exec_id,
                 "persona_id": persona_id,
@@ -1827,7 +2062,7 @@ fn spawn_healing_chain(
         )
         .await;
 
-        // 10. Write final status
+        // 10. Write final status (conditional to avoid cancel race)
         let status = if cancelled.load(Ordering::Acquire) {
             ExecutionState::Cancelled
         } else if result.success {
@@ -1836,7 +2071,7 @@ fn spawn_healing_chain(
             ExecutionState::Failed
         };
 
-        persist_status_update(
+        persist_status_if_not_final(
             &pool,
             Some(&app),
             &exec_id,
@@ -1852,12 +2087,13 @@ fn spawn_healing_chain(
                 cost_usd: Some(result.cost_usd),
                 tool_steps: result.tool_steps.clone(),
                 claude_session_id: result.claude_session_id.clone(),
+                execution_config: None,
             },
         )
         .await;
 
         let _ = app.emit(
-            "execution-status",
+            event_name::EXECUTION_STATUS,
             types::ExecutionStatusEvent {
                 execution_id: exec_id.clone(),
                 status,
@@ -1869,7 +2105,7 @@ fn spawn_healing_chain(
 
         // 11. Process healing output: parse fixes and apply to DB
         let _ = app.emit(
-            "ai-healing-status",
+            event_name::AI_HEALING_STATUS,
             serde_json::json!({
                 "execution_id": original_exec_id,
                 "persona_id": persona_id,
@@ -1888,7 +2124,7 @@ fn spawn_healing_chain(
                 );
 
                 let _ = app.emit(
-                    "ai-healing-status",
+                    event_name::AI_HEALING_STATUS,
                     serde_json::json!({
                         "execution_id": original_exec_id,
                         "persona_id": persona_id,
@@ -1930,7 +2166,7 @@ fn spawn_healing_chain(
             Err(e) => {
                 tracing::warn!("AI healing: failed to process result: {}", e);
                 let _ = app.emit(
-                    "ai-healing-status",
+                    event_name::AI_HEALING_STATUS,
                     serde_json::json!({
                         "execution_id": original_exec_id,
                         "persona_id": persona_id,
@@ -2102,11 +2338,11 @@ fn spawn_delayed_retry(
         )
         .await;
 
-        // 12. Write final status
+        // 12. Write final status (conditional to avoid cancel race)
         if cancelled.load(Ordering::Acquire) {
             // Cancelled: preserve accumulated metrics so budget tracking
             // accounts for API spend consumed before the kill signal.
-            persist_status_update(
+            persist_status_if_not_final(
                 &pool,
                 Some(&app),
                 &exec_id,
@@ -2125,7 +2361,7 @@ fn spawn_delayed_retry(
             .await;
         } else {
             let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
-            persist_status_update(
+            persist_status_if_not_final(
                 &pool,
                 Some(&app),
                 &exec_id,
@@ -2141,13 +2377,14 @@ fn spawn_delayed_retry(
                     cost_usd: Some(result.cost_usd),
                     tool_steps: result.tool_steps.clone(),
                     claude_session_id: result.claude_session_id.clone(),
+                    execution_config: None,
                 },
             )
             .await;
 
             // Emit status to frontend
             let _ = app.emit(
-                "execution-status",
+                event_name::EXECUTION_STATUS,
                 types::ExecutionStatusEvent {
                     execution_id: exec_id.clone(),
                     status,
@@ -2198,12 +2435,15 @@ fn spawn_delayed_retry(
                     .as_ref()
                     .map(|p| p.name.as_str())
                     .unwrap_or("Agent");
-                crate::notifications::notify_execution_completed(
+                crate::notifications::notify_execution_completed_rich(
                     &app,
                     p_name,
                     status.as_str(),
                     result.duration_ms,
                     notif_channels,
+                    Some(result.cost_usd),
+                    result.model_used.as_deref(),
+                    result.error.as_deref(),
                 );
             }
         }

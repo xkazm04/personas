@@ -9,6 +9,8 @@ import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { TIERS, isTierVisible } from '@/lib/constants/uiModes';
 import { sections } from './sidebarData';
+import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SidebarLevel1Props {
   collapsed: boolean;
@@ -51,6 +53,8 @@ export default function SidebarLevel1({
   const isExecuting = useAgentStore((s) => s.isExecuting);
   const isDev = import.meta.env.DEV;
   const tier = useTier();
+  const labelOf = useSidebarLabels();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -86,7 +90,7 @@ export default function SidebarLevel1({
               className={`relative ${collapsed ? 'w-[40px]' : 'w-[76px]'} rounded-xl flex flex-col items-center justify-center py-2 transition-all group ${
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
               } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''} ${isDevModeSection ? 'ring-1 ring-amber-500/30' : ''}`}
-              title={isDisabled ? `${section.label} (Coming soon)` : section.label}
+              title={isDisabled ? `${labelOf(section.id, section.label)} (${t.sidebar.coming_soon})` : labelOf(section.id, section.label)}
             >
               {isActive && !isDisabled && (
                 <motion.div
@@ -109,12 +113,12 @@ export default function SidebarLevel1({
                 <span className={`relative z-10 text-[10px] leading-tight mt-1 font-bold transition-colors ${
                   isActive ? 'text-primary' : 'text-foreground/80 group-hover:text-foreground'
                 }`}>
-                  {section.label}
+                  {labelOf(section.id, section.label)}
                 </span>
               )}
               {isDisabled && (
                 <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 z-20 px-1 py-px typo-label leading-none rounded bg-muted-foreground/15 text-muted-foreground/80 whitespace-nowrap">
-                  soon
+                  {t.sidebar.soon_badge}
                 </span>
               )}
               {section.id === 'overview' && pendingReviewCount > 0 && (

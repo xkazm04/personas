@@ -8,6 +8,8 @@
  * should import from here instead of maintaining independent heuristics.
  */
 
+import { isTauriError, type TauriErrorKind } from '@/lib/types/tauriError';
+
 // ---------------------------------------------------------------------------
 // ErrorCategory — mirrors Rust `ErrorCategory` (snake_case serde)
 // ---------------------------------------------------------------------------
@@ -29,6 +31,34 @@ export type ErrorCategory =
 // ---------------------------------------------------------------------------
 
 export type ErrorSeverity = 'info' | 'low' | 'medium' | 'high' | 'critical';
+
+// ---------------------------------------------------------------------------
+// Structured kind → ErrorCategory mapping
+// ---------------------------------------------------------------------------
+
+/** Maps Rust `AppError::kind` to the frontend `ErrorCategory`. */
+const KIND_TO_CATEGORY: Partial<Record<TauriErrorKind, ErrorCategory>> = {
+  rate_limited: 'rate_limit',
+  not_found: 'provider_not_found',
+  auth: 'credential_error',
+  forbidden: 'credential_error',
+  network_offline: 'network',
+  validation: 'validation',
+  serde: 'validation',
+  cloud: 'api_error',
+  gitlab: 'api_error',
+  database: 'api_error',
+  pool: 'api_error',
+  io: 'api_error',
+  execution: 'tool_error',
+  process_spawn: 'tool_error',
+  internal: 'unknown',
+};
+
+/** Classify a structured `TauriErrorKind` into an `ErrorCategory`. */
+export function classifyKind(kind: TauriErrorKind): ErrorCategory {
+  return KIND_TO_CATEGORY[kind] ?? 'unknown';
+}
 
 // ---------------------------------------------------------------------------
 // Classification
@@ -133,8 +163,11 @@ export function classifyError(error: string): ErrorCategory {
 
 /**
  * Classify from an unknown error value (Error object, string, or other).
+ * Uses structured `kind` from Tauri errors when available, otherwise falls
+ * back to string-based classification.
  */
 export function classifyUnknownError(err: unknown): ErrorCategory {
+  if (isTauriError(err)) return classifyKind(err.kind);
   const msg = err instanceof Error ? err.message : String(err);
   return classifyError(msg);
 }

@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{
     CreatePersonaRecipeLinkInput, CreateRecipeInput, PersonaRecipeLink, RecipeDefinition,
@@ -11,68 +11,25 @@ use crate::error::AppError;
 // Row Mappers
 // ============================================================================
 
-fn row_to_recipe(row: &Row) -> rusqlite::Result<RecipeDefinition> {
-    Ok(RecipeDefinition {
-        id: row.get("id")?,
-        project_id: row.get("project_id")?,
-        credential_id: row.get("credential_id")?,
-        use_case_id: row.get("use_case_id")?,
-        name: row.get("name")?,
-        description: row.get("description")?,
-        category: row.get("category")?,
-        prompt_template: row.get("prompt_template")?,
-        input_schema: row.get("input_schema")?,
-        output_contract: row.get("output_contract")?,
-        tool_requirements: row.get("tool_requirements")?,
-        credential_requirements: row.get("credential_requirements")?,
-        model_preference: row.get("model_preference")?,
-        sample_inputs: row.get("sample_inputs")?,
-        tags: row.get("tags")?,
-        icon: row.get("icon")?,
-        color: row.get("color")?,
-        is_builtin: row.get::<_, i32>("is_builtin")? != 0,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_recipe -> RecipeDefinition {
+    id, project_id, credential_id, use_case_id, name, description,
+    category, prompt_template, input_schema, output_contract,
+    tool_requirements, credential_requirements, model_preference,
+    sample_inputs, tags, icon, color,
+    is_builtin [bool],
+    created_at, updated_at,
+});
 
-fn row_to_link(row: &Row) -> rusqlite::Result<PersonaRecipeLink> {
-    Ok(PersonaRecipeLink {
-        id: row.get("id")?,
-        persona_id: row.get("persona_id")?,
-        recipe_id: row.get("recipe_id")?,
-        sort_order: row.get("sort_order")?,
-        config: row.get("config")?,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_link -> PersonaRecipeLink {
+    id, persona_id, recipe_id, sort_order, config, created_at,
+});
 
 // ============================================================================
 // Recipe CRUD
 // ============================================================================
 
-pub fn get_all(pool: &DbPool) -> Result<Vec<RecipeDefinition>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare("SELECT * FROM recipe_definitions ORDER BY created_at DESC")?;
-    let rows = stmt.query_map([], row_to_recipe)?;
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)
-}
-
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<RecipeDefinition, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM recipe_definitions WHERE id = ?1",
-        params![id],
-        row_to_recipe,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("Recipe {id}"))
-        }
-        other => AppError::Database(other),
-    })
-}
+crud_get_by_id!(RecipeDefinition, "recipe_definitions", "Recipe", row_to_recipe);
+crud_get_all!(RecipeDefinition, "recipe_definitions", row_to_recipe, "created_at DESC");
 
 pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinition, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
@@ -294,19 +251,11 @@ pub fn get_for_use_case(pool: &DbPool, use_case_id: &str) -> Result<Vec<RecipeDe
 // Recipe Versions
 // ============================================================================
 
-fn row_to_version(row: &Row) -> rusqlite::Result<RecipeVersion> {
-    Ok(RecipeVersion {
-        id: row.get("id")?,
-        recipe_id: row.get("recipe_id")?,
-        version_number: row.get("version_number")?,
-        prompt_template: row.get("prompt_template")?,
-        input_schema: row.get("input_schema")?,
-        sample_inputs: row.get("sample_inputs")?,
-        description: row.get("description")?,
-        changes_summary: row.get("changes_summary")?,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_version -> RecipeVersion {
+    id, recipe_id, version_number, prompt_template,
+    input_schema, sample_inputs, description,
+    changes_summary, created_at,
+});
 
 pub fn get_versions(pool: &DbPool, recipe_id: &str) -> Result<Vec<RecipeVersion>, AppError> {
     let conn = pool.get()?;

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
@@ -26,10 +25,8 @@ export function CreateTeamForm({
   onCancel,
 }: CreateTeamFormProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-6 p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-indigo-500/20"
+    <div
+      className="animate-fade-slide-in mb-6 p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-indigo-500/20"
     >
       <div className="space-y-4">
         <FormField label="Team Name" required>
@@ -86,6 +83,6 @@ export function CreateTeamForm({
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

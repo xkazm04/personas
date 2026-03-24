@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Brain, Plus, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -129,7 +128,7 @@ export default function MemoriesPage() {
         </div>
       </ContentHeader>
 
-      <AnimatePresence>{showAddForm && <InlineAddMemoryForm onClose={() => setShowAddForm(false)} />}</AnimatePresence>
+      {showAddForm && <InlineAddMemoryForm onClose={() => setShowAddForm(false)} />}
 
       {memories.length > 1 && <div className="py-2"><MemoryConflictReview /></div>}
 
@@ -170,12 +169,9 @@ export default function MemoriesPage() {
         )}
       </ContentBody>
 
-      <AnimatePresence>
-        <ReviewResultsModal reviewResult={reviewResult} reviewError={reviewError} onClose={closeReviewModal} />
-      </AnimatePresence>
+      <ReviewResultsModal reviewResult={reviewResult} reviewError={reviewError} onClose={closeReviewModal} />
 
-      <AnimatePresence>
-        {selectedMemory && (() => {
+      {selectedMemory && (() => {
           const persona = personaMap.get(selectedMemory.persona_id);
           return (
             <MemoryDetailModal
@@ -187,7 +183,6 @@ export default function MemoriesPage() {
             />
           );
         })()}
-      </AnimatePresence>
     </ContentBox>
   );
 }

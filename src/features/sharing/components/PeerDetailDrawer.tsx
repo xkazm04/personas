@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import {
   X, RefreshCw,
   Package, Clock,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion } from 'framer-motion';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
@@ -42,7 +42,7 @@ export function PeerDetailDrawer({
   useEffect(() => {
     let unlisten: UnlistenFn | null = null;
     void listen<{ peerId: string; resourceCount: number; syncedAt: string }>(
-      'p2p:manifest-sync-progress',
+      EventName.P2P_MANIFEST_SYNC_PROGRESS,
       (event) => {
         if (event.payload.peerId === peer.peer_id) {
           setSyncProgress({ resourceCount: event.payload.resourceCount, syncedAt: event.payload.syncedAt });
@@ -233,11 +233,8 @@ export function PeerDetailDrawer({
               {/* Sync progress bar */}
               {syncing && (
                 <div className="h-0.5 rounded-full overflow-hidden bg-secondary/20">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-violet-500 to-blue-500"
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: 8, ease: 'linear' }}
+                  <div
+                    className="animate-fade-in h-full bg-gradient-to-r from-violet-500 to-blue-500"
                   />
                 </div>
               )}

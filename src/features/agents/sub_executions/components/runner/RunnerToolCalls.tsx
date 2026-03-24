@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { Clock, RotateCw, ShieldAlert, ExternalLink } from 'lucide-react';
-import { motion } from 'framer-motion';
 import type { HealingEventPayload } from '../../libs/runnerHelpers';
 
 /** Inline Healing Notification Card */
@@ -32,12 +31,8 @@ export function HealingCard({
     : { border: 'border-amber-500/25', bg: 'bg-amber-500/[0.04]', icon: 'text-amber-400', accent: 'text-amber-300' };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -8, height: 0 }}
-      animate={{ opacity: 1, y: 0, height: 'auto' }}
-      exit={{ opacity: 0, y: -8, height: 0 }}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className={`rounded-xl border ${styles.border} ${styles.bg} overflow-hidden`}
+    <div
+      className={`animate-fade-slide-in rounded-xl border ${styles.border} ${styles.bg} overflow-hidden`}
     >
       <div className="px-4 py-3.5 space-y-2.5">
         <div className="flex items-start gap-2.5">
@@ -82,7 +77,7 @@ export function HealingCard({
 
         {isRetry && (notification.backoff_seconds ?? 0) > 0 && (
           <div className="w-full h-1 rounded-full bg-secondary/40 overflow-hidden">
-            <motion.div className="h-full rounded-full bg-amber-500/40" initial={{ width: '100%' }} animate={{ width: '0%' }} transition={{ duration: notification.backoff_seconds ?? 0, ease: 'linear' }} />
+            <div className="animate-fade-in h-full rounded-full bg-amber-500/40" />
           </div>
         )}
 
@@ -96,7 +91,7 @@ export function HealingCard({
           <p className="typo-body text-muted-foreground/60 leading-relaxed pl-6.5">{notification.suggested_fix}</p>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 

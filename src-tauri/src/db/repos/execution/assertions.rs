@@ -9,6 +9,7 @@ use crate::error::AppError;
 
 // -- Row mappers -----------------------------------------------
 
+// row_to_assertion uses custom enum conversions, so it stays manual.
 fn row_to_assertion(row: &Row) -> rusqlite::Result<OutputAssertion> {
     let assertion_type_str: String = row.get("assertion_type")?;
     let on_failure_str: String = row.get("on_failure")?;
@@ -31,19 +32,11 @@ fn row_to_assertion(row: &Row) -> rusqlite::Result<OutputAssertion> {
     })
 }
 
-fn row_to_result(row: &Row) -> rusqlite::Result<AssertionResult> {
-    Ok(AssertionResult {
-        id: row.get("id")?,
-        assertion_id: row.get("assertion_id")?,
-        execution_id: row.get("execution_id")?,
-        persona_id: row.get("persona_id")?,
-        passed: row.get::<_, i32>("passed")? != 0,
-        explanation: row.get("explanation")?,
-        matched_value: row.get("matched_value")?,
-        evaluation_ms: row.get("evaluation_ms")?,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_result -> AssertionResult {
+    id, assertion_id, execution_id, persona_id,
+    passed [bool],
+    explanation, matched_value, evaluation_ms, created_at,
+});
 
 fn parse_assertion_type(s: &str) -> AssertionType {
     match s {
@@ -94,18 +87,7 @@ pub fn create(
     get_by_id(pool, &id)
 }
 
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<OutputAssertion, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM output_assertions WHERE id = ?1",
-        params![id],
-        row_to_assertion,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("OutputAssertion {id}")),
-        other => AppError::Database(other),
-    })
-}
+crud_get_by_id!(OutputAssertion, "output_assertions", "OutputAssertion", row_to_assertion);
 
 pub fn list_by_persona(
     pool: &DbPool,
@@ -162,11 +144,7 @@ pub fn update(
     get_by_id(pool, id)
 }
 
-pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM output_assertions WHERE id = ?1", params![id])?;
-    Ok(rows > 0)
-}
+crud_delete!("output_assertions");
 
 // -- Result operations ----------------------------------------
 

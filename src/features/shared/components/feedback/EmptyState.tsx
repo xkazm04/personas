@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { Key, Zap, Bot, Play, Radio, Link, ListChecks, type LucideIcon } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Scenario Variants --------------------------------------------
 
@@ -27,55 +27,37 @@ interface ScenarioConfig {
   steps?: StepGuide[];
 }
 
-const SCENARIO_CONFIGS: Record<EmptyStateVariant, ScenarioConfig> = {
-  'credentials-need-agents': {
-    icon: Key,
-    title: 'Your agents need credentials to run',
-    subtitle: 'Add API keys and service connections so your agents can interact with external tools.',
-    iconColor: 'text-emerald-400/80',
-    iconContainerClassName: 'bg-emerald-500/10 border-emerald-500/20',
-  },
-  'triggers-manual-only': {
-    icon: Zap,
-    title: 'This agent runs manually only',
-    subtitle: 'Add a trigger to automate it -- schedules, webhooks, or event-driven.',
-    iconColor: 'text-amber-400/80',
-    iconContainerClassName: 'bg-amber-500/10 border-amber-500/20',
-  },
-  'dashboard-no-executions': {
-    icon: Play,
-    title: 'No executions yet',
-    subtitle: 'Get started in three steps to see activity here.',
-    iconColor: 'text-primary/70',
-    iconContainerClassName: 'bg-primary/10 border-primary/20',
-    steps: [
-      { icon: Bot, label: 'Create an agent', color: 'text-violet-400 bg-violet-500/10 border-violet-500/20' },
-      { icon: Key, label: 'Add a credential', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-      { icon: Play, label: 'Run your agent', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
-    ],
-  },
-  'subscriptions-empty': {
-    icon: Radio,
-    title: 'No event subscriptions yet',
-    subtitle: 'Subscribe to events so this agent reacts automatically when things happen.',
-    iconColor: 'text-cyan-400/75',
-    iconContainerClassName: 'bg-cyan-500/10 border-cyan-500/20',
-  },
-  'connectors-empty': {
-    icon: Link,
-    title: 'No tools or connectors configured',
-    subtitle: 'Link external services so your agent can take actions and access data.',
-    iconColor: 'text-cyan-400/75',
-    iconContainerClassName: 'bg-cyan-500/10 border-cyan-500/20',
-  },
-  'use-cases-empty': {
-    icon: ListChecks,
-    title: 'No use cases defined yet',
-    subtitle: 'Define what this agent should do -- import from a workflow or describe it in plain language.',
-    iconColor: 'text-violet-400/75',
-    iconContainerClassName: 'bg-violet-500/10 border-violet-500/20',
-  },
+/** Style config per scenario (icons + colors only -- text comes from translations). */
+const SCENARIO_STYLES: Record<EmptyStateVariant, Omit<ScenarioConfig, 'title' | 'subtitle' | 'steps'> & { hasSteps?: boolean }> = {
+  'credentials-need-agents': { icon: Key, iconColor: 'text-emerald-400/80', iconContainerClassName: 'bg-emerald-500/10 border-emerald-500/20' },
+  'triggers-manual-only': { icon: Zap, iconColor: 'text-amber-400/80', iconContainerClassName: 'bg-amber-500/10 border-amber-500/20' },
+  'dashboard-no-executions': { icon: Play, iconColor: 'text-primary/70', iconContainerClassName: 'bg-primary/10 border-primary/20', hasSteps: true },
+  'subscriptions-empty': { icon: Radio, iconColor: 'text-cyan-400/75', iconContainerClassName: 'bg-cyan-500/10 border-cyan-500/20' },
+  'connectors-empty': { icon: Link, iconColor: 'text-cyan-400/75', iconContainerClassName: 'bg-cyan-500/10 border-cyan-500/20' },
+  'use-cases-empty': { icon: ListChecks, iconColor: 'text-violet-400/75', iconContainerClassName: 'bg-violet-500/10 border-violet-500/20' },
 };
+
+function useScenarioConfigs(): Record<EmptyStateVariant, ScenarioConfig> {
+  const { t } = useTranslation();
+  const es = t.empty_states;
+  return {
+    'credentials-need-agents': { ...SCENARIO_STYLES['credentials-need-agents'], title: es.credentials_title, subtitle: es.credentials_subtitle },
+    'triggers-manual-only': { ...SCENARIO_STYLES['triggers-manual-only'], title: es.triggers_title, subtitle: es.triggers_subtitle },
+    'dashboard-no-executions': {
+      ...SCENARIO_STYLES['dashboard-no-executions'],
+      title: es.executions_title,
+      subtitle: es.executions_subtitle,
+      steps: [
+        { icon: Bot, label: es.step_create, color: 'text-violet-400 bg-violet-500/10 border-violet-500/20' },
+        { icon: Key, label: es.step_credential, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+        { icon: Play, label: es.step_run, color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
+      ],
+    },
+    'subscriptions-empty': { ...SCENARIO_STYLES['subscriptions-empty'], title: es.events_title, subtitle: es.events_subtitle },
+    'connectors-empty': { ...SCENARIO_STYLES['connectors-empty'], title: es.tools_title, subtitle: es.tools_subtitle },
+    'use-cases-empty': { ...SCENARIO_STYLES['use-cases-empty'], title: es.use_cases_title, subtitle: es.use_cases_subtitle },
+  };
+}
 
 // -- Component ----------------------------------------------------
 
@@ -105,7 +87,8 @@ export default function EmptyState({
   children,
   variant,
 }: EmptyStateProps) {
-  const scenario = variant ? SCENARIO_CONFIGS[variant] : null;
+  const scenarioConfigs = useScenarioConfigs();
+  const scenario = variant ? scenarioConfigs[variant] : null;
 
   const Icon = icon ?? scenario?.icon;
   const resolvedTitle = title ?? scenario?.title ?? '';
@@ -115,10 +98,8 @@ export default function EmptyState({
   const steps = scenario?.steps;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`py-8 flex flex-col items-center justify-center text-center gap-2.5 ${className ?? ''}`}
+    <div
+      className={`animate-fade-slide-in py-8 flex flex-col items-center justify-center text-center gap-2.5 ${className ?? ''}`}
     >
       {Icon && (
         <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${resolvedContainerClass}`}>
@@ -157,6 +138,6 @@ export default function EmptyState({
           {action.label}
         </button>
       )}
-    </motion.div>
+    </div>
   );
 }

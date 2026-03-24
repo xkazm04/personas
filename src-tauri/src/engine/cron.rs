@@ -159,7 +159,28 @@ fn parse_range_bounds(s: &str, min: u32, max: u32) -> Result<(u32, u32), String>
     Ok((lo, hi))
 }
 
-/// Check if a datetime matches the schedule. O(1) — 5 bitwise ANDs.
+/// Bitmask for days_of_month when all 1–31 are set (wildcard).
+const DOM_WILDCARD: u32 = 0xFFFF_FFFE; // bits 1..=31
+/// Bitmask for days_of_week when all 0–6 are set (wildcard).
+const DOW_WILDCARD: u8 = 0x7F; // bits 0..=6
+
+/// Check whether the day component matches, applying POSIX cron semantics:
+/// when both day_of_month and day_of_week are restricted (non-wildcard),
+/// fire if EITHER matches (OR). When only one is restricted, just that one
+/// is checked. When both are wildcard, every day matches.
+fn day_matches(schedule: &CronSchedule, day: u32, weekday: u32) -> bool {
+    let dom_restricted = schedule.days_of_month != DOM_WILDCARD;
+    let dow_restricted = schedule.days_of_week != DOW_WILDCARD;
+
+    match (dom_restricted, dow_restricted) {
+        (true, true) => schedule.has_day_of_month(day) || schedule.has_day_of_week(weekday),
+        (true, false) => schedule.has_day_of_month(day),
+        (false, true) => schedule.has_day_of_week(weekday),
+        (false, false) => true,
+    }
+}
+
+/// Check if a datetime matches the schedule.
 fn matches(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
     let minute = dt.minute();
     let hour = dt.hour();
@@ -169,9 +190,8 @@ fn matches(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
 
     schedule.has_minute(minute)
         && schedule.has_hour(hour)
-        && schedule.has_day_of_month(day)
         && schedule.has_month(month)
-        && schedule.has_day_of_week(weekday)
+        && day_matches(schedule, day, weekday)
 }
 
 /// Compute the next fire time strictly after `from`.
@@ -213,9 +233,7 @@ pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<Da
             continue;
         }
 
-        if !schedule.has_day_of_month(current.day())
-            || !schedule.has_day_of_week(current.weekday().num_days_from_sunday())
-        {
+        if !day_matches(schedule, current.day(), current.weekday().num_days_from_sunday()) {
             current = (current + Duration::days(1))
                 .with_hour(0)
                 .unwrap()
@@ -351,5 +369,73 @@ mod tests {
         // Wrong minute
         let dt2 = Utc.with_ymd_and_hms(2026, 6, 15, 12, 31, 0).unwrap();
         assert!(!matches(&s, &dt2));
+    }
+
+    // -- POSIX OR semantics for day_of_month + day_of_week ----------------------
+
+    #[test]
+    fn test_posix_or_dom_and_dow_both_restricted() {
+        // "0 9 15 * 1" = 9am on the 15th OR every Monday (POSIX OR)
+        let s = parse_cron("0 9 15 * 1").unwrap();
+
+        // 2026-01-15 is a Thursday — matches on day_of_month (15th)
+        let thu_15 = Utc.with_ymd_and_hms(2026, 1, 15, 9, 0, 0).unwrap();
+        assert!(matches(&s, &thu_15), "should match: 15th (dom), even though not Monday");
+
+        // 2026-01-19 is a Monday (day 19) — matches on day_of_week
+        let mon_19 = Utc.with_ymd_and_hms(2026, 1, 19, 9, 0, 0).unwrap();
+        assert!(matches(&s, &mon_19), "should match: Monday (dow), even though not 15th");
+
+        // 2026-01-16 is a Friday, not 15th nor Monday — no match
+        let fri_16 = Utc.with_ymd_and_hms(2026, 1, 16, 9, 0, 0).unwrap();
+        assert!(!matches(&s, &fri_16), "should NOT match: neither 15th nor Monday");
+    }
+
+    #[test]
+    fn test_posix_or_next_fire_dom_and_dow() {
+        // "0 9 15 * 1" — should fire on the 15th OR Mondays
+        let s = parse_cron("0 9 15 * 1").unwrap();
+        // Start on 2026-01-15 (Thursday) at 10:00 — already past 9am
+        let from = Utc.with_ymd_and_hms(2026, 1, 15, 10, 0, 0).unwrap();
+        let next = next_fire_time(&s, from).unwrap();
+        // Next Monday is Jan 19, which comes before Feb 15
+        assert_eq!(next, Utc.with_ymd_and_hms(2026, 1, 19, 9, 0, 0).unwrap());
+    }
+
+    #[test]
+    fn test_dom_only_restricted_uses_dom() {
+        // "0 9 15 * *" — day_of_week is wildcard, only dom matters
+        let s = parse_cron("0 9 15 * *").unwrap();
+        let dt = Utc.with_ymd_and_hms(2026, 1, 15, 9, 0, 0).unwrap();
+        assert!(matches(&s, &dt));
+        let dt2 = Utc.with_ymd_and_hms(2026, 1, 16, 9, 0, 0).unwrap();
+        assert!(!matches(&s, &dt2));
+    }
+
+    #[test]
+    fn test_dow_only_restricted_uses_dow() {
+        // "0 9 * * 1" — day_of_month is wildcard, only dow matters
+        let s = parse_cron("0 9 * * 1").unwrap();
+        // 2026-01-19 is Monday
+        let mon = Utc.with_ymd_and_hms(2026, 1, 19, 9, 0, 0).unwrap();
+        assert!(matches(&s, &mon));
+        // 2026-01-20 is Tuesday
+        let tue = Utc.with_ymd_and_hms(2026, 1, 20, 9, 0, 0).unwrap();
+        assert!(!matches(&s, &tue));
+    }
+
+    #[test]
+    fn test_posix_or_weekdays_and_1st_15th() {
+        // "0 9 1,15 * 1-5" — 9am on 1st/15th OR weekdays
+        let s = parse_cron("0 9 1,15 * 1-5").unwrap();
+        // 2026-01-04 is a Sunday, day 4 — not 1st/15th, not weekday
+        let sun = Utc.with_ymd_and_hms(2026, 1, 4, 9, 0, 0).unwrap();
+        assert!(!matches(&s, &sun));
+        // 2026-01-06 is Monday, day 6 — weekday match
+        let mon = Utc.with_ymd_and_hms(2026, 1, 6, 9, 0, 0).unwrap();
+        assert!(matches(&s, &mon));
+        // 2026-02-01 is Sunday, day 1 — dom match (1st)
+        let sun_1st = Utc.with_ymd_and_hms(2026, 2, 1, 9, 0, 0).unwrap();
+        assert!(matches(&s, &sun_1st));
     }
 }

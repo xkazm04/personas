@@ -6,6 +6,7 @@ import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode } from '@/stores
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import CustomThemeCreator from './CustomThemeCreator';
+import TranslationContributor from './TranslationContributor';
 
 function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
@@ -234,6 +235,9 @@ export default function AppearanceSettings() {
               })}
             </div>
           </div>
+
+          {/* Language & Translation Contributions */}
+          <TranslationContributor />
         </div>
       </ContentBody>
     </ContentBox>

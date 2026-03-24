@@ -1,48 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import { RefreshCw, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, XCircle, Ban } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useCallback, useRef, useState } from 'react';
+import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { CloudExecutionRow } from './CloudExecutionRow';
 import { useAgentStore } from "@/stores/agentStore";
-import { cloudListExecutions, cloudExecutionStats } from '@/api/system/cloud';
+import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput } from '@/api/system/cloud';
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function statusIcon(status: string) {
-  switch (status) {
-    case 'completed': return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
-    case 'failed': return <XCircle className="w-3.5 h-3.5 text-red-400" />;
-    case 'cancelled': return <Ban className="w-3.5 h-3.5 text-amber-400" />;
-    default: return <LoadingSpinner size="sm" className="text-blue-400" />;
-  }
-}
-
-function formatDuration(ms: number | null): string {
-  if (ms == null) return '-';
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`;
-}
-
-function formatCost(usd: number | null): string {
-  if (usd == null || usd === 0) return '$0.00';
-  if (usd < 0.01) return '<$0.01';
-  return `$${usd.toFixed(2)}`;
-}
-
-function timeAgo(iso: string | null): string {
-  if (!iso) return '-';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
+import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
+import { statusIcon, formatDuration, formatCost, timeAgo } from './CloudHistoryHelpers';
+import { StatCard } from './StatCard';
+import { DailyBreakdownChart } from './DailyBreakdownChart';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -54,6 +21,7 @@ export function CloudHistoryPanel() {
   const [stats, setStats] = useState<CloudExecutionStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [outputMap, setOutputMap] = useState<Record<string, { lines: string[]; loading: boolean; error?: string }>>({});
   const [filterPersona, setFilterPersona] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [period, setPeriod] = useState<number>(7);
@@ -79,7 +47,29 @@ export function CloudHistoryPanel() {
     }
   }, [filterPersona, filterStatus, period]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const fetchingRef = useRef(new Set<string>());
+  const fetchOutput = useCallback(async (execId: string) => {
+    if (fetchingRef.current.has(execId)) return;
+    fetchingRef.current.add(execId);
+    setOutputMap((prev) => ({ ...prev, [execId]: { lines: [], loading: true } }));
+    try {
+      const lines = await cloudGetExecutionOutput(execId);
+      setOutputMap((prev) => ({ ...prev, [execId]: { lines, loading: false } }));
+    } catch (e) {
+      setOutputMap((prev) => ({
+        ...prev,
+        [execId]: { lines: [], loading: false, error: e instanceof Error ? e.message : 'Failed to fetch output' },
+      }));
+    } finally {
+      fetchingRef.current.delete(execId);
+    }
+  }, []);
+
+  // Auto-poll history data while this panel is mounted and tab is visible
+  const { lastRefreshed: historyLastPolled } = usePolling(fetchData, {
+    ...POLLING_CONFIG.cloudHistory,
+    enabled: true,
+  });
 
   return (
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
@@ -95,6 +85,11 @@ export function CloudHistoryPanel() {
           <StatCard label="Total Cost" value={formatCost(stats.total_cost_usd)} />
           <StatCard label="Avg Duration" value={formatDuration(stats.avg_duration_ms ?? null)} />
         </div>
+      )}
+
+      {/* Daily breakdown chart */}
+      {stats && stats.daily_breakdown.length > 0 && (
+        <DailyBreakdownChart data={stats.daily_breakdown} />
       )}
 
       {/* Filters */}
@@ -131,10 +126,19 @@ export function CloudHistoryPanel() {
           <option value={90}>Last 90 days</option>
         </select>
 
+        {historyLastPolled != null && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground/60 ml-auto mr-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            Live
+          </div>
+        )}
         <button
           onClick={fetchData}
           disabled={isLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ml-auto"
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-secondary/40 border border-primary/15 text-muted-foreground/80 hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer ${historyLastPolled == null ? 'ml-auto' : ''}`}
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
@@ -163,75 +167,19 @@ export function CloudHistoryPanel() {
       ) : (
         <div className="space-y-1">
           <SectionHeading className="text-xs mb-2">Execution History ({executions.length})</SectionHeading>
-          {executions.map((exec) => {
-            const isExpanded = expandedId === exec.id;
-
-            return (
-              <div key={exec.id} className="rounded-lg bg-secondary/30 border border-primary/10 overflow-hidden">
-                {/* Row */}
-                <button
-                  type="button"
-                  onClick={() => setExpandedId(isExpanded ? null : exec.id)}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-secondary/50 transition-colors cursor-pointer"
-                >
-                  {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/60" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/60" />}
-                  {statusIcon(exec.status)}
-                  <span className="text-sm text-foreground/80 truncate flex-1">{personaName(exec.persona_id)}</span>
-                  <span className="text-xs text-muted-foreground/60">{formatDuration(exec.duration_ms)}</span>
-                  <span className="text-xs text-muted-foreground/60">{formatCost(exec.cost_usd)}</span>
-                  <span className="text-xs text-muted-foreground/50">{timeAgo(exec.created_at)}</span>
-                </button>
-
-                {/* Expanded detail */}
-                {isExpanded && (
-                  <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-2">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div><span className="text-muted-foreground/60">Status:</span> <span className="text-foreground/80">{exec.status}</span></div>
-                      <div><span className="text-muted-foreground/60">Duration:</span> <span className="text-foreground/80">{formatDuration(exec.duration_ms)}</span></div>
-                      <div><span className="text-muted-foreground/60">Cost:</span> <span className="text-foreground/80">{formatCost(exec.cost_usd)}</span></div>
-                      <div><span className="text-muted-foreground/60">Tokens:</span> <span className="text-foreground/80">{(exec.input_tokens ?? 0) + (exec.output_tokens ?? 0)}</span></div>
-                      <div><span className="text-muted-foreground/60">Started:</span> <span className="text-foreground/80">{exec.started_at ? new Date(exec.started_at).toLocaleString() : '-'}</span></div>
-                      <div><span className="text-muted-foreground/60">Completed:</span> <span className="text-foreground/80">{exec.completed_at ? new Date(exec.completed_at).toLocaleString() : '-'}</span></div>
-                    </div>
-                    {exec.error_message && (
-                      <div className="p-2 rounded-lg bg-red-500/5 border border-red-500/10 text-xs text-red-400">
-                        {exec.error_message}
-                      </div>
-                    )}
-                    {exec.input_data && (
-                      <div className="space-y-1">
-                        <span className="text-xs text-muted-foreground/60">Input:</span>
-                        <pre className="text-xs text-foreground/70 bg-secondary/40 p-2 rounded-lg overflow-auto max-h-32 border border-primary/10">
-                          {exec.input_data}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {executions.map((exec) => (
+            <CloudExecutionRow
+              key={exec.id}
+              exec={exec}
+              personaName={personaName(exec.persona_id)}
+              isExpanded={expandedId === exec.id}
+              onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
+              output={outputMap[exec.id]}
+              onFetchOutput={() => fetchOutput(exec.id)}
+            />
+          ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Stat card sub-component
-// ---------------------------------------------------------------------------
-
-function StatCard({ label, value, color }: { label: string; value: string; color?: 'emerald' | 'amber' | 'red' }) {
-  const colorMap: Record<string, string> = {
-    emerald: 'text-emerald-400',
-    amber: 'text-amber-400',
-    red: 'text-red-400',
-  };
-
-  return (
-    <div className="p-3 rounded-xl bg-secondary/30 border border-primary/10 text-center">
-      <p className="text-xs text-muted-foreground/70 mb-1">{label}</p>
-      <p className={`text-lg font-semibold ${color ? colorMap[color] : 'text-foreground/90'}`}>{value}</p>
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Pencil, Pause, Play, Trash2, MoreHorizontal } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 
 interface AutomationCardActionsProps {
@@ -36,14 +35,9 @@ export function AutomationCardActions({
         <MoreHorizontal className="w-3.5 h-3.5" />
       </button>
 
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.1 }}
-            className="absolute right-0 top-full mt-1 z-[100] w-40 rounded-lg border border-border bg-background shadow-lg py-1"
+      {menuOpen && (
+          <div
+            className="animate-fade-slide-in absolute right-0 top-full mt-1 z-[100] w-40 rounded-lg border border-border bg-background shadow-lg py-1"
           >
             <button
               onClick={() => { onEdit(automation.id); setMenuOpen(false); }}
@@ -79,9 +73,8 @@ export function AutomationCardActions({
               <Trash2 className="w-3 h-3" />
               {confirmDelete ? 'Confirm?' : 'Delete'}
             </button>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

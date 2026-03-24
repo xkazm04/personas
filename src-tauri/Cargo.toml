@@ -62,7 +62,7 @@ r2d2 = "0.8"
 r2d2_sqlite = "0.32"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
-ts-rs = { version = "10", features = ["serde-compat", "chrono-impl", "serde-json-impl"] }
+ts-rs = { version = "10", features = ["serde-compat", "chrono-impl", "serde-json-impl", "no-serde-warnings"] }
 dirs = "6"
 aes-gcm = "0.10"
 base64 = "0.22"
@@ -128,6 +128,12 @@ panic = "abort"
 
 [profile.dev]
 opt-level = 0
+
+# Compile all dependencies with basic optimizations even in dev.
+# Barely slows initial compile (cached after first build), but makes
+# crypto, parsing, and ML inference significantly faster at runtime.
+[profile.dev.package."*"]
+opt-level = 1
 
 # Fast local testing: `cargo build --profile dev-release`
 # ~3x faster compile than release, still optimized enough for perf testing

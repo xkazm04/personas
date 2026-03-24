@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { FlaskConical, GitBranch, Wand2, Dna, Sparkles } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { ArenaPanel } from '../arena/ArenaPanel';
@@ -40,7 +40,7 @@ export function LabTab() {
 
   return (
     <div className="space-y-4">
-      {/* Mode tabs */}
+      {/* Mode tabs + Auto-Optimize toggle */}
       <div className="flex items-center gap-1">
         {modeTabs.map((tab) => {
           const Icon = tab.icon;
@@ -73,6 +73,9 @@ export function LabTab() {
             </button>
           );
         })}
+        <div className="ml-auto">
+          <AutoOptimizeToggle />
+        </div>
       </div>
 
       {/* Mode content */}
@@ -82,5 +85,61 @@ export function LabTab() {
       {labMode === 'evolve' && <EvolutionPanel />}
       {labMode === 'versions' && <VersionsPanel />}
     </div>
+  );
+}
+
+function AutoOptimizeToggle() {
+  const persona = useAgentStore((s) => s.selectedPersona);
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const fetchConfig = useCallback(async () => {
+    if (!persona) return;
+    try {
+      const resp = await fetch(`http://127.0.0.1:9420/api/settings/auto-optimize/${persona.id}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        setEnabled(data?.data?.enabled || false);
+      }
+    } catch { /* management API not running */ }
+  }, [persona]);
+
+  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+
+  const toggle = async () => {
+    if (!persona) return;
+    setLoading(true);
+    try {
+      await fetch(`http://127.0.0.1:9420/api/settings/auto-optimize/${persona.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enabled: !enabled,
+          cron: "0 2 * * 0",
+          min_score: 80,
+          models: ["sonnet"],
+        }),
+      });
+      setEnabled(!enabled);
+    } catch { /* silent */ }
+    setLoading(false);
+  };
+
+  return (
+    <button
+      data-testid="auto-optimize-toggle"
+      onClick={toggle}
+      disabled={loading || !persona}
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+        enabled
+          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+          : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
+      }`}
+      title={enabled ? "Auto-optimization enabled (weekly arena + improve)" : "Enable automatic prompt optimization"}
+    >
+      <Zap className={`w-3 h-3 ${enabled ? 'text-emerald-400' : ''}`} />
+      Auto-Optimize
+      <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
+    </button>
   );
 }

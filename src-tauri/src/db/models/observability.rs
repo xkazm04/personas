@@ -218,6 +218,63 @@ pub struct ExecutionDashboardData {
 }
 
 // ============================================================================
+// Observability: Alert Rules (backend-persisted)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct AlertRule {
+    pub id: String,
+    pub name: String,
+    pub metric: String,
+    pub operator: String,
+    pub threshold: f64,
+    pub severity: String,
+    pub persona_id: Option<String>,
+    pub enabled: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct FiredAlert {
+    pub id: String,
+    pub rule_id: String,
+    pub rule_name: String,
+    pub metric: String,
+    pub severity: String,
+    pub message: String,
+    pub value: f64,
+    pub threshold: f64,
+    pub persona_id: Option<String>,
+    pub fired_at: String,
+    pub dismissed: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CreateAlertRuleInput {
+    pub name: String,
+    pub metric: String,
+    pub operator: String,
+    pub threshold: f64,
+    pub severity: String,
+    pub persona_id: Option<String>,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct UpdateAlertRuleInput {
+    pub name: Option<String>,
+    pub metric: Option<String>,
+    pub operator: Option<String>,
+    pub threshold: Option<f64>,
+    pub severity: Option<String>,
+    pub persona_id: Option<String>,
+    pub enabled: Option<bool>,
+}
+
+// ============================================================================
 // Observability: Prompt Versions
 // ============================================================================
 

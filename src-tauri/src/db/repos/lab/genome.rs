@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{
     CreateBreedingResultInput, CreateBreedingRunInput, GenomeBreedingResult, GenomeBreedingRun,
@@ -9,7 +9,8 @@ use crate::error::AppError;
 
 // -- Row mappers ------------------------------------------------
 
-fn row_to_run(row: &Row) -> rusqlite::Result<GenomeBreedingRun> {
+// row_to_run uses LabRunStatus::from_db() -- keep manual
+fn row_to_run(row: &rusqlite::Row) -> rusqlite::Result<GenomeBreedingRun> {
     Ok(GenomeBreedingRun {
         id: row.get("id")?,
         project_id: row.get("project_id")?,
@@ -26,20 +27,11 @@ fn row_to_run(row: &Row) -> rusqlite::Result<GenomeBreedingRun> {
     })
 }
 
-fn row_to_result(row: &Row) -> rusqlite::Result<GenomeBreedingResult> {
-    Ok(GenomeBreedingResult {
-        id: row.get("id")?,
-        run_id: row.get("run_id")?,
-        genome_json: row.get("genome_json")?,
-        parent_ids: row.get("parent_ids")?,
-        generation: row.get("generation")?,
-        fitness_json: row.get("fitness_json")?,
-        fitness_overall: row.get("fitness_overall")?,
-        adopted: row.get::<_, i32>("adopted")? != 0,
-        adopted_persona_id: row.get("adopted_persona_id")?,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_result -> GenomeBreedingResult {
+    id, run_id, genome_json, parent_ids,
+    generation, fitness_json, fitness_overall,
+    adopted [bool], adopted_persona_id, created_at,
+});
 
 // -- Breeding Runs -------------------------------------------------
 

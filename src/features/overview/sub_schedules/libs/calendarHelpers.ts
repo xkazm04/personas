@@ -108,7 +108,19 @@ export function generateCronFireTimes(
 
     const dom = d.getDate();
     const dow = d.getDay();
-    if (!daysOfMonth.has(dom) || !daysOfWeek.has(dow)) continue;
+
+    // POSIX cron: when both day-of-month and day-of-week are restricted
+    // (non-wildcard), fire if EITHER matches (OR semantics).
+    const domRestricted = daysOfMonth.size < 31;
+    const dowRestricted = daysOfWeek.size < 7;
+    const dayOk = domRestricted && dowRestricted
+      ? daysOfMonth.has(dom) || daysOfWeek.has(dow)
+      : domRestricted
+        ? daysOfMonth.has(dom)
+        : dowRestricted
+          ? daysOfWeek.has(dow)
+          : true;
+    if (!dayOk) continue;
 
     for (const h of hours) {
       for (const m of minutes) {
@@ -342,4 +354,124 @@ export function formatDayHeader(d: Date, view: CalendarView): string {
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export function weekdayShort(i: number): string {
   return WEEKDAY_SHORT[i] ?? '';
+}
+
+// -- Conflict detection -------------------------------------------------------
+
+const CONFLICT_WINDOW_MS = 5 * 60_000; // 5 minutes
+
+export interface ConflictGroup {
+  /** All events within a 5-minute window */
+  events: CalendarEvent[];
+  /** Earliest event time in the group */
+  windowStart: Date;
+}
+
+/**
+ * Detect groups of 2+ events from *different* agents that fire within
+ * the same 5-minute window. Returns a map keyed by event id for O(1) lookup.
+ */
+export function detectConflicts(events: CalendarEvent[]): {
+  /** event id -> its conflict group */
+  byEventId: Map<string, ConflictGroup>;
+  /** dayKey-hour -> count of conflicting events in that cell (week view) */
+  byHourCell: Map<string, number>;
+  /** dayKey -> count of conflicting events on that day (month view) */
+  byDayCell: Map<string, number>;
+} {
+  const byEventId = new Map<string, ConflictGroup>();
+  const byHourCell = new Map<string, number>();
+  const byDayCell = new Map<string, number>();
+
+  if (events.length < 2) return { byEventId, byHourCell, byDayCell };
+
+  // Sort by time (events from buildCalendarEvents are already sorted, but be safe)
+  const sorted = [...events].sort((a, b) => a.time.getTime() - b.time.getTime());
+
+  // Sweep: collect windows of events within CONFLICT_WINDOW_MS
+  let windowStart = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    // Move window start forward
+    while (sorted[windowStart]!.time.getTime() + CONFLICT_WINDOW_MS <= sorted[i]!.time.getTime()) {
+      windowStart++;
+    }
+
+    // Collect all events in [windowStart..i] that span multiple agents
+    if (i > windowStart) {
+      const windowEvents = sorted.slice(windowStart, i + 1);
+      const uniqueAgents = new Set(windowEvents.map((e) => e.triggerId));
+      if (uniqueAgents.size >= 2) {
+        const group: ConflictGroup = {
+          events: windowEvents,
+          windowStart: sorted[windowStart]!.time,
+        };
+        for (const ev of windowEvents) {
+          byEventId.set(ev.id, group);
+
+          // Aggregate into hour cells
+          const hKey = `${dayKey(ev.time)}-${ev.time.getHours()}`;
+          byHourCell.set(hKey, (byHourCell.get(hKey) ?? 0) + 1);
+
+          // Aggregate into day cells
+          const dKey = dayKey(ev.time);
+          byDayCell.set(dKey, (byDayCell.get(dKey) ?? 0) + 1);
+        }
+      }
+    }
+  }
+
+  return { byEventId, byHourCell, byDayCell };
+}
+
+/**
+ * Check whether a candidate cron/interval schedule would conflict with
+ * existing entries. Returns the number of conflicts in the next 7 days.
+ */
+export function previewConflicts(
+  existingEntries: ScheduleEntry[],
+  candidateCron: string | null,
+  candidateIntervalSeconds: number | null,
+  excludeTriggerId?: string,
+): number {
+  const now = new Date();
+  const end = new Date(now.getTime() + 7 * 24 * 3_600_000);
+
+  // Generate candidate fire times
+  let candidateTimes: Date[] = [];
+  if (candidateCron) {
+    candidateTimes = generateCronFireTimes(candidateCron, now, end);
+  } else if (candidateIntervalSeconds && candidateIntervalSeconds > 0) {
+    candidateTimes = generateIntervalFireTimes(candidateIntervalSeconds, null, now, end);
+  }
+  if (candidateTimes.length === 0) return 0;
+
+  // Generate existing fire times (excluding the agent being edited)
+  const existingTimes: Date[] = [];
+  for (const entry of existingEntries) {
+    if (entry.health === 'paused') continue;
+    if (excludeTriggerId && entry.agent.trigger_id === excludeTriggerId) continue;
+    const { agent } = entry;
+    if (agent.cron_expression) {
+      existingTimes.push(...generateCronFireTimes(agent.cron_expression, now, end));
+    } else if (agent.interval_seconds) {
+      existingTimes.push(...generateIntervalFireTimes(agent.interval_seconds, agent.last_triggered_at, now, end));
+    }
+  }
+  if (existingTimes.length === 0) return 0;
+
+  existingTimes.sort((a, b) => a.getTime() - b.getTime());
+
+  // Count candidate times that fall within CONFLICT_WINDOW_MS of any existing time
+  let conflicts = 0;
+  for (const ct of candidateTimes) {
+    const ctMs = ct.getTime();
+    for (const et of existingTimes) {
+      if (Math.abs(ctMs - et.getTime()) <= CONFLICT_WINDOW_MS) {
+        conflicts++;
+        break; // count each candidate time at most once
+      }
+    }
+  }
+
+  return conflicts;
 }

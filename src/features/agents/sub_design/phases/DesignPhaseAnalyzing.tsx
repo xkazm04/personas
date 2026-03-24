@@ -1,5 +1,4 @@
 import { Pencil, X } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { CompilationStepper } from './CompilationStepper';
 import type { AgentIR } from '@/lib/types/designTypes';
@@ -13,13 +12,9 @@ interface DesignPhaseAnalyzingProps {
 
 export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResult, onCancel }: DesignPhaseAnalyzingProps) {
   return (
-    <motion.div
+    <div
       key="analyzing"
-      initial={{ opacity: 0, x: -18, filter: 'blur(4px)' }}
-      animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-      exit={{ opacity: 0, x: 12, filter: 'blur(3px)' }}
-      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-      className="space-y-3"
+      className="animate-fade-slide-in space-y-3"
     >
       {savedDesignResult && (
         <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground/90">
@@ -42,6 +37,6 @@ export function DesignPhaseAnalyzing({ instruction, outputLines, savedDesignResu
         <X className="w-3.5 h-3.5" />
         Cancel
       </button>
-    </motion.div>
+    </div>
   );
 }

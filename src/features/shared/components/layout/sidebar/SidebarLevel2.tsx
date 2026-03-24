@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Users, Sparkles, Plus, List, Star, Bot, ChevronDown, Cloud, Wrench, Puzzle, Clock } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Star, Bot, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
@@ -454,6 +454,32 @@ function PluginsSidebarNav() {
         >
           <Puzzle className="w-4 h-4 flex-shrink-0" />
           Browse
+        </button>
+
+        {/* Doc Signing */}
+        <button
+          onClick={() => setPluginTab('doc-signing')}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+            pluginTab === 'doc-signing'
+              ? 'bg-primary/10 text-foreground/90'
+              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+          }`}
+        >
+          <FileSignature className="w-4 h-4 flex-shrink-0" />
+          Doc Signing
+        </button>
+
+        {/* OCR */}
+        <button
+          onClick={() => setPluginTab('ocr')}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+            pluginTab === 'ocr'
+              ? 'bg-primary/10 text-foreground/90'
+              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+          }`}
+        >
+          <ScanLine className="w-4 h-4 flex-shrink-0" />
+          OCR
         </button>
 
         {/* Dev Tools (dev-only, gold border) */}

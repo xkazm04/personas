@@ -1,7 +1,9 @@
-import { motion } from 'framer-motion';
+import { lazy, Suspense } from 'react';
 import HeroHeader from './HeroHeader';
 import SetupCards from './SetupCards';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
+
+const LanguageCards = lazy(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
 
 interface WelcomeLayoutProps {
   greeting: string;
@@ -42,21 +44,31 @@ export default function WelcomeLayout({
 
           <SetupCards />
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35, duration: 0.3 }} className="flex items-center gap-3">
+          <div className="animate-fade-slide-in flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
             <span className="typo-label text-muted-foreground/50">{quickNavLabel}</span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-          </motion.div>
+          </div>
 
           <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.5 }} className="flex items-center justify-center pt-4 pb-8">
+          <div className="animate-fade-slide-in flex items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
+            <span className="typo-label text-muted-foreground/50">Language</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
+          </div>
+
+          <Suspense fallback={null}>
+            <LanguageCards />
+          </Suspense>
+
+          <div className="animate-fade-slide-in flex items-center justify-center pt-4 pb-8">
             <div className="flex items-center gap-2 typo-label text-muted-foreground/50">
               <div className="w-8 h-px bg-gradient-to-r from-transparent to-muted-foreground/20" />
               {platformLabel}
               <div className="w-8 h-px bg-gradient-to-l from-transparent to-muted-foreground/20" />
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>

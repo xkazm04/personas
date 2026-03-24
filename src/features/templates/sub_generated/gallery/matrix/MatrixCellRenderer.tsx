@@ -1,5 +1,4 @@
 import { createContext, useContext, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, HelpCircle, AlertCircle, Loader2, Pencil } from 'lucide-react';
 import { getCellStateClasses } from '@/features/agents/components/matrix/cellStateClasses';
 import { getCellGlowColorClass } from '@/features/agents/components/matrix/cellGlowColors';
@@ -49,13 +48,9 @@ function ResolvedCellContent({ cellKey, fallbackRender, typewriterActive }: { ce
   const items = data?.items;
 
   return (
-    <motion.div
+    <div
       key="resolved-content"
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="w-full relative z-10"
+      className="animate-fade-slide-in w-full relative z-10"
     >
       {items && items.length > 0 ? (
         <TypewriterContext.Provider value={typewriterActive}>
@@ -66,7 +61,7 @@ function ResolvedCellContent({ cellKey, fallbackRender, typewriterActive }: { ce
           {fallbackRender}
         </TypewriterContext.Provider>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -207,30 +202,24 @@ export function MatrixCellRenderer({
             ) : null}
           </div>
         )}
-        <AnimatePresence mode="wait">
-          {/* Resolved/Updated/Highlighted cell content — bullet points or inline edit */}
+        {/* Resolved/Updated/Highlighted cell content — bullet points or inline edit */}
           {/* Highlighted cells also show resolved content (propose-and-confirm pattern) */}
           {(cellBuildStatus === 'resolved' || cellBuildStatus === 'updated') && useEditRender ? (
-            <motion.div key="edit-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="w-full relative z-10">
+            <div key="edit-content" className="animate-fade-slide-in w-full relative z-10">
               {cell.editRender!()}
-            </motion.div>
+            </div>
           ) : (cellBuildStatus === 'resolved' || cellBuildStatus === 'updated' || cellBuildStatus === 'highlighted') ? (
             <ResolvedCellContent cellKey={cell.key} fallbackRender={cell.render()} typewriterActive={typewriterActiveRef.current} />
           ) : hasContent ? (
-            <motion.div
+            <div
               key="cell-content"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="w-full relative z-10"
+              className="animate-fade-slide-in w-full relative z-10"
             >
               <TypewriterContext.Provider value={typewriterActiveRef.current}>
                 {useEditRender ? cell.editRender!() : cell.render()}
               </TypewriterContext.Provider>
-            </motion.div>
+            </div>
           ) : null}
-        </AnimatePresence>
       </div>
 
       {/* Bottom-left edit button — shown when cell is editable (resolved/updated in draft phase) */}

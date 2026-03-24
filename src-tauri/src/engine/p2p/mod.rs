@@ -18,6 +18,7 @@ use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 
 use crate::db::DbPool;
+use crate::engine::event_registry::{emit_event, event_name};
 use crate::error::AppError;
 
 use self::connection::ConnectionManager;
@@ -26,7 +27,7 @@ use self::mdns::MdnsService;
 use self::messaging::MessageRouter;
 use self::periodic::PeriodicTask;
 use self::transport::QuicTransport;
-use self::types::NetworkConfig;
+use self::types::{NetworkConfig, NetworkSnapshot, NetworkStatusInfo};
 
 /// Top-level P2P network service that orchestrates all sub-systems.
 pub struct NetworkService {
@@ -38,6 +39,8 @@ pub struct NetworkService {
     config: Arc<RwLock<NetworkConfig>>,
     running: Arc<RwLock<bool>>,
     cancel: CancellationToken,
+    pool: DbPool,
+    app_handle: Arc<RwLock<Option<tauri::AppHandle>>>,
 }
 
 impl NetworkService {
@@ -73,6 +76,8 @@ impl NetworkService {
             config,
             running: Arc::new(RwLock::new(false)),
             cancel: CancellationToken::new(),
+            pool,
+            app_handle: Arc::new(RwLock::new(None)),
         })
     }
 
@@ -89,9 +94,9 @@ impl NetworkService {
             return Ok(());
         }
 
-        // Provide app handle to manifest sync for progress events
+        // Store app handle for event emission
         if let Some(app) = app_handle {
-            self.manifest_sync.set_app_handle(app).await;
+            *self.app_handle.write().await = Some(app);
         }
 
         let config = self.config.read().await;
@@ -192,6 +197,53 @@ impl NetworkService {
             messages.receive_loop(connections_msg).await;
         });
 
+        // Start periodic snapshot emitter — pushes network state to the frontend
+        // via Tauri events so the UI doesn't need to poll via IPC.
+        {
+            let app_h = self.app_handle.clone();
+            let pool_snap = self.pool.clone();
+            let transport_snap = self.transport.clone();
+            let mdns_snap = self.mdns.clone();
+            let conns_snap = self.connections.clone();
+            let msgs_snap = self.messages.clone();
+            let ms_snap = self.manifest_sync.clone();
+            let config_snap = self.config.clone();
+            let cancel = self.cancel.clone();
+            tokio::spawn(async move {
+                PeriodicTask::with_dynamic_interval(
+                    "p2p_snapshot_emitter",
+                    move || {
+                        let secs = config_snap.try_read()
+                            .map(|c| c.health_check_interval_secs)
+                            .unwrap_or(15);
+                        // Emit at health-check cadence (default 15s)
+                        Duration::from_secs(secs)
+                    },
+                    cancel,
+                )
+                .run(|| {
+                    let app_h = app_h.clone();
+                    let pool = pool_snap.clone();
+                    let transport = transport_snap.clone();
+                    let mdns = mdns_snap.clone();
+                    let conns = conns_snap.clone();
+                    let msgs = msgs_snap.clone();
+                    let ms = ms_snap.clone();
+                    async move {
+                        let guard = app_h.read().await;
+                        let app = match guard.as_ref() {
+                            Some(a) => a,
+                            None => return Ok(()),
+                        };
+                        let snapshot = build_snapshot(&pool, &transport, &mdns, &conns, &msgs, &ms).await;
+                        emit_event(app, event_name::NETWORK_SNAPSHOT_UPDATED, &snapshot);
+                        Ok(())
+                    }
+                })
+                .await;
+            });
+        }
+
         *running = true;
         tracing::info!(port = port, "P2P NetworkService started");
         Ok(())
@@ -267,5 +319,60 @@ impl NetworkService {
     /// Get the port the QUIC endpoint is listening on.
     pub async fn listening_port(&self) -> Option<u16> {
         self.transport.local_port().await
+    }
+
+    /// Build and emit a network snapshot event to the frontend.
+    /// Called after state-changing operations (connect, disconnect) for instant UI updates.
+    pub async fn emit_snapshot(&self) {
+        let guard = self.app_handle.read().await;
+        if let Some(app) = guard.as_ref() {
+            let snapshot = build_snapshot(
+                &self.pool, &self.transport, &self.mdns, &self.connections,
+                &self.messages, &self.manifest_sync,
+            ).await;
+            emit_event(app, event_name::NETWORK_SNAPSHOT_UPDATED, &snapshot);
+        }
+    }
+}
+
+/// Build a [`NetworkSnapshot`] from the current state of all subsystems.
+async fn build_snapshot(
+    pool: &DbPool,
+    transport: &QuicTransport,
+    mdns: &MdnsService,
+    connections: &ConnectionManager,
+    messages: &MessageRouter,
+    manifest_sync: &ManifestSync,
+) -> NetworkSnapshot {
+    let is_running = true; // only called while running
+    let listening_port = transport.local_port().await;
+    let connected_peer_count = connections.connected_count().await;
+    let peers = mdns.get_discovered_peers().unwrap_or_default();
+    let discovered_peer_count = peers.len() as u32;
+
+    let local_peer_id = crate::engine::identity::get_or_create_identity(pool)
+        .map(|id| id.peer_id)
+        .unwrap_or_default();
+
+    let status = NetworkStatusInfo {
+        is_running,
+        listening_port,
+        discovered_peer_count,
+        connected_peer_count,
+        local_peer_id,
+    };
+
+    let health = connections.get_connection_health().await;
+    let messaging_metrics = messages.get_metrics();
+    let connection_metrics = connections.get_connection_metrics();
+    let manifest_sync_metrics = manifest_sync.get_metrics();
+
+    NetworkSnapshot {
+        status,
+        health,
+        discovered_peers: peers,
+        messaging_metrics,
+        connection_metrics,
+        manifest_sync_metrics,
     }
 }

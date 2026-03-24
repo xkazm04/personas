@@ -1,4 +1,3 @@
-import { AnimatePresence } from 'framer-motion';
 import { PhaseIndicator } from '../PhaseIndicator';
 import { DesignConversationHistory } from './DesignConversationHistory';
 import type { DesignPhase, DesignConversation } from '@/lib/types/designTypes';
@@ -37,9 +36,7 @@ export function DesignTabPhaseContent(props: DesignTabPhaseContentProps) {
         />
       )}
 
-      <AnimatePresence mode="wait">
-        {renderPhaseContent({ phase, ...phaseProps })}
-      </AnimatePresence>
+      {renderPhaseContent({ phase, ...phaseProps })}
     </div>
   );
 }

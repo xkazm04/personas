@@ -4,6 +4,7 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::background_job::BackgroundJobManager;
+use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -38,8 +39,8 @@ pub type N8nTransformSnapshot = crate::background_job::BackgroundTaskSnapshot<N8
 
 static N8N_JOBS: BackgroundJobManager<N8nTransformExtra> = BackgroundJobManager::new(
     "n8n transform job lock poisoned",
-    "n8n-transform-status",
-    "n8n-transform-output",
+    event_name::N8N_TRANSFORM_STATUS,
+    event_name::N8N_TRANSFORM_OUTPUT,
 );
 
 /// Access the underlying manager (used by cli_runner for insert_running, etc.)

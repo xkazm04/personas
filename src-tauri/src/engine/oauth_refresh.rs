@@ -248,6 +248,24 @@ pub async fn refresh_single_credential(
     // Persist the fresh access_token
     cred_repo::upsert_field(pool, &cred.id, "access_token", &resolved.token, true)?;
 
+    // Persist rotated refresh_token if the provider returned one (RFC 6749 §6).
+    // This prevents credential death when providers enforce refresh token rotation
+    // and ensures exfiltrated old tokens are invalidated server-side.
+    if let Some(ref new_refresh_token) = resolved.refresh_token {
+        // Determine the field key used by this credential (refresh_token vs refreshToken)
+        let refresh_key = if fields.contains_key("refreshToken") {
+            "refreshToken"
+        } else {
+            "refresh_token"
+        };
+        cred_repo::upsert_field(pool, &cred.id, refresh_key, new_refresh_token, true)?;
+        tracing::info!(
+            credential_id = %cred.id,
+            service_type = %cred.service_type,
+            "Rotated refresh_token persisted"
+        );
+    }
+
     // Compute lifetime metrics
     let used_fallback = resolved.expires_in_secs.is_none();
     let expiry_secs = resolved.expires_in_secs.unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
@@ -333,20 +351,23 @@ pub async fn refresh_single_credential(
     cred_repo::patch_metadata_atomic(pool, &cred.id, patch)?;
 
     // Audit log
+    let rt_rotated = resolved.refresh_token.is_some();
     let detail = if used_fallback {
         format!(
-            "Proactive refresh (count: {}, fallback {}s, no provider expires_in)",
+            "Proactive refresh (count: {}, fallback {}s, no provider expires_in{})",
             current_count + 1,
             DEFAULT_FALLBACK_LIFETIME_SECS,
+            if rt_rotated { ", refresh_token rotated" } else { "" },
         )
     } else {
         format!(
-            "Proactive refresh (count: {}, provider TTL: {}s{})",
+            "Proactive refresh (count: {}, provider TTL: {}s{}{})",
             current_count + 1,
             expiry_secs,
             drift_secs
                 .map(|d| format!(", drift: {}s", d))
                 .unwrap_or_default(),
+            if rt_rotated { ", refresh_token rotated" } else { "" },
         )
     };
 

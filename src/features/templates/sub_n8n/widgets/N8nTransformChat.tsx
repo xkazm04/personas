@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, CheckCircle2, LayoutList, Layers } from 'lucide-react';
 import { N8nQuestionListView } from './N8nQuestionListView';
 import { N8nQuestionStepper } from './N8nQuestionStepper';
@@ -57,10 +56,8 @@ export function N8nTransformChat({
 
       {/* Phase 1: Asking -- unified transform in progress */}
       {transformSubPhase === 'asking' && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
+        <div
+          className="animate-fade-slide-in space-y-4"
         >
           {streamingSections.length > 0 && (
             <StreamingSections
@@ -76,18 +73,16 @@ export function N8nTransformChat({
             onRetry={onRetry}
             onCancel={onCancel}
           />
-        </motion.div>
+        </div>
       )}
 
       {/* Phase 2: Answering -- questions loaded, user fills in */}
       {transformSubPhase === 'answering' && (
-        <AnimatePresence>
+        <>
           {/* Questions available */}
           {questions && questions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-primary/10 bg-secondary/20 p-4"
+            <div
+              className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-4"
             >
               {/* Header with view mode toggle */}
               <div className="flex items-center justify-between mb-4">
@@ -153,15 +148,13 @@ export function N8nTransformChat({
                   onAnswerUpdated={onAnswerUpdated}
                 />
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* No questions */}
           {(!questions || questions.length === 0) && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-primary/10 bg-secondary/20 p-4"
+            <div
+              className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-4"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-secondary/40 border border-primary/10 flex items-center justify-center">
@@ -176,9 +169,9 @@ export function N8nTransformChat({
                   </p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </>
       )}
 
       {/* Phase 3: Generating -- show answer summary + streaming sections + progress */}
@@ -186,10 +179,8 @@ export function N8nTransformChat({
         <>
           {/* Answer summary bubble */}
           {Object.keys(userAnswers).length > 0 && questions && questions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-primary/10 bg-secondary/20 p-4"
+            <div
+              className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-4"
             >
               <p className="text-sm font-medium text-muted-foreground/90 uppercase tracking-wider mb-2">
                 Your answers
@@ -209,7 +200,7 @@ export function N8nTransformChat({
                   );
                 })}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Streaming sections -- tools, triggers, connectors appear one-by-one */}

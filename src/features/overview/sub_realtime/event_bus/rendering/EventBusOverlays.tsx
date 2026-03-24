@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_LABELS } from '../../libs/visualizationHelpers';
 
@@ -16,15 +15,10 @@ export function EventBusOverlays({ seenTypes, droppedCount, isEmpty }: OverlaysP
       {/* Legend (only when traffic flowing) */}
       {seenTypes.length > 0 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 bg-background/80 backdrop-blur-sm border border-primary/10 rounded-xl px-3 py-2 flex items-center gap-3">
-          <AnimatePresence initial={false}>
-            {seenTypes.slice(0, 6).map((type) => (
-              <motion.div
+          {seenTypes.slice(0, 6).map((type) => (
+              <div
                 key={type}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-1.5"
+                className="animate-fade-slide-in flex items-center gap-1.5"
               >
                 <div
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
@@ -33,9 +27,8 @@ export function EventBusOverlays({ seenTypes, droppedCount, isEmpty }: OverlaysP
                 <span className="text-sm font-mono text-muted-foreground/80">
                   {EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}
                 </span>
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
         </div>
       )}
 

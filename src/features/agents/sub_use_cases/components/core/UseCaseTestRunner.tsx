@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { FlaskConical, Play, Square, ArrowRight } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
@@ -144,13 +143,9 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
             </button>
 
             {/* Progress */}
-            <AnimatePresence>
-              {testRunProgress && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
+            {testRunProgress && (
+                <div
+                  className="animate-fade-slide-in overflow-hidden"
                 >
                   <div className="flex items-center gap-2 text-sm text-foreground/70">
                     <LoadingSpinner size="sm" className="text-primary" />
@@ -164,16 +159,13 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
                   </div>
                   {testRunProgress.total && (
                     <div className="w-full h-1 rounded-full bg-secondary/50 overflow-hidden mt-2">
-                      <motion.div
-                        className="h-full rounded-full bg-primary/60"
-                        animate={{ width: `${((testRunProgress.current ?? 0) / testRunProgress.total) * 100}%` }}
-                        transition={{ duration: 0.4, ease: 'easeOut' }}
+                      <div
+                        className="animate-fade-in h-full rounded-full bg-primary/60" style={{ width: `${((testRunProgress.current ?? 0) / testRunProgress.total) * 100}%` }}
                       />
                     </div>
                   )}
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
           </>
         ) : (
           <button

@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{EvolutionCycle, EvolutionPolicy, UpsertEvolutionPolicyInput};
 use crate::db::DbPool;
@@ -7,40 +7,21 @@ use crate::error::AppError;
 
 // -- Row mappers ------------------------------------------------
 
-fn row_to_policy(row: &Row) -> rusqlite::Result<EvolutionPolicy> {
-    Ok(EvolutionPolicy {
-        id: row.get("id")?,
-        persona_id: row.get("persona_id")?,
-        enabled: row.get::<_, i32>("enabled")? != 0,
-        fitness_objective: row.get("fitness_objective")?,
-        mutation_rate: row.get("mutation_rate")?,
-        variants_per_cycle: row.get("variants_per_cycle")?,
-        improvement_threshold: row.get("improvement_threshold")?,
-        min_executions_between: row.get("min_executions_between")?,
-        last_cycle_at: row.get("last_cycle_at")?,
-        total_cycles: row.get("total_cycles")?,
-        total_promotions: row.get("total_promotions")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_policy -> EvolutionPolicy {
+    id, persona_id,
+    enabled [bool],
+    fitness_objective, mutation_rate, variants_per_cycle,
+    improvement_threshold, min_executions_between,
+    last_cycle_at, total_cycles, total_promotions,
+    created_at, updated_at,
+});
 
-fn row_to_cycle(row: &Row) -> rusqlite::Result<EvolutionCycle> {
-    Ok(EvolutionCycle {
-        id: row.get("id")?,
-        policy_id: row.get("policy_id")?,
-        persona_id: row.get("persona_id")?,
-        status: row.get("status")?,
-        variants_tested: row.get("variants_tested")?,
-        winner_fitness: row.get("winner_fitness")?,
-        incumbent_fitness: row.get("incumbent_fitness")?,
-        promoted: row.get::<_, i32>("promoted")? != 0,
-        summary: row.get("summary")?,
-        error: row.get("error")?,
-        started_at: row.get("started_at")?,
-        completed_at: row.get("completed_at")?,
-    })
-}
+row_mapper!(row_to_cycle -> EvolutionCycle {
+    id, policy_id, persona_id, status, variants_tested,
+    winner_fitness, incumbent_fitness,
+    promoted [bool],
+    summary, error, started_at, completed_at,
+});
 
 // -- Evolution Policies ------------------------------------------
 

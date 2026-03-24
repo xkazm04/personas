@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Shield, ChevronDown, ChevronRight, Gauge, Clock, Layers } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   type TriggerRateLimitConfig,
   DEFAULT_RATE_LIMIT,
@@ -49,13 +48,9 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
         )}
       </button>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="space-y-3 pl-5 pt-1">
               {/* Max per window */}
@@ -166,9 +161,8 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                 </button>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

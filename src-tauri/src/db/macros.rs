@@ -14,10 +14,228 @@
 /// ```
 #[macro_export]
 macro_rules! push_field {
-    ($field:expr, $col:literal, $sets:expr, $param_idx:expr) => {
+    ($field:expr, $col:expr, $sets:expr, $param_idx:expr) => {
         if $field.is_some() {
             $sets.push(format!("{} = ?{}", $col, $param_idx));
             $param_idx += 1;
+        }
+    };
+}
+
+// ============================================================================
+// CRUD Repository Macros
+//
+// Composable macros that generate standard repository functions.
+// Each repo module picks the macros it needs; custom methods coexist freely.
+// ============================================================================
+
+/// Generate a `row_to_<name>` mapper function from field specifications.
+///
+/// Field annotations:
+/// - *(none)* — `row.get("col")?`  (String, Option<String>, i32, f64, etc.)
+/// - `[bool]` — `row.get::<_, i32>("col")? != 0`  (bool stored as integer)
+/// - `[opt]`  — `row.get("col").ok().flatten()`  (column may not exist in schema)
+///
+/// # Example
+///
+/// ```ignore
+/// row_mapper!(row_to_group -> PersonaGroup {
+///     id, name, color, sort_order,
+///     collapsed [bool],
+///     description [opt],
+///     created_at, updated_at,
+/// });
+/// ```
+#[macro_export]
+macro_rules! row_mapper {
+    ($fn_name:ident -> $model:ident {
+        $( $field:ident $( [ $kind:ident ] )? ),* $(,)?
+    }) => {
+        fn $fn_name(row: &rusqlite::Row) -> rusqlite::Result<$model> {
+            Ok($model {
+                $( $field: row_mapper!(@get row, $field $(, $kind )? ), )*
+            })
+        }
+    };
+    (@get $row:ident, $field:ident) => {
+        $row.get(stringify!($field))?
+    };
+    (@get $row:ident, $field:ident, bool) => {
+        $row.get::<_, i32>(stringify!($field))? != 0
+    };
+    (@get $row:ident, $field:ident, opt) => {
+        $row.get(stringify!($field)).ok().flatten()
+    };
+}
+
+/// Generate a standard `get_by_id` function.
+///
+/// Looks up a single row by primary key `id` and maps `QueryReturnedNoRows`
+/// to `AppError::NotFound` with the given entity label.
+///
+/// # Example
+///
+/// ```ignore
+/// crud_get_by_id!(PersonaGroup, "persona_groups", "PersonaGroup", row_to_group);
+/// ```
+#[macro_export]
+macro_rules! crud_get_by_id {
+    ($model:ty, $table:literal, $entity:literal, $mapper:ident) => {
+        pub fn get_by_id(
+            pool: &crate::db::DbPool,
+            id: &str,
+        ) -> Result<$model, crate::error::AppError> {
+            let conn = pool.get()?;
+            conn.query_row(
+                concat!("SELECT * FROM ", $table, " WHERE id = ?1"),
+                rusqlite::params![id],
+                $mapper,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    crate::error::AppError::NotFound(format!(concat!($entity, " {}"), id))
+                }
+                other => crate::error::AppError::Database(other),
+            })
+        }
+    };
+}
+
+/// Generate a standard `get_all` function (unfiltered, ordered).
+///
+/// Returns all rows from the table using `collect_rows` for resilience.
+///
+/// # Example
+///
+/// ```ignore
+/// crud_get_all!(PersonaGroup, "persona_groups", row_to_group, "sort_order, created_at");
+/// ```
+#[macro_export]
+macro_rules! crud_get_all {
+    ($model:ty, $table:literal, $mapper:ident, $order:literal) => {
+        pub fn get_all(
+            pool: &crate::db::DbPool,
+        ) -> Result<Vec<$model>, crate::error::AppError> {
+            let conn = pool.get()?;
+            let mut stmt =
+                conn.prepare(concat!("SELECT * FROM ", $table, " ORDER BY ", $order))?;
+            let rows = stmt.query_map([], $mapper)?;
+            Ok(crate::db::repos::utils::collect_rows(
+                rows,
+                concat!($table, "::get_all"),
+            ))
+        }
+    };
+}
+
+/// Generate a standard `delete` function.
+///
+/// Deletes a single row by `id` and returns whether a row was affected.
+///
+/// # Example
+///
+/// ```ignore
+/// crud_delete!("persona_groups");
+/// ```
+#[macro_export]
+macro_rules! crud_delete {
+    ($table:literal) => {
+        pub fn delete(
+            pool: &crate::db::DbPool,
+            id: &str,
+        ) -> Result<bool, crate::error::AppError> {
+            let conn = pool.get()?;
+            let rows = conn.execute(
+                concat!("DELETE FROM ", $table, " WHERE id = ?1"),
+                rusqlite::params![id],
+            )?;
+            Ok(rows > 0)
+        }
+    };
+}
+
+/// Generate a standard `update` function with a dynamic SET clause.
+///
+/// Verifies the row exists via `get_by_id`, builds a partial UPDATE from
+/// non-`None` fields, executes it, and returns the refreshed row.
+///
+/// Field kinds control how values are boxed for the parameter vector:
+/// - `clone` — `Box::new(v.clone())`  (String, Option<String>)
+/// - `copy`  — `Box::new(v)`          (i32, f64 — Copy types)
+/// - `bool`  — `Box::new(v as i32)`   (bool stored as integer)
+///
+/// # Example
+///
+/// ```ignore
+/// crud_update! {
+///     model: PersonaGroup,
+///     table: "persona_groups",
+///     input: UpdatePersonaGroupInput,
+///     fields: {
+///         name: clone,
+///         color: clone,
+///         sort_order: copy,
+///         collapsed: bool,
+///         description: clone,
+///     }
+/// }
+/// ```
+#[macro_export]
+macro_rules! crud_update {
+    (
+        model: $model:ty,
+        table: $table:literal,
+        input: $input_type:ty,
+        fields: {
+            $( $field:ident : $kind:ident ),* $(,)?
+        }
+    ) => {
+        pub fn update(
+            pool: &crate::db::DbPool,
+            id: &str,
+            input: $input_type,
+        ) -> Result<$model, crate::error::AppError> {
+            get_by_id(pool, id)?;
+
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+
+            let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+            let mut param_idx = 2u32;
+
+            $( push_field!(input.$field, stringify!($field), sets, param_idx); )*
+
+            let sql = format!(
+                concat!("UPDATE ", $table, " SET {} WHERE id = ?{}"),
+                sets.join(", "),
+                param_idx
+            );
+
+            let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+            $( crud_update!(@push input.$field, param_values, $kind); )*
+            param_values.push(Box::new(id.to_string()));
+
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                param_values.iter().map(|p| p.as_ref()).collect();
+            conn.execute(&sql, params_ref.as_slice())?;
+
+            get_by_id(pool, id)
+        }
+    };
+
+    (@push $field:expr, $params:expr, clone) => {
+        if let Some(ref v) = $field {
+            $params.push(Box::new(v.clone()));
+        }
+    };
+    (@push $field:expr, $params:expr, copy) => {
+        if let Some(v) = $field {
+            $params.push(Box::new(v));
+        }
+    };
+    (@push $field:expr, $params:expr, bool) => {
+        if let Some(v) = $field {
+            $params.push(Box::new(v as i32));
         }
     };
 }

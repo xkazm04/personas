@@ -1,7 +1,9 @@
-import { Search, X, Send } from 'lucide-react';
+import { Search, X, Send, GraduationCap, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SearchAutocomplete } from './SearchAutocomplete';
 import { getCategoryMeta } from '../filters/searchConstants';
+import { DIFFICULTY_META, SETUP_META } from '../../../shared/templateComplexity';
+import type { DifficultyLevel, SetupLevel } from '../../../shared/templateComplexity';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { QueryChip } from './useStructuredQuery';
 
@@ -38,15 +40,33 @@ export function SearchChipInput({
       </div>
 
       {chips.map((chip, i) => {
-        const meta = chip.type === 'category' ? getCategoryMeta(chip.value) : null;
-        const Icon = meta?.icon;
+        let Icon: typeof Search | null = null;
+        let chipColor: string | undefined;
+        let chipBg = 'bg-violet-500/10 border-violet-500/20 text-violet-300';
+
+        if (chip.type === 'category') {
+          const meta = getCategoryMeta(chip.value);
+          Icon = meta.icon;
+          chipColor = meta.color;
+        } else if (chip.type === 'difficulty') {
+          Icon = GraduationCap;
+          const dm = DIFFICULTY_META[chip.value as DifficultyLevel];
+          chipColor = dm?.color;
+          chipBg = dm ? `${dm.bgClass}` : chipBg;
+        } else if (chip.type === 'setup') {
+          Icon = Clock;
+          const sm = SETUP_META[chip.value as SetupLevel];
+          chipColor = sm?.color;
+          chipBg = sm ? `${sm.bgClass}` : chipBg;
+        }
+
         return (
           <span key={`${chip.type}-${chip.value}`}
-            className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-sm rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 flex-shrink-0">
-            {Icon && <Icon className="w-3 h-3" style={{ color: meta?.color }} />}
+            className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-sm rounded-full border flex-shrink-0 ${chipBg}`}>
+            {Icon && <Icon className="w-3 h-3" style={{ color: chipColor }} />}
             {chip.label}
             <button onClick={() => removeChip(i)}
-              className="ml-0.5 p-0.5 hover:text-white transition-colors rounded-full hover:bg-violet-500/20">
+              className="ml-0.5 p-0.5 hover:text-white transition-colors rounded-full hover:bg-white/10">
               <X className="w-2.5 h-2.5" />
             </button>
           </span>
@@ -69,7 +89,7 @@ export function SearchChipInput({
         placeholder={
           chips.length > 0 ? 'Add more filters or search...'
             : aiSearchMode ? 'Describe what you need, then press Enter...'
-            : 'Search templates... (try category:monitoring)'
+            : 'Search templates... (try category: difficulty: setup:)'
         }
         className="flex-1 min-w-[120px] py-2 pr-10 text-sm bg-transparent text-foreground/90 placeholder:text-muted-foreground/40 focus-visible:outline-none"
       />

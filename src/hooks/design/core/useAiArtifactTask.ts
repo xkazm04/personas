@@ -1,6 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useTauriStream, type TauriStreamActions } from './useTauriStream';
 import { defaultGetLine, buildResolveStatus } from '../template/useAiArtifactFlow';
+import type { SystemOperationType } from '@/lib/execution/pipeline';
+import { SystemTraceSession } from '@/lib/execution/systemTrace';
 
 // -- Types -------------------------------------------------------
 
@@ -36,6 +38,11 @@ export interface AiArtifactTaskConfig<TArgs extends unknown[], TResult> {
   getLine?: (payload: Record<string, unknown>) => string;
   /** Custom resolveStatus. Defaults to `buildResolveStatus(errorMessage)`. */
   resolveStatus?: (payload: Record<string, unknown>) => { result: TResult } | { error: string } | null;
+  /**
+   * Enable system-wide tracing for this task. When set, each start/complete/error
+   * lifecycle emits UnifiedSpan entries into the system trace timeline.
+   */
+  traceOperation?: SystemOperationType;
 }
 
 export interface AiArtifactTaskState<TResult> {
@@ -96,14 +103,36 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
     errorMessage = 'AI task failed',
     timeoutMs,
     getLine = defaultGetLine,
-    resolveStatus = buildResolveStatus<TResult>(errorMessage),
+    resolveStatus: userResolveStatus,
+    traceOperation,
   } = config;
+
+  const traceSessionRef = useRef<SystemTraceSession | null>(null);
+
+  // Wrap resolveStatus to also complete the trace session on resolution
+  const baseResolveStatus = userResolveStatus ?? buildResolveStatus<TResult>(errorMessage);
+  const tracedResolveStatus = useCallback(
+    (payload: Record<string, unknown>): { result: TResult } | { error: string } | null => {
+      const outcome = baseResolveStatus(payload);
+      if (outcome && traceSessionRef.current) {
+        const session = traceSessionRef.current;
+        if ('error' in outcome) {
+          session.complete(outcome.error);
+        } else {
+          session.complete();
+        }
+        traceSessionRef.current = null;
+      }
+      return outcome;
+    },
+    [baseResolveStatus],
+  );
 
   const stream = useTauriStream<TResult>({
     progressEvent,
     statusEvent,
     getLine,
-    resolveStatus,
+    resolveStatus: traceOperation ? tracedResolveStatus : baseResolveStatus,
     completedPhase,
     runningPhase,
     startErrorMessage: errorMessage,
@@ -112,12 +141,23 @@ export function useAiArtifactTask<TArgs extends unknown[], TResult>(
 
   const start = useCallback(
     async (...args: TArgs) => {
+      // Start a system trace session if tracing is enabled
+      if (traceOperation) {
+        traceSessionRef.current?.complete('cancelled');
+        const label = `${errorMessage.replace(/ failed$/, '')}`;
+        traceSessionRef.current = SystemTraceSession.start(traceOperation, label);
+      }
+
       await stream.start(() => startFn(...args));
     },
-    [stream.start, startFn],
+    [stream.start, startFn, traceOperation, errorMessage],
   );
 
   const cancel = useCallback(() => {
+    if (traceSessionRef.current) {
+      traceSessionRef.current.complete('cancelled');
+      traceSessionRef.current = null;
+    }
     stream.cancel(cancelFn ? async () => { await cancelFn(); return; } : undefined);
   }, [stream.cancel, cancelFn]);
 

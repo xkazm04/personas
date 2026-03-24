@@ -7,6 +7,7 @@ use crate::db::models::{
 };
 use crate::db::repos::resources::teams as repo;
 use crate::db::repos::resources::team_memories as team_memories_repo;
+use crate::engine::event_registry::event_name;
 use crate::engine::optimizer::{self, PipelineAnalytics};
 use crate::engine::topology::{self, TopologyBlueprint};
 use crate::error::AppError;
@@ -282,7 +283,7 @@ pub async fn execute_team(
 
     // Emit initial status
     let _ = app.emit(
-        "pipeline-status",
+        event_name::PIPELINE_STATUS,
         serde_json::json!({
             "pipeline_id": run_id,
             "team_id": team_id,
@@ -341,7 +342,7 @@ pub async fn execute_team(
                 None,
             );
             let _ = app.emit(
-                "pipeline-status",
+                event_name::PIPELINE_STATUS,
                 serde_json::json!({
                     "pipeline_id": run_id_clone,
                     "team_id": team_id,
@@ -556,7 +557,7 @@ pub async fn execute_team(
                 None,
             );
             let _ = app.emit(
-                "pipeline-status",
+                event_name::PIPELINE_STATUS,
                 serde_json::json!({
                     "pipeline_id": run_id_clone,
                     "team_id": team_id,
@@ -588,7 +589,7 @@ pub async fn execute_team(
             None,
         );
         let _ = app.emit(
-            "pipeline-status",
+            event_name::PIPELINE_STATUS,
             serde_json::json!({
                 "pipeline_id": run_id_clone,
                 "team_id": team_id,

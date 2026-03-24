@@ -1,5 +1,4 @@
 import { Trash2, GripVertical } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import type { BuilderUseCase } from '../../steps/builder/types';
 import { TriggerPopover } from '../triggers/TriggerPopover';
@@ -100,16 +99,12 @@ export function DraggableUseCaseCard({
   });
 
   return (
-    <motion.div
+    <div
       ref={(node) => {
         setDragRef(node);
         setDropRef(node);
       }}
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.2 }}
-      className={`overflow-hidden ${isOver && !isDragging ? 'ring-1 ring-primary/30 rounded-xl' : ''}`}
+      className={`animate-fade-in overflow-hidden ${isOver && !isDragging ? 'ring-1 ring-primary/30 rounded-xl' : ''}`}
       {...attributes}
     >
       <UseCaseCardContent
@@ -120,6 +115,6 @@ export function DraggableUseCaseCard({
         dragHandleProps={listeners}
         isDragging={isDragging}
       />
-    </motion.div>
+    </div>
   );
 }

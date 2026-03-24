@@ -1,5 +1,4 @@
 import { useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   ArrowLeft,
@@ -71,12 +70,8 @@ export function CreateTemplateModal({
       maxWidthClass="max-w-3xl"
       panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={TRANSITION_NORMAL}
-        className="relative h-full flex flex-col overflow-hidden"
+      <div
+        className="animate-fade-slide-in relative h-full flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
@@ -102,8 +97,7 @@ export function CreateTemplateModal({
 
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            {state.step === 'describe' && (
+          {state.step === 'describe' && (
               <DescribeStep
                 templateName={state.templateName}
                 description={state.description}
@@ -136,7 +130,6 @@ export function CreateTemplateModal({
                 onApplyAdjustment={handleApplyAdjustment}
               />
             )}
-          </AnimatePresence>
         </div>
 
         {/* Footer */}
@@ -201,7 +194,7 @@ export function CreateTemplateModal({
             )}
           </div>
         </div>
-      </motion.div>
+      </div>
     </BaseModal>
   );
 }

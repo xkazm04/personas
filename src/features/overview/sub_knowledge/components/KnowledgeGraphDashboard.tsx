@@ -12,6 +12,7 @@ import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/ov
 import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
 import { KnowledgeRow } from './KnowledgeRow';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
+import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 
 import { AnnotateModal } from './AnnotateModal';
 
@@ -78,6 +79,12 @@ export default function KnowledgeGraphDashboard() {
         : null,
     ],
   });
+
+  const ENTRY_ROW_ESTIMATE = 64;
+  const { parentRef: entryListRef, virtualizer: entryVirtualizer } = useVirtualList(allEntries, ENTRY_ROW_ESTIMATE);
+
+  const recentLearnings = !selectedPersonaId && summary ? summary.recent_learnings : [];
+  const { parentRef: recentListRef, virtualizer: recentVirtualizer } = useVirtualList(recentLearnings, ENTRY_ROW_ESTIMATE);
 
   const dismissDrilldown = () => {
     setFailureDrilldownDate(null);
@@ -273,10 +280,23 @@ export default function KnowledgeGraphDashboard() {
               `}</style>
             </div>
           ) : (
-            <div className="space-y-2">
-              {allEntries.map((entry) => (
-                <KnowledgeRow key={entry.id} entry={entry} personaName={personaMap.get(entry.persona_id)} onMutated={() => { void fetchData(); }} />
-              ))}
+            <div ref={entryListRef} className="overflow-y-auto max-h-[600px] rounded-xl">
+              <div style={{ height: `${entryVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+                {entryVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const entry = allEntries[virtualRow.index]!;
+                  return (
+                    <div
+                      key={entry.id}
+                      data-index={virtualRow.index}
+                      ref={entryVirtualizer.measureElement}
+                      style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
+                      className="pb-2"
+                    >
+                      <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)} onMutated={() => { void fetchData(); }} />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -285,10 +305,23 @@ export default function KnowledgeGraphDashboard() {
               <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
                 <RefreshCw className="w-3.5 h-3.5 text-primary/60" /> Recent Learnings
               </h3>
-              <div className="space-y-2">
-                {summary.recent_learnings.map((entry) => (
-                  <KnowledgeRow key={entry.id} entry={entry} personaName={personaMap.get(entry.persona_id)} onMutated={() => { void fetchData(); }} />
-                ))}
+              <div ref={recentListRef} className="overflow-y-auto max-h-[400px] rounded-xl">
+                <div style={{ height: `${recentVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+                  {recentVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const entry = recentLearnings[virtualRow.index]!;
+                    return (
+                      <div
+                        key={entry.id}
+                        data-index={virtualRow.index}
+                        ref={recentVirtualizer.measureElement}
+                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
+                        className="pb-2"
+                      >
+                        <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)} onMutated={() => { void fetchData(); }} />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

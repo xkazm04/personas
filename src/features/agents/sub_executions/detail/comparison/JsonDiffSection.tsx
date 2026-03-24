@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { jsonDiff } from './comparisonHelpers';
 
 export function JsonDiffSection({
@@ -32,13 +31,9 @@ export function JsonDiffSection({
         )}
       </button>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-2 overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in mt-2 overflow-hidden"
           >
             {diffs.length === 0 ? (
               <p className="typo-body text-muted-foreground/50 py-2">No differences</p>
@@ -53,9 +48,8 @@ export function JsonDiffSection({
                 ))}
               </div>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -81,17 +80,8 @@ export function WizardSidebar({
                 </div>
 
                 {isActive && shouldAnimate && (
-                  <motion.div
-                    className="absolute inset-0 rounded-full border border-violet-500/40"
-                    animate={{
-                      scale: [1, 1.4, 1],
-                      opacity: [0.4, 0, 0.4],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                    }}
+                  <div
+                    className="animate-fade-in absolute inset-0 rounded-full border border-violet-500/40"
                   />
                 )}
               </div>
@@ -121,12 +111,9 @@ export function WizardSidebar({
               <div className="flex justify-center py-0">
                 <div className="relative ml-[-48px]">
                   <div className="h-3 w-0.5 bg-primary/10" />
-                  <motion.div
-                    className="absolute inset-0 w-0.5 bg-emerald-500/50"
-                    initial={{ scaleY: 0 }}
-                    animate={{ scaleY: isCompleted ? 1 : 0 }}
-                    style={{ originY: 0 }}
-                    transition={spring}
+                  <div
+                    className="animate-fade-slide-in absolute inset-0 w-0.5 bg-emerald-500/50"
+                    style={{ transformOrigin: 'top' }}
                   />
                 </div>
               </div>

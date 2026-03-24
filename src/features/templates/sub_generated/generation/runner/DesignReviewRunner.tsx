@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, Play, Square, Copy, Check, Clock, AlertCircle } from 'lucide-react';
 import type { RunProgress } from '@/hooks/design/template/useDesignReviews';
 import type { PredefinedTestCase } from './designRunnerConstants';
@@ -41,19 +40,14 @@ export default function DesignReviewRunner({
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    <div
+        className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
         onClick={(e) => e.target === e.currentTarget && !isRunning && onClose()}
       >
-        <motion.div
+        <div
           ref={state.modalRef}
           role="dialog" aria-modal="true" aria-labelledby="design-runner-title"
-          initial={{ opacity: 0, scale: 0.95, y: 12 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 12 }}
-          className="w-[750px] max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          className="animate-fade-slide-in w-[750px] max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-primary/10 bg-primary/5">
@@ -146,7 +140,7 @@ export default function DesignReviewRunner({
                 <p className="text-sm text-violet-400/70 mb-2 truncate">Generating: {state.progressInfo.currentTemplateName}</p>
               )}
               <div className="w-full h-2 rounded-full bg-secondary/50 border border-primary/10 overflow-hidden">
-                <motion.div className="h-full rounded-full bg-violet-500/80" initial={{ width: 0 }} animate={{ width: `${state.progressInfo.pct}%` }} transition={{ duration: 0.4, ease: 'easeOut' }} />
+                <div className="animate-fade-in h-full rounded-full bg-violet-500/80" style={{ width: `${state.progressInfo.pct}%` }} />
               </div>
             </div>
           )}
@@ -186,8 +180,7 @@ export default function DesignReviewRunner({
               </div>
             )}
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        </div>
+      </div>
   );
 }

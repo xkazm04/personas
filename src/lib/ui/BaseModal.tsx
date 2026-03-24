@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
 const SIZE_CLASSES = {
@@ -106,25 +105,19 @@ export function BaseModal({
 
   return (
     <div className={containerClassName ?? `fixed inset-0 z-50 flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`}>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.15 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-md"
+      <div
+        className="animate-fade-slide-in absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
       />
-      <motion.div
+      <div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-        className={`relative w-full ${IS_MOBILE ? 'max-w-full' : resolvedMaxWidth} ${panelClassName ?? (IS_MOBILE ? 'h-full bg-background overflow-hidden' : 'max-h-[85vh] glass-md rounded-2xl shadow-elevation-4 overflow-hidden')}`}
+        className={`animate-fade-slide-in relative w-full ${IS_MOBILE ? 'max-w-full' : resolvedMaxWidth} ${panelClassName ?? (IS_MOBILE ? 'h-full bg-background overflow-hidden' : 'max-h-[85vh] glass-md rounded-2xl shadow-elevation-4 overflow-hidden')}`}
       >
         {children}
-      </motion.div>
+      </div>
     </div>
   );
 }

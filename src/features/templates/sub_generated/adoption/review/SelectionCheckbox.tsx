@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { useTemplateMotion } from '@/features/templates/animationPresets';
 
@@ -22,18 +21,12 @@ export function SelectionCheckbox({ checked, onChange, id }: { checked: boolean;
         onClick={(e) => e.stopPropagation()}
         className="sr-only"
       />
-      <AnimatePresence>
-        {checked && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 15, stiffness: 400, ...MOTION.snappy.framer }}
+      {checked && (
+          <div className="animate-fade-slide-in"
           >
             <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </span>
   );
 }

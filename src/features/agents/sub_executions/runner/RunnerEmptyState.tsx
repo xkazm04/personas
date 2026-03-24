@@ -1,6 +1,4 @@
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
-import { motion } from 'framer-motion';
-
 interface RunnerEmptyStateProps {
   persona: {
     name: string;
@@ -11,12 +9,8 @@ interface RunnerEmptyStateProps {
 
 export function RunnerEmptyState({ persona }: RunnerEmptyStateProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col items-center justify-center py-16 gap-4"
+    <div
+      className="animate-fade-slide-in flex flex-col items-center justify-center py-16 gap-4"
       data-testid="runner-empty-state"
     >
       {persona.icon ? (
@@ -46,6 +40,6 @@ export function RunnerEmptyState({ persona }: RunnerEmptyStateProps) {
           </kbd>
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 }

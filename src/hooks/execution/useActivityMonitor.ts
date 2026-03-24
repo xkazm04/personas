@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 
 export type StaleLevel = 'active' | 'waiting' | 'stuck';
 
@@ -33,7 +34,7 @@ export function useActivityMonitor(
     if (!executionId || !isRunning) return;
 
     let cancelled = false;
-    const unlistenPromise = listen<HeartbeatPayload>('execution-heartbeat', (event) => {
+    const unlistenPromise = listen<HeartbeatPayload>(EventName.EXECUTION_HEARTBEAT, (event) => {
       if (cancelled || event.payload.execution_id !== executionId) return;
       setSilenceMs(event.payload.silence_ms);
     });
@@ -49,7 +50,7 @@ export function useActivityMonitor(
     if (!executionId || !isRunning) return;
 
     let cancelled = false;
-    const unlistenPromise = listen<{ execution_id: string; line: string }>('execution-output', (event) => {
+    const unlistenPromise = listen<{ execution_id: string; line: string }>(EventName.EXECUTION_OUTPUT, (event) => {
       if (cancelled || event.payload.execution_id !== executionId) return;
       setSilenceMs(0);
       lastOutputRef.current = Date.now();

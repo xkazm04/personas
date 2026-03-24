@@ -158,7 +158,7 @@ export function useSchemaProposal({
         .filter((s) => s.length > 0);
 
       for (const stmt of statements) {
-        await executeDbQuery(credentialId, stmt);
+        await executeDbQuery(credentialId, stmt, undefined, true);
       }
 
       setExecutionResult({ success: true, message: `${statements.length} statement(s) executed successfully.` });

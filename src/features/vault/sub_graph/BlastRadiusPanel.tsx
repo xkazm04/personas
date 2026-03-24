@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { Key, Bot, Zap, X, Shield, FlaskConical } from 'lucide-react';
 import type { BlastRadius } from './credentialGraph';
 import type { SimulationResult } from './credentialGraph';
@@ -50,20 +49,16 @@ export function BlastRadiusPanel({
         </div>
       )}
 
-      <AnimatePresence mode="wait">
-        {simulationMode && simulation ? (
+      {simulationMode && simulation ? (
           <SimulationPanel
             key="simulation"
             simulation={simulation}
             onClose={onClose}
           />
         ) : (
-          <motion.div
+          <div
             key="blast"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            className="rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
+            className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
@@ -132,9 +127,8 @@ export function BlastRadiusPanel({
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

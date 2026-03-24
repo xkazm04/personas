@@ -52,29 +52,28 @@ export function useHealthChecks() {
     setIpcError(false);
     setSections([]);
 
-    Promise.allSettled(CHECKS.map((check) =>
-      check.fn()
-        .then((section) => {
-          if (generationRef.current !== gen) return;
-          setSections((prev) => sortSections([...prev.filter((s) => s.id !== section.id), section]));
-        })
-        .catch(() => {
-          if (generationRef.current !== gen) return;
-          setIpcError(true);
-          setSections((prev) => sortSections([...prev.filter((s) => s.id !== check.id), IPC_FALLBACKS[check.id]!]));
-          setHasIssues(true);
-        })
-    )).then(() => {
-      if (generationRef.current !== gen) return;
-      setSections((finalSections) => {
-        const allOk = finalSections.every((s) =>
-          s.items.every((i) => i.status === 'ok' || i.status === 'info' || i.status === 'inactive')
+    Promise.allSettled(CHECKS.map((check) => check.fn()))
+      .then((results) => {
+        if (generationRef.current !== gen) return;
+
+        let anyIpcError = false;
+        const resolved: HealthCheckSection[] = results.map((result, i) => {
+          if (result.status === 'fulfilled') return result.value;
+          anyIpcError = true;
+          const checkId = CHECKS[i]!.id;
+          return IPC_FALLBACKS[checkId]!;
+        });
+
+        const sorted = sortSections(resolved);
+        const allOk = sorted.every((s) =>
+          s.items.every((item) => item.status === 'ok' || item.status === 'info' || item.status === 'inactive')
         );
+
+        setSections(sorted);
         setHasIssues(!allOk);
-        return finalSections;
+        setIpcError(anyIpcError);
+        setLoading(false);
       });
-      setLoading(false);
-    });
   }, []);
 
   useEffect(() => {

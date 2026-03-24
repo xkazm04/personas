@@ -7,6 +7,7 @@ import type { PersonaTrigger } from "@/lib/bindings/PersonaTrigger";
 import type { PersonaEventSubscription } from "@/lib/bindings/PersonaEventSubscription";
 import type { PersonaAutomation } from "@/lib/bindings/PersonaAutomation";
 import type { CreatePersonaInput } from "@/lib/bindings/CreatePersonaInput";
+import type { EffectiveModelConfig } from "@/lib/bindings/EffectiveModelConfig";
 import type { UpdatePersonaInput } from "@/lib/bindings/UpdatePersonaInput";
 
 /** Batched persona detail returned by the single `get_persona_detail` IPC command. */
@@ -53,6 +54,10 @@ export const getPersonaSummaries = () =>
 /** Single IPC call that returns the persona with all sub-resources. */
 export const getPersonaDetail = (id: string) =>
   invoke<PersonaDetailResponse>("get_persona_detail", { id });
+
+/** Resolve the effective model config for a persona (global -> workspace -> agent cascade). */
+export const resolveEffectiveConfig = (personaId: string) =>
+  invoke<EffectiveModelConfig>("resolve_effective_config", { personaId });
 
 // ============================================================================
 // Import / Export

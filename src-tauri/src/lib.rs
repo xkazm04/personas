@@ -20,6 +20,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 
 use db::DbPool;
+use engine::event_registry::event_name;
 use tauri::{Emitter, Manager};
 
 /// Shared HTTP client for all general-purpose HTTP callsites.
@@ -245,6 +246,9 @@ pub struct AppState {
     pub refresh_lock: Arc<tokio::sync::Mutex<()>>,
     /// Cloud orchestrator HTTP client (None when not connected).
     pub cloud_client: Arc<tokio::sync::Mutex<Option<Arc<cloud::client::CloudClient>>>>,
+    /// Guard flag: prevents concurrent cloud_connect / cloud_reconnect_from_keyring
+    /// calls from racing through the health check and keyring write.
+    pub cloud_connecting: Arc<std::sync::atomic::AtomicBool>,
     /// Maps local execution ID -> cloud execution ID for active cloud runs.
     pub cloud_exec_ids: Arc<tokio::sync::Mutex<HashMap<String, String>>>,
     /// GitLab API client (None when not connected).
@@ -401,6 +405,22 @@ pub fn run() {
                 }
             }
 
+            // Encrypt any legacy plaintext trigger config secrets (webhook_secret, polling headers)
+            match engine::crypto::migrate_plaintext_trigger_secrets(&pool) {
+                Ok((migrated, skipped)) => {
+                    if migrated > 0 || skipped > 0 {
+                        tracing::info!(
+                            "Trigger config secret migration: {} encrypted, {} skipped",
+                            migrated,
+                            skipped
+                        );
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("Trigger config secret migration skipped: {}", e);
+                }
+            }
+
             // Initialise the connector strategy registry (healthcheck + rotation dispatch)
             engine::connector_strategy::init_registry();
 
@@ -504,6 +524,7 @@ pub fn run() {
                 auth: auth.clone(),
                 refresh_lock: Arc::new(tokio::sync::Mutex::new(())),
                 cloud_client: Arc::new(tokio::sync::Mutex::new(cloud_client_opt)),
+                cloud_connecting: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 gitlab_client: Arc::new(tokio::sync::Mutex::new(gitlab_client_opt)),
                 rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
@@ -546,7 +567,7 @@ pub fn run() {
                 tracing::warn!("Failed to set up system tray: {}", e);
             }
 
-            // Deep-link handler for OAuth callbacks
+            // Deep-link handler for OAuth callbacks and share links
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let dl_handle = app.handle().clone();
@@ -563,11 +584,19 @@ pub fn run() {
                                     commands::infrastructure::auth::handle_auth_callback(&handle, &url_str).await
                                 {
                                     tracing::error!("Auth callback failed: {}", e);
-                                    let _ = handle.emit("auth-error", serde_json::json!({
+                                    let _ = handle.emit(event_name::AUTH_ERROR, serde_json::json!({
                                         "error": format!("{}", e)
                                     }));
                                 }
                             });
+                        } else if url_str.starts_with("personas://share") {
+                            // Share link deep link: emit event to frontend so it can
+                            // auto-open the import dialog with the deep link URL.
+                            tracing::info!("Share deep link received: {}", url_str);
+                            let _ = dl_handle.emit(
+                                event_name::SHARE_LINK_RECEIVED,
+                                serde_json::json!({ "url": url_str }),
+                            );
                         }
                     }
                 });
@@ -656,6 +685,7 @@ pub fn run() {
             commands::core::personas::delete_persona,
             commands::core::personas::get_persona_summaries,
             commands::core::personas::get_persona_detail,
+            commands::core::personas::resolve_effective_config,
             // Core -- Groups
             commands::core::groups::list_groups,
             commands::core::groups::create_group,
@@ -694,6 +724,9 @@ pub fn run() {
             commands::core::chat::get_chat_messages,
             commands::core::chat::create_chat_message,
             commands::core::chat::delete_chat_session,
+            commands::core::chat::save_chat_session_context,
+            commands::core::chat::get_chat_session_context,
+            commands::core::chat::get_latest_chat_session,
             // Execution -- Executions
             commands::execution::executions::list_executions,
             commands::execution::executions::list_all_executions,
@@ -701,6 +734,7 @@ pub fn run() {
             commands::execution::executions::create_execution,
             commands::execution::executions::execute_persona,
             commands::execution::executions::cancel_execution,
+            commands::execution::executions::list_executions_by_trigger,
             commands::execution::executions::list_executions_for_use_case,
             commands::execution::executions::get_execution_log,
             commands::execution::executions::get_execution_log_lines,
@@ -851,6 +885,10 @@ pub fn run() {
             commands::design::template_adopt::clear_template_generate_snapshot,
             commands::design::template_adopt::cancel_template_generate,
             commands::design::template_adopt::save_custom_template,
+            // Design -- Template Integrity (backend verification)
+            commands::design::template_adopt::verify_template_integrity,
+            commands::design::template_adopt::verify_template_integrity_batch,
+            commands::design::template_adopt::get_template_manifest_count,
             // Design -- Template Feedback
             commands::design::template_feedback::create_template_feedback,
             commands::design::template_feedback::list_template_feedback,
@@ -971,6 +1009,7 @@ pub fn run() {
             commands::credentials::db_schema::update_db_saved_query,
             commands::credentials::db_schema::delete_db_saved_query,
             commands::credentials::db_schema::execute_db_query,
+            commands::credentials::db_schema::classify_db_query,
             commands::credentials::db_schema::introspect_db_tables,
             commands::credentials::db_schema::introspect_db_columns,
             // Credentials -- Query Debug (AI-assisted)
@@ -981,6 +1020,10 @@ pub fn run() {
             commands::credentials::schema_proposal::get_schema_proposal_snapshot,
             commands::credentials::schema_proposal::cancel_schema_proposal,
             commands::credentials::schema_proposal::validate_db_schema,
+            // Credentials -- NL Query (conversational database console)
+            commands::credentials::nl_query::start_nl_query,
+            commands::credentials::nl_query::get_nl_query_snapshot,
+            commands::credentials::nl_query::cancel_nl_query,
             // Credentials -- API Proxy
             commands::credentials::api_proxy::execute_api_request,
             commands::credentials::api_proxy::get_api_proxy_metrics,
@@ -1079,6 +1122,12 @@ pub fn run() {
             commands::communication::events::update_subscription,
             commands::communication::events::delete_subscription,
             commands::communication::events::test_event_flow,
+            // Communication -- Shared Events
+            commands::communication::shared_events::shared_events_browse_catalog,
+            commands::communication::shared_events::shared_events_refresh_catalog,
+            commands::communication::shared_events::shared_events_subscribe,
+            commands::communication::shared_events::shared_events_unsubscribe,
+            commands::communication::shared_events::shared_events_list_subscriptions,
             // Communication -- Messages
             commands::communication::messages::list_messages,
             commands::communication::messages::get_message,
@@ -1102,6 +1151,16 @@ pub fn run() {
             commands::communication::observability::rollback_prompt_version,
             commands::communication::observability::get_prompt_error_rate,
             commands::communication::observability::run_prompt_ab_test,
+            // Communication -- Alert Rules (backend-persisted)
+            commands::communication::observability::list_alert_rules,
+            commands::communication::observability::create_alert_rule,
+            commands::communication::observability::update_alert_rule,
+            commands::communication::observability::delete_alert_rule,
+            commands::communication::observability::toggle_alert_rule,
+            commands::communication::observability::list_fired_alerts,
+            commands::communication::observability::create_fired_alert,
+            commands::communication::observability::dismiss_fired_alert,
+            commands::communication::observability::clear_fired_alerts,
             // Communication -- SLA Dashboard
             commands::communication::sla::get_sla_dashboard,
             // Teams
@@ -1198,6 +1257,21 @@ pub fn run() {
             commands::tools::triggers::get_persona_config_warnings,
             commands::tools::triggers::get_composite_partial_matches,
             commands::tools::triggers::get_composite_partial_match,
+            // Signing -- Document Signatures
+            commands::signing::sign_document,
+            commands::signing::verify_document,
+            commands::signing::list_document_signatures,
+            commands::signing::get_document_signature,
+            commands::signing::delete_document_signature,
+            commands::signing::export_signature_sidecar,
+            commands::signing::write_sidecar_file,
+            commands::signing::read_sidecar_file,
+            // OCR -- Document Text Extraction
+            commands::ocr::ocr_with_gemini,
+            commands::ocr::ocr_with_claude,
+            commands::ocr::list_ocr_documents,
+            commands::ocr::get_ocr_document,
+            commands::ocr::delete_ocr_document,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
@@ -1212,6 +1286,9 @@ pub fn run() {
             commands::infrastructure::system::health_check_circuit_breaker,
             commands::infrastructure::system::health_check_subscriptions,
             commands::infrastructure::system::open_external_url,
+            commands::infrastructure::system::register_claude_desktop_mcp,
+            commands::infrastructure::system::unregister_claude_desktop_mcp,
+            commands::infrastructure::system::check_claude_desktop_mcp,
             commands::infrastructure::system::get_crash_logs,
             commands::infrastructure::system::clear_crash_logs,
             commands::infrastructure::system::report_frontend_crash,
@@ -1228,12 +1305,16 @@ pub fn run() {
             // Infrastructure -- BYOM (Bring Your Own Model)
             commands::infrastructure::byom::get_byom_policy,
             commands::infrastructure::byom::set_byom_policy,
+            commands::infrastructure::byom::validate_byom_policy,
             commands::infrastructure::byom::delete_byom_policy,
             commands::infrastructure::byom::list_provider_audit_log,
             commands::infrastructure::byom::list_provider_audit_by_persona,
             commands::infrastructure::byom::get_provider_usage_stats,
+            commands::infrastructure::byom::get_provider_usage_timeseries,
+            commands::infrastructure::byom::test_provider_connection,
             // Infrastructure -- Cloud
             commands::infrastructure::cloud::cloud_connect,
+            commands::infrastructure::cloud::cloud_diagnose,
             commands::infrastructure::cloud::cloud_reconnect_from_keyring,
             commands::infrastructure::cloud::cloud_disconnect,
             commands::infrastructure::cloud::cloud_get_config,
@@ -1255,6 +1336,7 @@ pub fn run() {
             commands::infrastructure::cloud::cloud_respond_to_review,
             commands::infrastructure::cloud::cloud_list_executions,
             commands::infrastructure::cloud::cloud_execution_stats,
+            commands::infrastructure::cloud::cloud_get_execution_output,
             commands::infrastructure::cloud::cloud_list_triggers,
             commands::infrastructure::cloud::cloud_create_trigger,
             commands::infrastructure::cloud::cloud_update_trigger,
@@ -1279,6 +1361,13 @@ pub fn run() {
             commands::infrastructure::gitlab::gitlab_list_agents,
             commands::infrastructure::gitlab::gitlab_undeploy_agent,
             commands::infrastructure::gitlab::gitlab_revoke_credentials,
+            commands::infrastructure::gitlab::gitlab_list_persona_versions,
+            commands::infrastructure::gitlab::gitlab_deploy_persona_versioned,
+            commands::infrastructure::gitlab::gitlab_rollback_persona,
+            commands::infrastructure::gitlab::gitlab_list_persona_branches,
+            commands::infrastructure::gitlab::gitlab_setup_persona_branches,
+            commands::infrastructure::gitlab::gitlab_list_deployment_history,
+            commands::infrastructure::gitlab::gitlab_rollback_from_history,
             // Workflows
             commands::infrastructure::workflows::get_workflows_overview,
             commands::infrastructure::workflows::get_workflow_job_output,
@@ -1356,6 +1445,15 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_triage_rule,
             commands::infrastructure::dev_tools::dev_tools_delete_triage_rule,
             commands::infrastructure::dev_tools::dev_tools_run_triage_rules,
+            // Dev Tools -- Pipelines (Idea-to-Execution)
+            commands::infrastructure::dev_tools::dev_tools_create_pipeline,
+            commands::infrastructure::dev_tools::dev_tools_list_pipelines,
+            commands::infrastructure::dev_tools::dev_tools_get_pipeline,
+            commands::infrastructure::dev_tools::dev_tools_advance_pipeline,
+            commands::infrastructure::dev_tools::dev_tools_delete_pipeline,
+            // Dev Tools -- Health Snapshots
+            commands::infrastructure::dev_tools::dev_tools_list_health_snapshots,
+            commands::infrastructure::dev_tools::dev_tools_save_health_snapshot,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,
@@ -1382,6 +1480,13 @@ pub fn run() {
             commands::network::bundle::preview_bundle_import,
             commands::network::bundle::apply_bundle_import,
             commands::network::bundle::verify_bundle,
+            commands::network::bundle::export_bundle_to_clipboard,
+            commands::network::bundle::preview_bundle_from_clipboard,
+            commands::network::bundle::apply_bundle_from_clipboard,
+            commands::network::bundle::create_share_link,
+            commands::network::bundle::preview_share_link,
+            commands::network::bundle::import_from_share_link,
+            commands::network::bundle::resolve_share_deep_link,
             // Network -- Sovereign Enclaves
             commands::network::enclave::seal_enclave,
             commands::network::enclave::verify_enclave,

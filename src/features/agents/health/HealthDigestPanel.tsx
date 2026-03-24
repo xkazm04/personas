@@ -9,7 +9,6 @@ import {
   ChevronRight,
   Clock,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
@@ -34,12 +33,9 @@ function CompactScoreRing({ score }: { score: HealthScore }) {
     <div className="relative w-12 h-12 flex-shrink-0">
       <svg className="w-full h-full -rotate-90" viewBox="0 0 40 40">
         <circle cx="20" cy="20" r={radius} fill="none" stroke="currentColor" strokeWidth="3" className="text-primary/10" />
-        <motion.circle
+        <circle className="animate-fade-in"
           cx="20" cy="20" r={radius} fill="none" stroke={strokeColor} strokeWidth="3"
           strokeLinecap="round" strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">

@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Smile } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewportClamp';
@@ -55,15 +54,10 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
+      {open && (
+          <div
             ref={popupRef}
-            initial={{ opacity: 0, y: -4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute top-full mt-1 left-0 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 p-3 min-w-[260px]"
+            className="animate-fade-slide-in absolute top-full mt-1 left-0 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 p-3 min-w-[260px]"
             style={{ transform: clampStyle.transform }}
           >
             <IconSelector
@@ -72,9 +66,8 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
               connectors={connectors}
               size={size}
             />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

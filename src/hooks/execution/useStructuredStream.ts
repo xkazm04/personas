@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import type {
   StructuredExecutionEvent,
   TextEvent,
@@ -37,7 +38,7 @@ export function useStructuredStream(
     if (!executionId) return;
 
     let cancelled = false;
-    const unlistenPromise = listen<StructuredExecutionEvent>('execution-event', (event) => {
+    const unlistenPromise = listen<StructuredExecutionEvent>(EventName.EXECUTION_EVENT, (event) => {
       if (cancelled) return;
       const payload = event.payload;
       if (payload.execution_id !== executionId) return;

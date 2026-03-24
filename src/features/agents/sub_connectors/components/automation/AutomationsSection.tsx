@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Zap, Trash2 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useVaultStore } from "@/stores/vaultStore";
 import type { PersonaAutomation, AutomationDeploymentStatus } from '@/lib/bindings/PersonaAutomation';
 import { AutomationCard } from './AutomationCard';
@@ -121,14 +120,9 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
         />
       </div>
 
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className={`${TOOLS_INNER_SPACE} pt-2`}>
               {automations.length > 0 ? (
@@ -161,9 +155,8 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                 </button>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       <BaseModal
         isOpen={!!deleteTarget}

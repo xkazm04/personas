@@ -15,6 +15,7 @@ import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 import { ErrorBanner, CostAnomalyAlerts } from './AnalyticsDashboardAlerts';
 import { AnalyticsDashboardCharts } from './AnalyticsDashboardCharts';
 import { AnalyticsDashboardHealthPanel } from './AnalyticsDashboardHealthPanel';
+import { formatDateTick } from './libs/analyticsHelpers';
 
 function formatToolName(name: string): string {
   return name.replace(/_/g, ' ').split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -77,8 +78,8 @@ export default function AnalyticsDashboard() {
   const summary = observabilityMetrics?.summary;
   const rawChartData = observabilityMetrics?.chartData?.chart_points ?? [];
   const chartData = useMemo(() => {
-    if (!compareEnabled || rawChartData.length === 0) return rawChartData;
-    return mergePreviousPeriod(rawChartData, effectiveDays, ['cost', 'executions', 'success', 'failed']);
+    const base = (!compareEnabled || rawChartData.length === 0) ? rawChartData : mergePreviousPeriod(rawChartData, effectiveDays, ['cost', 'executions', 'success', 'failed']);
+    return base.map(pt => ({ ...pt, dateLabel: formatDateTick(pt.date) }));
   }, [compareEnabled, rawChartData, effectiveDays]);
 
   const pieData: PieDataPoint[] = useMemo(() =>
@@ -88,9 +89,12 @@ export default function AnalyticsDashboard() {
     })), [observabilityMetrics?.chartData?.persona_breakdown, personas]);
 
   const successRate = resolveMetricPercent(SUCCESS_RATE_IDENTITIES.analyticsSummary, { numerator: summary?.successful_executions ?? 0, denominator: summary?.total_executions ?? 0 }).toFixed(1);
-  const { areaData, allToolNames } = useMemo(() => pivotToolUsageOverTime(toolUsageOverTime), [toolUsageOverTime]);
+  const { areaData, allToolNames } = useMemo(() => {
+    const pivot = pivotToolUsageOverTime(toolUsageOverTime);
+    return { areaData: pivot.areaData.map(pt => ({ ...pt, dateLabel: formatDateTick(pt.date) })), allToolNames: pivot.allToolNames };
+  }, [toolUsageOverTime]);
   const barData = useMemo(() => [...toolUsageSummary].sort((a, b) => b.total_invocations - a.total_invocations).map((s) => ({ name: formatToolName(s.tool_name), invocations: s.total_invocations, executions: s.unique_executions, personas: s.unique_personas })), [toolUsageSummary]);
-  const latencyData = useMemo(() => executionDashboard ? executionDashboard.daily_points.map((pt) => ({ date: pt.date, p50: pt.p50_duration_ms, p95: pt.p95_duration_ms, p99: pt.p99_duration_ms })) : [], [executionDashboard]);
+  const latencyData = useMemo(() => executionDashboard ? executionDashboard.daily_points.map((pt) => ({ date: pt.date, dateLabel: formatDateTick(pt.date), p50: pt.p50_duration_ms, p95: pt.p95_duration_ms, p99: pt.p99_duration_ms })) : [], [executionDashboard]);
   const costAnomalies = executionDashboard?.cost_anomalies ?? [];
 
   // -- Callbacks --

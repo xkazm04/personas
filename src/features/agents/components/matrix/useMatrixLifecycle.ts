@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
+import { EventName } from "@/lib/eventRegistry";
 import { answerBuildQuestion, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
 import {
   updatePersona,
@@ -72,7 +73,7 @@ export function useMatrixLifecycle({
 
     async function setup() {
       unlisten = await listen<ToolTestEventPayload>(
-        "build-test-tool-result",
+        EventName.BUILD_TEST_TOOL_RESULT,
         (event) => {
           if (cancelled) return;
           const store = useAgentStore.getState();
@@ -106,6 +107,8 @@ export function useMatrixLifecycle({
     // when the component remounts (React Suspense / lazy) while the Zustand
     // store already holds the correct ids from the running session.
     const state = useAgentStore.getState();
+    if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return;
+
     const effectivePersonaId = state.buildPersonaId || personaId;
     const sessionId = state.buildSessionId;
 

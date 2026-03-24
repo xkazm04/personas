@@ -3,6 +3,7 @@
 //! Polls the system clipboard for changes and publishes events when the content
 //! changes and matches the trigger's filter criteria.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use tokio::sync::Mutex;
@@ -15,11 +16,17 @@ use crate::db::DbPool;
 /// Shared state: stores the hash of the last known clipboard content to detect changes.
 pub struct ClipboardState {
     last_hash: Option<u64>,
+    /// Cached compiled regexes keyed by pattern string.
+    /// `None` value means the pattern failed to compile (use substring fallback).
+    regex_cache: HashMap<String, Option<regex::Regex>>,
 }
 
 impl ClipboardState {
     pub fn new() -> Self {
-        Self { last_hash: None }
+        Self {
+            last_hash: None,
+            regex_cache: HashMap::new(),
+        }
     }
 
     /// Read the last known clipboard hash (for ambient context change detection).
@@ -96,7 +103,11 @@ pub async fn clipboard_tick(
         return;
     }
 
+    let now_utc = chrono::Utc::now();
     for trigger in &clipboard_triggers {
+        if !trigger.is_within_active_window(now_utc) {
+            continue;
+        }
         let config = trigger.parse_config();
         if let TriggerConfig::Clipboard {
             content_type: ref ct_filter,
@@ -111,16 +122,23 @@ pub async fn clipboard_tick(
                 continue;
             }
 
-            // Check pattern filter (regex or substring)
+            // Check pattern filter (cached regex or substring fallback)
             if let Some(ref pattern) = pat {
-                match regex::Regex::new(pattern) {
-                    Ok(re) => {
+                let cached = {
+                    let mut s = state.lock().await;
+                    s.regex_cache
+                        .entry(pattern.clone())
+                        .or_insert_with(|| regex::Regex::new(pattern).ok())
+                        .clone()
+                };
+                match cached {
+                    Some(re) => {
                         if !re.is_match(&content) {
                             continue;
                         }
                     }
-                    Err(_) => {
-                        // Fall back to substring match
+                    None => {
+                        // Pattern failed to compile — fall back to substring match
                         if !content.contains(pattern.as_str()) {
                             continue;
                         }

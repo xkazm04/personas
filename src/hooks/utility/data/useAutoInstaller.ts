@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import { cancelSetupInstall, startSetupInstall } from "@/api/system/system";
 import { silentCatch } from "@/lib/silentCatch";
 
@@ -57,13 +58,13 @@ export function useAutoInstaller() {
     }
 
     try {
-      const unlistenOutput = await listen<SetupOutputPayload>('setup-output', (event) => {
+      const unlistenOutput = await listen<SetupOutputPayload>(EventName.SETUP_OUTPUT, (event) => {
         const { target: t, line } = event.payload;
         const setter = t === 'node' ? setNodeState : setClaudeState;
         setter((prev) => ({ ...prev, outputLines: [...prev.outputLines, line] }));
       });
 
-      const unlistenStatus = await listen<SetupStatusPayload>('setup-status', (event) => {
+      const unlistenStatus = await listen<SetupStatusPayload>(EventName.SETUP_STATUS, (event) => {
         const { target: t, status, progress_pct, error, manual_command } = event.payload;
         const setter = t === 'node' ? setNodeState : setClaudeState;
         setter((prev) => ({

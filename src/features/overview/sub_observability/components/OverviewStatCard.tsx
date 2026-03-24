@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAnimatedNumber } from '@/hooks/utility/timing/useAnimatedNumber';
@@ -47,7 +47,7 @@ export interface OverviewStatCardProps {
   subtitleColor?: string;
 }
 
-export function OverviewStatCard({
+export const OverviewStatCard = memo(function OverviewStatCard({
   icon: Icon,
   label,
   numericValue,
@@ -129,4 +129,4 @@ export function OverviewStatCard({
       </div>
     </div>
   );
-}
+});

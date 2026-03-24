@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { CredentialCardHeader } from '@/features/vault/sub_card/CredentialCardHeader';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -56,24 +55,20 @@ export function CredentialCard({
 
   if (isPendingDelete) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 0.4, y: 0 }}
-        className="bg-secondary/25 backdrop-blur-sm border border-red-500/20 rounded-lg overflow-hidden pointer-events-none"
+      <div
+        className="animate-fade-slide-in bg-secondary/25 backdrop-blur-sm border border-red-500/20 rounded-lg overflow-hidden pointer-events-none"
       >
         <div className="flex items-center gap-2 px-4 py-3 text-sm text-red-400/70">
           <LoadingSpinner size="sm" />
           Deleting {credential.name}...
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-secondary/25 backdrop-blur-sm border border-primary/15 rounded-lg overflow-hidden"
+    <div
+      className="animate-fade-slide-in bg-secondary/25 backdrop-blur-sm border border-primary/15 rounded-lg overflow-hidden"
     >
       <CredentialCardHeader
         credential={credential}
@@ -84,6 +79,6 @@ export function CredentialCard({
         onSelect={onSelect}
         onDelete={onDelete}
       />
-    </motion.div>
+    </div>
   );
 }

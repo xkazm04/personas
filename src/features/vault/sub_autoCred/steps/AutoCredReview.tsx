@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, RefreshCw, Save, Database, Plug, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
@@ -65,11 +64,8 @@ export function AutoCredReview({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+    <div
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -225,6 +221,6 @@ export function AutoCredReview({
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

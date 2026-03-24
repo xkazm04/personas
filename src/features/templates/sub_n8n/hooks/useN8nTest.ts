@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
+import { EventName } from '@/lib/eventRegistry';
 import type { N8nImportAction } from './useN8nImportReducer';
 
 export interface N8nTestApi {
@@ -22,8 +23,8 @@ export function useN8nTest(
     lines: testStreamLines,
     phase: testStreamPhase,
   } = useCorrelatedCliStream({
-    outputEvent: 'n8n-test-output',
-    statusEvent: 'n8n-test-status',
+    outputEvent: EventName.N8N_TEST_OUTPUT,
+    statusEvent: EventName.N8N_TEST_STATUS,
     idField: 'test_id',
     onFailed: (message) => {
       dispatch({ type: 'TEST_FAILED', error: message });

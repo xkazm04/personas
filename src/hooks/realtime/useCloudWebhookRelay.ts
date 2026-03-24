@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 
 export interface CloudWebhookRelayStatus {
   connected: boolean;
@@ -28,7 +29,7 @@ export function useCloudWebhookRelay(): CloudWebhookRelayStatus {
   useEffect(() => {
     let cancelled = false;
 
-    listen<CloudWebhookRelayStatus>('cloud-webhook-relay-status', (event) => {
+    listen<CloudWebhookRelayStatus>(EventName.CLOUD_WEBHOOK_RELAY_STATUS, (event) => {
       if (!cancelled) {
         setStatus(event.payload);
       }

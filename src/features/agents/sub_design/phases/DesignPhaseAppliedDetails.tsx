@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Key, Zap, Play, FileText, ChevronRight, type LucideIcon } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useSystemStore } from "@/stores/systemStore";
 import type { AgentIR } from '@/lib/types/designTypes';
 
@@ -71,11 +70,8 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
     <>
       {/* Stats pills showing what was created */}
       {stats.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex flex-wrap justify-center gap-1.5"
+        <div
+          className="animate-fade-slide-in flex flex-wrap justify-center gap-1.5"
         >
           {stats.map((s) => (
             <span
@@ -86,15 +82,12 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
               {s.label}
             </span>
           ))}
-        </motion.div>
+        </div>
       )}
 
       {/* Next-step cards */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="w-full max-w-sm"
+      <div
+        className="animate-fade-slide-in w-full max-w-sm"
       >
         <p className="text-sm font-mono text-muted-foreground/50 uppercase tracking-widest mb-2 text-center">
           Next steps
@@ -103,13 +96,10 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
           {nextSteps.map((step, i) => {
             const Icon = step.icon;
             return (
-              <motion.button
+              <button
                 key={step.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.45 + i * 0.07 }}
                 onClick={step.action}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 transition-all group text-left"
+                className="animate-fade-slide-in w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 transition-all group text-left"
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border"
@@ -129,11 +119,11 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
                   </div>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all shrink-0" />
-              </motion.button>
+              </button>
             );
           })}
         </div>
-      </motion.div>
+      </div>
     </>
   );
 }

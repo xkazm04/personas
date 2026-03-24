@@ -1,5 +1,4 @@
 import { useMemo, useRef, useEffect, useId } from 'react';
-import { motion } from 'framer-motion';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import type { DiscoveredSource } from '../../libs/visualizationHelpers';
@@ -211,48 +210,30 @@ export default function SwimLaneVisualization({ events, personas, onSelectEvent 
             return (
               <g key={evt._animationId} onClick={() => onSelectEvent(evt)} style={{ cursor: 'pointer' }}>
                 {/* Trail line */}
-                <motion.line
-                  initial={{ x1: SRC_X, y1: srcY, x2: SRC_X, y2: srcY }}
-                  animate={{ x1: SRC_X, y1: srcY, x2: targetX, y2: targetY, opacity: isDone ? 0 : 0.15 }}
-                  transition={{ duration: 0.6, ease: 'easeInOut' }}
+                <line className="animate-fade-in"
                   stroke={color} strokeWidth="0.12"
                 />
                 {/* Outer glow */}
-                <motion.circle
-                  initial={{ cx: SRC_X, cy: srcY }}
-                  animate={{ cx: targetX, cy: targetY, opacity: isDone ? 0 : 0.25 }}
-                  transition={{ duration: 0.6, ease: 'easeInOut' }}
+                <circle className="animate-fade-slide-in"
                   r={1.6} fill={color}
                 />
                 {/* Main particle */}
-                <motion.circle
-                  initial={{ cx: SRC_X, cy: srcY }}
-                  animate={{ cx: targetX, cy: targetY, opacity: isDone ? 0 : 1 }}
-                  transition={{ duration: 0.55, ease: 'easeInOut' }}
+                <circle className="animate-fade-slide-in"
                   r={0.9} fill={color} filter={`url(#${uid}-glow)`}
                 />
                 {/* Core */}
-                <motion.circle
-                  initial={{ cx: SRC_X, cy: srcY }}
-                  animate={{ cx: targetX, cy: targetY, opacity: isDone ? 0 : 0.95 }}
-                  transition={{ duration: 0.55, ease: 'easeInOut' }}
+                <circle className="animate-fade-slide-in"
                   r={0.35} fill="white"
                 />
                 {/* Event label */}
-                <motion.text
-                  initial={{ x: SRC_X, y: srcY - 2 }}
-                  animate={{ x: targetX, y: targetY - 2, opacity: isDone ? 0 : 0.6 }}
-                  transition={{ duration: 0.55, ease: 'easeInOut' }}
+                <text className="animate-fade-slide-in"
                   textAnchor="middle" fill={color} fontSize="1.1" fontFamily="monospace"
                 >
                   {EVENT_TYPE_LABELS[evt.event_type] ?? evt.event_type.replace(/_/g, ' ')}
-                </motion.text>
+                </text>
                 {/* Impact ring */}
                 {evt._phase === 'delivering' && (evt.status === 'completed' || evt.status === 'failed') && (
-                  <motion.circle
-                    initial={{ r: 1, opacity: 0.5 }}
-                    animate={{ r: 4, opacity: 0 }}
-                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                  <circle className="animate-fade-slide-in"
                     cx={targetX} cy={targetY} fill="none" stroke={color} strokeWidth={0.12}
                   />
                 )}

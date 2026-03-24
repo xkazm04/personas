@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Loader2, Settings2, SkipForward } from 'lucide-react';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -24,12 +23,10 @@ export function ConfigureStep({
   if (questionGenerating) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+        <div className="animate-fade-in"
         >
           <Loader2 className="w-8 h-8 text-violet-400/60" />
-        </motion.div>
+        </div>
         <p className="typo-body text-muted-foreground/80">{loadingText}</p>
         <button
           onClick={onSkip}
@@ -72,12 +69,9 @@ export function ConfigureStep({
 
       <div className="space-y-3">
         {questions.map((q, i) => (
-          <motion.div
+          <div
             key={q.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="p-4 rounded-xl border border-primary/10 bg-secondary/10"
+            className="animate-fade-slide-in p-4 rounded-xl border border-primary/10 bg-secondary/10"
           >
             <label className="block typo-heading text-foreground/90 mb-2">
               {q.question}
@@ -133,7 +127,7 @@ export function ConfigureStep({
                 })}
               </div>
             )}
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>

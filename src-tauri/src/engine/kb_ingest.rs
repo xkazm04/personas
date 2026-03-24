@@ -10,6 +10,7 @@ use rusqlite::params;
 use tauri::{AppHandle, Emitter};
 use tokio_util::sync::CancellationToken;
 
+use super::event_registry::event_name;
 use crate::db::models::{KbDocument, KbIngestProgress, KnowledgeBase};
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -62,7 +63,7 @@ pub async fn ingest_files(
             .to_string();
 
         progress.current_file = Some(title.clone());
-        let _ = app.emit("kb:ingest_progress", &progress);
+        let _ = app.emit(event_name::KB_INGEST_PROGRESS, &progress);
 
         match ingest_single_file(
             &user_db,
@@ -86,7 +87,7 @@ pub async fn ingest_files(
         }
 
         progress.documents_done = i + 1;
-        let _ = app.emit("kb:ingest_progress", &progress);
+        let _ = app.emit(event_name::KB_INGEST_PROGRESS, &progress);
     }
 
     // Update KB counters
@@ -94,7 +95,7 @@ pub async fn ingest_files(
 
     progress.status = "completed".into();
     progress.current_file = None;
-    let _ = app.emit("kb:ingest_complete", &progress);
+    let _ = app.emit(event_name::KB_INGEST_COMPLETE, &progress);
 
     Ok(progress)
 }

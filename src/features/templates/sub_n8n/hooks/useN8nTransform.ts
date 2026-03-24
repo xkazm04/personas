@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
 import { usePersistedContext } from '@/hooks/utility/data/usePersistedContext';
@@ -72,8 +73,8 @@ export function useN8nTransform(
     setLines: setStreamLines,
     setPhase: setStreamPhase,
   } = useCorrelatedCliStream({
-    outputEvent: 'n8n-transform-output',
-    statusEvent: 'n8n-transform-status',
+    outputEvent: EventName.N8N_TRANSFORM_OUTPUT,
+    statusEvent: EventName.N8N_TRANSFORM_STATUS,
     idField: 'transform_id',
     onFailed: (message) => {
       clearPersistedContext();
@@ -247,7 +248,7 @@ export function useN8nTransform(
     let cancelled = false;
     let unlisten: UnlistenFn | null = null;
     listen<{ transformId: string; section: Record<string, unknown> }>(
-      'n8n-transform-section',
+      EventName.N8N_TRANSFORM_SECTION,
       (event) => {
         const { transformId: tid, section: s } = event.payload;
         if (tid !== transformIdRef.current) return;

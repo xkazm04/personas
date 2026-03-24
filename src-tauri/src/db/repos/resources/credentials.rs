@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use rusqlite::{params, OptionalExtension, Row};
+use rusqlite::{params, OptionalExtension};
 
 use crate::db::models::{
     CreateCredentialEventInput, CreateCredentialInput, CredentialEvent, CredentialField,
@@ -15,59 +15,23 @@ use crate::utils::sanitization::sanitize_secrets;
 // Row Mappers
 // ============================================================================
 
-fn row_to_credential(row: &Row) -> rusqlite::Result<PersonaCredential> {
-    Ok(PersonaCredential {
-        id: row.get("id")?,
-        name: row.get("name")?,
-        service_type: row.get("service_type")?,
-        encrypted_data: row.get("encrypted_data")?,
-        iv: row.get("iv")?,
-        metadata: row.get("metadata")?,
-        last_used_at: row.get("last_used_at")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_credential -> PersonaCredential {
+    id, name, service_type, encrypted_data, iv,
+    metadata, last_used_at, created_at, updated_at,
+});
 
-fn row_to_credential_event(row: &Row) -> rusqlite::Result<CredentialEvent> {
-    Ok(CredentialEvent {
-        id: row.get("id")?,
-        credential_id: row.get("credential_id")?,
-        event_template_id: row.get("event_template_id")?,
-        name: row.get("name")?,
-        config: row.get("config")?,
-        enabled: row.get::<_, i32>("enabled")? != 0,
-        last_polled_at: row.get("last_polled_at")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_credential_event -> CredentialEvent {
+    id, credential_id, event_template_id, name, config,
+    enabled [bool],
+    last_polled_at, created_at, updated_at,
+});
 
 // ============================================================================
 // Credential CRUD
 // ============================================================================
 
-pub fn get_all(pool: &DbPool) -> Result<Vec<PersonaCredential>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare("SELECT * FROM persona_credentials ORDER BY created_at DESC")?;
-    let rows = stmt.query_map([], row_to_credential)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-}
-
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaCredential, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_credentials WHERE id = ?1",
-        params![id],
-        row_to_credential,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("Credential {id}"))
-        }
-        other => AppError::Database(other),
-    })
-}
+crud_get_by_id!(PersonaCredential, "persona_credentials", "Credential", row_to_credential);
+crud_get_all!(PersonaCredential, "persona_credentials", row_to_credential, "created_at DESC");
 
 pub fn get_by_service_type(
     pool: &DbPool,
@@ -596,19 +560,10 @@ pub fn delete_events_by_credential(pool: &DbPool, credential_id: &str) -> Result
 // Credential Field CRUD (field-level storage)
 // ============================================================================
 
-fn row_to_credential_field(row: &Row) -> rusqlite::Result<CredentialField> {
-    Ok(CredentialField {
-        id: row.get("id")?,
-        credential_id: row.get("credential_id")?,
-        field_key: row.get("field_key")?,
-        encrypted_value: row.get("encrypted_value")?,
-        iv: row.get("iv")?,
-        field_type: row.get("field_type")?,
-        is_sensitive: row.get::<_, i32>("is_sensitive")? != 0,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_credential_field -> CredentialField {
+    id, credential_id, field_key, encrypted_value, iv,
+    field_type, is_sensitive [bool], created_at, updated_at,
+});
 
 /// Get all field rows for a credential.
 pub fn get_fields(pool: &DbPool, credential_id: &str) -> Result<Vec<CredentialField>, AppError> {

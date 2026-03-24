@@ -29,6 +29,7 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         started_at: row.get("started_at")?,
         completed_at: row.get("completed_at")?,
         created_at: row.get("created_at")?,
+        execution_config: row.get("execution_config").unwrap_or(None),
     })
 }
 
@@ -52,36 +53,41 @@ pub fn get_all_global(
     pool: &DbPool,
     limit: Option<i64>,
     status: Option<&str>,
+    persona_id: Option<&str>,
 ) -> Result<Vec<GlobalExecutionRow>, AppError> {
     let limit = limit.unwrap_or(200);
     let conn = pool.get()?;
 
-    let (sql, needs_status) = if status.is_some() {
-        (
-            "SELECT e.*, \
+    // Build query dynamically based on which filters are present.
+    let base = "SELECT e.*, \
                 COALESCE(p.name, 'Unknown') as persona_name, \
                 p.icon as persona_icon, \
                 p.color as persona_color \
              FROM persona_executions e \
-             LEFT JOIN personas p ON p.id = e.persona_id \
-             WHERE e.status = ?1 \
-             ORDER BY e.created_at DESC LIMIT ?2",
-            true,
-        )
+             LEFT JOIN personas p ON p.id = e.persona_id";
+
+    let mut conditions: Vec<String> = Vec::new();
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
+    if let Some(s) = status {
+        param_values.push(Box::new(s.to_string()));
+        conditions.push(format!("e.status = ?{}", param_values.len()));
+    }
+    if let Some(pid) = persona_id {
+        param_values.push(Box::new(pid.to_string()));
+        conditions.push(format!("e.persona_id = ?{}", param_values.len()));
+    }
+
+    param_values.push(Box::new(limit));
+    let limit_idx = param_values.len();
+
+    let sql = if conditions.is_empty() {
+        format!("{base} ORDER BY e.created_at DESC LIMIT ?{limit_idx}")
     } else {
-        (
-            "SELECT e.*, \
-                COALESCE(p.name, 'Unknown') as persona_name, \
-                p.icon as persona_icon, \
-                p.color as persona_color \
-             FROM persona_executions e \
-             LEFT JOIN personas p ON p.id = e.persona_id \
-             ORDER BY e.created_at DESC LIMIT ?1",
-            false,
-        )
+        format!("{base} WHERE {} ORDER BY e.created_at DESC LIMIT ?{limit_idx}", conditions.join(" AND "))
     };
 
-    let mut stmt = conn.prepare(sql)?;
+    let mut stmt = conn.prepare(&sql)?;
 
     let row_mapper = |row: &Row| -> rusqlite::Result<GlobalExecutionRow> {
         Ok(GlobalExecutionRow {
@@ -107,17 +113,15 @@ pub fn get_all_global(
             started_at: row.get("started_at")?,
             completed_at: row.get("completed_at")?,
             created_at: row.get("created_at")?,
+            execution_config: row.get("execution_config").unwrap_or(None),
             persona_name: row.get("persona_name")?,
             persona_icon: row.get("persona_icon")?,
             persona_color: row.get("persona_color")?,
         })
     };
 
-    let rows = if needs_status {
-        stmt.query_map(params![status.unwrap(), limit], row_mapper)?
-    } else {
-        stmt.query_map(params![limit], row_mapper)?
-    };
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|b| b.as_ref()).collect();
+    let rows = stmt.query_map(param_refs.as_slice(), row_mapper)?;
 
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
@@ -145,18 +149,76 @@ pub fn create(
     model_used: Option<String>,
     use_case_id: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
+    create_with_idempotency(pool, persona_id, trigger_id, input_data, model_used, use_case_id, None)
+}
+
+/// Create an execution record with an optional idempotency key.
+/// If `idempotency_key` is `Some` and an execution with that key already exists,
+/// the existing record is returned instead of creating a duplicate.
+pub fn create_with_idempotency(
+    pool: &DbPool,
+    persona_id: &str,
+    trigger_id: Option<String>,
+    input_data: Option<String>,
+    model_used: Option<String>,
+    use_case_id: Option<String>,
+    idempotency_key: Option<String>,
+) -> Result<PersonaExecution, AppError> {
+    // Check for existing execution with this idempotency key
+    if let Some(ref key) = idempotency_key {
+        if let Some(existing) = get_by_idempotency_key(pool, key)? {
+            tracing::info!(
+                idempotency_key = %key,
+                execution_id = %existing.id,
+                "Returning existing execution for idempotency key (dedup)"
+            );
+            return Ok(existing);
+        }
+    }
+
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_executions
-         (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, created_at)
-         VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7)",
-        params![id, persona_id, trigger_id, input_data, model_used, use_case_id, now],
+         (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, created_at)
+         VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8)",
+        params![id, persona_id, trigger_id, input_data, model_used, use_case_id, idempotency_key, now],
     )?;
 
     get_by_id(pool, &id)
+}
+
+/// Look up an execution by its idempotency key.
+pub fn get_by_idempotency_key(
+    pool: &DbPool,
+    key: &str,
+) -> Result<Option<PersonaExecution>, AppError> {
+    let conn = pool.get()?;
+    match conn.query_row(
+        "SELECT * FROM persona_executions WHERE idempotency_key = ?1",
+        params![key],
+        row_to_execution,
+    ) {
+        Ok(exec) => Ok(Some(exec)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(AppError::Database(e)),
+    }
+}
+
+pub fn get_by_trigger_id(
+    pool: &DbPool,
+    trigger_id: &str,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaExecution>, AppError> {
+    let limit = limit.unwrap_or(10);
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_executions WHERE trigger_id = ?1 ORDER BY created_at DESC LIMIT ?2",
+    )?;
+    let rows = stmt.query_map(params![trigger_id, limit], row_to_execution)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
 pub fn get_by_use_case_id(
@@ -211,7 +273,8 @@ pub fn update_status(
             started_at = COALESCE(?10, started_at),
             completed_at = COALESCE(?11, completed_at),
             tool_steps = COALESCE(?13, tool_steps),
-            claude_session_id = COALESCE(?14, claude_session_id)
+            claude_session_id = COALESCE(?14, claude_session_id),
+            execution_config = COALESCE(?15, execution_config)
          WHERE id = ?12",
         params![
             status_str,
@@ -228,10 +291,147 @@ pub fn update_status(
             id,
             input.tool_steps,
             input.claude_session_id,
+            input.execution_config,
         ],
     )?;
 
     Ok(())
+}
+
+/// Compare-and-swap status update: only writes if the current DB status is `running`.
+///
+/// Returns `true` if the row was updated (status was running), `false` if
+/// the execution had already transitioned to a terminal state and was left
+/// untouched. This prevents the cancel safety-net from overwriting a final
+/// status that the spawned task already wrote.
+pub fn update_status_if_running(
+    pool: &DbPool,
+    id: &str,
+    input: UpdateExecutionStatus,
+) -> Result<bool, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+
+    let started_at: Option<String> = if input.status == ExecutionState::Running {
+        Some(now.clone())
+    } else {
+        None
+    };
+
+    let completed_at: Option<String> = if input.status.is_terminal() {
+        Some(now)
+    } else {
+        None
+    };
+
+    let status_str = input.status.as_str();
+
+    let rows_changed = conn.execute(
+        "UPDATE persona_executions SET
+            status = ?1,
+            output_data = COALESCE(?2, output_data),
+            error_message = COALESCE(?3, error_message),
+            duration_ms = COALESCE(?4, duration_ms),
+            log_file_path = COALESCE(?5, log_file_path),
+            execution_flows = COALESCE(?6, execution_flows),
+            input_tokens = COALESCE(?7, input_tokens),
+            output_tokens = COALESCE(?8, output_tokens),
+            cost_usd = COALESCE(?9, cost_usd),
+            started_at = COALESCE(?10, started_at),
+            completed_at = COALESCE(?11, completed_at),
+            tool_steps = COALESCE(?13, tool_steps),
+            claude_session_id = COALESCE(?14, claude_session_id),
+            execution_config = COALESCE(?15, execution_config)
+         WHERE id = ?12 AND status = 'running'",
+        params![
+            status_str,
+            input.output_data,
+            input.error_message,
+            input.duration_ms,
+            input.log_file_path,
+            input.execution_flows,
+            input.input_tokens,
+            input.output_tokens,
+            input.cost_usd,
+            started_at,
+            completed_at,
+            id,
+            input.tool_steps,
+            input.claude_session_id,
+            input.execution_config,
+        ],
+    )?;
+
+    Ok(rows_changed > 0)
+}
+
+/// Compare-and-swap status update: only writes if the current DB status is
+/// still active (`running` or `cancelled`-by-safety-net).
+///
+/// This allows the spawned task to enrich a bare cancel (written by the
+/// safety-net without metrics) with full execution metrics, but prevents
+/// overwriting a truly terminal status written by another code path.
+pub fn update_status_if_not_final(
+    pool: &DbPool,
+    id: &str,
+    input: UpdateExecutionStatus,
+) -> Result<bool, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+
+    let started_at: Option<String> = if input.status == ExecutionState::Running {
+        Some(now.clone())
+    } else {
+        None
+    };
+
+    let completed_at: Option<String> = if input.status.is_terminal() {
+        Some(now)
+    } else {
+        None
+    };
+
+    let status_str = input.status.as_str();
+
+    // Allow overwrite when status is 'running' (normal path) or 'cancelled'
+    // (safety-net wrote a bare cancel that we can now enrich with metrics).
+    let rows_changed = conn.execute(
+        "UPDATE persona_executions SET
+            status = ?1,
+            output_data = COALESCE(?2, output_data),
+            error_message = COALESCE(?3, error_message),
+            duration_ms = COALESCE(?4, duration_ms),
+            log_file_path = COALESCE(?5, log_file_path),
+            execution_flows = COALESCE(?6, execution_flows),
+            input_tokens = COALESCE(?7, input_tokens),
+            output_tokens = COALESCE(?8, output_tokens),
+            cost_usd = COALESCE(?9, cost_usd),
+            started_at = COALESCE(?10, started_at),
+            completed_at = COALESCE(?11, completed_at),
+            tool_steps = COALESCE(?13, tool_steps),
+            claude_session_id = COALESCE(?14, claude_session_id),
+            execution_config = COALESCE(?15, execution_config)
+         WHERE id = ?12 AND status IN ('running', 'cancelled')",
+        params![
+            status_str,
+            input.output_data,
+            input.error_message,
+            input.duration_ms,
+            input.log_file_path,
+            input.execution_flows,
+            input.input_tokens,
+            input.output_tokens,
+            input.cost_usd,
+            started_at,
+            completed_at,
+            id,
+            input.tool_steps,
+            input.claude_session_id,
+            input.execution_config,
+        ],
+    )?;
+
+    Ok(rows_changed > 0)
 }
 
 pub fn get_recent(pool: &DbPool, limit: Option<i64>) -> Result<Vec<PersonaExecution>, AppError> {

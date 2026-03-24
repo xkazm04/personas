@@ -108,6 +108,11 @@ export function deriveConnectionPhase(
  * vs a network error (stay quiet).
  */
 export function isAuthError(err: unknown): boolean {
+  // Prefer structured kind from Tauri errors
+  if (typeof err === 'object' && err !== null && 'kind' in err) {
+    const kind = (err as { kind: string }).kind;
+    return kind === 'auth' || kind === 'forbidden';
+  }
   const raw = String(err).toLowerCase();
   return (
     raw.includes('401') ||

@@ -4,7 +4,7 @@ import {
   List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, CalendarClock, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
-  Radio, Gauge, Unplug, Webhook, Puzzle,
+  Radio, Gauge, Unplug, Webhook, Puzzle, Store,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -76,6 +76,8 @@ export const credentialItems: SubNavItem[] = [
 ];
 
 export const eventBusItems: SubNavItem[] = [
+  { id: 'canvas', label: 'Canvas', icon: Network },
+  { id: 'shared', label: 'Marketplace', icon: Store },
   { id: 'live-stream', label: 'Live Stream', icon: Activity },
   { id: 'rate-limits', label: 'Throttling', icon: Gauge },
   { id: 'test', label: 'Test', icon: Zap },

@@ -16,4 +16,7 @@ pub mod identity;
 pub mod exposure;
 pub mod tool_audit_log;
 pub mod oauth_token_metrics;
+pub mod ocr;
+pub mod signing;
 pub mod webhook_log;
+pub mod deployment_history;

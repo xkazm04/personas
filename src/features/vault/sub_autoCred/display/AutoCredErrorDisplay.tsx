@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Clock, Globe, ChevronDown, ChevronUp, Wrench, AlertTriangle } from 'lucide-react';
 import type { BrowserLogEntry, AutoCredErrorInfo } from '../helpers/types';
 import { CopyLogButton } from './AutoCredLogEntries';
@@ -25,11 +24,9 @@ export function AutoCredErrorDisplay({
   const ctx = error.context;
 
   return (
-    <motion.div
+    <div
       key="error"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Error header */}
       <div className="flex items-start gap-3 p-4 rounded-xl border border-red-500/15 bg-red-500/5">
@@ -154,6 +151,6 @@ export function AutoCredErrorDisplay({
           </button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

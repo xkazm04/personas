@@ -11,6 +11,7 @@ import { useThemeStore } from '@/stores/themeStore';
 
 interface ScheduleRowProps {
   entry: ScheduleEntry;
+  existingEntries?: ScheduleEntry[];
   isExecuting: boolean;
   isEditing: boolean;
   onManualExecute: () => void;
@@ -29,6 +30,7 @@ const HEALTH_CONFIG = {
 
 export default function ScheduleRow({
   entry,
+  existingEntries,
   isExecuting,
   isEditing,
   onManualExecute,
@@ -165,6 +167,7 @@ export default function ScheduleRow({
         <FrequencyEditor
           agent={agent}
           currentSchedule={schedule}
+          existingEntries={existingEntries}
           onSave={(cron, interval) => {
             onUpdateFrequency(cron, interval);
             setShowFreqEditor(false);

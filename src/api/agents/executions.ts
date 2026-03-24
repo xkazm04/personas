@@ -17,10 +17,11 @@ export const listExecutions = (personaId: string, limit?: number) =>
     limit: limit,
   });
 
-export const listAllExecutions = (limit?: number, status?: string) =>
+export const listAllExecutions = (limit?: number, status?: string, personaId?: string) =>
   invoke<GlobalExecutionRow[]>("list_all_executions", {
     limit: limit,
     status: status,
+    personaId: personaId,
   });
 
 export const getExecution = (id: string, callerPersonaId: string) =>
@@ -35,6 +36,7 @@ export const executePersona = (
   inputData?: string,
   useCaseId?: string,
   continuation?: Continuation,
+  idempotencyKey?: string,
 ) =>
   invoke<PersonaExecution>("execute_persona", {
     personaId,
@@ -42,6 +44,13 @@ export const executePersona = (
     inputData: inputData,
     useCaseId: useCaseId,
     continuation: continuation,
+    idempotencyKey: idempotencyKey,
+  }, idempotencyKey ? { idempotencyKey } : undefined);
+
+export const listExecutionsByTrigger = (triggerId: string, limit?: number) =>
+  invoke<PersonaExecution[]>("list_executions_by_trigger", {
+    triggerId,
+    limit: limit,
   });
 
 export const listExecutionsForUseCase = (

@@ -1,6 +1,6 @@
 import type { SpanType } from '@/lib/bindings/SpanType';
-import type { UnifiedSpan, UnifiedSpanType, PipelineStage } from '@/lib/execution/pipeline';
-import { isPipelineStage, STAGE_META } from '@/lib/execution/pipeline';
+import type { UnifiedSpan, UnifiedSpanType, PipelineStage, SystemOperationType } from '@/lib/execution/pipeline';
+import { isPipelineStage, isSystemOperation, STAGE_META } from '@/lib/execution/pipeline';
 
 /** Styling config for backend engine span types. */
 export const SPAN_TYPE_CONFIG: Record<SpanType, { label: string; color: string; bg: string; border: string }> = {
@@ -28,10 +28,34 @@ const PIPELINE_STAGE_CONFIG: Record<PipelineStage, { label: string; color: strin
   frontend_complete: { label: 'Frontend Complete',  color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
 };
 
-/** Get styling config for any unified span type (pipeline stage or engine span). */
+/** Styling config for system operation span types. */
+export const SYSTEM_OPERATION_CONFIG: Record<SystemOperationType, { label: string; color: string; bg: string; border: string }> = {
+  design_conversation:    { label: 'Design Chat',       color: 'text-indigo-400',  bg: 'bg-indigo-500/15',  border: 'border-indigo-500/25' },
+  credential_design:      { label: 'Cred Design',       color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25' },
+  credential_negotiation: { label: 'Cred Negotiation',  color: 'text-yellow-400',  bg: 'bg-yellow-500/15',  border: 'border-yellow-500/25' },
+  credential_healthcheck: { label: 'Cred Health',       color: 'text-green-400',   bg: 'bg-green-500/15',   border: 'border-green-500/25' },
+  template_generation:    { label: 'Template Gen',      color: 'text-purple-400',  bg: 'bg-purple-500/15',  border: 'border-purple-500/25' },
+  template_adoption:      { label: 'Template Adopt',    color: 'text-fuchsia-400', bg: 'bg-fuchsia-500/15', border: 'border-fuchsia-500/25' },
+  template_review:        { label: 'Template Review',   color: 'text-rose-400',    bg: 'bg-rose-500/15',    border: 'border-rose-500/25' },
+  subscription_evaluation:{ label: 'Subscription',      color: 'text-teal-400',    bg: 'bg-teal-500/15',    border: 'border-teal-500/25' },
+  automation_design:      { label: 'Automation Design', color: 'text-cyan-400',    bg: 'bg-cyan-500/15',    border: 'border-cyan-500/25' },
+  kb_ingest:              { label: 'KB Ingest',         color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  recipe_execution:       { label: 'Recipe',            color: 'text-orange-400',  bg: 'bg-orange-500/15',  border: 'border-orange-500/25' },
+  schema_proposal:        { label: 'Schema Proposal',   color: 'text-sky-400',     bg: 'bg-sky-500/15',     border: 'border-sky-500/25' },
+  query_debug:            { label: 'Query Debug',       color: 'text-slate-400',   bg: 'bg-slate-500/15',   border: 'border-slate-500/25' },
+  nl_query:               { label: 'NL Query',          color: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
+  setup_install:          { label: 'Setup',             color: 'text-lime-400',    bg: 'bg-lime-500/15',    border: 'border-lime-500/25' },
+  context_generation:     { label: 'Context Gen',       color: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25' },
+  task_execution:         { label: 'Task Exec',         color: 'text-pink-400',    bg: 'bg-pink-500/15',    border: 'border-pink-500/25' },
+};
+
+/** Get styling config for any unified span type (pipeline stage, engine span, or system operation). */
 export function getSpanConfig(spanType: UnifiedSpanType): { label: string; color: string; bg: string; border: string } {
   if (isPipelineStage(spanType)) {
     return PIPELINE_STAGE_CONFIG[spanType] ?? { label: STAGE_META[spanType].label, color: 'text-gray-400', bg: 'bg-gray-500/15', border: 'border-gray-500/25' };
+  }
+  if (isSystemOperation(spanType)) {
+    return SYSTEM_OPERATION_CONFIG[spanType];
   }
   return SPAN_TYPE_CONFIG[spanType as SpanType] ?? { label: spanType, color: 'text-gray-400', bg: 'bg-gray-500/15', border: 'border-gray-500/25' };
 }

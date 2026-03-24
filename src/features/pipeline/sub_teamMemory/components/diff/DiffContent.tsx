@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Plus, Minus, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { MemoryRunDiff } from '../../libs/memoryDiff';
 
@@ -36,7 +35,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
   const [expandedSection, setExpandedSection] = useState<'added' | 'removed' | null>('added');
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
+    <div className="animate-fade-slide-in space-y-2">
       {/* Summary bar */}
       <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5 border border-primary/10">
         <div className="flex items-center gap-1 text-xs">
@@ -120,6 +119,6 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {diff.added.length === 0 && diff.removed.length === 0 && (
         <div className="text-center py-3"><p className="text-xs text-muted-foreground/50">No memory differences between these runs</p></div>
       )}
-    </motion.div>
+    </div>
   );
 }

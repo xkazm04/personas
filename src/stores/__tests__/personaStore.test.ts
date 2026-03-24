@@ -62,7 +62,7 @@ describe("personaStore", () => {
       expect(agentState.isLoading).toBe(false);
       expect(agentState.isExecuting).toBe(false);
       expect(agentState.error).toBeNull();
-      expect(systemState.editorTab).toBe("use-cases");
+      expect(systemState.editorTab).toBe("activity");
     });
   });
 

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use ts_rs::TS;
 
 use std::collections::HashMap;
@@ -29,6 +29,7 @@ use crate::engine::subscription::{
     ContextRuleSubscription,
 };
 use crate::engine::ExecutionEngine;
+use super::event_registry::event_name;
 
 /// Per-subscription health snapshot including tick latency, counts, and error tracking.
 #[derive(Debug, Clone, Serialize, TS)]
@@ -360,12 +361,10 @@ pub fn start_loops(
     scheduler.running.store(true, Ordering::Relaxed);
     tracing::info!("Scheduler starting via unified subscription model");
 
-    // Build the HTTP client for the polling subscription
-    let http = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
-        .user_agent("Personas-Polling/1.0")
-        .build()
-        .unwrap_or_default();
+    // Build the HTTP client for the polling subscription.
+    // Uses SsrfSafeResolver to reject private IPs at connect time,
+    // closing the DNS-rebinding TOCTOU window (CWE-367).
+    let http = super::url_safety::build_ssrf_safe_client(Duration::from_secs(30));
 
     // Assemble all reactive subscriptions
     let mut subscriptions: Vec<Box<dyn subscription::ReactiveSubscription>> = vec![
@@ -470,7 +469,7 @@ pub fn start_loops(
         let recovered = trigger_scheduler_tick_counted(&scheduler, &pool);
         if recovered > 0 {
             tracing::info!(count = recovered, "Startup overdue sweep: fired {recovered} overdue trigger(s)");
-            let _ = app.emit("overdue-triggers-fired", OverdueTriggersEvent {
+            let _ = app.emit(event_name::OVERDUE_TRIGGERS_FIRED, OverdueTriggersEvent {
                 recovered,
                 timestamp: chrono::Utc::now().to_rfc3339(),
             });
@@ -509,14 +508,30 @@ pub fn start_loops(
         }
     });
 
-    // Webhook HTTP server (not a reactive subscription -- it's a long-lived server)
+    // Webhook HTTP server + Management API (not a reactive subscription -- it's a long-lived server)
     let (webhook_shutdown_tx, webhook_shutdown_rx) = tokio::sync::watch::channel(false);
     tokio::spawn({
         let pool = pool.clone();
         let scheduler = scheduler.clone();
+        let app_for_mgmt = app.clone();
         async move {
             scheduler.webhook_alive.store(true, Ordering::Relaxed);
-            if let Err(e) = super::webhook::start_webhook_server(pool, rate_limiter, tier_config, webhook_shutdown_rx).await {
+
+            // Try to start with management API (needs AppState for process_registry)
+            let process_registry = app_for_mgmt.try_state::<std::sync::Arc<crate::AppState>>()
+                .map(|s| s.process_registry.clone());
+            let result = if let Some(registry) = process_registry {
+                super::webhook::start_webhook_server_with_management(
+                    pool, rate_limiter, tier_config,
+                    app_for_mgmt, registry,
+                    webhook_shutdown_rx,
+                ).await
+            } else {
+                // Fallback: webhook-only (no management API)
+                super::webhook::start_webhook_server(pool, rate_limiter, tier_config, webhook_shutdown_rx).await
+            };
+
+            if let Err(e) = result {
                 tracing::error!("Webhook server failed: {}", e);
             }
             scheduler.webhook_alive.store(false, Ordering::Relaxed);
@@ -806,6 +821,16 @@ pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &
             continue;
         }
 
+        // Active window gate: skip triggers outside their configured active hours.
+        // The schedule still advances so triggers don't pile up as overdue.
+        if !trigger.is_within_active_window(now) {
+            let cfg = trigger.parse_config();
+            let next = sched_logic::compute_next_from_config(&cfg, now);
+            let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+            tracing::debug!(trigger_id = %trigger.id, "Trigger outside active window, skipping");
+            continue;
+        }
+
         // 2. Parse config once; reuse for event_type, payload, and next schedule time
         let cfg = trigger.parse_config();
 
@@ -923,7 +948,7 @@ fn emit_event_to_frontend(app: &AppHandle, event: &PersonaEvent, status: &str) {
     payload.status = status.to_string();
     payload.processed_at = Some(chrono::Utc::now().to_rfc3339());
 
-    if let Err(e) = app.emit("event-bus", payload) {
+    if let Err(e) = app.emit(event_name::EVENT_BUS, payload) {
         tracing::warn!(event_id = %event.id, error = %e, "Failed to emit event-bus event to frontend");
     }
 }
@@ -954,7 +979,7 @@ pub(crate) fn zombie_execution_tick(pool: &DbPool, app: &AppHandle) {
                     "Zombie execution sweep: transitioned {} stale executions to incomplete",
                     count,
                 );
-                let _ = app.emit("zombie-executions-detected", ZombieExecutionEvent {
+                let _ = app.emit(event_name::ZOMBIE_EXECUTIONS_DETECTED, ZombieExecutionEvent {
                     zombie_ids,
                     count,
                 });

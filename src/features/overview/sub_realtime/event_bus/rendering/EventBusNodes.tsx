@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import type { SwarmNode, ProcessingInfo } from '../../libs/visualizationHelpers';
 import {
   TOOL_NODE_R_MIN, TOOL_NODE_R_MAX, TOOL_NODE_R,
@@ -67,13 +66,10 @@ export function PersonaNodeGroup({
             {proc && (
               <g>
                 <circle cx={node.x} cy={node.y} r={PROGRESS_R} fill="none" stroke={`${proc.color}20`} strokeWidth="0.5" />
-                <motion.circle
+                <circle className="animate-fade-in"
                   cx={node.x} cy={node.y} r={PROGRESS_R}
                   fill="none" stroke={proc.color} strokeWidth="0.5" strokeLinecap="round"
                   style={{ strokeDasharray: PROGRESS_CIRC, transformOrigin: `${node.x}px ${node.y}px`, transform: `rotate(-90deg)` }}
-                  initial={{ strokeDashoffset: PROGRESS_CIRC }}
-                  animate={{ strokeDashoffset: 0 }}
-                  transition={{ duration: proc.durationMs / 1000, ease: 'linear' }}
                 />
                 <circle cx={node.x} cy={node.y} r={PERSONA_NODE_R + 0.5} fill="none" stroke={proc.color} strokeWidth="0.15" opacity={0.35}>
                   <animate attributeName="opacity" values="0.35;0.1;0.35" dur="0.7s" repeatCount="indefinite" />

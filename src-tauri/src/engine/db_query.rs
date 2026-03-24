@@ -73,17 +73,83 @@ fn sanitize_error(msg: &str, fields: &HashMap<String, String>) -> String {
     sanitized
 }
 
+/// Classifies a SQL/Redis/Convex statement as read-only or mutating.
+///
+/// Returns `true` if the statement is a mutation (INSERT, UPDATE, DELETE,
+/// DROP, ALTER, TRUNCATE, CREATE, REPLACE, GRANT, REVOKE, SET, FLUSH, DEL, etc.).
+/// Returns `false` for read-only statements (SELECT, SHOW, DESCRIBE, EXPLAIN, WITH, etc.).
+///
+/// For Redis commands, checks against known write commands (SET, DEL, HSET, LPUSH, etc.).
+pub fn is_mutation(query_text: &str) -> bool {
+    let trimmed = query_text.trim();
+
+    // Strip leading block/line comments to reach the actual keyword
+    let mut s = trimmed;
+    loop {
+        s = s.trim_start();
+        if s.starts_with("--") {
+            // Line comment -- skip to next line
+            if let Some(pos) = s.find('\n') {
+                s = &s[pos + 1..];
+            } else {
+                return false; // entire query is a comment
+            }
+        } else if s.starts_with("/*") {
+            // Block comment -- skip to closing */
+            if let Some(pos) = s.find("*/") {
+                s = &s[pos + 2..];
+            } else {
+                return true; // unclosed comment — treat as mutation (fail-safe)
+            }
+        } else {
+            break;
+        }
+    }
+
+    // Extract the first keyword (letters only, case-insensitive)
+    let first_keyword: String = s.chars()
+        .take_while(|c| c.is_ascii_alphabetic())
+        .collect::<String>()
+        .to_ascii_uppercase();
+
+    // Read-only keywords -- anything not in this list is treated as a mutation
+    matches!(
+        first_keyword.as_str(),
+        "SELECT" | "SHOW" | "DESCRIBE" | "DESC" | "EXPLAIN" | "WITH"
+        | "PRAGMA" | "ANALYZE" | "VALUES"
+        // Redis read commands
+        | "GET" | "MGET" | "HGET" | "HGETALL" | "HMGET" | "HKEYS" | "HVALS" | "HLEN"
+        | "LRANGE" | "LLEN" | "LINDEX" | "SCARD" | "SMEMBERS" | "SISMEMBER"
+        | "ZRANGE" | "ZRANGEBYSCORE" | "ZSCORE" | "ZCARD" | "ZCOUNT" | "ZRANK"
+        | "EXISTS" | "TYPE" | "TTL" | "PTTL" | "KEYS" | "SCAN" | "DBSIZE" | "INFO"
+        | "PING" | "ECHO" | "TIME" | "RANDOMKEY" | "STRLEN" | "GETRANGE"
+    ) == false
+}
+
 /// Execute a query against the database credential's service.
 ///
 /// `user_db` is required for `personas_database` (built-in SQLite) queries.
 /// Pass `None` when the caller does not have access to the user database pool
 /// (legacy call sites) -- `personas_database` queries will return an error.
+///
+/// When `allow_mutation` is `false` (safe mode, the default), any statement
+/// classified as a mutation (INSERT, UPDATE, DELETE, DROP, etc.) is rejected
+/// before it reaches the external database.
 pub async fn execute_query(
     pool: &DbPool,
     credential_id: &str,
     query_text: &str,
     user_db: Option<&UserDbPool>,
+    allow_mutation: bool,
 ) -> Result<QueryResult, AppError> {
+    // Safe-mode guard: reject mutations unless explicitly allowed
+    if !allow_mutation && is_mutation(query_text) {
+        return Err(AppError::Validation(
+            "This query appears to modify data (INSERT, UPDATE, DELETE, DROP, etc.). \
+             Enable write mode or confirm the mutation to execute it."
+                .to_string(),
+        ));
+    }
     let credential = cred_repo::get_by_id(pool, credential_id)?;
 
     let start = Instant::now();

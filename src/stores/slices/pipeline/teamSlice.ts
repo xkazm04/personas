@@ -9,7 +9,7 @@ import type { CreateTeamMemoryInput } from "@/lib/bindings/CreateTeamMemoryInput
 import { batchDeleteTeamMemories, createTeamMemory, deleteTeamMemory, getTeamMemoryCount, getTeamMemoryStats, listTeamMemories, updateTeamMemory, updateTeamMemoryImportance } from "@/api/pipeline/teamMemories";
 import { addTeamMember, cloneTeam, createTeam, createTeamConnection, deleteTeam, deleteTeamConnection, listTeamConnections, listTeamMembers, listTeams, removeTeamMember, updateTeamConnection } from "@/api/pipeline/teams";
 
-import { useToastStore } from "@/stores/toastStore";
+import { storeBus } from "@/lib/storeBus";
 import { reportError } from "../../storeTypes";
 
 export interface TeamSlice {
@@ -110,7 +110,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
     try {
       const team = await cloneTeam(sourceTeamId);
       await get().fetchTeams();
-      useToastStore.getState().addToast('Team forked successfully', 'success');
+      storeBus.emit('toast', { message: 'Team forked successfully', type: 'success' });
       return team;
     } catch (err) {
       reportError(err, "Failed to fork team", set);

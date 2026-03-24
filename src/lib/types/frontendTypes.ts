@@ -67,11 +67,14 @@ export function buildSidebarTree(
 
 export type ModelProvider = "anthropic" | "ollama" | "litellm" | "copilot" | "custom";
 
+export type PromptCachePolicy = "none" | "short" | "long";
+
 export interface ModelProfile {
   model?: string;
   provider?: ModelProvider;
   base_url?: string;
   auth_token?: string;
+  prompt_cache_policy?: PromptCachePolicy;
 }
 
 // -- Notification Channels ----------------------------------------------

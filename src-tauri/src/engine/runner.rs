@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
+use super::event_registry::event_name;
 
 /// Tracks a per-credential mutex with an explicit active-user count.
 /// `active` is incremented/decremented exclusively while holding the outer map lock,
@@ -84,6 +85,7 @@ fn credential_refresh_lock(credential_id: &str) -> CredentialLockHandle {
 
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
 use crate::db::repos::core::groups as group_repo;
+use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
 use crate::db::repos::resources::{
@@ -228,6 +230,18 @@ pub async fn run_execution(
         }
     }
 
+    // Fall back to global model profile when neither persona nor workspace provides one
+    if persona.model_profile.as_deref().map_or(true, |p| p.trim().is_empty()) {
+        if let Ok(Some(global_json)) = crate::db::repos::core::settings::get(
+            &pool,
+            settings_keys::GLOBAL_MODEL_PROFILE,
+        ) {
+            if !global_json.trim().is_empty() {
+                persona.model_profile = Some(global_json);
+            }
+        }
+    }
+
     // Parse model profile
     let mut model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
 
@@ -279,14 +293,14 @@ pub async fn run_execution(
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
 
         let _ = app.emit(
-            "execution-output",
+            event_name::EXECUTION_OUTPUT,
             ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {msg}"),
             },
         );
         let _ = app.emit(
-            "execution-status",
+            event_name::EXECUTION_STATUS,
             ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
@@ -307,6 +321,28 @@ pub async fn run_execution(
     }
 
     let cred_env_clone = cred_env.clone();
+
+    // Assemble immutable ExecutionConfig snapshot from all resolved sources.
+    // This is the single source of truth for what config this execution used.
+    let execution_config = ExecutionConfig {
+        model_profile: model_profile.as_ref().map(RedactedModelProfile::from_profile),
+        engine: provider::load_engine_kind(&pool).as_setting().to_string(),
+        max_budget_usd: persona.max_budget_usd,
+        max_turns: persona.max_turns,
+        timeout_ms: persona.timeout_ms,
+        has_workspace_instructions: workspace_instructions.is_some(),
+        workspace_id: persona.group_id.clone(),
+        tool_names: tools.iter().map(|t| t.name.clone()).collect(),
+        credential_connectors: cred_hints.iter().map(|h| h.clone()).collect(),
+        routing_rule: None, // Set after BYOM policy evaluation in spawn stage
+        compliance_rule: None,
+        continuation_mode: match &continuation {
+            None => "none".to_string(),
+            Some(Continuation::PromptHint(_)) => "prompt_hint".to_string(),
+            Some(Continuation::SessionResume(_)) => "session_resume".to_string(),
+        },
+        assembled_at: chrono::Utc::now().to_rfc3339(),
+    };
 
     trace.end_span_ok(&validate_stage);
 
@@ -350,6 +386,33 @@ pub async fn run_execution(
             #[cfg(feature = "desktop")]
             None, // Ambient context is injected by the engine layer (see mod.rs)
         )
+    };
+
+    // Inject top-N agent memories from prior runs so the agent can recall
+    // what the user found valuable, recurring patterns, and learned context.
+    let prompt_text = if !is_session_resume {
+        match mem_repo::get_by_persona(&pool, &persona.id, Some(20)) {
+            Ok(memories) if !memories.is_empty() => {
+                let mut mem_section = String::from("\n\n## Agent Memory -- Prior Learnings\n\n");
+                mem_section.push_str("The following memories were saved from your previous executions. Use them to inform your analysis, prioritize what the user found valuable, and avoid repeating approaches they marked as invaluable.\n\n");
+                for m in &memories {
+                    mem_section.push_str(&format!(
+                        "- **{}** [{}] (importance: {}): {}\n",
+                        m.title, m.category, m.importance, m.content
+                    ));
+                }
+                mem_section.push('\n');
+                logger.log(&format!("[MEMORY] Injected {} memories from prior runs", memories.len()));
+                format!("{prompt_text}{mem_section}")
+            }
+            Ok(_) => prompt_text, // no memories yet
+            Err(e) => {
+                logger.log(&format!("[MEMORY] Failed to load memories: {e}"));
+                prompt_text
+            }
+        }
+    } else {
+        prompt_text // skip for session resumes -- context already loaded
     };
 
     trace.end_span(&prompt_span, None, None, None, None);
@@ -406,6 +469,14 @@ pub async fn run_execution(
             routing_rule_name: None,
             compliance_rule_name: None,
         });
+
+    // Enrich execution config with BYOM policy results
+    let mut execution_config = execution_config;
+    execution_config.routing_rule = policy_decision.routing_rule_name.clone();
+    execution_config.compliance_rule = policy_decision.compliance_rule_name.clone();
+    // Freeze: no further mutations after this point
+    let execution_config = execution_config;
+    let execution_config_json = serde_json::to_string(&execution_config).ok();
 
     let failover_chain = failover::build_failover_chain_with_policy(
         primary_engine,
@@ -501,7 +572,7 @@ pub async fn run_execution(
                     candidate.label,
                 ));
                 let _ = app.emit(
-                    "execution-output",
+                    event_name::EXECUTION_OUTPUT,
                     ExecutionOutputEvent {
                         execution_id: execution_id.clone(),
                         line: format!("[FAILOVER] Trying {}...", candidate.label),
@@ -528,10 +599,10 @@ pub async fn run_execution(
                     // Record failure in circuit breaker and emit transition events
                     let transitions = circuit_breaker.record_failure(candidate.engine_kind);
                     for transition in &transitions {
-                        let _ = app.emit("circuit-breaker-transition", transition);
+                        let _ = app.emit(event_name::CIRCUIT_BREAKER_TRANSITION, transition);
                     }
                     if transitions.iter().any(|t| t.provider == "global") {
-                        let _ = app.emit("circuit-breaker-global-tripped", circuit_breaker.get_status());
+                        let _ = app.emit(event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED, circuit_breaker.get_status());
                     }
                     logger.log(&format!("[FAILOVER] {} failed: {}", candidate.label, error_msg));
                     last_spawn_error = Some(error_msg);
@@ -552,14 +623,14 @@ pub async fn run_execution(
         logger.close();
 
         let _ = app.emit(
-            "execution-output",
+            event_name::EXECUTION_OUTPUT,
             ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {error_msg}"),
             },
         );
         let _ = app.emit(
-            "execution-status",
+            event_name::EXECUTION_STATUS,
             ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
@@ -622,7 +693,7 @@ pub async fn run_execution(
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
         let _ = app.emit(
-            "execution-output",
+            event_name::EXECUTION_OUTPUT,
             ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: "[CANCELLED] Execution cancelled before startup completed".into(),
@@ -662,7 +733,7 @@ pub async fn run_execution(
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
         let _ = app.emit(
-            "execution-status",
+            event_name::EXECUTION_STATUS,
             ExecutionStatusEvent {
                 execution_id: execution_id.clone(),
                 status: ExecutionState::Failed,
@@ -774,7 +845,7 @@ pub async fn run_execution(
                                     output_truncated = true;
                                     logger.log("[RUNNER] stdout truncated -- MAX_OUTPUT_BYTES (10MB) exceeded");
                                     let _ = app.emit(
-                                        "execution-output",
+                                        event_name::EXECUTION_OUTPUT,
                                         ExecutionOutputEvent {
                                             execution_id: exec_id_for_stream.clone(),
                                             line: "[output truncated -- 10MB limit exceeded]".to_string(),
@@ -795,7 +866,7 @@ pub async fn run_execution(
                             // Emit user-facing output to frontend
                             if let Some(ref display_text) = display {
                                 let _ = app.emit(
-                                    "execution-output",
+                                    event_name::EXECUTION_OUTPUT,
                                     ExecutionOutputEvent {
                                         execution_id: exec_id_for_stream.clone(),
                                         line: display_text.clone(),
@@ -807,26 +878,24 @@ pub async fn run_execution(
                             parser::update_metrics_from_result(&mut metrics, &line_type);
 
                             // Persist session_id to DB immediately when first captured
-                            if let StreamLineType::SystemInit { ref session_id, .. } = line_type {
-                                if let Some(ref sid) = session_id {
-                                    if metrics.session_id.is_none() {
-                                        metrics.session_id = Some(sid.clone());
-                                        let pool_ref = pool_for_stream.clone();
-                                        let exec_id_ref = exec_id_for_stream.clone();
-                                        let sid_clone = sid.clone();
-                                        // Fire-and-forget DB update
-                                        tokio::spawn(async move {
-                                            let _ = exec_repo::update_status(
-                                                &pool_ref,
-                                                &exec_id_ref,
-                                                UpdateExecutionStatus {
-                                                    status: ExecutionState::Running,
-                                                    claude_session_id: Some(sid_clone),
-                                                    ..Default::default()
-                                                },
-                                            );
-                                        });
-                                    }
+                            if let StreamLineType::SystemInit { session_id: Some(ref sid), .. } = line_type {
+                                if metrics.session_id.is_none() {
+                                    metrics.session_id = Some(sid.clone());
+                                    let pool_ref = pool_for_stream.clone();
+                                    let exec_id_ref = exec_id_for_stream.clone();
+                                    let sid_clone = sid.clone();
+                                    // Fire-and-forget DB update
+                                    tokio::spawn(async move {
+                                        let _ = exec_repo::update_status(
+                                            &pool_ref,
+                                            &exec_id_ref,
+                                            UpdateExecutionStatus {
+                                                status: ExecutionState::Running,
+                                                claude_session_id: Some(sid_clone),
+                                                ..Default::default()
+                                            },
+                                        );
+                                    });
                                 }
                             }
 
@@ -862,7 +931,7 @@ pub async fn run_execution(
                                 StreamLineType::Unknown => None,
                             };
                             if let Some(event) = structured_event {
-                                let _ = app.emit("execution-event", &event);
+                                let _ = app.emit(event_name::EXECUTION_EVENT, &event);
                             }
 
                             // Track tool usage and build tool steps for inspector
@@ -886,7 +955,7 @@ pub async fn run_execution(
                                 );
                                 // Emit live trace span event to frontend
                                 if let Some(span_data) = trace.get_span(&tool_span_id) {
-                                    let _ = app.emit("execution-trace-span", TraceSpanEvent {
+                                    let _ = app.emit(event_name::EXECUTION_TRACE_SPAN, TraceSpanEvent {
                                         execution_id: exec_id_for_stream.clone(),
                                         span: span_data,
                                         event_type: "start".to_string(),
@@ -906,7 +975,7 @@ pub async fn run_execution(
                                 // Emit file change event if this is a file operation
                                 if let Some(file_change) = parser::extract_file_change(tool_name, input_preview) {
                                     let _ = app.emit(
-                                        "execution-file-change",
+                                        event_name::EXECUTION_FILE_CHANGE,
                                         serde_json::json!({
                                             "execution_id": exec_id_for_stream,
                                             "path": file_change.path,
@@ -914,7 +983,7 @@ pub async fn run_execution(
                                         }),
                                     );
                                     let _ = app.emit(
-                                        "execution-event",
+                                        event_name::EXECUTION_EVENT,
                                         &StructuredExecutionEvent::FileChange {
                                             execution_id: exec_id_for_stream.clone(),
                                             path: file_change.path.clone(),
@@ -953,7 +1022,7 @@ pub async fn run_execution(
                                     trace.end_span_ok(&span_id);
                                     // Emit live trace span end event
                                     if let Some(span_data) = trace.get_span(&span_id) {
-                                        let _ = app.emit("execution-trace-span", TraceSpanEvent {
+                                        let _ = app.emit(event_name::EXECUTION_TRACE_SPAN, TraceSpanEvent {
                                             execution_id: exec_id_for_stream.clone(),
                                             span: span_data,
                                             event_type: "end".to_string(),
@@ -1018,7 +1087,7 @@ pub async fn run_execution(
                     let elapsed_ms = start_time.elapsed().as_millis() as u64;
                     let silence_ms = last_activity.elapsed().as_millis() as u64;
                     let _ = app.emit(
-                        "execution-heartbeat",
+                        event_name::EXECUTION_HEARTBEAT,
                         HeartbeatEvent {
                             execution_id: exec_id_for_stream.clone(),
                             elapsed_ms,
@@ -1027,7 +1096,7 @@ pub async fn run_execution(
                     );
                     // Also emit on structured channel
                     let _ = app.emit(
-                        "execution-event",
+                        event_name::EXECUTION_EVENT,
                         &StructuredExecutionEvent::Heartbeat {
                             execution_id: exec_id_for_stream.clone(),
                             elapsed_ms,
@@ -1067,7 +1136,7 @@ pub async fn run_execution(
     if !stderr_text.is_empty() {
         logger.log(&format!("[STDERR] {}", stderr_text.trim()));
         let _ = app.emit(
-            "execution-output",
+            event_name::EXECUTION_OUTPUT,
             ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[ERROR] {}", stderr_text.trim()),
@@ -1081,7 +1150,7 @@ pub async fn run_execution(
         logger.log("[TIMEOUT] Execution timed out, killing process");
         driver.kill().await;
         let _ = app.emit(
-            "execution-output",
+            event_name::EXECUTION_OUTPUT,
             ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: format!("[TIMEOUT] Execution timed out after {}s", timeout_ms / 1000),
@@ -1235,10 +1304,10 @@ pub async fn run_execution(
         if failover::classify_error(err).is_some() {
             let transitions = circuit_breaker.record_failure(active_engine_kind);
             for transition in &transitions {
-                let _ = app.emit("circuit-breaker-transition", transition);
+                let _ = app.emit(event_name::CIRCUIT_BREAKER_TRANSITION, transition);
             }
             if transitions.iter().any(|t| t.provider == "global") {
-                let _ = app.emit("circuit-breaker-global-tripped", circuit_breaker.get_status());
+                let _ = app.emit(event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED, circuit_breaker.get_status());
             }
         }
     } else {
@@ -1283,11 +1352,11 @@ pub async fn run_execution(
         tracing::warn!(execution_id = %execution_id, "Failed to save execution trace: {}", e);
     }
     // Emit the complete trace to frontend
-    let _ = app.emit("execution-trace", &final_trace);
+    let _ = app.emit(event_name::EXECUTION_TRACE, &final_trace);
 
     // Emit final status
     let _ = app.emit(
-        "execution-status",
+        event_name::EXECUTION_STATUS,
         ExecutionStatusEvent {
             execution_id: execution_id.clone(),
             status: final_status,
@@ -1343,6 +1412,7 @@ pub async fn run_execution(
         cost_usd: metrics.cost_usd,
         tool_steps: tool_steps_json,
         trace_id: Some(final_trace.trace_id.clone()),
+        execution_config: execution_config_json,
     }
 }
 
@@ -1389,6 +1459,7 @@ fn default_result() -> ExecutionResult {
         cost_usd: 0.0,
         tool_steps: None,
         trace_id: None,
+        execution_config: None,
     }
 }
 

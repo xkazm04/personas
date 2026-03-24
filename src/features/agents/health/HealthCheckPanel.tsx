@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -6,9 +6,9 @@ import {
   Activity,
   RefreshCw,
   Clock,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
@@ -38,6 +38,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
   if (phase === 'idle') {
     return (
       <div className="space-y-4">
+        <HealthWatchToggle />
         <div className="text-center py-8">
           {/* Stethoscope-circuit illustration */}
           <svg width="160" height="100" viewBox="0 0 160 100" fill="none" className="mx-auto mb-4">
@@ -195,8 +196,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
         </div>
       )}
 
-      <AnimatePresence mode="popLayout">
-        {dryRun.issues.length > 0 && (
+      {dryRun.issues.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-sm font-medium text-muted-foreground/80 uppercase tracking-wider">Issues</p>
             <div className="space-y-2">
@@ -207,7 +207,6 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             </div>
           </div>
         )}
-      </AnimatePresence>
 
       {dryRun.issues.length === 0 && dryRun.capabilities.length > 0 && (
         <div className="text-center py-4">
@@ -219,6 +218,54 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           <p className="text-xs text-muted-foreground/50 mt-0.5">No issues detected in agent configuration</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function HealthWatchToggle() {
+  const persona = useAgentStore((s) => s.selectedPersona);
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!persona) return;
+    fetch(`http://127.0.0.1:9420/api/settings/health-watch/${persona.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data?.enabled !== undefined) setEnabled(d.data.enabled); })
+      .catch(() => {});
+  }, [persona]);
+
+  const toggle = async () => {
+    if (!persona) return;
+    setLoading(true);
+    try {
+      await fetch(`http://127.0.0.1:9420/api/settings/health-watch/${persona.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !enabled, interval_hours: 6, error_threshold: 30 }),
+      });
+      setEnabled(!enabled);
+    } catch { /* silent */ }
+    setLoading(false);
+  };
+
+  return (
+    <div className="flex items-center justify-end">
+      <button
+        data-testid="health-watch-toggle"
+        onClick={toggle}
+        disabled={loading || !persona}
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+          enabled
+            ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+            : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
+        }`}
+        title={enabled ? "Health monitoring active (every 6h)" : "Enable continuous health monitoring"}
+      >
+        <Eye className={`w-3 h-3 ${enabled ? 'text-cyan-400' : ''}`} />
+        Health Watch
+        <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-cyan-400' : 'bg-muted-foreground/30'}`} />
+      </button>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { CX, CY, iconChar } from '../../libs/visualizationHelpers';
 import type { ProcessingInfo } from '../../libs/visualizationHelpers';
 import { NODE_R } from './EventBusTypes';
@@ -75,13 +74,10 @@ export function InnerNodeGroup({
             {proc && (
               <g>
                 <circle cx={node.x} cy={node.y} r={r + 1.2} fill="none" stroke={`${proc.color}25`} strokeWidth="0.4" />
-                <motion.circle
+                <circle className="animate-fade-in"
                   cx={node.x} cy={node.y} r={r + 1.2}
                   fill="none" stroke={proc.color} strokeWidth="0.5" strokeLinecap="round"
                   style={{ strokeDasharray: 2 * Math.PI * (r + 1.2), transformOrigin: `${node.x}px ${node.y}px`, transform: 'rotate(-90deg)' }}
-                  initial={{ strokeDashoffset: 2 * Math.PI * (r + 1.2) }}
-                  animate={{ strokeDashoffset: 0 }}
-                  transition={{ duration: proc.durationMs / 1000, ease: 'linear' }}
                 />
               </g>
             )}

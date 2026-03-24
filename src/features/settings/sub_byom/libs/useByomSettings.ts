@@ -1,11 +1,12 @@
 import { silentCatch } from "@/lib/silentCatch";
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   getByomPolicy,
   setByomPolicy,
   deleteByomPolicy,
   listProviderAuditLog,
   getProviderUsageStats,
+  getProviderUsageTimeseries,
 } from '@/api/system/byom';
 import type {
   ByomPolicy,
@@ -13,7 +14,36 @@ import type {
   ComplianceRule,
   ProviderAuditEntry,
   ProviderUsageStats,
+  ProviderUsageTimeseries,
 } from '@/api/system/byom';
+import { validateByomPolicy, type PolicyWarning } from './byomHelpers';
+
+/** Shallow-equal comparison for ByomPolicy objects. */
+function policyEqual(a: ByomPolicy, b: ByomPolicy): boolean {
+  if (a.enabled !== b.enabled) return false;
+  if (!arraysEqual(a.allowed_providers, b.allowed_providers)) return false;
+  if (!arraysEqual(a.blocked_providers, b.blocked_providers)) return false;
+  if (a.routing_rules.length !== b.routing_rules.length) return false;
+  if (a.compliance_rules.length !== b.compliance_rules.length) return false;
+  for (let i = 0; i < a.routing_rules.length; i++) {
+    const ra = a.routing_rules[i]!, rb = b.routing_rules[i]!;
+    if (ra.name !== rb.name || ra.task_complexity !== rb.task_complexity ||
+        ra.provider !== rb.provider || ra.model !== rb.model || ra.enabled !== rb.enabled) return false;
+  }
+  for (let i = 0; i < a.compliance_rules.length; i++) {
+    const ca = a.compliance_rules[i]!, cb = b.compliance_rules[i]!;
+    if (ca.name !== cb.name || ca.enabled !== cb.enabled ||
+        !arraysEqual(ca.workflow_tags, cb.workflow_tags) ||
+        !arraysEqual(ca.allowed_providers, cb.allowed_providers)) return false;
+  }
+  return true;
+}
+
+function arraysEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) return false; }
+  return true;
+}
 
 function defaultPolicy(): ByomPolicy {
   return {
@@ -25,7 +55,7 @@ function defaultPolicy(): ByomPolicy {
   };
 }
 
-export type ByomSection = 'policy' | 'routing' | 'compliance' | 'audit';
+export type ByomSection = 'policy' | 'keys' | 'routing' | 'compliance' | 'audit';
 
 export function useByomSettings() {
   const [policy, setPolicy] = useState<ByomPolicy>(defaultPolicy());
@@ -33,28 +63,43 @@ export function useByomSettings() {
   const [saved, setSaved] = useState(false);
   const [auditLog, setAuditLog] = useState<ProviderAuditEntry[]>([]);
   const [usageStats, setUsageStats] = useState<ProviderUsageStats[]>([]);
+  const [usageTimeseries, setUsageTimeseries] = useState<ProviderUsageTimeseries[]>([]);
   const [activeSection, setActiveSection] = useState<ByomSection>('policy');
+
+  // --- Dirty-state tracking ---
+  const savedSnapshotRef = useRef<ByomPolicy>(defaultPolicy());
+  const isDirty = useMemo(() => !policyEqual(policy, savedSnapshotRef.current), [policy]);
 
   useEffect(() => {
     getByomPolicy().then((p) => {
-      if (p) setPolicy(p);
+      const initial = p ?? defaultPolicy();
+      setPolicy(initial);
+      savedSnapshotRef.current = initial;
       setLoaded(true);
     }).catch(() => setLoaded(true));
     listProviderAuditLog(50).then(setAuditLog).catch(silentCatch("useByomSettings:listAuditLog"));
     getProviderUsageStats().then(setUsageStats).catch(silentCatch("useByomSettings:getUsageStats"));
+    getProviderUsageTimeseries(30).then(setUsageTimeseries).catch(silentCatch("useByomSettings:getTimeseries"));
   }, []);
 
   const handleSave = useCallback(async () => {
     await setByomPolicy(policy);
+    savedSnapshotRef.current = policy;
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [policy]);
 
   const handleReset = useCallback(async () => {
     await deleteByomPolicy();
-    setPolicy(defaultPolicy());
+    const reset = defaultPolicy();
+    setPolicy(reset);
+    savedSnapshotRef.current = reset;
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  }, []);
+
+  const discardChanges = useCallback(() => {
+    setPolicy(savedSnapshotRef.current);
   }, []);
 
   const toggleEnabled = useCallback(() => {
@@ -121,16 +166,45 @@ export function useByomSettings() {
     }));
   }, []);
 
+  const policyWarnings = useMemo(() => validateByomPolicy(policy), [policy]);
+
+  const routingWarnings = useMemo(() => {
+    const map = new Map<number, PolicyWarning[]>();
+    for (const w of policyWarnings) {
+      if (w.ruleType === 'routing') {
+        const existing = map.get(w.ruleIndex) ?? [];
+        existing.push(w);
+        map.set(w.ruleIndex, existing);
+      }
+    }
+    return map;
+  }, [policyWarnings]);
+
+  const complianceWarnings = useMemo(() => {
+    const map = new Map<number, PolicyWarning[]>();
+    for (const w of policyWarnings) {
+      if (w.ruleType === 'compliance') {
+        const existing = map.get(w.ruleIndex) ?? [];
+        existing.push(w);
+        map.set(w.ruleIndex, existing);
+      }
+    }
+    return map;
+  }, [policyWarnings]);
+
   return {
     policy,
     loaded,
     saved,
+    isDirty,
     auditLog,
     usageStats,
+    usageTimeseries,
     activeSection,
     setActiveSection,
     handleSave,
     handleReset,
+    discardChanges,
     toggleEnabled,
     toggleProvider,
     addRoutingRule,
@@ -139,5 +213,8 @@ export function useByomSettings() {
     addComplianceRule,
     updateComplianceRule,
     removeComplianceRule,
+    policyWarnings,
+    routingWarnings,
+    complianceWarnings,
   };
 }

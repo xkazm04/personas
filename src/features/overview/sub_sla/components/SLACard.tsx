@@ -1,5 +1,4 @@
 import { Activity, AlertTriangle, Clock, ChevronDown, ChevronUp, Zap, TrendingUp, TrendingDown, Wrench } from 'lucide-react';
-import { motion } from 'framer-motion';
 import type { PersonaSlaStats } from '@/api/overview/sla';
 import { formatPercent, formatDuration, formatMtbf } from '../libs/slaHelpers';
 import { rateToHealth, healthClasses, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
@@ -90,11 +89,8 @@ export function DailyTrendChart({ points }: { points: { date: string; success_ra
         const color = `${HEALTH_STATUS_TOKEN[rateToHealth(p.success_rate)].icon}/60`;
         return (
           <div key={i} className="flex flex-col items-center justify-end flex-shrink-0" style={{ width: barWidth }} title={`${p.date}: ${formatPercent(p.success_rate)} (${p.total} runs)`}>
-            <motion.div
-              className={`w-full rounded-t-sm ${color}`}
-              initial={{ height: 0 }}
-              animate={{ height: h }}
-              transition={{ ...barSpring, delay: i * 0.015 }}
+            <div
+              className={`animate-fade-in w-full rounded-t-sm ${color}`}
             />
           </div>
         );

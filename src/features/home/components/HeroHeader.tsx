@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 import LanguageSwitcher from './LanguageSwitcher';
 import TourLauncher from '@/features/onboarding/components/TourLauncher';
@@ -20,15 +19,12 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
   return (
     <div className="relative w-full">
       {/* Random cinematic background at low opacity */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.12 }}
-        transition={{ duration: 1.2 }}
-        className="absolute inset-0 -top-4 -left-4 -right-4 overflow-hidden pointer-events-none z-0 rounded-2xl"
+      <div
+        className="animate-fade-slide-in absolute inset-0 -top-4 -left-4 -right-4 overflow-hidden pointer-events-none z-0 rounded-2xl"
       >
         <img src={bgSrc} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
-      </motion.div>
+      </div>
 
       <div className="relative z-10">
         {/* Top bar -- language on left, tour on right */}
@@ -38,11 +34,8 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
         </div>
 
         {/* Logo + greeting -- centered row */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center justify-center gap-6 py-4"
+        <div
+          className="animate-fade-slide-in flex items-center justify-center gap-6 py-4"
         >
           {/* Logo */}
           <div className="relative group flex-shrink-0">
@@ -59,15 +52,12 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
           </div>
 
           {/* Greeting */}
-          <motion.h1
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-            className="typo-hero font-display bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent"
+          <h1
+            className="animate-fade-slide-in typo-hero font-display bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent"
           >
             {greeting}, {displayName}
-          </motion.h1>
-        </motion.div>
+          </h1>
+        </div>
       </div>
     </div>
   );

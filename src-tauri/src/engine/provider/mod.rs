@@ -17,6 +17,7 @@ pub enum PromptDelivery {
     /// Prompt is embedded as a positional argument (Codex: `exec "<prompt>"`).
     PositionalArg,
     /// Prompt is passed via a flag (Codex: `-p "<prompt>"`).
+    #[allow(dead_code)]
     Flag(String),
 }
 

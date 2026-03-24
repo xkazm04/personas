@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
@@ -182,13 +181,8 @@ export function EditorBody() {
       <CloudNudgeBanner />
 
       <div className="flex-1 overflow-y-auto p-4">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
+        <div className="animate-fade-slide-in"
             key={editorTab}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
           >
             <Suspense fallback={null}>
               {editorTab === 'activity' && <ActivityTab />}
@@ -214,8 +208,7 @@ export function EditorBody() {
                 />
               )}
             </Suspense>
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </div>
 
       <UnsavedChangesModal

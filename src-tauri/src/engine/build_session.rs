@@ -13,6 +13,8 @@ use tauri::ipc::Channel;
 use tauri::Emitter;
 use tokio::sync::mpsc;
 
+use super::event_registry::event_name;
+
 use crate::db::models::{
     BuildEvent, BuildPhase, BuildSession, UpdateBuildSession, UserAnswer,
 };
@@ -899,7 +901,7 @@ pub async fn run_tool_tests(
             | "personas_messages" | "messaging"
             | "personas_vector_db"
             | "file_read" | "file_write"
-        ) || connector.as_deref().map_or(false, |c| c.starts_with("personas_") || c == "builtin");
+        ) || connector.as_deref().is_some_and(|c| c.starts_with("personas_") || c == "builtin");
 
         let result = if is_cli_native || is_builtin_platform {
             // CLI-native tools and built-in platform connectors auto-pass
@@ -955,7 +957,7 @@ pub async fn run_tool_tests(
         });
 
         // Emit per-tool result event
-        let _ = app.emit("build-test-tool-result", serde_json::json!({
+        let _ = app.emit(event_name::BUILD_TEST_TOOL_RESULT, serde_json::json!({
             "session_id": session_id,
             "tool_name": result.tool_name,
             "status": result.status,
@@ -1936,7 +1938,7 @@ fn dual_emit(
     event: &BuildEvent,
 ) {
     let _ = channel.send(event.clone());
-    let _ = app.emit("build-session-event", event);
+    let _ = app.emit(event_name::BUILD_SESSION_EVENT, event);
 }
 
 /// Emit a SessionStatus event via Channel + Tauri.

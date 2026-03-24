@@ -8,13 +8,17 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
 use crate::db::models::{
-    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, CreateReviewMessageInput,
-    ImportDesignReviewInput, PersonaDesignReview, PersonaManualReview, ReviewMessage,
+    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, CreatePersonaEventInput,
+    CreateReviewMessageInput, ImportDesignReviewInput, PersonaDesignReview, PersonaManualReview,
+    ReviewMessage,
 };
-use crate::db::repos::communication::{manual_reviews as manual_repo, reviews as repo};
+use crate::db::repos::communication::{
+    events as event_repo, manual_reviews as manual_repo, reviews as repo,
+};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
 use crate::engine::design;
+use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -185,7 +189,7 @@ pub async fn start_design_review_run(
             // Check cancellation
             if cancel_flag.load(Ordering::Relaxed) {
                 let _ = app.emit(
-                    "design-review-status",
+                    event_name::DESIGN_REVIEW_STATUS,
                     DesignReviewStatusEvent {
                         run_id: run_id_clone.clone(),
                         test_case_index: i,
@@ -231,7 +235,7 @@ pub async fn start_design_review_run(
 
             // Emit "generating" status
             let _ = app.emit(
-                "design-review-status",
+                event_name::DESIGN_REVIEW_STATUS,
                 DesignReviewStatusEvent {
                     run_id: run_id_clone.clone(),
                     test_case_index: i,
@@ -280,7 +284,7 @@ pub async fn start_design_review_run(
             // Check cancellation after CLI completes but before persisting review
             if cancel_flag.load(Ordering::Relaxed) {
                 let _ = app.emit(
-                    "design-review-status",
+                    event_name::DESIGN_REVIEW_STATUS,
                     DesignReviewStatusEvent {
                         run_id: run_id_clone.clone(),
                         test_case_index: i,
@@ -459,7 +463,7 @@ pub async fn start_design_review_run(
 
         // Emit completion
         let _ = app.emit(
-            "design-review-status",
+            event_name::DESIGN_REVIEW_STATUS,
             DesignReviewStatusEvent {
                 run_id: run_id_clone,
                 test_case_index: total,
@@ -838,8 +842,9 @@ pub fn update_manual_review_status(
     let review = manual_repo::get_by_id(&state.db, &id)?;
 
     if matches!(review.status, crate::db::models::ManualReviewStatus::Approved | crate::db::models::ManualReviewStatus::Rejected | crate::db::models::ManualReviewStatus::Resolved) {
+        // Notify frontend via Tauri IPC (existing behavior)
         let _ = app.emit(
-            "manual-review-resolved",
+            event_name::MANUAL_REVIEW_RESOLVED,
             ManualReviewResolvedEvent {
                 review_id: review.id.clone(),
                 execution_id: review.execution_id.clone(),
@@ -869,6 +874,48 @@ pub fn update_manual_review_status(
                 tags: Some(serde_json::json!(["review", decision]).to_string()),
             },
         );
+
+        // Publish to the event bus so downstream personas can subscribe
+        let event_type = format!("review_decision.{}", review.status.as_str());
+        match event_repo::publish(
+            &state.db,
+            CreatePersonaEventInput {
+                event_type: event_type.clone(),
+                source_type: "manual_review".into(),
+                source_id: Some(review.id.clone()),
+                target_persona_id: Some(review.persona_id.clone()),
+                payload: Some(
+                    json!({
+                        "review_id": review.id,
+                        "execution_id": review.execution_id,
+                        "persona_id": review.persona_id,
+                        "title": review.title,
+                        "decision": review.status.as_str(),
+                        "reviewer_notes": review.reviewer_notes,
+                    })
+                    .to_string(),
+                ),
+                project_id: None,
+                use_case_id: None,
+            },
+        ) {
+            Ok(event) => {
+                let _ = app.emit(event_name::EVENT_BUS, event.clone());
+                tracing::info!(
+                    review_id = %review.id,
+                    event_type = %event_type,
+                    event_id = %event.id,
+                    "Published review decision to event bus"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(
+                    review_id = %review.id,
+                    error = %e,
+                    "Failed to publish review decision to event bus"
+                );
+            }
+        }
     }
 
     Ok(review)
@@ -914,7 +961,7 @@ pub fn add_review_message(
         },
     )?;
 
-    let _ = app.emit("review-message-added", &msg);
+    let _ = app.emit(event_name::REVIEW_MESSAGE_ADDED, &msg);
     Ok(msg)
 }
 
@@ -1333,7 +1380,7 @@ async fn run_cli_for_template(
             // Emit display text for streaming progress
             if let Some(text) = extract_display_text(&line) {
                 let _ = app.emit(
-                    "design-review-output",
+                    event_name::DESIGN_REVIEW_OUTPUT,
                     DesignReviewOutputEvent {
                         run_id: run_id.to_string(),
                         test_case_index,
@@ -1389,7 +1436,7 @@ fn emit_status(
     elapsed_ms: Option<u64>,
 ) {
     let _ = app.emit(
-        "design-review-status",
+        event_name::DESIGN_REVIEW_STATUS,
         DesignReviewStatusEvent {
             run_id: run_id.to_string(),
             test_case_index: index,

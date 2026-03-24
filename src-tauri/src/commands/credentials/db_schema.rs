@@ -132,6 +132,15 @@ pub fn delete_db_saved_query(
 }
 
 // ============================================================================
+// Query Safety Classification
+// ============================================================================
+
+#[tauri::command]
+pub fn classify_db_query(query_text: String) -> bool {
+    crate::engine::db_query::is_mutation(&query_text)
+}
+
+// ============================================================================
 // Schema Introspection
 // ============================================================================
 
@@ -164,9 +173,16 @@ pub async fn execute_db_query(
     credential_id: String,
     query_text: String,
     saved_query_id: Option<String>,
+    allow_mutation: Option<bool>,
 ) -> Result<QueryResult, AppError> {
     require_privileged(&state, "execute_db_query").await?;
-    let result = crate::engine::db_query::execute_query(&state.db, &credential_id, &query_text, Some(&state.user_db)).await;
+    let result = crate::engine::db_query::execute_query(
+        &state.db,
+        &credential_id,
+        &query_text,
+        Some(&state.user_db),
+        allow_mutation.unwrap_or(false),
+    ).await;
 
     // Update last_run stats if we have a saved query ID
     // (fire-and-forget -- don't fail the execution if this errors)

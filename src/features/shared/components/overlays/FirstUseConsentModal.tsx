@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield,
   Brain,
@@ -16,6 +15,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const CONSENT_KEY = '__personas_user_consent_accepted';
 const CONSENT_VERSION = '1';
@@ -70,14 +70,9 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
       </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+      {open && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <ul className="px-4 pb-3 space-y-1.5">
               {items.map((item, i) => (
@@ -87,9 +82,8 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -101,6 +95,8 @@ interface FirstUseConsentModalProps {
 export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
   const [acknowledged, setAcknowledged] = useState(false);
   const noop = useCallback(() => {}, []);
+  const { t } = useTranslation();
+  const c = t.consent;
 
   const handleAccept = useCallback(() => {
     persistConsent();
@@ -123,8 +119,8 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
               <Shield className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h2 id="first-use-consent-title" className="typo-heading-lg text-foreground">Welcome to Personas Desktop</h2>
-              <p className="typo-body text-muted-foreground/70">Please review how this application works before continuing</p>
+              <h2 id="first-use-consent-title" className="typo-heading-lg text-foreground">{c.title}</h2>
+              <p className="typo-body text-muted-foreground/70">{c.subtitle}</p>
             </div>
           </div>
         </div>
@@ -132,110 +128,76 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           <p className="typo-body text-muted-foreground/80 mb-4">
-            Personas Desktop is a local-first AI agent orchestration tool. Before you start, please understand what it does and what data it accesses.
+            {c.intro}
           </p>
 
           <ConsentSection
             icon={<Brain className="w-4 h-4 text-violet-400" />}
-            title="AI Provider Communication"
-            tldr="Your prompts are sent to your chosen AI service using your own API key."
+            title={c.ai_title}
+            tldr={c.ai_tldr}
             color="violet"
             defaultOpen
-            items={[
-              'Your persona prompts, tool definitions, and input data are sent to the selected AI provider (Anthropic Claude, OpenAI Codex, Google Gemini, or GitHub Copilot) for execution.',
-              'Requests are made over HTTPS to provider APIs. Each provider has its own terms of service and data retention policies.',
-              'You supply your own API keys; they are encrypted locally and never shared with us.',
-              'Execution output (including token counts and cost) is stored locally in your database.',
-            ]}
+            items={[c.ai_detail_1, c.ai_detail_2, c.ai_detail_3, c.ai_detail_4]}
           />
 
           <ConsentSection
             icon={<Database className="w-4 h-4 text-emerald-400" />}
-            title="Local Data Storage"
-            tldr="Your passwords are encrypted and all your data stays on your computer."
+            title={c.storage_title}
+            tldr={c.storage_tldr}
             color="emerald"
-            items={[
-              'All data (personas, execution history, logs, memories) is stored in a local SQLite database on your machine.',
-              'Credential values (API keys, tokens, passwords) are encrypted with AES-256-GCM before storage. The encryption key is held in your OS keyring.',
-              'Execution logs are written as plaintext files to your app data directory.',
-              'No data is sent to Personas servers unless you explicitly use the optional cloud deployment feature.',
-            ]}
+            items={[c.storage_detail_1, c.storage_detail_2, c.storage_detail_3, c.storage_detail_4]}
           />
 
           <ConsentSection
             icon={<Globe className="w-4 h-4 text-cyan-400" />}
-            title="Third-Party Service Connections"
-            tldr="Agents can connect to services like Slack or GitHub using credentials you provide."
+            title={c.services_title}
+            tldr={c.services_tldr}
             color="cyan"
-            items={[
-              'Personas can make authenticated API calls to 40+ services (Slack, GitHub, Linear, Discord, Jira, Notion, databases, etc.) using credentials you provide.',
-              'These calls are made on your behalf using your credentials. You control which services each persona can access.',
-              'An API proxy validates URLs against a blocklist (private IPs, localhost) to mitigate SSRF risks.',
-              'All external communication uses HTTPS (TLS 1.2+).',
-            ]}
+            items={[c.services_detail_1, c.services_detail_2, c.services_detail_3, c.services_detail_4]}
           />
 
           <ConsentSection
             icon={<Eye className="w-4 h-4 text-amber-400" />}
-            title="System Monitoring Capabilities"
-            tldr="Agents can watch your clipboard, files, or schedule to trigger actions automatically."
+            title={c.monitoring_title}
+            tldr={c.monitoring_tldr}
             color="amber"
-            items={[
-              'Clipboard Monitor: When enabled for a persona, the app polls your system clipboard (~500ms interval) to detect text changes matching configured regex patterns. Clipboard content is hashed for change detection and is not stored unless it triggers an execution.',
-              'File Watcher: When configured, monitors specified local directories for file creation or modification to trigger persona execution.',
-              'Cron Scheduler: Runs personas on configured schedules (cron expressions). Active only while the app is running.',
-              'Webhook Server: A local HTTP server (localhost:9420) listens for inbound webhooks when webhook triggers are configured.',
-            ]}
+            items={[c.monitoring_clipboard, c.monitoring_file, c.monitoring_cron, c.monitoring_webhook]}
           />
 
           <ConsentSection
             icon={<Terminal className="w-4 h-4 text-orange-400" />}
-            title="Process Execution"
-            tldr="The app runs AI tools and scripts on your machine to carry out agent tasks."
+            title={c.process_title}
+            tldr={c.process_tldr}
             color="orange"
-            items={[
-              'The app spawns AI provider CLI processes (e.g., claude, codex, gemini) as child processes on your machine.',
-              'Credentials are passed to child processes as environment variables (not CLI arguments) and scrubbed after execution.',
-              'Browser automation (Auto-Credential setup) may launch a Playwright-controlled browser session to help set up OAuth credentials. This requires your explicit consent each time.',
-              'Automations can trigger external workflows (GitHub Actions, GitLab CI/CD, n8n, webhooks) based on execution output.',
-            ]}
+            items={[c.process_detail_1, c.process_detail_2, c.process_detail_3, c.process_detail_4]}
           />
 
           <ConsentSection
             icon={<Clipboard className="w-4 h-4 text-rose-400" />}
-            title="Error Reporting & Telemetry"
-            tldr="Anonymous crash reports may be sent to help fix bugs -- no personal data included."
+            title={c.telemetry_title}
+            tldr={c.telemetry_tldr}
             color="rose"
-            items={[
-              'Crash reports may be sent to Sentry for error tracking. IP addresses, email addresses, and request bodies are stripped before transmission.',
-              'Anonymous feature usage data (which sections and tabs you visit) is sent to Sentry to help prioritize development. No personal data, credential values, or execution content is included.',
-              'No personal data, credential values, or execution content is included in any telemetry.',
-              'The app checks for updates via GitHub Releases.',
-            ]}
+            items={[c.telemetry_detail_1, c.telemetry_detail_2, c.telemetry_detail_3, c.telemetry_detail_4]}
           />
 
           <ConsentSection
             icon={<FolderSearch className="w-4 h-4 text-teal-400" />}
-            title="Deployment (Optional)"
-            tldr="You can optionally run agents in the cloud -- nothing is uploaded unless you choose to."
+            title={c.deploy_title}
+            tldr={c.deploy_tldr}
             color="teal"
-            items={[
-              'You may optionally deploy personas to a cloud orchestrator, GitHub Actions, or GitLab CI/CD. This sends persona configuration (not credentials) to the selected platform.',
-              'Cloud deployment uses OAuth authentication with a deep-link callback (personas:// protocol).',
-              'Deployed personas run on the target platform under that platform\'s terms and security model.',
-            ]}
+            items={[c.deploy_detail_1, c.deploy_detail_2, c.deploy_detail_3]}
           />
 
           {/* Important warnings */}
           <div className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 mt-4">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="typo-body text-muted-foreground/80 space-y-1.5">
-              <p><span className="font-medium text-amber-400/90">Important:</span></p>
+              <p><span className="font-medium text-amber-400/90">{c.important}</span></p>
               <ul className="space-y-1 list-disc list-inside">
-                <li>You are responsible for the content of your persona prompts and the actions they take on connected services.</li>
-                <li>AI outputs may be inaccurate, biased, or harmful. Always review execution results before acting on them.</li>
-                <li>Credentials you store grant the app access to your accounts on third-party services. Use scoped tokens with minimal permissions where possible.</li>
-                <li>This software is provided under the MIT License, without warranty of any kind.</li>
+                <li>{c.notice_responsibility}</li>
+                <li>{c.notice_accuracy}</li>
+                <li>{c.notice_credentials}</li>
+                <li>{c.notice_license}</li>
               </ul>
             </div>
           </div>
@@ -249,7 +211,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
               className="mt-0.5 w-4 h-4 rounded border-primary/30 accent-blue-500"
             />
             <span className="typo-body text-foreground/90">
-              I understand that this application sends data to AI providers, accesses system resources (clipboard, file system, network), and executes processes on my behalf. I accept responsibility for how I configure and use it.
+              {c.checkbox}
             </span>
           </label>
         </div>
@@ -263,7 +225,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
             className="inline-flex items-center gap-1.5 typo-caption text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
-            View source & license
+            {c.source_link}
           </a>
           <button
             disabled={!acknowledged}
@@ -275,7 +237,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
             }`}
           >
             <CheckCircle2 className="w-4 h-4" />
-            I Understand, Continue
+            {c.accept_button}
           </button>
         </div>
     </BaseModal>

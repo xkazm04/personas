@@ -3,4 +3,8 @@ import type { AnomalyScore } from "./AnomalyScore";
 import type { CredentialRotationEntry } from "./CredentialRotationEntry";
 import type { RotationEntryStatus } from "./RotationEntryStatus";
 
-export type RotationStatus = { has_policy: boolean, policy_enabled: boolean, rotation_interval_days: number | null, next_rotation_at: string | null, last_rotated_at: string | null, last_status: RotationEntryStatus | null, anomaly_detected: boolean, consecutive_failures: number, recent_history: Array<CredentialRotationEntry>, anomaly_score: AnomalyScore | null, anomaly_tolerance: number, };
+export type RotationStatus = { has_policy: boolean, policy_enabled: boolean, rotation_interval_days: number | null, next_rotation_at: string | null, last_rotated_at: string | null, last_status: RotationEntryStatus | null, 
+/**
+ * The policy type: "scheduled", "oauth_keepalive", etc.
+ */
+policy_type: string | null, anomaly_detected: boolean, consecutive_failures: number, recent_history: Array<CredentialRotationEntry>, anomaly_score: AnomalyScore | null, anomaly_tolerance: number, };

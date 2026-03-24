@@ -6,6 +6,7 @@ use ts_rs::TS;
 
 use crate::db::settings_keys;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 pub(crate) fn command_exists_in_path(command: &str) -> bool {
@@ -77,6 +78,7 @@ pub struct SystemHealthReport {
 pub async fn system_health_check(
     state: State<'_, Arc<AppState>>,
 ) -> Result<SystemHealthReport, AppError> {
+    require_auth_sync(&state)?;
     let mut sections = Vec::new();
 
     // -- Section 1: Local Environment --
@@ -370,6 +372,20 @@ fn build_local_section(active_engine: &str, sched_running: bool) -> HealthCheckS
         });
     }
 
+    // Claude Desktop MCP integration check
+    let mcp_registered = is_personas_mcp_registered();
+    local_items.push(HealthCheckItem {
+        id: "claude_desktop_mcp".into(),
+        label: "Claude Desktop Integration".into(),
+        status: if mcp_registered { "ok" } else { "inactive" }.into(),
+        detail: Some(if mcp_registered {
+            "Personas MCP server registered in Claude Desktop".into()
+        } else {
+            "Not connected -- click Connect to enable Personas tools in Claude Desktop".into()
+        }),
+        installable: false,
+    });
+
     local_items.push(HealthCheckItem {
         id: "scheduler".into(),
         label: "Event Bus".into(),
@@ -389,10 +405,155 @@ fn build_local_section(active_engine: &str, sched_running: bool) -> HealthCheckS
     }
 }
 
+// =============================================================================
+// Claude Desktop MCP Integration
+// =============================================================================
+
+/// Path to the Personas MCP server script relative to the app resources.
+pub fn resolve_mcp_server_path() -> Option<std::path::PathBuf> {
+    // Try relative to the binary (for dev and production)
+    let exe_dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
+
+    // Dev: the script is at project_root/scripts/mcp-server/index.mjs
+    // Walk up from src-tauri/target/debug to project root
+    for ancestor in exe_dir.ancestors() {
+        let candidate = ancestor.join("scripts").join("mcp-server").join("index.mjs");
+        if candidate.exists() {
+            return Some(candidate);
+        }
+    }
+    None
+}
+
+/// Get Claude Desktop config path for the current platform.
+fn claude_desktop_config_path() -> Option<std::path::PathBuf> {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(appdata) = std::env::var("APPDATA") {
+            return Some(std::path::PathBuf::from(appdata).join("Claude").join("claude_desktop_config.json"));
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(home) = std::env::var("HOME") {
+            return Some(std::path::PathBuf::from(home)
+                .join("Library/Application Support/Claude/claude_desktop_config.json"));
+        }
+    }
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(config) = std::env::var("XDG_CONFIG_HOME") {
+            return Some(std::path::PathBuf::from(config).join("claude").join("claude_desktop_config.json"));
+        }
+        if let Ok(home) = std::env::var("HOME") {
+            return Some(std::path::PathBuf::from(home).join(".config/claude/claude_desktop_config.json"));
+        }
+    }
+    None
+}
+
+/// Check if the Personas MCP server is registered in Claude Desktop config.
+fn is_personas_mcp_registered() -> bool {
+    let config_path = match claude_desktop_config_path() {
+        Some(p) if p.exists() => p,
+        _ => return false,
+    };
+    let content = std::fs::read_to_string(&config_path).unwrap_or_default();
+    let config: serde_json::Value = serde_json::from_str(&content).unwrap_or_default();
+    config.get("mcpServers")
+        .and_then(|s| s.get("personas"))
+        .is_some()
+}
+
+#[tauri::command]
+pub fn register_claude_desktop_mcp() -> Result<String, AppError> {
+    let mcp_server_path = resolve_mcp_server_path()
+        .ok_or_else(|| AppError::NotFound("Personas MCP server script not found".into()))?;
+
+    let config_path = claude_desktop_config_path()
+        .ok_or_else(|| AppError::NotFound("Claude Desktop config path not found".into()))?;
+
+    // Ensure parent directory exists
+    if let Some(parent) = config_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| AppError::Internal(format!("Failed to create config directory: {e}")))?;
+    }
+
+    // Read existing config or start fresh
+    let mut config: serde_json::Value = if config_path.exists() {
+        let content = std::fs::read_to_string(&config_path)
+            .map_err(|e| AppError::Internal(format!("Failed to read Claude Desktop config: {e}")))?;
+        serde_json::from_str(&content).unwrap_or(serde_json::json!({}))
+    } else {
+        serde_json::json!({})
+    };
+
+    // Add mcpServers.personas entry
+    let server_path_str = mcp_server_path.to_string_lossy().to_string();
+    let servers = config.as_object_mut()
+        .ok_or_else(|| AppError::Internal("Invalid config format".into()))?
+        .entry("mcpServers")
+        .or_insert(serde_json::json!({}));
+
+    if let Some(obj) = servers.as_object_mut() {
+        obj.insert("personas".into(), serde_json::json!({
+            "command": "node",
+            "args": [server_path_str]
+        }));
+    }
+
+    // Write via temp file + rename for atomicity
+    let output = serde_json::to_string_pretty(&config)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize config: {e}")))?;
+    let tmp_path = config_path.with_extension("json.tmp");
+    std::fs::write(&tmp_path, &output)
+        .map_err(|e| AppError::Internal(format!("Failed to write temp config: {e}")))?;
+    std::fs::rename(&tmp_path, &config_path)
+        .map_err(|e| AppError::Internal(format!("Failed to rename temp config: {e}")))?;
+
+    tracing::info!(config = %config_path.display(), "Registered Personas MCP server in Claude Desktop");
+    Ok(format!("Registered. Restart Claude Desktop to activate."))
+}
+
+#[tauri::command]
+pub fn unregister_claude_desktop_mcp() -> Result<String, AppError> {
+    let config_path = claude_desktop_config_path()
+        .ok_or_else(|| AppError::NotFound("Claude Desktop config path not found".into()))?;
+
+    if !config_path.exists() {
+        return Ok("No Claude Desktop config found".into());
+    }
+
+    let content = std::fs::read_to_string(&config_path)
+        .map_err(|e| AppError::Internal(format!("Failed to read config: {e}")))?;
+    let mut config: serde_json::Value = serde_json::from_str(&content).unwrap_or_default();
+
+    if let Some(servers) = config.get_mut("mcpServers").and_then(|s| s.as_object_mut()) {
+        servers.remove("personas");
+    }
+
+    let output = serde_json::to_string_pretty(&config)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize config: {e}")))?;
+    let tmp_path = config_path.with_extension("json.tmp");
+    std::fs::write(&tmp_path, &output)
+        .map_err(|e| AppError::Internal(format!("Failed to write temp config: {e}")))?;
+    std::fs::rename(&tmp_path, &config_path)
+        .map_err(|e| AppError::Internal(format!("Failed to rename temp config: {e}")))?;
+
+    tracing::info!("Unregistered Personas MCP server from Claude Desktop");
+    Ok("Unregistered. Restart Claude Desktop to apply.".into())
+}
+
+#[tauri::command]
+pub fn check_claude_desktop_mcp() -> Result<bool, AppError> {
+    Ok(is_personas_mcp_registered())
+}
+
 #[tauri::command]
 pub async fn health_check_local(
     state: State<'_, Arc<AppState>>,
 ) -> Result<HealthCheckSection, AppError> {
+    require_auth_sync(&state)?;
     let active_engine = crate::db::repos::core::settings::get(&state.db, settings_keys::CLI_ENGINE)
         .ok()
         .flatten()
@@ -405,6 +566,7 @@ pub async fn health_check_local(
 pub async fn health_check_agents(
     state: State<'_, Arc<AppState>>,
 ) -> Result<HealthCheckSection, AppError> {
+    require_auth_sync(&state)?;
     let mut agent_items = Vec::new();
 
     let ollama_key_configured = crate::db::repos::core::settings::get(&state.db, settings_keys::OLLAMA_API_KEY)
@@ -463,6 +625,7 @@ pub async fn health_check_agents(
 pub async fn health_check_cloud(
     state: State<'_, Arc<AppState>>,
 ) -> Result<HealthCheckSection, AppError> {
+    require_auth_sync(&state)?;
     let cloud_connected = state.cloud_client.lock().await.is_some();
     let mut cloud_items = Vec::new();
 
@@ -489,6 +652,7 @@ pub async fn health_check_cloud(
 pub async fn health_check_account(
     state: State<'_, Arc<AppState>>,
 ) -> Result<HealthCheckSection, AppError> {
+    require_auth_sync(&state)?;
     let auth = state.auth.lock().await;
     let auth_resp = auth.to_response();
     drop(auth);
@@ -605,6 +769,7 @@ fn build_circuit_breaker_section(state: &AppState) -> HealthCheckSection {
 pub fn health_check_circuit_breaker(
     state: State<'_, Arc<AppState>>,
 ) -> Result<HealthCheckSection, AppError> {
+    require_auth_sync(&state)?;
     Ok(build_circuit_breaker_section(&state))
 }
 
@@ -678,6 +843,7 @@ fn build_subscriptions_section(state: &AppState) -> HealthCheckSection {
 pub fn health_check_subscriptions(
     state: State<'_, Arc<AppState>>,
 ) -> Result<HealthCheckSection, AppError> {
+    require_auth_sync(&state)?;
     Ok(build_subscriptions_section(&state))
 }
 

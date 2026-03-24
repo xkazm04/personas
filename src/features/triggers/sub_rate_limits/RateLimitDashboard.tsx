@@ -41,9 +41,21 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
     return { totalQueued, throttledCount, rateLimitedCount, totalConcurrent, throttledNames };
   }, [triggers, rateLimits]);
 
-  // Don't render if no triggers have rate limits configured
+  // Show empty state when no rate limits configured
   if (stats.rateLimitedCount === 0 && stats.throttledCount === 0 && stats.totalQueued === 0) {
-    return null;
+    return (
+      <div className="mx-6 mt-4 rounded-xl border border-dashed border-primary/15 bg-secondary/10 p-6 flex flex-col items-center gap-3 text-center">
+        <div className="w-10 h-10 rounded-xl bg-primary/8 border border-primary/10 flex items-center justify-center">
+          <Shield className="w-5 h-5 text-muted-foreground/40" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground/70">No rate limits configured</p>
+          <p className="text-xs text-muted-foreground/50 mt-1 max-w-xs">
+            Add rate limits to your triggers to control execution frequency and prevent API overuse.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -1,14 +1,18 @@
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use serde::Serialize;
 use tauri::State;
 use tracing::{info, instrument};
 use ts_rs::TS;
 
-use crate::db::models::{MetricsChartData, PersonaPromptVersion, PromptPerformanceData, ExecutionDashboardData};
+use crate::db::models::{AlertRule, CreateAlertRuleInput, FiredAlert, MetricsChartData, PersonaPromptVersion, PromptPerformanceData, ExecutionDashboardData, UpdateAlertRuleInput};
 use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+/// Guard that prevents concurrent A/B tests from running simultaneously.
+static AB_TEST_RUNNING: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug, Serialize, TS)]
 #[ts(export)]
@@ -255,6 +259,9 @@ pub struct PromptAbExecResult {
 
 /// Run an A/B test: execute a persona with two different prompt versions
 /// against the same input, returning a comparison of results.
+///
+/// Uses oneshot channels to await execution completion instead of polling,
+/// and prevents concurrent A/B tests via an atomic guard.
 #[tauri::command]
 pub async fn run_prompt_ab_test(
     state: State<'_, Arc<AppState>>,
@@ -265,6 +272,14 @@ pub async fn run_prompt_ab_test(
     test_input: Option<String>,
 ) -> Result<PromptAbTestResult, AppError> {
     require_auth(&state).await?;
+
+    // Debounce guard: prevent concurrent A/B tests
+    if AB_TEST_RUNNING.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire).is_err() {
+        return Err(AppError::Validation("An A/B test is already running. Please wait for it to finish.".into()));
+    }
+    // Ensure the guard is always released, even on early returns / errors
+    let _guard = AbTestGuard;
+
     let version_a = repo::get_prompt_version_by_id(&state.db, &version_a_id)?;
     let version_b = repo::get_prompt_version_by_id(&state.db, &version_b_id)?;
 
@@ -316,7 +331,6 @@ pub async fn run_prompt_ab_test(
         crate::db::models::UpdateExecutionStatus { status: crate::engine::types::ExecutionState::Running, ..Default::default() },
     )?;
 
-    // Run both executions concurrently
     let db_a = state.db.clone();
     let db_b = state.db.clone();
     let engine = state.engine.clone();
@@ -324,60 +338,169 @@ pub async fn run_prompt_ab_test(
     let exec_a_id = exec_a.id.clone();
     let exec_b_id = exec_b.id.clone();
 
+    // Subscribe to completion signals BEFORE starting executions to avoid races
+    let rx_a = engine.subscribe_completion(&exec_a_id).await;
+    let rx_b = engine.subscribe_completion(&exec_b_id).await;
+
+    // Start both executions concurrently (fire-and-forget, returns immediately)
     let (res_a, res_b) = tokio::join!(
         engine.start_execution(app_a, db_a, exec_a_id.clone(), persona_a, tools.clone(), input_json.clone(), None),
         engine.start_execution(app, db_b, exec_b_id.clone(), persona_b, tools, input_json, None),
     );
 
-    // Allow execution failures -- we still want to report results
+    // Allow execution start failures -- we still want to report results
     let _ = res_a;
     let _ = res_b;
 
-    // Wait a moment for executions to complete, then poll results
-    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    // Await both completion signals with a 120-second timeout
+    let timeout = std::time::Duration::from_secs(120);
+    let wait_result = tokio::time::timeout(timeout, async {
+        // Wait for both to complete (order doesn't matter)
+        let _ = rx_a.await;
+        let _ = rx_b.await;
+    })
+    .await;
 
-    // Poll for completion (max 120s)
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(120);
-    loop {
-        let a = crate::db::repos::execution::executions::get_by_id(&state.db, &exec_a_id)?;
-        let b = crate::db::repos::execution::executions::get_by_id(&state.db, &exec_b_id)?;
-
-        let a_done = a.state().is_terminal();
-        let b_done = b.state().is_terminal();
-
-        if a_done && b_done {
-            return Ok(PromptAbTestResult {
-                version_a_id: version_a.id,
-                version_b_id: version_b.id,
-                version_a_number: version_a.version_number,
-                version_b_number: version_b.version_number,
-                execution_a_id: a.id,
-                execution_b_id: b.id,
-                result_a: PromptAbExecResult {
-                    status: a.status,
-                    duration_ms: a.duration_ms,
-                    cost_usd: a.cost_usd,
-                    input_tokens: a.input_tokens,
-                    output_tokens: a.output_tokens,
-                    output_preview: a.output_data.map(|s| s.chars().take(500).collect()),
-                    error_message: a.error_message,
-                },
-                result_b: PromptAbExecResult {
-                    status: b.status,
-                    duration_ms: b.duration_ms,
-                    cost_usd: b.cost_usd,
-                    input_tokens: b.input_tokens,
-                    output_tokens: b.output_tokens,
-                    output_preview: b.output_data.map(|s| s.chars().take(500).collect()),
-                    error_message: b.error_message,
-                },
-            });
-        }
-
-        if std::time::Instant::now() > deadline {
-            return Err(AppError::Validation("A/B test timed out after 120 seconds".into()));
-        }
-
-        tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+    if wait_result.is_err() {
+        return Err(AppError::Validation("A/B test timed out after 120 seconds".into()));
     }
+
+    // Both executions are done — read final results
+    let a = crate::db::repos::execution::executions::get_by_id(&state.db, &exec_a_id)?;
+    let b = crate::db::repos::execution::executions::get_by_id(&state.db, &exec_b_id)?;
+
+    Ok(PromptAbTestResult {
+        version_a_id: version_a.id,
+        version_b_id: version_b.id,
+        version_a_number: version_a.version_number,
+        version_b_number: version_b.version_number,
+        execution_a_id: a.id,
+        execution_b_id: b.id,
+        result_a: PromptAbExecResult {
+            status: a.status,
+            duration_ms: a.duration_ms,
+            cost_usd: a.cost_usd,
+            input_tokens: a.input_tokens,
+            output_tokens: a.output_tokens,
+            output_preview: a.output_data.map(|s| s.chars().take(500).collect()),
+            error_message: a.error_message,
+        },
+        result_b: PromptAbExecResult {
+            status: b.status,
+            duration_ms: b.duration_ms,
+            cost_usd: b.cost_usd,
+            input_tokens: b.input_tokens,
+            output_tokens: b.output_tokens,
+            output_preview: b.output_data.map(|s| s.chars().take(500).collect()),
+            error_message: b.error_message,
+        },
+    })
+}
+
+/// RAII guard that resets the AB_TEST_RUNNING flag on drop.
+struct AbTestGuard;
+
+impl Drop for AbTestGuard {
+    fn drop(&mut self) {
+        AB_TEST_RUNNING.store(false, Ordering::Release);
+    }
+}
+
+// =============================================================================
+// Alert Rules (backend-persisted CRUD)
+// =============================================================================
+
+use crate::db::repos::communication::alert_rules as alert_repo;
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn list_alert_rules(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<AlertRule>, AppError> {
+    require_auth_sync(&state)?;
+    alert_repo::list_alert_rules(&state.db)
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn create_alert_rule(
+    state: State<'_, Arc<AppState>>,
+    input: CreateAlertRuleInput,
+) -> Result<AlertRule, AppError> {
+    require_auth_sync(&state)?;
+    alert_repo::create_alert_rule(&state.db, input)
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn update_alert_rule(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    input: UpdateAlertRuleInput,
+) -> Result<AlertRule, AppError> {
+    require_auth_sync(&state)?;
+    alert_repo::update_alert_rule(&state.db, &id, input)
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn delete_alert_rule(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    alert_repo::delete_alert_rule(&state.db, &id)
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn toggle_alert_rule(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<AlertRule, AppError> {
+    require_auth_sync(&state)?;
+    alert_repo::toggle_alert_rule(&state.db, &id)
+}
+
+// =============================================================================
+// Fired Alerts (backend-persisted history)
+// =============================================================================
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn list_fired_alerts(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<i64>,
+) -> Result<Vec<FiredAlert>, AppError> {
+    require_auth_sync(&state)?;
+    alert_repo::list_fired_alerts(&state.db, limit)
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn create_fired_alert(
+    state: State<'_, Arc<AppState>>,
+    alert: FiredAlert,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    alert_repo::create_fired_alert(&state.db, &alert)
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn dismiss_fired_alert(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    alert_repo::dismiss_fired_alert(&state.db, &id)
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub fn clear_fired_alerts(
+    state: State<'_, Arc<AppState>>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    alert_repo::clear_fired_alerts(&state.db)
 }

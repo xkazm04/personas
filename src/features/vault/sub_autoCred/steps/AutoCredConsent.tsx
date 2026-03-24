@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { Globe, Shield, ArrowRight, ExternalLink, MessageSquare, LogIn } from 'lucide-react';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { AutoCredMode } from '../helpers/types';
@@ -26,11 +25,8 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
   }, [ctx.docsUrl]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+    <div
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Header */}
       <div className={`flex items-start gap-4 p-4 rounded-xl border ${
@@ -148,7 +144,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

@@ -11,6 +11,7 @@ import { createRotationSlice } from "./slices/vault/rotationSlice";
 
 export const useVaultStore = create<VaultStore>()((...a) => ({
   error: null,
+  errorKind: null,
   isLoading: false,
   ...createCredentialSlice(...a),
   ...createDatabaseSlice(...a),

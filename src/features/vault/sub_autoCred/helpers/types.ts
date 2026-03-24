@@ -35,7 +35,7 @@ export type ExtractedValues = Record<string, string>;
  * Adapters MUST set `partial: true` when:
  *  - One or more required fields have an empty or missing value.
  *  - The browser session was interrupted before all fields were captured.
- *  - The adapter detected a page layout it could not parse fully.
+ *  - The adapter detected a page it could not parse fully.
  *
  * Adapters SHOULD set `partial: false` only when every required field
  * has a non-empty value.
@@ -143,6 +143,28 @@ export interface AutoCredConnectorContext {
   docsUrl: string | null;
   setupInstructions: string | null;
   fields: CredentialTemplateField[];
+  /** Universal mode: service URL (bypasses pre-defined connector). */
+  serviceUrl?: string;
+  /** Universal mode: free-text description of what credentials are needed. */
+  serviceDescription?: string;
+}
+
+/** Fields discovered by universal mode during browser automation. */
+export interface DiscoveredField {
+  key: string;
+  label: string;
+  type: string;
+  required: boolean;
+  help_text?: string;
+}
+
+/** Connector definition discovered by universal mode. */
+export interface DiscoveredConnector {
+  name: string;
+  label: string;
+  category: string;
+  color: string;
+  healthcheck_url?: string;
 }
 
 /** Build a context object from a CredentialDesignResult */
@@ -163,10 +185,17 @@ export function buildConnectorContext(result: CredentialDesignResult): AutoCredC
     if (match) docsUrl = match[0];
   }
 
+  // Universal mode: pass through service URL and description
+  const universal = result as unknown as Record<string, unknown>;
+  const serviceUrl = typeof universal._universalServiceUrl === 'string' ? universal._universalServiceUrl : undefined;
+  const serviceDescription = typeof universal._universalDescription === 'string' ? universal._universalDescription : undefined;
+
   return {
     connector: result.connector,
     docsUrl,
     setupInstructions: result.setup_instructions || null,
     fields,
+    serviceUrl,
+    serviceDescription,
   };
 }

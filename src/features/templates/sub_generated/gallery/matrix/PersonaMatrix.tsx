@@ -290,7 +290,8 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     const triggers = extractTriggers(designResult.suggested_triggers ?? []);
     const review = extractHumanReview(designResult.protocol_capabilities);
     const memory = extractMemory(designResult.protocol_capabilities);
-    const channels = designResult.suggested_notification_channels ?? [];
+    const rawChannels = designResult.suggested_notification_channels;
+    const channels = Array.isArray(rawChannels) ? rawChannels : [];
     const errorStrategies = extractErrorStrategies(designResult.structured_prompt?.errorHandling ?? '');
     const events: SuggestedEventSubscription[] = designResult.suggested_event_subscriptions ?? [];
     const editProps = isEditMode ? props as PersonaMatrixEditProps : null;
@@ -313,7 +314,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         render: () => { const dotColor = review.level === 'required' ? 'bg-rose-400' : review.level === 'optional' ? 'bg-amber-400' : 'bg-emerald-400'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{review.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
         editRender: editProps ? () => (<ReviewEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'messages', label: CELL_LABELS['messages']!, watermark: MessagesIcon, watermarkColor: 'text-blue-400', filled: channels.length > 0,
-        render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-muted-foreground/50" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground/70" />; },
+        render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-muted-foreground/50" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description && ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground/70" />; },
         editRender: editProps ? () => (<MessagesEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'memory', label: CELL_LABELS['memory']!, watermark: MemoryIcon, filled: memory.active,
         watermarkColor: memory.active ? 'text-purple-400' : 'text-zinc-400',
@@ -324,7 +325,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         editRender: editProps ? () => (<ErrorEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'events', label: CELL_LABELS['events']!, watermark: EventsIcon, filled: events.length > 0,
         watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-muted-foreground',
-        render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
+        render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description && ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode, draftConnectors, protocolByCellKey,

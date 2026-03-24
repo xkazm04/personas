@@ -11,72 +11,48 @@ use crate::error::AppError;
 // Row mappers
 // ============================================================================
 
-fn row_to_team(row: &Row) -> rusqlite::Result<PersonaTeam> {
-    Ok(PersonaTeam {
-        id: row.get("id")?,
-        project_id: row.get("project_id")?,
-        parent_team_id: row.get("parent_team_id")?,
-        name: row.get("name")?,
-        description: row.get("description")?,
-        canvas_data: row.get("canvas_data")?,
-        team_config: row.get("team_config")?,
-        icon: row.get("icon")?,
-        color: row.get("color")?,
-        enabled: row.get::<_, i32>("enabled")? != 0,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_team -> PersonaTeam {
+    id, project_id, parent_team_id, name, description,
+    canvas_data, team_config, icon, color,
+    enabled [bool],
+    created_at, updated_at,
+});
 
-fn row_to_member(row: &Row) -> rusqlite::Result<PersonaTeamMember> {
-    Ok(PersonaTeamMember {
-        id: row.get("id")?,
-        team_id: row.get("team_id")?,
-        persona_id: row.get("persona_id")?,
-        role: row.get("role")?,
-        position_x: row.get("position_x")?,
-        position_y: row.get("position_y")?,
-        config: row.get("config")?,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_member -> PersonaTeamMember {
+    id, team_id, persona_id, role,
+    position_x, position_y, config, created_at,
+});
 
-fn row_to_connection(row: &Row) -> rusqlite::Result<PersonaTeamConnection> {
-    Ok(PersonaTeamConnection {
-        id: row.get("id")?,
-        team_id: row.get("team_id")?,
-        source_member_id: row.get("source_member_id")?,
-        target_member_id: row.get("target_member_id")?,
-        connection_type: row.get("connection_type")?,
-        condition: row.get("condition")?,
-        label: row.get("label")?,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_connection -> PersonaTeamConnection {
+    id, team_id, source_member_id, target_member_id,
+    connection_type, condition, label, created_at,
+});
 
-fn row_to_pipeline_run(row: &Row) -> rusqlite::Result<PipelineRun> {
-    Ok(PipelineRun {
-        id: row.get("id")?,
-        team_id: row.get("team_id")?,
-        status: row.get("status")?,
-        node_statuses: row.get("node_statuses")?,
-        input_data: row.get("input_data")?,
-        started_at: row.get("started_at")?,
-        completed_at: row.get("completed_at")?,
-        error_message: row.get("error_message")?,
-    })
-}
+row_mapper!(row_to_pipeline_run -> PipelineRun {
+    id, team_id, status, node_statuses,
+    input_data, started_at, completed_at, error_message,
+});
 
 // ============================================================================
 // Team CRUD
 // ============================================================================
 
-pub fn get_all(pool: &DbPool) -> Result<Vec<PersonaTeam>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare("SELECT * FROM persona_teams ORDER BY updated_at DESC")?;
-    let rows = stmt.query_map([], row_to_team)?;
-    let teams = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(teams)
+crud_get_by_id!(PersonaTeam, "persona_teams", "Team", row_to_team);
+crud_get_all!(PersonaTeam, "persona_teams", row_to_team, "updated_at DESC");
+
+crud_update! {
+    model: PersonaTeam,
+    table: "persona_teams",
+    input: UpdateTeamInput,
+    fields: {
+        name: clone,
+        description: clone,
+        canvas_data: clone,
+        team_config: clone,
+        icon: clone,
+        color: clone,
+        enabled: bool,
+    }
 }
 
 /// Fetch member and connection counts for all teams in a single query.
@@ -104,19 +80,6 @@ pub fn get_all_team_counts(pool: &DbPool) -> Result<Vec<TeamCounts>, AppError> {
     })?;
     let counts = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
     Ok(counts)
-}
-
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaTeam, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_teams WHERE id = ?1",
-        params![id],
-        row_to_team,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Team {id}")),
-        other => AppError::Database(other),
-    })
 }
 
 pub fn create(pool: &DbPool, input: CreateTeamInput) -> Result<PersonaTeam, AppError> {
@@ -234,63 +197,6 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
     get_by_id(pool, &new_team_id)
 }
 
-pub fn update(pool: &DbPool, id: &str, input: UpdateTeamInput) -> Result<PersonaTeam, AppError> {
-    // Verify exists
-    get_by_id(pool, id)?;
-
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-
-    // Build dynamic SET clause
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
-
-    push_field!(input.name, "name", sets, param_idx);
-    push_field!(input.description, "description", sets, param_idx);
-    push_field!(input.canvas_data, "canvas_data", sets, param_idx);
-    push_field!(input.team_config, "team_config", sets, param_idx);
-    push_field!(input.icon, "icon", sets, param_idx);
-    push_field!(input.color, "color", sets, param_idx);
-    push_field!(input.enabled, "enabled", sets, param_idx);
-
-    let sql = format!(
-        "UPDATE persona_teams SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
-
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-
-    if let Some(ref v) = input.name {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.description {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.canvas_data {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.team_config {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.icon {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.color {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(v) = input.enabled {
-        param_values.push(Box::new(v as i32));
-    }
-    param_values.push(Box::new(id.to_string()));
-
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
-
-    get_by_id(pool, id)
-}
-
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     // Clean up pipeline_runs which have no FK CASCADE on team_id
@@ -399,8 +305,6 @@ pub fn update_member(
 
 pub fn remove_member(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     let mut conn = pool.get()?;
-    // Wrap in a transaction so connection cleanup and member deletion are atomic.
-    // Without this, a failed member DELETE leaves orphaned connections already gone.
     let tx = conn.transaction().map_err(AppError::Database)?;
     tx.execute(
         "DELETE FROM persona_team_connections WHERE source_member_id = ?1 OR target_member_id = ?1",
@@ -468,11 +372,8 @@ pub fn create_connection(
     }
 
     // Cycle detection: reject non-feedback edges that would create a cycle.
-    // Feedback edges are intentional back-edges (e.g. reviewer -> orchestrator)
-    // and are excluded from topological sort during execution.
     if conn_type != "feedback" {
         let existing = get_connections(pool, team_id)?;
-        // Collect all member IDs referenced by existing edges + the proposed edge
         let mut member_set = std::collections::HashSet::new();
         for e in &existing {
             member_set.insert(e.source_member_id.clone());
@@ -482,7 +383,6 @@ pub fn create_connection(
         member_set.insert(target_member_id.to_string());
         let member_ids: Vec<String> = member_set.into_iter().collect();
 
-        // Build edges: existing non-feedback edges + the proposed edge
         let mut edges: Vec<(&str, &str)> = existing
             .iter()
             .filter(|e| e.connection_type != "feedback")

@@ -1,5 +1,4 @@
 import { X, Zap, Rocket } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useAutomationSetup } from '../../libs/useAutomationSetup';
@@ -50,8 +49,7 @@ export function AutomationSetupModal({
       </div>
 
       <div className="px-6 py-6 max-h-[75vh] overflow-y-auto">
-        <AnimatePresence mode="wait">
-          {s.phase === 'idle' && (
+        {s.phase === 'idle' && (
             <AutomationTriggerStep
               description={s.description} setDescription={s.setDescription}
               platform={s.platform} setPlatform={s.setPlatform}
@@ -100,7 +98,6 @@ export function AutomationSetupModal({
               phase={s.phase as 'deploying' | 'success' | 'error'}
             />
           )}
-        </AnimatePresence>
       </div>
 
       {/* Footer -- only in preview phase */}

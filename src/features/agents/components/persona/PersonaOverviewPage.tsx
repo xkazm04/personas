@@ -1,8 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Bot, Zap, Clock, MoreHorizontal, Trash2, Settings, Star, Plug } from 'lucide-react';
+import { Bot, Zap, Clock, MoreHorizontal, Trash2, Settings, Star, Plug, ShieldCheck } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusShape, mapToShapeStatus } from '@/features/shared/components/display/StatusShape';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -22,6 +21,42 @@ const HEALTH_STYLES: Record<string, { bg: string; text: string; label: string }>
   degraded: { bg: 'bg-amber-500/10',   text: 'text-amber-400',   label: 'Degraded' },
   failing:  { bg: 'bg-red-500/10',     text: 'text-red-400',     label: 'Failing' },
 };
+
+const TRUST_TIERS = [
+  { min: 0,  label: 'L0', color: 'text-zinc-400',    bar: 'bg-zinc-500',    bg: 'bg-zinc-500/15' },
+  { min: 25, label: 'L1', color: 'text-sky-400',     bar: 'bg-sky-500',     bg: 'bg-sky-500/15' },
+  { min: 50, label: 'L2', color: 'text-violet-400',  bar: 'bg-violet-500',  bg: 'bg-violet-500/15' },
+  { min: 75, label: 'L3', color: 'text-amber-400',   bar: 'bg-amber-500',   bg: 'bg-amber-500/15' },
+  { min: 90, label: 'L4', color: 'text-emerald-400', bar: 'bg-emerald-500', bg: 'bg-emerald-500/15' },
+] as const;
+
+function getTrustTier(score: number): (typeof TRUST_TIERS)[number] {
+  for (let i = TRUST_TIERS.length - 1; i >= 0; i--) {
+    if (score >= TRUST_TIERS[i]!.min) return TRUST_TIERS[i]!;
+  }
+  return TRUST_TIERS[0];
+}
+
+function TrustScoreBar({ score }: { score: number }) {
+  const tier = getTrustTier(score);
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <div className={`flex items-center gap-1 text-[10px] font-semibold ${tier.color}`}>
+        <ShieldCheck className="w-3 h-3" />
+        {tier.label}
+      </div>
+      <div className="flex-1 h-1.5 rounded-full bg-primary/10 overflow-hidden min-w-[40px]">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${tier.bar}`}
+          style={{ width: `${Math.round(score)}%` }}
+        />
+      </div>
+      <span className={`text-[10px] font-medium tabular-nums ${tier.color}`}>
+        {Math.round(score)}
+      </span>
+    </div>
+  );
+}
 
 function StatusBadge({ enabled, health, isDraft }: { enabled: boolean; health?: PersonaHealth; isDraft: boolean }) {
   if (isDraft) {
@@ -117,14 +152,10 @@ function BatchActionBar({ count, onDelete, onClear }: {
   onClear: () => void;
 }) {
   return (
-    <AnimatePresence>
+    <>
       {count > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 8 }}
-          transition={{ duration: 0.15 }}
-          className="flex items-center gap-3 px-4 py-2 rounded-xl border border-primary/15 bg-secondary/40 backdrop-blur-sm"
+        <div
+          className="animate-fade-slide-in flex items-center gap-3 px-4 py-2 rounded-xl border border-primary/15 bg-secondary/40 backdrop-blur-sm"
         >
           <span className="text-sm text-foreground/80 font-medium">
             {count} selected
@@ -145,9 +176,9 @@ function BatchActionBar({ count, onDelete, onClear }: {
           >
             Clear
           </button>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 
@@ -289,6 +320,7 @@ export default function PersonaOverviewPage() {
         switch (sortKey) {
           case 'name': cmp = a.name.localeCompare(b.name); break;
           case 'status': cmp = (a.enabled ? 1 : 0) - (b.enabled ? 1 : 0); break;
+          case 'trust': cmp = (a.trust_score ?? 0) - (b.trust_score ?? 0); break;
           case 'triggers': cmp = (triggerCounts[a.id] ?? 0) - (triggerCounts[b.id] ?? 0); break;
           case 'lastRun': {
             const ta = lastRunMap[a.id] ?? '';
@@ -468,6 +500,18 @@ export default function PersonaOverviewPage() {
             {style.label}
           </span>
         );
+      },
+    },
+    {
+      key: 'trust',
+      label: 'Trust',
+      width: '140px',
+      sortable: true,
+      render: (persona) => {
+        if (!persona.enabled || isDraft(persona)) {
+          return <span className="text-[11px] text-muted-foreground/30">--</span>;
+        }
+        return <TrustScoreBar score={persona.trust_score ?? 0} />;
       },
     },
     {

@@ -24,6 +24,7 @@ use tokio::sync::Mutex;
 use ts_rs::TS;
 
 use super::ambient_context::{ContextEvent, ContextStreamReceiver};
+use super::event_registry::event_name;
 
 // ---------------------------------------------------------------------------
 // Rule types
@@ -362,7 +363,7 @@ pub async fn context_rule_tick(
                     );
                 }
                 ContextAction::EmitEvent => {
-                    let _ = app.emit("context-rule-match", &m);
+                    let _ = app.emit(event_name::CONTEXT_RULE_MATCH, &m);
                     tracing::debug!(
                         rule = %m.rule_name,
                         "Context rule emitted frontend event"

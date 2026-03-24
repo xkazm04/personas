@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { ChevronDown, ChevronRight, FileText, Loader2, Copy, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { getExecutionLog } from '@/api/agents/executions';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 
@@ -64,11 +63,10 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
           </button>
         )}
       </div>
-      <AnimatePresence>
-        {showLog && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+      {showLog && (
+          <div>
             {logLoading && (
-              <div className="flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-xl typo-body text-muted-foreground/80">
+              <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-xl typo-body text-muted-foreground/80">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Loading log...
               </div>
@@ -91,9 +89,8 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
                 })}
               </div>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

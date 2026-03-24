@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { Lightbulb, X, Gauge, Clock, AlertTriangle, Settings, GitBranch } from 'lucide-react';
 import type { MemoryAction, MemoryActionKind } from '../libs/memoryActions';
 import { ACTION_KIND_META } from '../libs/memoryActions';
@@ -21,12 +20,8 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
   const Icon = KIND_ICONS[action.kind];
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -20, height: 0 }}
-      className={`group relative rounded-xl border ${meta.borderClass} ${meta.bgClass} p-3 transition-colors hover:border-opacity-40`}
+    <div
+      className={`animate-fade-slide-in group relative rounded-xl border ${meta.borderClass} ${meta.bgClass} p-3 transition-colors hover:border-opacity-40`}
     >
       <button
         onClick={() => onDismiss(action.id)}
@@ -51,7 +46,7 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
           <p className="text-sm text-muted-foreground/70 line-clamp-2">{action.rule}</p>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -75,11 +70,9 @@ export function MemoryActionsPanel({ actions, onDismiss }: MemoryActionsPanelPro
         </h3>
         <span className="text-sm text-muted-foreground/50 ml-auto">{visible.length} suggestion{visible.length !== 1 ? 's' : ''}</span>
       </div>
-      <AnimatePresence mode="popLayout">
-        {visible.map((action) => (
+      {visible.map((action) => (
           <MemoryActionCardItem key={action.id} action={action} onDismiss={onDismiss} />
         ))}
-      </AnimatePresence>
     </div>
   );
 }

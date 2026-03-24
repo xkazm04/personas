@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-import { motion } from 'framer-motion';
 import { useSystemStore } from "@/stores/systemStore";
 import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
 import HomeWelcome from '@/features/home/components/HomeWelcome';
@@ -11,12 +10,9 @@ export default function HomePage() {
   const showSystemCheck = homeTab === 'system-check' && import.meta.env.DEV;
 
   return (
-    <motion.div
+    <div
       key={homeTab}
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
+      className="animate-fade-slide-in flex-1 min-h-0 flex flex-col w-full overflow-hidden"
     >
       {showSystemCheck ? (
         <SystemHealthPanel />
@@ -27,6 +23,6 @@ export default function HomePage() {
       ) : (
         <HomeWelcome />
       )}
-    </motion.div>
+    </div>
   );
 }

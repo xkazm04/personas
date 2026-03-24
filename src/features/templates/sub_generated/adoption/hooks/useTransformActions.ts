@@ -2,7 +2,7 @@
  * Async transform action handlers: startTransform, cancelTransform, continueTransform.
  */
 import { silentCatch } from "@/lib/silentCatch";
-import { useCallback, type MutableRefObject } from 'react';
+import { useCallback, useRef, type MutableRefObject } from 'react';
 import {
   startTemplateAdoptBackground,
   clearTemplateAdoptSnapshot,
@@ -23,6 +23,7 @@ import type { AdoptState, PersistedAdoptContext } from './useAdoptReducer';
 import { ADOPT_CONTEXT_KEY } from './useAdoptReducer';
 import type { WizardActions } from '../state/asyncTransformTypes';
 import { clearPersistedContext } from '../state/asyncTransformTypes';
+import { SystemTraceSession } from '@/lib/execution/systemTrace';
 
 interface UseTransformActionsOptions {
   state: AdoptState;
@@ -46,6 +47,7 @@ export function useTransformActions({
   setIsRestoring,
 }: UseTransformActionsOptions) {
   const setTemplateAdoptActive = useSystemStore((s) => s.setTemplateAdoptActive);
+  const traceSessionRef = useRef<SystemTraceSession | null>(null);
 
   const startTransform = useCallback(async () => {
     if (transformStartingRef.current || state.transforming || state.confirming) return;
@@ -141,7 +143,10 @@ export function useTransformActions({
           ? JSON.stringify(state.connectorSwaps)
           : null;
 
-      console.debug(`[adopt:${adoptId}] transform start`, { templateName: state.templateName, isAdjustment: !!state.adjustmentRequest.trim() });
+      traceSessionRef.current?.complete('cancelled');
+      traceSessionRef.current = SystemTraceSession.start('template_adoption', `Adopt: ${state.templateName}`);
+      const transformSpanId = traceSessionRef.current.beginSpan('template_adoption', 'Transform', undefined, { adoptId, isAdjustment: !!state.adjustmentRequest.trim() });
+
       await startTemplateAdoptBackground(
         adoptId,
         state.templateName,
@@ -151,12 +156,13 @@ export function useTransformActions({
         userAnswersJson,
         connectorSwapsJson,
       );
-      console.debug(`[adopt:${adoptId}] transform dispatched`);
+      traceSessionRef.current.endSpan(transformSpanId);
 
       if (state.adjustmentRequest.trim()) wizard.setAdjustment('');
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Failed to start template adoption.';
-      console.debug(`[adopt:${adoptId}] transform fail`, { error: errMsg });
+      traceSessionRef.current?.complete(errMsg);
+      traceSessionRef.current = null;
       setTemplateAdoptActive(false);
       clearPersistedContext();
       void resetAdoptStream();
@@ -194,14 +200,18 @@ export function useTransformActions({
     const userAnswersJson = hasAnswers ? JSON.stringify(state.userAnswers) : '{}';
 
     try {
-      console.debug(`[adopt:${adoptId}] continue transform start`);
+      if (!traceSessionRef.current) {
+        traceSessionRef.current = SystemTraceSession.start('template_adoption', `Continue Adopt`);
+      }
+      const continueSpanId = traceSessionRef.current.beginSpan('template_adoption', 'Continue Transform', undefined, { adoptId });
       wizard.transformStarted(adoptId);
       setTemplateAdoptActive(true);
       await continueTemplateAdopt(adoptId, userAnswersJson);
-      console.debug(`[adopt:${adoptId}] continue transform dispatched`);
+      traceSessionRef.current.endSpan(continueSpanId);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Failed to continue template adoption.';
-      console.debug(`[adopt:${adoptId}] continue transform fail`, { error: errMsg });
+      traceSessionRef.current?.complete(errMsg);
+      traceSessionRef.current = null;
       setTemplateAdoptActive(false);
       wizard.transformFailed(errMsg);
     }

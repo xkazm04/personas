@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { BookOpen, Plus, Play, Unlink } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { AnimatePresence } from 'framer-motion';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
@@ -136,25 +135,21 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
       )}
 
       {/* Picker Modal */}
-      <AnimatePresence>
-        {pickerOpen && (
+      {pickerOpen && (
           <RecipePicker
             linkedRecipeIds={linkedIds}
             onSelect={handleLink}
             onClose={() => setPickerOpen(false)}
           />
         )}
-      </AnimatePresence>
 
       {/* Playground Modal */}
-      <AnimatePresence>
-        {playgroundRecipe && (
+      {playgroundRecipe && (
           <RecipePlaygroundModal
             recipe={playgroundRecipe}
             onClose={() => setPlaygroundRecipe(null)}
           />
         )}
-      </AnimatePresence>
     </div>
   );
 }

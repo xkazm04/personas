@@ -9,14 +9,14 @@
  *  • `teardownAllListeners()` – detach them (useful for tests / hot-reload).
  */
 
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { type UnlistenFn } from "@tauri-apps/api/event";
+import { EventName, typedListen } from "@/lib/eventRegistry";
 import { AUTH_LOGIN_EVENT, useAuthStore } from "@/stores/authStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
-import type { AuthStateResponse } from "@/api/auth/auth";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,27 +48,26 @@ const unlisteners: UnlistenFn[] = [];
 const registry: EventRegistration[] = [
   // -- Auth state changed --------------------------------------------------
   {
-    event: "auth-state-changed",
+    event: EventName.AUTH_STATE_CHANGED,
     setup: async () => {
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-      const unlisten = await listen<AuthStateResponse>(
-        "auth-state-changed",
-        (event) => {
+      const unlisten = await typedListen(
+        EventName.AUTH_STATE_CHANGED,
+        (payload) => {
           if (debounceTimer !== null) clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
             debounceTimer = null;
             const prev = useAuthStore.getState();
-            const state = event.payload;
             useAuthStore.setState({
-              user: state.user,
-              isAuthenticated: state.is_authenticated,
-              isOffline: state.is_offline,
+              user: payload.user,
+              isAuthenticated: payload.is_authenticated,
+              isOffline: payload.is_offline,
               isLoading: false,
             });
 
             // Notify downstream when user becomes authenticated.
-            if (state.is_authenticated && !prev.isAuthenticated) {
+            if (payload.is_authenticated && !prev.isAuthenticated) {
               if (typeof window !== "undefined") {
                 window.dispatchEvent(new CustomEvent(AUTH_LOGIN_EVENT));
               }
@@ -96,12 +95,12 @@ const registry: EventRegistration[] = [
 
   // -- Auth error (callback failures surfaced from Rust) --------------------
   {
-    event: "auth-error",
+    event: EventName.AUTH_ERROR,
     setup: async () => {
-      const unlisten = await listen<{ error: string }>(
-        "auth-error",
-        (event) => {
-          const msg = event.payload?.error ?? "Authentication failed";
+      const unlisten = await typedListen(
+        EventName.AUTH_ERROR,
+        (payload) => {
+          const msg = payload?.error ?? "Authentication failed";
           console.error("[auth-error]", msg);
           useAuthStore.setState({
             isLoading: false,
@@ -115,9 +114,9 @@ const registry: EventRegistration[] = [
 
   // -- Healing event -------------------------------------------------------
   {
-    event: "healing-event",
+    event: EventName.HEALING_EVENT,
     setup: async () => {
-      const unlisten = await listen("healing-event", () => {
+      const unlisten = await typedListen(EventName.HEALING_EVENT, () => {
         useOverviewStore.getState().fetchHealingIssues();
       });
       return [unlisten];
@@ -126,20 +125,20 @@ const registry: EventRegistration[] = [
 
   // -- Rotation completed / anomaly ----------------------------------------
   {
-    event: "rotation-completed",
+    event: EventName.ROTATION_COMPLETED,
     setup: async () => {
-      const unlistenCompleted = await listen<{
-        credential_id: string;
-        status: string;
-      }>("rotation-completed", (event) => {
-        const { credential_id } = event.payload;
-        useVaultStore.getState().fetchRotationStatus(credential_id);
-      });
+      const unlistenCompleted = await typedListen(
+        EventName.ROTATION_COMPLETED,
+        (payload) => {
+          const { credential_id } = payload;
+          useVaultStore.getState().fetchRotationStatus(credential_id);
+        },
+      );
 
-      const unlistenAnomaly = await listen<{ credential_id: string }>(
-        "rotation-anomaly",
-        (event) => {
-          const { credential_id } = event.payload;
+      const unlistenAnomaly = await typedListen(
+        EventName.ROTATION_ANOMALY,
+        (payload) => {
+          const { credential_id } = payload;
           useVaultStore.getState().fetchRotationStatus(credential_id);
         },
       );
@@ -150,12 +149,12 @@ const registry: EventRegistration[] = [
 
   // -- Zombie execution detection ------------------------------------------
   {
-    event: "zombie-executions-detected",
+    event: EventName.ZOMBIE_EXECUTIONS_DETECTED,
     setup: async () => {
-      const unlisten = await listen<{ zombie_ids: string[]; count: number }>(
-        "zombie-executions-detected",
-        (event) => {
-          const { zombie_ids, count } = event.payload;
+      const unlisten = await typedListen(
+        EventName.ZOMBIE_EXECUTIONS_DETECTED,
+        (payload) => {
+          const { zombie_ids, count } = payload;
           console.warn(
             `[zombie-sweep] ${count} stale execution(s) transitioned to incomplete:`,
             zombie_ids,
@@ -178,25 +177,21 @@ const registry: EventRegistration[] = [
 
   // -- Auto-rollback notification -------------------------------------------
   {
-    event: "auto-rollback-triggered",
+    event: EventName.AUTO_ROLLBACK_TRIGGERED,
     setup: async () => {
-      const unlisten = await listen<{
-        personaId: string;
-        personaName: string;
-        fromVersion: number;
-        toVersion: number;
-        currentErrorRate: number;
-        previousErrorRate: number;
-      }>("auto-rollback-triggered", (event) => {
-        const { personaName, fromVersion, toVersion } = event.payload;
-        useToastStore
-          .getState()
-          .addToast(
-            `Auto-rollback: "${personaName}" reverted from v${fromVersion} to v${toVersion} due to elevated error rate`,
-            "error",
-            8000,
-          );
-      });
+      const unlisten = await typedListen(
+        EventName.AUTO_ROLLBACK_TRIGGERED,
+        (payload) => {
+          const { personaName, fromVersion, toVersion } = payload;
+          useToastStore
+            .getState()
+            .addToast(
+              `Auto-rollback: "${personaName}" reverted from v${fromVersion} to v${toVersion} due to elevated error rate`,
+              "error",
+              8000,
+            );
+        },
+      );
       return [unlisten];
     },
   },
@@ -206,44 +201,91 @@ const registry: EventRegistration[] = [
   // When the matrix component is mounted, the Channel handler processes events directly.
   // This prevents double-processing that causes "updated" state on first resolve.
   {
-    event: "build-session-event",
+    event: EventName.BUILD_SESSION_EVENT,
     setup: async () => {
-      const unlisten = await listen<{
-        type: string;
-        session_id: string;
-        [key: string]: unknown;
-      }>("build-session-event", (event) => {
-        // Skip if Channel handler is active (component mounted)
-        if ((window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__) return;
+      const unlisten = await typedListen(
+        EventName.BUILD_SESSION_EVENT,
+        (payload) => {
+          // Skip if Channel handler is active (component mounted)
+          if ((window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__) return;
 
-        const store = useAgentStore.getState();
-        const e = event.payload;
+          const store = useAgentStore.getState();
 
-        // Only process events for the active build session
-        if (!store.buildSessionId || e.session_id !== store.buildSessionId) return;
+          // Only process events for the active build session
+          if (!store.buildSessionId || payload.session_id !== store.buildSessionId) return;
 
-        switch (e.type) {
-          case "cell_update":
-            store.handleBuildCellUpdate(e as Parameters<typeof store.handleBuildCellUpdate>[0]);
-            break;
-          case "question":
-            store.handleBuildQuestion(e as Parameters<typeof store.handleBuildQuestion>[0]);
-            break;
-          case "progress":
-            store.handleBuildProgress(e as Parameters<typeof store.handleBuildProgress>[0]);
-            break;
-          case "error":
-            store.handleBuildError(e as Parameters<typeof store.handleBuildError>[0]);
-            break;
-          case "session_status":
-            store.handleBuildSessionStatus(e as Parameters<typeof store.handleBuildSessionStatus>[0]);
-            break;
-        }
-      });
+          switch (payload.type) {
+            case "cell_update":
+              store.handleBuildCellUpdate(payload as Parameters<typeof store.handleBuildCellUpdate>[0]);
+              break;
+            case "question":
+              store.handleBuildQuestion(payload as Parameters<typeof store.handleBuildQuestion>[0]);
+              break;
+            case "progress":
+              store.handleBuildProgress(payload as Parameters<typeof store.handleBuildProgress>[0]);
+              break;
+            case "error":
+              store.handleBuildError(payload as Parameters<typeof store.handleBuildError>[0]);
+              break;
+            case "session_status":
+              store.handleBuildSessionStatus(payload as Parameters<typeof store.handleBuildSessionStatus>[0]);
+              break;
+          }
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Network snapshot pushed from Rust P2P engine --------------------------
+  {
+    event: EventName.NETWORK_SNAPSHOT_UPDATED,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.NETWORK_SNAPSHOT_UPDATED,
+        (payload) => {
+          useSystemStore.setState({
+            networkStatus: payload.status,
+            connectionHealth: payload.health,
+            discoveredPeers: payload.discoveredPeers,
+            messagingMetrics: payload.messagingMetrics,
+            connectionMetrics: payload.connectionMetrics,
+            manifestSyncMetrics: payload.manifestSyncMetrics,
+            networkConsecutiveFailures: 0,
+            networkError: null,
+          });
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Share link received (OS deep link) -----------------------------------
+  {
+    event: EventName.SHARE_LINK_RECEIVED,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.SHARE_LINK_RECEIVED,
+        (payload) => {
+          const url = payload?.url;
+          if (url && typeof url === "string") {
+            tracing("[share-link-received]", url);
+            // Dispatch a DOM event so any mounted import dialog can react.
+            window.dispatchEvent(
+              new CustomEvent("personas:share-link", { detail: { url } }),
+            );
+          }
+        },
+      );
       return [unlisten];
     },
   },
 ];
+
+function tracing(...args: unknown[]) {
+  // eslint-disable-next-line no-console
+  console.info(...args);
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -268,6 +310,12 @@ export async function initAllListeners(): Promise<void> {
       console.error("[EventBridge] Failed to attach listener:", result.reason);
     }
   }
+
+  // Kick off backend template integrity verification (defense-in-depth).
+  // Runs async and doesn't block app startup.
+  void import("@/lib/personas/templates/templateCatalog").then((m) =>
+    m.verifyTemplatesWithBackend(),
+  );
 }
 
 /**

@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, Check, ArrowRight } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PersonaAvatar, ROLE_COLORS } from '../../libs/teamConstants';
@@ -63,13 +62,9 @@ export default function AssistantMessages({
       )}
 
       {/* Blueprint preview */}
-      <AnimatePresence>
-        {blueprint && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-t border-primary/10 overflow-hidden"
+      {blueprint && (
+          <div
+            className="animate-fade-slide-in border-t border-primary/10 overflow-hidden"
           >
             {/* Preview header */}
             <button
@@ -147,9 +142,8 @@ export default function AssistantMessages({
                 </button>
               </div>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </>
   );
 }

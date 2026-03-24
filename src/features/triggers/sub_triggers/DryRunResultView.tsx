@@ -1,5 +1,4 @@
 import { X, CheckCircle2, Zap, ArrowRight, Radio, FlaskConical } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 
 interface DryRunResultViewProps {
@@ -11,12 +10,8 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
   if (!dryRunResult) return null;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: 'auto' }}
-        exit={{ opacity: 0, height: 0 }}
-        className="overflow-hidden"
+    <div
+        className="animate-fade-slide-in overflow-hidden"
       >
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 space-y-2.5">
           <div className="flex items-center justify-between">
@@ -91,7 +86,6 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
             </div>
           )}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }

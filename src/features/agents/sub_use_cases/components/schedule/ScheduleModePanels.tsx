@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SCHEDULE_PRESETS } from '../../libs/scheduleHelpers';
 import type { CronPreview } from '@/api/pipeline/triggers';
@@ -13,7 +12,7 @@ interface PresetPanelProps {
 
 export function PresetPanel({ cronExpression, onSelect }: PresetPanelProps) {
   return (
-    <motion.div key="presets" {...ANIM} className="space-y-2">
+    <div key="presets" {...ANIM} className="animate-fade-in space-y-2">
       <div className="grid grid-cols-2 gap-1.5">
         {SCHEDULE_PRESETS.map((preset) => {
           const active = cronExpression === preset.cron;
@@ -36,7 +35,7 @@ export function PresetPanel({ cronExpression, onSelect }: PresetPanelProps) {
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -51,7 +50,7 @@ interface VisualPanelProps {
 
 export function VisualPanel({ selectedDays, hour, minute, onToggleDay, onHourChange, onMinuteChange }: VisualPanelProps) {
   return (
-    <motion.div key="visual" {...ANIM}>
+    <div className="animate-fade-in" key="visual" {...ANIM}>
       <DayTimeGrid
         selectedDays={selectedDays}
         hour={hour}
@@ -60,7 +59,7 @@ export function VisualPanel({ selectedDays, hour, minute, onToggleDay, onHourCha
         onHourChange={onHourChange}
         onMinuteChange={onMinuteChange}
       />
-    </motion.div>
+    </div>
   );
 }
 
@@ -73,7 +72,7 @@ interface CronPanelProps {
 
 export function CronPanel({ cronExpression, onCronChange, cronPreview, cronLoading }: CronPanelProps) {
   return (
-    <motion.div key="cron" {...ANIM} className="space-y-2">
+    <div key="cron" {...ANIM} className="animate-fade-in space-y-2">
       <div className="flex items-center gap-2">
         <input
           type="text"
@@ -97,6 +96,6 @@ export function CronPanel({ cronExpression, onCronChange, cronPreview, cronLoadi
       {cronPreview?.valid && (
         <p className="text-sm text-amber-400/80 font-medium">{cronPreview.description}</p>
       )}
-    </motion.div>
+    </div>
   );
 }

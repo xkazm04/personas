@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { CodebaseProjectPicker } from '@/features/vault/sub_forms/CodebaseProjectPicker';
 import { McpPrefilledForm } from '@/features/vault/sub_schemas/McpPrefilledForm';
@@ -119,8 +118,8 @@ export function CredentialTemplateForm({
     : requiresHealthcheck && !healthcheckResult?.success ? 'Run a successful connection test before saving.' : undefined;
 
   return (
-    <motion.div key="form" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-      className="w-full bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-6 space-y-4">
+    <div key="form"
+      className="animate-fade-slide-in w-full bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-6 space-y-4">
       <TemplateFormHeader selectedConnector={selectedConnector} activeMethod={activeMethod}
         onBack={onBack} onAutoSetup={onAutoSetup} onDesktopDetect={onDesktopDetect} />
       {guide && <SetupGuideSection guide={guide} connectorLabel={selectedConnector.label} />}
@@ -198,6 +197,6 @@ export function CredentialTemplateForm({
           />
         </>
       )}
-    </motion.div>
+    </div>
   );
 }

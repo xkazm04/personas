@@ -1,11 +1,15 @@
 use std::sync::Arc;
+use serde::Serialize;
 use tauri::State;
+use ts_rs::TS;
 
 use crate::engine::byom::{ByomPolicy, ProviderAuditEntry};
+use crate::engine::provider::{resolve_provider, EngineKind};
 use crate::db::repos::execution::provider_audit;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth_sync, require_privileged_sync};
 use crate::AppState;
+use std::time::Instant;
 
 // =============================================================================
 // BYOM Policy CRUD
@@ -34,6 +38,16 @@ pub fn delete_byom_policy(state: State<'_, Arc<AppState>>) -> Result<(), AppErro
     require_auth_sync(&state)?;
     crate::db::repos::core::settings::delete(&state.db, crate::engine::byom::BYOM_POLICY_KEY)?;
     Ok(())
+}
+
+/// Validate a BYOM policy without saving it. Returns a list of warning strings.
+#[tauri::command]
+pub fn validate_byom_policy(
+    state: State<'_, Arc<AppState>>,
+    policy: ByomPolicy,
+) -> Result<Vec<String>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(policy.validate())
 }
 
 // =============================================================================
@@ -68,4 +82,94 @@ pub fn get_provider_usage_stats(
 ) -> Result<Vec<provider_audit::ProviderUsageStats>, AppError> {
     require_privileged_sync(&state, "get_provider_usage_stats")?;
     provider_audit::get_usage_stats(&state.db)
+}
+
+/// Get daily provider usage timeseries for sparkline rendering.
+#[tauri::command]
+pub fn get_provider_usage_timeseries(
+    state: State<'_, Arc<AppState>>,
+    days: Option<i64>,
+) -> Result<Vec<provider_audit::ProviderUsageTimeseries>, AppError> {
+    require_privileged_sync(&state, "get_provider_usage_timeseries")?;
+    provider_audit::get_usage_timeseries(&state.db, days.unwrap_or(30))
+}
+
+// =============================================================================
+// Provider Connection Test
+// =============================================================================
+
+/// Result of testing a provider connection.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct ProviderConnectionResult {
+    pub provider_id: String,
+    pub reachable: bool,
+    pub latency_ms: Option<u64>,
+    pub version: Option<String>,
+    pub error: Option<String>,
+}
+
+/// Test whether a provider's CLI binary is installed and reachable.
+///
+/// Checks that the binary exists in PATH and can report its version.
+#[tauri::command]
+pub fn test_provider_connection(
+    state: State<'_, Arc<AppState>>,
+    provider_id: String,
+) -> Result<ProviderConnectionResult, AppError> {
+    require_auth_sync(&state)?;
+
+    let engine_kind = match provider_id.as_str() {
+        "claude_code" => EngineKind::ClaudeCode,
+        "codex_cli" => EngineKind::CodexCli,
+        _ => {
+            return Ok(ProviderConnectionResult {
+                provider_id,
+                reachable: false,
+                latency_ms: None,
+                version: None,
+                error: Some("Unknown provider".into()),
+            });
+        }
+    };
+
+    let provider = resolve_provider(engine_kind);
+    let candidates = provider.binary_candidates();
+
+    // Try each binary candidate until one succeeds, measuring response time
+    for candidate in candidates {
+        let start = Instant::now();
+        match crate::commands::infrastructure::system::command_version(candidate) {
+            Ok(version) => {
+                let elapsed = start.elapsed().as_millis() as u64;
+                return Ok(ProviderConnectionResult {
+                    provider_id,
+                    reachable: true,
+                    latency_ms: Some(elapsed),
+                    version: Some(version),
+                    error: None,
+                });
+            }
+            Err(_) => continue,
+        }
+    }
+
+    // None of the candidates worked — check if at least one is in PATH
+    let in_path = candidates
+        .iter()
+        .any(|c| crate::commands::infrastructure::system::command_exists_in_path(c));
+
+    let error_msg = if in_path {
+        "Binary found in PATH but --version failed. The CLI may be misconfigured."
+    } else {
+        "CLI binary not found in PATH. Please install the provider CLI."
+    };
+
+    Ok(ProviderConnectionResult {
+        provider_id,
+        reachable: false,
+        latency_ms: None,
+        version: None,
+        error: Some(error_msg.into()),
+    })
 }

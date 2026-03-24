@@ -1,28 +1,40 @@
-import { useState, useEffect } from 'react';
-import { Download, ShieldCheck, ShieldAlert, ShieldOff, AlertTriangle, Lock } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Download, ShieldOff, AlertTriangle, Lock, ClipboardPaste, Link2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { open } from '@tauri-apps/plugin-dialog';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
-import type { BundleImportPreview, BundleResourcePreview } from '@/api/network/bundle';
+import type { BundleImportPreview } from '@/api/network/bundle';
 import type { EnclaveVerifyResult } from '@/api/network/enclave';
+import { EnclaveVerificationView } from './EnclaveVerificationView';
+import { ImportSuccessCelebration } from './ImportSuccessCelebration';
+import { BundlePreviewContent } from './BundlePreviewContent';
 
 type Phase = 'pick' | 'previewing' | 'preview' | 'importing' | 'done';
 
 interface BundleImportDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Pre-fill with a personas://share deep link URL and auto-start preview. */
+  initialShareUrl?: string;
 }
 
-export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps) {
+export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleImportDialogProps) {
   const previewBundleImport = useSystemStore((s) => s.previewBundleImport);
+  const previewBundleFromClipboard = useSystemStore((s) => s.previewBundleFromClipboard);
+  const previewShareLink = useSystemStore((s) => s.previewShareLink);
   const applyBundleImport = useSystemStore((s) => s.applyBundleImport);
+  const applyBundleFromClipboard = useSystemStore((s) => s.applyBundleFromClipboard);
+  const importFromShareLink = useSystemStore((s) => s.importFromShareLink);
   const verifyEnclave = useSystemStore((s) => s.verifyEnclave);
   const addToast = useToastStore((s) => s.addToast);
 
   const [phase, setPhase] = useState<Phase>('pick');
   const [filePath, setFilePath] = useState<string | null>(null);
+  const [clipboardData, setClipboardData] = useState<string | null>(null);
+  const [shareLinkUrl, setShareLinkUrl] = useState<string | null>(null);
+  const [shareLinkInput, setShareLinkInput] = useState('');
   const [preview, setPreview] = useState<BundleImportPreview | null>(null);
   const [enclaveResult, setEnclaveResult] = useState<EnclaveVerifyResult | null>(null);
   const [skipConflicts, setSkipConflicts] = useState(true);
@@ -33,9 +45,26 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
 
   const isEnclave = filePath?.endsWith('.enclave') ?? false;
 
+  // Auto-start share link preview when opened with an initialShareUrl
+  const autoStartedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isOpen && initialShareUrl && autoStartedRef.current !== initialShareUrl) {
+      autoStartedRef.current = initialShareUrl;
+      setShareLinkInput(initialShareUrl);
+      // Defer to next tick so dialog is fully mounted
+      queueMicrotask(() => handleImportShareLink(initialShareUrl));
+    }
+    if (!isOpen) {
+      autoStartedRef.current = null;
+    }
+  }, [isOpen, initialShareUrl]);
+
   const reset = () => {
     setPhase('pick');
     setFilePath(null);
+    setClipboardData(null);
+    setShareLinkUrl(null);
+    setShareLinkInput('');
     setPreview(null);
     setEnclaveResult(null);
     setSkipConflicts(true);
@@ -83,21 +112,79 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
     }
   };
 
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text || text.trim().length === 0) {
+        setError('Clipboard is empty');
+        return;
+      }
+
+      const trimmed = text.trim();
+      setClipboardData(trimmed);
+      setFilePath(null);
+      setPhase('previewing');
+      setError(null);
+
+      const p = await previewBundleFromClipboard(trimmed);
+      setPreview(p);
+      setPhase('preview');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('[BundleImportDialog] Failed to paste from clipboard', { error: msg });
+      setError(msg || 'Failed to read clipboard');
+      setClipboardData(null);
+      setPhase('pick');
+    }
+  };
+
+  const handleImportShareLink = async (urlOverride?: string) => {
+    const url = (urlOverride ?? shareLinkInput).trim();
+    if (!url) return;
+
+    try {
+      // Store the original URL (may be personas:// or http://) -- both are
+      // handled transparently by the backend commands.
+      setShareLinkUrl(url);
+      setFilePath(null);
+      setClipboardData(null);
+      setPhase('previewing');
+      setError(null);
+
+      const p = await previewShareLink(url);
+      setPreview(p);
+      setPhase('preview');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn('[BundleImportDialog] Failed to preview share link', { error: msg });
+      setError(msg || 'Failed to load share link');
+      setShareLinkUrl(null);
+      setPhase('pick');
+    }
+  };
+
   const handleImport = async () => {
-    if (!filePath) return;
+    if (!filePath && !clipboardData && !shareLinkUrl) return;
     setPhase('importing');
     try {
-      const result = await applyBundleImport(filePath, {
+      const options = {
         skip_conflicts: skipConflicts,
         rename_prefix: renamePrefix || null,
         preview_id: preview?.preview_id ?? null,
-      });
+      };
+
+      const result = shareLinkUrl
+        ? await importFromShareLink(shareLinkUrl, options)
+        : clipboardData
+          ? await applyBundleFromClipboard(clipboardData, options)
+          : await applyBundleImport(filePath!, options);
+
       setImportResult(result);
       setPhase('done');
       addToast(`Imported ${result.imported} resource${result.imported !== 1 ? 's' : ''}`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleImportDialog] Failed to import bundle', { filePath, error: msg });
+      console.warn('[BundleImportDialog] Failed to import bundle', { filePath, clipboard: !!clipboardData, error: msg });
       setError(msg || 'Failed to import bundle');
       setPhase('preview');
     }
@@ -134,16 +221,45 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
           phase === 'pick' ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         }`}>
           <div className="overflow-hidden">
-            <div className="rounded-xl border border-dashed border-border p-8 text-center">
-              <Download className="w-8 h-8 mx-auto mb-3 text-muted-foreground/40" />
-              <button
-                onClick={handlePickFile}
-                className="px-4 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary/90"
-              >
-                Choose file
-              </button>
+            <div className="rounded-xl border border-dashed border-border p-8 text-center space-y-3">
+              <Download className="w-8 h-8 mx-auto mb-1 text-muted-foreground/40" />
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={handlePickFile}
+                  className="px-4 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary/90"
+                >
+                  Choose file
+                </button>
+                <button
+                  onClick={handlePasteFromClipboard}
+                  className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
+                >
+                  <ClipboardPaste className="w-4 h-4" />
+                  Paste from Clipboard
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 w-full max-w-xs mx-auto">
+                <div className="relative flex-1">
+                  <Link2 className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+                  <input
+                    type="text"
+                    value={shareLinkInput}
+                    onChange={(e) => setShareLinkInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleImportShareLink(); }}
+                    placeholder="Paste share link or personas:// URL..."
+                    className="w-full pl-7 pr-2 py-1.5 text-xs rounded-lg border border-border bg-background focus-ring"
+                  />
+                </div>
+                <button
+                  onClick={() => handleImportShareLink()}
+                  disabled={!shareLinkInput.trim()}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  Open
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Select a .persona bundle or .enclave file.
+                Choose a file, paste clipboard data, or use a share link (personas:// deep link) from another Personas instance.
               </p>
             </div>
           </div>
@@ -245,419 +361,5 @@ export function BundleImportDialog({ isOpen, onClose }: BundleImportDialogProps)
         </div>
       </div>
     </BaseModal>
-  );
-}
-
-// -- Enclave Verification View ------------------------------------------------
-
-function EnclaveVerificationView({ result }: { result: EnclaveVerifyResult }) {
-  const allValid = result.signatureValid && result.contentIntact;
-
-  return (
-    <div className="space-y-3">
-      {/* Status header */}
-      <div className={`rounded-lg border p-3 space-y-2 ${
-        !allValid
-          ? 'border-red-500/30 bg-red-500/5'
-          : 'border-violet-500/20 bg-violet-500/5'
-      }`}>
-        <div className="flex items-center gap-2">
-          {allValid ? (
-            result.creatorTrusted ? (
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            ) : (
-              <ShieldAlert className="w-5 h-5 text-amber-400" />
-            )
-          ) : (
-            <ShieldOff className="w-5 h-5 text-red-400" />
-          )}
-          <div>
-            <div className="text-sm font-medium text-foreground">
-              {result.personaName}
-            </div>
-            <div className="text-[10px] text-muted-foreground">
-              by {result.creatorDisplayName}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 text-[10px]">
-          <span className={`px-1.5 py-0.5 rounded-full ${
-            result.signatureValid
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
-          }`}>
-            {result.signatureValid ? 'Signature valid' : 'Invalid signature'}
-          </span>
-          <span className={`px-1.5 py-0.5 rounded-full ${
-            result.contentIntact
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
-          }`}>
-            {result.contentIntact ? 'Content intact' : 'Content tampered'}
-          </span>
-          <span className={`px-1.5 py-0.5 rounded-full ${
-            result.creatorTrusted
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-amber-500/10 text-amber-400'
-          }`}>
-            {result.creatorTrusted ? 'Trusted creator' : 'Unknown creator'}
-          </span>
-        </div>
-      </div>
-
-      {/* Creator identity */}
-      <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-1.5">
-        <div className="text-xs text-muted-foreground font-medium">Creator Identity</div>
-        <div className="text-[10px] text-muted-foreground font-mono">
-          {result.creatorPeerId.slice(0, 12)}...{result.creatorPeerId.slice(-12)}
-        </div>
-      </div>
-
-      {/* Policy details */}
-      <div className="rounded-lg border border-border bg-secondary/10 p-3 space-y-2">
-        <div className="text-xs text-muted-foreground font-medium">Execution Policy</div>
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div>
-            <span className="text-muted-foreground">Max cost:</span>{' '}
-            <span className="text-foreground">${result.policy.maxCostUsd.toFixed(2)}</span>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Max turns:</span>{' '}
-            <span className="text-foreground">{result.policy.maxTurns}</span>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Persistence:</span>{' '}
-            <span className="text-foreground">{result.policy.allowPersistence ? 'Allowed' : 'Denied'}</span>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Capabilities:</span>{' '}
-            <span className="text-foreground">
-              {result.policy.requiredCapabilities.length || 'None'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Enclave hash */}
-      <div className="text-[10px] text-muted-foreground/60 font-mono truncate">
-        Hash: {result.enclaveHash}
-      </div>
-    </div>
-  );
-}
-
-// -- Bundle Preview and shared components (unchanged) -------------------------
-
-const CONFETTI_COLORS = ['#34d399', '#06b6d4', '#10b981', '#22d3ee', '#6ee7b7', '#67e8f9'];
-
-function ConfettiParticle({ index }: { index: number }) {
-  const color = CONFETTI_COLORS[index % CONFETTI_COLORS.length];
-  const left = 10 + (index * 17) % 80;
-  const delay = (index * 70) % 400;
-  const size = 4 + (index % 3) * 2;
-  const rotation = (index * 47) % 360;
-
-  return (
-    <rect
-      x={left}
-      y={-10}
-      width={size}
-      height={size * 0.6}
-      rx={1}
-      fill={color}
-      opacity={0.85}
-      transform={`rotate(${rotation} ${left + size / 2} ${-10 + size * 0.3})`}
-    >
-      <animateTransform
-        attributeName="transform"
-        type="translate"
-        values={`0 0; ${(index % 2 ? 8 : -8)} 90; ${(index % 2 ? -4 : 12)} 140`}
-        dur="1.2s"
-        begin={`${delay}ms`}
-        fill="freeze"
-        additive="sum"
-      />
-      <animate
-        attributeName="opacity"
-        values="0;0.85;0.85;0"
-        keyTimes="0;0.1;0.7;1"
-        dur="1.2s"
-        begin={`${delay}ms`}
-        fill="freeze"
-      />
-      <animateTransform
-        attributeName="transform"
-        type="rotate"
-        values={`0 ${left + size / 2} ${-10 + size * 0.3}; ${360 + rotation} ${left + size / 2} ${60}`}
-        dur="1.2s"
-        begin={`${delay}ms`}
-        fill="freeze"
-        additive="sum"
-      />
-    </rect>
-  );
-}
-
-function PackageUnwrapSvg() {
-  return (
-    <svg
-      viewBox="0 0 160 120"
-      width={160}
-      height={120}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="mx-auto"
-      aria-hidden="true"
-    >
-      {Array.from({ length: 8 }, (_, i) => (
-        <ConfettiParticle key={i} index={i} />
-      ))}
-      <g>
-        <rect x="45" y="50" width="70" height="50" rx="6" fill="#064e3b" stroke="#34d399" strokeWidth="1.5">
-          <animate attributeName="opacity" values="0;1" dur="0.3s" fill="freeze" />
-        </rect>
-        <rect x="76" y="50" width="8" height="50" fill="#10b981" opacity="0.4">
-          <animate attributeName="opacity" values="0;0.4" dur="0.3s" fill="freeze" />
-        </rect>
-        <rect x="45" y="70" width="70" height="8" fill="#10b981" opacity="0.4">
-          <animate attributeName="opacity" values="0;0.4" dur="0.3s" fill="freeze" />
-        </rect>
-        <circle cx="80" cy="50" r="5" fill="#34d399">
-          <animate attributeName="opacity" values="0;1" dur="0.3s" fill="freeze" />
-        </circle>
-      </g>
-      <g>
-        <rect x="42" y="44" width="76" height="14" rx="4" fill="#065f46" stroke="#34d399" strokeWidth="1.5">
-          <animate attributeName="opacity" values="0;1" dur="0.3s" fill="freeze" />
-          <animateTransform attributeName="transform" type="translate" values="0 0; 0 -18" dur="0.5s" begin="0.15s" fill="freeze" />
-          <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.6;1" dur="0.6s" begin="0.15s" fill="freeze" />
-        </rect>
-        <rect x="76" y="44" width="8" height="14" fill="#10b981" opacity="0.4">
-          <animateTransform attributeName="transform" type="translate" values="0 0; 0 -18" dur="0.5s" begin="0.15s" fill="freeze" />
-          <animate attributeName="opacity" values="0.4;0.4;0" keyTimes="0;0.6;1" dur="0.6s" begin="0.15s" fill="freeze" />
-        </rect>
-      </g>
-      <g>
-        <circle cx="80" cy="62" r="14" fill="#059669" opacity="0">
-          <animate attributeName="opacity" values="0;0;1" keyTimes="0;0.5;1" dur="0.8s" begin="0.3s" fill="freeze" />
-          <animateTransform attributeName="transform" type="translate" values="0 10; 0 -12" dur="0.5s" begin="0.45s" fill="freeze" />
-        </circle>
-        <path d="M73 62 L78 67 L88 57" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0">
-          <animate attributeName="opacity" values="0;0;1" keyTimes="0;0.5;1" dur="0.8s" begin="0.3s" fill="freeze" />
-          <animateTransform attributeName="transform" type="translate" values="0 10; 0 -12" dur="0.5s" begin="0.45s" fill="freeze" />
-        </path>
-      </g>
-      {[[50, 30], [110, 28], [35, 55], [125, 52]].map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r={2} fill={i % 2 === 0 ? '#34d399' : '#22d3ee'} opacity="0">
-          <animate attributeName="opacity" values="0;0.8;0" dur="0.6s" begin={`${0.5 + i * 0.12}s`} fill="freeze" />
-          <animate attributeName="r" values="0;3;1.5" dur="0.6s" begin={`${0.5 + i * 0.12}s`} fill="freeze" />
-        </circle>
-      ))}
-    </svg>
-  );
-}
-
-function ImportSuccessCelebration({ importResult }: { importResult: { imported: number; skipped: number; errors: string[] } }) {
-  const [entered, setEntered] = useState(false);
-
-  useEffect(() => {
-    const t = requestAnimationFrame(() => setEntered(true));
-    return () => cancelAnimationFrame(t);
-  }, []);
-
-  return (
-    <div
-      className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3 overflow-hidden"
-      style={{
-        transform: entered ? 'scale(1)' : 'scale(0.85)',
-        opacity: entered ? 1 : 0,
-        transition: 'transform 600ms cubic-bezier(0.34,1.56,0.64,1), opacity 400ms ease-out',
-      }}
-    >
-      <PackageUnwrapSvg />
-      <div className="text-center space-y-1">
-        <div className="text-sm font-medium text-emerald-400">
-          Import Complete
-        </div>
-        <div className="text-xs text-muted-foreground space-y-0.5">
-          <p>{importResult.imported} resource{importResult.imported !== 1 ? 's' : ''} imported</p>
-          {importResult.skipped > 0 && (
-            <p>{importResult.skipped} skipped (conflicts)</p>
-          )}
-          {importResult.errors.length > 0 && (
-            <div className="mt-2 text-left">
-              <p className="text-red-400">{importResult.errors.length} error{importResult.errors.length !== 1 ? 's' : ''}:</p>
-              {importResult.errors.map((e, i) => (
-                <p key={i} className="text-red-400/80 ml-2">- {e}</p>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BundlePreviewContent({
-  preview,
-  skipConflicts,
-  setSkipConflicts,
-  renamePrefix,
-  setRenamePrefix,
-  dangerConfirmed,
-  setDangerConfirmed,
-}: {
-  preview: BundleImportPreview;
-  skipConflicts: boolean;
-  setSkipConflicts: (v: boolean) => void;
-  renamePrefix: string;
-  setRenamePrefix: (v: string) => void;
-  dangerConfirmed: boolean;
-  setDangerConfirmed: (v: boolean) => void;
-}) {
-  const hasConflicts = preview.resources.some((r) => r.conflict);
-
-  return (
-    <div className="space-y-3">
-      {/* Signer info */}
-      <div className={`rounded-lg border p-3 space-y-2 ${
-        !preview.signature_valid
-          ? 'border-red-500/30 bg-red-500/5'
-          : 'border-border bg-secondary/10'
-      }`}>
-        <div className="flex items-center gap-2">
-          {preview.signature_valid ? (
-            preview.signer_trusted ? (
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            ) : (
-              <ShieldAlert className="w-4 h-4 text-amber-400" />
-            )
-          ) : (
-            <ShieldOff className="w-4 h-4 text-red-400" />
-          )}
-          <div>
-            <div className="text-sm font-medium text-foreground">{preview.signer_display_name}</div>
-            <div className="text-[10px] text-muted-foreground font-mono">
-              {preview.signer_peer_id.slice(0, 8)}...{preview.signer_peer_id.slice(-8)}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 text-[10px]">
-          <span className={`px-1.5 py-0.5 rounded-full ${
-            preview.signature_valid
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
-          }`}>
-            {preview.signature_valid ? 'Signature valid' : 'Invalid signature'}
-          </span>
-          <span className={`px-1.5 py-0.5 rounded-full ${
-            preview.signer_trusted
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-amber-500/10 text-amber-400'
-          }`}>
-            {preview.signer_trusted ? 'Trusted peer' : 'Unknown peer'}
-          </span>
-        </div>
-      </div>
-
-      {/* Danger: invalid signature */}
-      {!preview.signature_valid && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-3 space-y-2">
-          <div className="flex items-start gap-2">
-            <ShieldOff className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-red-400 space-y-1">
-              <p className="font-medium">This bundle has an invalid or missing signature.</p>
-              <p className="text-red-400/80">
-                The contents may have been tampered with. Importing untrusted bundles could introduce
-                malicious persona configurations. Only proceed if you fully trust the source.
-              </p>
-            </div>
-          </div>
-          <label className="flex items-center gap-2 text-xs text-red-400 cursor-pointer pt-1">
-            <input
-              type="checkbox"
-              checked={dangerConfirmed}
-              onChange={(e) => setDangerConfirmed(e.target.checked)}
-              className="rounded border-red-500/40"
-            />
-            I understand the risks and want to import this unsigned bundle
-          </label>
-        </div>
-      )}
-
-      {/* Warning for untrusted signer */}
-      {!preview.signer_trusted && preview.signature_valid && (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 flex items-start gap-2">
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-          <span className="text-xs text-amber-400/90">
-            This bundle is from an unknown peer. Add them as a trusted peer first for verified imports.
-          </span>
-        </div>
-      )}
-
-      {/* Resources list */}
-      <div>
-        <div className="text-xs text-muted-foreground mb-1.5">
-          {preview.resources.length} resource{preview.resources.length !== 1 ? 's' : ''} in bundle
-        </div>
-        <div className="max-h-[30vh] overflow-y-auto space-y-1 pr-1">
-          {preview.resources.map((resource) => (
-            <ResourcePreviewItem key={resource.resource_id} resource={resource} />
-          ))}
-        </div>
-      </div>
-
-      {/* Conflict options */}
-      {hasConflicts && (
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
-          <div className="text-xs text-amber-400 font-medium">Naming conflicts detected</div>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-            <input
-              type="checkbox"
-              checked={skipConflicts}
-              onChange={(e) => setSkipConflicts(e.target.checked)}
-              className="rounded border-border"
-            />
-            Skip conflicting resources
-          </label>
-          {!skipConflicts && (
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Rename prefix</label>
-              <input
-                value={renamePrefix}
-                onChange={(e) => setRenamePrefix(e.target.value)}
-                placeholder="e.g. imported-"
-                className="w-full px-2 py-1 text-xs rounded-lg border border-border bg-background focus-ring"
-              />
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ResourcePreviewItem({ resource }: { resource: BundleResourcePreview }) {
-  return (
-    <div className={`rounded-lg border p-2 flex items-center gap-2 ${
-      resource.conflict
-        ? 'border-amber-500/20 bg-amber-500/5'
-        : 'border-border bg-secondary/10'
-    }`}>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm text-foreground truncate">{resource.display_name}</div>
-        <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-          <span>{resource.resource_type}</span>
-          <span className="text-muted-foreground/40">·</span>
-          <span>{resource.access_level}</span>
-        </div>
-      </div>
-      {resource.conflict && (
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 flex-shrink-0">
-          conflict
-        </span>
-      )}
-    </div>
   );
 }

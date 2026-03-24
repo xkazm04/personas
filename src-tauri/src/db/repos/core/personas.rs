@@ -281,7 +281,7 @@ const SENSITIVE_CHANNEL_KEYS: &[&str] = &[
 
 /// Encrypt sensitive config values inside notification_channels JSON before DB storage.
 /// For each sensitive key, replaces `key` with `key_enc` (ciphertext) and `key_iv` (nonce).
-fn encrypt_notification_channels(json: &str) -> Result<String, AppError> {
+pub(crate) fn encrypt_notification_channels(json: &str) -> Result<String, AppError> {
     let mut channels: Vec<serde_json::Value> = serde_json::from_str(json)
         .map_err(|e| AppError::Validation(format!("Invalid notification_channels JSON: {e}")))?;
 
@@ -419,6 +419,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         trust_level: row.get::<_, Option<String>>("trust_level")?.unwrap_or_else(|| "verified".to_string()),
         trust_origin: row.get::<_, Option<String>>("trust_origin")?.unwrap_or_else(|| "builtin".to_string()),
         trust_verified_at: row.get::<_, Option<String>>("trust_verified_at").unwrap_or(None),
+        trust_score: row.get::<_, Option<f64>>("trust_score")?.unwrap_or(0.0),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -827,6 +828,98 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     }
 
     Ok(summaries)
+}
+
+/// Compute a trust score (0.0–100.0) for a persona from its recent execution history.
+///
+/// Factors:
+/// - **Success rate** (weight 0.50): percentage of completed executions in last 50
+/// - **Cost discipline** (weight 0.20): 1.0 if under budget, scaled down if over
+/// - **Healing frequency** (weight 0.15): penalised by consecutive failures
+/// - **Volume bonus** (weight 0.15): more executions = more confidence in the score
+pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
+    let conn = pool.get()?;
+
+    // Last 50 terminal executions
+    let mut stmt = conn.prepare(
+        "SELECT status, cost_usd FROM persona_executions
+         WHERE persona_id = ?1 AND status IN ('completed', 'failed')
+         ORDER BY created_at DESC LIMIT 50",
+    )?;
+    let rows: Vec<(String, f64)> = stmt
+        .query_map(params![persona_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, Option<f64>>(1)?.unwrap_or(0.0)))
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    if rows.is_empty() {
+        return Ok(0.0);
+    }
+
+    let total = rows.len() as f64;
+    let successes = rows.iter().filter(|(s, _)| s == "completed").count() as f64;
+    let success_rate = successes / total;
+
+    // Cost discipline: compare monthly spend vs budget
+    let budget: Option<f64> = conn
+        .query_row(
+            "SELECT max_budget_usd FROM personas WHERE id = ?1",
+            params![persona_id],
+            |row| row.get(0),
+        )
+        .unwrap_or(None);
+    let monthly_spend: f64 = conn
+        .query_row(
+            "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
+             WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
+             AND created_at >= datetime('now', 'start of month')",
+            params![persona_id],
+            |row| row.get(0),
+        )
+        .unwrap_or(0.0);
+    let cost_score = match budget {
+        Some(b) if b > 0.0 => (1.0 - (monthly_spend / b).min(2.0) / 2.0).max(0.0),
+        _ => 1.0, // no budget set = full marks
+    };
+
+    // Healing frequency: penalise consecutive failures
+    let consecutive_failures: u32 = {
+        let mut stmt2 = conn.prepare(
+            "SELECT status FROM persona_executions
+             WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT 20",
+        )?;
+        let statuses: Vec<String> = stmt2
+            .query_map(params![persona_id], |row| row.get::<_, String>(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+        statuses.iter().take_while(|s| s.as_str() == "failed").count() as u32
+    };
+    let healing_score = (1.0 - (consecutive_failures as f64 * 0.2)).max(0.0);
+
+    // Volume bonus: more executions build confidence (sigmoid-like curve capped at 1.0)
+    let volume_score = (total / 20.0).min(1.0);
+
+    // Weighted combination
+    let score = (success_rate * 50.0)
+        + (cost_score * 20.0)
+        + (healing_score * 15.0)
+        + (volume_score * 15.0);
+
+    Ok(score.clamp(0.0, 100.0))
+}
+
+/// Recompute and persist the trust score for a persona.
+/// Called after every execution completion.
+pub fn refresh_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
+    let score = compute_trust_score(pool, persona_id)?;
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE personas SET trust_score = ?1, updated_at = datetime('now') WHERE id = ?2",
+        params![score, persona_id],
+    )?;
+    tracing::debug!(persona_id, trust_score = score, "Trust score updated");
+    Ok(score)
 }
 
 /// Duplicate a persona server-side, preserving the encrypted model_profile

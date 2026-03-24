@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialList } from '@/features/vault/sub_list/CredentialList';
 import { CredentialPicker } from '@/features/vault/sub_list/CredentialPicker';
 import { CredentialTemplateForm } from '@/features/vault/sub_forms/CredentialTemplateForm';
@@ -42,13 +41,9 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
 
   return (
     <>
-      <AnimatePresence mode="wait">
-        {viewState.view === 'catalog-browse' && (
-          <motion.div
+      {viewState.view === 'catalog-browse' && (
+          <div className="animate-fade-slide-in"
             key="picker"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
           >
             <CredentialPicker
               connectors={filteredConnectors}
@@ -56,7 +51,7 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
               onPickType={handlePickType}
               searchTerm={credentialSearch}
             />
-          </motion.div>
+          </div>
         )}
 
         {viewState.view === 'catalog-form' && (
@@ -133,7 +128,6 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
         {viewState.view === 'graph' && (
           <CredentialRelationshipGraph key="graph" />
         )}
-      </AnimatePresence>
 
       <CredentialAddViews state={state} />
     </>

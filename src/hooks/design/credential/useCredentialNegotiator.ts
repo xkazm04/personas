@@ -5,6 +5,7 @@ import {
   getNegotiationStepHelp,
 } from '@/api/vault/negotiator';
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
+import { EventName } from '@/lib/eventRegistry';
 import { useStepProgress } from '@/hooks/useStepProgress';
 import { lookupPlaybook, savePlaybook, markPlaybookUsed } from '../core/playbookCache';
 import { resolveStepGraph, type StepGraphContext, type ResolvedSteps } from './negotiatorStepGraph';
@@ -66,12 +67,13 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
 
   const flow = useAiArtifactTask<[string, Record<string, unknown>, string[]], NegotiationPlan>({
     progressEvent: 'credential-negotiation-progress',
-    statusEvent: 'credential-negotiation-status',
+    statusEvent: EventName.CREDENTIAL_NEGOTIATION_STATUS,
     runningPhase: 'planning',
     completedPhase: 'guiding',
     startFn: startCredentialNegotiation,
     cancelFn: cancelCredentialNegotiation,
     errorMessage: 'Failed to generate provisioning plan',
+    traceOperation: 'credential_negotiation',
   });
 
   // -- Step graph resolution --

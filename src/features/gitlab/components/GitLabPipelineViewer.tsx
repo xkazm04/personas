@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Play, RefreshCw, ExternalLink, FileText } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import { Button } from '@/features/shared/components/buttons';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { StatusIcon, statusColor } from './pipelineHelpers';
 import { PipelineRow } from './PipelineRow';
 import { JobRow } from './JobRow';
+import { usePipelineNotifications } from '../hooks/usePipelineNotifications';
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -31,6 +33,9 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
   const refreshPipeline = useSystemStore((s) => s.gitlabRefreshPipeline);
   const clearPipelineState = useSystemStore((s) => s.gitlabClearPipelineState);
 
+  // Desktop notifications + in-app notification center on pipeline status transitions
+  usePipelineNotifications(pipelines, projectId);
+
   useEffect(() => {
     if (projectId) {
       fetchPipelines(projectId);
@@ -38,19 +43,21 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
     return () => clearPipelineState();
   }, [projectId, fetchPipelines, clearPipelineState]);
 
-  // Auto-refresh running pipelines -- use scalar deps to avoid interval churn
+  // Auto-refresh running pipelines (visibility-aware: pauses when tab hidden)
   const activePipelineId = activePipeline?.id ?? null;
   const activePipelineStatus = activePipeline?.status ?? null;
-  useEffect(() => {
-    if (!projectId || !activePipelineId) return;
-    if (activePipelineStatus !== 'running' && activePipelineStatus !== 'pending') return;
+  const isRunning = activePipelineStatus === 'running' || activePipelineStatus === 'pending';
 
-    const interval = setInterval(() => {
-      refreshPipeline(projectId, activePipelineId);
-    }, 5000);
+  const refreshActivePipeline = useCallback(() => {
+    if (projectId && activePipelineId) {
+      return refreshPipeline(projectId, activePipelineId);
+    }
+  }, [projectId, activePipelineId, refreshPipeline]);
 
-    return () => clearInterval(interval);
-  }, [projectId, activePipelineId, activePipelineStatus, refreshPipeline]);
+  usePolling(refreshActivePipeline, {
+    ...POLLING_CONFIG.pipelineRefresh,
+    enabled: !!projectId && !!activePipelineId && isRunning,
+  });
 
   if (!projectId) {
     return (

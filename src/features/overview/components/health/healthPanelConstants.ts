@@ -25,5 +25,5 @@ export const SKELETON_SECTIONS = [
   { id: 'agents', label: 'Agents' },
   { id: 'cloud', label: 'Cloud Deployment' },
   { id: 'account', label: 'Account' },
-  { id: 'subscriptions', label: 'Subscription Health' },
+  ...(import.meta.env.DEV ? [{ id: 'subscriptions', label: 'Subscription Health', devOnly: true }] : []),
 ];

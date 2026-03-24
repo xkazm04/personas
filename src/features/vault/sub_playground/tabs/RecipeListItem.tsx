@@ -1,5 +1,4 @@
 import { BookOpen, Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 
@@ -60,14 +59,9 @@ export function RecipeListItem({
         </button>
       </div>
 
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {isExpanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-4 pb-3 pt-0 border-t border-border/30 space-y-2">
               <div>
@@ -79,9 +73,8 @@ export function RecipeListItem({
                 <span>Updated: {new Date(recipe.updated_at).toLocaleDateString()}</span>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

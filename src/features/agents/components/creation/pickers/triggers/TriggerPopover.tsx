@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { Clock, Hand, Webhook, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import type { TriggerPreset } from '../../steps/builder/types';
 import { TRIGGER_PRESETS } from '../../steps/builder/types';
 
@@ -48,14 +47,9 @@ export function TriggerPopover({
         <Icon className="w-3.5 h-3.5" />
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.1 }}
-            className="absolute z-50 left-0 top-full mt-1 bg-background border border-primary/20 rounded-xl shadow-elevation-3 p-2 min-w-[180px]"
+      {open && (
+          <div
+            className="animate-fade-slide-in absolute z-50 left-0 top-full mt-1 bg-background border border-primary/20 rounded-xl shadow-elevation-3 p-2 min-w-[180px]"
           >
             <p className="text-sm font-medium text-muted-foreground/60 uppercase tracking-wider px-1.5 mb-1">
               Trigger
@@ -95,9 +89,8 @@ export function TriggerPopover({
                 Clear override
               </button>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

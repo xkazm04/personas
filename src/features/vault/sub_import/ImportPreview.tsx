@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { ArrowLeft, AlertTriangle, Import, RefreshCw } from 'lucide-react';
 import {
   IMPORT_SOURCES,
@@ -45,11 +44,8 @@ export function ImportPreview({
   const [showSync, setShowSync] = useState(!!syncConfig);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+    <div
+      className="animate-fade-slide-in space-y-4"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -211,6 +207,6 @@ export function ImportPreview({
           Import {selectedCount} Secret{selectedCount !== 1 ? 's' : ''}
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -172,6 +172,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   lemonsqueezy:       { label: 'Lemon Squeezy',      color: '#FFC233', iconUrl: '/icons/connectors/lemonsqueezy.svg',                 Icon: ShoppingBag },
 
   // -- Finance & Payments ----------------------------------------
+  alpha_vantage:      { label: 'Alpha Vantage',      color: '#222832', iconUrl: '/icons/connectors/alpha-vantage.svg',                 Icon: BarChart3 },
   stripe:             { label: 'Stripe',             color: '#635BFF', iconUrl: 'https://cdn.simpleicons.org/stripe/635BFF',           Icon: CreditCard },
   paddle:             { label: 'Paddle',             color: '#FDDD35', iconUrl: 'https://cdn.simpleicons.org/paddle/FDDD35',           Icon: CreditCard },
   quickbooks:         { label: 'QuickBooks',         color: '#2CA01C', iconUrl: 'https://cdn.simpleicons.org/quickbooks/2CA01C',       Icon: Calculator },

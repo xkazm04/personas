@@ -5,6 +5,7 @@ import {
   CliOutputSchema,
   ExecutionStatusSchema,
 } from '@/lib/validation/eventPayloads';
+import type { EventPayloadMap } from '@/lib/eventRegistry';
 
 export type CliRunPhase = 'idle' | 'running' | 'completed' | 'failed';
 
@@ -14,8 +15,8 @@ const MAX_STREAM_LINES = 5000;
 const MAX_STREAM_LINE_LENGTH = 4096;
 
 interface UseCorrelatedCliStreamOptions {
-  outputEvent: string;
-  statusEvent: string;
+  outputEvent: keyof EventPayloadMap | string;
+  statusEvent: keyof EventPayloadMap | string;
   idField: string;
   onFailed?: (errorMessage: string) => void;
   /** Called for every correlated output line (after dedup). */

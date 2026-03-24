@@ -11,6 +11,9 @@ import { compareValues } from './deploymentTypes';
 import { SummaryCard } from './DeploymentSubComponents';
 import { DeploymentTable } from './DeploymentTable';
 import { DeploymentFilters } from './DeploymentFilters';
+import { BulkActionsToolbar } from './BulkActionsToolbar';
+import { useDeploymentHealth } from '../hooks/useDeploymentHealth';
+import { useDeploymentTest } from '../hooks/useDeploymentTest';
 
 export function UnifiedDeploymentDashboard() {
   const personas = useAgentStore((s) => s.personas);
@@ -25,6 +28,9 @@ export function UnifiedDeploymentDashboard() {
   const cloudPauseDeploy = useSystemStore((s) => s.cloudPauseDeploy);
   const cloudResumeDeploy = useSystemStore((s) => s.cloudResumeDeploy);
   const cloudRemoveDeploy = useSystemStore((s) => s.cloudRemoveDeploy);
+  const cloudBulkPause = useSystemStore((s) => s.cloudBulkPause);
+  const cloudBulkResume = useSystemStore((s) => s.cloudBulkResume);
+  const cloudBulkRemove = useSystemStore((s) => s.cloudBulkRemove);
   const gitlabFetchAgents = useSystemStore((s) => s.gitlabFetchAgents);
   const gitlabUndeployAgent = useSystemStore((s) => s.gitlabUndeployAgent);
 
@@ -35,6 +41,7 @@ export function UnifiedDeploymentDashboard() {
   const [statusFilter, setStatusFilter] = useState<DeployStatus | 'all'>('all');
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (cloudConfig?.is_connected) cloudFetchDeployments().catch(silentCatch("DeploymentDashboard:fetchCloudDeployments"));
@@ -73,6 +80,9 @@ export function UnifiedDeploymentDashboard() {
     return rows;
   }, [cloudDeployments, gitlabAgents, cloudBaseUrl, personaName, gitlabSelectedProjectId]);
 
+  const { healthMap } = useDeploymentHealth(unified);
+  const { tests, runTest, dismissResult } = useDeploymentTest();
+
   const displayRows = useMemo(() => {
     let rows = unified;
     if (search.trim()) {
@@ -105,6 +115,30 @@ export function UnifiedDeploymentDashboard() {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else { setSortKey(key); setSortDir('desc'); }
   };
+
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleToggleSelectAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      const allSelected = displayRows.every((r) => prev.has(r.id));
+      if (allSelected) return new Set();
+      return new Set(displayRows.map((r) => r.id));
+    });
+  }, [displayRows]);
+
+  const handleClearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+  const selectedRows = useMemo(
+    () => displayRows.filter((r) => selectedIds.has(r.id)),
+    [displayRows, selectedIds],
+  );
 
   const totalCloud = unified.filter((r) => r.target === 'cloud').length;
   const totalGitlab = unified.filter((r) => r.target === 'gitlab').length;
@@ -179,9 +213,25 @@ export function UnifiedDeploymentDashboard() {
             handleAction={handleAction}
             cloudPauseDeploy={cloudPauseDeploy} cloudResumeDeploy={cloudResumeDeploy}
             cloudRemoveDeploy={cloudRemoveDeploy} gitlabUndeployAgent={gitlabUndeployAgent}
+            healthMap={healthMap}
+            testStates={tests} onTest={runTest} onDismissTest={dismissResult}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onToggleSelectAll={handleToggleSelectAll}
           />
         )}
       </div>
+
+      {/* Bulk actions toolbar */}
+      {selectedRows.length >= 2 && (
+        <BulkActionsToolbar
+          selectedRows={selectedRows}
+          onClearSelection={handleClearSelection}
+          cloudBulkPause={cloudBulkPause}
+          cloudBulkResume={cloudBulkResume}
+          cloudBulkRemove={cloudBulkRemove}
+        />
+      )}
 
       {/* Footer stats */}
       {displayRows.length > 0 && (

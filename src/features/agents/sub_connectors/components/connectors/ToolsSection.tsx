@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Wrench, ChevronDown, ChevronRight, Play } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import { ToolRunnerPanel } from '@/features/agents/sub_tool_runner';
 
@@ -40,14 +39,9 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
         )}
       </button>
 
-      <AnimatePresence>
-        {toolsExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {toolsExpanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="border-t border-primary/10 px-3.5 py-3 space-y-3">
               {tools.length > 0 ? (
@@ -81,19 +75,13 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                         {showRunner ? 'Hide Tool Runner' : `Try Tools (${invocableTools.length})`}
                       </button>
 
-                      <AnimatePresence>
-                        {showRunner && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.15 }}
-                            className="overflow-hidden"
+                      {showRunner && (
+                          <div
+                            className="animate-fade-slide-in overflow-hidden"
                           >
                             <ToolRunnerPanel tools={invocableTools} personaId={personaId} />
-                          </motion.div>
+                          </div>
                         )}
-                      </AnimatePresence>
                     </>
                   )}
                 </>
@@ -101,9 +89,8 @@ export function ToolsSection({ tools, personaId }: ToolsSectionProps) {
                 <p className="text-sm text-muted-foreground/60">No tools configured.</p>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

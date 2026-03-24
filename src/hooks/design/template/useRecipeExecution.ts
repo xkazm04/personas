@@ -1,5 +1,6 @@
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { startRecipeExecution, cancelRecipeExecution } from '@/api/templates/recipes';
+import { EventName } from '@/lib/eventRegistry';
 
 // -- Types -------------------------------------------------------
 
@@ -14,12 +15,13 @@ interface RecipeExecutionOutput {
 export function useRecipeExecution() {
   const task = useAiArtifactTask<[string, Record<string, unknown>], RecipeExecutionOutput>({
     progressEvent: 'recipe-execution-progress',
-    statusEvent: 'recipe-execution-status',
+    statusEvent: EventName.RECIPE_EXECUTION_STATUS,
     runningPhase: 'executing',
     completedPhase: 'done',
     startFn: startRecipeExecution,
     cancelFn: cancelRecipeExecution,
     errorMessage: 'Failed to execute recipe',
+    traceOperation: 'recipe_execution',
   });
 
   return {

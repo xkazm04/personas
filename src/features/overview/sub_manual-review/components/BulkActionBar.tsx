@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, AlertTriangle } from 'lucide-react';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
@@ -20,14 +19,10 @@ export function BulkActionBar({
   onDeselect,
 }: BulkActionBarProps) {
   return (
-    <AnimatePresence>
+    <>
       {activeSelectionCount > 0 && (
-        <motion.div
-          initial={{ y: 60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 60, opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex-shrink-0 border-t border-primary/15 bg-secondary/40 backdrop-blur-sm px-4 py-3"
+        <div
+          className="animate-fade-slide-in flex-shrink-0 border-t border-primary/15 bg-secondary/40 backdrop-blur-sm px-4 py-3"
         >
           {confirmAction ? (
             <div className="flex items-center justify-between">
@@ -90,8 +85,8 @@ export function BulkActionBar({
               </div>
             </div>
           )}
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

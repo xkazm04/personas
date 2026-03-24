@@ -20,6 +20,13 @@ export interface BundleResourcePreview {
   conflict_name: string | null;
 }
 
+export interface NetworkAccessScope {
+  level: 'none' | 'restricted' | 'unrestricted';
+  domains: string[];
+  tool_integrations: string[];
+  api_endpoints: string[];
+}
+
 export interface BundleImportPreview {
   preview_id: string;
   signer_peer_id: string;
@@ -27,6 +34,7 @@ export interface BundleImportPreview {
   signature_valid: boolean;
   signer_trusted: boolean;
   resources: BundleResourcePreview[];
+  network_scope: NetworkAccessScope;
   bundle_hash: string;
   created_at: string;
 }
@@ -55,11 +63,25 @@ export interface BundleVerification {
 }
 
 // ============================================================================
+// Types (clipboard)
+// ============================================================================
+
+export interface ClipboardExportResult {
+  base64: string;
+  bundle_hash: string;
+  resource_count: number;
+  byte_size: number;
+}
+
+// ============================================================================
 // Export
 // ============================================================================
 
 export const exportPersonaBundle = (resourceIds: string[], savePath: string) =>
   invoke<BundleExportResult>("export_persona_bundle", { resourceIds, savePath });
+
+export const exportBundleToClipboard = (resourceIds: string[]) =>
+  invoke<ClipboardExportResult>("export_bundle_to_clipboard", { resourceIds });
 
 // ============================================================================
 // Import
@@ -68,8 +90,14 @@ export const exportPersonaBundle = (resourceIds: string[], savePath: string) =>
 export const previewBundleImport = (filePath: string) =>
   invoke<BundleImportPreview>("preview_bundle_import", { filePath });
 
+export const previewBundleFromClipboard = (base64Data: string) =>
+  invoke<BundleImportPreview>("preview_bundle_from_clipboard", { base64Data });
+
 export const applyBundleImport = (filePath: string, options: BundleImportOptions) =>
   invoke<BundleImportResult>("apply_bundle_import", { filePath, options });
+
+export const applyBundleFromClipboard = (base64Data: string, options: BundleImportOptions) =>
+  invoke<BundleImportResult>("apply_bundle_from_clipboard", { base64Data, options });
 
 // ============================================================================
 // Verify
@@ -77,3 +105,37 @@ export const applyBundleImport = (filePath: string, options: BundleImportOptions
 
 export const verifyBundle = (filePath: string) =>
   invoke<BundleVerification>("verify_bundle", { filePath });
+
+// ============================================================================
+// Share Link
+// ============================================================================
+
+export interface ShareLinkResult {
+  url: string;
+  deep_link: string;
+  token: string;
+  resource_count: number;
+  byte_size: number;
+  expires_at: string;
+}
+
+export interface ResolvedShareLink {
+  http_url: string;
+  token: string;
+  peer_id: string;
+  bundle_hash: string;
+  resource_count: number;
+  host: string;
+}
+
+export const createShareLink = (resourceIds: string[]) =>
+  invoke<ShareLinkResult>("create_share_link", { resourceIds });
+
+export const previewShareLink = (url: string) =>
+  invoke<BundleImportPreview>("preview_share_link", { url });
+
+export const importFromShareLink = (url: string, options: BundleImportOptions) =>
+  invoke<BundleImportResult>("import_from_share_link", { url, options });
+
+export const resolveShareDeepLink = (url: string) =>
+  invoke<ResolvedShareLink>("resolve_share_deep_link", { url });

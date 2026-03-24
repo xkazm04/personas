@@ -20,7 +20,7 @@ function getSnapshot(): boolean {
 }
 
 /**
- * Reactive hook that returns true when mobile layout should be shown.
+ * Reactive hook that returns true when mobile should be shown.
  * In dev mode, responds to Ctrl+Shift+M toggle. In production, returns
  * the build-time constant.
  */

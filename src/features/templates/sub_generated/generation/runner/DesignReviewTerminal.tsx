@@ -2,7 +2,6 @@
  * Terminal output and result summary for DesignReviewRunner.
  */
 import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 interface TestRunResult {
@@ -66,15 +65,9 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
           <div className="p-3">
             {lines.map((line, index) => {
               const shouldAnimate = index >= animateFromRef.current;
-              const Wrapper = shouldAnimate ? motion.div : 'div';
-              const animProps = shouldAnimate ? {
-                initial: { opacity: 0, x: -4 },
-                animate: { opacity: 1, x: 0 },
-                transition: { delay: (index - animateFromRef.current) * 0.02, duration: 0.15 },
-              } : {};
 
               return (
-                <Wrapper key={index} className="flex gap-2 py-px" {...animProps}>
+                <div key={index} className={`flex gap-2 py-px${shouldAnimate ? ' animate-fade-in' : ''}`}>
                   <span className="text-muted-foreground/20 select-none flex-shrink-0 w-8 text-right">
                     {(index + 1).toString().padStart(3, ' ')}
                   </span>
@@ -87,7 +80,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
                     line.includes('[TestRunner]') ? 'text-violet-400/80' :
                     'text-blue-400/80'
                   }`}>{line}</span>
-                </Wrapper>
+                </div>
               );
             })}
             {isRunning && (

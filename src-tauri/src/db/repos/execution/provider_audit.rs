@@ -122,6 +122,47 @@ pub struct ProviderUsageStats {
     pub failover_count: i64,
 }
 
+/// A single day's aggregated usage for one engine_kind.
+#[derive(Debug, Clone, serde::Serialize, TS)]
+#[ts(export)]
+pub struct ProviderUsageTimeseries {
+    pub engine_kind: String,
+    pub date: String,
+    pub execution_count: i64,
+    pub total_cost_usd: f64,
+    pub avg_duration_ms: f64,
+}
+
+/// Get daily provider usage timeseries for the last N days.
+pub fn get_usage_timeseries(pool: &DbPool, days: i64) -> Result<Vec<ProviderUsageTimeseries>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT engine_kind,
+                DATE(created_at) as day,
+                COUNT(*) as execution_count,
+                COALESCE(SUM(cost_usd), 0) as total_cost_usd,
+                COALESCE(AVG(duration_ms), 0) as avg_duration_ms
+         FROM provider_audit_log
+         WHERE created_at >= DATE('now', ?1)
+         GROUP BY engine_kind, DATE(created_at)
+         ORDER BY engine_kind, day ASC",
+    )?;
+    let offset_str = format!("-{} days", days);
+    let rows = stmt
+        .query_map(params![offset_str], |row| {
+            Ok(ProviderUsageTimeseries {
+                engine_kind: row.get(0)?,
+                date: row.get(1)?,
+                execution_count: row.get(2)?,
+                total_cost_usd: row.get(3)?,
+                avg_duration_ms: row.get(4)?,
+            })
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+    Ok(rows)
+}
+
 pub fn get_usage_stats(pool: &DbPool) -> Result<Vec<ProviderUsageStats>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(

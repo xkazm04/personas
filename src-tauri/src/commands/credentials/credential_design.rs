@@ -18,12 +18,13 @@ use super::ai_artifact_flow::{
     AiArtifactMessages, AiArtifactParams, run_ai_artifact_task, run_claude_prompt,
 };
 use super::shared::build_credential_task_cli_args;
+use crate::engine::event_registry::event_name;
 
 // -- Credential design messages ----------------------------------
 
 const DESIGN_MESSAGES: AiArtifactMessages = AiArtifactMessages {
-    status_event: "credential-design-status",
-    progress_event: "credential-design-output",
+    status_event: event_name::CREDENTIAL_DESIGN_STATUS,
+    progress_event: event_name::CREDENTIAL_DESIGN_OUTPUT,
     id_field: "design_id",
     initial_status: "analyzing",
     init_progress: "Analyzing service requirements...",

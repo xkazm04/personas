@@ -147,6 +147,37 @@ export const en = {
   },
 
   // -------------------------------------------------------------------
+  //  CHROME -- window frame, footer bar, update banner, skip links
+  // -------------------------------------------------------------------
+  chrome: {
+    // App title shown in title bar
+    app_title: "Personas",
+    // Accessibility: skip-to-content link
+    skip_to_content: "Skip to content",
+    // Title bar window controls (tooltips)
+    minimize: "Minimize",
+    restore: "Restore",
+    maximize: "Maximize",
+    close_window: "Close",
+    // Update banner
+    // {version} = the new version number
+    update_available: "Update available: v{version}",
+    install_and_restart: "Install & Restart",
+    installing: "Installing...",
+    // Footer bar
+    expand_sidebar: "Expand sidebar",
+    collapse_sidebar: "Collapse sidebar",
+    network_settings: "Network settings",
+    dark: "Dark",
+    light: "Light",
+    // Auth (footer + standalone)
+    sign_in_google: "Sign in with Google",
+    signed_in: "Signed in",
+    sign_out: "Sign out",
+    offline: "Offline",
+  },
+
+  // -------------------------------------------------------------------
   //  SIDEBAR -- main app navigation (left panel)
   // -------------------------------------------------------------------
   sidebar: {

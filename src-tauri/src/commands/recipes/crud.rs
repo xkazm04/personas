@@ -5,6 +5,7 @@ use tauri::{Emitter, State};
 
 use crate::commands::credentials::ai_artifact_flow::{AiArtifactParams, run_ai_artifact_task};
 use crate::commands::credentials::shared::build_credential_task_cli_args;
+use crate::engine::event_registry::event_name;
 use crate::db::models::{
     CreatePersonaRecipeLinkInput, CreateRecipeInput, PersonaRecipeLink,
     RecipeDefinition, RecipeExecutionInput, RecipeExecutionResult, RecipeVersion,
@@ -213,7 +214,7 @@ pub async fn cancel_recipe_execution(
 
     if let Some(ref id) = cancelled_id {
         tracing::info!(cancelled_id = %id, "Cancelled recipe execution");
-        let _ = app.emit("recipe-execution-status", json!({
+        let _ = app.emit(event_name::RECIPE_EXECUTION_STATUS, json!({
             "execution_id": id,
             "status": "cancelled",
             "result": null,
@@ -293,7 +294,7 @@ pub async fn cancel_recipe_generation(
 
     if let Some(ref id) = cancelled_id {
         tracing::info!(cancelled_id = %id, "Cancelled recipe generation");
-        let _ = app.emit("recipe-generation-status", json!({
+        let _ = app.emit(event_name::RECIPE_GENERATION_STATUS, json!({
             "generation_id": id,
             "status": "cancelled",
             "result": null,
@@ -424,7 +425,7 @@ pub async fn cancel_recipe_versioning(
 
     if let Some(ref id) = cancelled_id {
         tracing::info!(cancelled_id = %id, "Cancelled recipe versioning");
-        let _ = app.emit("recipe-versioning-status", json!({
+        let _ = app.emit(event_name::RECIPE_VERSIONING_STATUS, json!({
             "versioning_id": id,
             "status": "cancelled",
             "result": null,

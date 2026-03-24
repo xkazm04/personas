@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import {
   CheckCircle2,
   Cloud,
@@ -51,12 +50,10 @@ export function ForagingResultCard({
   const disabled = credential.already_imported || isImported || isImporting;
 
   return (
-    <motion.button
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
+    <button
       onClick={disabled ? undefined : onToggle}
       disabled={disabled}
-      className={`w-full text-left rounded-xl border p-3 transition-all ${
+      className={`animate-fade-slide-in w-full text-left rounded-xl border p-3 transition-all ${
         isImported
           ? "border-emerald-500/30 bg-emerald-500/5 opacity-70"
           : credential.already_imported
@@ -135,6 +132,6 @@ export function ForagingResultCard({
           </div>
         </div>
       </div>
-    </motion.button>
+    </button>
   );
 }

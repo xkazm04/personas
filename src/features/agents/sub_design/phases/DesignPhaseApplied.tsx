@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, AlertTriangle, RotateCcw } from 'lucide-react';
-import { motion } from 'framer-motion';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { FailedOperation } from '@/hooks/design/credential/applyDesignResult';
 import { DesignPhaseAppliedDetails } from './DesignPhaseAppliedDetails';
@@ -24,56 +23,40 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
   }, []);
 
   return (
-    <motion.div
+    <div
       key="applied"
-      initial={{ opacity: 0, y: -14, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-      className="flex flex-col items-center py-8 gap-6"
+      className="animate-fade-slide-in flex flex-col items-center py-8 gap-6"
       ref={containerRef}
       tabIndex={-1}
     >
       {/* Animated success checkmark */}
       <div className="relative">
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
-          className={`w-14 h-14 rounded-full flex items-center justify-center ${
+        <div
+          className={`animate-fade-slide-in w-14 h-14 rounded-full flex items-center justify-center ${
             hasWarnings
               ? 'bg-amber-500/15 ring-2 ring-amber-500/30'
               : 'bg-emerald-500/15 ring-2 ring-emerald-500/30'
           }`}
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.3 }}
+          <div className="animate-fade-scale-in"
           >
             {hasWarnings
               ? <AlertTriangle className="w-6 h-6 text-amber-400" />
               : <Check className="w-6 h-6 text-emerald-400" strokeWidth={3} />
             }
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
         {/* Expanding pulse ring on success */}
         {!hasWarnings && (
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0.5 }}
-            animate={{ scale: 1.8, opacity: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
-            className="absolute inset-0 rounded-full ring-2 ring-emerald-500/40"
+          <div
+            className="animate-fade-slide-in absolute inset-0 rounded-full ring-2 ring-emerald-500/40"
           />
         )}
       </div>
 
       {/* Title + summary */}
-      <motion.div
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="text-center"
+      <div
+        className="animate-fade-slide-in text-center"
       >
         <h3 className={`text-base font-semibold ${hasWarnings ? 'text-amber-400' : 'text-emerald-400'}`}>
           {hasWarnings ? `Applied with ${warnings.length} warning${warnings.length !== 1 ? 's' : ''}` : 'Agent configured!'}
@@ -83,15 +66,12 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
             {result.summary}
           </p>
         )}
-      </motion.div>
+      </div>
 
       {/* Failed operations banner */}
       {hasFailures && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 }}
-          className="w-full max-w-sm px-3 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
+        <div
+          className="animate-fade-slide-in w-full max-w-sm px-3 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20"
         >
           <p className="text-xs font-medium text-amber-400 mb-2">
             {failedOperations.length} operation{failedOperations.length !== 1 ? 's' : ''} failed
@@ -120,16 +100,13 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
               {retrying ? 'Retrying...' : `Retry ${failedOperations.length} failed`}
             </button>
           )}
-        </motion.div>
+        </div>
       )}
 
       {/* Generic warnings (non-structured) */}
       {!hasFailures && warnings.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 }}
-          className="w-full max-w-sm px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
+        <div
+          className="animate-fade-slide-in w-full max-w-sm px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
         >
           <ul className="space-y-1">
             {warnings.map((w, i) => (
@@ -139,22 +116,19 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
               </li>
             ))}
           </ul>
-        </motion.div>
+        </div>
       )}
 
       {/* Stats + Next steps (extracted component) */}
       <DesignPhaseAppliedDetails result={result} onReset={onReset} />
 
       {/* Subtle close link */}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
+      <button
         onClick={onReset}
-        className="mt-1 text-sm text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+        className="animate-fade-slide-in mt-1 text-sm text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
       >
         Close
-      </motion.button>
-    </motion.div>
+      </button>
+    </div>
   );
 }

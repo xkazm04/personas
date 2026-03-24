@@ -1,7 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
-import { useAuthStore } from "@/stores/authStore";
-import { useToastStore } from "@/stores/toastStore";
+import { storeBus, AccessorKey } from "@/lib/storeBus";
 import { reportError } from "../../storeTypes";
 import { translateCloudError, isAuthError } from "./deployTarget";
 import { emitDeploymentEvent } from "@/hooks/realtime/emitDeploymentEvent";
@@ -31,6 +30,17 @@ import {
   type CloudDeployment,
 } from "@/api/system/cloud";
 
+export interface CloudReconnectState {
+  /** Whether auto-reconnection is in progress. */
+  isReconnecting: boolean;
+  /** Number of consecutive reconnection attempts so far. */
+  attempt: number;
+  /** Timestamp (ms) when the next retry will fire, or null if idle. */
+  nextRetryAt: number | null;
+}
+
+export const CLOUD_BACKOFF_STEPS = [5_000, 10_000, 20_000, 60_000] as const;
+
 export interface CloudSlice {
   // State
   cloudConfig: CloudConfig | null;
@@ -40,6 +50,10 @@ export interface CloudSlice {
   cloudOAuthStatus: CloudOAuthStatusResponse | null;
   cloudPendingOAuthState: string | null;
   cloudError: string | null;
+  /** Last measured health-check round-trip latency in milliseconds, or null when unknown. */
+  cloudConnectionLatencyMs: number | null;
+  /** Auto-reconnection state when cloud connection drops. */
+  cloudReconnectState: CloudReconnectState;
   // Deployments
   cloudDeployments: CloudDeployment[];
   cloudIsDeploying: boolean;
@@ -59,12 +73,24 @@ export interface CloudSlice {
   cloudRefreshOAuth: () => Promise<void>;
   cloudDisconnectOAuth: () => Promise<void>;
   cloudClearError: () => void;
+  /** Reset reconnect state (called when reconnection succeeds or user manually acts). */
+  cloudClearReconnect: () => void;
   // Deployment actions
   cloudFetchDeployments: () => Promise<void>;
   cloudDeploy: (personaId: string, maxMonthlyBudgetUsd?: number) => Promise<CloudDeployment>;
   cloudPauseDeploy: (deploymentId: string) => Promise<void>;
   cloudResumeDeploy: (deploymentId: string) => Promise<void>;
   cloudRemoveDeploy: (deploymentId: string) => Promise<void>;
+  // Bulk deployment actions
+  cloudBulkPause: (deploymentIds: string[]) => Promise<BulkActionResult[]>;
+  cloudBulkResume: (deploymentIds: string[]) => Promise<BulkActionResult[]>;
+  cloudBulkRemove: (deploymentIds: string[]) => Promise<BulkActionResult[]>;
+}
+
+export interface BulkActionResult {
+  deploymentId: string;
+  status: 'fulfilled' | 'rejected';
+  error?: string;
 }
 
 const PENDING_OAUTH_TIMEOUT_MS = 10 * 60 * 1000;
@@ -77,11 +103,15 @@ function clearPendingOAuthTimeout() {
   }
 }
 
+const IDLE_RECONNECT: CloudReconnectState = { isReconnecting: false, attempt: 0, nextRetryAt: null };
+
 export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (set, get) => ({
   cloudConfig: null,
   cloudIsConnecting: false,
   cloudStatus: null,
   cloudIsLoadingStatus: false,
+  cloudConnectionLatencyMs: null,
+  cloudReconnectState: IDLE_RECONNECT,
   cloudDeployments: [],
   cloudIsDeploying: false,
   cloudBaseUrl: null,
@@ -91,7 +121,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
 
   cloudInitialize: async () => {
     // Skip cloud initialization if user is not authenticated
-    if (!useAuthStore.getState().isAuthenticated) return;
+    if (!storeBus.get<boolean>(AccessorKey.AUTH_IS_AUTHENTICATED)) return;
 
     try {
       const config = await cloudGetConfig();
@@ -101,9 +131,9 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       // attempt to reconnect automatically so users don't have to re-enter creds.
       if (config && !config.is_connected) {
         try {
-          await cloudReconnectFromKeyring();
+          const latencyMs = await cloudReconnectFromKeyring();
           const refreshed = await cloudGetConfig();
-          set({ cloudConfig: refreshed });
+          set({ cloudConfig: refreshed, cloudConnectionLatencyMs: latencyMs || null });
         } catch (err) {
           if (isAuthError(err)) {
             set({ cloudError: "Credentials expired or revoked. Please reconnect to the cloud orchestrator." });
@@ -119,9 +149,9 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
   cloudConnectAction: async (url: string, apiKey: string) => {
     set({ cloudIsConnecting: true, cloudError: null });
     try {
-      await cloudConnect(url, apiKey);
+      const latencyMs = await cloudConnect(url, apiKey);
       const config = await cloudGetConfig();
-      set({ cloudConfig: config, cloudIsConnecting: false });
+      set({ cloudConfig: config, cloudIsConnecting: false, cloudConnectionLatencyMs: latencyMs, cloudReconnectState: IDLE_RECONNECT });
     } catch (err) {
       set({ cloudIsConnecting: false, cloudError: translateCloudError(err) });
       throw err;
@@ -138,6 +168,8 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
         cloudOAuthStatus: null,
         cloudPendingOAuthState: null,
         cloudError: null,
+        cloudConnectionLatencyMs: null,
+        cloudReconnectState: IDLE_RECONNECT,
         cloudDeployments: [],
         cloudBaseUrl: null,
       });
@@ -180,7 +212,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       set({ cloudPendingOAuthState: result.state });
       pendingOAuthTimeoutRef = setTimeout(() => {
         set({ cloudPendingOAuthState: null, cloudError: "OAuth authorization timed out. Please try again." });
-        useToastStore.getState().addToast("OAuth authorization timed out -- please retry.", "error");
+        storeBus.emit('toast', { message: "OAuth authorization timed out -- please retry.", type: "error" });
       }, PENDING_OAUTH_TIMEOUT_MS);
       return result;
     } catch (err) {
@@ -227,6 +259,10 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
 
   cloudClearError: () => {
     set({ cloudError: null });
+  },
+
+  cloudClearReconnect: () => {
+    set({ cloudReconnectState: IDLE_RECONNECT });
   },
 
   // --- Deployment actions ---
@@ -304,5 +340,73 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
     } catch (err) {
       reportError(err, "Failed to remove deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
     }
+  },
+
+  // --- Bulk deployment actions ---
+
+  cloudBulkPause: async (deploymentIds: string[]) => {
+    const results = await Promise.allSettled(
+      deploymentIds.map((id) => cloudPauseDeployment(id).then((updated) => ({ id, updated })))
+    );
+    const updates: Record<string, CloudDeployment> = {};
+    const bulkResults: BulkActionResult[] = results.map((r, i) => {
+      const deploymentId = deploymentIds[i]!;
+      if (r.status === 'fulfilled') {
+        updates[r.value.id] = r.value.updated;
+        emitDeploymentEvent({ eventType: 'deploy_paused', target: 'cloud', detail: deploymentId });
+        return { deploymentId, status: 'fulfilled' as const };
+      }
+      return { deploymentId, status: 'rejected' as const, error: translateCloudError(r.reason) };
+    });
+    if (Object.keys(updates).length > 0) {
+      set((state) => ({
+        cloudDeployments: state.cloudDeployments.map((d) => updates[d.id] ?? d),
+      }));
+    }
+    return bulkResults;
+  },
+
+  cloudBulkResume: async (deploymentIds: string[]) => {
+    const results = await Promise.allSettled(
+      deploymentIds.map((id) => cloudResumeDeployment(id).then((updated) => ({ id, updated })))
+    );
+    const updates: Record<string, CloudDeployment> = {};
+    const bulkResults: BulkActionResult[] = results.map((r, i) => {
+      const deploymentId = deploymentIds[i]!;
+      if (r.status === 'fulfilled') {
+        updates[r.value.id] = r.value.updated;
+        emitDeploymentEvent({ eventType: 'deploy_resumed', target: 'cloud', detail: deploymentId });
+        return { deploymentId, status: 'fulfilled' as const };
+      }
+      return { deploymentId, status: 'rejected' as const, error: translateCloudError(r.reason) };
+    });
+    if (Object.keys(updates).length > 0) {
+      set((state) => ({
+        cloudDeployments: state.cloudDeployments.map((d) => updates[d.id] ?? d),
+      }));
+    }
+    return bulkResults;
+  },
+
+  cloudBulkRemove: async (deploymentIds: string[]) => {
+    const results = await Promise.allSettled(
+      deploymentIds.map((id) => cloudUndeploy(id).then(() => id))
+    );
+    const removedIds = new Set<string>();
+    const bulkResults: BulkActionResult[] = results.map((r, i) => {
+      const deploymentId = deploymentIds[i]!;
+      if (r.status === 'fulfilled') {
+        removedIds.add(deploymentId);
+        emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'cloud', detail: deploymentId });
+        return { deploymentId, status: 'fulfilled' as const };
+      }
+      return { deploymentId, status: 'rejected' as const, error: translateCloudError(r.reason) };
+    });
+    if (removedIds.size > 0) {
+      set((state) => ({
+        cloudDeployments: state.cloudDeployments.filter((d) => !removedIds.has(d.id)),
+      }));
+    }
+    return bulkResults;
   },
 });

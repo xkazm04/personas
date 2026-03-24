@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { RefreshCw, Monitor } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useAuthStore } from '@/stores/authStore';
@@ -105,12 +104,17 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                   onSignIn={handleSignIn}
                   onShowOllama={() => setShowOllamaPopup(true)}
                   onShowLiteLLM={() => setShowLiteLLMPopup(true)}
+                  onMcpRegistered={runChecks}
                 />
               );
             })}
           </div>
 
-          {import.meta.env.DEV && <CrashLogsSection />}
+          {import.meta.env.DEV && (
+            <div className="rounded-xl border-2 border-amber-500/30 p-0.5">
+              <CrashLogsSection />
+            </div>
+          )}
 
           {hasIssues && !loading && (
             <p className="typo-body text-amber-400/80">
@@ -135,8 +139,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
             onNext={onNext}
           />
 
-          <AnimatePresence>
-            {showOllamaPopup && (
+          {showOllamaPopup && (
               <ConfigurationPopup
                 title="Ollama Cloud API Key"
                 subtitle="Optional \u2014 unlocks free cloud models (Qwen3 Coder, GLM-5, Kimi K2.5) for all agents."
@@ -148,10 +151,8 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                 onSaved={() => { setShowOllamaPopup(false); runChecks(); }}
               />
             )}
-          </AnimatePresence>
 
-          <AnimatePresence>
-            {showLiteLLMPopup && (
+          {showLiteLLMPopup && (
               <ConfigurationPopup
                 title="LiteLLM Proxy Configuration"
                 subtitle="Optional \u2014 route agents through your LiteLLM proxy for model management and cost tracking."
@@ -163,7 +164,6 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                 onSaved={() => { setShowLiteLLMPopup(false); runChecks(); }}
               />
             )}
-          </AnimatePresence>
         </div>
       </ContentBody>
     </ContentBox>

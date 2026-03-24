@@ -7,6 +7,7 @@ use crate::db::models::{
 };
 use crate::db::repos::communication::events as repo;
 use crate::db::repos::resources::triggers as trigger_repo;
+use crate::engine::event_registry::event_name;
 use crate::engine::rate_limiter::EVENT_SOURCE_WINDOW;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -51,7 +52,7 @@ pub fn publish_event(
     }
 
     let event = repo::publish(&state.db, input)?;
-    if let Err(e) = app.emit("event-bus", event.clone()) {
+    if let Err(e) = app.emit(event_name::EVENT_BUS, event.clone()) {
         tracing::warn!(event_id = %event.id, error = %e, "Failed to emit event-bus event to frontend");
     }
     Ok(event)
@@ -145,7 +146,7 @@ pub fn test_event_flow(
         use_case_id: None,
     };
     let event = repo::publish(&state.db, input)?;
-    if let Err(e) = app.emit("event-bus", event.clone()) {
+    if let Err(e) = app.emit(event_name::EVENT_BUS, event.clone()) {
         tracing::warn!(event_id = %event.id, error = %e, "Failed to emit test event-bus event to frontend");
     }
     Ok(event)
@@ -218,7 +219,7 @@ pub fn seed_mock_event(
         created_at: now,
     };
 
-    if let Err(e) = app.emit("event-bus", event.clone()) {
+    if let Err(e) = app.emit(event_name::EVENT_BUS, event.clone()) {
         tracing::warn!(error = %e, "Failed to emit mock event-bus event");
     }
 

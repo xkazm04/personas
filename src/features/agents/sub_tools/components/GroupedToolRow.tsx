@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { BarChart3, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ToolImpactPanel } from './ToolImpactPanel';
 import { ToolCheckbox } from './ToolCheckbox';
 import type { ToolDef } from './ToolCardItems';
@@ -69,19 +68,17 @@ export function GroupedToolRow({
             className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-sm text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-primary/5 transition-all flex-shrink-0"
             title={expanded ? 'Hide impact' : 'Show impact'}
           >
-            <motion.span animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-              <ChevronDown className="w-3 h-3" />
-            </motion.span>
+            <span>
+              <ChevronDown className="animate-fade-in w-3 h-3" />
+            </span>
           </button>
         )}
       </div>
-      <AnimatePresence>
-        {expanded && hasImpact && (
+      {expanded && hasImpact && (
           <div className="px-4" onClick={(e) => e.stopPropagation()}>
             <ToolImpactPanel impact={impactData} isAssigned={isAssigned} />
           </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
