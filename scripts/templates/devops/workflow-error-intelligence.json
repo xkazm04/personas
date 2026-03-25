@@ -717,14 +717,21 @@
         "type": "text",
         "default": "#ops-alerts",
         "context": "This channel receives real-time critical alerts, daily digests, and weekly reliability reports",
-        "connector_names": ["slack"],
+        "connector_names": [
+          "slack"
+        ],
         "category": "configuration"
       },
       {
         "id": "severity_threshold",
         "question": "What minimum severity level should trigger real-time Slack alerts?",
         "type": "select",
-        "options": ["critical", "high", "medium", "low"],
+        "options": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
         "default": "high",
         "context": "Lower thresholds mean more alerts. Start with 'high' and adjust based on alert volume.",
         "category": "configuration"
@@ -749,7 +756,11 @@
         "id": "recurring_threshold",
         "question": "How many occurrences of the same error in 1 hour triggers a 'recurring failure' pattern?",
         "type": "select",
-        "options": ["2", "3", "5"],
+        "options": [
+          "2",
+          "3",
+          "5"
+        ],
         "default": "3",
         "context": "Lower values catch issues faster but may generate more noise. 3 is recommended for most setups.",
         "category": "configuration"
@@ -758,11 +769,17 @@
         "id": "retention_days",
         "question": "How many days of error history should be retained?",
         "type": "select",
-        "options": ["30", "60", "90", "180"],
+        "options": [
+          "30",
+          "60",
+          "90",
+          "180"
+        ],
         "default": "90",
         "context": "Longer retention enables better trend analysis. 90 days provides good balance for weekly reporting.",
         "category": "configuration"
       }
     ]
-  }
+  },
+  "is_published": false
 }

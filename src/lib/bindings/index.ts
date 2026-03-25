@@ -127,7 +127,7 @@ export type { OAuthTokenMetric } from "./OAuthTokenMetric";
 export type { ObservabilityMetrics } from "./ObservabilityMetrics";
 export type { PartialMatchResult } from "./PartialMatchResult";
 export type { PersonaGenome } from "./PersonaGenome";
-export type { Persona } from "./Persona";
+export type { Persona, PersonaParameter } from "./Persona";
 export type { PersonaAutomation } from "./PersonaAutomation";
 export type { PersonaCostEntry } from "./PersonaCostEntry";
 export type { PersonaCredential } from "./PersonaCredential";

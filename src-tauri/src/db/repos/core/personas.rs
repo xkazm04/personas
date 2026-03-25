@@ -420,6 +420,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         trust_origin: row.get::<_, Option<String>>("trust_origin")?.unwrap_or_else(|| "builtin".to_string()),
         trust_verified_at: row.get::<_, Option<String>>("trust_verified_at").unwrap_or(None),
         trust_score: row.get::<_, Option<f64>>("trust_score")?.unwrap_or(0.0),
+        parameters: row.get::<_, Option<String>>("parameters").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -620,6 +621,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     push_field!(input.max_turns, "max_turns", sets, param_idx);
     push_field!(input.design_context, "design_context", sets, param_idx);
     push_field!(input.group_id, "group_id", sets, param_idx);
+    push_field!(input.parameters, "parameters", sets, param_idx);
 
     let sql = format!(
         "UPDATE personas SET {} WHERE id = ?{}",
@@ -648,6 +650,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
     if let Some(ref v) = input.max_turns { param_values.push(Box::new(*v)); }
     if let Some(ref v) = input.design_context { param_values.push(Box::new(v.clone())); }
     if let Some(ref v) = input.group_id { param_values.push(Box::new(v.clone())); }
+    if let Some(ref v) = input.parameters { param_values.push(Box::new(v.clone())); }
     param_values.push(Box::new(id.to_string()));
 
     let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();

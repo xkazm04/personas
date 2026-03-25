@@ -3070,6 +3070,17 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added idempotency_key column to persona_executions");
     }
 
+    // Add free parameters column to personas (adjustable without rebuild)
+    let has_parameters: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'parameters'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_parameters {
+        conn.execute_batch("ALTER TABLE personas ADD COLUMN parameters TEXT;")?;
+        tracing::info!("Added parameters column to personas");
+    }
+
     Ok(())
 }
 

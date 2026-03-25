@@ -8,14 +8,14 @@ import { type PersonaDraft, buildDraft } from '../libs/PersonaDraft';
 import { useEditorDirtyState, useEditorHistory, TabSaveError } from '../libs/EditorDocument';
 import { tabIdsToLabels } from '../libs/editorTabConstants';
 import { useEditorSave } from '../libs/useEditorSave';
-import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from './EditorBanners';
+import { UnsavedChangesBanner, CloudNudgeBanner } from './EditorBanners';
 // OnboardingBanner removed — setup stepper no longer shown
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
   ActivityTab, MatrixTab,
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
-  PersonaConnectorsTab, DesignTab, LabTab, HealthTab, ChatTab,
+  PersonaConnectorsTab, LabTab, ChatTab,
 } from './EditorLazyTabs';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
@@ -177,7 +177,6 @@ export function EditorBody() {
       />
 
       <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={connectorsMissing} />
-      <DesignNudgeBanner />
       <CloudNudgeBanner />
 
       <div className="flex-1 overflow-y-auto p-4">
@@ -197,8 +196,6 @@ export function EditorBody() {
               {editorTab === 'lab' && <LabTab />}
               {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
               {editorTab === 'chat' && <ChatTab />}
-              {editorTab === 'design' && <DesignTab />}
-              {editorTab === 'health' && <HealthTab />}
               {editorTab === 'settings' && (
                 <PersonaSettingsTab
                   draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}

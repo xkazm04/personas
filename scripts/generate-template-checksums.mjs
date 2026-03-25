@@ -56,9 +56,17 @@ function findJsonFiles(dir) {
 const files = findJsonFiles(TEMPLATES_DIR).sort();
 const checksums = {};
 
+let skippedUnpublished = 0;
 for (const filePath of files) {
   const raw = readFileSync(filePath, 'utf-8');
   const parsed = JSON.parse(raw);
+
+  // Skip templates with is_published === false (unpublished drafts)
+  if (parsed.is_published === false) {
+    skippedUnpublished++;
+    continue;
+  }
+
   const canonical = JSON.stringify(parsed);
   const rel = relative(TEMPLATES_DIR, filePath).replace(/\\/g, '/');
   checksums[rel] = computeContentHashSync(canonical);
@@ -81,7 +89,8 @@ outputLines.push('};');
 outputLines.push('');
 
 writeFileSync(OUTPUT_FILE, outputLines.join('\n'), 'utf-8');
-console.log(`Generated ${OUTPUT_FILE} with ${files.length} checksums`);
+const publishedCount = Object.keys(checksums).length;
+console.log(`Generated ${OUTPUT_FILE} with ${publishedCount} checksums (${skippedUnpublished} unpublished templates skipped)`);
 
 // -- Generate Rust backend manifest -------------------------------------------
 
@@ -200,4 +209,4 @@ rustLines.push('}');
 rustLines.push('');
 
 writeFileSync(RUST_OUTPUT_FILE, rustLines.join('\n'), 'utf-8');
-console.log(`Generated ${RUST_OUTPUT_FILE} with ${files.length} checksums (Rust backend)`);
+console.log(`Generated ${RUST_OUTPUT_FILE} with ${publishedCount} checksums (Rust backend, ${skippedUnpublished} unpublished skipped)`);

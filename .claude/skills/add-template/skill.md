@@ -147,6 +147,25 @@ This is the most critical section. Each sub-field must be detailed and technical
 
 ### 3c. Generate remaining payload fields
 
+- **suggested_parameters**: Array of free parameter definitions. Parameters are runtime-adjustable values (thresholds, caps, limits) that users can change without triggering a rebuild. Templates should define parameters for any numeric threshold, limit, or configurable value referenced in the instructions. Parameters are injected into prompts via `{{param.key_name}}` syntax.
+  ```json
+  [
+    {
+      "key": "parameter_key",
+      "label": "Display Label",
+      "type": "number|string|boolean|select",
+      "default_value": 100,
+      "value": 100,
+      "description": "What this parameter controls",
+      "unit": "$|%|ms|items",
+      "min": 0,
+      "max": 10000,
+      "options": ["option1", "option2"]
+    }
+  ]
+  ```
+  When generating instructions and prompt, reference parameters as `{{param.key}}` so they're substituted at runtime.
+
 - **suggested_tools**: Typically `["http_request", "file_read", "file_write"]`.
 
 - **suggested_triggers**: Array of trigger objects:
@@ -246,6 +265,7 @@ The JSON must be valid and properly formatted with 2-space indentation. The top-
     "suggested_connectors": [...],
     "suggested_notification_channels": [...],
     "suggested_event_subscriptions": [...],
+    "suggested_parameters": [...],
     "use_case_flows": [...]
   }
 }

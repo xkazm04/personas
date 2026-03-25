@@ -983,5 +983,6 @@
         "impact": "Determines currency formatting in reports and revenue calculations."
       }
     ]
-  }
+  },
+  "is_published": false
 }

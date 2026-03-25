@@ -641,6 +641,7 @@ export type CommandName =
   | "update_n8n_session"
   | "update_output_assertion"
   | "update_persona"
+  | "update_persona_parameters"
   | "update_recipe"
   | "update_rotation_policy"
   | "update_subscription"

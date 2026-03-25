@@ -79,7 +79,12 @@ pub struct PortabilityBundle {
 #[serde(rename_all = "snake_case")]
 pub enum ExportScope {
     Full,
-    Selective { persona_ids: Vec<String>, team_ids: Vec<String> },
+    Selective {
+        persona_ids: Vec<String>,
+        team_ids: Vec<String>,
+        #[serde(default)]
+        connector_ids: Vec<String>,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -286,12 +291,14 @@ pub async fn export_selective(
     app: AppHandle,
     persona_ids: Vec<String>,
     team_ids: Vec<String>,
+    connector_ids: Vec<String>,
 ) -> Result<bool, AppError> {
     require_auth(&state).await?;
     let pool = &state.db;
     let scope = ExportScope::Selective {
         persona_ids: persona_ids.clone(),
         team_ids: team_ids.clone(),
+        connector_ids: connector_ids.clone(),
     };
     let bundle = build_export_bundle(pool, scope)?;
     save_bundle_to_file(&app, &bundle, "personas_selective_export").await
@@ -414,6 +421,7 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
         ExportScope::Selective {
             persona_ids,
             team_ids,
+            ..
         } => (persona_ids.clone(), team_ids.clone()),
     };
 
@@ -595,9 +603,19 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
         });
     }
 
-    // Connector exports
+    // Connector exports (filtered in selective mode when connector_ids is non-empty)
+    let selected_connector_ids: Option<&Vec<String>> = match &scope {
+        ExportScope::Full => None,
+        ExportScope::Selective { connector_ids, .. } if connector_ids.is_empty() => None,
+        ExportScope::Selective { connector_ids, .. } => Some(connector_ids),
+    };
+
     let connector_exports: Vec<ConnectorExport> = all_connectors
         .iter()
+        .filter(|c| match &selected_connector_ids {
+            None => true,
+            Some(ids) => ids.contains(&c.id),
+        })
         .map(|c| ConnectorExport {
             name: c.name.clone(),
             label: c.label.clone(),

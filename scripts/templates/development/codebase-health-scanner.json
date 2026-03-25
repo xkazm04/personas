@@ -22,17 +22,40 @@
       "errorHandling": "If the project has no context map yet, run a context map scan first before health scoring. If file access fails, skip that context and note it in the report. If a previous health snapshot exists, compare scores and highlight trends (improving/declining). Always complete the full scan even if individual files are inaccessible."
     },
     "suggested_tools": [
-      { "name": "read_file", "category": "codebase", "description": "Read project files for analysis" },
-      { "name": "list_files", "category": "codebase", "description": "List directory contents" },
-      { "name": "search_code", "category": "codebase", "description": "Search code patterns" },
-      { "name": "get_contexts", "category": "codebase", "description": "Load context map" },
-      { "name": "create_idea", "category": "codebase", "description": "Create backlog ideas for issues found" }
+      {
+        "name": "read_file",
+        "category": "codebase",
+        "description": "Read project files for analysis"
+      },
+      {
+        "name": "list_files",
+        "category": "codebase",
+        "description": "List directory contents"
+      },
+      {
+        "name": "search_code",
+        "category": "codebase",
+        "description": "Search code patterns"
+      },
+      {
+        "name": "get_contexts",
+        "category": "codebase",
+        "description": "Load context map"
+      },
+      {
+        "name": "create_idea",
+        "category": "codebase",
+        "description": "Create backlog ideas for issues found"
+      }
     ],
     "suggested_triggers": [
       {
         "name": "Monthly Health Scan",
         "type": "cron",
-        "config": { "cron_expression": "0 9 1 * *", "description": "First of each month at 9 AM" }
+        "config": {
+          "cron_expression": "0 9 1 * *",
+          "description": "First of each month at 9 AM"
+        }
       }
     ],
     "full_prompt_markdown": "# Codebase Health Scanner\n\nPerform a comprehensive monthly health assessment of the connected codebase project.\n\n## Workflow\n1. **Context Freshness**: Review and update the context map\n2. **Security Scan**: Check for vulnerabilities and hardcoded secrets\n3. **Quality Audit**: Evaluate code organization and patterns\n4. **Coverage Assessment**: Check test coverage gaps\n5. **Tech Debt Review**: Catalog TODO/FIXME and legacy patterns\n6. **Score & Report**: Generate per-group health scores and trend comparison\n\n## Output\n- Updated context map (if stale)\n- Health snapshot scores per context group\n- New backlog ideas for issues found\n- Summary message with trends and top priorities",
@@ -46,10 +69,17 @@
       "Reports via built-in message system for dashboard visibility"
     ],
     "suggested_connectors": [
-      { "connector_name": "codebase", "label": "Codebase", "reason": "Required: provides project file access, context map, and idea management" }
+      {
+        "connector_name": "codebase",
+        "label": "Codebase",
+        "reason": "Required: provides project file access, context map, and idea management"
+      }
     ],
     "suggested_notification_channels": [
-      { "channel": "in_app", "reason": "Health report summary appears in messages" }
+      {
+        "channel": "in_app",
+        "reason": "Health report summary appears in messages"
+      }
     ],
     "suggested_event_subscriptions": [],
     "use_case_flows": [
@@ -72,17 +102,36 @@
         "id": "project_focus",
         "question": "Which aspects matter most for your project?",
         "type": "multi_select",
-        "options": ["Security", "Code Quality", "Test Coverage", "Tech Debt"],
-        "default": ["Security", "Code Quality", "Test Coverage", "Tech Debt"]
+        "options": [
+          "Security",
+          "Code Quality",
+          "Test Coverage",
+          "Tech Debt"
+        ],
+        "default": [
+          "Security",
+          "Code Quality",
+          "Test Coverage",
+          "Tech Debt"
+        ]
       },
       {
         "id": "scan_frequency",
         "question": "How often should the health scan run?",
         "type": "single_select",
-        "options": ["Weekly", "Bi-weekly", "Monthly"],
+        "options": [
+          "Weekly",
+          "Bi-weekly",
+          "Monthly"
+        ],
         "default": "Monthly"
       }
     ],
-    "protocol_capabilities": ["health_snapshot", "context_map_update", "idea_creation"]
-  }
+    "protocol_capabilities": [
+      "health_snapshot",
+      "context_map_update",
+      "idea_creation"
+    ]
+  },
+  "is_published": false
 }

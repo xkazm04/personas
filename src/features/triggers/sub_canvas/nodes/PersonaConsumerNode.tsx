@@ -18,25 +18,23 @@ function PersonaConsumerNodeInner({ data, selected }: NodeProps) {
     <div
       className={`
         relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl
-        bg-card/90 backdrop-blur
-        border-[1.5px]
+        bg-card backdrop-blur
+        border-2
         ${selected
-          ? 'border-emerald-400 ring-2 ring-emerald-400/20 shadow-[0_0_12px_rgba(52,211,153,0.15)]'
-          : 'border-emerald-500/30 dark:border-emerald-400/40 hover:border-emerald-400/60'
+          ? 'border-emerald-400 ring-2 ring-emerald-400/25 shadow-[0_0_16px_rgba(52,211,153,0.2)]'
+          : 'border-emerald-400/70 hover:border-emerald-300'
         }
         ${!d.enabled ? 'opacity-50' : ''}
-        shadow-sm min-w-[160px] transition-all
+        shadow-md min-w-[160px] transition-all
       `}
     >
-      {/* Target handle (left side) */}
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-2.5 !h-2.5 !bg-emerald-400 !border-2 !border-background"
+        className="!w-3 !h-3 !bg-emerald-400 !border-2 !border-background !rounded-full"
       />
 
-      {/* Avatar */}
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/8">
+      <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/15">
         {d.icon ? (
           <span className="text-sm">{d.icon}</span>
         ) : (
@@ -44,7 +42,6 @@ function PersonaConsumerNodeInner({ data, selected }: NodeProps) {
         )}
       </div>
 
-      {/* Name + status */}
       <div className="flex flex-col min-w-0">
         <span className="text-xs font-semibold text-foreground truncate">{d.name}</span>
         <div className="flex items-center gap-1.5">
@@ -57,9 +54,8 @@ function PersonaConsumerNodeInner({ data, selected }: NodeProps) {
         </div>
       </div>
 
-      {/* Connected count badge */}
       {d.connectedEventCount > 0 && (
-        <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500/90 text-[9px] font-bold text-white shadow">
+        <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-[9px] font-bold text-white shadow">
           {d.connectedEventCount}
         </span>
       )}

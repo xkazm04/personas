@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   getExportStats,
   exportFull,
+  exportSelective,
   importPortabilityBundle,
   exportCredentials,
   importCredentials,
@@ -31,6 +32,8 @@ export function useDataPortability() {
   const [showCredExportInput, setShowCredExportInput] = useState(false);
   const [showCredImportInput, setShowCredImportInput] = useState(false);
 
+  const [showExportModal, setShowExportModal] = useState(false);
+
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
@@ -49,6 +52,23 @@ export function useDataPortability() {
     try {
       const saved = await exportFull();
       setExportStatus(saved ? 'success' : 'idle');
+    } catch (e) {
+      setErrorMsg(String(e));
+      setExportStatus('error');
+    }
+  }, []);
+
+  const handleExportSelective = useCallback(async (
+    personaIds: string[],
+    teamIds: string[],
+    connectorIds: string[],
+  ) => {
+    setExportStatus('loading');
+    setErrorMsg('');
+    try {
+      const saved = await exportSelective(personaIds, teamIds, connectorIds);
+      setExportStatus(saved ? 'success' : 'idle');
+      if (saved) setShowExportModal(false);
     } catch (e) {
       setErrorMsg(String(e));
       setExportStatus('error');
@@ -154,8 +174,11 @@ export function useDataPortability() {
     setShowCredExportInput,
     showCredImportInput,
     setShowCredImportInput,
+    showExportModal,
+    setShowExportModal,
     errorMsg,
     handleExportFull,
+    handleExportSelective,
     handleImport,
     handleCredExport,
     handleCredImport,

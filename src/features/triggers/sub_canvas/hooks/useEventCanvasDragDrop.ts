@@ -1,4 +1,4 @@
-import { useCallback, type DragEvent } from 'react';
+import { useCallback } from 'react';
 import type { ReactFlowInstance, Node } from '@xyflow/react';
 import {
   NODE_TYPE_EVENT_SOURCE,
@@ -9,41 +9,69 @@ import {
 } from '../libs/eventCanvasConstants';
 import type { EventSourceNodeData, PersonaConsumerNodeData } from '../libs/eventCanvasReconcile';
 
-export const DRAG_TYPE_EVENT_SOURCE = 'application/event-source-id';
-export const DRAG_TYPE_PERSONA = 'application/persona-consumer-id';
+// ---------------------------------------------------------------------------
+// Module-level drag payload.
+// Browser DnD restricts dataTransfer.getData() during dragover — only the
+// `types` array and `effectAllowed` are readable. We use a module ref
+// to carry the full payload from dragStart to drop.
+// ---------------------------------------------------------------------------
 
-interface UseEventCanvasDragDropOpts {
+const dragPayload: { type: 'event' | 'persona' | null; value: string } = {
+  type: null,
+  value: '',
+};
+
+export function setDragPayload(type: 'event' | 'persona', value: string) {
+  dragPayload.type = type;
+  dragPayload.value = value;
+}
+
+export function clearDragPayload() {
+  dragPayload.type = null;
+  dragPayload.value = '';
+}
+
+// Custom MIME type set in dataTransfer.types — readable during dragover
+export const CANVAS_DND_MIME = 'application/x-event-canvas';
+
+// ---------------------------------------------------------------------------
+// Hook — returns onDragOver + onDrop to pass as props to <ReactFlow>
+// ReactFlow v12 spreads ...rest onto its wrapper div, so these become
+// native DOM event handlers on the actual element.
+// ---------------------------------------------------------------------------
+
+interface Opts {
   reactFlowInstance: ReactFlowInstance | null;
   setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
   personas: Array<{ id: string; name: string; icon: string | null; color: string | null; enabled: boolean }>;
 }
 
-export function useEventCanvasDragDrop({
-  reactFlowInstance,
-  setNodes,
-  personas,
-}: UseEventCanvasDragDropOpts) {
-
-  const onDragOver = useCallback((e: DragEvent) => {
+export function useEventCanvasDragDrop({ reactFlowInstance, setNodes, personas }: Opts) {
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    // Only allow drop if it's our custom canvas DnD (not ReactFlow internal node drag)
+    if (!e.dataTransfer.types.includes(CANVAS_DND_MIME)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const onDrop = useCallback((e: DragEvent) => {
+  const onDrop = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes(CANVAS_DND_MIME)) return;
     e.preventDefault();
-    if (!reactFlowInstance) return;
+
+    if (!reactFlowInstance || !dragPayload.type) {
+      clearDragPayload();
+      return;
+    }
 
     const position = reactFlowInstance.screenToFlowPosition({
       x: e.clientX,
       y: e.clientY,
     });
-    // Snap to grid
     position.x = Math.round(position.x / GRID_SIZE) * GRID_SIZE;
     position.y = Math.round(position.y / GRID_SIZE) * GRID_SIZE;
 
-    // Check for event source drop
-    const eventSourceId = e.dataTransfer.getData(DRAG_TYPE_EVENT_SOURCE);
-    if (eventSourceId) {
+    if (dragPayload.type === 'event') {
+      const eventSourceId = dragPayload.value;
       const template = findTemplateByEventType(eventSourceId);
       const nodeId = `src-${eventSourceId}`;
 
@@ -62,42 +90,34 @@ export function useEventCanvasDragDrop({
         } satisfies EventSourceNodeData,
       };
 
-      setNodes(prev => {
-        // Don't add duplicate source nodes for the same event type
-        if (prev.some(n => n.id === nodeId)) return prev;
-        return [...prev, newNode];
-      });
-      return;
+      setNodes(prev => prev.some(n => n.id === nodeId) ? prev : [...prev, newNode]);
     }
 
-    // Check for persona drop
-    const personaId = e.dataTransfer.getData(DRAG_TYPE_PERSONA);
-    if (personaId) {
+    if (dragPayload.type === 'persona') {
+      const personaId = dragPayload.value;
       const persona = personas.find(p => p.id === personaId);
-      if (!persona) return;
+      if (persona) {
+        const newNode: Node = {
+          id: personaId,
+          type: NODE_TYPE_PERSONA_CONSUMER,
+          position,
+          data: {
+            personaId,
+            name: persona.name,
+            icon: persona.icon ?? '',
+            color: persona.color ?? 'text-blue-400',
+            enabled: persona.enabled,
+            lastExecutionAt: null,
+            executionStatus: null,
+            connectedEventCount: 0,
+          } satisfies PersonaConsumerNodeData,
+        };
 
-      const newNode: Node = {
-        id: personaId,
-        type: NODE_TYPE_PERSONA_CONSUMER,
-        position,
-        data: {
-          personaId,
-          name: persona.name,
-          icon: persona.icon ?? '',
-          color: persona.color ?? 'text-blue-400',
-          enabled: persona.enabled,
-          lastExecutionAt: null,
-          executionStatus: null,
-          connectedEventCount: 0,
-        } satisfies PersonaConsumerNodeData,
-      };
-
-      setNodes(prev => {
-        // Don't add duplicate persona nodes
-        if (prev.some(n => n.id === personaId)) return prev;
-        return [...prev, newNode];
-      });
+        setNodes(prev => prev.some(n => n.id === personaId) ? prev : [...prev, newNode]);
+      }
     }
+
+    clearDragPayload();
   }, [reactFlowInstance, setNodes, personas]);
 
   return { onDragOver, onDrop };

@@ -25,8 +25,6 @@ export const TAB_LABELS: Record<string, string> = {
   prompt: 'Prompt',
   lab: 'Lab',
   connectors: 'Connectors',
-  design: 'Design',
-  health: 'Health',
   settings: 'Settings',
   assertions: 'Assertions',
   model: 'Model',

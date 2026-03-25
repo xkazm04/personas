@@ -291,5 +291,6 @@
       "icon": "UserCheck",
       "color": "#059669"
     }
-  }
+  },
+  "is_published": false
 }

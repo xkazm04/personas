@@ -793,38 +793,74 @@
         "placeholder": "https://docs.google.com/spreadsheets/d/1ABC.../edit",
         "helpText": "The sheet should have columns for prospect data (at minimum: name and company, or email). The agent will add enrichment columns to the right of your existing data.",
         "required": true,
-        "affectsConfig": ["google_sheets.spreadsheet_id"]
+        "affectsConfig": [
+          "google_sheets.spreadsheet_id"
+        ]
       },
       {
         "id": "column_mapping",
         "question": "Which columns contain your prospect data?",
         "type": "multi_select",
         "options": [
-          {"value": "email", "label": "Email Address"},
-          {"value": "first_name", "label": "First Name"},
-          {"value": "last_name", "label": "Last Name"},
-          {"value": "full_name", "label": "Full Name (single column)"},
-          {"value": "company", "label": "Company Name"},
-          {"value": "domain", "label": "Company Domain"},
-          {"value": "title", "label": "Job Title"}
+          {
+            "value": "email",
+            "label": "Email Address"
+          },
+          {
+            "value": "first_name",
+            "label": "First Name"
+          },
+          {
+            "value": "last_name",
+            "label": "Last Name"
+          },
+          {
+            "value": "full_name",
+            "label": "Full Name (single column)"
+          },
+          {
+            "value": "company",
+            "label": "Company Name"
+          },
+          {
+            "value": "domain",
+            "label": "Company Domain"
+          },
+          {
+            "value": "title",
+            "label": "Job Title"
+          }
         ],
         "helpText": "Select all columns present in your sheet. The agent needs at minimum an email OR name+company to begin enrichment.",
         "required": true,
-        "affectsConfig": ["structured_prompt.instructions"]
+        "affectsConfig": [
+          "structured_prompt.instructions"
+        ]
       },
       {
         "id": "enrichment_depth",
         "question": "What level of enrichment do you want?",
         "type": "select",
         "options": [
-          {"value": "verify_only", "label": "Email verification only"},
-          {"value": "person_company", "label": "Person + company enrichment (no outreach drafts)"},
-          {"value": "full_pipeline", "label": "Full pipeline with AI analysis and outreach drafts"}
+          {
+            "value": "verify_only",
+            "label": "Email verification only"
+          },
+          {
+            "value": "person_company",
+            "label": "Person + company enrichment (no outreach drafts)"
+          },
+          {
+            "value": "full_pipeline",
+            "label": "Full pipeline with AI analysis and outreach drafts"
+          }
         ],
         "default": "full_pipeline",
         "helpText": "Full pipeline runs all five stages. Lighter options use fewer API calls and process faster.",
         "required": true,
-        "affectsConfig": ["structured_prompt.instructions"]
+        "affectsConfig": [
+          "structured_prompt.instructions"
+        ]
       },
       {
         "id": "slack_channel",
@@ -833,7 +869,9 @@
         "placeholder": "#sales-outbound",
         "helpText": "The bot must be invited to this channel. Summaries include daily metrics, top prospects, and any API issues.",
         "required": true,
-        "affectsConfig": ["slack.channel"]
+        "affectsConfig": [
+          "slack.channel"
+        ]
       },
       {
         "id": "daily_batch_limit",
@@ -843,23 +881,40 @@
         "default": 100,
         "helpText": "Limits API usage. Each prospect uses 1 Hunter verification + 1 Clearbit lookup. Set based on your API plan limits.",
         "required": false,
-        "affectsConfig": ["structured_prompt.instructions"]
+        "affectsConfig": [
+          "structured_prompt.instructions"
+        ]
       },
       {
         "id": "outreach_tone",
         "question": "What tone should the AI-generated outreach drafts use?",
         "type": "select",
         "options": [
-          {"value": "professional", "label": "Professional and formal"},
-          {"value": "conversational", "label": "Conversational and friendly"},
-          {"value": "direct", "label": "Direct and concise"},
-          {"value": "consultative", "label": "Consultative and value-driven"}
+          {
+            "value": "professional",
+            "label": "Professional and formal"
+          },
+          {
+            "value": "conversational",
+            "label": "Conversational and friendly"
+          },
+          {
+            "value": "direct",
+            "label": "Direct and concise"
+          },
+          {
+            "value": "consultative",
+            "label": "Consultative and value-driven"
+          }
         ],
         "default": "conversational",
         "helpText": "Sets the tone for generated cold email and LinkedIn message drafts.",
         "required": false,
-        "affectsConfig": ["structured_prompt.instructions"]
+        "affectsConfig": [
+          "structured_prompt.instructions"
+        ]
       }
     ]
-  }
+  },
+  "is_published": false
 }

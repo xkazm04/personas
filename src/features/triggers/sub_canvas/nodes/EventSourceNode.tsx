@@ -21,38 +21,34 @@ function EventSourceNodeInner({ data, selected }: NodeProps) {
     <div
       className={`
         relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl
-        bg-card/90 backdrop-blur
-        border-[1.5px]
+        bg-card backdrop-blur
+        border-2
         ${selected
-          ? 'border-cyan-400 ring-2 ring-cyan-400/20 shadow-[0_0_12px_rgba(34,211,238,0.15)]'
-          : 'border-cyan-500/30 dark:border-cyan-400/40 hover:border-cyan-400/60'
+          ? 'border-cyan-400 ring-2 ring-cyan-400/25 shadow-[0_0_16px_rgba(34,211,238,0.2)]'
+          : 'border-cyan-400/70 hover:border-cyan-300'
         }
-        shadow-sm min-w-[160px] transition-all
+        shadow-md min-w-[160px] transition-all
       `}
     >
-      {/* Icon */}
-      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/8 ${d.color}`}>
+      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/15 ${d.color}`}>
         <Icon className="w-4 h-4" />
       </div>
 
-      {/* Label + event type */}
       <div className="flex flex-col min-w-0">
         <span className="text-xs font-semibold text-foreground truncate">{d.label}</span>
         <span className="text-[10px] text-muted-foreground truncate">{d.eventType}</span>
       </div>
 
-      {/* Live count badge */}
       {count > 0 && (
         <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-cyan-500 text-[9px] font-bold text-white shadow animate-pulse">
           {count > 99 ? '99+' : count}
         </span>
       )}
 
-      {/* Source handle (right side — events flow left to right) */}
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-2.5 !h-2.5 !bg-cyan-400 !border-2 !border-background"
+        className="!w-3 !h-3 !bg-cyan-400 !border-2 !border-background !rounded-full"
       />
     </div>
   );

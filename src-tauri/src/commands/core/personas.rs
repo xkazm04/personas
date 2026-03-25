@@ -51,6 +51,24 @@ pub fn update_persona(
     repo::update(&state.db, &id, input)
 }
 
+/// Lightweight parameter-only update — no rebuild required.
+#[tauri::command]
+pub fn update_persona_parameters(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    parameters: Option<String>,
+) -> Result<Persona, AppError> {
+    require_auth_sync(&state)?;
+    repo::update(
+        &state.db,
+        &id,
+        UpdatePersonaInput {
+            parameters: Some(parameters),
+            ..Default::default()
+        },
+    )
+}
+
 #[tauri::command]
 pub fn duplicate_persona(
     state: State<'_, Arc<AppState>>,

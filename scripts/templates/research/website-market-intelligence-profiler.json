@@ -666,52 +666,6 @@
     ],
     "adoption_questions": [
       {
-        "id": "google_sheet_id",
-        "question": "What is your Google Sheets spreadsheet ID containing the URL list?",
-        "type": "text",
-        "default": "",
-        "context": "The long alphanumeric ID from your Google Sheets URL (between /d/ and /edit). The sheet should have URLs in column A.",
-        "connector_names": ["google_sheets"],
-        "category": "configuration"
-      },
-      {
-        "id": "slack_report_channel",
-        "question": "Which Slack channel should receive the market landscape reports?",
-        "type": "text",
-        "default": "#market-intelligence",
-        "context": "Completed landscape analysis reports with industry breakdowns, tech trends, and white space opportunities are posted here",
-        "connector_names": ["slack"],
-        "category": "configuration"
-      },
-      {
-        "id": "max_urls_per_run",
-        "question": "Maximum number of URLs to process per run?",
-        "type": "text",
-        "default": "200",
-        "context": "Safety cap to prevent timeout on very large URL lists. Remaining URLs will be processed in the next scheduled run.",
-        "connector_names": [],
-        "category": "configuration"
-      }
-    ],
-    "protocol_capabilities": [
-      {
-        "type": "user_message",
-        "label": "Slack landscape reports, batch progress updates, and error notifications",
-        "context": "1 notification channel(s) configured: slack"
-      },
-      {
-        "type": "agent_memory",
-        "label": "Classification cache, batch processing state, and historical landscape data for trend analysis",
-        "context": "Tracks: classification results, processing progress, landscape trends"
-      },
-      {
-        "type": "emit_event",
-        "label": "Emits events: batch complete, landscape report ready, critical errors",
-        "context": "3 event subscription(s) configured -- agent participates in event bus"
-      }
-    ],
-    "adoption_questions": [
-      {
         "id": "spreadsheet_url",
         "question": "What is the Google Sheets URL containing your list of website URLs to analyze?",
         "type": "text",
@@ -725,9 +679,18 @@
         "question": "Which column contains the website URLs?",
         "type": "select",
         "options": [
-          {"label": "Column A", "value": "A"},
-          {"label": "Column B", "value": "B"},
-          {"label": "Column C", "value": "C"}
+          {
+            "label": "Column A",
+            "value": "A"
+          },
+          {
+            "label": "Column B",
+            "value": "B"
+          },
+          {
+            "label": "Column C",
+            "value": "C"
+          }
         ],
         "default": "A",
         "helpText": "The column header should be 'URL', 'Website', 'Domain', or 'Link'.",
@@ -748,9 +711,18 @@
         "question": "How many URLs should be processed per batch?",
         "type": "select",
         "options": [
-          {"label": "5 (conservative -- slower but gentler on target sites)", "value": "5"},
-          {"label": "10 (recommended -- balanced speed and politeness)", "value": "10"},
-          {"label": "20 (aggressive -- faster but higher risk of blocking)", "value": "20"}
+          {
+            "label": "5 (conservative -- slower but gentler on target sites)",
+            "value": "5"
+          },
+          {
+            "label": "10 (recommended -- balanced speed and politeness)",
+            "value": "10"
+          },
+          {
+            "label": "20 (aggressive -- faster but higher risk of blocking)",
+            "value": "20"
+          }
         ],
         "default": "10",
         "helpText": "Smaller batches are less likely to trigger rate limits on target websites.",
@@ -762,16 +734,46 @@
         "question": "How often should the profiler automatically re-check for new URLs?",
         "type": "select",
         "options": [
-          {"label": "Manual only (I will trigger it myself)", "value": "manual"},
-          {"label": "Daily at 6 AM", "value": "daily"},
-          {"label": "Weekly on Monday at 6 AM", "value": "weekly"},
-          {"label": "Monthly on the 1st at 6 AM", "value": "monthly"}
+          {
+            "label": "Manual only (I will trigger it myself)",
+            "value": "manual"
+          },
+          {
+            "label": "Daily at 6 AM",
+            "value": "daily"
+          },
+          {
+            "label": "Weekly on Monday at 6 AM",
+            "value": "weekly"
+          },
+          {
+            "label": "Monthly on the 1st at 6 AM",
+            "value": "monthly"
+          }
         ],
         "default": "weekly",
         "helpText": "The agent will check for new URLs added to the sheet and process only unanalyzed entries.",
         "required": false,
         "maps_to": "trigger.schedule.cron"
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "user_message",
+        "label": "Slack landscape reports, batch progress updates, and error notifications",
+        "context": "1 notification channel(s) configured: slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Classification cache, batch processing state, and historical landscape data for trend analysis",
+        "context": "Tracks: classification results, processing progress, landscape trends"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: batch complete, landscape report ready, critical errors",
+        "context": "3 event subscription(s) configured -- agent participates in event bus"
+      }
     ]
-  }
+  },
+  "is_published": false
 }

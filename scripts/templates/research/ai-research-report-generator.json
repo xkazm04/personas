@@ -1108,5 +1108,6 @@
         "category": "configuration"
       }
     ]
-  }
+  },
+  "is_published": false
 }

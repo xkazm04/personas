@@ -61,7 +61,10 @@ export default function DataPortabilitySettings() {
             exportStatus={dp.exportStatus}
             importStatus={dp.importStatus}
             importResult={dp.importResult}
-            onExport={dp.handleExportFull}
+            showExportModal={dp.showExportModal}
+            onOpenExportModal={() => dp.setShowExportModal(true)}
+            onCloseExportModal={() => dp.setShowExportModal(false)}
+            onExportSelective={dp.handleExportSelective}
             onImport={dp.handleImport}
           />
 

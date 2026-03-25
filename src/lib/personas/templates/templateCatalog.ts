@@ -41,6 +41,9 @@ interface ClientVerifiedTemplate {
 const clientVerified: ClientVerifiedTemplate[] = [];
 
 for (const [modulePath, template] of Object.entries(modules)) {
+  // Skip unpublished templates (is_published === false)
+  if ((template as Record<string, unknown>).is_published === false) continue;
+
   const relPath = templatePathFromModulePath(modulePath);
   const expectedChecksum = TEMPLATE_CHECKSUMS[relPath];
 

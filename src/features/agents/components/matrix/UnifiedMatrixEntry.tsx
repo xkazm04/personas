@@ -12,11 +12,10 @@
  * NOTE: This does NOT delete CreationWizard -- that happens in Plan 05.
  * This plan just creates the replacement component.
  */
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix/PersonaMatrix";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
-import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 
 // ---------------------------------------------------------------------------
@@ -24,7 +23,7 @@ import { useAgentStore } from "@/stores/agentStore";
 // ---------------------------------------------------------------------------
 
 interface UnifiedMatrixEntryProps {
-  /** Whether the cancel link is shown at the bottom. */
+  /** @deprecated Cancel button removed. Kept for call-site compatibility. */
   canCancel?: boolean;
 }
 
@@ -66,10 +65,7 @@ function generateAgentName(intent: string): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
-  const setIsCreatingPersona = useSystemStore(
-    (s) => s.setIsCreatingPersona,
-  );
+export function UnifiedMatrixEntry(_props: UnifiedMatrixEntryProps) {
   const createPersona = useAgentStore((s) => s.createPersona);
   const deletePersona = useAgentStore((s) => s.deletePersona);
 
@@ -83,7 +79,13 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
 
   // -- Local state --------------------------------------------------------
 
-  const [intentText, setIntentText] = useState("");
+  const [intentText, _setIntentText] = useState("");
+  const intentTextRef = useRef(intentText);
+  intentTextRef.current = intentText;
+  const setIntentText = useCallback((v: string) => {
+    intentTextRef.current = v;
+    _setIntentText(v);
+  }, []);
   const [agentName, setAgentName] = useState("");
   const [launchError, setLaunchError] = useState<string | null>(null);
 
@@ -119,8 +121,8 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
     const parserResultJson = store.buildParserResultJson;
     const workflowName = store.buildWorkflowName;
 
-    // For intent: use text input or fall back to workflow name
-    const trimmed = intentText.trim() || (workflowName ? `Import and transform: ${workflowName}` : "");
+    // For intent: use text input (via ref for latest value) or fall back to workflow name
+    const trimmed = intentTextRef.current.trim() || (workflowName ? `Import and transform: ${workflowName}` : "");
     if (!trimmed || build.isBuilding) return;
     setLaunchError(null);
 
@@ -159,15 +161,7 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
       } catch { /* best-effort cleanup */ }
       setDraftPersonaId(null);
     }
-  }, [intentText, build, draftPersonaId, createPersona, deletePersona]);
-
-  /**
-   * Cancel: abort build + exit creation mode.
-   */
-  const handleCancel = useCallback(async () => {
-    await build.handleCancel();
-    setIsCreatingPersona(false);
-  }, [build, setIsCreatingPersona]);
+  }, [build, draftPersonaId, createPersona, deletePersona]); // intentText read via ref
 
   // -- Inline edit handlers (use --continue session for CLI refine) --------
 
@@ -272,19 +266,6 @@ export function UnifiedMatrixEntry({ canCancel }: UnifiedMatrixEntryProps) {
         </div>
       )}
 
-      {/* Cancel link -- same pattern as MatrixCreator */}
-      {canCancel && (
-        <div className="flex items-center justify-start pt-3 border-t border-primary/10 flex-shrink-0">
-          <button
-            type="button"
-            onClick={handleCancel}
-            data-testid="agent-cancel-btn"
-            className="text-sm text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
     </div>
   );
 }

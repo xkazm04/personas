@@ -292,5 +292,6 @@
       "icon": "Mail",
       "color": "#dc2626"
     }
-  }
+  },
+  "is_published": false
 }

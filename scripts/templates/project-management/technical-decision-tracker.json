@@ -198,5 +198,6 @@
       "icon": "FileText",
       "color": "#8b5cf6"
     }
-  }
+  },
+  "is_published": false
 }

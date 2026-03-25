@@ -440,6 +440,7 @@ impl EphemeralPersona {
             trust_origin: "builtin".to_string(),
             trust_verified_at: None,
             trust_score: 1.0,
+            parameters: None,
             created_at: now.clone(),
             updated_at: now,
         };

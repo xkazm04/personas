@@ -940,5 +940,6 @@
         "helpText": "Expenses above this amount will trigger an immediate Slack alert for review. You can always adjust this later."
       }
     ]
-  }
+  },
+  "is_published": false
 }

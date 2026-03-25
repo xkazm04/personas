@@ -9,9 +9,10 @@ import {
   BackgroundVariant,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { PanelLeft, PanelLeftClose, RotateCcw, Trash2 } from 'lucide-react';
+import { PanelLeft, PanelLeftClose, RotateCcw, Trash2, Zap, Play } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { listAllTriggers } from '@/api/pipeline/triggers';
+import { testEventFlow } from '@/api/overview/events';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 
@@ -34,30 +35,24 @@ import {
   type EventSourceNodeData,
 } from './libs/eventCanvasReconcile';
 
-// Register custom node/edge types (must be stable refs outside component)
 const nodeTypes = {
   [NODE_TYPE_EVENT_SOURCE]: EventSourceNode,
   [NODE_TYPE_PERSONA_CONSUMER]: PersonaConsumerNode,
 };
-const edgeTypes = {
-  eventEdge: EventEdge,
-};
-
-// Hide ReactFlow attribution
+const edgeTypes = { eventEdge: EventEdge };
 const proOptions = { hideAttribution: true };
 
 interface Props {
   allTriggers: PersonaTrigger[];
 }
 
-// ---------------------------------------------------------------------------
-// Context menu state
-// ---------------------------------------------------------------------------
 interface ContextMenu {
   x: number;
   y: number;
   nodeId: string;
+  nodeType: string;
   nodeLabel: string;
+  eventType?: string;
 }
 
 export function EventCanvas({ allTriggers: initialTriggers }: Props) {
@@ -65,6 +60,7 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
   const [cs, dispatch] = useEventCanvasState();
   const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>(initialTriggers);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+  const [testFiring, setTestFiring] = useState(false);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -76,13 +72,12 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
     saveTimerRef.current = setTimeout(() => saveLayout(n), 800);
   }, []);
 
-  // Save layout whenever nodes change position
   useEffect(() => {
     if (nodes.length > 0) saveDebounced(nodes);
   }, [nodes, saveDebounced]);
 
   // ---------------------------------------------------------------------------
-  // Load & reconcile on mount
+  // Load & reconcile
   // ---------------------------------------------------------------------------
   const loadCanvas = useCallback(async () => {
     try {
@@ -99,17 +94,15 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
   useEffect(() => { void loadCanvas(); }, [loadCanvas]);
 
   // ---------------------------------------------------------------------------
-  // Canvas actions (connect/disconnect -> trigger CRUD)
+  // Canvas actions (connect = create trigger, disconnect = delete trigger)
   // ---------------------------------------------------------------------------
   const { isValidConnection, onConnect, onDeleteEdge, onDeleteNode } = useEventCanvasActions({
-    nodes,
-    edges,
-    setEdges,
+    nodes, edges, setEdges,
     onTriggerChanged: () => { void loadCanvas(); },
   });
 
   // ---------------------------------------------------------------------------
-  // Drag & drop from palettes
+  // DnD — onDragOver/onDrop passed as props to <ReactFlow> (goes through ...rest)
   // ---------------------------------------------------------------------------
   const { onDragOver, onDrop } = useEventCanvasDragDrop({
     reactFlowInstance: cs.reactFlowInstance,
@@ -118,12 +111,10 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
   });
 
   // ---------------------------------------------------------------------------
-  // Live event count updates
+  // Live event counts
   // ---------------------------------------------------------------------------
   useEventBusListener(useCallback((event: { event_type?: string }) => {
-    if (event.event_type) {
-      dispatch({ type: 'INCREMENT_LIVE_COUNT', eventType: event.event_type });
-    }
+    if (event.event_type) dispatch({ type: 'INCREMENT_LIVE_COUNT', eventType: event.event_type });
   }, [dispatch]));
 
   useEffect(() => {
@@ -161,35 +152,51 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
   // Edge delete via keyboard
   // ---------------------------------------------------------------------------
   const onEdgesDelete = useCallback(async (deletedEdges: typeof edges) => {
-    for (const edge of deletedEdges) {
-      await onDeleteEdge(edge.id);
-    }
+    for (const edge of deletedEdges) await onDeleteEdge(edge.id);
   }, [onDeleteEdge]);
 
   // ---------------------------------------------------------------------------
-  // Right-click context menu
+  // Context menu
   // ---------------------------------------------------------------------------
   const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
     event.preventDefault();
-    const label = node.type === NODE_TYPE_EVENT_SOURCE
-      ? (node.data as EventSourceNodeData).label
-      : (node.data as { name?: string }).name ?? node.id;
-    setContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id, nodeLabel: label });
+    const isSource = node.type === NODE_TYPE_EVENT_SOURCE;
+    const d = node.data as Record<string, unknown>;
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      nodeId: node.id,
+      nodeType: node.type ?? '',
+      nodeLabel: isSource ? (d.label as string) : (d.name as string) ?? node.id,
+      eventType: isSource ? (d.eventType as string) : undefined,
+    });
   }, []);
 
   const onPaneClick = useCallback(() => { setContextMenu(null); }, []);
 
   const handleContextMenuRemove = useCallback(async () => {
     if (!contextMenu) return;
-    const node = nodes.find(n => n.id === contextMenu.nodeId);
-    if (!node) return;
     await onDeleteNode(contextMenu.nodeId);
     setNodes(prev => prev.filter(n => n.id !== contextMenu.nodeId));
     setContextMenu(null);
-  }, [contextMenu, nodes, onDeleteNode, setNodes]);
+  }, [contextMenu, onDeleteNode, setNodes]);
+
+  /** Fire a test event so all connected personas execute */
+  const handleTestFire = useCallback(async () => {
+    if (!contextMenu?.eventType) return;
+    setTestFiring(true);
+    try {
+      await testEventFlow(contextMenu.eventType, JSON.stringify({ _source: 'canvas_test', _timestamp: new Date().toISOString() }));
+    } catch (err) {
+      console.error('[EventCanvas] Test fire failed:', err);
+    } finally {
+      setTestFiring(false);
+      setContextMenu(null);
+    }
+  }, [contextMenu]);
 
   // ---------------------------------------------------------------------------
-  // Marketplace sidebar content (inline)
+  // Marketplace placeholder
   // ---------------------------------------------------------------------------
   const marketplaceContent = useMemo(() => (
     <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
@@ -202,7 +209,7 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
 
   return (
     <div className="flex-1 flex min-h-0">
-      {/* Left sidebar — Personas + Marketplace */}
+      {/* Left sidebar */}
       {!cs.paletteCollapsed && (
         <div className="w-64 border-r border-primary/10 flex flex-col overflow-hidden bg-card/30">
           <PersonaPalette
@@ -216,7 +223,7 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
       )}
 
       {/* Canvas area */}
-      <div className="flex-1 relative" onDragOver={onDragOver} onDrop={onDrop}>
+      <div className="flex-1 relative">
         {/* Top-left toolbar */}
         <div className="absolute top-2 left-2 z-10 flex items-center gap-1">
           <button
@@ -236,10 +243,8 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
           >
             <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
+          <SystemEventsToolbar onCanvasEventTypes={onCanvasEventTypes} />
         </div>
-
-        {/* Top center — System Events toolbar */}
-        <SystemEventsToolbar onCanvasEventTypes={onCanvasEventTypes} />
 
         <ReactFlow
           nodes={nodes}
@@ -252,6 +257,8 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
           onInit={instance => dispatch({ type: 'SET_REACT_FLOW_INSTANCE', instance })}
           onNodeContextMenu={onNodeContextMenu}
           onPaneClick={onPaneClick}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           defaultEdgeOptions={{ type: 'eventEdge' }}
@@ -274,14 +281,31 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
         {/* Context menu */}
         {contextMenu && (
           <div
-            className="fixed z-50 min-w-[160px] rounded-lg bg-popover/95 backdrop-blur-md border border-primary/10 shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100"
+            className="fixed z-50 min-w-[180px] rounded-lg bg-popover border border-primary/15 shadow-xl py-1"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
             <div className="px-3 py-1.5 border-b border-primary/5">
-              <span className="text-[10px] text-muted-foreground/60 truncate block max-w-[140px]">
+              <span className="text-[10px] text-muted-foreground/60 truncate block max-w-[160px]">
                 {contextMenu.nodeLabel}
               </span>
             </div>
+
+            {/* Test fire — only for event source nodes */}
+            {contextMenu.eventType && (
+              <button
+                onClick={handleTestFire}
+                disabled={testFiring}
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50"
+              >
+                {testFiring ? (
+                  <Zap className="w-3 h-3 text-amber-400 animate-pulse" />
+                ) : (
+                  <Play className="w-3 h-3 text-emerald-400" />
+                )}
+                {testFiring ? 'Firing...' : 'Fire Test Event'}
+              </button>
+            )}
+
             <button
               onClick={handleContextMenuRemove}
               className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
@@ -295,12 +319,12 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
         {/* Empty state */}
         {nodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center">
+            <div className="text-center max-w-xs">
               <p className="text-sm text-muted-foreground/60 mb-1">
-                Drag personas from the sidebar and connect them with events
+                Drag personas and events from the sidebar onto the canvas
               </p>
               <p className="text-xs text-muted-foreground/40">
-                System events available in the toolbar above
+                Connect an event source to a persona — the persona will automatically execute when that event fires
               </p>
             </div>
           </div>

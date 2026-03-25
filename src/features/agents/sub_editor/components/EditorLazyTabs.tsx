@@ -18,14 +18,8 @@ export const PersonaUseCasesTab = lazy(() =>
 export const PersonaConnectorsTab = lazy(() =>
   import('@/features/agents/sub_connectors/components/connectors/PersonaConnectorsTab').then((m) => ({ default: m.PersonaConnectorsTab })),
 );
-export const DesignTab = lazy(() =>
-  import('@/features/agents/sub_design/DesignTab').then((m) => ({ default: m.DesignTab })),
-);
 export const LabTab = lazy(() =>
   import('@/features/agents/sub_lab/components/shared/LabTab').then((m) => ({ default: m.LabTab })),
-);
-export const HealthTab = lazy(() =>
-  import('@/features/agents/sub_health').then((m) => ({ default: m.HealthTab })),
 );
 export const ChatTab = lazy(() =>
   import('@/features/agents/sub_chat/ChatTab').then((m) => ({ default: m.ChatTab })),

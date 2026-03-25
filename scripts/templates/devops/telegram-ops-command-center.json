@@ -332,23 +332,103 @@
           }
         ],
         "edges": [
-          { "id": "ce1", "source": "c1", "target": "c2" },
-          { "id": "ce2", "source": "c2", "target": "c3" },
-          { "id": "ce3", "source": "c3", "target": "c4" },
-          { "id": "ce4", "source": "c4", "target": "c5", "label": "Yes", "variant": "yes" },
-          { "id": "ce5", "source": "c4", "target": "c14", "label": "No", "variant": "no" },
-          { "id": "ce6", "source": "c5", "target": "c6" },
-          { "id": "ce7", "source": "c6", "target": "c9", "label": "Confirmation YES", "variant": "yes" },
-          { "id": "ce8", "source": "c6", "target": "c7", "label": "New command", "variant": "no" },
-          { "id": "ce9", "source": "c7", "target": "c8" },
-          { "id": "ce10", "source": "c8", "target": "c9", "label": "Safe", "variant": "no" },
-          { "id": "ce11", "source": "c8", "target": "c12", "label": "Destructive", "variant": "yes" },
-          { "id": "ce12", "source": "c9", "target": "c10" },
-          { "id": "ce13", "source": "c10", "target": "c11" },
-          { "id": "ce14", "source": "c11", "target": "c15" },
-          { "id": "ce15", "source": "c12", "target": "c13" },
-          { "id": "ce16", "source": "c13", "target": "c15" },
-          { "id": "ce17", "source": "c14", "target": "c15" }
+          {
+            "id": "ce1",
+            "source": "c1",
+            "target": "c2"
+          },
+          {
+            "id": "ce2",
+            "source": "c2",
+            "target": "c3"
+          },
+          {
+            "id": "ce3",
+            "source": "c3",
+            "target": "c4"
+          },
+          {
+            "id": "ce4",
+            "source": "c4",
+            "target": "c5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "ce5",
+            "source": "c4",
+            "target": "c14",
+            "label": "No",
+            "variant": "no"
+          },
+          {
+            "id": "ce6",
+            "source": "c5",
+            "target": "c6"
+          },
+          {
+            "id": "ce7",
+            "source": "c6",
+            "target": "c9",
+            "label": "Confirmation YES",
+            "variant": "yes"
+          },
+          {
+            "id": "ce8",
+            "source": "c6",
+            "target": "c7",
+            "label": "New command",
+            "variant": "no"
+          },
+          {
+            "id": "ce9",
+            "source": "c7",
+            "target": "c8"
+          },
+          {
+            "id": "ce10",
+            "source": "c8",
+            "target": "c9",
+            "label": "Safe",
+            "variant": "no"
+          },
+          {
+            "id": "ce11",
+            "source": "c8",
+            "target": "c12",
+            "label": "Destructive",
+            "variant": "yes"
+          },
+          {
+            "id": "ce12",
+            "source": "c9",
+            "target": "c10"
+          },
+          {
+            "id": "ce13",
+            "source": "c10",
+            "target": "c11"
+          },
+          {
+            "id": "ce14",
+            "source": "c11",
+            "target": "c15"
+          },
+          {
+            "id": "ce15",
+            "source": "c12",
+            "target": "c13"
+          },
+          {
+            "id": "ce16",
+            "source": "c13",
+            "target": "c15"
+          },
+          {
+            "id": "ce17",
+            "source": "c14",
+            "target": "c15"
+          }
         ]
       },
       {
@@ -441,20 +521,84 @@
           }
         ],
         "edges": [
-          { "id": "de1", "source": "d1", "target": "d2" },
-          { "id": "de2", "source": "d2", "target": "d3" },
-          { "id": "de3", "source": "d3", "target": "d12", "label": "Expired", "variant": "yes" },
-          { "id": "de4", "source": "d3", "target": "d4", "label": "Valid", "variant": "no" },
-          { "id": "de5", "source": "d4", "target": "d5", "label": "YES", "variant": "yes" },
-          { "id": "de6", "source": "d4", "target": "d11", "label": "Not YES", "variant": "no" },
-          { "id": "de7", "source": "d5", "target": "d6" },
-          { "id": "de8", "source": "d6", "target": "d7" },
-          { "id": "de9", "source": "d7", "target": "d8" },
-          { "id": "de10", "source": "d8", "target": "d9" },
-          { "id": "de11", "source": "d9", "target": "d10" },
-          { "id": "de12", "source": "d10", "target": "d13" },
-          { "id": "de13", "source": "d11", "target": "d8" },
-          { "id": "de14", "source": "d12", "target": "d8" }
+          {
+            "id": "de1",
+            "source": "d1",
+            "target": "d2"
+          },
+          {
+            "id": "de2",
+            "source": "d2",
+            "target": "d3"
+          },
+          {
+            "id": "de3",
+            "source": "d3",
+            "target": "d12",
+            "label": "Expired",
+            "variant": "yes"
+          },
+          {
+            "id": "de4",
+            "source": "d3",
+            "target": "d4",
+            "label": "Valid",
+            "variant": "no"
+          },
+          {
+            "id": "de5",
+            "source": "d4",
+            "target": "d5",
+            "label": "YES",
+            "variant": "yes"
+          },
+          {
+            "id": "de6",
+            "source": "d4",
+            "target": "d11",
+            "label": "Not YES",
+            "variant": "no"
+          },
+          {
+            "id": "de7",
+            "source": "d5",
+            "target": "d6"
+          },
+          {
+            "id": "de8",
+            "source": "d6",
+            "target": "d7"
+          },
+          {
+            "id": "de9",
+            "source": "d7",
+            "target": "d8"
+          },
+          {
+            "id": "de10",
+            "source": "d8",
+            "target": "d9"
+          },
+          {
+            "id": "de11",
+            "source": "d9",
+            "target": "d10"
+          },
+          {
+            "id": "de12",
+            "source": "d10",
+            "target": "d13"
+          },
+          {
+            "id": "de13",
+            "source": "d11",
+            "target": "d8"
+          },
+          {
+            "id": "de14",
+            "source": "d12",
+            "target": "d8"
+          }
         ]
       },
       {
@@ -540,18 +684,68 @@
           }
         ],
         "edges": [
-          { "id": "re1", "source": "r1", "target": "r2" },
-          { "id": "re2", "source": "r2", "target": "r3" },
-          { "id": "re3", "source": "r3", "target": "r4" },
-          { "id": "re4", "source": "r4", "target": "r5" },
-          { "id": "re5", "source": "r5", "target": "r6" },
-          { "id": "re6", "source": "r6", "target": "r7" },
-          { "id": "re7", "source": "r7", "target": "r8" },
-          { "id": "re8", "source": "r8", "target": "r9" },
-          { "id": "re9", "source": "r9", "target": "r10" },
-          { "id": "re10", "source": "r10", "target": "r12" },
-          { "id": "re11", "source": "r3", "target": "r11", "variant": "error" },
-          { "id": "re12", "source": "r11", "target": "r7", "variant": "error" }
+          {
+            "id": "re1",
+            "source": "r1",
+            "target": "r2"
+          },
+          {
+            "id": "re2",
+            "source": "r2",
+            "target": "r3"
+          },
+          {
+            "id": "re3",
+            "source": "r3",
+            "target": "r4"
+          },
+          {
+            "id": "re4",
+            "source": "r4",
+            "target": "r5"
+          },
+          {
+            "id": "re5",
+            "source": "r5",
+            "target": "r6"
+          },
+          {
+            "id": "re6",
+            "source": "r6",
+            "target": "r7"
+          },
+          {
+            "id": "re7",
+            "source": "r7",
+            "target": "r8"
+          },
+          {
+            "id": "re8",
+            "source": "r8",
+            "target": "r9"
+          },
+          {
+            "id": "re9",
+            "source": "r9",
+            "target": "r10"
+          },
+          {
+            "id": "re10",
+            "source": "r10",
+            "target": "r12"
+          },
+          {
+            "id": "re11",
+            "source": "r3",
+            "target": "r11",
+            "variant": "error"
+          },
+          {
+            "id": "re12",
+            "source": "r11",
+            "target": "r7",
+            "variant": "error"
+          }
         ]
       }
     ],
@@ -651,5 +845,6 @@
         "maps_to_field": null
       }
     ]
-  }
+  },
+  "is_published": false
 }

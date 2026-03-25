@@ -194,5 +194,6 @@
       "icon": "Activity",
       "color": "#ef4444"
     }
-  }
+  },
+  "is_published": false
 }

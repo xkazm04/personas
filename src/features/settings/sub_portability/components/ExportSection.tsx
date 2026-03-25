@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ExportSelectionModal } from './ExportSelectionModal';
 import type { PortabilityImportResult } from '@/api/system/dataPortability';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
@@ -14,7 +15,10 @@ interface ExportSectionProps {
   exportStatus: Status;
   importStatus: Status;
   importResult: PortabilityImportResult | null;
-  onExport: () => void;
+  showExportModal: boolean;
+  onOpenExportModal: () => void;
+  onCloseExportModal: () => void;
+  onExportSelective: (personaIds: string[], teamIds: string[], connectorIds: string[]) => void;
   onImport: () => void;
 }
 
@@ -22,21 +26,25 @@ export function ExportSection({
   exportStatus,
   importStatus,
   importResult,
-  onExport,
+  showExportModal,
+  onOpenExportModal,
+  onCloseExportModal,
+  onExportSelective,
   onImport,
 }: ExportSectionProps) {
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
       <SectionHeading title="Workspace Export & Import" />
       <p className="text-sm text-muted-foreground/70">
-        Export your workspace to a portable ZIP archive containing all personas, teams,
-        tools, connectors, memories, and test suites. Import restores from a previously
-        exported archive -- imported items are created as new entities (disabled by default).
+        Export your workspace to a portable ZIP archive containing personas, teams,
+        connectors, and related data. Choose exactly what to include. Import restores
+        from a previously exported archive — imported items are created as new entities
+        (disabled by default).
       </p>
 
       <div className="flex flex-wrap gap-3">
         <button
-          onClick={onExport}
+          onClick={onOpenExportModal}
           disabled={exportStatus === 'loading'}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
             bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15
@@ -114,6 +122,14 @@ export function ExportSection({
           )}
         </div>
       )}
+
+      {/* Export selection modal */}
+      <ExportSelectionModal
+        isOpen={showExportModal}
+        onClose={onCloseExportModal}
+        onExport={onExportSelective}
+        exporting={exportStatus === 'loading'}
+      />
     </div>
   );
 }
