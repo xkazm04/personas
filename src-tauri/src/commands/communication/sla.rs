@@ -333,45 +333,31 @@ pub fn get_sla_dashboard(
         active_persona_count: persona_stats.len() as i64,
     };
 
-    // -- Healing summary -------------------------------------------------
-    let open_issues: i64 = conn
+    // -- Healing summary (single query with conditional aggregation) ------
+    let healing_summary: HealingSummary = conn
         .query_row(
-            "SELECT COUNT(*) FROM persona_healing_issues WHERE status = 'open'",
+            "SELECT
+                SUM(CASE WHEN h.status = 'open' THEN 1 ELSE 0 END),
+                SUM(CASE WHEN h.auto_fixed = 1 THEN 1 ELSE 0 END),
+                SUM(CASE WHEN h.is_circuit_breaker = 1 AND h.status = 'open' THEN 1 ELSE 0 END),
+                (SELECT COUNT(*) FROM healing_knowledge)
+             FROM persona_healing_issues h",
             [],
-            |row| row.get(0),
+            |row| {
+                Ok(HealingSummary {
+                    open_issues: row.get::<_, Option<i64>>(0)?.unwrap_or(0),
+                    auto_fixed_count: row.get::<_, Option<i64>>(1)?.unwrap_or(0),
+                    circuit_breaker_count: row.get::<_, Option<i64>>(2)?.unwrap_or(0),
+                    knowledge_patterns: row.get(3)?,
+                })
+            },
         )
-        .unwrap_or(0);
-
-    let auto_fixed_count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM persona_healing_issues WHERE auto_fixed = 1",
-            [],
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
-
-    let circuit_breaker_count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM persona_healing_issues WHERE is_circuit_breaker = 1 AND status = 'open'",
-            [],
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
-
-    let knowledge_patterns: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM healing_knowledge",
-            [],
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
-
-    let healing_summary = HealingSummary {
-        open_issues,
-        auto_fixed_count,
-        circuit_breaker_count,
-        knowledge_patterns,
-    };
+        .unwrap_or(HealingSummary {
+            open_issues: 0,
+            auto_fixed_count: 0,
+            circuit_breaker_count: 0,
+            knowledge_patterns: 0,
+        });
 
     // -- Daily trend -----------------------------------------------------
     let mut daily_stmt = conn.prepare(

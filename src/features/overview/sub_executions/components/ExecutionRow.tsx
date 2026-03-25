@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, RotateCw } from 'lucide-react';
 import type { GlobalExecution } from '@/lib/types/types';
 import { formatDuration, getStatusEntry } from '@/lib/utils/formatters';
@@ -16,12 +15,8 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
   const status = getStatusEntry(execution.status);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      className="rounded-xl border border-primary/15 bg-secondary/20 hover:bg-secondary/30 transition-colors overflow-hidden"
+    <div
+      className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/20 hover:bg-secondary/30 transition-colors overflow-hidden"
     >
       <div
         role="button"
@@ -76,21 +71,15 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
         )}
       </div>
 
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+      {isExpanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-4 pb-4 pt-3 border-t border-primary/15">
               <ExecutionDetail execution={execution} />
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 });

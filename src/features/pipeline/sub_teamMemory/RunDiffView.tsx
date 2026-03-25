@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GitCompareArrows, Plus, Minus, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion } from 'framer-motion';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import { listTeamMemoriesByRun } from '@/api/pipeline/teamMemories';
@@ -125,10 +124,8 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
 
       {/* Diff results */}
       {diff && !loading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-2"
+        <div
+          className="animate-fade-slide-in space-y-2"
         >
           {/* Summary bar */}
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5 border border-primary/10">
@@ -248,7 +245,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
               <p className="text-xs text-muted-foreground/50">No memory differences between these runs</p>
             </div>
           )}
-        </motion.div>
+        </div>
       )}
     </div>
   );

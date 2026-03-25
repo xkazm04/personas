@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 
 export interface SmeeRelayStatus {
   channel_url: string | null;
@@ -28,7 +29,7 @@ export function useSmeeRelayStatus(): SmeeRelayStatus {
   useEffect(() => {
     let cancelled = false;
 
-    listen<SmeeRelayStatus>('smee-relay-status', (event) => {
+    listen<SmeeRelayStatus>(EventName.SMEE_RELAY_STATUS, (event) => {
       if (!cancelled) {
         setStatus(event.payload);
       }

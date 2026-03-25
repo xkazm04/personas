@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Plug, CheckCircle, Shield, ListChecks, KeyRound, CircleHelp, Bot, PenLine, PackagePlus } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { NegotiatorPanel } from '@/features/vault/sub_negotiator/NegotiatorPanel';
@@ -55,12 +54,9 @@ export function PreviewPhase() {
   const providerLabel = getProviderLabel(credentialFlow);
 
   return (
-    <motion.div
+    <div
       key="preview"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Save error banner */}
       {saveError && (
@@ -154,14 +150,11 @@ export function PreviewPhase() {
 
       {/* AI Auto-Provision */}
       {showsNegotiator(credentialFlow) && (
-        <AnimatePresence>
+        <>
           {!showNegotiator ? (
-            <motion.div
+            <div
               key="neg-trigger"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${AI_STATUS.bgColor} ${AI_STATUS.borderColor}`}
+              className={`animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-xl border ${AI_STATUS.bgColor} ${AI_STATUS.borderColor}`}
             >
               <Bot className={`w-4 h-4 shrink-0 ${AI_STATUS.color}`} />
               <div className="flex-1 min-w-0">
@@ -176,7 +169,7 @@ export function PreviewPhase() {
               >
                 Start
               </button>
-            </motion.div>
+            </div>
           ) : (
             <NegotiatorPanel
               key="neg-panel"
@@ -190,7 +183,7 @@ export function PreviewPhase() {
               onClose={() => setShowNegotiator(false)}
             />
           )}
-        </AnimatePresence>
+        </>
       )}
 
       {/* Credential name */}
@@ -246,16 +239,13 @@ export function PreviewPhase() {
       />
 
       {canSaveCredential && lastSuccessfulTestAt && (
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: [0.8, 1.08, 1], opacity: 1, boxShadow: ['0 0 0 rgba(16,185,129,0)', '0 0 12px rgba(16,185,129,0.2)', '0 0 0 rgba(16,185,129,0)'] }}
-          transition={{ duration: 0.4 }}
-          className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-sm ${SUCCESS_STATUS.bgColor} ${SUCCESS_STATUS.borderColor} ${SUCCESS_STATUS.color}`}
+        <div
+          className={`animate-fade-slide-in inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-sm ${SUCCESS_STATUS.bgColor} ${SUCCESS_STATUS.borderColor} ${SUCCESS_STATUS.color}`}
         >
           <CheckCircle className="w-3.5 h-3.5" />
           Tested successfully at {lastSuccessfulTestAt}
-        </motion.div>
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 }

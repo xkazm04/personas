@@ -4,4 +4,4 @@ export type PersonaPromptVersion = { id: string, persona_id: string, version_num
 /**
  * Version tag: "production", "experimental", or "archived"
  */
-tag: string, created_at: string, };
+tag: string, created_at: string, design_context: string | null, last_design_result: string | null, resolved_cells: string | null, icon: string | null, color: string | null, };

@@ -1,0 +1,15 @@
+{
+  "name": "@personas/mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server exposing Personas agent management to Claude Desktop",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "sql.js": "^1.11.0",
+    "zod": "^3.25.0"
+  }
+}

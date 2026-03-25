@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 
@@ -7,13 +6,9 @@ export function LabProgress() {
   const labProgress = useAgentStore((s) => s.labProgress);
 
   return (
-    <AnimatePresence>
-      {isLabRunning && labProgress && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="overflow-hidden"
+    <>{isLabRunning && labProgress && (
+        <div
+          className="animate-fade-slide-in overflow-hidden"
         >
           <div className="p-4 rounded-xl bg-secondary/30 border border-primary/10 space-y-3" role="status" aria-live="polite">
             <div className="flex items-center justify-between">
@@ -49,10 +44,8 @@ export function LabProgress() {
 
             {labProgress.total != null && (
               <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-primary/60"
-                  animate={{ width: `${((labProgress.current ?? 0) / labProgress.total) * 100}%` }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                <div
+                  className="animate-fade-in h-full rounded-full bg-primary/60" style={{ width: `${((labProgress.current ?? 0) / labProgress.total) * 100}%` }}
                 />
               </div>
             )}
@@ -65,8 +58,7 @@ export function LabProgress() {
               </div>
             )}
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </div>
+      )}</>
   );
 }

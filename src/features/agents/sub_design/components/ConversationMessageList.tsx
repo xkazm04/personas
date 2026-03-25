@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { MessageSquare, Clock, Trash2, ChevronDown, ChevronRight, User, Bot, CheckCircle2, X, ArrowRight, AlertTriangle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { DesignConversation, DesignConversationMessage } from '@/lib/types/designTypes';
 import { parseConversationMessages } from '@/lib/types/designTypes';
 import type { DesignDriftEvent } from '@/lib/design/designDrift';
@@ -76,15 +75,13 @@ export function ConversationCard({
           <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="ml-0.5 p-0.5 text-muted-foreground/40 hover:text-red-400 transition-colors" data-testid={`conversation-delete-${conversation.id}`}><Trash2 className="w-3 h-3" /></button>
         </div>
       </div>
-      <AnimatePresence>
-        {expanded && messages.length > 0 && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden">
+      {expanded && messages.length > 0 && (
+          <div className="animate-fade-slide-in overflow-hidden">
             <div className="px-3 pb-2.5 space-y-2 border-t border-border/30 pt-2">
               {messages.map((msg, i) => <MessageBubble key={i} message={msg} />)}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -92,7 +89,7 @@ export function ConversationCard({
 export function DriftNotificationCard({ event, onDismiss }: { event: DesignDriftEvent; onDismiss: () => void }) {
   const meta = DRIFT_KIND_META[event.kind];
   return (
-    <motion.div layout initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -12, height: 0 }} className={`group relative rounded-lg border ${meta.borderClass} ${meta.bgClass} p-2.5 transition-colors`}>
+    <div className={`animate-fade-slide-in group relative rounded-lg border ${meta.borderClass} ${meta.bgClass} p-2.5 transition-colors`}>
       <button onClick={onDismiss} className="absolute top-1.5 right-1.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground/50 hover:text-foreground/70 transition-all" title="Dismiss"><X className="w-2.5 h-2.5" /></button>
       <div className="flex items-start gap-2">
         <AlertTriangle className={`w-3.5 h-3.5 ${meta.textClass} flex-shrink-0 mt-0.5`} />
@@ -108,6 +105,6 @@ export function DriftNotificationCard({ event, onDismiss }: { event: DesignDrift
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

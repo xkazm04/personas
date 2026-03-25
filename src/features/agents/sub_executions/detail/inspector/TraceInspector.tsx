@@ -1,8 +1,7 @@
 import type { PersonaExecution } from '@/lib/types/types';
 import { formatDuration } from '@/lib/utils/formatters';
 import { AlertCircle, Activity } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { SPAN_TYPE_CONFIG } from './traceInspectorTypes';
+import { getSpanTypeConfig } from './traceInspectorTypes';
 import { SpanRow } from './SpanRow';
 import { TraceSummary } from './TraceSummary';
 import { useTraceData } from './useTraceData';
@@ -55,14 +54,9 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
         {/* Span rows */}
         <div className="max-h-[500px] overflow-y-auto">
-          <AnimatePresence initial={false}>
-            {visibleNodes.map((node) => (
-              <motion.div
+          {visibleNodes.map((node) => (
+              <div className="animate-fade-slide-in"
                 key={node.span.span_id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.1 }}
               >
                 <SpanRow
                   node={node}
@@ -71,9 +65,8 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
                   onToggle={() => toggleSpan(node.span.span_id)}
                   hasChildren={childrenMap.has(node.span.span_id)}
                 />
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
         </div>
       </div>
 
@@ -87,7 +80,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
           {trace.spans
             .filter(s => s.error)
             .map((span) => {
-              const config = SPAN_TYPE_CONFIG[span.span_type];
+              const config = getSpanTypeConfig(span.span_type);
               return (
                 <div key={span.span_id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-lg">
                   <div className="flex items-center gap-2 mb-1.5">

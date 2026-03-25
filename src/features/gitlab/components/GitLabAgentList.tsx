@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Bot, Trash2, ExternalLink, RefreshCw, CheckCircle2, XCircle, Clock, RotateCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { GitLabAgent } from '@/api/system/gitlab';
 import { useSystemStore } from "@/stores/systemStore";
@@ -10,6 +10,8 @@ interface GitLabAgentListProps {
   agents: GitLabAgent[];
   onFetchAgents: (projectId: number) => Promise<void>;
   onUndeploy: (projectId: number, agentId: string) => Promise<void>;
+  onRedeploy: (agentName: string) => Promise<unknown>;
+  redeployingAgentId: string | null;
 }
 
 export function GitLabAgentList({
@@ -17,6 +19,8 @@ export function GitLabAgentList({
   agents,
   onFetchAgents,
   onUndeploy,
+  onRedeploy,
+  redeployingAgentId,
 }: GitLabAgentListProps) {
   useEffect(() => {
     if (projectId) {
@@ -80,6 +84,18 @@ export function GitLabAgentList({
           </div>
           <div className="flex items-center gap-1.5">
             <PipelineStatusBadge projectId={projectId} />
+            <button
+              onClick={() => onRedeploy(agent.name)}
+              disabled={redeployingAgentId === agent.name}
+              className="p-1.5 rounded-lg hover:bg-orange-500/10 text-muted-foreground/60 hover:text-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Redeploy agent"
+            >
+              {redeployingAgentId === agent.name ? (
+                <LoadingSpinner size="xs" />
+              ) : (
+                <RotateCw className="w-4 h-4" />
+              )}
+            </button>
             {sanitizeExternalUrl(agent.webUrl) && (
               <a
                 href={sanitizeExternalUrl(agent.webUrl)!}

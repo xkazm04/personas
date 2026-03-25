@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ShieldAlert, ShieldCheck, ChevronDown, ChevronUp, History } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import { getCircuitBreakerStatus } from '@/api/agents/executions';
 import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
@@ -55,7 +56,7 @@ export function CircuitBreakerIndicator() {
 
   // Listen for real-time global breaker trip event
   useEffect(() => {
-    const unlisten = listen<CircuitBreakerStatus>('circuit-breaker-global-tripped', (event) => {
+    const unlisten = listen<CircuitBreakerStatus>(EventName.CIRCUIT_BREAKER_GLOBAL_TRIPPED, (event) => {
       setStatus(event.payload);
       setExpanded(true); // Auto-expand on global trip for visibility
     });
@@ -64,7 +65,7 @@ export function CircuitBreakerIndicator() {
 
   // Listen for individual circuit breaker transitions — refresh status on any change
   useEffect(() => {
-    const unlisten = listen<CircuitTransitionEvent>('circuit-breaker-transition', () => {
+    const unlisten = listen<CircuitTransitionEvent>(EventName.CIRCUIT_BREAKER_TRANSITION, () => {
       fetchStatus();
     });
     return () => { unlisten.then((fn) => fn()); };

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Link2,
   ChevronDown,
@@ -104,13 +103,9 @@ export function ChainCascadeTimeline({
         </span>
       </button>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="p-4 space-y-1">
               {sortedTraces.map((trace, i) => {
@@ -146,18 +141,15 @@ export function ChainCascadeTimeline({
                     {/* Cascade bar */}
                     <div className="flex-1 relative h-5">
                       <div className="absolute inset-0 bg-primary/5 rounded" />
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${widthPct}%` }}
-                        transition={{ delay: i * 0.1, duration: 0.3 }}
-                        className={`absolute top-0.5 bottom-0.5 rounded ${
+                      <div
+                        className={`animate-fade-in absolute top-0.5 bottom-0.5 rounded ${
                           isCurrent
                             ? 'bg-blue-500/40'
                             : hasError
                               ? 'bg-red-500/30'
                               : 'bg-orange-500/30'
                         }`}
-                        style={{ left: `${offsetPct}%` }}
+                        style={{ width: `${widthPct}%`, left: `${offsetPct}%` }}
                       />
 
                       {/* Connector arrow from previous */}
@@ -190,9 +182,8 @@ export function ChainCascadeTimeline({
               <span>Total: {formatDuration(chainDurationMs)}</span>
               <span>Depth: {sortedTraces.length}</span>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

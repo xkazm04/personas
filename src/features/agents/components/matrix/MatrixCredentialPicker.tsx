@@ -5,8 +5,6 @@
  * Designed to fit within the constrained space of a matrix cell.
  */
 import { Star } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-
 interface CredentialItem {
   id: string;
   name: string;
@@ -27,13 +25,8 @@ export function MatrixCredentialPicker({
   const allEmpty = matchingCreds.length === 0 && otherCreds.length === 0;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ height: 0, opacity: 0 }}
-        animate={{ height: "auto", opacity: 1 }}
-        exit={{ height: 0, opacity: 0 }}
-        transition={{ duration: 0.15 }}
-        className="overflow-hidden"
+    <div
+        className="animate-fade-slide-in overflow-hidden"
       >
         <div className="mt-1 max-h-32 overflow-y-auto rounded-lg border border-primary/10 bg-background/40 backdrop-blur-sm">
           {allEmpty && (
@@ -88,7 +81,6 @@ export function MatrixCredentialPicker({
             </div>
           )}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }

@@ -1,26 +1,30 @@
-import { useMemo } from 'react';
-import { LogIn, LogOut, Key, ArrowRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { LogIn, LogOut, Key, ArrowRight, Globe } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEPLOYMENT_TOKENS } from '@/features/deployment/components/deploymentTokens';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
+import { PipelineNotificationPrefs } from './PipelineNotificationPrefs';
 
 interface GitLabConnectionFormProps {
   isConnected: boolean;
   username: string;
+  baseUrl: string;
   isConnecting: boolean;
-  onConnect: () => void;
+  onConnect: (instanceUrl?: string) => void;
   onDisconnect: () => void;
 }
 
 export function GitLabConnectionForm({
   isConnected,
   username,
+  baseUrl,
   isConnecting,
   onConnect,
   onDisconnect,
 }: GitLabConnectionFormProps) {
+  const [instanceUrl, setInstanceUrl] = useState('');
   const credentials = useVaultStore((s) => s.credentials);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const credentialNav = useCredentialNav();
@@ -47,10 +51,12 @@ export function GitLabConnectionForm({
             </div>
             <div>
               <p className="text-sm font-medium text-foreground/90">Connected as @{username}</p>
-              <p className="text-sm text-muted-foreground/70">gitlab.com</p>
+              <p className="text-sm text-muted-foreground/70">{baseUrl.replace(/^https?:\/\//, '')}</p>
             </div>
           </div>
         </div>
+
+        <PipelineNotificationPrefs />
 
         <button
           onClick={onDisconnect}
@@ -79,8 +85,27 @@ export function GitLabConnectionForm({
                 Using <span className="font-medium">{gitlabCredential.name}</span> from Vault
               </span>
             </div>
+
+            <div className="mt-3">
+              <label htmlFor="gitlab-instance-url" className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/70 mb-1.5">
+                <Globe className="w-3.5 h-3.5" />
+                Instance URL
+              </label>
+              <input
+                id="gitlab-instance-url"
+                type="url"
+                value={instanceUrl}
+                onChange={(e) => setInstanceUrl(e.target.value)}
+                placeholder="https://gitlab.com"
+                className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/50 border border-primary/10 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-orange-500/40 transition-colors"
+              />
+              <p className="mt-1 text-xs text-muted-foreground/50">
+                Leave empty for gitlab.com, or enter your self-hosted instance URL
+              </p>
+            </div>
+
             <button
-              onClick={onConnect}
+              onClick={() => onConnect(instanceUrl || undefined)}
               disabled={isConnecting}
               className="mt-3 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >

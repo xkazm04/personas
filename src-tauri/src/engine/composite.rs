@@ -143,6 +143,9 @@ pub fn composite_tick(pool: &DbPool) {
     let now = Utc::now();
 
     for trigger in &composite_triggers {
+        if !trigger.is_within_active_window(now) {
+            continue;
+        }
         let config = trigger.parse_config();
         if let TriggerConfig::Composite {
             conditions: Some(ref conditions),

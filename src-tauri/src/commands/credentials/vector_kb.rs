@@ -8,6 +8,7 @@ use tauri::{Emitter, State};
 use crate::db::models::{
     KbDocument, KbSearchQuery, KnowledgeBase, VectorSearchResult,
 };
+use crate::engine::event_registry::event_name;
 use crate::engine::kb_ingest;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -233,7 +234,7 @@ pub async fn kb_ingest_files(
 
         if let Err(e) = result {
             tracing::error!(error = %e, "File ingestion failed");
-            let _ = app.emit("kb:ingest_error", serde_json::json!({
+            let _ = app.emit(event_name::KB_INGEST_ERROR, serde_json::json!({
                 "jobId": job_id_clone,
                 "error": e.to_string()
             }));
@@ -301,7 +302,7 @@ pub async fn kb_ingest_directory(
     };
 
     let mut file_paths = Vec::new();
-    collect_files_recursive(&canonical_dir, &allowed_exts, &mut file_paths, 0)?;
+    collect_files_recursive(&canonical_dir, &allowed_exts, &mut file_paths, 0, &canonical_dir)?;
 
     if file_paths.is_empty() {
         return Err(AppError::Validation(
@@ -342,7 +343,7 @@ pub async fn kb_ingest_directory(
 
         if let Err(e) = result {
             tracing::error!(error = %e, "Directory ingestion failed");
-            let _ = app.emit("kb:ingest_error", serde_json::json!({
+            let _ = app.emit(event_name::KB_INGEST_ERROR, serde_json::json!({
                 "jobId": job_id_clone,
                 "error": e.to_string()
             }));
@@ -357,6 +358,7 @@ fn collect_files_recursive(
     allowed_exts: &[String],
     out: &mut Vec<String>,
     depth: usize,
+    root_boundary: &std::path::Path,
 ) -> Result<(), AppError> {
     if depth > MAX_DIR_DEPTH || out.len() >= MAX_DIR_FILES {
         return Ok(());
@@ -364,12 +366,30 @@ fn collect_files_recursive(
     for entry in std::fs::read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.is_dir() {
-            collect_files_recursive(&path, allowed_exts, out, depth + 1)?;
+
+        // Canonicalize each entry to resolve symlinks, then verify it
+        // remains within the approved root directory. This prevents
+        // symlink escapes that could exfiltrate sensitive files.
+        let canonical = match std::fs::canonicalize(&path) {
+            Ok(c) => c,
+            Err(_) => continue, // Skip unresolvable entries
+        };
+        if !canonical.starts_with(root_boundary) {
+            tracing::warn!(
+                path = %path.display(),
+                resolved = %canonical.display(),
+                boundary = %root_boundary.display(),
+                "Skipping symlink that escapes directory boundary"
+            );
+            continue;
+        }
+
+        if canonical.is_dir() {
+            collect_files_recursive(&canonical, allowed_exts, out, depth + 1, root_boundary)?;
         } else if out.len() < MAX_DIR_FILES {
-            if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            if let Some(ext) = canonical.extension().and_then(|e| e.to_str()) {
                 if allowed_exts.iter().any(|a| a.eq_ignore_ascii_case(ext)) {
-                    out.push(path.to_string_lossy().to_string());
+                    out.push(canonical.to_string_lossy().to_string());
                 }
             }
         }
@@ -410,67 +430,88 @@ pub async fn kb_search(
         return Ok(Vec::new());
     }
 
-    // Hydrate results with chunk and document metadata
+    // Hydrate results with chunk and document metadata in a single batch query
     let conn = state.user_db.get()?;
-    let mut results = Vec::with_capacity(matches.len());
 
-    for (chunk_id, distance) in &matches {
-        let row = conn.query_row(
-            "SELECT c.id, c.document_id, c.content, c.metadata_json,
-                    d.title, d.source_path
-             FROM kb_chunks c
-             JOIN kb_documents d ON d.id = c.document_id
-             WHERE c.id = ?1",
-            params![chunk_id],
-            |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, String>(2)?,
-                    row.get::<_, Option<String>>(3)?,
-                    row.get::<_, String>(4)?,
-                    row.get::<_, Option<String>>(5)?,
-                ))
-            },
-        );
+    let placeholders: Vec<String> = (1..=matches.len()).map(|i| format!("?{i}")).collect();
+    let sql = format!(
+        "SELECT c.id, c.document_id, c.content, c.metadata_json,
+                d.title, d.source_path
+         FROM kb_chunks c
+         JOIN kb_documents d ON d.id = c.document_id
+         WHERE c.id IN ({})",
+        placeholders.join(", ")
+    );
 
+    let mut stmt = conn.prepare(&sql)?;
+    let chunk_ids: Vec<&str> = matches.iter().map(|(id, _)| id.as_str()).collect();
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = chunk_ids
+        .iter()
+        .map(|id| id as &dyn rusqlite::types::ToSql)
+        .collect();
+
+    let rows = stmt.query_map(param_refs.as_slice(), |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, Option<String>>(3)?,
+            row.get::<_, String>(4)?,
+            row.get::<_, Option<String>>(5)?,
+        ))
+    })?;
+
+    // Collect hydrated rows keyed by chunk_id
+    let mut hydrated: std::collections::HashMap<String, (String, String, Option<String>, String, Option<String>)> =
+        std::collections::HashMap::with_capacity(matches.len());
+    for row in rows {
         if let Ok((cid, doc_id, content, meta_json, doc_title, source_path)) = row {
-            // Convert distance to a 0-1 score (lower distance = higher score)
-            let score = 1.0 / (1.0 + distance);
-
-            // Apply min_score filter
-            if let Some(min) = query.min_score {
-                if score < min {
-                    continue;
-                }
-            }
-
-            // Apply source filter
-            if let Some(ref filter) = query.filter_source {
-                if let Some(ref sp) = source_path {
-                    if !sp.starts_with(filter) {
-                        continue;
-                    }
-                } else {
-                    continue;
-                }
-            }
-
-            let metadata = meta_json
-                .as_deref()
-                .and_then(|j| serde_json::from_str(j).ok());
-
-            results.push(VectorSearchResult {
-                chunk_id: cid,
-                document_id: doc_id,
-                document_title: doc_title,
-                content,
-                score,
-                distance: *distance,
-                source_path,
-                metadata,
-            });
+            hydrated.insert(cid, (doc_id, content, meta_json, doc_title, source_path));
         }
+    }
+
+    // Rebuild results in original vector-search ranking order
+    let mut results = Vec::with_capacity(matches.len());
+    for (chunk_id, distance) in &matches {
+        let Some((doc_id, content, meta_json, doc_title, source_path)) = hydrated.remove(chunk_id) else {
+            continue;
+        };
+
+        // Convert distance to a 0-1 score (lower distance = higher score)
+        let score = 1.0 / (1.0 + distance);
+
+        // Apply min_score filter
+        if let Some(min) = query.min_score {
+            if score < min {
+                continue;
+            }
+        }
+
+        // Apply source filter
+        if let Some(ref filter) = query.filter_source {
+            if let Some(ref sp) = source_path {
+                if !sp.starts_with(filter) {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+        }
+
+        let metadata = meta_json
+            .as_deref()
+            .and_then(|j| serde_json::from_str(j).ok());
+
+        results.push(VectorSearchResult {
+            chunk_id: chunk_id.clone(),
+            document_id: doc_id,
+            document_title: doc_title,
+            content,
+            score,
+            distance: *distance,
+            source_path,
+            metadata,
+        });
     }
 
     Ok(results)
@@ -497,43 +538,44 @@ pub async fn kb_delete_document(
     document_id: String,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
-    let conn = state.user_db.get()?;
+    let mut conn = state.user_db.get()?;
 
-    // Get KB ID and chunk IDs for vector cleanup
-    let (kb_id, chunk_ids): (String, Vec<String>) = {
-        let kb_id: String = conn.query_row(
-            "SELECT kb_id FROM kb_documents WHERE id = ?1",
-            params![document_id],
-            |row| row.get(0),
-        )?;
+    // Run all deletes (vectors, chunks, document) and counter update in a
+    // single transaction so the database never enters an inconsistent state.
+    let tx = conn.transaction()?;
 
-        let mut stmt = conn.prepare("SELECT id FROM kb_chunks WHERE document_id = ?1")?;
+    // Look up KB ID and chunk IDs inside the transaction
+    let kb_id: String = tx.query_row(
+        "SELECT kb_id FROM kb_documents WHERE id = ?1",
+        params![document_id],
+        |row| row.get(0),
+    )?;
+
+    let chunk_ids: Vec<String> = {
+        let mut stmt = tx.prepare("SELECT id FROM kb_chunks WHERE document_id = ?1")?;
         let ids = stmt
             .query_map(params![document_id], |row| row.get::<_, String>(0))?
             .collect::<Result<Vec<_>, _>>()?;
-
-        (kb_id, ids)
+        ids
     };
 
-    // Delete vectors
-    if let Some(vs) = &state.vector_store {
-        vs.delete_by_chunks(&kb_id, &chunk_ids)?;
+    // Delete vectors from the vec0 virtual table (same SQLite DB)
+    if state.vector_store.is_some() {
+        crate::engine::vector_store::delete_vectors_by_chunks(&tx, &kb_id, &chunk_ids)?;
     }
 
-    // Delete chunks and document
-    conn.execute(
+    // Delete chunks, then the document row
+    tx.execute(
         "DELETE FROM kb_chunks WHERE document_id = ?1",
         params![document_id],
     )?;
-    conn.execute(
+    tx.execute(
         "DELETE FROM kb_documents WHERE id = ?1",
         params![document_id],
     )?;
 
-    // Update counters
-    let user_db = &state.user_db;
-    let conn2 = user_db.get()?;
-    conn2.execute(
+    // Update counters in the same transaction
+    tx.execute(
         "UPDATE knowledge_bases SET
             document_count = (SELECT COUNT(*) FROM kb_documents WHERE kb_id = ?1 AND status = 'indexed'),
             chunk_count = (SELECT COUNT(*) FROM kb_chunks WHERE kb_id = ?1),
@@ -542,5 +584,6 @@ pub async fn kb_delete_document(
         params![kb_id],
     )?;
 
+    tx.commit()?;
     Ok(())
 }

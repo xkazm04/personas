@@ -1,6 +1,7 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useCallback, useEffect, MutableRefObject } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { getTemplateGenerateSnapshot } from '@/api/templates/templateAdopt';
 import { normalizeDraftFromUnknown } from '@/features/templates/sub_n8n/hooks/n8nTypes';
@@ -90,7 +91,7 @@ export function useCreateTemplateSnapshot(
     const currentGenId = backgroundGenId;
 
     const unlistenPromise = listen<{ gen_id: string; line: string }>(
-      'template-generate-output',
+      EventName.TEMPLATE_GENERATE_OUTPUT,
       (event) => {
         if (event.payload.gen_id === currentGenId) {
           reducer.appendGenerateLine(event.payload.line);

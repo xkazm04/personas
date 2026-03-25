@@ -1,7 +1,5 @@
 import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-
 type Placement = 'top' | 'bottom' | 'left' | 'right';
 
 interface TooltipProps {
@@ -178,22 +176,18 @@ export function Tooltip({
         {children}
       </span>
       {createPortal(
-        <AnimatePresence>
+        <>
           {visible && (
-            <motion.div
+            <div
               ref={tooltipRef}
-              initial={{ opacity: 0, x: offset.x, y: offset.y }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
-              exit={{ opacity: 0, x: offset.x, y: offset.y }}
-              transition={{ duration: 0.15 }}
               role="tooltip"
-              className="fixed z-[9999] pointer-events-none max-w-[240px] typo-caption text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
+              className="animate-fade-slide-in fixed z-[9999] pointer-events-none max-w-[240px] typo-caption text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
               style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
             >
               {content}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>,
+        </>,
         document.body,
       )}
     </>

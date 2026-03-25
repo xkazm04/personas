@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { ExternalLink, MessageSquare, Hand, Check } from 'lucide-react';
 import type { BrowserLogEntry } from '../helpers/types';
 import { openExternalUrl } from '@/api/system/system';
@@ -28,10 +27,8 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={`flex items-start gap-3 p-3 rounded-xl border-2 ${
+    <div
+      className={`animate-fade-slide-in flex items-start gap-3 p-3 rounded-xl border-2 ${
         confirmed ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/8'
       }`}
     >
@@ -66,17 +63,15 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 /** Violet card for input requests */
 export function InputRequestCard({ entry }: { entry: BrowserLogEntry }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="flex items-start gap-3 p-3 rounded-xl border-2 border-violet-500/30 bg-violet-500/8"
+    <div
+      className="animate-fade-slide-in flex items-start gap-3 p-3 rounded-xl border-2 border-violet-500/30 bg-violet-500/8"
     >
       <div className="w-8 h-8 rounded-full bg-violet-500/15 flex items-center justify-center shrink-0 mt-0.5">
         <MessageSquare className="w-4 h-4 text-violet-400" />
@@ -85,6 +80,6 @@ export function InputRequestCard({ entry }: { entry: BrowserLogEntry }) {
         <p className="text-sm font-semibold text-violet-400">Input Requested</p>
         <p className="text-sm text-foreground/80 mt-1 leading-relaxed">{entry.message}</p>
       </div>
-    </motion.div>
+    </div>
   );
 }

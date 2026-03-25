@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
+import { EventName } from '@/lib/eventRegistry';
 import { testN8nDraft } from '@/api/agents/tests';
 import { sendAppNotification } from '@/api/system/system';
 import { silentCatch } from "@/lib/silentCatch";
@@ -29,8 +30,8 @@ export function useBackgroundPreview(): UseBackgroundPreviewReturn {
   const setTemplateTestActive = useSystemStore((s) => s.setTemplateTestActive);
 
   const stream = useCorrelatedCliStream({
-    outputEvent: 'n8n-test-output',
-    statusEvent: 'n8n-test-status',
+    outputEvent: EventName.N8N_TEST_OUTPUT,
+    statusEvent: EventName.N8N_TEST_STATUS,
     idField: 'test_id',
     onFailed: (msg) => setError(msg),
   });

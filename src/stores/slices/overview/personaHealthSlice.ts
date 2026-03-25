@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
-import { useAgentStore } from "../../agentStore";
+import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import type { DashboardDailyPoint } from "@/lib/bindings/DashboardDailyPoint";
@@ -235,7 +235,7 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
     set({ healthLoading: true, healthError: null });
     try {
       await measureStoreAction('computePersonaHealth', async () => {
-        const { personas } = useAgentStore.getState();
+        const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS);
         const dashboard = get().executionDashboard;
         const dailyPoints = dashboard?.daily_points ?? [];
 

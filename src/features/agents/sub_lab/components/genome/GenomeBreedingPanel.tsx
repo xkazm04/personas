@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dna, Play, Loader2, CheckCircle2,
   Trash2, Plus, Sparkles, Zap, DollarSign, Target,
@@ -133,11 +132,8 @@ function FitnessBar({ label, value, color }: { label: string; value: number; col
     <div className="flex items-center gap-2" role="meter" aria-label={label} aria-valuenow={Math.round(value * 100)} aria-valuemin={0} aria-valuemax={100}>
       <span className="text-xs text-muted-foreground w-14">{label}</span>
       <div className="flex-1 h-1.5 bg-primary/10 rounded-full overflow-hidden">
-        <motion.div
-          className={`h-full rounded-full ${color}`}
-          initial={{ width: 0 }}
-          animate={{ width: `${Math.round(value * 100)}%` }}
-          transition={{ duration: 0.5 }}
+        <div
+          className={`animate-fade-in h-full rounded-full ${color}`} style={{ width: `${Math.round(value * 100)}%` }}
         />
       </div>
       <span className="text-xs text-muted-foreground w-10 text-right">
@@ -192,11 +188,8 @@ function OffspringCard({
   const firstParentGenome = firstParentId ? parentGenomes.get(firstParentId) : undefined;
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="border border-primary/10 rounded-lg p-3 space-y-2 bg-primary/[0.02]"
+    <div
+      className="animate-fade-slide-in border border-primary/10 rounded-lg p-3 space-y-2 bg-primary/[0.02]"
       role="article"
       aria-label={`Offspring: ${genome?.sourcePersonaName ?? result.id.slice(0, 6)}, generation ${result.generation}`}
     >
@@ -243,19 +236,13 @@ function OffspringCard({
       )}
 
       {/* Genome diff section */}
-      <AnimatePresence>
-        {showDiff && firstParentGenome && genome && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden pt-1 border-t border-primary/5"
+      {showDiff && firstParentGenome && genome && (
+          <div
+            className="animate-fade-slide-in overflow-hidden pt-1 border-t border-primary/5"
           >
             <GenomeDiffView parent={firstParentGenome} offspring={genome} />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       <div className="flex items-center justify-end pt-1 border-t border-primary/5">
         {result.adopted ? (
@@ -277,7 +264,7 @@ function OffspringCard({
           </button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -629,12 +616,8 @@ export function GenomeBreedingPanel() {
       )}
 
       {/* Offspring results */}
-      <AnimatePresence>
-        {hasResults && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+      {hasResults && (
+          <div className="animate-fade-slide-in"
           >
             <SectionCard
               title={`Offspring (${results.length})`}
@@ -652,9 +635,8 @@ export function GenomeBreedingPanel() {
                 ))}
               </div>
             </SectionCard>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {selectedRunId && results.length === 0 && (
         <div className="text-center py-8 text-muted-foreground/60 text-sm" role="status">

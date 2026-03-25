@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
@@ -74,8 +73,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
 
   return (
     <div className="space-y-4">
-      <AnimatePresence mode="wait">
-        {session.phase === 'consent' && (
+      {session.phase === 'consent' && (
           <AutoCredConsent
             key="consent"
             designResult={designResult}
@@ -124,24 +122,19 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
         )}
 
         {session.phase === 'saving' && (
-          <motion.div
+          <div
             key="saving"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center py-12 gap-3"
+            className="animate-fade-slide-in flex flex-col items-center justify-center py-12 gap-3"
           >
             <LoadingSpinner size="2xl" className="text-emerald-400" />
             <p className="text-sm text-muted-foreground/90">Saving credential...</p>
-          </motion.div>
+          </div>
         )}
 
         {session.phase === 'done' && (
-          <motion.div
+          <div
             key="done"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center py-10 gap-4"
+            className="animate-fade-slide-in flex flex-col items-center justify-center py-10 gap-4"
           >
             <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
               <CheckCircle2 className="w-7 h-7 text-emerald-400" />
@@ -158,7 +151,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             >
               Done
             </button>
-          </motion.div>
+          </div>
         )}
 
         {session.phase === 'error' && session.error && (
@@ -170,7 +163,6 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
             onCancel={handleCancel}
           />
         )}
-      </AnimatePresence>
     </div>
   );
 }

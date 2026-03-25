@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Zap, Clock, CheckCircle2, TrendingUp, Radio } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { RealtimeStats } from '@/hooks/realtime/useRealtimeEvents';
@@ -15,18 +14,12 @@ interface Props {
 
 const AnimatedNumber = memo(function AnimatedNumber({ value, color }: { value: string | number; color?: string }) {
   return (
-    <AnimatePresence mode="wait">
-      <motion.span
+    <span
         key={String(value)}
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 8 }}
-        transition={{ duration: 0.15 }}
-        className={`font-bold text-sm ${color ?? 'text-foreground'}`}
+        className={`animate-fade-slide-in font-bold text-sm ${color ?? 'text-foreground'}`}
       >
         {value}
-      </motion.span>
-    </AnimatePresence>
+      </span>
   );
 });
 

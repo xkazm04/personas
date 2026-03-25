@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { WIZARD_STEPS, compileWizardInstruction, compileWizardToAgentIR, getAnswerSummary } from './wizardSteps';
 import type { WizardAnswers } from './wizardSteps';
@@ -73,15 +72,9 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
       />
 
       {/* Step content */}
-      <AnimatePresence mode="wait" custom={direction}>
-        <motion.div
+      <div
           key={currentStep.id}
-          custom={direction}
-          initial={{ opacity: 0, x: direction * 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: direction * -40 }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="rounded-xl border border-primary/10 bg-secondary/10 p-4"
+          className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/10 p-4"
         >
           {/* Step header */}
           <div className="mb-4">
@@ -134,8 +127,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
               onAnswer={handleAnswer}
             />
           )}
-        </motion.div>
-      </AnimatePresence>
+        </div>
 
       {/* Footer navigation */}
       <div className="flex items-center justify-between">

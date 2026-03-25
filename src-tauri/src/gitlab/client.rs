@@ -56,6 +56,11 @@ impl GitLabClient {
         })
     }
 
+    /// Return the base URL this client is configured for.
+    pub fn base_url(&self) -> &str {
+        &self.base_url
+    }
+
     // --------------------------------------------------------------------
     // Private HTTP helpers
     // --------------------------------------------------------------------
@@ -265,6 +270,104 @@ impl GitLabClient {
     // --------------------------------------------------------------------
     // AGENTS.md fallback (Repository Files API)
     // --------------------------------------------------------------------
+
+    // --------------------------------------------------------------------
+    // Tags API (for version history)
+    // --------------------------------------------------------------------
+
+    /// `GET /api/v4/projects/:id/repository/tags?search=<prefix>`
+    /// List tags, optionally filtered by a search prefix.
+    pub async fn list_tags(
+        &self,
+        project_id: i64,
+        search: Option<&str>,
+    ) -> Result<Vec<super::types::GitLabTag>, AppError> {
+        let path = format!("/projects/{project_id}/repository/tags");
+        let mut req = self
+            .authed(reqwest::Method::GET, &path)
+            .query(&[("per_page", "100"), ("order_by", "updated")]);
+        if let Some(s) = search {
+            req = req.query(&[("search", s)]);
+        }
+        self.send_json(req).await
+    }
+
+    /// `POST /api/v4/projects/:id/repository/tags`
+    /// Create a new tag pointing at a given ref (branch, commit SHA, etc.).
+    pub async fn create_tag(
+        &self,
+        project_id: i64,
+        tag_name: &str,
+        ref_name: &str,
+        message: Option<&str>,
+    ) -> Result<super::types::GitLabTag, AppError> {
+        let path = format!("/projects/{project_id}/repository/tags");
+        let mut body = serde_json::json!({
+            "tag_name": tag_name,
+            "ref": ref_name,
+        });
+        if let Some(msg) = message {
+            body["message"] = serde_json::Value::String(msg.to_string());
+        }
+        let req = self.authed(reqwest::Method::POST, &path).json(&body);
+        self.send_json(req).await
+    }
+
+    // --------------------------------------------------------------------
+    // Branches API (for environment management)
+    // --------------------------------------------------------------------
+
+    /// `GET /api/v4/projects/:id/repository/branches?search=<prefix>`
+    pub async fn list_branches(
+        &self,
+        project_id: i64,
+        search: Option<&str>,
+    ) -> Result<Vec<super::types::GitLabBranch>, AppError> {
+        let path = format!("/projects/{project_id}/repository/branches");
+        let mut req = self
+            .authed(reqwest::Method::GET, &path)
+            .query(&[("per_page", "100")]);
+        if let Some(s) = search {
+            req = req.query(&[("search", s)]);
+        }
+        self.send_json(req).await
+    }
+
+    /// `POST /api/v4/projects/:id/repository/branches`
+    pub async fn create_branch(
+        &self,
+        project_id: i64,
+        branch_name: &str,
+        ref_name: &str,
+    ) -> Result<super::types::GitLabBranch, AppError> {
+        let path = format!("/projects/{project_id}/repository/branches");
+        let body = serde_json::json!({
+            "branch": branch_name,
+            "ref": ref_name,
+        });
+        let req = self.authed(reqwest::Method::POST, &path).json(&body);
+        self.send_json(req).await
+    }
+
+    // --------------------------------------------------------------------
+    // Repository Files API (read at specific ref)
+    // --------------------------------------------------------------------
+
+    /// `GET /api/v4/projects/:id/repository/files/:path/raw?ref=<ref>`
+    /// Read a file at a specific git ref (tag, branch, or commit SHA).
+    pub async fn get_file_at_ref(
+        &self,
+        project_id: i64,
+        file_path: &str,
+        git_ref: &str,
+    ) -> Result<String, AppError> {
+        let encoded_path = urlencoding::encode(file_path);
+        let path = format!("/projects/{project_id}/repository/files/{encoded_path}/raw");
+        let req = self
+            .authed(reqwest::Method::GET, &path)
+            .query(&[("ref", git_ref)]);
+        self.send_text(req).await
+    }
 
     /// Create or update AGENTS.md via Repository Files API.
     pub async fn upsert_agents_md(

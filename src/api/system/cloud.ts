@@ -10,20 +10,28 @@ import type { CloudExecution } from "@/lib/bindings/CloudExecution";
 import type { CloudExecutionStats } from "@/lib/bindings/CloudExecutionStats";
 import type { CloudTrigger } from "@/lib/bindings/CloudTrigger";
 import type { CloudTriggerFiring } from "@/lib/bindings/CloudTriggerFiring";
+import type { CloudDiagnostics } from "@/lib/bindings/CloudDiagnostics";
 
 export type { CloudConfig } from "@/lib/bindings/CloudConfig";
 export type { CloudWorkerCounts } from "@/lib/bindings/CloudWorkerCounts";
 export type { CloudStatusResponse } from "@/lib/bindings/CloudStatusResponse";
 export type { CloudOAuthAuthorizeResponse } from "@/lib/bindings/CloudOAuthAuthorizeResponse";
 export type { CloudOAuthStatusResponse } from "@/lib/bindings/CloudOAuthStatusResponse";
+export type { CloudDiagnostics } from "@/lib/bindings/CloudDiagnostics";
+export type { DiagnosticStep } from "@/lib/bindings/DiagnosticStep";
 export type { CloudDeployment, CloudReviewRequest, CloudExecution, CloudExecutionStats, CloudTrigger, CloudTriggerFiring };
 
 // Config
+/** Returns health-check round-trip latency in milliseconds. */
 export const cloudConnect = (url: string, apiKey: string) =>
-  invoke<void>("cloud_connect", { url, apiKey });
+  invoke<number>("cloud_connect", { url, apiKey });
 
+export const cloudDiagnose = (url: string, apiKey: string) =>
+  invoke<CloudDiagnostics>("cloud_diagnose", { url, apiKey });
+
+/** Returns health-check round-trip latency in milliseconds. */
 export const cloudReconnectFromKeyring = () =>
-  invoke<void>("cloud_reconnect_from_keyring");
+  invoke<number>("cloud_reconnect_from_keyring");
 
 export const cloudDisconnect = () =>
   invoke<void>("cloud_disconnect");
@@ -101,6 +109,9 @@ export const cloudExecutionStats = (personaId?: string, periodDays?: number) =>
     personaId: personaId,
     periodDays: periodDays,
   });
+
+export const cloudGetExecutionOutput = (executionId: string) =>
+  invoke<string[]>("cloud_get_execution_output", { executionId });
 
 // Cloud Triggers (schedules, webhooks, etc.)
 

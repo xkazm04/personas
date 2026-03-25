@@ -16,7 +16,6 @@ use crate::engine::genome::{
     self, breed_generation, compute_fitness, FitnessObjective, FitnessScore, PersonaGenome,
 };
 use super::test_runner::{generate_scenarios, execute_scenario, score_result, TestModelConfig};
-use super::prompt;
 
 // =============================================================================
 // Types
@@ -308,6 +307,7 @@ pub async fn run_evolution_cycle(
 ///
 /// Combines the incumbent's actual fitness with structural heuristics
 /// to estimate variant quality without running full executions.
+#[allow(dead_code)]
 fn score_variant(
     variant: &PersonaGenome,
     incumbent: &PersonaGenome,

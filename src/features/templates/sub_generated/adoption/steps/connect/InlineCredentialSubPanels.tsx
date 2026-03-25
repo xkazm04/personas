@@ -2,7 +2,6 @@
  * Sub-panels for InlineCredentialPanel: MethodPicker, DesignQueryInput.
  * ManualForm is in ManualCredentialForm.tsx.
  */
-import { motion } from 'framer-motion';
 import { Sparkles, PenTool } from 'lucide-react';
 import { MOTION } from '@/features/templates/animationPresets';
 
@@ -67,11 +66,8 @@ export function MethodPicker({
   onDesign: () => void;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="grid grid-cols-2 gap-2"
+    <div
+      className="animate-fade-slide-in grid grid-cols-2 gap-2"
     >
       <MethodCard
         icon={<PenTool className="w-4 h-4 text-foreground/60" />}
@@ -88,7 +84,7 @@ export function MethodPicker({
         onClick={onDesign}
         accent="violet"
       />
-    </motion.div>
+    </div>
   );
 }
 
@@ -111,11 +107,8 @@ export function DesignQueryInput({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
-      className="space-y-3"
+    <div
+      className="animate-fade-slide-in space-y-3"
     >
       <p className="text-sm text-muted-foreground/70">
         Describe the service or connector you need. AI will identify
@@ -140,6 +133,6 @@ export function DesignQueryInput({
           Design Credential
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -3,7 +3,7 @@ import type { UseCaseFlow, FlowNode } from '@/lib/types/frontendTypes';
 import FlowNodeCard from './FlowNodeCard';
 
 // ============================================================================
-// Simple vertical flow layout with BFS layering
+// Simple vertical flow with BFS layering
 // ============================================================================
 
 export default function FlowDiagram({

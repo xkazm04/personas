@@ -1,5 +1,4 @@
 import { memo, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -91,11 +90,8 @@ const SectionRow = memo(function SectionRow({
   const { Icon, color, bg } = meta;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className={`flex items-start gap-2.5 px-3 py-2 rounded-xl border transition-colors ${
+    <div
+      className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2 rounded-xl border transition-colors ${
         isLatest
           ? 'border-primary/15 bg-secondary/30'
           : 'border-transparent bg-transparent'
@@ -118,7 +114,7 @@ const SectionRow = memo(function SectionRow({
         </div>
         <SectionDetail section={section} />
       </div>
-    </motion.div>
+    </div>
   );
 }, (prev, next) => {
   if (prev.isLatest !== next.isLatest) return false;
@@ -161,12 +157,10 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
   if (sections.length === 0 && !isStreaming) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       aria-live="polite"
       aria-busy={isStreaming}
-      className="rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden"
+      className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden"
     >
       {/* Header */}
       <div className="px-4 py-2.5 border-b border-primary/8 flex items-center justify-between">
@@ -202,28 +196,24 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
 
       {/* Section list */}
       <div className="px-2 py-2 space-y-0.5">
-        <AnimatePresence mode="popLayout">
-          {sections.map((section, i) => (
+        {sections.map((section, i) => (
             <SectionRow
               key={`${section.kind}-${section.index}`}
               section={section}
               isLatest={i === sections.length - 1 && isStreaming}
             />
           ))}
-        </AnimatePresence>
 
         {/* Loading indicator */}
         {isStreaming && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground/50"
+          <div
+            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground/50"
           >
             <LoadingSpinner size="xs" />
             Awaiting next section...
-          </motion.div>
+          </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

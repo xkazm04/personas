@@ -3,7 +3,7 @@
  *
  * Build-time detection uses env vars set by build scripts (TAURI_ANDROID, TAURI_IOS).
  * In dev mode, you can toggle mobile preview via localStorage or the keyboard shortcut
- * Ctrl+Shift+M to test mobile layout without an Android device.
+ * Ctrl+Shift+M to test mobile without an Android device.
  */
 
 // Build-time flag -- true only when building for Android/iOS.

@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::PersonaTestSuite;
 use crate::db::DbPool;
@@ -6,19 +6,10 @@ use crate::error::AppError;
 
 // -- Row mapper -------------------------------------------------
 
-fn row_to_suite(row: &Row) -> rusqlite::Result<PersonaTestSuite> {
-    Ok(PersonaTestSuite {
-        id: row.get("id")?,
-        persona_id: row.get("persona_id")?,
-        name: row.get("name")?,
-        description: row.get("description")?,
-        scenarios: row.get("scenarios")?,
-        scenario_count: row.get("scenario_count")?,
-        source_run_id: row.get("source_run_id")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_suite -> PersonaTestSuite {
+    id, persona_id, name, description, scenarios,
+    scenario_count, source_run_id, created_at, updated_at,
+});
 
 // -- CRUD operations --------------------------------------------
 
@@ -43,18 +34,7 @@ pub fn create(
     get_by_id(pool, &id)
 }
 
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaTestSuite, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM test_suites WHERE id = ?1",
-        params![id],
-        row_to_suite,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("TestSuite {id}")),
-        other => AppError::Database(other),
-    })
-}
+crud_get_by_id!(PersonaTestSuite, "test_suites", "TestSuite", row_to_suite);
 
 pub fn list_by_persona(
     pool: &DbPool,
@@ -121,8 +101,4 @@ pub fn update(
     get_by_id(pool, id)
 }
 
-pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM test_suites WHERE id = ?1", params![id])?;
-    Ok(rows > 0)
-}
+crud_delete!("test_suites");

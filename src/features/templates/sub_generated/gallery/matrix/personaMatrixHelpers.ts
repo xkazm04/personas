@@ -40,7 +40,7 @@ export function extractTriggers(triggers: SuggestedTrigger[]): { type: string; l
       if (typeof interval === 'string') return { type: t.trigger_type, label: `Poll every ${interval}` };
       if (typeof interval === 'number') return { type: t.trigger_type, label: `Poll every ${interval}m` };
     }
-    if (t.description.length > 3 && t.description.length <= 45) return { type: t.trigger_type, label: t.description };
+    if (t.description && t.description.length > 3 && t.description.length <= 45) return { type: t.trigger_type, label: t.description };
     return { type: t.trigger_type, label: TRIGGER_LABELS[t.trigger_type] ?? t.trigger_type };
   });
 }

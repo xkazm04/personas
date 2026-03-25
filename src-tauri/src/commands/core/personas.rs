@@ -8,11 +8,13 @@ use crate::db::models::{
     PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus, UpdatePersonaInput,
 };
 use crate::db::repos::communication::events as event_repo;
+use crate::db::repos::core::groups as group_repo;
 use crate::db::repos::core::personas as repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::automations as automation_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
+use crate::engine::config_merge::{self, EffectiveModelConfig};
 use crate::engine::types::ExecutionState;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -47,6 +49,24 @@ pub fn update_persona(
 ) -> Result<Persona, AppError> {
     require_auth_sync(&state)?;
     repo::update(&state.db, &id, input)
+}
+
+/// Lightweight parameter-only update — no rebuild required.
+#[tauri::command]
+pub fn update_persona_parameters(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    parameters: Option<String>,
+) -> Result<Persona, AppError> {
+    require_auth_sync(&state)?;
+    repo::update(
+        &state.db,
+        &id,
+        UpdatePersonaInput {
+            parameters: Some(parameters),
+            ..Default::default()
+        },
+    )
 }
 
 #[tauri::command]
@@ -122,11 +142,35 @@ pub fn persona_blast_radius(
         .collect())
 }
 
+/// Maximum time to wait for engine slots to clear during persona deletion.
+const DELETION_DRAIN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
+/// Poll interval when waiting for engine slots to drain.
+const DELETION_DRAIN_POLL: std::time::Duration = std::time::Duration::from_millis(250);
+
 #[tauri::command]
 pub async fn delete_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth(&state).await?;
 
-    // Cancel any running/queued executions for this persona before deleting
+    // ── Phase 1: Mark persona as "deleting" to block new executions ──
+    state.engine.mark_deleting(&id).await;
+
+    // Ensure we always unmark on early return / error
+    let state_ref: &Arc<AppState> = &state;
+    let result = delete_persona_inner(state_ref, &id).await;
+
+    // Clean up the deleting marker regardless of outcome
+    state.engine.unmark_deleting(&id).await;
+
+    result
+}
+
+/// Inner two-phase deletion logic, separated so the caller can guarantee
+/// cleanup of the `deleting_personas` marker via `unmark_deleting`.
+async fn delete_persona_inner(
+    state: &Arc<AppState>,
+    id: &str,
+) -> Result<bool, AppError> {
+    // ── Phase 1b: Cancel all running/queued executions for this persona ──
     let running = match exec_repo::get_running(&state.db) {
         Ok(r) => r,
         Err(e) => {
@@ -141,18 +185,20 @@ pub async fn delete_persona(state: State<'_, Arc<AppState>>, id: String) -> Resu
         }
     };
 
+    let mut force_cancelled: Vec<String> = Vec::new();
     let mut cancel_failures: Vec<String> = Vec::new();
+
     for exec in &running {
         if exec.persona_id == id {
             let cancelled = state
                 .engine
-                .cancel_execution(&exec.id, &state.db, Some(&id))
+                .cancel_execution(&exec.id, &state.db, Some(id))
                 .await;
             if !cancelled {
                 tracing::warn!(
                     persona_id = %id,
                     execution_id = %exec.id,
-                    "Engine failed to cancel execution; marking as cancelled in DB"
+                    "Engine failed to cancel execution; force-marking as cancelled in DB"
                 );
                 // Force-mark the execution as cancelled in DB to prevent orphaned runs
                 if let Err(e) = exec_repo::update_status(
@@ -160,7 +206,7 @@ pub async fn delete_persona(state: State<'_, Arc<AppState>>, id: String) -> Resu
                     &exec.id,
                     UpdateExecutionStatus {
                         status: ExecutionState::Cancelled,
-                        error_message: Some("Cancelled during persona deletion".into()),
+                        error_message: Some("Force-cancelled during persona deletion".into()),
                         ..Default::default()
                     },
                 ) {
@@ -171,18 +217,66 @@ pub async fn delete_persona(state: State<'_, Arc<AppState>>, id: String) -> Resu
                         "Failed to mark orphaned execution as cancelled"
                     );
                     cancel_failures.push(exec.id.clone());
+                } else {
+                    force_cancelled.push(exec.id.clone());
                 }
             }
         }
+    }
+
+    // Log force-cancelled executions as warnings
+    for exec_id in &force_cancelled {
+        tracing::warn!(
+            persona_id = %id,
+            execution_id = %exec_id,
+            "Execution was force-cancelled during persona deletion (engine cancel failed)"
+        );
     }
 
     if !cancel_failures.is_empty() {
         tracing::error!(
             persona_id = %id,
             failed_executions = ?cancel_failures,
-            "Some executions could not be cancelled or marked; proceeding with deletion"
+            "Some executions could not be cancelled or marked during persona deletion"
         );
     }
 
-    repo::delete(&state.db, &id)
+    // ── Phase 2: Wait for engine tracker to confirm all slots are cleared ──
+    let deadline = tokio::time::Instant::now() + DELETION_DRAIN_TIMEOUT;
+    loop {
+        if state.engine.all_slots_cleared(id).await {
+            break;
+        }
+        if tokio::time::Instant::now() >= deadline {
+            tracing::warn!(
+                persona_id = %id,
+                "Timed out waiting for engine slots to clear; proceeding with deletion"
+            );
+            break;
+        }
+        tokio::time::sleep(DELETION_DRAIN_POLL).await;
+    }
+
+    // ── Phase 2b: Finalize the delete ──
+    repo::delete(&state.db, id)
+}
+
+/// Resolve the effective model configuration for a persona, showing the
+/// cascaded result of global -> workspace -> agent-level overrides.
+#[tauri::command]
+pub fn resolve_effective_config(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<EffectiveModelConfig, AppError> {
+    require_auth_sync(&state)?;
+    let persona = repo::get_by_id(&state.db, &persona_id)?;
+    let workspace = persona
+        .group_id
+        .as_deref()
+        .and_then(|gid| group_repo::get_by_id(&state.db, gid).ok());
+    Ok(config_merge::resolve_effective_config(
+        &state.db,
+        &persona,
+        workspace.as_ref(),
+    ))
 }

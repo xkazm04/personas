@@ -26,6 +26,9 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
   const [autoSetupPending, setAutoSetupPending] = useState(false);
   const [autoSetupResult, setAutoSetupResult] = useState<CredentialDesignResult | null>(null);
 
+  // Universal AutoCred state
+  const [showUniversal, setShowUniversal] = useState(false);
+
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
 
@@ -77,6 +80,7 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
       setExpandedTemplateId(null);
       setAutoSetupPending(false);
       setAutoSetupResult(null);
+      setShowUniversal(false);
       setShowImport(false);
       importFlow.reset();
       fetchConnectorDefinitions();
@@ -117,6 +121,7 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
     if (orch.phase === 'done') onComplete();
     setAutoSetupPending(false);
     setAutoSetupResult(null);
+    setShowUniversal(false);
     onClose();
   };
 
@@ -188,5 +193,7 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
     autoSetupPending,
     autoSetupResult,
     setAutoSetupResult,
+    showUniversal,
+    setShowUniversal,
   };
 }

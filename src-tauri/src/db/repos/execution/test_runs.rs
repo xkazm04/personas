@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{CreateTestResultInput, PersonaTestResult, PersonaTestRun};
 use crate::db::DbPool;
@@ -6,21 +6,14 @@ use crate::error::AppError;
 
 // -- Row mappers ------------------------------------------------
 
-fn row_to_run(row: &Row) -> rusqlite::Result<PersonaTestRun> {
-    Ok(PersonaTestRun {
-        id: row.get("id")?,
-        persona_id: row.get("persona_id")?,
-        status: row.get("status")?,
-        models_tested: row.get("models_tested")?,
-        scenarios_count: row.get("scenarios_count")?,
-        summary: row.get("summary")?,
-        error: row.get("error")?,
-        created_at: row.get("created_at")?,
-        completed_at: row.get("completed_at")?,
-    })
-}
+row_mapper!(row_to_run -> PersonaTestRun {
+    id, persona_id, status, models_tested,
+    scenarios_count, summary, error,
+    created_at, completed_at,
+});
 
-fn row_to_result(row: &Row) -> rusqlite::Result<PersonaTestResult> {
+// row_to_result uses custom logic (unwrap_or for tokens/cost/duration) -- keep manual
+fn row_to_result(row: &rusqlite::Row) -> rusqlite::Result<PersonaTestResult> {
     Ok(PersonaTestResult {
         id: row.get("id")?,
         test_run_id: row.get("test_run_id")?,

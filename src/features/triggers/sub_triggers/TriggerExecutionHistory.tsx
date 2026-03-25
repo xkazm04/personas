@@ -4,7 +4,6 @@ import {
   RefreshCw, RotateCcw, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useTriggerHistory } from '../hooks/useTriggerHistory';
@@ -78,14 +77,9 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
       </button>
 
       {/* Expanded detail */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {isExpanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-primary/5">
               {/* Metadata line */}
@@ -131,9 +125,8 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                 )}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -174,13 +167,9 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
+      {open && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="space-y-1.5 pt-1">
               {history.loading ? (
@@ -230,9 +219,8 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                 </>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </>
   );
 }

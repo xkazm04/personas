@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Clock, Trash2, ChevronRight, RefreshCw, RotateCcw } from 'lucide-react';
 import { listN8nSessionSummaries, deleteN8nSession, getN8nSession } from '@/api/templates/n8nTransform';
 import type { N8nSessionSummary } from '@/lib/bindings/N8nSessionSummary';
@@ -219,16 +218,13 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
           const statusKey = interrupted ? 'interrupted' : session.status;
           const style = STATUS_STYLES[statusKey] ?? STATUS_STYLES.draft!;
           return (
-            <motion.div
+            <div
               key={session.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04, duration: 0.2 }}
               role="button"
               tabIndex={0}
               onClick={() => void handleLoad(session)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleLoad(session); } }}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 transition-colors text-left group cursor-pointer"
+              className="animate-fade-slide-in w-full flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 transition-colors text-left group cursor-pointer"
               data-testid={`n8n-session-card-${session.id}`}
             >
               <div className="w-10 h-10 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
@@ -270,7 +266,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
                   <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-muted-foreground" />
                 )}
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>

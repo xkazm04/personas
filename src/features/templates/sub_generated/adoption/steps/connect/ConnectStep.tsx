@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { Plug, ChevronDown, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
@@ -247,8 +246,7 @@ export function ConnectStep() {
       {ctx.hasDatabaseConnector && <DatabaseSetupCard />}
 
       {/* Inline credential panel */}
-      <AnimatePresence initial={false}>
-        {activeInlineConnector && (
+      {activeInlineConnector && (
           <InlineCredentialPanel
             key={`${activeInlineConnector.activeName}-${inlineStartMode}`}
             connectorName={activeInlineConnector.activeName}
@@ -263,7 +261,6 @@ export function ConnectStep() {
             onClose={() => onSetInlineConnector(null)}
           />
         )}
-      </AnimatePresence>
     </div>
   );
 }

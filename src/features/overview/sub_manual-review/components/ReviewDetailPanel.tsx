@@ -1,6 +1,5 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Check, X, Send, Bot, User, Cloud, ExternalLink } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
@@ -144,7 +143,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
         {messages.map((msg) => {
           const isUser = msg.role === 'user';
           return (
-            <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+            <div key={msg.id} className={`animate-fade-slide-in flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border ${isUser ? 'bg-blue-500/15 border-blue-500/25' : 'bg-violet-500/15 border-violet-500/25'}`}>
                 {isUser ? <User className="w-3.5 h-3.5 text-blue-400" /> : <Bot className="w-3.5 h-3.5 text-violet-400" />}
               </div>
@@ -157,7 +156,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           );
         })}
 

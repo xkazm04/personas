@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ICON_STYLES } from './iconStyles';
 import { ICONS, type IconMode } from './iconData';
 import { Button } from '@/features/shared/components/buttons';
@@ -37,15 +36,10 @@ export default function IconShowcase() {
 
       {/* Icon grid */}
       <div className="grid grid-cols-9 gap-2">
-        <AnimatePresence mode="wait">
-          {ICONS.map((icon, i) => (
-            <motion.div
+        {ICONS.map((icon, i) => (
+            <div
               key={`${icon.id}-${mode}`}
-              initial={{ scale: 0.7, opacity: 0, y: 8 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.7, opacity: 0, y: -8 }}
-              transition={{ delay: i * 0.04, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="flex flex-col items-center gap-1.5"
+              className="animate-fade-slide-in flex flex-col items-center gap-1.5"
               onMouseEnter={() => setHoveredIcon(icon.id)}
               onMouseLeave={() => setHoveredIcon(null)}
             >
@@ -59,26 +53,20 @@ export default function IconShowcase() {
               <span className="text-[9px] text-muted-foreground/60 font-medium leading-none">
                 {icon.label}
               </span>
-            </motion.div>
+            </div>
           ))}
-        </AnimatePresence>
       </div>
 
       {/* Hover detail */}
       <div className="h-5 flex items-center justify-center">
-        <AnimatePresence mode="wait">
-          {hoveredIcon && mode === 'custom' && (
-            <motion.p
+        {hoveredIcon && mode === 'custom' && (
+            <p
               key={hoveredIcon}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              className="text-[11px] text-primary/60 font-mono"
+              className="animate-fade-slide-in text-[11px] text-primary/60 font-mono"
             >
               {ICONS.find((i) => i.id === hoveredIcon)?.desc} · animated SVG · currentColor
-            </motion.p>
+            </p>
           )}
-        </AnimatePresence>
       </div>
 
       <p className="text-[11px] text-muted-foreground/40 font-mono text-center">

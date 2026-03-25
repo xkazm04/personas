@@ -880,5 +880,6 @@
         "context": "4 event subscription(s) configured -- agent participates in event bus"
       }
     ]
-  }
+  },
+  "is_published": false
 }

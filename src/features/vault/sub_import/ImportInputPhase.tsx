@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { ArrowLeft, Upload, Terminal } from 'lucide-react';
 import { IMPORT_SOURCES, type ImportSourceId } from './importTypes';
 
@@ -28,11 +27,8 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
     : 'Paste your .env file contents below.';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+    <div
+      className="animate-fade-slide-in space-y-4"
     >
       <div className="flex items-center gap-2">
         <button
@@ -72,6 +68,6 @@ export function ImportInputPhase({ sourceId, rawInput, onInputChange, onParse, o
           Parse Secrets
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

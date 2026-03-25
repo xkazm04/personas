@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { Database, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { TestFixture } from '@/lib/types/frontendTypes';
 import { FixtureList, AddFixtureForm } from './FixtureDropdownList';
 
@@ -58,14 +57,9 @@ export function UseCaseFixtureDropdown({
         <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 mt-1 z-50 w-64 rounded-xl bg-popover border border-primary/20 shadow-xl shadow-black/30 overflow-hidden"
+      {isOpen && (
+          <div
+            className="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-64 rounded-xl bg-popover border border-primary/20 shadow-xl shadow-black/30 overflow-hidden"
           >
             {/* No fixture option */}
             <button
@@ -91,9 +85,8 @@ export function UseCaseFixtureDropdown({
             />
 
             <AddFixtureForm currentInputs={currentInputs} onSave={onSave} />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

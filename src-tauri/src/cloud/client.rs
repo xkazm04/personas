@@ -258,6 +258,49 @@ pub struct CloudTriggerFiring {
 }
 
 // ============================================================================
+// Shared Events Marketplace types
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SharedCatalogResponse {
+    pub entries: Vec<SharedCatalogCloudEntry>,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SharedCatalogCloudEntry {
+    pub id: String,
+    pub slug: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub category: String,
+    pub publisher: Option<String>,
+    pub icon: Option<String>,
+    pub color: Option<String>,
+    pub sample_payload: Option<String>,
+    pub event_schema: Option<String>,
+    pub subscriber_count: i64,
+    pub is_featured: bool,
+    pub status: String,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SharedEventFiring {
+    pub id: String,
+    pub catalog_slug: String,
+    pub event_type: String,
+    pub payload: Option<String>,
+    pub fired_at: String,
+}
+
+// ============================================================================
 // Internal request bodies (not exported to TS)
 // ============================================================================
 
@@ -566,12 +609,13 @@ impl CloudClient {
         limit: Option<u32>,
         offset: Option<u32>,
     ) -> Result<Vec<CloudExecution>, AppError> {
-        let mut path = "/api/executions?".to_string();
-        if let Some(pid) = persona_id { path.push_str(&format!("personaId={pid}&")); }
-        if let Some(s) = status { path.push_str(&format!("status={s}&")); }
-        if let Some(l) = limit { path.push_str(&format!("limit={l}&")); }
-        if let Some(o) = offset { path.push_str(&format!("offset={o}&")); }
-        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+        let mut params: Vec<(&str, String)> = Vec::new();
+        if let Some(pid) = persona_id { params.push(("personaId", pid.to_string())); }
+        if let Some(s) = status { params.push(("status", s.to_string())); }
+        if let Some(l) = limit { params.push(("limit", l.to_string())); }
+        if let Some(o) = offset { params.push(("offset", o.to_string())); }
+        let req = self.authed(reqwest::Method::GET, "/api/executions").await.query(&params);
+        self.send_json(req).await
     }
 
     /// `GET /api/executions/stats` -- aggregated execution statistics.
@@ -580,10 +624,11 @@ impl CloudClient {
         persona_id: Option<&str>,
         period_days: Option<u32>,
     ) -> Result<CloudExecutionStats, AppError> {
-        let mut path = "/api/executions/stats?".to_string();
-        if let Some(pid) = persona_id { path.push_str(&format!("personaId={pid}&")); }
-        if let Some(p) = period_days { path.push_str(&format!("period={p}&")); }
-        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+        let mut params: Vec<(&str, String)> = Vec::new();
+        if let Some(pid) = persona_id { params.push(("personaId", pid.to_string())); }
+        if let Some(p) = period_days { params.push(("period", p.to_string())); }
+        let req = self.authed(reqwest::Method::GET, "/api/executions/stats").await.query(&params);
+        self.send_json(req).await
     }
 
     // --------------------------------------------------------------------
@@ -617,9 +662,11 @@ impl CloudClient {
 
     /// `GET /api/triggers/{id}/firings` -- list recent firings for a trigger.
     pub async fn list_trigger_firings(&self, trigger_id: &str, limit: Option<u32>) -> Result<Vec<CloudTriggerFiring>, AppError> {
-        let mut path = format!("/api/triggers/{}/firings?", trigger_id);
-        if let Some(l) = limit { path.push_str(&format!("limit={l}&")); }
-        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+        let path = format!("/api/triggers/{}/firings", trigger_id);
+        let mut params: Vec<(&str, String)> = Vec::new();
+        if let Some(l) = limit { params.push(("limit", l.to_string())); }
+        let req = self.authed(reqwest::Method::GET, &path).await.query(&params);
+        self.send_json(req).await
     }
 
     /// `GET /api/triggers/{id}/stats` -- trigger firing statistics.
@@ -631,5 +678,72 @@ impl CloudClient {
     /// Returns the base URL of the orchestrator (for building endpoint URLs).
     pub fn base_url(&self) -> &str {
         &self.base_url
+    }
+
+    // --------------------------------------------------------------------
+    // Shared Events Marketplace
+    // --------------------------------------------------------------------
+
+    /// `GET /api/shared-events/catalog` -- browse the shared events catalog.
+    pub async fn shared_events_browse_catalog(
+        &self,
+        category: Option<&str>,
+    ) -> Result<SharedCatalogResponse, AppError> {
+        let mut params: Vec<(&str, String)> = Vec::new();
+        if let Some(c) = category {
+            params.push(("category", c.to_string()));
+        }
+        let req = self
+            .authed(reqwest::Method::GET, "/api/shared-events/catalog")
+            .await
+            .query(&params);
+        self.send_json(req).await
+    }
+
+    /// `POST /api/shared-events/subscribe` -- subscribe to a catalog feed.
+    pub async fn shared_events_subscribe(
+        &self,
+        catalog_entry_id: &str,
+    ) -> Result<(), AppError> {
+        let req = self
+            .authed(reqwest::Method::POST, "/api/shared-events/subscribe")
+            .await
+            .json(&serde_json::json!({ "catalogEntryId": catalog_entry_id }));
+        self.send_ok(req).await
+    }
+
+    /// `POST /api/shared-events/unsubscribe` -- unsubscribe from a catalog feed.
+    pub async fn shared_events_unsubscribe(
+        &self,
+        catalog_entry_id: &str,
+    ) -> Result<(), AppError> {
+        let req = self
+            .authed(reqwest::Method::POST, "/api/shared-events/unsubscribe")
+            .await
+            .json(&serde_json::json!({ "catalogEntryId": catalog_entry_id }));
+        self.send_ok(req).await
+    }
+
+    /// `GET /api/shared-events/feed/{slug}?since={cursor}&limit=50`
+    /// -- poll for new events in a subscribed feed since the cursor.
+    pub async fn shared_events_poll_feed(
+        &self,
+        slug: &str,
+        since: Option<&str>,
+        limit: Option<u32>,
+    ) -> Result<Vec<SharedEventFiring>, AppError> {
+        let path = format!("/api/shared-events/feed/{slug}");
+        let mut params: Vec<(&str, String)> = Vec::new();
+        if let Some(s) = since {
+            params.push(("since", s.to_string()));
+        }
+        if let Some(l) = limit {
+            params.push(("limit", l.to_string()));
+        }
+        let req = self
+            .authed(reqwest::Method::GET, &path)
+            .await
+            .query(&params);
+        self.send_json(req).await
     }
 }

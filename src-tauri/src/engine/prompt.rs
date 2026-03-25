@@ -516,6 +516,26 @@ pub fn replace_variables(
     trusted_vars.insert("persona_id".into(), persona.id.clone());
     trusted_vars.insert("persona_name".into(), persona.name.clone());
 
+    // Inject free parameters as trusted variables (persona-owned, not user-input)
+    if let Some(ref params_json) = persona.parameters {
+        if let Ok(params) = serde_json::from_str::<Vec<serde_json::Value>>(params_json) {
+            for p in &params {
+                if let (Some(key), Some(value)) = (
+                    p.get("key").and_then(|k| k.as_str()),
+                    p.get("value"),
+                ) {
+                    let val_str = match value {
+                        serde_json::Value::String(s) => s.clone(),
+                        serde_json::Value::Number(n) => n.to_string(),
+                        serde_json::Value::Bool(b) => b.to_string(),
+                        _ => value.to_string(),
+                    };
+                    trusted_vars.insert(format!("param.{}", key), val_str);
+                }
+            }
+        }
+    }
+
     // Add input_data variables -- these are user-provided and MUST be sanitized.
     // Keys starting with _ are internal metadata (e.g. _use_case, _time_filter)
     // and are not substituted into prompts via {{}} -- they are handled separately.
@@ -690,6 +710,15 @@ pub fn build_cli_args(
     // Provider env
     if let Some(profile) = model_profile {
         apply_provider_env(&mut cli_args, profile);
+
+        // Prompt cache policy: pass as env var for the execution runtime
+        if let Some(ref policy) = profile.prompt_cache_policy {
+            if policy != "none" && !policy.is_empty() {
+                cli_args
+                    .env_overrides
+                    .push(("PROMPT_CACHE_POLICY".to_string(), policy.clone()));
+            }
+        }
     }
 
     cli_args.env_removals.push("CLAUDECODE".to_string());

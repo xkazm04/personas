@@ -19,6 +19,7 @@ use std::time::{Duration, Instant};
 use futures_util::FutureExt;
 use tauri::{AppHandle, Emitter};
 
+use super::event_registry::event_name;
 use crate::db::DbPool;
 use crate::engine::background::{SchedulerState, SubscriptionCrashEvent};
 use crate::engine::ExecutionEngine;
@@ -654,7 +655,7 @@ async fn run_single(
             scheduler.record_subscription_crash(name);
 
             // Emit a Tauri event so the frontend can surface the crash immediately
-            let _ = app.emit("subscription-crashed", SubscriptionCrashEvent {
+            let _ = app.emit(event_name::SUBSCRIPTION_CRASHED, SubscriptionCrashEvent {
                 name: name.to_string(),
                 panic_message: msg,
                 consecutive_panics,

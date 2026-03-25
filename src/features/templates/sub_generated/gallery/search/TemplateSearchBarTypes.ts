@@ -45,4 +45,7 @@ export interface TemplateSearchBarProps {
   // Recommended
   hasRecommendations?: boolean;
   onOpenRecommended?: () => void;
+  // Difficulty & setup filters
+  onDifficultyFilterChange?: (values: string[]) => void;
+  onSetupFilterChange?: (values: string[]) => void;
 }

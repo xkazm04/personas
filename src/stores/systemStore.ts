@@ -24,6 +24,7 @@ const LEGACY_MAP: Record<string, string> = { simple: 'starter', full: 'team', de
 export const useSystemStore = create<SystemStore>()(
   persist(
     (...a) => ({
+      errorKind: null,
       ...createUiSlice(...a),
       ...createCloudSlice(...a),
       ...createGitLabSlice(...a),

@@ -7,7 +7,6 @@
  */
 
 import { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
   TrendingDown,
@@ -92,11 +91,8 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
   const Icon = config.icon;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`rounded-xl border ${config.border} ${config.bg} overflow-hidden`}
+    <div
+      className={`animate-fade-slide-in rounded-xl border ${config.border} ${config.bg} overflow-hidden`}
     >
       <button
         onClick={() => setExpanded(!expanded)}
@@ -123,14 +119,9 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
         </div>
       </button>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-4 pb-3 pt-1 border-t border-primary/5 space-y-2.5">
               {/* Impact */}
@@ -161,10 +152,9 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 

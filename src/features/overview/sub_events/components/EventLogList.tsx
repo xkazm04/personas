@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Server, Bot, Plus } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { AnimatePresence } from 'framer-motion';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
@@ -190,8 +189,7 @@ export default function EventLogList() {
         />
       </ContentBody>
 
-      <AnimatePresence>
-        {selectedEvent && (
+      {selectedEvent && (
           <DetailModal
             title={`Event: ${selectedEvent.event_type}`}
             subtitle={`Status: ${selectedEvent.status}`}
@@ -204,7 +202,6 @@ export default function EventLogList() {
             />
           </DetailModal>
         )}
-      </AnimatePresence>
     </ContentBox>
   );
 }

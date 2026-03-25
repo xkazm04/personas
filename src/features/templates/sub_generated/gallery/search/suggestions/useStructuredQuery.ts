@@ -1,7 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 
+export type ChipType = 'category' | 'difficulty' | 'setup';
+
 export interface QueryChip {
-  type: 'category';
+  type: ChipType;
   value: string;
   label: string;
 }
@@ -21,15 +23,23 @@ export interface UseStructuredQueryReturn {
   keywordText: string;
 }
 
-const PREFIXES = ['category:'] as const;
+const PREFIXES = ['category:', 'difficulty:', 'setup:'] as const;
+
+export interface StructuredQueryCallbacks {
+  onCategoryFilterChange: (categories: string[]) => void;
+  onSearchChange: (keyword: string) => void;
+  onDifficultyFilterChange?: (values: string[]) => void;
+  onSetupFilterChange?: (values: string[]) => void;
+}
 
 /**
  * Parses structured query tokens from the search input.
- * Supports `category:value` syntax that commits as chips.
+ * Supports `category:value`, `difficulty:value`, and `setup:value` syntax that commits as chips.
  */
 export function useStructuredQuery(
   onCategoryFilterChange: (categories: string[]) => void,
   onSearchChange: (keyword: string) => void,
+  callbacks?: Pick<StructuredQueryCallbacks, 'onDifficultyFilterChange' | 'onSetupFilterChange'>,
 ): UseStructuredQueryReturn {
   const [inputValue, setInputValueRaw] = useState('');
   const [chips, setChips] = useState<QueryChip[]>([]);
@@ -74,16 +84,23 @@ export function useStructuredQuery(
     }
   }, [onSearchChange]);
 
+  const syncChipFilters = useCallback((next: QueryChip[], changedType: ChipType) => {
+    if (changedType === 'category') {
+      onCategoryFilterChange(next.filter((c) => c.type === 'category').map((c) => c.value));
+    } else if (changedType === 'difficulty') {
+      callbacks?.onDifficultyFilterChange?.(next.filter((c) => c.type === 'difficulty').map((c) => c.value));
+    } else if (changedType === 'setup') {
+      callbacks?.onSetupFilterChange?.(next.filter((c) => c.type === 'setup').map((c) => c.value));
+    }
+  }, [onCategoryFilterChange, callbacks]);
+
   const addChip = useCallback((chip: QueryChip) => {
     setChips((prev) => {
       // Don't add duplicate
       if (prev.some((c) => c.type === chip.type && c.value === chip.value)) return prev;
 
       const next = [...prev, chip];
-      // Sync to parent
-      if (chip.type === 'category') {
-        onCategoryFilterChange(next.filter((c) => c.type === 'category').map((c) => c.value));
-      }
+      syncChipFilters(next, chip.type);
       return next;
     });
 
@@ -101,26 +118,26 @@ export function useStructuredQuery(
       }
       return prev;
     });
-  }, [onCategoryFilterChange, onSearchChange]);
+  }, [syncChipFilters, onSearchChange]);
 
   const removeChip = useCallback((index: number) => {
     setChips((prev) => {
       const removed = prev[index];
       const next = prev.filter((_, i) => i !== index);
 
-      if (removed?.type === 'category') {
-        onCategoryFilterChange(next.filter((c) => c.type === 'category').map((c) => c.value));
-      }
+      if (removed) syncChipFilters(next, removed.type);
       return next;
     });
-  }, [onCategoryFilterChange]);
+  }, [syncChipFilters]);
 
   const clearAll = useCallback(() => {
     setChips([]);
     setInputValueRaw('');
     onCategoryFilterChange([]);
+    callbacks?.onDifficultyFilterChange?.([]);
+    callbacks?.onSetupFilterChange?.([]);
     onSearchChange('');
-  }, [onCategoryFilterChange, onSearchChange]);
+  }, [onCategoryFilterChange, callbacks, onSearchChange]);
 
   // Also handle external category filter changes (e.g. from explore view)
   // by syncing chips when category filter is set externally

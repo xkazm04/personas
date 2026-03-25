@@ -1,5 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Wand2, Cloud, LogIn, X } from 'lucide-react';
+import { AlertTriangle, Cloud, LogIn, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAuthStore } from '@/stores/authStore';
@@ -39,14 +38,10 @@ function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], on
   const palette = COLOR_SCHEMES[colorScheme];
 
   return (
-    <AnimatePresence>
+    <>
       {visible && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration }}
-          className="overflow-hidden"
+        <div
+          className="animate-fade-slide-in overflow-hidden"
         >
           <div className={`mx-6 my-2 rounded-xl p-3 flex items-center gap-3 ${palette.container}`}>
             {icon}
@@ -58,9 +53,9 @@ function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], on
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 
@@ -91,32 +86,6 @@ export function UnsavedChangesBanner({
       ]}
       onDismiss={onDismiss}
       duration={0.2}
-    />
-  );
-}
-
-export function DesignNudgeBanner() {
-  const showDesignNudge = useSystemStore((s) => s.showDesignNudge);
-  const setShowDesignNudge = useSystemStore((s) => s.setShowDesignNudge);
-  const editorTab = useSystemStore((s) => s.editorTab);
-  const setEditorTab = useSystemStore((s) => s.setEditorTab);
-
-  return (
-    <BannerPrimitive
-      visible={showDesignNudge && editorTab !== 'design'}
-      colorScheme="violet"
-      icon={<Wand2 className="w-4 h-4 text-violet-400 flex-shrink-0" />}
-      message="Customize this template with the AI Design Wizard"
-      actions={[
-        <button
-          key="design"
-          onClick={() => { setEditorTab('design'); setShowDesignNudge(false); }}
-          className="px-3 py-1 rounded-xl typo-heading bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors duration-snap"
-        >
-          Try Design Wizard
-        </button>,
-      ]}
-      onDismiss={() => setShowDesignNudge(false)}
     />
   );
 }

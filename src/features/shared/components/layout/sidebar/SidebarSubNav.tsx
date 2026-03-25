@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 
 export interface SubNavItem {
   id: string;
@@ -38,6 +39,7 @@ export default function SidebarSubNav({
   const isOverview = variant === 'overview';
   const boxSize = isOverview ? 'w-8 h-8' : 'w-7 h-7';
   const iconSize = isOverview ? 'w-4 h-4' : 'w-3.5 h-3.5';
+  const labelOf = useSidebarLabels();
 
   return (
     <>
@@ -72,7 +74,7 @@ export default function SidebarSubNav({
               <Icon className={`${iconSize} ${isActive ? 'text-primary' : 'text-muted-foreground/90'}`} />
             </div>
             <span className={`typo-heading ${isActive ? 'text-foreground' : isOverview ? 'text-foreground/80' : 'text-muted-foreground/90'}`}>
-              {item.label}
+              {labelOf(item.id, item.label)}
             </span>
             {badge && badge.count > 0 && (
               <span className={`ml-auto px-1.5 py-0.5 typo-heading leading-none rounded-full ${badge.className}`}>

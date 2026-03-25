@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion, AnimatePresence } from 'framer-motion';
 import { CredentialDesignProvider } from '@/features/vault/sub_design/CredentialDesignContext';
 import { IdlePhase } from '@/features/vault/sub_design/phases/IdlePhase';
 import { AnalyzingPhase } from '@/features/vault/sub_design/phases/AnalyzingPhase';
@@ -75,7 +74,7 @@ export function CredentialDesignModalBody({
           }}
         />
       ) : showImport ? (
-        <AnimatePresence mode="wait">
+        <>
           {importFlow.phase === 'pick_source' && (
             <ImportSourcePicker
               key="import-pick"
@@ -110,9 +109,9 @@ export function CredentialDesignModalBody({
               onBack={importFlow.goBack}
             />
           )}
-        </AnimatePresence>
+        </>
       ) : (
-        <AnimatePresence mode="wait">
+        <>
           {orch.phase === 'idle' && (
             <IdlePhase
               key="idle"
@@ -144,16 +143,13 @@ export function CredentialDesignModalBody({
           )}
 
           {orch.phase === 'saving' && (
-            <motion.div
+            <div
               key="saving"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-12 gap-3"
+              className="animate-fade-slide-in flex flex-col items-center justify-center py-12 gap-3"
             >
               <LoadingSpinner size="2xl" className="text-primary" />
               <p className="text-sm text-muted-foreground/90">Saving credential...</p>
-            </motion.div>
+            </div>
           )}
 
           {orch.phase === 'done' && (
@@ -183,7 +179,7 @@ export function CredentialDesignModalBody({
               }}
             />
           )}
-        </AnimatePresence>
+        </>
       )}
     </div>
   );

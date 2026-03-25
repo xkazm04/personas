@@ -1,0 +1,38 @@
+{
+  "id": "builtin-alpha-vantage",
+  "name": "alpha_vantage",
+  "label": "Alpha Vantage",
+  "color": "#222832",
+  "icon_url": "/icons/connectors/alpha-vantage.svg",
+  "category": "finance",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "YOUR_API_KEY",
+      "helpText": "Claim your free API key at alphavantage.co/support/#api-key"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://www.alphavantage.co/query?function=MARKET_STATUS&apikey={{api_key}}",
+    "method": "GET",
+    "headers": {},
+    "description": "Validates API key via Alpha Vantage Market Status endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Alpha Vantage for real-time and historical stock, forex, crypto, and economic data.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://www.alphavantage.co/documentation/",
+    "setup_guide": "1. Go to alphavantage.co/support/#api-key\n2. Enter your email and a description\n3. Click 'Get Free API Key'\n4. Copy the API key and paste it here",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      { "id": "api_key", "label": "API Key", "type": "credential", "is_default": true }
+    ]
+  }
+}

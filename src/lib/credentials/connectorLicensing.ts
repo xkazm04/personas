@@ -45,6 +45,7 @@ export const LICENSE_TIER_META: Record<LicenseTier, LicenseTierMeta> = {
  */
 const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   // -- Personal (free) ---------------------------------
+  alpha_vantage:                   'personal',
   azure_devops:                    'personal',
   kubernetes:                      'personal',
   github:                          'personal',

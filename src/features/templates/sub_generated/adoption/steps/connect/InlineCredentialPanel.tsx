@@ -11,7 +11,6 @@
  * State machine: pick -> (design-query -> designing ->) manual <-> auto
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
@@ -126,12 +125,8 @@ export function InlineCredentialPanel({
   }, []);
 
   return (
-    <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: 'auto', opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      transition={MOTION.smooth.framer}
-      className="overflow-hidden"
+    <div
+      className="animate-fade-slide-in overflow-hidden"
     >
       <div className="rounded-xl border border-primary/15 bg-secondary/20 p-4 space-y-3">
         {/* Header */}
@@ -161,8 +156,7 @@ export function InlineCredentialPanel({
           </Button>
         </div>
 
-        <AnimatePresence mode="wait">
-          {mode === 'pick' && (
+        {mode === 'pick' && (
             <MethodPicker
               key="pick"
               hasKnownFields={hasKnownFields}
@@ -181,14 +175,11 @@ export function InlineCredentialPanel({
           )}
 
           {mode === 'designing' && (
-            <motion.div
+            <div className="animate-fade-slide-in"
               key="designing"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
             >
               <AnalyzingPhase outputLines={design.outputLines} onCancel={handleBack} />
-            </motion.div>
+            </div>
           )}
 
           {mode === 'manual' && (
@@ -209,21 +200,17 @@ export function InlineCredentialPanel({
           )}
 
           {mode === 'auto' && activeDesignResult && (
-            <motion.div
+            <div className="animate-fade-slide-in"
               key="auto"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
             >
               <AutoCredPanel
                 designResult={activeDesignResult}
                 onComplete={handleAutoComplete}
                 onCancel={handleAutoCancel}
               />
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </div>
-    </motion.div>
+    </div>
   );
 }

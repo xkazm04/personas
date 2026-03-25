@@ -1,6 +1,4 @@
 import { Filter, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-
 // -- Dropdown wrapper ----------------------------------------------
 
 interface FilterDropdownProps {
@@ -41,19 +39,13 @@ export function FilterDropdown({
         )}
         <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.12 }}
-            className={`absolute top-full left-0 mt-1 z-50 ${wide ? 'w-56' : 'w-44'} p-1.5 rounded-xl border border-primary/12 bg-background/95 backdrop-blur-md shadow-xl shadow-black/20`}
+      {isOpen && (
+          <div
+            className={`animate-fade-slide-in absolute top-full left-0 mt-1 z-50 ${wide ? 'w-56' : 'w-44'} p-1.5 rounded-xl border border-primary/12 bg-background/95 backdrop-blur-md shadow-xl shadow-black/20`}
           >
             {children}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

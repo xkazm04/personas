@@ -52,6 +52,122 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         let _ = conn.execute_batch(col); // ignore "duplicate column" errors
     }
 
+    // -- Deployment history for GitLab integration ----------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS deployment_history (
+            id              TEXT PRIMARY KEY,
+            persona_id      TEXT NOT NULL,
+            persona_name    TEXT NOT NULL,
+            project_id      INTEGER NOT NULL,
+            method          TEXT NOT NULL,
+            credentials_provisioned INTEGER NOT NULL DEFAULT 0,
+            deploy_result   TEXT NOT NULL DEFAULT 'success',
+            agent_id        TEXT,
+            web_url         TEXT,
+            snapshot_prompt TEXT,
+            rolled_back_from TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_deploy_hist_persona_project
+            ON deployment_history(persona_id, project_id);
+        CREATE INDEX IF NOT EXISTS idx_deploy_hist_created
+            ON deployment_history(created_at DESC);"
+    )?;
+
+    // -- Immutable ExecutionConfig snapshot per execution ----------------------
+    let _ = conn.execute_batch(
+        "ALTER TABLE persona_executions ADD COLUMN execution_config TEXT;"
+    ); // ignore "duplicate column" error on re-run
+
+    // -- Alert Rules (moved from frontend localStorage to backend DB) ----------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS alert_rules (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL,
+            metric      TEXT NOT NULL,
+            operator    TEXT NOT NULL,
+            threshold   REAL NOT NULL,
+            severity    TEXT NOT NULL DEFAULT 'warning',
+            persona_id  TEXT,
+            enabled     INTEGER NOT NULL DEFAULT 1,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_alert_rules_enabled ON alert_rules(enabled);
+
+        CREATE TABLE IF NOT EXISTS fired_alerts (
+            id          TEXT PRIMARY KEY,
+            rule_id     TEXT NOT NULL,
+            rule_name   TEXT NOT NULL,
+            metric      TEXT NOT NULL,
+            severity    TEXT NOT NULL,
+            message     TEXT NOT NULL,
+            value       REAL NOT NULL,
+            threshold   REAL NOT NULL,
+            persona_id  TEXT,
+            fired_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            dismissed   INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_fired_alerts_fired_at ON fired_alerts(fired_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_fired_alerts_rule_id ON fired_alerts(rule_id);"
+    )?;
+
+    // -- Trust score for graduated autonomy (Agent Trust Ladder) ---------------
+    let _ = conn.execute_batch(
+        "ALTER TABLE personas ADD COLUMN trust_score REAL NOT NULL DEFAULT 0.0;"
+    ); // ignore "duplicate column" error on re-run
+
+    // -- Shared Events Marketplace: catalog cache + subscriptions ---------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS shared_event_catalog (
+            id               TEXT PRIMARY KEY,
+            slug             TEXT NOT NULL UNIQUE,
+            name             TEXT NOT NULL,
+            description      TEXT,
+            category         TEXT NOT NULL DEFAULT 'general',
+            publisher        TEXT,
+            icon             TEXT,
+            color            TEXT,
+            sample_payload   TEXT,
+            event_schema     TEXT,
+            subscriber_count INTEGER NOT NULL DEFAULT 0,
+            is_featured      INTEGER NOT NULL DEFAULT 0,
+            status           TEXT NOT NULL DEFAULT 'active',
+            cloud_updated_at TEXT,
+            cached_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_shared_catalog_category ON shared_event_catalog(category);
+        CREATE INDEX IF NOT EXISTS idx_shared_catalog_slug ON shared_event_catalog(slug);
+
+        CREATE TABLE IF NOT EXISTS shared_event_subscriptions (
+            id               TEXT PRIMARY KEY,
+            catalog_entry_id TEXT NOT NULL REFERENCES shared_event_catalog(id) ON DELETE CASCADE,
+            slug             TEXT NOT NULL,
+            enabled          INTEGER NOT NULL DEFAULT 1,
+            last_cursor      TEXT,
+            events_relayed   INTEGER NOT NULL DEFAULT 0,
+            last_event_at    TEXT,
+            error            TEXT,
+            created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_shared_subs_catalog ON shared_event_subscriptions(catalog_entry_id);
+        CREATE INDEX IF NOT EXISTS idx_shared_subs_enabled ON shared_event_subscriptions(enabled);"
+    )?;
+
+    // -- Shared Event Analytics --------------------------------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS shared_event_analytics (
+            slug             TEXT PRIMARY KEY,
+            total_received   INTEGER NOT NULL DEFAULT 0,
+            total_failed     INTEGER NOT NULL DEFAULT 0,
+            total_bytes      INTEGER NOT NULL DEFAULT 0,
+            last_received_at TEXT,
+            hourly_buckets   TEXT NOT NULL DEFAULT '[]',
+            updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+        );"
+    )?;
+
     tracing::info!("Database migrations complete");
     Ok(())
 }
@@ -1388,6 +1504,23 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE INDEX IF NOT EXISTS idx_chat_persona   ON chat_messages(persona_id);
 CREATE INDEX IF NOT EXISTS idx_chat_session   ON chat_messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_chat_created   ON chat_messages(created_at);
+
+-- ============================================================================
+-- Chat Session Context (persistent session metadata for cross-restart memory)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS chat_session_context (
+    session_id          TEXT PRIMARY KEY,
+    persona_id          TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+    title               TEXT,
+    summary             TEXT,
+    system_prompt_hash  TEXT,
+    working_memory      TEXT,
+    chat_mode           TEXT NOT NULL DEFAULT 'ops',
+    updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_chat_ctx_persona   ON chat_session_context(persona_id);
+CREATE INDEX IF NOT EXISTS idx_chat_ctx_updated   ON chat_session_context(updated_at);
 
 -- ============================================================================
 -- Build Sessions (multi-turn agent builder sessions)
@@ -2830,6 +2963,122 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             )?;
             tracing::info!("Migrated persona_prompt_versions to persona_versions");
         }
+    }
+
+    // -- Document Signatures table (Doc-Signing plugin) ------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS document_signatures (
+            id                      TEXT PRIMARY KEY,
+            file_name               TEXT NOT NULL,
+            file_path               TEXT,
+            file_hash               TEXT NOT NULL,
+            signature_b64           TEXT NOT NULL,
+            signer_peer_id          TEXT NOT NULL,
+            signer_public_key_b64   TEXT NOT NULL,
+            signer_display_name     TEXT NOT NULL,
+            metadata                TEXT,
+            signed_at               TEXT NOT NULL,
+            created_at              TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_doc_sig_peer ON document_signatures(signer_peer_id);
+        CREATE INDEX IF NOT EXISTS idx_doc_sig_hash ON document_signatures(file_hash);"
+    )?;
+
+    // -- Dev Pipelines (Idea-to-Execution Pipeline) -------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS dev_pipelines (
+            id              TEXT PRIMARY KEY,
+            project_id      TEXT NOT NULL,
+            idea_id         TEXT NOT NULL,
+            task_id         TEXT,
+            stage           TEXT NOT NULL DEFAULT 'triaged',
+            auto_execute    INTEGER NOT NULL DEFAULT 0,
+            verify_after    INTEGER NOT NULL DEFAULT 0,
+            verification_scan_id TEXT,
+            error           TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_pipeline_project ON dev_pipelines(project_id);
+        CREATE INDEX IF NOT EXISTS idx_pipeline_stage ON dev_pipelines(stage);
+        CREATE INDEX IF NOT EXISTS idx_pipeline_idea ON dev_pipelines(idea_id);"
+    )?;
+
+    // -- Context Health Snapshots (Codebase Health Scanner) ------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS context_health_snapshots (
+            id              TEXT PRIMARY KEY,
+            project_id      TEXT NOT NULL,
+            group_id        TEXT,
+            group_name      TEXT NOT NULL,
+            overall_score   INTEGER NOT NULL DEFAULT 0,
+            security_score  INTEGER,
+            quality_score   INTEGER,
+            coverage_score  INTEGER,
+            debt_score      INTEGER,
+            issues_found    INTEGER NOT NULL DEFAULT 0,
+            issues_json     TEXT,
+            recommendations TEXT,
+            scanned_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_health_snap_project ON context_health_snapshots(project_id);
+        CREATE INDEX IF NOT EXISTS idx_health_snap_date ON context_health_snapshots(scanned_at);"
+    )?;
+
+    // -- OCR Documents table (OCR plugin) ------------------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS ocr_documents (
+            id              TEXT PRIMARY KEY,
+            file_name       TEXT NOT NULL,
+            file_path       TEXT,
+            provider        TEXT NOT NULL,
+            model           TEXT,
+            extracted_text  TEXT NOT NULL DEFAULT '',
+            structured_data TEXT,
+            prompt          TEXT,
+            duration_ms     INTEGER NOT NULL DEFAULT 0,
+            token_count     INTEGER,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_ocr_provider ON ocr_documents(provider);
+        CREATE INDEX IF NOT EXISTS idx_ocr_created ON ocr_documents(created_at);"
+    )?;
+
+    // Add claude_session_id column to chat_session_context for --resume support
+    let has_chat_ctx_claude_sid: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('chat_session_context') WHERE name = 'claude_session_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_chat_ctx_claude_sid {
+        conn.execute_batch("ALTER TABLE chat_session_context ADD COLUMN claude_session_id TEXT;")?;
+        tracing::info!("Added claude_session_id column to chat_session_context");
+    }
+
+    // Add idempotency_key column to persona_executions (dedup timeout-retries)
+    let has_idempotency_key: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_executions') WHERE name = 'idempotency_key'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_idempotency_key {
+        conn.execute_batch(
+            "ALTER TABLE persona_executions ADD COLUMN idempotency_key TEXT;
+             CREATE UNIQUE INDEX IF NOT EXISTS idx_pe_idempotency ON persona_executions(idempotency_key) WHERE idempotency_key IS NOT NULL;"
+        )?;
+        tracing::info!("Added idempotency_key column to persona_executions");
+    }
+
+    // Add free parameters column to personas (adjustable without rebuild)
+    let has_parameters: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'parameters'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_parameters {
+        conn.execute_batch("ALTER TABLE personas ADD COLUMN parameters TEXT;")?;
+        tracing::info!("Added parameters column to personas");
     }
 
     Ok(())

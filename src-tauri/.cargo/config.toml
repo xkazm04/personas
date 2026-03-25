@@ -1,3 +1,7 @@
+# Use LLD for faster linking on Windows (2-5x faster than MSVC link.exe)
+[target.aarch64-pc-windows-msvc]
+linker = "lld-link"
+
 [target.aarch64-linux-android]
 linker = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\aarch64-linux-android24-clang.cmd"
 ar = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\llvm-ar.exe"

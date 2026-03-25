@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Plus, Sparkles } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Button } from '@/features/shared/components/buttons';
-import { AnimatePresence } from 'framer-motion';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import * as recipeApi from '@/api/templates/recipes';
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -185,14 +184,12 @@ export function CredentialRecipesTab({ credentialId }: CredentialRecipesTabProps
         )}
       </div>
 
-      <AnimatePresence>
-        {playgroundRecipe && (
+      {playgroundRecipe && (
           <RecipePlaygroundModal
             recipe={playgroundRecipe}
             onClose={() => setPlaygroundRecipe(null)}
           />
         )}
-      </AnimatePresence>
     </div>
   );
 }

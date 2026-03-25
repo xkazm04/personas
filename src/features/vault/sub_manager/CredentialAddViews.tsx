@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
 import { CredentialTypePicker } from '@/features/vault/sub_forms/CredentialTypePicker';
 import { CredentialSchemaForm, MCP_SCHEMA, CUSTOM_SCHEMA, DATABASE_SCHEMA } from '@/features/vault/sub_schemas/CredentialSchemaForm';
@@ -84,12 +83,9 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
       )}
 
       {viewState.view === 'add-api-tool' && (
-        <motion.div
+        <div
           key="design-inline"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="bg-secondary/35 border border-primary/15 rounded-xl p-4"
+          className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl p-4"
         >
           <CredentialDesignModal
             open
@@ -101,7 +97,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
               dispatch({ type: 'GO_LIST' });
             }}
           />
-        </motion.div>
+        </div>
       )}
 
       {viewState.view === 'add-mcp' && (

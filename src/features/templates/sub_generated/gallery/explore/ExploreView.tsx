@@ -7,11 +7,14 @@ import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { CATEGORY_ROLE_GROUPS } from '../search/filters/searchConstants';
 import { RoleGroupCard } from './RoleGroupCard';
+import { AutomationOpportunitiesRail } from './AutomationOpportunitiesRail';
+import { useAutomationDiscovery } from './useAutomationDiscovery';
 
 interface ExploreViewProps {
   availableCategories: CategoryWithCount[];
   allItems: PersonaDesignReview[];
   readyTemplates: PersonaDesignReview[];
+  userServiceTypes: string[];
   onSelectCategory: (category: string) => void;
   onSelectTemplate: (template: PersonaDesignReview) => void;
 }
@@ -20,9 +23,11 @@ export function ExploreView({
   availableCategories,
   allItems,
   readyTemplates,
+  userServiceTypes,
   onSelectCategory,
   onSelectTemplate,
 }: ExploreViewProps) {
+  const opportunities = useAutomationDiscovery(allItems, userServiceTypes);
   // Build category count map
   const categoryCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -33,15 +38,45 @@ export function ExploreView({
   }, [availableCategories]);
 
   // Build top templates per role group (by adoption count)
+  // Pre-index by category in O(n), then merge small lists per group
   const topTemplatesByGroup = useMemo(() => {
+    // Single pass: bucket items by category, keeping only top 3 per category
+    const byCategory = new Map<string, PersonaDesignReview[]>();
+    for (const item of allItems) {
+      if (!item.category) continue;
+      let bucket = byCategory.get(item.category);
+      if (!bucket) {
+        bucket = [];
+        byCategory.set(item.category, bucket);
+      }
+      if (bucket.length < 3) {
+        bucket.push(item);
+        // Insertion-sort to maintain descending adoption_count order
+        for (let i = bucket.length - 1; i > 0; i--) {
+          if (bucket[i]!.adoption_count > bucket[i - 1]!.adoption_count) {
+            [bucket[i], bucket[i - 1]] = [bucket[i - 1]!, bucket[i]!];
+          } else break;
+        }
+      } else if (item.adoption_count > bucket[2]!.adoption_count) {
+        bucket[2] = item;
+        for (let i = 2; i > 0; i--) {
+          if (bucket[i]!.adoption_count > bucket[i - 1]!.adoption_count) {
+            [bucket[i], bucket[i - 1]] = [bucket[i - 1]!, bucket[i]!];
+          } else break;
+        }
+      }
+    }
+
+    // For each role group, merge the small per-category buckets
     const map = new Map<string, PersonaDesignReview[]>();
     for (const group of CATEGORY_ROLE_GROUPS) {
-      const groupCats = new Set(group.categories);
-      const matching = allItems
-        .filter((t) => t.category && groupCats.has(t.category))
-        .sort((a, b) => b.adoption_count - a.adoption_count)
-        .slice(0, 3);
-      map.set(group.role, matching);
+      const merged: PersonaDesignReview[] = [];
+      for (const cat of group.categories) {
+        const bucket = byCategory.get(cat);
+        if (bucket) merged.push(...bucket);
+      }
+      merged.sort((a, b) => b.adoption_count - a.adoption_count);
+      map.set(group.role, merged.slice(0, 3));
     }
     return map;
   }, [allItems]);
@@ -83,6 +118,15 @@ export function ExploreView({
             ))}
           </div>
         </div>
+      )}
+
+      {/* Automation Opportunities */}
+      {!isSimple && (
+        <AutomationOpportunitiesRail
+          opportunities={opportunities}
+          onSelectTemplate={onSelectTemplate}
+          onSelectCategory={onSelectCategory}
+        />
       )}
 
       {/* Role group grid */}

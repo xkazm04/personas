@@ -26,6 +26,7 @@ function importWithRetry<T>(importFn: () => Promise<T>): Promise<T> {
  * error-boundary reset triggers a brand-new import attempt instead of
  * replaying the cached error.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyRetry<T extends ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
 ): React.FC<React.ComponentProps<T>> {

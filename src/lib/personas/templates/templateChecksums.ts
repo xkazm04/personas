@@ -4,6 +4,7 @@
  */
 
 export const TEMPLATE_CHECKSUMS: Record<string, string> = {
+<<<<<<< HEAD
   'content/ai-document-intelligence-hub.json': '001ece5d479a0048',
   'content/analytics-content-distribution-use-case.json': '001d6119defeddba',
   'content/cms-index-sync-use-case.json': '00019262b280b84b',
@@ -129,4 +130,13 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'support/support-email-router.json': '0005fdf901b8e281',
   'support/support-escalation-engine.json': '0012a1d3e500347d',
   'support/support-intelligence-use-case.json': '0016497df9b9e94a',
+=======
+  'devops/devops-guardian.json': '00191a118384bf31',
+  'finance/budget-spending-monitor.json': '0010da3539bfc201',
+  'finance/financial-stocks-signaller.json': '0005eeb9976fbd12',
+  'finance/freelancer-invoice-autopilot.json': '00001d171ba0a8dc',
+  'marketing/visual-brand-asset-factory.json': '0000d76233262c49',
+  'marketing/web-marketing.json': '001b8d0d2a1d49a4',
+  'productivity/idea-harvester.json': '001bf490524fca47',
+>>>>>>> f2806d4b5e78de0153e79cd8721248a468bd8b7d
 };

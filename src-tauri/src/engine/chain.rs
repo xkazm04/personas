@@ -96,6 +96,10 @@ pub fn evaluate_chain_triggers(
     metrics.triggers_evaluated = chain_triggers.len() as u32;
 
     for trigger in chain_triggers {
+        if !trigger.is_within_active_window(chrono::Utc::now()) {
+            tracing::debug!(trigger_id = %trigger.id, "Chain trigger outside active window, skipping");
+            continue;
+        }
         let config: serde_json::Value = match trigger.config.as_deref() {
             Some(raw) => match serde_json::from_str(raw) {
                 Ok(c) => c,

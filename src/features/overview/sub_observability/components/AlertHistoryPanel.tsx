@@ -1,7 +1,7 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
 import { Bell, CheckCircle2, Trash2, AlertTriangle, Info, XCircle } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
-import type { FiredAlert } from '@/stores/slices/overview/alertSlice';
+import type { FiredAlert } from '@/lib/bindings/FiredAlert';
 
 const SEVERITY_CONFIG: Record<string, { icon: typeof Info; color: string }> = {
   info: { icon: Info, color: '#3b82f6' },
@@ -23,20 +23,16 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
   const Icon = cfg.icon;
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      className={`flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${
+    <div
+      className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${
         alert.dismissed ? 'border-primary/8 bg-secondary/10 opacity-50' : 'border-primary/15 bg-secondary/20'
       }`}
     >
       <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: cfg.color }} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="typo-heading text-foreground truncate">{alert.ruleName}</span>
-          <span className="text-[10px] text-muted-foreground/50">{formatTime(alert.firedAt)}</span>
+          <span className="typo-heading text-foreground truncate">{alert.rule_name}</span>
+          <span className="text-[10px] text-muted-foreground/50">{formatTime(alert.fired_at)}</span>
         </div>
         <p className="text-xs text-muted-foreground/70 mt-0.5">{alert.message}</p>
       </div>
@@ -49,7 +45,7 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
           <CheckCircle2 className="w-3.5 h-3.5" />
         </button>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -57,6 +53,9 @@ export function AlertHistoryPanel() {
   const alertHistory = useOverviewStore((s) => s.alertHistory);
   const dismissAlert = useOverviewStore((s) => s.dismissAlert);
   const clearAlertHistory = useOverviewStore((s) => s.clearAlertHistory);
+  const fetchAlertHistory = useOverviewStore((s) => s.fetchAlertHistory);
+
+  useEffect(() => { void fetchAlertHistory(); }, [fetchAlertHistory]);
 
   const activeCount = alertHistory.filter(a => !a.dismissed).length;
 
@@ -73,7 +72,7 @@ export function AlertHistoryPanel() {
         </div>
         {alertHistory.length > 0 && (
           <button
-            onClick={clearAlertHistory}
+            onClick={() => void clearAlertHistory()}
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border border-primary/15 text-muted-foreground/60 hover:text-red-400 hover:border-red-500/20 transition-colors"
           >
             <Trash2 className="w-3 h-3" /> Clear
@@ -89,11 +88,9 @@ export function AlertHistoryPanel() {
       )}
 
       <div className="space-y-2 max-h-[400px] overflow-y-auto">
-        <AnimatePresence mode="popLayout">
-          {alertHistory.slice(0, 50).map((alert) => (
-            <AlertRow key={alert.id} alert={alert} onDismiss={() => dismissAlert(alert.id)} />
+        {alertHistory.slice(0, 50).map((alert) => (
+            <AlertRow key={alert.id} alert={alert} onDismiss={() => void dismissAlert(alert.id)} />
           ))}
-        </AnimatePresence>
       </div>
     </div>
   );

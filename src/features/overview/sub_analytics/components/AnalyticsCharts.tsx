@@ -5,6 +5,7 @@ import {
   ComposedChart,
 } from 'recharts';
 import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
+import { LazyChart } from '@/features/overview/sub_usage/components/LazyChart';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { CHART_COLORS, CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
 import { DASHBOARD_GRID } from '@/features/overview/utils/dashboardGrid';
@@ -37,7 +38,7 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
         <MetricChart title="Cost Over Time" height={180}>
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+            <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
             <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `$${v}`} />
             <Tooltip content={<ChartTooltip />} />
             {compareEnabled && (
@@ -57,7 +58,7 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
         <MetricChart title="Execution Health" height={180}>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+            <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
             <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
             <Tooltip content={<ChartTooltip />} cursor={false} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -83,68 +84,76 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
 
         {/* Tool Usage Over Time */}
         {areaData.length > 0 && (
-          <MetricChart title="Tool Usage Over Time" height={180}>
-            <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} allowDecimals={false} />
-              <Tooltip content={<ChartTooltip />} />
-              {allToolNames.map((toolName, idx) => (
-                <Area key={toolName} type="monotone" dataKey={toolName} name={formatToolName(toolName)} stackId="1" fill={CHART_COLORS[idx % CHART_COLORS.length]} fillOpacity={0.3} stroke={CHART_COLORS[idx % CHART_COLORS.length]} strokeWidth={1.5} />
-              ))}
-            </AreaChart>
-          </MetricChart>
+          <LazyChart height={180}>
+            <MetricChart title="Tool Usage Over Time" height={180}>
+              <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                <XAxis dataKey="dateLabel" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
+                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} allowDecimals={false} />
+                <Tooltip content={<ChartTooltip />} />
+                {allToolNames.map((toolName, idx) => (
+                  <Area key={toolName} type="monotone" dataKey={toolName} name={formatToolName(toolName)} stackId="1" fill={CHART_COLORS[idx % CHART_COLORS.length]} fillOpacity={0.3} stroke={CHART_COLORS[idx % CHART_COLORS.length]} strokeWidth={1.5} />
+                ))}
+              </AreaChart>
+            </MetricChart>
+          </LazyChart>
         )}
 
         {/* Executions by Persona (donut) */}
-        <MetricChart
-          title="Executions by Persona"
-          height={180}
-          emptySlot={pieData.length === 0 ? (
-            <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground/80">No execution data</div>
-          ) : undefined}
-        >
-          <PieChart>
-            <Pie data={pieData} dataKey="executions" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} stroke="none">
-              {pieData.map((_, i) => (
-                <Cell key={i} fill={CHART_COLORS_PURPLE[i % CHART_COLORS_PURPLE.length]} />
-              ))}
-            </Pie>
-            <Tooltip content={<ChartTooltip />} />
-            <Legend verticalAlign="bottom" iconType="circle" iconSize={8} formatter={(value: string) => (
-              <span className="text-sm text-foreground/90">{value}</span>
-            )} />
-          </PieChart>
-        </MetricChart>
+        <LazyChart height={180}>
+          <MetricChart
+            title="Executions by Persona"
+            height={180}
+            emptySlot={pieData.length === 0 ? (
+              <div className="h-[180px] flex items-center justify-center text-sm text-muted-foreground/80">No execution data</div>
+            ) : undefined}
+          >
+            <PieChart>
+              <Pie data={pieData} dataKey="executions" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} stroke="none">
+                {pieData.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS_PURPLE[i % CHART_COLORS_PURPLE.length]} />
+                ))}
+              </Pie>
+              <Tooltip content={<ChartTooltip />} />
+              <Legend verticalAlign="bottom" iconType="circle" iconSize={8} formatter={(value: string) => (
+                <span className="text-sm text-foreground/90">{value}</span>
+              )} />
+            </PieChart>
+          </MetricChart>
+        </LazyChart>
 
         {/* Latency Distribution */}
         {latencyData.length > 0 && (
-          <MetricChart title="Latency (p50 / p95 / p99)" height={180}>
-            <LineChart data={latencyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
-              <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`} />
-              <Tooltip content={<ChartTooltip />} />
-              <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
-              <Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="p95" name="p95" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-              <Line type="monotone" dataKey="p99" name="p99" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="2 2" />
-            </LineChart>
-          </MetricChart>
+          <LazyChart height={180}>
+            <MetricChart title="Latency (p50 / p95 / p99)" height={180}>
+              <LineChart data={latencyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
+                <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`} />
+                <Tooltip content={<ChartTooltip />} />
+                <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
+                <Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="p95" name="p95" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                <Line type="monotone" dataKey="p99" name="p99" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="2 2" />
+              </LineChart>
+            </MetricChart>
+          </LazyChart>
         )}
       </div>
 
       {/* Tool Invocations -- full width horizontal bar */}
       {barData.length > 0 && (
-        <MetricChart title="Tool Invocations" height={Math.max(200, barData.length * 40)}>
-          <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
-            <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis dataKey="name" type="category" width={120} tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
-            <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <Bar dataKey="invocations" name="Invocations" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} barSize={20} />
-          </BarChart>
-        </MetricChart>
+        <LazyChart height={Math.max(200, barData.length * 40)}>
+          <MetricChart title="Tool Invocations" height={Math.max(200, barData.length * 40)}>
+            <BarChart data={barData} margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
+              <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis dataKey="name" type="category" width={120} tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+              <Bar dataKey="invocations" name="Invocations" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} barSize={20} />
+            </BarChart>
+          </MetricChart>
+        </LazyChart>
       )}
     </>
   );

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import type { BrowserLogEntry, AutoCredErrorInfo } from '../helpers/types';
 import { CopyLogButton } from '../display/AutoCredLogEntries';
 import { ERROR_KIND_CONFIG, useAutoScrollRef } from '../helpers/autoCredErrorConfig';
@@ -21,12 +20,9 @@ export function AutoCredBrowserError({
   const Icon = config!.icon;
 
   return (
-    <motion.div
+    <div
       key="browser-error"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Error banner */}
       <div className="flex items-start gap-3 p-3 rounded-xl border border-red-500/20 bg-red-500/5">
@@ -87,6 +83,6 @@ export function AutoCredBrowserError({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

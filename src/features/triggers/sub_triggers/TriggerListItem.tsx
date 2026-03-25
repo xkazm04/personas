@@ -1,11 +1,9 @@
 import { useState, useMemo, useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { extractRateLimit, type TriggerRateLimitConfig } from '@/lib/utils/platform/triggerConstants';
 import { TriggerRow } from './TriggerRow';
 import { TriggerDetailDrawer } from './TriggerDetailDrawer';
-import { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 
 export interface TriggerListItemProps {
   trigger: PersonaTrigger;
@@ -34,7 +32,6 @@ export function TriggerListItem({
   onDelete,
 }: TriggerListItemProps) {
   const [expanded, setExpanded] = useState(false);
-  const detail = useTriggerDetail(trigger.id, trigger.persona_id);
   const updateTrigger = usePipelineStore((s) => s.updateTrigger);
   const rateLimitState = usePipelineStore((s) => s.triggerRateLimits[trigger.id] ?? null);
 
@@ -52,6 +49,13 @@ export function TriggerListItem({
     [trigger.id, trigger.persona_id, trigger.config, updateTrigger],
   );
 
+  const handleActiveWindowChange = useCallback(
+    (updated: Record<string, unknown>) => {
+      updateTrigger(trigger.persona_id, trigger.id, { config: updated });
+    },
+    [trigger.id, trigger.persona_id, updateTrigger],
+  );
+
   return (
     <div className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl transition-colors hover:border-primary/25">
       <TriggerRow
@@ -61,19 +65,18 @@ export function TriggerListItem({
         onToggleEnabled={onToggleEnabled}
       />
 
-      <AnimatePresence initial={false}>
-        {expanded && (
+      {expanded && (
           <TriggerDetailDrawer
             trigger={trigger}
             credentialEventsList={credentialEventsList}
-            detail={detail}
             onDelete={onDelete}
             rateLimit={rateLimit}
             rateLimitState={rateLimitState}
             onRateLimitChange={handleRateLimitChange}
+            rawConfig={parseRawConfig(trigger.config)}
+            onActiveWindowChange={handleActiveWindowChange}
           />
         )}
-      </AnimatePresence>
     </div>
   );
 }

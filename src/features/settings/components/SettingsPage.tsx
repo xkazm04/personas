@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-import { motion } from 'framer-motion';
 import { useSystemStore } from "@/stores/systemStore";
 
 // Lazy-load each settings tab -- only the active one resolves.
@@ -30,17 +29,14 @@ export default function SettingsPage() {
   })();
 
   return (
-    <motion.div
+    <div
       key={settingsTab}
       data-testid="settings-page"
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
+      className="animate-fade-slide-in flex-1 min-h-0 flex flex-col w-full overflow-hidden"
     >
       <Suspense fallback={null}>
         {content}
       </Suspense>
-    </motion.div>
+    </div>
   );
 }

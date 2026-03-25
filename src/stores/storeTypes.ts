@@ -44,11 +44,19 @@ import type { RotationSlice } from "./slices/vault/rotationSlice";
 import type { CompositionSlice } from "./slices/pipeline/compositionSlice";
 
 // -- Shared helpers ------------------------------------------------------
+import { isTauriError, type TauriErrorKind } from "@/lib/types/tauriError";
+
 export function errMsg(err: unknown, fallback: string): string {
   if (err instanceof Error) return err.message;
+  if (isTauriError(err)) return err.error;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (typeof err === "object" && err !== null && "error" in err) return String((err as any).error);
   return fallback;
+}
+
+/** Extract the structured `kind` code from a Tauri error, or `undefined` for unstructured errors. */
+export function errKind(err: unknown): TauriErrorKind | undefined {
+  return isTauriError(err) ? err.kind : undefined;
 }
 
 /**
@@ -70,7 +78,7 @@ const _recentToasts = new Map<string, number>();
 export function reportError(
   err: unknown,
   fallback: string,
-  set: (partial: { error: string }) => void,
+  set: (partial: { error: string; errorKind?: TauriErrorKind | null }) => void,
   options?: {
     severity?: "toast" | "state" | "both";
     stateUpdates?: Record<string, unknown>;
@@ -78,9 +86,10 @@ export function reportError(
 ): string {
   const { severity = "both", stateUpdates } = options ?? {};
   const message = errMsg(err, fallback);
+  const kind = errKind(err);
 
   if (severity !== "toast") {
-    set({ error: message, ...stateUpdates } as { error: string });
+    set({ error: message, errorKind: kind ?? null, ...stateUpdates } as { error: string; errorKind?: TauriErrorKind | null });
   }
   if (severity !== "state") {
     const now = Date.now();
@@ -93,9 +102,9 @@ export function reportError(
           if (now - ts > _toastCooldownMs * 2) _recentToasts.delete(key);
         }
       }
-      // Lazy import to avoid circular dependency at module load time
-      import("@/stores/toastStore").then(({ useToastStore }) => {
-        useToastStore.getState().addToast(message, "error");
+      // Use storeBus to avoid circular dependency at module load time
+      import("@/lib/storeBus").then(({ storeBus }) => {
+        storeBus.emit('toast', { message, type: 'error' });
       }).catch(() => {});
     }
   }
@@ -108,6 +117,8 @@ export function reportError(
  *  set({ error, isLoading }) without cross-domain writes. */
 export interface CoreState {
   error: string | null;
+  /** Structured error code from the Rust backend (`AppError::kind`). */
+  errorKind: TauriErrorKind | null;
   isLoading: boolean;
 }
 

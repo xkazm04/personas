@@ -719,76 +719,6 @@
     ],
     "adoption_questions": [
       {
-        "id": "hubspot_portal_id",
-        "question": "What is your HubSpot portal ID?",
-        "type": "text",
-        "default": "",
-        "context": "Used to construct HubSpot API URLs. Find this in your HubSpot account settings or in the URL when logged in.",
-        "connector_names": ["hubspot"],
-        "category": "configuration"
-      },
-      {
-        "id": "notion_database_id",
-        "question": "What is the Notion database ID for the audit report dashboard?",
-        "type": "text",
-        "default": "",
-        "context": "Weekly audit reports and data quality scores are logged to this Notion database for historical tracking.",
-        "connector_names": ["notion"],
-        "category": "configuration"
-      },
-      {
-        "id": "slack_channel",
-        "question": "Which Slack channel should receive data quality reports?",
-        "type": "text",
-        "default": "#crm-data-quality",
-        "context": "Weekly audit summaries, auto-repair logs, and flagged-for-review items are posted here.",
-        "connector_names": ["slack"],
-        "category": "configuration"
-      },
-      {
-        "id": "auto_repair_safe",
-        "question": "Should the agent auto-repair safe issues (formatting, missing fields)?",
-        "type": "boolean",
-        "default": "Yes",
-        "context": "Safe repairs include standardizing phone formats, filling known-derivable fields, and fixing capitalization. Risky changes (duplicate merges, record deletions) always require human approval.",
-        "connector_names": ["hubspot"],
-        "category": "human_in_the_loop"
-      },
-      {
-        "id": "stale_record_days",
-        "question": "After how many days without activity should a CRM record be flagged as stale?",
-        "type": "select",
-        "default": "90",
-        "options": ["30", "60", "90", "180"],
-        "context": "Records with no updates, emails, or deal activity in this many days are flagged in the weekly audit for review or archival.",
-        "connector_names": [],
-        "category": "configuration"
-      }
-    ],
-    "protocol_capabilities": [
-      {
-        "type": "manual_review",
-        "label": "Approval workflow for suggested fixes including duplicate merges, stale archives, and association corrections",
-        "context": "Three-tier fix classification requires human approval for medium and high risk changes"
-      },
-      {
-        "type": "user_message",
-        "label": "Weekly data quality reports via Slack with score trends, issue breakdowns, and actionable fix recommendations",
-        "context": "1 notification channel(s) configured: slack"
-      },
-      {
-        "type": "agent_memory",
-        "label": "Historical data quality scores, dismissed issues, audit baselines, and trend data for 52-week analysis",
-        "context": "Tracks: score history, issue patterns, auto-fix outcomes"
-      },
-      {
-        "type": "emit_event",
-        "label": "Emits events: data quality score changed, critical issues detected, execution errors",
-        "context": "3 event subscription(s) configured -- agent participates in event bus"
-      }
-    ],
-    "adoption_questions": [
-      {
         "id": "hubspot_properties",
         "question": "Which HubSpot contact properties are critical for your team? (These will be flagged as 'must-have' in the missing field audit)",
         "type": "multi_select",
@@ -804,7 +734,12 @@
           "LinkedIn URL",
           "Annual Revenue"
         ],
-        "default": ["Email", "Company", "Job Title", "Lifecycle Stage"],
+        "default": [
+          "Email",
+          "Company",
+          "Job Title",
+          "Lifecycle Stage"
+        ],
         "hint": "Select the fields your sales team relies on most. Records missing these will be flagged as critical-incomplete."
       },
       {
@@ -885,6 +820,29 @@
         "default": "yes",
         "hint": "Notion reports provide a more detailed, browseable format ideal for team review meetings."
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Approval workflow for suggested fixes including duplicate merges, stale archives, and association corrections",
+        "context": "Three-tier fix classification requires human approval for medium and high risk changes"
+      },
+      {
+        "type": "user_message",
+        "label": "Weekly data quality reports via Slack with score trends, issue breakdowns, and actionable fix recommendations",
+        "context": "1 notification channel(s) configured: slack"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Historical data quality scores, dismissed issues, audit baselines, and trend data for 52-week analysis",
+        "context": "Tracks: score history, issue patterns, auto-fix outcomes"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: data quality score changed, critical issues detected, execution errors",
+        "context": "3 event subscription(s) configured -- agent participates in event bus"
+      }
     ]
-  }
+  },
+  "is_published": false
 }

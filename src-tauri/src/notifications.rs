@@ -293,12 +293,49 @@ pub fn notify_execution_completed(
     duration_ms: u64,
     channels: Option<&str>,
 ) {
+    notify_execution_completed_rich(app, persona_name, status, duration_ms, channels, None, None, None);
+}
+
+/// Richer execution notification with cost, model, and error context.
+pub fn notify_execution_completed_rich(
+    app: &AppHandle,
+    persona_name: &str,
+    status: &str,
+    duration_ms: u64,
+    channels: Option<&str>,
+    cost_usd: Option<f64>,
+    model_used: Option<&str>,
+    error: Option<&str>,
+) {
     if !parse_prefs(channels).execution_completed {
         return;
     }
     let duration_str = format!("{:.1}s", duration_ms as f64 / 1000.0);
-    let title = format!("Execution {}", status);
-    let body = format!("{} finished in {}", persona_name, duration_str);
+    let emoji = match status {
+        "completed" => "OK",
+        "failed" => "FAIL",
+        "cancelled" => "CANCEL",
+        _ => status,
+    };
+    let title = format!("[{}] {}", emoji, persona_name);
+    let mut body = format!("{} in {}", status, duration_str);
+    if let Some(cost) = cost_usd {
+        if cost > 0.0 {
+            body.push_str(&format!(" | ${:.4}", cost));
+        }
+    }
+    if let Some(model) = model_used {
+        if !model.is_empty() {
+            body.push_str(&format!(" | {}", model));
+        }
+    }
+    if let Some(err) = error {
+        if !err.is_empty() {
+            // Truncate error for notification readability
+            let short_err = if err.len() > 200 { &err[..200] } else { err };
+            body.push_str(&format!("\nError: {}", short_err));
+        }
+    }
     send(app, &title, &body);
     deliver_to_channels(channels, &title, &body);
 }

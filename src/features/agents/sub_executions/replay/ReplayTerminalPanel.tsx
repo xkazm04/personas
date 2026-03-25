@@ -56,7 +56,6 @@ function JsonHighlight({ json }: { json: string }) {
   const parts = useMemo(() => {
     const result: React.ReactNode[] = [];
     let remaining = highlighted;
-    let idx = 0;
 
     const tagMap: Record<string, string> = {
       k: 'text-sky-400',      // keys
@@ -68,12 +67,12 @@ function JsonHighlight({ json }: { json: string }) {
     while (remaining.length > 0) {
       const match = remaining.match(/<([ksnb])>(.*?)<\/\1>/);
       if (!match) {
-        result.push(<span key={idx++} className="text-foreground/50">{remaining}</span>);
+        result.push(<span key={result.length} className="text-foreground/50">{remaining}</span>);
         break;
       }
       const before = remaining.slice(0, match.index);
-      if (before) result.push(<span key={idx++} className="text-foreground/50">{before}</span>);
-      result.push(<span key={idx++} className={tagMap[match[1] ?? 'k']}>{match[2]}</span>);
+      if (before) result.push(<span key={result.length} className="text-foreground/50">{before}</span>);
+      result.push(<span key={result.length} className={tagMap[match[1] ?? 'k']}>{match[2]}</span>);
       remaining = remaining.slice((match.index || 0) + match[0].length);
     }
     return result;

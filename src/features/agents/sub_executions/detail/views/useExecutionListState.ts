@@ -1,24 +1,21 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import { listExecutions } from "@/api/agents/executions";
 import { getRetryChain } from '@/api/overview/healing';
-import { TEMPLATE_CATALOG } from '@/lib/personas/templates/templateCatalog';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { useToastStore } from '@/stores/toastStore';
-import { TEMPLATE_SAMPLE_INPUT } from '../executionListConstants';
+import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
 
 export function useExecutionListState() {
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
-  const isExecuting = useAgentStore((state) => state.isExecuting);
   const setRerunInputData = useSystemStore((state) => state.setRerunInputData);
-  const [executions, setExecutions] = useState<PersonaExecution[]>([]);
+
+  const personaId = selectedPersona?.id || '';
+  const { executions, loading } = useExecutionList(personaId);
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { copied: hasCopied, copy: copyToClipboard } = useCopyToClipboard();
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const prevIsExecutingRef = useRef(isExecuting);
 
   const [showRaw, setShowRaw] = useState(false);
 
@@ -28,47 +25,11 @@ export function useExecutionListState() {
   const [compareRight, setCompareRight] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
 
-  const personaId = selectedPersona?.id || '';
-
-  const sampleInput = useMemo(() => {
-    if (!selectedPersona) return '{}';
-    const match = TEMPLATE_CATALOG.find(
-      (t) => t.name === selectedPersona.name,
-    );
-    const data = match ? TEMPLATE_SAMPLE_INPUT[match.id] ?? {} : {};
-    return JSON.stringify(data, null, 2);
-  }, [selectedPersona]);
+  const sampleInput = useMemo(() => getSampleInput(selectedPersona?.name), [selectedPersona]);
 
   const handleTryIt = () => {
     setRerunInputData(sampleInput === '{}' ? '{}' : sampleInput);
   };
-
-  const fetchExecutions = async () => {
-    if (!personaId) return;
-    setLoading(true);
-    try {
-      const data = await listExecutions(personaId);
-      setExecutions(data || []);
-    } catch (error) {
-      console.error('Failed to fetch executions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (personaId) {
-      fetchExecutions();
-    }
-  }, [personaId]);
-
-  // Re-fetch when execution finishes (isExecuting transitions true -> false)
-  useEffect(() => {
-    if (prevIsExecutingRef.current && !isExecuting && personaId) {
-      fetchExecutions();
-    }
-    prevIsExecutingRef.current = isExecuting;
-  }, [isExecuting, personaId]);
 
   // Auto-suggest retry comparison: when an execution with retries is expanded
   const handleAutoCompareRetry = useCallback(async (executionId: string) => {

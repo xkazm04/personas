@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Play, Loader2, CheckCircle2, XCircle,
   ToggleLeft, ToggleRight, TrendingUp,
@@ -356,14 +355,9 @@ export function EvolutionPanel() {
           </div>
 
           {/* Settings panel */}
-          <AnimatePresence>
-            {showSettings && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
+          {showSettings && (
+              <div
+                className="animate-fade-slide-in overflow-hidden"
               >
                 <div className="space-y-3 pt-3 border-t border-primary/10">
                   <ObjectiveEditor objective={objective} onChange={setObjective} />
@@ -451,9 +445,8 @@ export function EvolutionPanel() {
                     Save Settings
                   </button>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       </SectionCard>
 

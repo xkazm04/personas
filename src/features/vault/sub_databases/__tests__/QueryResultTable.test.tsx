@@ -1,7 +1,22 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QueryResultTable } from "../QueryResultTable";
 import type { QueryResult } from "@/api/vault/database/dbSchema";
+
+// Mock the virtualizer so rows render without real DOM dimensions
+vi.mock("@tanstack/react-virtual", () => ({
+  useVirtualizer: ({ count }: { count: number }) => ({
+    getVirtualItems: () =>
+      Array.from({ length: count }, (_, i) => ({
+        index: i,
+        key: i,
+        start: i * 32,
+        size: 32,
+      })),
+    getTotalSize: () => count * 32,
+    measureElement: () => {},
+  }),
+}));
 
 function makeResult(overrides: Partial<QueryResult> = {}): QueryResult {
   return {

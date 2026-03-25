@@ -12,6 +12,7 @@ use crate::db::repos::execution::test_suites as suite_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::engine::{eval, parser, prompt};
 use crate::engine::cli_process::CliProcessDriver;
+use crate::engine::event_registry::event_name;
 use crate::engine::test_runner::{self, TestModelConfig, TestScenario};
 use crate::engine::types::{EphemeralPersona, StreamLineType};
 use crate::error::AppError;
@@ -262,7 +263,7 @@ pub async fn test_n8n_draft(
         let missing = if path.is_absolute() { !path.exists() } else { true };
         if missing {
             let _ = app.emit(
-                "n8n-test-status",
+                event_name::N8N_TEST_STATUS,
                 N8nTestStatusEvent {
                     test_id,
                     status: "failed".to_string(),
@@ -310,7 +311,7 @@ pub async fn test_n8n_draft(
         Ok(d) => d,
         Err(e) => {
             let _ = app.emit(
-                "n8n-test-status",
+                event_name::N8N_TEST_STATUS,
                 N8nTestStatusEvent {
                     test_id,
                     status: "failed".to_string(),
@@ -324,7 +325,7 @@ pub async fn test_n8n_draft(
 
     // Emit running status
     let _ = app.emit(
-        "n8n-test-status",
+        event_name::N8N_TEST_STATUS,
         N8nTestStatusEvent {
             test_id: test_id.clone(),
             status: "running".to_string(),
@@ -347,7 +348,7 @@ pub async fn test_n8n_draft(
             Some(r) => r.lines(),
             None => {
                 let _ = app_bg.emit(
-                    "n8n-test-status",
+                    event_name::N8N_TEST_STATUS,
                     N8nTestStatusEvent {
                         test_id: test_id_bg,
                         status: "failed".to_string(),
@@ -374,7 +375,7 @@ pub async fn test_n8n_draft(
                 if let Some(ref d) = display {
                     if !d.trim().is_empty() {
                         let _ = app_bg.emit(
-                            "n8n-test-output",
+                            event_name::N8N_TEST_OUTPUT,
                             N8nTestOutputEvent {
                                 test_id: test_id_bg.clone(),
                                 line: d.clone(),
@@ -464,7 +465,7 @@ pub async fn test_n8n_draft(
         };
 
         let _ = app_bg.emit(
-            "n8n-test-status",
+            event_name::N8N_TEST_STATUS,
             N8nTestStatusEvent {
                 test_id: test_id_bg,
                 status,

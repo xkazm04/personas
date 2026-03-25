@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import type { PersonaExecution } from '@/lib/types/types';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
@@ -10,7 +11,6 @@ import { useAgentStore } from "@/stores/agentStore";
 import { formatDuration } from '@/lib/utils/formatters';
 import { Activity } from 'lucide-react';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
-import { motion, AnimatePresence } from 'framer-motion';
 import { buildSpanTree, flattenTree } from '../../libs/traceHelpers';
 import { SpanRow } from './TraceTree';
 import { TraceSummary, TraceErrors } from './TraceNodeDetail';
@@ -69,7 +69,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
   // Listen for live trace updates
   useEffect(() => {
-    const unlisten = listen<ExecutionTrace>('execution-trace', (event) => {
+    const unlisten = listen<ExecutionTrace>(EventName.EXECUTION_TRACE, (event) => {
       if (event.payload.execution_id === execution.id) {
         setBackendTrace(event.payload);
       }
@@ -80,7 +80,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   // Listen for live span events
   useEffect(() => {
     const unlisten = listen<{ execution_id: string; span: TraceSpan; event_type: string }>(
-      'execution-trace-span',
+      EventName.EXECUTION_TRACE_SPAN,
       (event) => {
         if (event.payload.execution_id !== execution.id) return;
         setBackendTrace((prev) => {
@@ -218,14 +218,9 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
         </div>
 
         <div className="max-h-[500px] overflow-y-auto">
-          <AnimatePresence initial={false}>
-            {visibleNodes.map((node) => (
-              <motion.div
+          {visibleNodes.map((node) => (
+              <div className="animate-fade-slide-in"
                 key={node.span.span_id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.1 }}
               >
                 <SpanRow
                   node={node}
@@ -234,9 +229,8 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
                   onToggle={() => toggleSpan(node.span.span_id)}
                   hasChildren={childrenMap.has(node.span.span_id)}
                 />
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
         </div>
       </div>
 

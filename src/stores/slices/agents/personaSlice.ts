@@ -1,7 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { errMsg, reportError } from "../../storeTypes";
-import { useSystemStore } from "../../systemStore";
 import type {
   Persona,
   PersonaWithDetails,
@@ -12,6 +11,7 @@ import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
 import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPersonaSummaries, listPersonas, updatePersona } from "@/api/agents/personas";
 import { trackRecentAgent, removeRecentAgent } from "@/hooks/agents/useRecentAgents";
 import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
+import { storeBus } from "@/lib/storeBus";
 
 const DEGRADATION_THRESHOLD = 3;
 
@@ -224,11 +224,23 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   },
 
   selectPersona: (id) => {
+    // Warn when navigating away from a persona that has an active/queued execution
+    const prev = get().selectedPersonaId;
+    if (id !== prev && prev != null) {
+      const { isExecuting, executionPersonaId, queuePosition } = get();
+      if (isExecuting && executionPersonaId === prev) {
+        const label = queuePosition != null ? "queued" : "running";
+        storeBus.emit('toast', {
+          message: `Execution still ${label} for the previous agent. Switch back to monitor it.`,
+          type: "success",
+          duration: 5000,
+        });
+      }
+    }
+
     if (!id) ++fetchDetailSeq; // invalidate any in-flight fetchDetail
-    set({ selectedPersonaId: id, queuePosition: null, queueDepth: null });
-    useSystemStore.getState().setEditorTab("use-cases");
-    if (id) useSystemStore.setState({ sidebarSection: "personas" });
-    useSystemStore.setState({ isCreatingPersona: false, resumeDraftId: null });
+    set({ selectedPersonaId: id });
+    storeBus.emit('persona:selected', { personaId: id });
     if (id) {
       get().fetchDetail(id);
       trackRecentAgent(id);

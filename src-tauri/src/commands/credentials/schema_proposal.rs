@@ -8,6 +8,7 @@ use serde::Serialize;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::n8n_transform::run_claude_prompt_text_inner;
 use crate::engine::db_query;
+use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged;
@@ -33,8 +34,8 @@ struct SchemaProposalSnapshotExtras {
 static SCHEMA_PROPOSAL_JOBS: BackgroundJobManager<SchemaProposalExtra> =
     BackgroundJobManager::new(
         "schema proposal job lock",
-        "schema-proposal-status",
-        "schema-proposal-output",
+        event_name::SCHEMA_PROPOSAL_STATUS,
+        event_name::SCHEMA_PROPOSAL_OUTPUT,
     );
 
 /// List all schema proposal job snapshots (for unified workflows view).
@@ -277,7 +278,7 @@ async fn run_schema_proposal(params: RunParams) {
 
                     // Emit completed status with data
                     let _ = app.emit(
-                        "schema-proposal-status",
+                        event_name::SCHEMA_PROPOSAL_STATUS,
                         serde_json::json!({
                             "job_id": proposal_id,
                             "status": "completed",

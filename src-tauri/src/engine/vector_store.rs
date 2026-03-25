@@ -157,6 +157,33 @@ impl SqliteVectorStore {
     }
 }
 
+/// Delete vectors by chunk IDs using an externally-provided connection.
+/// This allows callers to include vector deletes inside their own transaction.
+pub fn delete_vectors_by_chunks(
+    conn: &rusqlite::Connection,
+    kb_id: &str,
+    chunk_ids: &[String],
+) -> Result<usize, AppError> {
+    if chunk_ids.is_empty() {
+        return Ok(0);
+    }
+
+    let table_name = vec_table_name(kb_id)?;
+    let placeholders: Vec<String> = (1..=chunk_ids.len()).map(|i| format!("?{i}")).collect();
+    let sql = format!(
+        "DELETE FROM [{table_name}] WHERE chunk_id IN ({})",
+        placeholders.join(",")
+    );
+
+    let params: Vec<&dyn rusqlite::types::ToSql> = chunk_ids
+        .iter()
+        .map(|id| id as &dyn rusqlite::types::ToSql)
+        .collect();
+
+    let deleted = conn.execute(&sql, params.as_slice())?;
+    Ok(deleted)
+}
+
 /// Sanitize a KB ID into a safe SQLite table name suffix.
 /// Validates that kb_id contains only hex digits and hyphens (UUID format)
 /// to prevent SQL injection via dynamic table names.

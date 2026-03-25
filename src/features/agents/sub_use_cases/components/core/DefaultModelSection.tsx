@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Cpu, ChevronDown, DollarSign } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import { ModelSelector } from '@/features/agents/sub_model_config';
 import type { CustomModelConfig } from '@/features/agents/sub_model_config';
-import type { ModelProvider } from '@/lib/types/frontendTypes';
+import type { ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
 import { isOllamaCloudValue, OLLAMA_CLOUD_PRESETS } from '@/features/agents/sub_model_config/OllamaCloudPresets';
+import { useEffectiveConfig } from '@/features/agents/sub_model_config/hooks/useEffectiveConfig';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 
 // -- Derive a human-readable label from the draft --------------------
@@ -26,17 +26,22 @@ interface DefaultModelSectionProps {
   draft: PersonaDraft;
   patch: (updates: Partial<PersonaDraft>) => void;
   modelDirty: boolean;
+  personaId?: string | null;
 }
 
-export function DefaultModelSection({ draft, patch, modelDirty }: DefaultModelSectionProps) {
+export function DefaultModelSection({ draft, patch, modelDirty, personaId }: DefaultModelSectionProps) {
   const [expanded, setExpanded] = useState(false);
   const { label, provider } = resolveModelLabel(draft);
+  const { config: effectiveConfig, loading: effectiveConfigLoading } = useEffectiveConfig(personaId);
 
   const budgetLabel = draft.maxBudget !== '' && draft.maxBudget != null
     ? `$${draft.maxBudget}`
     : null;
   const turnsLabel = draft.maxTurns !== '' && draft.maxTurns != null
     ? `${draft.maxTurns} turns`
+    : null;
+  const cacheLabel = draft.promptCachePolicy !== 'none'
+    ? draft.promptCachePolicy === 'short' ? 'Cache 5m' : 'Cache 1h'
     : null;
 
   return (
@@ -61,8 +66,8 @@ export function DefaultModelSection({ draft, patch, modelDirty }: DefaultModelSe
           )}
         </span>
 
-        {/* Budget chips */}
-        {(budgetLabel || turnsLabel) && (
+        {/* Budget & cache chips */}
+        {(budgetLabel || turnsLabel || cacheLabel) && (
           <span className="flex items-center gap-1.5">
             {budgetLabel && (
               <span className="flex items-center gap-0.5 text-sm font-mono px-1.5 py-0.5 rounded-lg bg-secondary/50 border border-primary/10 text-muted-foreground/60">
@@ -72,6 +77,11 @@ export function DefaultModelSection({ draft, patch, modelDirty }: DefaultModelSe
             {turnsLabel && (
               <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-secondary/50 border border-primary/10 text-muted-foreground/60">
                 {turnsLabel}
+              </span>
+            )}
+            {cacheLabel && (
+              <span className="text-sm font-mono px-1.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400/70">
+                {cacheLabel}
               </span>
             )}
           </span>
@@ -85,14 +95,9 @@ export function DefaultModelSection({ draft, patch, modelDirty }: DefaultModelSe
       </button>
 
       {/* Expandable full selector */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+      {expanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="pt-1">
               <p className="text-sm text-muted-foreground/70 mb-2 ml-[34px]">
@@ -115,13 +120,16 @@ export function DefaultModelSection({ draft, patch, modelDirty }: DefaultModelSe
                 maxTurns={draft.maxTurns}
                 onMaxBudgetChange={(v) => patch({ maxBudget: v as number | '' })}
                 onMaxTurnsChange={(v) => patch({ maxTurns: v as number | '' })}
+                promptCachePolicy={draft.promptCachePolicy}
+                onPromptCachePolicyChange={(v: PromptCachePolicy) => patch({ promptCachePolicy: v })}
                 dirty={modelDirty}
                 hideHeader
+                effectiveConfig={effectiveConfig}
+                effectiveConfigLoading={effectiveConfigLoading}
               />
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

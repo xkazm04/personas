@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
 import { ChevronDown, ChevronRight, Clock, Calendar, Shield, RotateCw, RefreshCw, Brain, Zap, ClipboardCheck, Copy, Check, Code } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useSystemStore } from "@/stores/systemStore";
 import { isTerminalState } from '@/lib/execution/executionState';
@@ -149,13 +148,11 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
           >
             Input Data
           </Button>
-          <AnimatePresence>
-            {showInputData && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+          {showInputData && (
+              <div className="animate-fade-slide-in">
                 <HighlightedJsonBlock raw={showRaw ? execution.input_data : maskSensitiveJson(execution.input_data) as string | null} />
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
 
@@ -196,11 +193,10 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
               </div>
             )}
           </div>
-          <AnimatePresence>
-            {showOutputData && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+          {showOutputData && (
+              <div>
                 {parsedOutput?.hasStructured && outputView === 'structured' ? (
-                  <div className="space-y-3">
+                  <div className="animate-fade-slide-in space-y-3">
                     {parsedOutput.memories.length > 0 && (
                       <div className="rounded-xl border border-violet-500/15 bg-violet-500/5 p-3">
                         <div className="flex items-center gap-2 mb-2">
@@ -254,9 +250,8 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
                 ) : (
                   <HighlightedJsonBlock raw={showRaw ? execution.output_data : maskSensitiveJson(execution.output_data) as string | null} />
                 )}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
 

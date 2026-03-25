@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
@@ -6,8 +6,13 @@ import { useOverviewFilterValues } from '@/features/overview/components/dashboar
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 
 /**
- * Owns the analytics data-fetch lifecycle (observability metrics, tool usage,
- * healing issues) and exposes high-level summary metrics.
+ * Exposes high-level summary metrics and an optional auto-refresh toggle
+ * for the Analytics subtab.
+ *
+ * Initial data fetches (observability, tool usage, healing issues) are
+ * centralized in useExecutionDashboardPipeline at the OverviewContent
+ * level so that subtab switches reuse cached data. This hook only drives
+ * the user-toggled auto-refresh polling cycle.
  */
 export function useOverviewMetrics() {
   const fetchObservabilityMetrics = useOverviewStore((s) => s.fetchObservabilityMetrics);
@@ -60,7 +65,8 @@ export function useOverviewMetrics() {
     }
   }, [refreshAll]);
 
-  useEffect(() => { void refreshAllSafe(); }, [refreshAllSafe]);
+  // No mount-time useEffect — initial fetch is handled by
+  // useExecutionDashboardPipeline at the OverviewContent level.
 
   usePolling(refreshAllSafe, {
     interval: POLLING_CONFIG.dashboardRefresh.interval,

@@ -4,6 +4,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
+use super::event_registry::event_name;
 use super::cli_process::CliProcessDriver;
 
 use serde::{Deserialize, Serialize};
@@ -139,7 +140,7 @@ pub async fn run_test(
     );
 
     let _ = app.emit(
-        "test-run-status",
+        event_name::TEST_RUN_STATUS,
         TestRunStatusEvent {
             run_id: run_id.clone(),
             phase: "generated".into(),
@@ -266,7 +267,7 @@ pub async fn run_test(
                     Some(msg.as_str()),
                 );
                 let _ = app.emit(
-                    "test-run-status",
+                    event_name::TEST_RUN_STATUS,
                     TestRunStatusEvent {
                         run_id: run_id.clone(),
                         phase: "failed".into(),
@@ -288,7 +289,7 @@ pub async fn run_test(
 
             // Emit progress
             let _ = app.emit(
-                "test-run-status",
+                event_name::TEST_RUN_STATUS,
                 TestRunStatusEvent {
                     run_id: run_id.clone(),
                     phase: "executing".into(),
@@ -328,7 +329,7 @@ pub async fn run_test(
     );
 
     let _ = app.emit(
-        "test-run-status",
+        event_name::TEST_RUN_STATUS,
         TestRunStatusEvent {
             run_id: run_id.clone(),
             phase: "completed".into(),
@@ -557,6 +558,7 @@ pub(crate) async fn execute_scenario(
         provider: Some(model.provider.clone()),
         base_url: model.base_url.clone(),
         auth_token: model.auth_token.clone(),
+        prompt_cache_policy: None,
     };
 
     let mut cli_args = prompt::build_cli_args(None, Some(&model_profile));
@@ -854,7 +856,7 @@ async fn spawn_cli_and_collect_structured(
 
 fn emit_status(app: &AppHandle, run_id: &str, phase: &str, error: Option<&str>) {
     let _ = app.emit(
-        "test-run-status",
+        event_name::TEST_RUN_STATUS,
         TestRunStatusEvent {
             run_id: run_id.to_string(),
             phase: phase.to_string(),

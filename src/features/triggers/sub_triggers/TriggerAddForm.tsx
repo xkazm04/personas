@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Clock, CalendarClock } from 'lucide-react';
-import { motion } from 'framer-motion';
 import {
   TRIGGER_TEMPLATES, getTriggerCategory,
   type CompositeCondition, type TriggerCategory,
@@ -10,6 +9,8 @@ import { IntervalConfig, CronConfig } from './TriggerScheduleConfig';
 import { TriggerQuickTemplates } from './TriggerQuickTemplates';
 import { TriggerCategorySelector } from './TriggerCategorySelector';
 import { TriggerTypeSelector } from './TriggerTypeSelector';
+import { NlTriggerInput } from './NlTriggerInput';
+import type { NlParseResult } from './nlTriggerParser';
 import { WebhookConfig } from './configs/WebhookConfig';
 import { FileWatcherConfig } from './configs/FileWatcherConfig';
 import { ClipboardConfig } from './configs/ClipboardConfig';
@@ -95,6 +96,38 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     }
   };
 
+  const applyNlResult = (result: NlParseResult) => {
+    setValidationError(null);
+    const o = result.formOverrides;
+    if (o.triggerType) {
+      setSelectedCategory(getTriggerCategory(o.triggerType));
+      setTriggerType(o.triggerType);
+    }
+    if (o.scheduleMode !== undefined) setScheduleMode(o.scheduleMode);
+    if (o.interval !== undefined) setInterval(o.interval);
+    if (o.cronExpression !== undefined) {
+      setCronExpression(o.cronExpression);
+      fetchCronPreview(o.cronExpression);
+    }
+    if (o.endpoint !== undefined) setEndpoint(o.endpoint);
+    if (o.hmacSecret !== undefined) setHmacSecret(o.hmacSecret);
+    if (o.listenEventType !== undefined) setListenEventType(o.listenEventType);
+    if (o.sourceFilter !== undefined) setSourceFilter(o.sourceFilter);
+    if (o.watchPaths !== undefined) setWatchPaths(o.watchPaths);
+    if (o.watchEvents !== undefined) setWatchEvents(o.watchEvents);
+    if (o.watchRecursive !== undefined) setWatchRecursive(o.watchRecursive);
+    if (o.globFilter !== undefined) setGlobFilter(o.globFilter);
+    if (o.clipboardContentType !== undefined) setClipboardContentType(o.clipboardContentType);
+    if (o.clipboardPattern !== undefined) setClipboardPattern(o.clipboardPattern);
+    if (o.clipboardInterval !== undefined) setClipboardInterval(o.clipboardInterval);
+    if (o.appNames !== undefined) setAppNames(o.appNames);
+    if (o.titlePattern !== undefined) setTitlePattern(o.titlePattern);
+    if (o.appFocusInterval !== undefined) setAppFocusInterval(o.appFocusInterval);
+    if (o.compositeConditions !== undefined) setCompositeConditions(o.compositeConditions);
+    if (o.compositeOperator !== undefined) setCompositeOperator(o.compositeOperator);
+    if (o.windowSeconds !== undefined) setWindowSeconds(o.windowSeconds);
+  };
+
   const handleAddTrigger = async () => {
     const result = buildTriggerConfig({
       triggerType, scheduleMode, interval, cronExpression, cronPreview,
@@ -110,12 +143,17 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      className="bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4 space-y-4"
+    <div
+      className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-xl p-4 space-y-4"
     >
+      <NlTriggerInput onApplyResult={applyNlResult} />
+
+      <div className="relative flex items-center gap-3 py-0.5">
+        <div className="flex-1 border-t border-border/20" />
+        <span className="text-xs text-muted-foreground/40 shrink-0">or use templates</span>
+        <div className="flex-1 border-t border-border/20" />
+      </div>
+
       <TriggerQuickTemplates onApplyTemplate={applyTemplate} />
       <TriggerCategorySelector selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onSelectTriggerType={setTriggerType} />
       <TriggerTypeSelector selectedCategory={selectedCategory} triggerType={triggerType} setTriggerType={setTriggerType} />
@@ -153,6 +191,6 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
         <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors">Cancel</button>
         <button onClick={handleAddTrigger} className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20">Create Trigger</button>
       </div>
-    </motion.div>
+    </div>
   );
 }

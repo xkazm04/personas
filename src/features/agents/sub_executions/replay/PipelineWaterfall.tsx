@@ -4,7 +4,6 @@ import type { PipelineStage } from '@/lib/execution/pipeline';
 import { isPipelineStage, STAGE_META } from '@/lib/execution/pipeline';
 import { useAgentStore } from "@/stores/agentStore";
 import { AlertCircle, Activity } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { formatDuration } from '@/lib/utils/formatters';
 
 import { STAGE_COLORS, parseToolSteps } from '../trace/stageColors';
@@ -126,14 +125,9 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
                 />
 
                 {/* Sub-spans (tool calls within stream_output) */}
-                <AnimatePresence>
-                  {hasSubSpans && isExpanded && streamEntry && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="bg-secondary/10"
+                {hasSubSpans && isExpanded && streamEntry && (
+                    <div
+                      className="animate-fade-slide-in bg-secondary/10"
                     >
                       {toolSteps.map((step) => (
                         <SubSpanBar
@@ -144,9 +138,8 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
                           pipelineStartMs={trace.startedAt}
                         />
                       ))}
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
               </div>
             );
           })}

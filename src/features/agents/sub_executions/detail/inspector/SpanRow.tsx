@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
-import { SPAN_TYPE_CONFIG } from './traceInspectorTypes';
+import { getSpanTypeConfig } from './traceInspectorTypes';
 import type { SpanNode } from './traceInspectorTypes';
 import { WaterfallBar } from './WaterfallBar';
 
@@ -17,7 +17,7 @@ export function SpanRow({
   hasChildren: boolean;
 }) {
   const { span, depth } = node;
-  const config = SPAN_TYPE_CONFIG[span.span_type];
+  const config = getSpanTypeConfig(span.span_type);
 
   return (
     <div

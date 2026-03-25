@@ -1,21 +1,12 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::DesignConversation;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn row_to_conversation(row: &Row) -> rusqlite::Result<DesignConversation> {
-    Ok(DesignConversation {
-        id: row.get("id")?,
-        persona_id: row.get("persona_id")?,
-        title: row.get("title")?,
-        status: row.get("status")?,
-        messages: row.get("messages")?,
-        last_result: row.get("last_result")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_conversation -> DesignConversation {
+    id, persona_id, title, status, messages, last_result, created_at, updated_at,
+});
 
 /// List all conversations for a persona, newest first.
 pub fn list_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<DesignConversation>, AppError> {
@@ -27,21 +18,7 @@ pub fn list_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<DesignConv
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
-/// Get a single conversation by ID.
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<DesignConversation, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM design_conversations WHERE id = ?1",
-        params![id],
-        row_to_conversation,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("Design conversation {id}"))
-        }
-        other => AppError::Database(other),
-    })
-}
+crud_get_by_id!(DesignConversation, "design_conversations", "Design conversation", row_to_conversation);
 
 /// Get the active conversation for a persona (if any).
 pub fn get_active(pool: &DbPool, persona_id: &str) -> Result<Option<DesignConversation>, AppError> {

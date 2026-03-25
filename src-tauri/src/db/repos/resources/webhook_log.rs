@@ -1,24 +1,17 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::webhook_log::{CreateWebhookRequestLogInput, WebhookRequestLog};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn row_to_log(row: &Row) -> rusqlite::Result<WebhookRequestLog> {
-    Ok(WebhookRequestLog {
-        id: row.get("id")?,
-        trigger_id: row.get("trigger_id")?,
-        method: row.get("method")?,
-        headers: row.get("headers")?,
-        body: row.get("body")?,
-        status_code: row.get("status_code")?,
-        response_body: row.get("response_body")?,
-        event_id: row.get("event_id")?,
-        error_message: row.get("error_message")?,
-        received_at: row.get("received_at")?,
-    })
-}
+row_mapper!(row_to_log -> WebhookRequestLog {
+    id, trigger_id, method, headers, body,
+    status_code, response_body, event_id,
+    error_message, received_at,
+});
+
+crud_get_by_id!(WebhookRequestLog, "webhook_request_log", "WebhookRequestLog", row_to_log);
 
 /// List the most recent webhook request logs for a trigger (newest first, max 100).
 pub fn list_by_trigger(pool: &DbPool, trigger_id: &str) -> Result<Vec<WebhookRequestLog>, AppError> {
@@ -28,20 +21,6 @@ pub fn list_by_trigger(pool: &DbPool, trigger_id: &str) -> Result<Vec<WebhookReq
     )?;
     let rows = stmt.query_map(params![trigger_id], row_to_log)?;
     Ok(collect_rows(rows, "webhook_log::list_by_trigger"))
-}
-
-/// Get a single log entry by ID.
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<WebhookRequestLog, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM webhook_request_log WHERE id = ?1",
-        params![id],
-        row_to_log,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("WebhookRequestLog {id}")),
-        other => AppError::Database(other),
-    })
 }
 
 /// Insert a new webhook request log entry and enforce the 100-per-trigger cap.

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Sparkles, Server, Link, Database, ArrowLeft, Radar, Monitor, Bot, Globe } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
@@ -98,11 +97,8 @@ export function CredentialTypePicker({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+    <div
+      className="animate-fade-slide-in space-y-4"
     >
       <div className="flex items-center gap-3">
         <button
@@ -203,6 +199,6 @@ export function CredentialTypePicker({
           </div>
         </button>
       )}
-    </motion.div>
+    </div>
   );
 }

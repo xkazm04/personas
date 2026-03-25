@@ -86,6 +86,7 @@ export function MatrixTab() {
     if (!session?.id || !selectedPersona?.id) return;
     try {
       await answerBuildQuestion(session.id, '_refine', feedback);
+      setHasUnsavedChanges(true);
     } catch (err) {
       console.error('Matrix refine failed:', err);
     }
@@ -96,6 +97,7 @@ export function MatrixTab() {
     if (!session?.id || !selectedPersona?.id) return;
     try {
       await testBuildDraft(session.id, selectedPersona.id);
+      setHasUnsavedChanges(true);
     } catch (err) {
       console.error('Matrix test failed:', err);
     }
@@ -166,6 +168,9 @@ export function MatrixTab() {
     }
   }, [selectedPersona?.id, execState]);
 
+  // Track whether user has made changes that warrant saving a new version
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   // Save version handler — creates a full persona snapshot
   const handleSaveVersion = useCallback(async () => {
     if (!selectedPersona?.id) return;
@@ -173,7 +178,7 @@ export function MatrixTab() {
       await invoke('lab_create_version_snapshot', { personaId: selectedPersona.id });
       // Refresh persona data
       useAgentStore.getState().fetchPersonas();
-    } catch (err) {
+    } catch {
       // Fallback: try the standard version creation path
       try {
         const persona = selectedPersona;
@@ -219,7 +224,7 @@ export function MatrixTab() {
         completeness={100}
         onRefine={session ? handleRefine : undefined}
         onStartTest={session ? handleTest : undefined}
-        onSaveVersion={handleSaveVersion}
+        onSaveVersion={hasUnsavedChanges ? handleSaveVersion : undefined}
         hideHeader
       />
 

@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -90,9 +89,9 @@ export function ExecutionRow({
   return (
     <div key={execution.id}>
       {/* Desktop table row (md+) */}
-      <motion.div
+      <div
         onClick={() => handleRowClick(execution.id)}
-        className={`hidden md:grid grid-cols-12 gap-4 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
+        className={`animate-fade-in hidden md:grid grid-cols-12 gap-4 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
           isCompareSelected
             ? 'bg-primary/10 border-l-2 border-l-primary/40'
             : 'bg-background/30 hover:bg-secondary/20'
@@ -132,9 +131,9 @@ export function ExecutionRow({
             />
           )}
         </div>
-      </motion.div>
+      </div>
 
-      {/* Mobile card layout (<md) */}
+      {/* Mobile card (<md) */}
       <div
         onClick={() => handleRowClick(execution.id)}
         className={`flex md:hidden flex-col gap-1.5 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${

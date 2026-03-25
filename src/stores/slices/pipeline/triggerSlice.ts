@@ -1,7 +1,8 @@
 import type { StateCreator } from "zustand";
+import { produce } from "immer";
 import type { PipelineStore } from "../../storeTypes";
 import { errMsg, reportError } from "../../storeTypes";
-import { useAgentStore } from "../../agentStore";
+import { storeBus } from "@/lib/storeBus";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 import { createTrigger, deleteTrigger, getWebhookStatus, updateTrigger } from "@/api/pipeline/triggers";
 import type { TriggerRateLimitConfig } from "@/lib/utils/platform/triggerConstants";
@@ -72,7 +73,7 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
         enabled: input.enabled ?? null,
         use_case_id: input.use_case_id ?? null,
       });
-      useAgentStore.getState().fetchDetail(personaId);
+      storeBus.emit('trigger:changed', { personaId });
     } catch (err) {
       set({ triggerError: { kind: 'crud', message: errMsg(err, "Failed to create trigger") } });
     }
@@ -87,7 +88,7 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
         enabled: updates.enabled !== undefined ? (updates.enabled as boolean) : null,
         next_trigger_at: null,
       });
-      useAgentStore.getState().fetchDetail(personaId);
+      storeBus.emit('trigger:changed', { personaId });
     } catch (err) {
       set({ triggerError: { kind: 'crud', message: errMsg(err, "Failed to update trigger") } });
     }
@@ -97,7 +98,7 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
     set({ triggerError: null });
     try {
       await deleteTrigger(triggerId, personaId);
-      useAgentStore.getState().fetchDetail(personaId);
+      storeBus.emit('trigger:changed', { personaId });
     } catch (err) {
       set({ triggerError: { kind: 'crud', message: errMsg(err, "Failed to delete trigger") } });
     }
@@ -122,73 +123,41 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
     const windowStart = now - rl.window_seconds * 1000;
     const recentTimestamps = prev.firingTimestamps.filter((t) => t > windowStart);
 
-    // Check cooldown
-    if (rl.cooldown_seconds > 0 && prev.cooldownUntil > now) {
-      set({
-        triggerRateLimits: {
-          ...get().triggerRateLimits,
-          [triggerId]: { ...prev, firingTimestamps: recentTimestamps, queueDepth: prev.queueDepth + 1, isThrottled: true },
-        },
-      });
-      return false;
-    }
+    // Determine whether firing is allowed
+    const throttled =
+      (rl.cooldown_seconds > 0 && prev.cooldownUntil > now) ||
+      (rl.max_per_window > 0 && recentTimestamps.length >= rl.max_per_window) ||
+      (rl.max_concurrent > 0 && prev.concurrentCount >= rl.max_concurrent);
 
-    // Check window rate limit
-    if (rl.max_per_window > 0 && recentTimestamps.length >= rl.max_per_window) {
-      set({
-        triggerRateLimits: {
-          ...get().triggerRateLimits,
-          [triggerId]: { ...prev, firingTimestamps: recentTimestamps, queueDepth: prev.queueDepth + 1, isThrottled: true },
-        },
-      });
-      return false;
-    }
-
-    // Check concurrent execution cap
-    if (rl.max_concurrent > 0 && prev.concurrentCount >= rl.max_concurrent) {
-      set({
-        triggerRateLimits: {
-          ...get().triggerRateLimits,
-          [triggerId]: { ...prev, firingTimestamps: recentTimestamps, queueDepth: prev.queueDepth + 1, isThrottled: true },
-        },
-      });
-      return false;
-    }
-
-    // Allowed -- record the firing
-    set({
-      triggerRateLimits: {
-        ...get().triggerRateLimits,
-        [triggerId]: {
+    const newState: TriggerRateLimitState = throttled
+      ? { ...prev, firingTimestamps: recentTimestamps, queueDepth: prev.queueDepth + 1, isThrottled: true }
+      : {
           firingTimestamps: [...recentTimestamps, now],
           concurrentCount: prev.concurrentCount + 1,
           queueDepth: prev.queueDepth,
           isThrottled: false,
           cooldownUntil: rl.cooldown_seconds > 0 ? now + rl.cooldown_seconds * 1000 : 0,
-        },
-      },
-    });
-    return true;
+        };
+
+    // Single O(1) structural-sharing update via immer — avoids spreading the entire map
+    set(produce((draft: PipelineStore) => {
+      draft.triggerRateLimits[triggerId] = newState;
+    }));
+
+    return !throttled;
   },
 
   recordTriggerComplete: (triggerId) => {
     const prev = get().triggerRateLimits[triggerId];
     if (!prev) return;
 
-    const newConcurrent = Math.max(0, prev.concurrentCount - 1);
-    const newQueueDepth = Math.max(0, prev.queueDepth - 1);
-
-    set({
-      triggerRateLimits: {
-        ...get().triggerRateLimits,
-        [triggerId]: {
-          ...prev,
-          concurrentCount: newConcurrent,
-          queueDepth: newQueueDepth,
-          isThrottled: newQueueDepth > 0 || prev.isThrottled,
-        },
-      },
-    });
+    set(produce((draft: PipelineStore) => {
+      const entry = draft.triggerRateLimits[triggerId];
+      if (!entry) return;
+      entry.concurrentCount = Math.max(0, entry.concurrentCount - 1);
+      entry.queueDepth = Math.max(0, entry.queueDepth - 1);
+      entry.isThrottled = entry.queueDepth > 0 || prev.isThrottled;
+    }));
   },
 
   getRateLimitSummary: () => {

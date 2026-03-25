@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Clock, AlertTriangle, Lightbulb, CheckCircle, SkipForward } from 'lucide-react';
 import type { NegotiationPlan } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { StepNode } from '@/hooks/design/credential/negotiatorStepGraph';
@@ -45,12 +44,9 @@ export function NegotiatorGuidingPhase({
   const progressPercent = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
 
   return (
-    <motion.div
+    <div
       key="negotiator-guiding"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 border border-primary/10 rounded-xl">
@@ -78,11 +74,8 @@ export function NegotiatorGuidingPhase({
 
         {/* Progress bar */}
         <div className="w-32 h-1.5 bg-secondary/60 rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="h-full bg-gradient-to-r from-violet-500 to-emerald-500 rounded-full"
+          <div style={{ width: `${progressPercent}%` }}
+            className="animate-fade-in h-full bg-gradient-to-r from-violet-500 to-emerald-500 rounded-full"
           />
         </div>
       </div>
@@ -163,17 +156,15 @@ export function NegotiatorGuidingPhase({
 
       {/* Verification hint */}
       {allDone && plan.verification_hint && (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-start gap-2.5 px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl"
+        <div
+          className="animate-fade-slide-in flex items-start gap-2.5 px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl"
         >
           <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm text-emerald-300 font-medium">All steps completed</p>
             <p className="text-sm text-emerald-200/60 mt-0.5">{plan.verification_hint}</p>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Footer buttons */}
@@ -185,16 +176,14 @@ export function NegotiatorGuidingPhase({
           Cancel
         </button>
         {allDone && (
-          <motion.button
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+          <button
             onClick={onFinish}
-            className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-colors"
+            className="animate-fade-slide-in px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-colors"
           >
             Apply credentials
-          </motion.button>
+          </button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Key, Wrench, Zap, Pencil, Copy, Check, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
@@ -181,9 +180,9 @@ export function OverviewTab({
             >
               <span className="font-mono">id</span>
               {copiedId ? (
-                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ duration: 0.15 }}>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                </motion.div>
+                <div>
+                  <Check className="animate-fade-scale-in w-3.5 h-3.5 text-emerald-400" />
+                </div>
               ) : (
                 <Copy className="w-3.5 h-3.5" />
               )}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { executeTeam, getPipelineAnalytics, suggestTopology, suggestTopologyLlm } from "@/api/pipeline/teams";
 import type { PipelineNodeStatus, DryRunState } from '@/features/pipeline/sub_canvas';
@@ -44,7 +45,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
     let cancelled = false;
     let unlistenFn: (() => void) | null = null;
     listen<{ pipeline_id: string; team_id: string; status: string; node_statuses: PipelineNodeStatus[]; memories_created?: number }>(
-      'pipeline-status', (event) => {
+      EventName.PIPELINE_STATUS, (event) => {
         if (cancelled) return;
         if (event.payload.team_id === selectedTeamId) {
           dispatch({ type: 'SET_PIPELINE_NODE_STATUSES', statuses: event.payload.node_statuses });

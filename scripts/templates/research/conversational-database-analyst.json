@@ -369,24 +369,108 @@
           }
         ],
         "edges": [
-          { "id": "qe1", "source": "q1", "target": "q2" },
-          { "id": "qe2", "source": "q2", "target": "q3" },
-          { "id": "qe3", "source": "q3", "target": "q4" },
-          { "id": "qe4", "source": "q4", "target": "q5", "label": "Yes", "variant": "yes" },
-          { "id": "qe5", "source": "q4", "target": "q6", "label": "Fresh question", "variant": "no" },
-          { "id": "qe6", "source": "q5", "target": "q6" },
-          { "id": "qe7", "source": "q6", "target": "q7" },
-          { "id": "qe8", "source": "q7", "target": "q9", "label": "Fresh", "variant": "yes" },
-          { "id": "qe9", "source": "q7", "target": "q8", "label": "Stale", "variant": "no" },
-          { "id": "qe10", "source": "q8", "target": "q9" },
-          { "id": "qe11", "source": "q9", "target": "q10" },
-          { "id": "qe12", "source": "q10", "target": "q12", "label": "Passed", "variant": "yes" },
-          { "id": "qe13", "source": "q10", "target": "q11", "label": "Failed", "variant": "no" },
-          { "id": "qe14", "source": "q11", "target": "q15" },
-          { "id": "qe15", "source": "q12", "target": "q13" },
-          { "id": "qe16", "source": "q13", "target": "q14" },
-          { "id": "qe17", "source": "q14", "target": "q15" },
-          { "id": "qe18", "source": "q15", "target": "q16" }
+          {
+            "id": "qe1",
+            "source": "q1",
+            "target": "q2"
+          },
+          {
+            "id": "qe2",
+            "source": "q2",
+            "target": "q3"
+          },
+          {
+            "id": "qe3",
+            "source": "q3",
+            "target": "q4"
+          },
+          {
+            "id": "qe4",
+            "source": "q4",
+            "target": "q5",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "qe5",
+            "source": "q4",
+            "target": "q6",
+            "label": "Fresh question",
+            "variant": "no"
+          },
+          {
+            "id": "qe6",
+            "source": "q5",
+            "target": "q6"
+          },
+          {
+            "id": "qe7",
+            "source": "q6",
+            "target": "q7"
+          },
+          {
+            "id": "qe8",
+            "source": "q7",
+            "target": "q9",
+            "label": "Fresh",
+            "variant": "yes"
+          },
+          {
+            "id": "qe9",
+            "source": "q7",
+            "target": "q8",
+            "label": "Stale",
+            "variant": "no"
+          },
+          {
+            "id": "qe10",
+            "source": "q8",
+            "target": "q9"
+          },
+          {
+            "id": "qe11",
+            "source": "q9",
+            "target": "q10"
+          },
+          {
+            "id": "qe12",
+            "source": "q10",
+            "target": "q12",
+            "label": "Passed",
+            "variant": "yes"
+          },
+          {
+            "id": "qe13",
+            "source": "q10",
+            "target": "q11",
+            "label": "Failed",
+            "variant": "no"
+          },
+          {
+            "id": "qe14",
+            "source": "q11",
+            "target": "q15"
+          },
+          {
+            "id": "qe15",
+            "source": "q12",
+            "target": "q13"
+          },
+          {
+            "id": "qe16",
+            "source": "q13",
+            "target": "q14"
+          },
+          {
+            "id": "qe17",
+            "source": "q14",
+            "target": "q15"
+          },
+          {
+            "id": "qe18",
+            "source": "q15",
+            "target": "q16"
+          }
         ]
       },
       {
@@ -464,18 +548,72 @@
           }
         ],
         "edges": [
-          { "id": "re1", "source": "r1", "target": "r2" },
-          { "id": "re2", "source": "r2", "target": "r3" },
-          { "id": "re3", "source": "r3", "target": "r4" },
-          { "id": "re4", "source": "r4", "target": "r5" },
-          { "id": "re5", "source": "r5", "target": "r6", "label": "Yes", "variant": "yes" },
-          { "id": "re6", "source": "r5", "target": "r9", "label": "No changes", "variant": "no" },
-          { "id": "re7", "source": "r6", "target": "r7" },
-          { "id": "re8", "source": "r7", "target": "r8" },
-          { "id": "re9", "source": "r8", "target": "r11" },
-          { "id": "re10", "source": "r9", "target": "r11" },
-          { "id": "re11", "source": "r3", "target": "r10", "variant": "error" },
-          { "id": "re12", "source": "r10", "target": "r11", "variant": "error" }
+          {
+            "id": "re1",
+            "source": "r1",
+            "target": "r2"
+          },
+          {
+            "id": "re2",
+            "source": "r2",
+            "target": "r3"
+          },
+          {
+            "id": "re3",
+            "source": "r3",
+            "target": "r4"
+          },
+          {
+            "id": "re4",
+            "source": "r4",
+            "target": "r5"
+          },
+          {
+            "id": "re5",
+            "source": "r5",
+            "target": "r6",
+            "label": "Yes",
+            "variant": "yes"
+          },
+          {
+            "id": "re6",
+            "source": "r5",
+            "target": "r9",
+            "label": "No changes",
+            "variant": "no"
+          },
+          {
+            "id": "re7",
+            "source": "r6",
+            "target": "r7"
+          },
+          {
+            "id": "re8",
+            "source": "r7",
+            "target": "r8"
+          },
+          {
+            "id": "re9",
+            "source": "r8",
+            "target": "r11"
+          },
+          {
+            "id": "re10",
+            "source": "r9",
+            "target": "r11"
+          },
+          {
+            "id": "re11",
+            "source": "r3",
+            "target": "r10",
+            "variant": "error"
+          },
+          {
+            "id": "re12",
+            "source": "r10",
+            "target": "r11",
+            "variant": "error"
+          }
         ]
       },
       {
@@ -552,78 +690,64 @@
           }
         ],
         "edges": [
-          { "id": "de1", "source": "d1", "target": "d2" },
-          { "id": "de2", "source": "d2", "target": "d3" },
-          { "id": "de3", "source": "d3", "target": "d4" },
-          { "id": "de4", "source": "d4", "target": "d5" },
-          { "id": "de5", "source": "d5", "target": "d6" },
-          { "id": "de6", "source": "d6", "target": "d7" },
-          { "id": "de7", "source": "d7", "target": "d8" },
-          { "id": "de8", "source": "d8", "target": "d9" },
-          { "id": "de9", "source": "d9", "target": "d11" },
-          { "id": "de10", "source": "d2", "target": "d10", "variant": "error" },
-          { "id": "de11", "source": "d10", "target": "d11", "variant": "error" }
+          {
+            "id": "de1",
+            "source": "d1",
+            "target": "d2"
+          },
+          {
+            "id": "de2",
+            "source": "d2",
+            "target": "d3"
+          },
+          {
+            "id": "de3",
+            "source": "d3",
+            "target": "d4"
+          },
+          {
+            "id": "de4",
+            "source": "d4",
+            "target": "d5"
+          },
+          {
+            "id": "de5",
+            "source": "d5",
+            "target": "d6"
+          },
+          {
+            "id": "de6",
+            "source": "d6",
+            "target": "d7"
+          },
+          {
+            "id": "de7",
+            "source": "d7",
+            "target": "d8"
+          },
+          {
+            "id": "de8",
+            "source": "d8",
+            "target": "d9"
+          },
+          {
+            "id": "de9",
+            "source": "d9",
+            "target": "d11"
+          },
+          {
+            "id": "de10",
+            "source": "d2",
+            "target": "d10",
+            "variant": "error"
+          },
+          {
+            "id": "de11",
+            "source": "d10",
+            "target": "d11",
+            "variant": "error"
+          }
         ]
-      }
-    ],
-    "adoption_questions": [
-      {
-        "id": "supabase_url",
-        "question": "What is your Supabase project URL?",
-        "type": "text",
-        "default": "",
-        "context": "The REST API base URL for your Supabase project (e.g., https://xyz.supabase.co). Used for schema introspection and query execution.",
-        "connector_names": ["supabase"],
-        "category": "configuration"
-      },
-      {
-        "id": "allowed_tables",
-        "question": "Which database tables should the analyst be allowed to query?",
-        "type": "text",
-        "default": "*",
-        "context": "Comma-separated list of table names, or * for all tables. Restricts which tables can appear in generated SQL for safety.",
-        "connector_names": ["supabase"],
-        "category": "configuration"
-      },
-      {
-        "id": "slack_channel",
-        "question": "Which Slack channel should receive query results and weekly digests?",
-        "type": "text",
-        "default": "#data-questions",
-        "context": "The channel where the bot listens for questions and posts results, weekly digests, and schema change alerts",
-        "connector_names": ["slack"],
-        "category": "configuration"
-      },
-      {
-        "id": "telegram_enabled",
-        "question": "Should the analyst also respond via Telegram?",
-        "type": "boolean",
-        "default": "No",
-        "context": "Enable Telegram as an additional query channel alongside Slack. Requires a Telegram Bot Token.",
-        "connector_names": ["telegram"],
-        "category": "configuration"
-      }
-    ],
-    "protocol_capabilities": [
-      {
-        "type": "user_message",
-        "label": "Real-time query results in Slack and Telegram, weekly digests, schema change alerts, and error notifications",
-        "context": "2 notification channel(s) configured: slack, telegram"
-      },
-      {
-        "type": "agent_memory",
-        "label": "Conversation context for follow-up questions, schema cache for fast query generation, and query pattern tracking",
-        "context": "Tracks: conversation history, schema state, query patterns"
-      },
-      {
-        "type": "emit_event",
-        "label": "Emits events: schema changes detected, query rejected for safety, critical errors",
-        "context": "3 event subscription(s) configured -- agent participates in event bus"
-      },
-      {
-        "type": "manual_review",
-        "label": "Escalation for ambiguous questions that map to multiple possible queries",
-        "context": "Clarification logic detected in instructions"
       }
     ],
     "adoption_questions": [
@@ -667,9 +791,35 @@
         "question": "Which platform should be the primary channel: Slack or Telegram?",
         "helpText": "Choose which platform will receive weekly digests and schema change notifications. The other platform will still work for queries.",
         "type": "select",
-        "options": ["Slack", "Telegram"],
+        "options": [
+          "Slack",
+          "Telegram"
+        ],
         "required": true
       }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "user_message",
+        "label": "Real-time query results in Slack and Telegram, weekly digests, schema change alerts, and error notifications",
+        "context": "2 notification channel(s) configured: slack, telegram"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Conversation context for follow-up questions, schema cache for fast query generation, and query pattern tracking",
+        "context": "Tracks: conversation history, schema state, query patterns"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: schema changes detected, query rejected for safety, critical errors",
+        "context": "3 event subscription(s) configured -- agent participates in event bus"
+      },
+      {
+        "type": "manual_review",
+        "label": "Escalation for ambiguous questions that map to multiple possible queries",
+        "context": "Clarification logic detected in instructions"
+      }
     ]
-  }
+  },
+  "is_published": false
 }

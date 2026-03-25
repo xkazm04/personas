@@ -1,6 +1,6 @@
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import { formatDuration } from '@/lib/utils/formatters';
-import { SPAN_TYPE_CONFIG } from './traceInspectorTypes';
+import { getSpanTypeConfig } from './traceInspectorTypes';
 
 export function WaterfallBar({ span, totalMs }: { span: TraceSpan; totalMs: number }) {
   if (!totalMs || totalMs === 0) return null;
@@ -10,7 +10,7 @@ export function WaterfallBar({ span, totalMs }: { span: TraceSpan; totalMs: numb
     ? Math.max((span.duration_ms / totalMs) * 100, 0.5)
     : Math.max(((totalMs - span.start_ms) / totalMs) * 100, 0.5);
 
-  const config = SPAN_TYPE_CONFIG[span.span_type];
+  const config = getSpanTypeConfig(span.span_type);
 
   return (
     <div className="relative h-5 w-full">

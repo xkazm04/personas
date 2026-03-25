@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
 import { useAgentStore } from "@/stores/agentStore";
 import { Activity } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { formatDuration } from '@/lib/utils/formatters';
 import { pipelineSpans } from '@/lib/execution/pipeline';
 import { parseToolSteps } from '../../libs/waterfallHelpers';
@@ -119,14 +118,9 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
                   hasSubSpans={hasSubSpans}
                 />
 
-                <AnimatePresence>
-                  {hasSubSpans && isExpanded && streamSpan && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="bg-secondary/10"
+                {hasSubSpans && isExpanded && streamSpan && (
+                    <div
+                      className="animate-fade-slide-in bg-secondary/10"
                     >
                       {toolSteps.map((step) => (
                         <SubSpanBar
@@ -136,9 +130,8 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
                           totalDurationMs={totalDurationMs}
                         />
                       ))}
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
               </div>
             );
           })}

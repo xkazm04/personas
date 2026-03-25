@@ -42,6 +42,7 @@ export interface DatabaseSlice {
     credentialId: string,
     queryText: string,
     savedQueryId?: string,
+    allowMutation?: boolean,
   ) => Promise<QueryResult>;
 }
 
@@ -139,7 +140,7 @@ export const createDatabaseSlice: StateCreator<VaultStore, [], [], DatabaseSlice
 
   // -- Query Execution ------------------------------------------------
 
-  executeDbQuery: async (credentialId, queryText, savedQueryId) => {
-    return dbApi.executeDbQuery(credentialId, queryText, savedQueryId);
+  executeDbQuery: async (credentialId, queryText, savedQueryId, allowMutation) => {
+    return dbApi.executeDbQuery(credentialId, queryText, savedQueryId, allowMutation);
   },
 });

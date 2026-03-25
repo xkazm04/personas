@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Wrench, Zap, Link, ChevronDown, ChevronRight, AlertTriangle, Brain, Activity, ShieldCheck } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useState } from 'react';
@@ -71,10 +70,8 @@ export function PersonaPreviewCard({
       </p>
 
       <div className="flex items-center gap-4 mb-4">
-        <motion.div
-          initial={{ scale: 0.8 }}
-          animate={{ scale: 1 }}
-          className="w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-lg"
+        <div
+          className="animate-fade-scale-in w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-lg"
           style={{
             backgroundColor: `${color ?? '#8b5cf6'}18`,
             borderColor: `${color ?? '#8b5cf6'}30`,
@@ -82,7 +79,7 @@ export function PersonaPreviewCard({
           }}
         >
           {icon ?? '\u2728'}
-        </motion.div>
+        </div>
         <div>
           <p className="text-base font-semibold text-foreground/90">
             {name ?? 'Unnamed Persona'}
@@ -164,15 +161,13 @@ export function PersonaPreviewCard({
             System Prompt Preview
           </Button>
           {showPrompt && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mt-2 p-3 rounded-lg bg-background/40 border border-primary/10 overflow-hidden"
+            <div
+              className="animate-fade-slide-in mt-2 p-3 rounded-lg bg-background/40 border border-primary/10 overflow-hidden"
             >
               <div className="text-sm max-h-48 overflow-y-auto leading-relaxed">
                 <MarkdownRenderer content={systemPrompt} />
               </div>
-            </motion.div>
+            </div>
           )}
         </div>
       )}

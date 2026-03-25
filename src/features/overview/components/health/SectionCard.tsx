@@ -1,6 +1,7 @@
-import { motion } from 'framer-motion';
-import { Chrome, Key, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Chrome, Key, Loader2, Unplug } from 'lucide-react';
 import type { HealthCheckSection } from "@/api/system/system";
+import { registerClaudeDesktopMcp, unregisterClaudeDesktopMcp } from "@/api/system/system";
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
 import { Button } from '@/features/shared/components/buttons';
 import { getStatusIcon, SectionStatusDot } from './StatusIndicators';
@@ -20,6 +21,7 @@ export function SectionCard({
   onSignIn,
   onShowOllama,
   onShowLiteLLM,
+  onMcpRegistered,
 }: {
   section: HealthCheckSection;
   stubIdx: number;
@@ -34,17 +36,17 @@ export function SectionCard({
   onSignIn: () => void;
   onShowOllama: () => void;
   onShowLiteLLM: () => void;
+  onMcpRegistered?: () => void;
 }) {
+  const [mcpBusy, setMcpBusy] = useState(false);
+
   const isAccount = section.id === 'account';
   const authItem = isAccount ? section.items.find((i) => i.id === 'google_auth') : null;
   const showSignIn = isAccount && authItem?.status === 'inactive' && !ipcError;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: stubIdx * 0.1, duration: 0.25 }}
-      className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 hover:shadow-elevation-2 transition-all overflow-hidden flex flex-col min-h-[160px] group"
+    <div
+      className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 hover:shadow-elevation-2 transition-all overflow-hidden flex flex-col min-h-[160px] group"
     >
       <div className="flex items-center gap-3 px-4 py-4 border-b border-primary/5 bg-background/30 group-hover:bg-background/50 transition-colors">
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${sectionStyle.badge}`}>
@@ -115,6 +117,12 @@ export function SectionCard({
                     {check.status === 'ok' ? 'Edit Config' : 'Configure'}
                   </Button>
                 )}
+                {check.id === 'claude_desktop_mcp' && !ipcError && (
+                  <ClaudeDesktopMcpButton
+                    isConnected={check.status === 'ok'}
+                    onDone={onMcpRegistered}
+                  />
+                )}
               </div>
             </div>
           ))
@@ -139,6 +147,52 @@ export function SectionCard({
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
+  );
+}
+
+function ClaudeDesktopMcpButton({
+  isConnected,
+  onDone,
+}: {
+  isConnected: boolean;
+  onDone?: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const handleToggle = async () => {
+    setBusy(true);
+    setResult(null);
+    try {
+      const msg = isConnected
+        ? await unregisterClaudeDesktopMcp()
+        : await registerClaudeDesktopMcp();
+      setResult(msg);
+      onDone?.();
+    } catch (e) {
+      setResult(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 space-y-1">
+      <Button
+        variant="accent"
+        accentColor={isConnected ? 'rose' : 'violet'}
+        size="xs"
+        onClick={handleToggle}
+        disabled={busy}
+        loading={busy}
+        icon={busy ? undefined : <Unplug className="w-3 h-3" />}
+      >
+        {busy ? 'Working...' : isConnected ? 'Disconnect' : 'Connect to Claude Desktop'}
+      </Button>
+      {result && (
+        <p className="text-[11px] text-muted-foreground/70">{result}</p>
+      )}
+    </div>
   );
 }

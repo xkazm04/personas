@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Upload, Search, Sparkles, Pencil, Check } from 'lucide-react';
 import { WIZARD_STEPS, STEP_META, type N8nWizardStep } from '../hooks/useN8nImportReducer';
 
@@ -75,21 +74,18 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
               {/* Step circle */}
               <div className="relative flex items-center justify-center">
                 {isActive && (
-                  <motion.div
-                    className="absolute w-7 h-7 rounded-full bg-violet-500/20"
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.4, 0, 0.4] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  <div
+                    className="animate-fade-in absolute w-7 h-7 rounded-full bg-violet-500/20"
                   />
                 )}
-                <motion.div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                <div
+                  className={`animate-fade-in w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-300 ${
                     isActive
                       ? 'bg-violet-500/30 border border-violet-400/50'
                       : isCompleted
                         ? 'bg-emerald-500/20 border border-emerald-400/40'
                         : 'bg-secondary/40 border border-primary/10'
                   }`}
-                  layout
                 >
                   {isCompleted ? (
                     <Check className="w-3 h-3 text-emerald-400" strokeWidth={3} />
@@ -100,7 +96,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
                       }`}
                     />
                   )}
-                </motion.div>
+                </div>
               </div>
 
               {/* Step label + timer */}

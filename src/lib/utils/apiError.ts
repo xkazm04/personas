@@ -3,7 +3,12 @@
  *
  * Transient errors (network timeout, 503, connection reset) are safe to auto-retry.
  * Permanent errors (400, 404, validation failures) should be surfaced immediately.
+ *
+ * When a structured Tauri error (`{ error, kind }`) is available, classification
+ * uses the `kind` field directly instead of regex-matching the message string.
  */
+
+import { isTauriError, type TauriErrorKind } from '@/lib/types/tauriError';
 
 export type ErrorSeverity = 'transient' | 'permanent' | 'unknown';
 
@@ -14,13 +19,16 @@ export class ApiError extends Error {
   readonly retryAfterMs: number;
   /** Original error for debugging */
   readonly cause: unknown;
+  /** Structured error kind from the Rust backend, if available */
+  readonly kind: TauriErrorKind | undefined;
 
-  constructor(message: string, severity: ErrorSeverity, retryAfterMs: number, cause?: unknown) {
+  constructor(message: string, severity: ErrorSeverity, retryAfterMs: number, cause?: unknown, kind?: TauriErrorKind) {
     super(message);
     this.name = 'ApiError';
     this.severity = severity;
     this.retryAfterMs = retryAfterMs;
     this.cause = cause;
+    this.kind = kind;
   }
 
   get isTransient(): boolean {
@@ -71,30 +79,60 @@ const PERMANENT_PATTERNS = [
   /missing required/i,
 ];
 
+/** Transient kinds that are safe to auto-retry. */
+const TRANSIENT_KINDS: ReadonlySet<TauriErrorKind> = new Set([
+  'network_offline',
+  'rate_limited',
+  'cloud',     // cloud calls can be retried
+  'pool',      // connection pool exhaustion is transient
+]);
+
+/** Permanent kinds that should be surfaced immediately. */
+const PERMANENT_KINDS: ReadonlySet<TauriErrorKind> = new Set([
+  'not_found',
+  'validation',
+  'serde',
+  'auth',
+  'forbidden',
+]);
+
 /**
  * Classify an unknown error into a typed ApiError with retry guidance.
- * Call this in catch blocks to get structured error information.
+ * When the error is a structured Tauri response with a `kind` field,
+ * classification uses the kind directly — no regex needed.
+ * Falls back to regex pattern matching for non-Tauri errors.
  */
 export function classifyError(err: unknown, fallbackMessage: string): ApiError {
   const msg = extractErrorMessage(err, fallbackMessage);
 
-  // Check transient patterns first (network issues are retryable)
+  // Fast path: structured Tauri error with a kind field
+  if (isTauriError(err)) {
+    const { kind } = err;
+    if (TRANSIENT_KINDS.has(kind)) {
+      const retryMs = kind === 'rate_limited' ? 5000 : 2000;
+      return new ApiError(msg, 'transient', retryMs, err, kind);
+    }
+    if (PERMANENT_KINDS.has(kind)) {
+      return new ApiError(msg, 'permanent', 0, err, kind);
+    }
+    // Known kind but neither transient nor permanent (database, io, execution, etc.)
+    return new ApiError(msg, 'unknown', 3000, err, kind);
+  }
+
+  // Fallback: regex-based classification for non-Tauri errors
   for (const pattern of TRANSIENT_PATTERNS) {
     if (pattern.test(msg)) {
-      // 429 gets longer backoff
       const retryMs = /429|too many requests/i.test(msg) ? 5000 : 2000;
       return new ApiError(msg, 'transient', retryMs, err);
     }
   }
 
-  // Check permanent patterns
   for (const pattern of PERMANENT_PATTERNS) {
     if (pattern.test(msg)) {
       return new ApiError(msg, 'permanent', 0, err);
     }
   }
 
-  // Default: unknown severity, allow one retry with moderate delay
   return new ApiError(msg, 'unknown', 3000, err);
 }
 

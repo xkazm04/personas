@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Stethoscope,
   AlertTriangle,
@@ -71,14 +70,10 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
   const showDiagnosis = currentMs >= failurePoint;
 
   return (
-    <AnimatePresence>
+    <>
       {showDiagnosis && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 8 }}
-          transition={{ duration: 0.2 }}
-          className="rounded-xl border border-red-500/25 bg-red-500/5 overflow-hidden"
+        <div
+          className="animate-fade-slide-in rounded-xl border border-red-500/25 bg-red-500/5 overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-red-500/15">
@@ -162,13 +157,10 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                           )}
                         </button>
 
-                        <AnimatePresence>
+                        <>
                           {isExpanded && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="overflow-hidden"
+                            <div
+                              className="animate-fade-slide-in overflow-hidden"
                             >
                               <div className="px-3 pb-3 space-y-2 border-t border-primary/10 pt-2 mx-2">
                                 <p className="typo-body text-muted-foreground/70">
@@ -192,9 +184,9 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
                                   <span>Status: {issue.status}</span>
                                 </div>
                               </div>
-                            </motion.div>
+                            </div>
                           )}
-                        </AnimatePresence>
+                        </>
                       </div>
                     );
                   })}
@@ -239,9 +231,9 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
               )}
             </div>
           )}
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 

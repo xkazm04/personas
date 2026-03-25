@@ -4,7 +4,6 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { AnimatePresence } from 'framer-motion';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from './TriggerAddForm';
 import { TriggerListItem } from './TriggerListItem';
@@ -66,15 +65,13 @@ export function TriggerConfig() {
       </div>
 
       {/* Add Trigger Form */}
-      <AnimatePresence>
-        {showAddForm && (
+      {showAddForm && (
           <TriggerAddForm
             credentialEventsList={credentialEventsList}
             onCreateTrigger={handleCreateTrigger}
             onCancel={() => setShowAddForm(false)}
           />
         )}
-      </AnimatePresence>
 
       {/* Trigger Error */}
       {triggerError?.kind === 'crud' && (

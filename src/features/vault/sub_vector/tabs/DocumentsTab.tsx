@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Trash2, Upload, FolderOpen, Type, RefreshCw, AlertCircle } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import type { KnowledgeBase, KbDocument } from '@/api/vault/database/vectorKb';
@@ -135,14 +134,10 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
         {documents.length > 0 && (
           <IngestDropZone kbId={kb.id} onIngestStarted={handleIngestStarted}>
             <div className="p-4 space-y-1">
-              <AnimatePresence>
-                {documents.map((doc) => (
-                  <motion.div
+              {documents.map((doc) => (
+                  <div
                     key={doc.id}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/30 transition-colors group"
+                    className="animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary/30 transition-colors group"
                   >
                     <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
                       <FileText className="w-4 h-4 text-violet-400/70" />
@@ -165,9 +160,8 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  </motion.div>
+                  </div>
                 ))}
-              </AnimatePresence>
             </div>
           </IngestDropZone>
         )}

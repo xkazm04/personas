@@ -11,6 +11,7 @@
  */
 import { useCallback, useRef, useState } from 'react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
+import { EventName } from '@/lib/eventRegistry';
 import { usePersistedContext } from '@/hooks/utility/data/usePersistedContext';
 import { ADOPT_CONTEXT_MAX_AGE_MS } from './useAdoptReducer';
 import type { PersistedAdoptContext } from '../state/asyncTransformTypes';
@@ -44,8 +45,8 @@ export function useAsyncTransform({
     setLines: setStreamLines,
     setPhase: setStreamPhase,
   } = useCorrelatedCliStream({
-    outputEvent: 'template-adopt-output',
-    statusEvent: 'template-adopt-status',
+    outputEvent: EventName.TEMPLATE_ADOPT_OUTPUT,
+    statusEvent: EventName.TEMPLATE_ADOPT_STATUS,
     idField: 'adopt_id',
     onFailed: (message) => wizard.transformFailed(message),
   });

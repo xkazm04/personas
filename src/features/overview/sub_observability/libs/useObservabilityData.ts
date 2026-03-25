@@ -32,40 +32,21 @@ export function useObservabilityData() {
   } = useOverviewFilters();
 
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState<import('@/lib/bindings/PersonaHealingIssue').PersonaHealingIssue | null>(null);
-  const [issueFilter, setIssueFilter] = useState<'all' | 'open' | 'auto-fixed'>('all');
-  const [analysisResult, setAnalysisResult] = useState<{
-    failures_analyzed: number;
-    issues_created: number;
-    auto_fixed: number;
-  } | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [healingViewMode, setHealingViewMode] = useState<'list' | 'timeline'>('list');
   const healingTimeline = useOverviewStore((s) => s.healingTimeline);
   const healingTimelineLoading = useOverviewStore((s) => s.healingTimelineLoading);
   const fetchHealingTimeline = useOverviewStore((s) => s.fetchHealingTimeline);
+
+  const fetchAlertRules = useOverviewStore((s) => s.fetchAlertRules);
+  const fetchAlertHistory = useOverviewStore((s) => s.fetchAlertHistory);
 
   const refreshAll = useCallback(() => {
     return Promise.all([
       fetchObservabilityMetrics(effectiveDays, selectedPersonaId || undefined),
       fetchHealingIssues(),
+      fetchAlertRules(),
+      fetchAlertHistory(),
     ]);
-  }, [effectiveDays, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues]);
-
-  const handleRunAnalysis = useCallback(async () => {
-    setAnalysisResult(null);
-    setAnalysisError(null);
-    try {
-      const result = await triggerHealing(selectedPersonaId || personas[0]?.id);
-      if (result) {
-        setAnalysisResult(result);
-      } else {
-        setAnalysisError('Healing analysis failed. Please try again.');
-      }
-    } catch (err) {
-      setAnalysisError(err instanceof Error ? err.message : 'Healing analysis failed');
-    }
-  }, [triggerHealing, selectedPersonaId, personas]);
+  }, [effectiveDays, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues, fetchAlertRules, fetchAlertHistory]);
 
   useEffect(() => { void fetchCredentials(); }, [fetchCredentials]);
 
@@ -75,14 +56,6 @@ export function useObservabilityData() {
   useEffect(() => {
     if (observabilityMetrics) evaluateAlertRules();
   }, [observabilityMetrics, evaluateAlertRules]);
-
-  // Fetch timeline when switching to timeline view or when persona changes
-  useEffect(() => {
-    if (healingViewMode === 'timeline') {
-      const pid = selectedPersonaId || personas[0]?.id;
-      if (pid) fetchHealingTimeline(pid);
-    }
-  }, [healingViewMode, selectedPersonaId, personas, fetchHealingTimeline]);
 
   useEffect(() => { refreshAll(); }, [refreshAll]);
 
@@ -94,7 +67,7 @@ export function useObservabilityData() {
 
   const summary = observabilityMetrics?.summary;
   const backendChartData = observabilityMetrics?.chartData;
-  const chartData = backendChartData?.chart_points ?? [];
+  const chartData = useMemo(() => backendChartData?.chart_points ?? [], [backendChartData?.chart_points]);
 
   const pieData: PieDataPoint[] = useMemo(() =>
     (backendChartData?.persona_breakdown ?? []).map((b) => ({
@@ -136,24 +109,6 @@ export function useObservabilityData() {
     };
   }, [chartData]);
 
-  const { issueCounts, sortedFilteredIssues } = useMemo(() => {
-    let open = 0, autoFixed = 0;
-    for (const i of healingIssues) {
-      if (i.auto_fixed) autoFixed++;
-      else open++;
-    }
-    const counts = { all: healingIssues.length, open, autoFixed };
-    const filtered = issueFilter === 'all' ? healingIssues
-      : issueFilter === 'open' ? healingIssues.filter(i => !i.auto_fixed)
-      : healingIssues.filter(i => i.auto_fixed);
-    const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-    const sorted = [...filtered].sort((a, b) => {
-      if (a.auto_fixed !== b.auto_fixed) return a.auto_fixed ? 1 : -1;
-      return (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99);
-    });
-    return { issueCounts: counts, sortedFilteredIssues: sorted };
-  }, [healingIssues, issueFilter]);
-
   const chartAnnotations = useAnnotationData({ selectedPersonaId, healingIssues });
 
   return {
@@ -165,12 +120,9 @@ export function useObservabilityData() {
     // Metrics
     observabilityError, summary, chartData, pieData, successRate, trends, chartAnnotations,
     setFailureDrilldownDate, setOverviewTab,
-    // Healing
-    healingIssues, healingRunning, handleRunAnalysis,
-    resolveHealingIssue, selectedIssue, setSelectedIssue,
-    issueFilter, setIssueFilter, issueCounts, sortedFilteredIssues,
-    analysisResult, setAnalysisResult, analysisError, setAnalysisError,
-    // Timeline
-    healingViewMode, setHealingViewMode, healingTimeline, healingTimelineLoading,
+    // Healing (data only — UI state lives in the dashboard)
+    healingIssues, healingRunning, triggerHealing,
+    resolveHealingIssue, fetchHealingTimeline,
+    healingTimeline, healingTimelineLoading,
   };
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown,
   ChevronUp,
@@ -120,20 +119,15 @@ export default function ExecutionMiniPlayer() {
   if (!miniPlayerPinned || !hasContent) return null;
 
   return (
-    <AnimatePresence>
-      <motion.div
+    <div
         ref={dragRef}
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
         style={{
           position: 'fixed',
           left: miniPlayerPosition.x,
           top: miniPlayerPosition.y,
           zIndex: 60,
         }}
-        className={`w-[360px] rounded-xl border border-primary/20 bg-background/95 backdrop-blur-lg shadow-2xl shadow-black/40 overflow-hidden select-none ${
+        className={`animate-fade-slide-in w-[360px] rounded-xl border border-primary/20 bg-background/95 backdrop-blur-lg shadow-2xl shadow-black/40 overflow-hidden select-none ${
           isDragging ? 'cursor-grabbing' : ''
         }`}
       >
@@ -199,13 +193,10 @@ export default function ExecutionMiniPlayer() {
               </span>
             </div>
             <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-              <motion.div
-                className={`h-full rounded-full ${
+              <div
+                className={`animate-fade-in h-full rounded-full ${
                   error && !isExecuting ? 'bg-red-400' : isExecuting ? 'bg-blue-400' : 'bg-emerald-400'
                 }`}
-                initial={{ width: '0%' }}
-                animate={{ width: isExecuting ? '75%' : '100%' }}
-                transition={{ duration: isExecuting ? 2 : 0.3, ease: 'easeOut' }}
               />
             </div>
           </div>
@@ -263,7 +254,6 @@ export default function ExecutionMiniPlayer() {
             )}
           </div>
         )}
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }

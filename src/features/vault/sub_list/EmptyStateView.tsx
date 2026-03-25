@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Key, LayoutTemplate, Sparkles, Plug, ArrowRight, Globe } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
@@ -20,10 +19,8 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
     .filter((c): c is ConnectorDefinition => c != null);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-4"
+    <div
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Heading */}
       <div className="pt-6 pb-2">
@@ -138,6 +135,6 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Clock, CalendarClock } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { formatInterval } from '@/lib/utils/formatters';
 import { type CronPreview } from '@/api/pipeline/triggers';
 
@@ -49,12 +48,8 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
   const totalSpan = lastRun.getTime() - now;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.2 }}
-      className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/10"
+    <div
+      className="animate-fade-slide-in mt-3 p-3 rounded-xl bg-primary/5 border border-primary/10"
     >
       {/* Human-readable summary */}
       <div className="flex items-center gap-2 mb-2.5">
@@ -82,12 +77,9 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
         {runs.map((run, i) => {
           const pct = ((run.getTime() - now) / totalSpan) * 100;
           return (
-            <motion.div
+            <div
               key={i}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: i * 0.06, type: 'spring', stiffness: 500, damping: 25 }}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
+              className="animate-fade-slide-in absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
               style={{ left: `${pct}%` }}
             >
               <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary' : 'bg-primary/40'} ring-2 ring-primary/10`} />
@@ -96,11 +88,11 @@ export function SchedulePreview({ intervalSeconds, triggerType }: { intervalSeco
               }`}>
                 {formatRunTime(run)}
               </span>
-            </motion.div>
+            </div>
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -118,12 +110,8 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
   if (totalSpan <= 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.2 }}
-      className="mt-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10"
+    <div
+      className="animate-fade-slide-in mt-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10"
     >
       {/* Human-readable summary */}
       <div className="flex items-center gap-2 mb-2.5">
@@ -150,12 +138,9 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
         {runs.map((run, i) => {
           const pct = Math.min(((run.getTime() - now) / totalSpan) * 100, 100);
           return (
-            <motion.div
+            <div
               key={i}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: i * 0.06, type: 'spring', stiffness: 500, damping: 25 }}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
+              className="animate-fade-slide-in absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group"
               style={{ left: `${pct}%` }}
             >
               <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-amber-400' : 'bg-amber-400/40'} ring-2 ring-amber-400/10`} />
@@ -164,10 +149,10 @@ export function CronSchedulePreview({ cronPreview }: { cronPreview: CronPreview 
               }`}>
                 {formatRunTime(run)}
               </span>
-            </motion.div>
+            </div>
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 }

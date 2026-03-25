@@ -1,4 +1,4 @@
-import type { ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
+import type { ModelProfile, ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
 import { profileToDropdownValue } from '@/features/agents/sub_model_config/OllamaCloudPresets';
 
 // -- Draft type for all editable persona fields --
@@ -19,6 +19,7 @@ export interface PersonaDraft {
   customModelName: string;
   maxBudget: number | '';
   maxTurns: number | '';
+  promptCachePolicy: PromptCachePolicy;
 }
 
 // -- Key groups for dirty detection --
@@ -31,7 +32,7 @@ export const SETTINGS_KEYS = [
 /** Fields that belong to the Model / Provider tab. */
 export const MODEL_KEYS = [
   'selectedModel', 'selectedProvider', 'baseUrl', 'authToken', 'customModelName',
-  'maxBudget', 'maxTurns',
+  'maxBudget', 'maxTurns', 'promptCachePolicy',
 ] as const satisfies readonly (keyof PersonaDraft)[];
 
 // -- Compile-time exhaustiveness check --
@@ -62,6 +63,7 @@ export function buildDraft(persona: { name: string; description?: string | null;
   let baseUrl = '';
   let authToken = '';
   let customModelName = '';
+  let promptCachePolicy: PromptCachePolicy = 'none';
   try {
     const mp: ModelProfile = persona.model_profile ? JSON.parse(persona.model_profile) : {};
     selectedModel = profileToDropdownValue(mp);
@@ -70,6 +72,9 @@ export function buildDraft(persona: { name: string; description?: string | null;
     authToken = mp.auth_token || '';
     if (selectedModel === 'custom' && mp.model) {
       customModelName = mp.model;
+    }
+    if (mp.prompt_cache_policy === 'short' || mp.prompt_cache_policy === 'long') {
+      promptCachePolicy = mp.prompt_cache_policy;
     }
   } catch {
     // intentional: non-critical -- JSON parse fallback
@@ -90,5 +95,6 @@ export function buildDraft(persona: { name: string; description?: string | null;
     customModelName,
     maxBudget: persona.max_budget_usd ?? '',
     maxTurns: persona.max_turns ?? '',
+    promptCachePolicy,
   };
 }

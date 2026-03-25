@@ -99,6 +99,31 @@ impl DesignContextData {
 }
 
 // ============================================================================
+// Free Parameters (adjustable without rebuild)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PersonaParameter {
+    pub key: String,
+    pub label: String,
+    #[serde(rename = "type")]
+    pub param_type: String, // "number", "string", "boolean", "select"
+    pub default_value: serde_json::Value,
+    pub value: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub options: Option<Vec<String>>, // for "select" type
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>, // e.g., "$", "%", "ms"
+}
+
+// ============================================================================
 // Persona
 // ============================================================================
 
@@ -129,6 +154,10 @@ pub struct Persona {
     pub trust_level: String,
     pub trust_origin: String,
     pub trust_verified_at: Option<String>,
+    pub trust_score: f64,
+    /// Free parameters: JSON array of `PersonaParameter` definitions.
+    /// Adjustable at runtime without triggering a rebuild.
+    pub parameters: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -313,4 +342,5 @@ pub struct UpdatePersonaInput {
     pub max_turns: Option<Option<i32>>,
     pub design_context: Option<Option<String>>,
     pub group_id: Option<Option<String>>,
+    pub parameters: Option<Option<String>>,
 }

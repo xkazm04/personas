@@ -5,6 +5,7 @@
 //! public URL. 3rd-party apps POST webhooks to the Smee URL, and this module
 //! receives them in real-time via Server-Sent Events.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -13,6 +14,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
 
+use super::event_registry::event_name;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::settings;
@@ -42,22 +44,26 @@ fn find_sse_boundary(buf: &str) -> Option<(usize, usize)> {
 // State
 // ---------------------------------------------------------------------------
 
+/// Per-relay connection status tracked individually so one relay's
+/// disconnect does not clobber the aggregate state of other relays.
+struct RelayInstanceStatus {
+    connected: bool,
+    error: Option<String>,
+    events_relayed: u64,
+    last_event_at: Option<String>,
+}
+
 pub struct SmeeRelayState {
     pub channel_url: Option<String>,
-    pub connected: bool,
-    pub events_relayed: u64,
-    pub last_event_at: Option<String>,
-    pub error: Option<String>,
+    /// Per-relay status keyed by relay ID (or "__legacy__" for the single-URL mode).
+    relays: HashMap<String, RelayInstanceStatus>,
 }
 
 impl SmeeRelayState {
     pub fn new() -> Self {
         Self {
             channel_url: None,
-            connected: false,
-            events_relayed: 0,
-            last_event_at: None,
-            error: None,
+            relays: HashMap::new(),
         }
     }
 }
@@ -78,14 +84,33 @@ pub struct SmeeRelayStatus {
 }
 
 fn emit_status(app: &AppHandle, state: &SmeeRelayState) {
+    let any_connected = state.relays.values().any(|r| r.connected);
+    let total_events: u64 = state.relays.values().map(|r| r.events_relayed).sum();
+    let latest_event = state
+        .relays
+        .values()
+        .filter_map(|r| r.last_event_at.as_deref())
+        .max()
+        .map(String::from);
+    // Only surface an error when no relay is connected.
+    let aggregate_error = if any_connected {
+        None
+    } else {
+        state
+            .relays
+            .values()
+            .filter_map(|r| r.error.clone())
+            .last()
+    };
+
     let status = SmeeRelayStatus {
         channel_url: state.channel_url.clone(),
-        connected: state.connected,
-        events_relayed: state.events_relayed,
-        last_event_at: state.last_event_at.clone(),
-        error: state.error.clone(),
+        connected: any_connected,
+        events_relayed: total_events,
+        last_event_at: latest_event,
+        error: aggregate_error,
     };
-    let _ = app.emit("smee-relay-status", status);
+    let _ = app.emit(event_name::SMEE_RELAY_STATUS, status);
 }
 
 // ---------------------------------------------------------------------------
@@ -121,8 +146,12 @@ async fn relay_sse_stream(
     // Mark connected
     {
         let mut s = state.lock().await;
-        s.connected = true;
-        s.error = None;
+        s.relays.insert("__legacy__".to_string(), RelayInstanceStatus {
+            connected: true,
+            error: None,
+            events_relayed: 0,
+            last_event_at: None,
+        });
         emit_status(app, &s);
     }
 
@@ -195,10 +224,12 @@ async fn relay_sse_stream(
 
             match event_repo::publish(pool, input) {
                 Ok(event) => {
-                    let _ = app.emit("event-bus", event.clone());
+                    let _ = app.emit(event_name::EVENT_BUS, event.clone());
                     let mut s = state.lock().await;
-                    s.events_relayed += 1;
-                    s.last_event_at = Some(chrono::Utc::now().to_rfc3339());
+                    if let Some(r) = s.relays.get_mut("__legacy__") {
+                        r.events_relayed += 1;
+                        r.last_event_at = Some(chrono::Utc::now().to_rfc3339());
+                    }
                     emit_status(app, &s);
 
                     tracing::debug!(event_id = %event.id, "Smee relay: published event");
@@ -245,8 +276,14 @@ async fn relay_sse_stream_for_relay(
 
     {
         let mut s = state.lock().await;
-        s.connected = true;
-        s.error = None;
+        let prev_events = s.relays.get(relay_id).map_or(0, |r| r.events_relayed);
+        let prev_last_event = s.relays.get(relay_id).and_then(|r| r.last_event_at.clone());
+        s.relays.insert(relay_id.to_string(), RelayInstanceStatus {
+            connected: true,
+            error: None,
+            events_relayed: prev_events,
+            last_event_at: prev_last_event,
+        });
         emit_status(app, &s);
     }
 
@@ -336,11 +373,13 @@ async fn relay_sse_stream_for_relay(
 
             match event_repo::publish(pool, input) {
                 Ok(event) => {
-                    let _ = app.emit("event-bus", event.clone());
+                    let _ = app.emit(event_name::EVENT_BUS, event.clone());
                     let _ = smee_relay_repo::record_event(pool, relay_id);
                     let mut s = state.lock().await;
-                    s.events_relayed += 1;
-                    s.last_event_at = Some(chrono::Utc::now().to_rfc3339());
+                    if let Some(r) = s.relays.get_mut(relay_id) {
+                        r.events_relayed += 1;
+                        r.last_event_at = Some(chrono::Utc::now().to_rfc3339());
+                    }
                     emit_status(app, &s);
                 }
                 Err(e) => {
@@ -362,7 +401,6 @@ pub async fn run_smee_relay(
     app: AppHandle,
     state: Arc<tokio::sync::Mutex<SmeeRelayState>>,
 ) {
-    use std::collections::HashMap;
     use crate::db::repos::communication::smee_relays as smee_relay_repo;
 
     tokio::time::sleep(Duration::from_secs(5)).await;
@@ -389,6 +427,8 @@ pub async fn run_smee_relay(
             if !desired_ids.contains(&id) {
                 if let Some(handle) = tasks.remove(&id) {
                     handle.abort();
+                    let mut s = state.lock().await;
+                    s.relays.remove(&id);
                     tracing::info!(relay_id = %id, "Stopped Smee relay task");
                 }
             }
@@ -418,8 +458,17 @@ pub async fn run_smee_relay(
                             tracing::warn!(relay_id = %relay_id2, error = %e, "Smee relay error");
                             let _ = smee_relay_repo::record_error(&pool2, &relay_id2, &e);
                             let mut s = state2.lock().await;
-                            s.connected = false;
-                            s.error = Some(e);
+                            if let Some(r) = s.relays.get_mut(&relay_id2) {
+                                r.connected = false;
+                                r.error = Some(e);
+                            } else {
+                                s.relays.insert(relay_id2.clone(), RelayInstanceStatus {
+                                    connected: false,
+                                    error: Some(e),
+                                    events_relayed: 0,
+                                    last_event_at: None,
+                                });
+                            }
                             emit_status(&app2, &s);
                         }
                     }
@@ -459,8 +508,10 @@ pub async fn run_smee_relay(
                             Ok(()) => { backoff = Duration::from_secs(1); }
                             Err(e) => {
                                 let mut s = state2.lock().await;
-                                s.connected = false;
-                                s.error = Some(e);
+                                if let Some(r) = s.relays.get_mut("__legacy__") {
+                                    r.connected = false;
+                                    r.error = Some(e);
+                                }
                                 emit_status(&app2, &s);
                             }
                         }
@@ -480,17 +531,16 @@ pub async fn run_smee_relay(
         } else if tasks.contains_key("__legacy__") {
             if let Some(handle) = tasks.remove("__legacy__") {
                 handle.abort();
+                let mut s = state.lock().await;
+                s.relays.remove("__legacy__");
             }
         }
 
-        // Update aggregate status for frontend
+        // Emit aggregate status (derived from per-relay map)
         {
             let mut s = state.lock().await;
-            let relay_count = tasks.len();
-            s.connected = relay_count > 0;
-            if relay_count == 0 {
+            if s.relays.is_empty() {
                 s.channel_url = None;
-                s.error = None;
             }
             emit_status(&app, &s);
         }

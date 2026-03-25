@@ -18,6 +18,10 @@ import type { TriageRule } from "@/lib/bindings/TriageRule";
 // ---------------------------------------------------------------------------
 
 function isCommandNotFound(err: unknown): boolean {
+  // Prefer structured kind from Tauri errors
+  if (typeof err === 'object' && err !== null && 'kind' in err) {
+    return (err as { kind: string }).kind === 'not_found';
+  }
   const msg = typeof err === "string" ? err : err instanceof Error ? err.message : String(err);
   return msg.includes("not found") || msg.includes("Command") && msg.includes("not found");
 }

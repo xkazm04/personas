@@ -3,6 +3,7 @@
 //! Monitors the foreground application window and publishes events when the
 //! focused app changes. Uses platform-specific APIs (Windows WinAPI).
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use tokio::sync::Mutex;
@@ -16,6 +17,9 @@ use crate::db::DbPool;
 pub struct AppFocusState {
     last_app_name: Option<String>,
     last_window_title: Option<String>,
+    /// Cached compiled regexes keyed by pattern string.
+    /// `None` value means the pattern failed to compile (use substring fallback).
+    regex_cache: HashMap<String, Option<regex::Regex>>,
 }
 
 impl AppFocusState {
@@ -23,6 +27,7 @@ impl AppFocusState {
         Self {
             last_app_name: None,
             last_window_title: None,
+            regex_cache: HashMap::new(),
         }
     }
 
@@ -160,7 +165,11 @@ pub async fn app_focus_tick(
         return;
     }
 
+    let now_utc = chrono::Utc::now();
     for trigger in &focus_triggers {
+        if !trigger.is_within_active_window(now_utc) {
+            continue;
+        }
         let config = trigger.parse_config();
         if let TriggerConfig::AppFocus {
             app_names: ref names,
@@ -180,15 +189,22 @@ pub async fn app_focus_tick(
                 }
             }
 
-            // Check title pattern
+            // Check title pattern (cached regex or substring fallback)
             if let Some(ref pattern) = tp {
-                match regex::Regex::new(pattern) {
-                    Ok(re) => {
+                let cached = {
+                    let mut s = state.lock().await;
+                    s.regex_cache
+                        .entry(pattern.clone())
+                        .or_insert_with(|| regex::Regex::new(pattern).ok())
+                        .clone()
+                };
+                match cached {
+                    Some(re) => {
                         if !re.is_match(&window.window_title) {
                             continue;
                         }
                     }
-                    Err(_) => {
+                    None => {
                         if !window.window_title.contains(pattern.as_str()) {
                             continue;
                         }

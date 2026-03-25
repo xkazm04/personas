@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Radar,
   CheckCircle2,
@@ -31,12 +30,9 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
     : 0;
 
   return (
-    <motion.div
+    <div
       key="foraging"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -58,14 +54,10 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
       </div>
 
       {/* Idle / Start state */}
-      <AnimatePresence mode="wait">
-        {forage.phase === "idle" && (
-          <motion.div
+      {forage.phase === "idle" && (
+          <div
             key="idle"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="rounded-xl border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
+            className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/25 p-6 text-center space-y-4"
           >
             <EmptyIllustration
               icon={Radar}
@@ -86,34 +78,28 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
               <p>Scans: ~/.aws, ~/.kube, env vars, .env, ~/.npmrc, Docker, GitHub CLI, SSH</p>
               <p>No secrets are uploaded -- scanning happens entirely on your machine.</p>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Scanning */}
         {forage.phase === "scanning" && (
-          <motion.div
+          <div
             key="scanning"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
+            className="animate-fade-slide-in rounded-xl border border-violet-500/20 bg-violet-500/5 p-8 text-center space-y-3"
           >
             <LoadingSpinner size="2xl" className="text-violet-400 mx-auto" />
             <p className="text-sm text-foreground/80">Scanning filesystem for credentials...</p>
             <p className="text-sm text-muted-foreground/50">
               Checking environment variables, config files, and dev tool credentials
             </p>
-          </motion.div>
+          </div>
         )}
 
         {/* Results */}
         {forage.phase === "results" && forage.scanResult && (
-          <motion.div
+          <div
             key="results"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="space-y-3"
+            className="animate-fade-slide-in space-y-3"
           >
             {/* Summary bar */}
             <div className="flex items-center justify-between px-1">
@@ -190,17 +176,14 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                 Import {forage.selected.size} credential{forage.selected.size !== 1 ? "s" : ""} to vault
               </Button>
             )}
-          </motion.div>
+          </div>
         )}
 
         {/* Importing */}
         {forage.phase === "importing" && (
-          <motion.div
+          <div
             key="importing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="space-y-3"
+            className="animate-fade-slide-in space-y-3"
           >
             <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 text-center space-y-2">
               <LoadingSpinner size="xl" className="text-violet-400 mx-auto" />
@@ -228,17 +211,14 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                   ))}
               </div>
             )}
-          </motion.div>
+          </div>
         )}
 
         {/* Done */}
         {forage.phase === "done" && (
-          <motion.div
+          <div
             key="done"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-3"
+            className="animate-fade-slide-in rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center space-y-3"
           >
             <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
             <div>
@@ -268,17 +248,14 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                 Back to vault
               </Button>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Error */}
         {forage.phase === "error" && (
-          <motion.div
+          <div
             key="error"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="rounded-xl border border-red-500/20 bg-red-500/5 p-6 text-center space-y-3"
+            className="animate-fade-slide-in rounded-xl border border-red-500/20 bg-red-500/5 p-6 text-center space-y-3"
           >
             <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
             <div>
@@ -304,9 +281,8 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
                 Back
               </Button>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

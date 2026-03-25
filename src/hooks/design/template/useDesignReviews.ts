@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import { cancelDesignReviewRun, deleteDesignReview, deleteStaleSeedTemplates, importDesignReview, listDesignReviews, startDesignReviewRun } from "@/api/overview/reviews";
 
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -141,7 +142,7 @@ export function useDesignReviews() {
       const result = await startDesignReviewRun(personaId, testCases ?? []);
       currentRunId.current = result.run_id;
 
-      unlistenRef.current = await listen<ReviewStatusPayload>('design-review-status', (event) => {
+      unlistenRef.current = await listen<ReviewStatusPayload>(EventName.DESIGN_REVIEW_STATUS, (event) => {
         const { status, test_case_name, test_case_index, total, run_id, error_message, elapsed_ms } = event.payload;
 
         // Only process events for the current run

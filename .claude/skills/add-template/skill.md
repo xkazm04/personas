@@ -53,20 +53,33 @@ Ask:
 ### Batch 2: Triggers & Timing
 
 Ask:
-1. **Primary trigger**: What event starts this agent? Options:
+1. **Primary trigger**: What event starts this agent? Options (manual trigger is always available in the app — no need to define it):
    - `webhook` — real-time event from external service (specify path, method, source)
    - `schedule` — cron-based recurring task (specify frequency)
    - `polling` — periodic check for changes (specify interval and what to check)
-   - `manual` — user-initiated on demand
 2. **Secondary triggers**: Are there additional triggers? (e.g., a webhook for real-time + a scheduled reconciliation sweep, or a weekly report schedule)
 3. **Trigger configuration**: For each trigger, what specific config is needed? (cron expression, webhook path, polling interval)
 
-### Batch 3: Human-in-the-Loop & Communication
+Note: Do NOT include `manual` triggers in `suggested_triggers` — manual execution is a built-in app capability.
+
+### Batch 3: Human-in-the-Loop, Memory & Communication
 
 Ask:
 1. **Approval gates**: Does this agent need human approval before any actions? (e.g., before sending emails, before deploying, before making payments)
-2. **Notification channels**: Where does the agent report results/status? Which Slack channels, email addresses, or webhook endpoints?
-3. **Alert severity**: Does the agent have different communication paths based on severity/importance? (e.g., critical → Slack #incidents, low → local log only)
+
+**Important — 2-Phase Review Pattern**: The platform supports a composable 2-phase pattern for human review. Templates can combine these phases as needed:
+
+**Phase 1: Review → Event** (wired in platform):
+When a human approves or rejects a manual review item, the platform automatically publishes a `review_decision.approved` or `review_decision.rejected` event to the event bus. Downstream personas can subscribe to these events. The event payload includes: `review_id`, `execution_id`, `persona_id`, `title`, `decision`, and `reviewer_notes`. Use this when review decisions should trigger other agents or create follow-on work items.
+
+**Phase 2: Review → Memory → Recall** (wired in platform):
+Agents save learnings as Memory items via the `agent_memory` protocol during execution. On future runs, the platform automatically injects the top 20 memories (by importance) into the agent's system prompt under "Agent Memory -- Prior Learnings". This creates a learning loop: the agent can recall what the user previously found valuable or invaluable and adapt its analysis accordingly. Use this when the agent should improve over time based on feedback.
+
+**Composing both phases**: A template can use both — e.g., a triage agent presents findings for human review, the review decision emits an event (Phase 1) that downstream agents consume, AND the agent saves review patterns as memories (Phase 2) to improve its future analysis. Reports should always be delivered via the **Messages module** regardless of whether human review is configured.
+
+When designing templates with human review, frame the review as evaluating "valuable / not valuable" findings. The accepted/rejected decisions become both events (for inter-agent coordination) and learning data (for self-improvement).
+2. **Notification channels**: Where does the agent report results/status? Use generic architecture components (e.g., "messaging connector" for chat delivery, "email connector" for email) rather than naming specific services like Slack or Gmail. The user chooses their messaging platform when adopting the template.
+3. **Alert severity**: Does the agent have different communication paths based on severity/importance? (e.g., critical → messaging channel, low → local log only)
 
 ### Batch 4: Error Handling & Resilience
 
@@ -134,12 +147,31 @@ This is the most critical section. Each sub-field must be detailed and technical
 
 ### 3c. Generate remaining payload fields
 
-- **suggested_tools**: Typically `["http_request", "file_read", "file_write"]`. Add `"gmail_send"` if email is involved.
+- **suggested_parameters**: Array of free parameter definitions. Parameters are runtime-adjustable values (thresholds, caps, limits) that users can change without triggering a rebuild. Templates should define parameters for any numeric threshold, limit, or configurable value referenced in the instructions. Parameters are injected into prompts via `{{param.key_name}}` syntax.
+  ```json
+  [
+    {
+      "key": "parameter_key",
+      "label": "Display Label",
+      "type": "number|string|boolean|select",
+      "default_value": 100,
+      "value": 100,
+      "description": "What this parameter controls",
+      "unit": "$|%|ms|items",
+      "min": 0,
+      "max": 10000,
+      "options": ["option1", "option2"]
+    }
+  ]
+  ```
+  When generating instructions and prompt, reference parameters as `{{param.key}}` so they're substituted at runtime.
+
+- **suggested_tools**: Typically `["http_request", "file_read", "file_write"]`.
 
 - **suggested_triggers**: Array of trigger objects:
   ```json
   {
-    "trigger_type": "webhook|schedule|polling|manual",
+    "trigger_type": "webhook|schedule|polling",
     "config": { ... },
     "description": "Why this trigger exists"
   }
@@ -175,9 +207,9 @@ This is the most critical section. Each sub-field must be detailed and technical
   }
   ```
 
-- **suggested_notification_channels**: Array of notification targets:
+- **suggested_notification_channels**: Array of notification targets. Use generic architecture roles (e.g., `"type": "messaging"` not `"type": "slack"`) so the user can choose their platform during adoption:
   ```json
-  { "type": "slack|email|webhook", "description": "When used", "required_connector": "connector_name", "config_hints": { "channel": "#channel" } }
+  { "type": "messaging|email|webhook", "description": "When used", "required_connector": "connector_name", "config_hints": { "channel": "#channel-suggestion" } }
   ```
 
 - **suggested_event_subscriptions**: Events emitted/consumed:
@@ -233,6 +265,7 @@ The JSON must be valid and properly formatted with 2-space indentation. The top-
     "suggested_connectors": [...],
     "suggested_notification_channels": [...],
     "suggested_event_subscriptions": [...],
+    "suggested_parameters": [...],
     "use_case_flows": [...]
   }
 }

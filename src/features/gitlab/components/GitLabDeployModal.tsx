@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Rocket, Check, ExternalLink, ShieldCheck, KeyRound } from 'lucide-react';
+import { Rocket, Check, ExternalLink, ShieldCheck, KeyRound, Tag } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { GitLabProject, GitLabDeployResult } from '@/api/system/gitlab';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -14,6 +14,7 @@ interface GitLabDeployModalProps {
   onSelectProject: (id: number) => void;
   onFetchProjects: () => Promise<void>;
   onDeploy: (personaId: string, projectId: number, provisionCredentials: boolean) => Promise<GitLabDeployResult>;
+  onDeployVersioned?: (personaId: string, projectId: number, provisionCredentials: boolean, environment?: string) => Promise<GitLabDeployResult>;
   onDeploySuccess?: () => void;
   onCreateFromTemplate?: (template: CiCdTemplate) => Promise<string>;
   gitlabTier?: GitLabTierId;
@@ -26,12 +27,15 @@ export function GitLabDeployModal({
   onSelectProject,
   onFetchProjects,
   onDeploy,
+  onDeployVersioned,
   onDeploySuccess,
   onCreateFromTemplate,
   gitlabTier = 'free',
 }: GitLabDeployModalProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [provisionCredentials, setProvisionCredentials] = useState(false);
+  const [enableVersioning, setEnableVersioning] = useState(true);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<string>('');
   const [isDeploying, setIsDeploying] = useState(false);
   const [isCreatingFromTemplate, setIsCreatingFromTemplate] = useState(false);
   const [result, setResult] = useState<GitLabDeployResult | null>(null);
@@ -61,7 +65,17 @@ export function GitLabDeployModal({
     setIsDeploying(true);
     setResult(null);
     try {
-      const res = await onDeploy(selectedPersonaId, selectedProjectId, provisionCredentials);
+      let res: GitLabDeployResult;
+      if (enableVersioning && onDeployVersioned) {
+        res = await onDeployVersioned(
+          selectedPersonaId,
+          selectedProjectId,
+          provisionCredentials,
+          selectedEnvironment || undefined,
+        );
+      } else {
+        res = await onDeploy(selectedPersonaId, selectedProjectId, provisionCredentials);
+      }
       setResult(res);
       onDeploySuccess?.();
     } catch {
@@ -149,6 +163,48 @@ export function GitLabDeployModal({
                   Credentials are transmitted over HTTPS and stored as masked, protected
                   variables. They will not appear in job logs or the system prompt.
                 </span>
+              </div>
+            )}
+          </div>
+        </label>
+      </div>
+
+      {/* Version tagging toggle */}
+      <div className="p-3 rounded-lg border border-primary/10 bg-primary/[0.02]">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={enableVersioning}
+            onChange={(e) => setEnableVersioning(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-primary/20 text-amber-500 focus-visible:ring-amber-500/30"
+          />
+          <div className="flex-1">
+            <div className="flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-sm font-medium text-foreground/90">
+                Version-controlled deploy
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground/70 mt-1">
+              Tag this deployment as a versioned release. Enables rollback to any previous version
+              from the GitOps tab.
+            </p>
+            {enableVersioning && (
+              <div className="mt-2">
+                <label htmlFor="deploy-env" className="block text-xs text-muted-foreground/60 mb-1">
+                  Target environment (optional)
+                </label>
+                <select
+                  id="deploy-env"
+                  value={selectedEnvironment}
+                  onChange={(e) => setSelectedEnvironment(e.target.value)}
+                  className="w-full rounded-lg border border-primary/15 bg-secondary/30 px-2.5 py-1.5 text-sm text-foreground/90 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                >
+                  <option value="">No environment</option>
+                  <option value="dev">dev</option>
+                  <option value="staging">staging</option>
+                  <option value="production">production</option>
+                </select>
               </div>
             )}
           </div>

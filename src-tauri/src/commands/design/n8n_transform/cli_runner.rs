@@ -8,6 +8,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::db::repos::resources::n8n_sessions;
 use crate::db::models::{SessionStatus, UpdateN8nSessionInput};
+use crate::engine::event_registry::event_name;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
 use crate::engine::types::StreamLineType;
@@ -291,7 +292,7 @@ fn build_section_callbacks(
         if let Ok(serialized) = serde_json::to_value(section) {
             job_state::store_n8n_transform_section(&id2, serialized.clone());
             // Push section to frontend instantly via Tauri event
-            let _ = app2.emit("n8n-transform-section", json!({
+            let _ = app2.emit(event_name::N8N_TRANSFORM_SECTION, json!({
                 "transformId": &id2,
                 "section": serialized,
             }));

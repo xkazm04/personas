@@ -5,7 +5,6 @@ import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStr
 import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, ShieldAlert, Monitor } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
-import { motion, AnimatePresence } from 'framer-motion';
 import { KeyValueEditor } from '@/features/shared/components/forms/KeyValueEditor';
 import { ExecutionTerminal } from './ExecutionTerminal';
 import { useRunnerState } from '../../libs/useRunnerState';
@@ -65,14 +64,12 @@ export function PersonaRunner() {
             {state.showInputEditor ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             Input Data (Optional)
           </button>
-          <AnimatePresence>
-            {state.showInputEditor && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+          {state.showInputEditor && (
+              <div className="animate-fade-slide-in">
                 <KeyValueEditor value={state.inputData} onChange={(v) => { state.setInputData(v); if (state.jsonError) state.setJsonError(null); }} placeholder='{"key": "value"}' />
                 {state.jsonError && <p className="text-red-400/80 typo-body mt-1">{state.jsonError}</p>}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
         {/* Budget enforcement banner */}
         {budgetStatus === 'exceeded' && (
@@ -140,7 +137,7 @@ export function PersonaRunner() {
 
       {/* Progress Indicator */}
       {isExecuting && state.isThisPersonasExecution && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/10 rounded-xl">
+        <div className="animate-fade-slide-in flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/10 rounded-xl">
           <Clock className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" />
           <MiniPlayerPinButton />
           <div className="flex-1 min-w-0">
@@ -151,17 +148,17 @@ export function PersonaRunner() {
                   <span className="text-muted-foreground/80">{state.elapsedMs < state.typicalDurationMs ? `Typically completes in ~${formatElapsed(state.typicalDurationMs)}` : 'Taking longer than usual...'}</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-                  <motion.div className="h-full rounded-full bg-primary/40" initial={{ width: 0 }} animate={{ width: `${Math.min(100, (state.elapsedMs / state.typicalDurationMs) * 100)}%` }} transition={{ duration: 0.4, ease: 'easeOut' }} />
+                  <div className="animate-fade-in h-full rounded-full bg-primary/40" style={{ width: `${Math.min(100, (state.elapsedMs / state.typicalDurationMs) * 100)}%` }} />
                 </div>
               </div>
             ) : <span className="typo-body text-muted-foreground/90">{formatElapsed(state.elapsedMs)} elapsed</span>}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Summary Card */}
       {!isExecuting && state.isThisPersonasExecution && state.executionSummary && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }} className={`rounded-xl border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}>
+        <div className={`animate-fade-slide-in rounded-xl border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2"><StatusIcon status={state.executionSummary.status} className="w-5 h-5" /><span className={`typo-heading capitalize ${summaryPresentation.text}`}>{state.executionSummary.status}</span></div>
             {state.executionSummary.duration_ms != null && <div className="flex items-center gap-1.5 text-muted-foreground/80"><Timer className="w-3.5 h-3.5" /><span className="typo-code">{(state.executionSummary.duration_ms / 1000).toFixed(1)}s</span></div>}
@@ -173,15 +170,13 @@ export function PersonaRunner() {
               <button onClick={exec.handleResume} className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"><RotateCw className="w-3.5 h-3.5" />Resume from here</button>
             </div>
           )}
-        </motion.div>
+        </div>
       )}
 
       {/* Healing Notification */}
-      <AnimatePresence>
-        {state.healingNotification && !isExecuting && state.isThisPersonasExecution && (
+      {state.healingNotification && !isExecuting && state.isThisPersonasExecution && (
           <HealingCard notification={state.healingNotification} onDismiss={() => state.setHealingNotification(null)} />
         )}
-      </AnimatePresence>
 
       {/* AI Self-Healing Strip */}
       {import.meta.env.DEV && state.aiHealing.phase !== 'idle' && (
@@ -189,9 +184,8 @@ export function PersonaRunner() {
       )}
 
       {/* Empty state */}
-      <AnimatePresence>
-        {!(state.isThisPersonasExecution && (isExecuting || state.outputLines.length > 0)) && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex flex-col items-center justify-center py-16 gap-4" data-testid="runner-empty-state">
+      {!(state.isThisPersonasExecution && (isExecuting || state.outputLines.length > 0)) && (
+          <div className="animate-fade-slide-in flex flex-col items-center justify-center py-16 gap-4" data-testid="runner-empty-state">
             {selectedPersona.icon ? (sanitizeIconUrl(selectedPersona.icon) ? <img src={sanitizeIconUrl(selectedPersona.icon)!} alt="" className="w-12 h-12 rounded-xl opacity-60" referrerPolicy="no-referrer" crossOrigin="anonymous" /> : isIconUrl(selectedPersona.icon) ? null : <span className="text-4xl leading-none opacity-60">{selectedPersona.icon}</span>) : (
               <div className="w-12 h-12 rounded-xl flex items-center justify-center typo-heading-lg opacity-50" style={{ backgroundColor: `${selectedPersona.color || '#6B7280'}20`, border: `1px solid ${selectedPersona.color || '#6B7280'}40`, color: selectedPersona.color || '#6B7280' }}>{selectedPersona.name.charAt(0).toUpperCase()}</div>
             )}
@@ -199,20 +193,19 @@ export function PersonaRunner() {
               <p className="typo-heading text-foreground/70">{selectedPersona.name}</p>
               <p className="typo-body text-zinc-500">Ready to execute &mdash; click Run or press{' '}<kbd className="inline-flex items-center px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800/60 text-zinc-400 typo-code">Enter</kbd></p>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Terminal Output */}
       {state.isThisPersonasExecution && (isExecuting || state.outputLines.length > 0) && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="animate-fade-slide-in">
           <ExecutionTerminal lines={state.outputLines} isRunning={isExecuting} onStop={exec.handleStop} label={activeExecutionId ? `exec:${activeExecutionId.slice(0, 8)}` : undefined} isFullscreen={state.isTerminalFullscreen} onToggleFullscreen={exec.toggleTerminalFullscreen} terminalHeight={state.terminalHeight} onResizeStart={exec.handleTerminalResizeStart} emptyState={state.terminalEmptyState}>
             {queuePosition != null && state.isThisPersonasExecution && (
               <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-amber-500/5"><Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" /><span className="typo-heading text-amber-300/90">Queued -- position {queuePosition + 1}{queueDepth != null ? ` of ${queueDepth}` : ''}</span></div>
             )}
             <RunnerPhaseTimeline phases={state.phases} showPhases={state.showPhases} setShowPhases={state.setShowPhases} isExecuting={isExecuting} elapsedMs={state.elapsedMs} />
           </ExecutionTerminal>
-        </motion.div>
+        </div>
       )}
     </div>
   );

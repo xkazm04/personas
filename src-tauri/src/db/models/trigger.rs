@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -33,6 +34,60 @@ pub struct CompositeCondition {
     /// Optional wildcard source filter.
     #[serde(default)]
     pub source_filter: Option<String>,
+}
+
+/// Time-window constraint: trigger only fires during configured active hours.
+/// Stored inside the trigger's `config` JSON under the `active_window` key.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActiveWindow {
+    /// Whether the active window constraint is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Days of the week when the trigger is active (0 = Sunday .. 6 = Saturday).
+    #[serde(default)]
+    pub days: Vec<u8>,
+    /// Start hour (0-23) in local time.
+    #[serde(default = "default_start_hour")]
+    pub start_hour: u8,
+    /// Start minute (0-59).
+    #[serde(default)]
+    pub start_minute: u8,
+    /// End hour (0-23) in local time.
+    #[serde(default = "default_end_hour")]
+    pub end_hour: u8,
+    /// End minute (0-59).
+    #[serde(default)]
+    pub end_minute: u8,
+}
+
+fn default_start_hour() -> u8 { 9 }
+fn default_end_hour() -> u8 { 18 }
+
+impl ActiveWindow {
+    /// Check whether the given UTC time falls within this active window.
+    /// Uses the system's local timezone offset to convert UTC → local.
+    pub fn is_active_at(&self, utc_now: DateTime<Utc>) -> bool {
+        if !self.enabled || self.days.is_empty() {
+            return true; // no constraint → always active
+        }
+
+        let local_now = utc_now.with_timezone(&chrono::Local);
+        let weekday = local_now.weekday().num_days_from_sunday() as u8; // 0=Sun
+        if !self.days.contains(&weekday) {
+            return false;
+        }
+
+        let now_minutes = local_now.hour() as u16 * 60 + local_now.minute() as u16;
+        let start_minutes = self.start_hour as u16 * 60 + self.start_minute as u16;
+        let end_minutes = self.end_hour as u16 * 60 + self.end_minute as u16;
+
+        if start_minutes <= end_minutes {
+            now_minutes >= start_minutes && now_minutes < end_minutes
+        } else {
+            // Overnight window (e.g. 22:00 → 06:00)
+            now_minutes >= start_minutes || now_minutes < end_minutes
+        }
+    }
 }
 
 /// Parsed, typed representation of a trigger's `config` JSON.
@@ -225,11 +280,44 @@ impl PersonaTrigger {
         TriggerStatus::from_enabled(self.enabled)
     }
 
+    /// Decrypt the config JSON, transparently handling both encrypted and
+    /// legacy plaintext formats.
+    fn decrypted_config_json(&self) -> Option<String> {
+        let raw = self.config.as_deref()?;
+        match crate::engine::crypto::decrypt_trigger_config(raw) {
+            Ok(decrypted) => Some(decrypted),
+            Err(e) => {
+                tracing::warn!(
+                    trigger_id = %self.id,
+                    "Failed to decrypt trigger config, using raw: {}", e
+                );
+                Some(raw.to_string())
+            }
+        }
+    }
+
+    /// Parse the `active_window` from the config JSON, if present.
+    pub fn parse_active_window(&self) -> Option<ActiveWindow> {
+        let config_str = self.decrypted_config_json()?;
+        let val: serde_json::Value = serde_json::from_str(&config_str).ok()?;
+        val.get("active_window")
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+    }
+
+    /// Check whether this trigger is within its active window right now.
+    pub fn is_within_active_window(&self, utc_now: DateTime<Utc>) -> bool {
+        match self.parse_active_window() {
+            Some(aw) => aw.is_active_at(utc_now),
+            None => true, // no window configured → always active
+        }
+    }
+
     /// Parse the raw `config` JSON string once and return a typed `TriggerConfig`.
     /// All downstream consumers should call this once and reuse the result.
+    /// Automatically decrypts encrypted fields before parsing.
     pub fn parse_config(&self) -> TriggerConfig {
-        let val: serde_json::Value = self
-            .config
+        let decrypted = self.decrypted_config_json();
+        let val: serde_json::Value = decrypted
             .as_deref()
             .and_then(|c| serde_json::from_str(c).ok())
             .unwrap_or(serde_json::Value::Null);

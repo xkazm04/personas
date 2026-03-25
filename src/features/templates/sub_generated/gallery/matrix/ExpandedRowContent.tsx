@@ -83,7 +83,7 @@ export function ExpandedRowContent({
 
   // Messages / notifications
   const messageItems = useMemo(() => {
-    const channels = designResult?.suggested_notification_channels ?? [];
+    const channels = Array.isArray(designResult?.suggested_notification_channels) ? designResult.suggested_notification_channels : [];
     const msgs = protocols
       .filter((p) => p.type === 'user_message')
       .map((p) => p.context || p.label);

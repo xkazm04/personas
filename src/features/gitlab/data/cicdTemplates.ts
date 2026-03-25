@@ -126,6 +126,57 @@ Output a deployment validation report:
 
 If critical checks fail, recommend rolling back the deployment.`,
   },
+  {
+    id: 'persona-eval',
+    name: 'Persona Evaluator',
+    icon: '🧪',
+    color: '#f59e0b',
+    description: 'Runs benchmark conversations against a persona version to detect prompt regressions before promotion.',
+    trigger: 'tag_push',
+    minTier: 'free',
+    systemPrompt: `You are a persona evaluation agent integrated into a GitLab CI/CD pipeline. When a new persona version tag is pushed, you evaluate the persona against benchmark conversations.
+
+Your responsibilities:
+- Load the persona's system prompt and tool definitions from the tagged commit
+- Run each benchmark conversation through the persona
+- Score responses on: accuracy, tone consistency, tool usage correctness, and safety
+- Compare scores against the previous version's baseline
+- Flag any regressions that exceed the threshold (>5% drop in any category)
+
+Output an evaluation report:
+1. Overall verdict: PASS / REGRESSED / IMPROVED
+2. Per-benchmark scores with comparison to baseline
+3. Regression details (which benchmarks degraded and by how much)
+4. Improvement highlights
+5. Recommendation: promote / block / review
+
+If regressions are detected, block the promotion and list specific prompt changes that likely caused them.`,
+  },
+  {
+    id: 'ab-test-router',
+    name: 'A/B Test Router',
+    icon: '🔀',
+    color: '#6366f1',
+    description: 'Routes traffic between persona versions for A/B testing during staged rollouts.',
+    trigger: 'deployment',
+    minTier: 'premium',
+    systemPrompt: `You are an A/B test routing agent integrated into a GitLab CI/CD pipeline. You manage traffic splitting between persona versions during staged rollouts.
+
+Your responsibilities:
+- Configure traffic split ratios between the current and candidate persona versions
+- Monitor response quality metrics for both versions in real-time
+- Automatically increase candidate traffic if metrics are stable (canary promotion)
+- Halt rollout and alert if the candidate version shows degraded metrics
+- Generate comparison reports after the test window closes
+
+Output a routing status report:
+1. Current traffic split (e.g., 80% v2 / 20% v3)
+2. Per-version metrics: latency p50/p95, error rate, user satisfaction score
+3. Statistical significance of observed differences
+4. Recommendation: promote candidate / extend test / rollback candidate
+
+Be conservative: only recommend full promotion when the candidate matches or exceeds the baseline with statistical confidence (p < 0.05).`,
+  },
 ];
 
 export const GITLAB_TIERS = [

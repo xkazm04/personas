@@ -2,7 +2,6 @@
  * ManualForm -- manual credential entry form for InlineCredentialPanel.
  */
 import { useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { Bot, ExternalLink } from 'lucide-react';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
@@ -141,10 +140,7 @@ export function ManualForm({
   const canAutoSetup = !!(designResult?.setup_instructions);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
+    <div className="animate-fade-slide-in"
     >
       {canAutoSetup && onSwitchToAuto && (
         <button
@@ -196,6 +192,6 @@ export function ManualForm({
           No credential fields defined. Try <span className="text-violet-400">Design with AI</span> to discover the required fields.
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

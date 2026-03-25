@@ -1,48 +1,38 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{CreatePersonaGroupInput, PersonaGroup, UpdatePersonaGroupInput};
-use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn row_to_group(row: &Row) -> rusqlite::Result<PersonaGroup> {
-    Ok(PersonaGroup {
-        id: row.get("id")?,
-        name: row.get("name")?,
-        color: row.get("color")?,
-        sort_order: row.get("sort_order")?,
-        collapsed: row.get::<_, i32>("collapsed")? != 0,
-        description: row.get("description").ok().flatten(),
-        default_model_profile: row.get("default_model_profile").ok().flatten(),
-        default_max_budget_usd: row.get("default_max_budget_usd").ok().flatten(),
-        default_max_turns: row.get("default_max_turns").ok().flatten(),
-        shared_instructions: row.get("shared_instructions").ok().flatten(),
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_group -> PersonaGroup {
+    id, name, color, sort_order,
+    collapsed [bool],
+    description [opt],
+    default_model_profile [opt],
+    default_max_budget_usd [opt],
+    default_max_turns [opt],
+    shared_instructions [opt],
+    created_at, updated_at,
+});
 
-pub fn get_all(pool: &DbPool) -> Result<Vec<PersonaGroup>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt =
-        conn.prepare("SELECT * FROM persona_groups ORDER BY sort_order, created_at")?;
-    let rows = stmt.query_map([], row_to_group)?;
-    Ok(collect_rows(rows, "groups::get_all"))
-}
+crud_get_by_id!(PersonaGroup, "persona_groups", "PersonaGroup", row_to_group);
+crud_get_all!(PersonaGroup, "persona_groups", row_to_group, "sort_order, created_at");
 
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaGroup, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_groups WHERE id = ?1",
-        params![id],
-        row_to_group,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("PersonaGroup {id}"))
-        }
-        other => AppError::Database(other),
-    })
+crud_update! {
+    model: PersonaGroup,
+    table: "persona_groups",
+    input: UpdatePersonaGroupInput,
+    fields: {
+        name: clone,
+        color: clone,
+        sort_order: copy,
+        collapsed: bool,
+        description: clone,
+        default_model_profile: clone,
+        default_max_budget_usd: copy,
+        default_max_turns: copy,
+        shared_instructions: clone,
+    }
 }
 
 pub fn create(pool: &DbPool, input: CreatePersonaGroupInput) -> Result<PersonaGroup, AppError> {
@@ -78,75 +68,6 @@ pub fn create(pool: &DbPool, input: CreatePersonaGroupInput) -> Result<PersonaGr
     )?;
 
     get_by_id(pool, &id)
-}
-
-pub fn update(
-    pool: &DbPool,
-    id: &str,
-    input: UpdatePersonaGroupInput,
-) -> Result<PersonaGroup, AppError> {
-    // Verify exists
-    get_by_id(pool, id)?;
-
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-
-    // Build dynamic SET clause
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
-
-    push_field!(input.name, "name", sets, param_idx);
-    push_field!(input.color, "color", sets, param_idx);
-    push_field!(input.sort_order, "sort_order", sets, param_idx);
-    push_field!(input.collapsed, "collapsed", sets, param_idx);
-    push_field!(input.description, "description", sets, param_idx);
-    push_field!(input.default_model_profile, "default_model_profile", sets, param_idx);
-    push_field!(input.default_max_budget_usd, "default_max_budget_usd", sets, param_idx);
-    push_field!(input.default_max_turns, "default_max_turns", sets, param_idx);
-    push_field!(input.shared_instructions, "shared_instructions", sets, param_idx);
-
-    let sql = format!(
-        "UPDATE persona_groups SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
-
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-
-    if let Some(ref v) = input.name {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.color {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(v) = input.sort_order {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = input.collapsed {
-        param_values.push(Box::new(v as i32));
-    }
-    if let Some(ref v) = input.description {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.default_model_profile {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(v) = input.default_max_budget_usd {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = input.default_max_turns {
-        param_values.push(Box::new(v));
-    }
-    if let Some(ref v) = input.shared_instructions {
-        param_values.push(Box::new(v.clone()));
-    }
-    param_values.push(Box::new(id.to_string()));
-
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
-
-    get_by_id(pool, id)
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {

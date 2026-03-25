@@ -1,6 +1,5 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
-import { useSystemStore } from "../../systemStore";
 import { reportError } from "../../storeTypes";
 import type { PersonaExecution } from "@/lib/types/types";
 import type { PipelineTrace } from "@/lib/execution/pipeline";
@@ -18,12 +17,14 @@ import type {
 } from "@/lib/execution/pipeline";
 import type { Continuation } from "@/lib/bindings/Continuation";
 import type { DesignDriftEvent } from "@/lib/design/designDrift";
-import { detectDesignDrift, loadDriftEvents, saveDriftEvents } from "@/lib/design/designDrift";
-import type { AgentIR } from "@/lib/types/designTypes";
+import { loadDriftEvents, saveDriftEvents } from "@/lib/design/designDrift";
 import { cancelExecution, executePersona, listExecutions } from "@/api/agents/executions";
 
 import { executionSink } from "@/lib/execution/executionSink";
 import { classifyLine } from "@/lib/utils/terminalColors";
+import { createRunLifecycle } from "./runLifecycle";
+
+const executionLifecycle = createRunLifecycle('isExecuting', 'executionProgress');
 
 /** Queue status event emitted from the engine when an execution is queued/promoted. */
 export interface QueueStatusPayload {
@@ -34,9 +35,22 @@ export interface QueueStatusPayload {
   queue_depth: number;
 }
 
+/** Structured progress for the execution lifecycle -- analogous to TestRunProgress / LabRunProgress. */
+export interface ExecutionRunProgress {
+  executionId?: string;
+  phase: string;
+  pipelineStage?: string;
+  status?: string;
+  error?: string;
+}
+
 export interface ExecutionSlice {
   // State
   executions: PersonaExecution[];
+  /** Whether the execution list is currently being fetched. */
+  executionsLoading: boolean;
+  /** The personaId whose executions are currently loaded (for cache coherence). */
+  executionsPersonaId: string | null;
   activeExecutionId: string | null;
   executionPersonaId: string | null;
   activeUseCaseId: string | null;
@@ -44,6 +58,8 @@ export interface ExecutionSlice {
   /** Total bytes accumulated in executionOutput (for budget enforcement). */
   executionOutputBytes: number;
   isExecuting: boolean;
+  /** Structured progress tracking (managed by RunLifecycle). */
+  executionProgress: ExecutionRunProgress | null;
   /** Pipeline trace for the active execution (observability). */
   pipelineTrace: PipelineTrace | null;
   /** Queue position for the active execution (null = not queued / running). */
@@ -63,6 +79,7 @@ export interface ExecutionSlice {
   appendExecutionOutput: (line: string) => void;
   clearExecutionOutput: () => void;
   setQueueStatus: (position: number | null, depth: number | null) => void;
+  setExecutionProgress: (progress: ExecutionRunProgress | null) => void;
   dismissDriftEvent: (eventId: string) => void;
 }
 
@@ -92,14 +109,20 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     return null;
   })();
 
+  // Deduplication: track in-flight fetch so concurrent callers reuse the same promise.
+  let inflightFetch: { personaId: string; promise: Promise<void> } | null = null;
+
   return ({
   executions: [],
+  executionsLoading: false,
+  executionsPersonaId: null,
   activeExecutionId: recoveredState?.activeExecutionId ?? null,
   executionPersonaId: recoveredState?.executionPersonaId ?? null,
   activeUseCaseId: null,
   executionOutput: [],
   executionOutputBytes: 0,
   isExecuting: recoveredState?.isExecuting ?? false,
+  executionProgress: null,
   pipelineTrace: null,
   queuePosition: null,
   queueDepth: null,
@@ -125,7 +148,8 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     // Lock execution state immediately before any async work to close the
     // race-window where a second call could pass the isExecuting guard.
     executionSink.reset();
-    set({ isExecuting: true, executionOutput: [], executionOutputBytes: 0, error: null, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null });
+    executionLifecycle.markStarted(set);
+    set({ executionOutput: [], executionOutputBytes: 0, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null });
 
     // Pipeline: initiate stage
     let trace = createPipelineTrace('pending');
@@ -135,7 +159,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     const initiatePayload: InitiatePayload = { personaId, inputData, useCaseId };
     await runMiddleware('initiate', initiatePayload, trace);
 
-    set({ pipelineTrace: trace });
+    set({ pipelineTrace: trace, executionProgress: { phase: 'initiating', pipelineStage: 'initiate' } });
     try {
       // Pipeline: validate stage -- middleware can enrich inputData (e.g. knowledge injection)
       trace = traceStage(trace, 'validate');
@@ -148,12 +172,18 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         modelUsed: null,
       }, trace);
 
+      // Generate an idempotency key so that if the IPC times out and the user
+      // retries, the backend returns the already-created execution instead of
+      // spawning a duplicate.
+      const idempotencyKey = crypto.randomUUID();
+
       const execution = await executePersona(
         personaId,
         undefined,
         validateResult.inputData ?? (inputData ? JSON.stringify(inputData) : undefined),
         useCaseId,
         continuation,
+        idempotencyKey,
       );
 
       // Pipeline: create_record stage
@@ -168,7 +198,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
 
       trace = { ...trace, executionId: execution.id };
 
-      set({ activeExecutionId: execution.id, pipelineTrace: trace });
+      set({ activeExecutionId: execution.id, pipelineTrace: trace, executionProgress: { executionId: execution.id, phase: 'running', pipelineStage: 'spawn_engine' } });
       // Persist to localStorage for recovery after refresh
       try {
         localStorage.setItem('personas:active-execution', JSON.stringify({
@@ -181,7 +211,8 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     } catch (err) {
       trace = traceStage(trace, 'validate', undefined, String(err));
       trace = completeTrace(trace);
-      reportError(err, "Failed to execute persona", set, { stateUpdates: { isExecuting: false, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace } });
+      executionLifecycle.markFailed(set);
+      reportError(err, "Failed to execute persona", set, { stateUpdates: { executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace } });
       return null;
     }
   },
@@ -208,7 +239,8 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       // Preserve the execution ID for Resume before clearing active state.
       const lastId = get().activeExecutionId;
       // Always reset execution state regardless of API success/failure.
-      set({ isExecuting: false, activeExecutionId: null, lastExecutionId: lastId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
+      executionLifecycle.markCancelled(set);
+      set({ activeExecutionId: null, lastExecutionId: lastId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
       try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
       const personaId = get().selectedPersona?.id;
       if (personaId) get().fetchExecutions(personaId);
@@ -239,96 +271,54 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       trace = traceStage(trace, 'frontend_complete', { status: _status });
       trace = completeTrace(trace);
       set({ pipelineTrace: trace });
+    }
 
-      // Run frontend_complete middleware (fire-and-forget -- non-blocking)
-      const completePayload: FrontendCompletePayload = { executionId: execId ?? '', finalStatus: _status ?? '' };
+    executionLifecycle.markFinished(set);
+    set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
+    const personaId = get().selectedPersona?.id;
+    if (personaId) get().fetchExecutions(personaId);
+
+    // Run frontend_complete middleware (fire-and-forget -- non-blocking).
+    // Middleware handles notification dispatch, budget cache invalidation,
+    // and design drift detection as composable pipeline concerns.
+    if (trace) {
+      const completePayload: FrontendCompletePayload = {
+        executionId: execId ?? '',
+        finalStatus: _status ?? '',
+        personaId: execPersonaId ?? undefined,
+        durationMs: statusData?.durationMs,
+        costUsd: statusData?.costUsd,
+        errorMessage: statusData?.errorMessage,
+      };
       void runMiddleware('frontend_complete', completePayload, trace).catch((err) => {
         console.warn('[execution] frontend_complete middleware failed', { executionId: execId, personaId: execPersonaId, error: String(err) });
       });
     }
-    // Snapshot executions before fetchExecutions can overwrite store state,
-    // so drift detection uses a consistent view of pre-refresh data.
-    const snapshotExecutions = get().executions;
 
-    set({ isExecuting: false, activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
-    const personaId = get().selectedPersona?.id;
-    if (personaId) get().fetchExecutions(personaId);
-    // Notify guided tour that an execution completed
-    useSystemStore.getState().emitTourEvent('tour:execution-complete');
-
-    // Invalidate budget cache so spend data refreshes after execution
-    get().invalidateBudgetCache(execPersonaId ?? undefined);
-
-    // Design drift detection uses the snapshotted executions to avoid a race
-    // where a concurrent fetchExecutions overwrites get().executions.
-    if (execPersonaId && execId && _status) {
-      try {
-        const persona = get().personas.find(p => p.id === execPersonaId);
-        if (persona) {
-          const durationMs = statusData?.durationMs ?? null;
-          const costUsd = statusData?.costUsd ?? 0;
-          const errorMessage = statusData?.errorMessage ?? null;
-
-          // Count recent consecutive failures from the pre-refresh executions
-          // snapshot, then prepend the just-finished status to account for it.
-          const recentStatuses: string[] = [_status];
-          const existingExecs = snapshotExecutions
-            .filter(e => e.persona_id === execPersonaId)
-            .slice(0, 4); // 4 + 1 current = 5 total window
-          for (const e of existingExecs) {
-            recentStatuses.push(e.status);
-          }
-          let recentFailureCount = 0;
-          for (const s of recentStatuses) {
-            if (s === 'failed') recentFailureCount++;
-            else break;
-          }
-
-          let lastDesignResult: AgentIR | null = null;
-          if (persona.last_design_result) {
-            try { lastDesignResult = JSON.parse(persona.last_design_result); } catch { /* ignore */ }
-          }
-
-          const driftEvents = detectDesignDrift(
-            {
-              status: _status,
-              durationMs,
-              costUsd,
-              errorMessage,
-              toolSteps: null,
-              executionId: execId,
-            },
-            {
-              personaId: execPersonaId,
-              personaName: persona.name,
-              timeoutMs: persona.timeout_ms,
-              maxBudgetUsd: persona.max_budget_usd ?? null,
-              lastDesignResult,
-              recentFailureCount,
-            },
-          );
-
-          if (driftEvents.length > 0) {
-            const all = [...get().designDriftEvents, ...driftEvents];
-            saveDriftEvents(all);
-            set({ designDriftEvents: all });
-          }
-        }
-      } catch (err) {
-        console.warn('[execution] drift detection failed', { executionId: execId, personaId: execPersonaId, error: String(err) });
-      }
-    }
     // Clear recovery state
     try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
   },
 
   fetchExecutions: async (personaId) => {
-    try {
-      const executions = await listExecutions(personaId);
-      set({ executions });
-    } catch (err) {
-      reportError(err, "Failed to fetch executions", set);
+    // Deduplicate: if already fetching for the same persona, reuse in-flight promise.
+    if (inflightFetch && inflightFetch.personaId === personaId) {
+      return inflightFetch.promise;
     }
+    const doFetch = async () => {
+      set({ executionsLoading: true });
+      try {
+        const executions = await listExecutions(personaId);
+        set({ executions, executionsPersonaId: personaId });
+      } catch (err) {
+        reportError(err, "Failed to fetch executions", set);
+      } finally {
+        set({ executionsLoading: false });
+        inflightFetch = null;
+      }
+    };
+    const promise = doFetch();
+    inflightFetch = { personaId, promise };
+    return promise;
   },
 
   appendExecutionOutput: (line) => {
@@ -343,11 +333,16 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       get().cancelExecution(activeId);
     }
     executionSink.clear();
-    set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, isExecuting: false, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null });
+    executionLifecycle.markCancelled(set);
+    set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null });
   },
 
   setQueueStatus: (position, depth) => {
     set({ queuePosition: position, queueDepth: depth });
+  },
+
+  setExecutionProgress: (progress) => {
+    set({ executionProgress: progress });
   },
 
   dismissDriftEvent: (eventId) => {

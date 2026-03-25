@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { Database, Table2, Code2 } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
@@ -174,9 +173,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
 
   if (allRows.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div className="animate-fade-slide-in"
       >
         <EmptyIllustration
           icon={Database}
@@ -184,16 +181,14 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
           description="Add database credentials from the Catalog to manage schemas and run queries."
           className="py-20"
         />
-      </motion.div>
+      </div>
     );
   }
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col min-h-0"
+      <div
+        className="animate-fade-slide-in flex flex-col min-h-0"
       >
         <DataGrid<DbRow>
           columns={columns}
@@ -208,7 +203,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
           emptyDescription="Try changing the type filter"
           className="flex-1"
         />
-      </motion.div>
+      </div>
 
       {selectedCredential && (
         <SchemaManagerModal

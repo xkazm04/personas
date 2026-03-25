@@ -1,6 +1,5 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
@@ -71,10 +70,10 @@ export function ExecutionListRow({
   return (
     <div>
       {/* Desktop table row (md+) */}
-      <motion.div
+      <div
         data-testid={`exec-row-${execution.id}`}
         onClick={() => onRowClick(execution.id)}
-        className={`hidden md:grid grid-cols-12 gap-4 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
+        className={`animate-fade-in hidden md:grid grid-cols-12 gap-4 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
           isCompareSelected
             ? 'bg-primary/10 border-l-2 border-l-primary/40'
             : 'bg-background/30 hover:bg-secondary/20'
@@ -122,9 +121,9 @@ export function ExecutionListRow({
             />
           )}
         </div>
-      </motion.div>
+      </div>
 
-      {/* Mobile card layout (<md) */}
+      {/* Mobile card (<md) */}
       <div
         onClick={() => onRowClick(execution.id)}
         className={`flex md:hidden flex-col gap-1.5 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
@@ -155,13 +154,9 @@ export function ExecutionListRow({
       </div>
 
       {/* Expanded Detail */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="border-b border-primary/10 bg-secondary/20"
+      {isExpanded && (
+          <div
+            className="animate-fade-slide-in border-b border-primary/10 bg-secondary/20"
           >
             <ExecutionRowExpanded
               execution={execution}
@@ -169,9 +164,8 @@ export function ExecutionListRow({
               onRerun={onRerun}
               onAutoCompareRetry={onAutoCompareRetry}
             />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

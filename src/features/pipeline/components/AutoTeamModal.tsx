@@ -1,5 +1,4 @@
 import { useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   Zap,
@@ -134,29 +133,22 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
             )}
           </div>
 
-          <AnimatePresence mode="wait">
-            {/* Suggesting */}
+          {/* Suggesting */}
             {at.phase === 'suggesting' && (
-              <motion.div
+              <div
                 key="suggesting"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-3 py-6 justify-center"
+                className="animate-fade-slide-in flex items-center gap-3 py-6 justify-center"
               >
                 <LoadingSpinner size="lg" className="text-indigo-400" />
                 <span className="text-sm text-muted-foreground/70">Assembling your team...</span>
-              </motion.div>
+              </div>
             )}
 
             {/* Preview */}
             {at.phase === 'previewing' && at.blueprint && (
-              <motion.div
+              <div
                 key="preview"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="space-y-4"
+                className="animate-fade-slide-in space-y-4"
               >
                 <BlueprintPreview blueprint={at.blueprint} />
 
@@ -179,17 +171,14 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     Create Team
                   </Button>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Applying / Seeding */}
             {(at.phase === 'applying' || at.phase === 'seeding') && (
-              <motion.div
+              <div
                 key="applying"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-3 py-4"
+                className="animate-fade-slide-in space-y-3 py-4"
               >
                 <div className="flex items-center gap-3">
                   {at.phase === 'applying' ? (
@@ -210,17 +199,14 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     </span>
                   </div>
                 )}
-              </motion.div>
+              </div>
             )}
 
             {/* Done */}
             {at.phase === 'done' && (
-              <motion.div
+              <div
                 key="done"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="space-y-3"
+                className="animate-fade-slide-in space-y-3"
               >
                 <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-2">
                   <div className="flex items-center gap-2">
@@ -251,17 +237,14 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 >
                   Open Team Canvas
                 </Button>
-              </motion.div>
+              </div>
             )}
 
             {/* Error */}
             {at.phase === 'error' && (
-              <motion.div
+              <div
                 key="error"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-3"
+                className="animate-fade-slide-in space-y-3"
               >
                 <div className="flex items-center gap-2 p-3 rounded-xl border border-red-500/20 bg-red-500/5">
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
@@ -275,9 +258,8 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 >
                   Try again
                 </Button>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       </div>
     </BaseModal>

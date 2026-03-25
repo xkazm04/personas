@@ -359,6 +359,7 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "knock" => Some("https://api.knock.app/v1"),
         "linkedin" => Some("https://api.linkedin.com"),
         "sentry" => Some("https://sentry.io"),
+        "alpha_vantage" => Some("https://www.alphavantage.co"),
         "google_workspace_oauth_template" => Some("https://www.googleapis.com"),
         "google_sheets" => Some("https://sheets.googleapis.com"),
         "gmail" => Some("https://gmail.googleapis.com"),
@@ -569,7 +570,7 @@ pub async fn execute_api_request(
         request = request.body(body_str.clone());
     }
 
-    let resp = request
+    let mut resp = request
         .send()
         .await
         .map_err(|e| AppError::Internal(format!("API request failed: {e}")))?;
@@ -594,19 +595,32 @@ pub async fn execute_api_request(
         }
     }
 
-    // Limit response body to 2MB to prevent memory issues
-    let body_bytes = resp
-        .bytes()
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to read response body: {e}")))?;
+    // Limit response body to 2MB to prevent memory issues.
+    // Read in chunks so we never buffer more than the limit, even if the
+    // upstream sends a multi-gigabyte response.
+    const MAX_RESPONSE_BODY_BYTES: usize = 2_000_000;
+    let mut body_buf = Vec::new();
+    let mut truncated = false;
 
-    let body = if body_bytes.len() > 2_000_000 {
+    while let Some(chunk) = resp
+        .chunk()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read response body: {e}")))?
+    {
+        if body_buf.len() + chunk.len() > MAX_RESPONSE_BODY_BYTES {
+            truncated = true;
+            break;
+        }
+        body_buf.extend_from_slice(&chunk);
+    }
+
+    let body = if truncated {
         format!(
-            "[Response truncated: {} bytes, showing first 2MB]",
-            body_bytes.len()
+            "[Response truncated: exceeded {} byte limit]",
+            MAX_RESPONSE_BODY_BYTES
         )
     } else {
-        String::from_utf8_lossy(&body_bytes).to_string()
+        String::from_utf8_lossy(&body_buf).to_string()
     };
 
     // Record aggregate metrics for this credential

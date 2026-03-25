@@ -1,0 +1,90 @@
+import { Rss, Trash2, AlertCircle } from 'lucide-react';
+import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
+import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
+
+interface Props {
+  subscriptions: SharedEventSubscription[];
+  catalog: SharedEventCatalogEntry[];
+  onUnsubscribe: (subscriptionId: string) => void;
+}
+
+export function SubscriptionList({ subscriptions, catalog, onUnsubscribe }: Props) {
+  const catalogMap = new Map(catalog.map(c => [c.id, c]));
+
+  if (subscriptions.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16 text-center">
+        <Rss className="w-8 h-8 text-muted-foreground/30" />
+        <p className="text-sm text-muted-foreground">No active subscriptions</p>
+        <p className="text-xs text-muted-foreground/50">
+          Browse the marketplace to subscribe to event feeds
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto">
+      <table className="w-full text-xs">
+        <thead className="sticky top-0 bg-background/95 backdrop-blur">
+          <tr className="border-b border-primary/5 text-muted-foreground/60">
+            <th className="text-left px-4 py-2 font-medium">Feed</th>
+            <th className="text-left px-4 py-2 font-medium">Event Type</th>
+            <th className="text-right px-4 py-2 font-medium">Events</th>
+            <th className="text-left px-4 py-2 font-medium">Last Event</th>
+            <th className="text-left px-4 py-2 font-medium">Status</th>
+            <th className="text-right px-4 py-2 font-medium">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {subscriptions.map(sub => {
+            const entry = catalogMap.get(sub.catalogEntryId);
+            return (
+              <tr key={sub.id} className="border-b border-primary/5 hover:bg-secondary/30 transition-colors">
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{entry?.icon ?? '📡'}</span>
+                    <span className="font-medium text-foreground">{entry?.name ?? sub.slug}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-2.5">
+                  <code className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/60 text-muted-foreground">
+                    shared:{sub.slug}
+                  </code>
+                </td>
+                <td className="px-4 py-2.5 text-right tabular-nums">
+                  {sub.eventsRelayed}
+                </td>
+                <td className="px-4 py-2.5 text-muted-foreground">
+                  {sub.lastEventAt
+                    ? new Date(sub.lastEventAt).toLocaleString()
+                    : 'Never'
+                  }
+                </td>
+                <td className="px-4 py-2.5">
+                  {sub.error ? (
+                    <span className="flex items-center gap-1 text-red-400">
+                      <AlertCircle className="w-3 h-3" />
+                      Error
+                    </span>
+                  ) : (
+                    <span className="text-emerald-400">Active</span>
+                  )}
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <button
+                    onClick={() => onUnsubscribe(sub.id)}
+                    className="p-1 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400 transition-colors"
+                    title="Unsubscribe"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}

@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown,
   ChevronRight,
@@ -82,20 +81,14 @@ export function PromptTabsPreview({
 
       {/* Content area */}
       <div className="border-t border-primary/10">
-        <AnimatePresence mode="wait">
-          {activeSection && (
-            <motion.div
+        {activeSection && (
+            <div
               key={activeSection.key}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.15 }}
-              className="max-h-[400px] overflow-y-auto p-4"
+              className="animate-fade-slide-in max-h-[400px] overflow-y-auto p-4"
             >
               <MarkdownRenderer content={activeSection.content} />
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </div>
 
       {/* Full prompt toggle */}
@@ -113,21 +106,15 @@ export function PromptTabsPreview({
               <ChevronRight className="w-3 h-3 ml-auto" />
             )}
           </button>
-          <AnimatePresence>
-            {showFullPrompt && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
+          {showFullPrompt && (
+              <div
+                className="animate-fade-slide-in overflow-hidden"
               >
                 <div className="max-h-[500px] overflow-y-auto px-4 pb-4 border-t border-primary/[0.06]">
                   <MarkdownRenderer content={designResult.full_prompt_markdown} className="mt-3" />
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
     </div>

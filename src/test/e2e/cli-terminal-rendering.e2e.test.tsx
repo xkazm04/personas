@@ -499,8 +499,8 @@ describe('E2E: CliOutputPanel -- rendering', () => {
         <CliOutputPanel phase="completed" lines={['Done']} />,
       );
 
-      const outputArea = container.querySelector('.font-mono.text-sm');
-      const cursor = outputArea?.querySelector('.animate-pulse');
+      const outputArea = container.querySelector('.typo-code');
+      const cursor = outputArea?.querySelector('.animate-pulse') ?? null;
       expect(cursor).toBeNull();
     });
 
@@ -679,8 +679,8 @@ describe('E2E: line classification in CliOutputPanel', () => {
       <CliOutputPanel phase="completed" lines={testLines} />,
     );
 
-    // Find the scrollable output area (has overflow-y-auto and font-mono)
-    const outputArea = container.querySelector('[class*="overflow-y-auto"][class*="font-mono"]');
+    // Find the scrollable output area (has overflow-y-auto and typo-code)
+    const outputArea = container.querySelector('[class*="overflow-y-auto"][class*="typo-code"]');
     expect(outputArea).toBeTruthy();
     const lineDivs = outputArea!.querySelectorAll(':scope > div.whitespace-pre-wrap');
 

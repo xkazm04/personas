@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { X, Clock, CheckCircle2, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
@@ -41,12 +40,8 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
   };
 
   return (
-    <motion.div
-      initial={{ y: '100%', opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: '100%', opacity: 0 }}
-      transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-      className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-primary/20 rounded-t-2xl shadow-2xl z-10 max-h-[50%] overflow-hidden flex flex-col"
+    <div
+      className="animate-fade-slide-in absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-primary/20 rounded-t-2xl shadow-2xl z-10 max-h-[50%] overflow-hidden flex flex-col"
     >
       {/* Handle bar */}
       <div className="flex justify-center pt-2 pb-1">
@@ -132,6 +127,6 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

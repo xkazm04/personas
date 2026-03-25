@@ -1,5 +1,4 @@
 import { MessageSquare, AlertTriangle } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 import type { DesignConversation } from '@/lib/types/designTypes';
 import type { DesignDriftEvent } from '@/lib/design/designDrift';
 import { ConversationCard, DriftNotificationCard } from './ConversationMessageList';
@@ -32,11 +31,9 @@ export function DesignConversationHistory({
             <span className="text-sm font-medium text-amber-400/80 uppercase tracking-wide">Design Drift</span>
             <span className="text-sm text-muted-foreground/50">({visibleDrift.length})</span>
           </div>
-          <AnimatePresence mode="popLayout">
-            {visibleDrift.map((event) => (
+          {visibleDrift.map((event) => (
               <DriftNotificationCard key={event.id} event={event} onDismiss={() => onDismissDrift?.(event.id)} />
             ))}
-          </AnimatePresence>
         </div>
       )}
 

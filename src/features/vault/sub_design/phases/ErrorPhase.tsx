@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { AlertTriangle, Lightbulb, RefreshCw, X } from 'lucide-react';
 
 interface ErrorPhaseProps {
@@ -67,12 +66,9 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
   const hasInstruction = Boolean(instruction?.trim());
 
   return (
-    <motion.div
+    <div
       key="error"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Error message */}
       <div className="flex items-start gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
@@ -130,6 +126,6 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
           {hasInstruction ? 'Try again with your request' : 'Try Again'}
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -38,6 +38,8 @@ pub struct PersonaExecution {
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
     pub created_at: String,
+    /// Frozen ExecutionConfig JSON snapshot assembled at execution start.
+    pub execution_config: Option<String>,
 }
 
 /// Execution row with persona metadata included via SQL JOIN.
@@ -71,6 +73,7 @@ pub struct GlobalExecutionRow {
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
     pub created_at: String,
+    pub execution_config: Option<String>,
     // Persona metadata from JOIN
     pub persona_name: Option<String>,
     pub persona_icon: Option<String>,
@@ -97,6 +100,7 @@ pub struct UpdateExecutionStatus {
     pub cost_usd: Option<f64>,
     pub tool_steps: Option<String>,
     pub claude_session_id: Option<String>,
+    pub execution_config: Option<String>,
 }
 
 impl Default for UpdateExecutionStatus {
@@ -113,6 +117,7 @@ impl Default for UpdateExecutionStatus {
             cost_usd: None,
             tool_steps: None,
             claude_session_id: None,
+            execution_config: None,
         }
     }
 }

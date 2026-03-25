@@ -3,7 +3,6 @@ import {
   KeyRound, ExternalLink, Zap,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion } from 'framer-motion';
 import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/automations';
@@ -41,7 +40,7 @@ export function AutomationTriggerStep({
   zapierZaps, loadingZaps, canDesign, onDesign,
 }: AutomationTriggerStepProps) {
   return (
-    <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+    <div key="idle" className="animate-fade-slide-in space-y-4">
       <p className="text-sm text-muted-foreground">
         Describe what you want this automation to do. AI will design and deploy the workflow automatically.
       </p>
@@ -213,6 +212,6 @@ export function AutomationTriggerStep({
           Design with AI
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { usePipelineStore } from "@/stores/pipelineStore";
-import { executePersona, listExecutions } from "@/api/agents/executions";
+import { executePersona, listExecutionsByTrigger } from "@/api/agents/executions";
 import { dryRunTrigger, validateTrigger } from "@/api/pipeline/triggers";
 
 import type { DryRunResult } from "@/api/pipeline/triggers";
@@ -145,17 +145,15 @@ export function useTriggerOperations(personaId: string) {
   // -- Activity log -------------------------------------------------------
 
   const fetchActivity = useCallback(
-    async (triggerId: string, triggerPersonaId?: string): Promise<TriggerOpResult<PersonaExecution[]>> => {
-      const pid = triggerPersonaId ?? personaId;
+    async (triggerId: string, _triggerPersonaId?: string): Promise<TriggerOpResult<PersonaExecution[]>> => {
       try {
-        const execs = await listExecutions(pid, 50);
-        const filtered = execs.filter((e) => e.trigger_id === triggerId).slice(0, 10);
-        return { ok: true, data: filtered };
+        const execs = await listExecutionsByTrigger(triggerId, 10);
+        return { ok: true, data: execs };
       } catch (err) {
         return { ok: false, error: errStr(err) };
       }
     },
-    [personaId],
+    [],
   );
 
   return {

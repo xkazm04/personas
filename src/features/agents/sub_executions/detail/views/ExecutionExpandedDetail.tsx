@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { RotateCw, Copy, Check, ArrowLeftRight } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatTimestamp } from '@/lib/utils/formatters';
@@ -29,13 +28,10 @@ export function ExecutionExpandedDetail({
   handleAutoCompareRetry,
 }: ExecutionExpandedDetailProps) {
   return (
-    <AnimatePresence>
+    <>
       {isExpanded && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="border-b border-primary/10 bg-secondary/20"
+        <div
+          className="animate-fade-slide-in border-b border-primary/10 bg-secondary/20"
         >
           <div className="p-4 space-y-3">
             <div className="grid grid-cols-2 gap-4 typo-body">
@@ -120,8 +116,8 @@ export function ExecutionExpandedDetail({
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

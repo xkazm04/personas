@@ -1,8 +1,8 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
 use crate::db::DbPool;
-use crate::engine::{chain, scheduler};
+use crate::engine::{chain, crypto, scheduler};
 use crate::error::AppError;
 
 const VALID_TRIGGER_TYPES: &[&str] = &[
@@ -63,30 +63,28 @@ fn validate_config(trigger_type: &str, config: Option<&str>) -> Result<(), AppEr
     Ok(())
 }
 
-fn row_to_trigger(row: &Row) -> rusqlite::Result<PersonaTrigger> {
-    Ok(PersonaTrigger {
-        id: row.get("id")?,
-        persona_id: row.get("persona_id")?,
-        trigger_type: row.get("trigger_type")?,
-        config: row.get("config")?,
-        enabled: row.get::<_, i32>("enabled")? != 0,
-        last_triggered_at: row.get("last_triggered_at")?,
-        next_trigger_at: row.get("next_trigger_at")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-        use_case_id: row.get("use_case_id")?,
-    })
+/// Encrypt sensitive fields in a trigger config JSON string before writing to DB.
+/// Returns the original string if encryption fails (best-effort -- logged, not fatal).
+fn encrypt_config(config: &str) -> String {
+    match crypto::encrypt_trigger_config(config) {
+        Ok(encrypted) => encrypted,
+        Err(e) => {
+            tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
+            config.to_string()
+        }
+    }
 }
 
-pub fn get_all(pool: &DbPool) -> Result<Vec<PersonaTrigger>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_triggers ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map([], row_to_trigger)?;
-    let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(triggers)
-}
+row_mapper!(row_to_trigger -> PersonaTrigger {
+    id, persona_id, trigger_type, config,
+    enabled [bool],
+    last_triggered_at, next_trigger_at,
+    created_at, updated_at, use_case_id,
+});
+
+crud_get_by_id!(PersonaTrigger, "persona_triggers", "Trigger", row_to_trigger);
+crud_get_all!(PersonaTrigger, "persona_triggers", row_to_trigger, "created_at DESC");
+crud_delete!("persona_triggers");
 
 pub fn get_by_persona_id(
     pool: &DbPool,
@@ -129,19 +127,6 @@ pub fn get_by_persona_ids(
     Ok(triggers)
 }
 
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaTrigger, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_triggers WHERE id = ?1",
-        params![id],
-        row_to_trigger,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Trigger {id}")),
-        other => AppError::Database(other),
-    })
-}
-
 pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger, AppError> {
     validate_trigger_type(&input.trigger_type)?;
     validate_config(&input.trigger_type, input.config.as_deref())?;
@@ -161,13 +146,16 @@ pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger
     let now = chrono::Utc::now().to_rfc3339();
     let enabled = input.enabled.unwrap_or(true) as i32;
 
+    // Encrypt sensitive config fields before writing to DB
+    let encrypted_config = input.config.as_deref().map(encrypt_config);
+
     {
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO persona_triggers
              (id, persona_id, trigger_type, config, enabled, use_case_id, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-            params![id, input.persona_id, input.trigger_type, input.config, enabled, input.use_case_id, now],
+            params![id, input.persona_id, input.trigger_type, encrypted_config, enabled, input.use_case_id, now],
         )?;
     }
 
@@ -216,6 +204,9 @@ pub fn update(
         }
     }
 
+    // Encrypt sensitive config fields before writing to DB
+    let encrypted_config = input.config.as_deref().map(encrypt_config);
+
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
 
@@ -224,7 +215,7 @@ pub fn update(
     let mut param_idx = 2u32;
 
     push_field!(input.trigger_type, "trigger_type", sets, param_idx);
-    push_field!(input.config, "config", sets, param_idx);
+    push_field!(encrypted_config, "config", sets, param_idx);
     push_field!(input.enabled, "enabled", sets, param_idx);
     push_field!(input.next_trigger_at, "next_trigger_at", sets, param_idx);
 
@@ -239,7 +230,7 @@ pub fn update(
     if let Some(ref v) = input.trigger_type {
         param_values.push(Box::new(v.clone()));
     }
-    if let Some(ref v) = input.config {
+    if let Some(ref v) = encrypted_config {
         param_values.push(Box::new(v.clone()));
     }
     if let Some(v) = input.enabled {
@@ -269,12 +260,6 @@ pub fn update(
     }
 
     get_by_id(pool, id)
-}
-
-pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM persona_triggers WHERE id = ?1", params![id])?;
-    Ok(rows > 0)
 }
 
 /// Get enabled chain triggers whose source_persona_id matches the given value.

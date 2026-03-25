@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { ToggleLeft, ToggleRight, ChevronDown, ShieldAlert } from 'lucide-react';
-import { motion } from 'framer-motion';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { useAgentStore } from "@/stores/agentStore";
 import { TriggerStatusSummary } from './TriggerStatusSummary';
@@ -17,10 +16,7 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
   const budgetStatus = useAgentStore((s) => s.getBudgetStatus(trigger.persona_id));
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
+    <div className="animate-fade-slide-in"
     >
       <button
         type="button"
@@ -62,6 +58,6 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
           <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/80 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
         </span>
       </button>
-    </motion.div>
+    </div>
   );
 });

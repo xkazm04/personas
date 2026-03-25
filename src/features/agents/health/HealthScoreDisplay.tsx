@@ -1,5 +1,4 @@
 import { Activity } from 'lucide-react';
-import { motion } from 'framer-motion';
 import type { HealthScore } from './types';
 
 // -- Score badge --------------------------------------------------
@@ -43,12 +42,9 @@ export function ScoreRing({ score }: { score: HealthScore }) {
     <div className="relative w-24 h-24 flex-shrink-0">
       <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
         <circle cx="40" cy="40" r={radius} fill="none" stroke="currentColor" strokeWidth="4" className="text-primary/10" />
-        <motion.circle
+        <circle className="animate-fade-in"
           cx="40" cy="40" r={radius} fill="none" stroke={strokeColor} strokeWidth="4"
           strokeLinecap="round" strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">

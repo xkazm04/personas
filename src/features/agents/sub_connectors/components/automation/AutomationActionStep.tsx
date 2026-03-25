@@ -1,6 +1,5 @@
 import { Clock, Check, Circle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion } from 'framer-motion';
 import { STAGE_DEFS } from '../../libs/useAutomationSetup';
 import type { RefObject } from 'react';
 
@@ -17,7 +16,7 @@ export function AutomationActionStep({
   elapsed, stageIndex, tailLines, outputLinesLength, tailRef, onCancel,
 }: AutomationActionStepProps) {
   return (
-    <motion.div key="analyzing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+    <div key="analyzing" className="animate-fade-slide-in space-y-4">
       <div className="flex items-center justify-between px-1">
         {elapsed >= 3 ? (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -29,11 +28,8 @@ export function AutomationActionStep({
       </div>
 
       <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
-        <motion.div
-          className="h-full rounded-full bg-primary"
-          initial={{ width: '0%' }}
-          animate={{ width: `${Math.min((stageIndex / STAGE_DEFS.length) * 100, 100)}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+        <div
+          className="animate-fade-in h-full rounded-full bg-primary" style={{ width: `${Math.min((stageIndex / STAGE_DEFS.length) * 100, 100)}%` }}
         />
       </div>
 
@@ -41,7 +37,7 @@ export function AutomationActionStep({
         {STAGE_DEFS.map((def, i) => {
           const status = i < stageIndex ? 'completed' : i === stageIndex ? 'active' : 'pending';
           return (
-            <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} className="flex items-center gap-3 py-1.5">
+            <div key={i} className="animate-fade-slide-in flex items-center gap-3 py-1.5">
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 {status === 'completed' ? (
                   <div className="w-5 h-5 rounded-full bg-brand-emerald/15 flex items-center justify-center">
@@ -59,7 +55,7 @@ export function AutomationActionStep({
                 </span>
                 {status === 'active' && <span className="ml-2 text-sm text-muted-foreground">{def.description}</span>}
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>
@@ -77,6 +73,6 @@ export function AutomationActionStep({
           Cancel
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

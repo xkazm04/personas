@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
+import { EventName } from '@/lib/eventRegistry';
 import { startQueryDebug, cancelQueryDebug } from '@/api/vault/database/dbSchema';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 
@@ -10,8 +11,8 @@ export function useQueryDebug() {
   const serviceTypeRef = useRef<string>('');
 
   const stream = useCorrelatedCliStream({
-    outputEvent: 'query-debug-output',
-    statusEvent: 'query-debug-status',
+    outputEvent: EventName.QUERY_DEBUG_OUTPUT,
+    statusEvent: EventName.QUERY_DEBUG_STATUS,
     idField: 'job_id',
     onStatusEvent: (payload) => {
       if (payload['status'] === 'completed') {

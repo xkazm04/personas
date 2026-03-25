@@ -269,5 +269,6 @@
       "icon": "BookOpen",
       "color": "#3b82f6"
     }
-  }
+  },
+  "is_published": false
 }

@@ -7,6 +7,7 @@ import type { RotationStatus } from '@/api/vault/rotation';
 import { createRotationPolicy, updateRotationPolicy, rotateCredentialNow, deleteRotationPolicy } from '@/api/vault/rotation';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
+import { PillGroup } from '@/features/shared/components/forms/PillGroup';
 
 const ROTATION_STATUS = STATUS_COLORS.rotation!;
 
@@ -105,6 +106,7 @@ export function RotationPolicyControls({
   const [isEnablingPolicy, setIsEnablingPolicy] = useState(false);
   const [rotationDays, setRotationDays] = useState(rotationStatus.rotation_interval_days ?? (isOAuth ? 1 : 90));
   const [isEditingPeriod, setIsEditingPeriod] = useState(false);
+  const [customFocused, setCustomFocused] = useState(false);
   if (rotationStatus.has_policy) {
     return (
       <div className="space-y-3">
@@ -183,13 +185,25 @@ export function RotationPolicyControls({
           <span className="text-sm text-muted-foreground/80">Rotate every</span>
           {isEditingPeriod ? (
             <div className="flex items-center gap-1.5">
-              <input
-                type="number"
+              <PillGroup
+                options={(isOAuth ? [1, 7, 30, 90] : [30, 60, 90, 180]).map((d) => ({ value: d, label: `${d}d` }))}
                 value={rotationDays}
-                onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                min={1}
-                data-testid="rotation-days-input"
-                className={`w-16 px-2 py-0.5 bg-background/50 border rounded-xl text-sm text-foreground text-center focus-visible:outline-none focus-visible:ring-1 ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.ringColor!}`}
+                onChange={setRotationDays}
+                layoutId={`rotation-edit-${credentialId}`}
+                activeBg={ROTATION_STATUS.bgColor}
+                activeText={ROTATION_STATUS.color}
+                activeBorder={ROTATION_STATUS.borderColor}
+                customInput={
+                  <input
+                    type="number"
+                    value={rotationDays}
+                    onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    min={1}
+                    data-testid="rotation-days-input"
+                    className="w-16 px-2 py-1 bg-transparent text-sm text-foreground text-center focus-visible:outline-none font-mono"
+                  />
+                }
+                data-testid="rotation-edit-presets"
               />
               <span className="text-sm text-muted-foreground/80">days</span>
               <Button
@@ -249,33 +263,30 @@ export function RotationPolicyControls({
       {/* Period selection */}
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground/80">Rotate every</span>
-        <div className="flex items-center gap-1">
-          {(isOAuth ? [1, 7, 30, 90] : [30, 60, 90, 180]).map((d) => (
-            <Button
-              key={d}
-              variant={rotationDays === d ? 'accent' : 'ghost'}
-              size="xs"
-              onClick={() => setRotationDays(d)}
-              data-testid={`rotation-preset-${d}-btn`}
-              className={`font-mono ${
-                rotationDays === d
-                  ? `${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.color} border ${ROTATION_STATUS.borderColor}`
-                  : 'bg-secondary/40 text-muted-foreground/80 border border-transparent hover:bg-secondary/60'
-              }`}
-            >
-              {d}d
-            </Button>
-          ))}
-          <input
-            type="number"
-            value={rotationDays}
-            onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
-            min={1}
-            data-testid="rotation-custom-days-input"
-            className={`w-16 px-2 py-0.5 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground text-center focus-visible:outline-none focus-visible:ring-1 ${ROTATION_STATUS.ringColor!}`}
-          />
-          <span className="text-sm text-muted-foreground/60">days</span>
-        </div>
+        <PillGroup
+          options={(isOAuth ? [1, 7, 30, 90] : [30, 60, 90, 180]).map((d) => ({ value: d, label: `${d}d` }))}
+          value={rotationDays}
+          onChange={setRotationDays}
+          layoutId={`rotation-presets-${credentialId}`}
+          activeBg={ROTATION_STATUS.bgColor}
+          activeText={ROTATION_STATUS.color}
+          activeBorder={ROTATION_STATUS.borderColor}
+          customInput={
+            <input
+              type="number"
+              value={rotationDays}
+              onChange={(e) => setRotationDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
+              min={1}
+              data-testid="rotation-custom-days-input"
+              onFocus={() => setCustomFocused(true)}
+              onBlur={() => setCustomFocused(false)}
+              className="w-16 px-2 py-1 bg-transparent text-sm text-foreground text-center focus-visible:outline-none font-mono"
+            />
+          }
+          customInputActive={customFocused}
+          data-testid="rotation-presets"
+        />
+        <span className="text-sm text-muted-foreground/60">days</span>
       </div>
       <Button
         variant="accent"

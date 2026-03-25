@@ -224,3 +224,46 @@ pub struct TriageRule {
     pub times_fired: i32,
     pub created_at: String,
 }
+
+// ============================================================================
+// Dev Pipelines (Idea-to-Execution)
+// ============================================================================
+
+/// Pipeline stages: triaged -> task_created -> executing -> verifying -> completed | failed
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevPipeline {
+    pub id: String,
+    pub project_id: String,
+    pub idea_id: String,
+    pub task_id: Option<String>,
+    pub stage: String,
+    pub auto_execute: bool,
+    pub verify_after: bool,
+    pub verification_scan_id: Option<String>,
+    pub error: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// ============================================================================
+// Context Health Snapshots
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ContextHealthSnapshot {
+    pub id: String,
+    pub project_id: String,
+    pub group_id: Option<String>,
+    pub group_name: String,
+    pub overall_score: i32,
+    pub security_score: Option<i32>,
+    pub quality_score: Option<i32>,
+    pub coverage_score: Option<i32>,
+    pub debt_score: Option<i32>,
+    pub issues_found: i32,
+    pub issues_json: Option<String>,
+    pub recommendations: Option<String>,
+    pub scanned_at: String,
+}

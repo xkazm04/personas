@@ -1,5 +1,4 @@
 import { Sparkles, Wand2, FlaskConical } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { DesignInput } from '@/features/shared/components/forms/DesignInput';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { DesignPhasePanelSaved } from './DesignPhasePanelSaved';
@@ -55,13 +54,9 @@ export function DesignPhasePanel({
   const hasExamples = examplePairs.some((p) => p.input.trim() || p.output.trim());
 
   return (
-    <motion.div
+    <div
       key="idle"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.15 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       {savedDesignResult ? (
         <DesignPhasePanelSaved
@@ -216,6 +211,6 @@ export function DesignPhasePanel({
           )}
         </>
       )}
-    </motion.div>
+    </div>
   );
 }

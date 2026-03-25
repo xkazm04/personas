@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
@@ -9,14 +8,14 @@ import { type PersonaDraft, buildDraft } from '../libs/PersonaDraft';
 import { useEditorDirtyState, useEditorHistory, TabSaveError } from '../libs/EditorDocument';
 import { tabIdsToLabels } from '../libs/editorTabConstants';
 import { useEditorSave } from '../libs/useEditorSave';
-import { UnsavedChangesBanner, DesignNudgeBanner, CloudNudgeBanner } from './EditorBanners';
+import { UnsavedChangesBanner, CloudNudgeBanner } from './EditorBanners';
 // OnboardingBanner removed — setup stepper no longer shown
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
   ActivityTab, MatrixTab,
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
-  PersonaConnectorsTab, DesignTab, LabTab, HealthTab, ChatTab,
+  PersonaConnectorsTab, LabTab, ChatTab,
 } from './EditorLazyTabs';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
@@ -178,17 +177,11 @@ export function EditorBody() {
       />
 
       <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={connectorsMissing} />
-      <DesignNudgeBanner />
       <CloudNudgeBanner />
 
       <div className="flex-1 overflow-y-auto p-4">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
+        <div className="animate-fade-slide-in"
             key={editorTab}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
           >
             <Suspense fallback={null}>
               {editorTab === 'activity' && <ActivityTab />}
@@ -203,8 +196,6 @@ export function EditorBody() {
               {editorTab === 'lab' && <LabTab />}
               {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
               {editorTab === 'chat' && <ChatTab />}
-              {editorTab === 'design' && <DesignTab />}
-              {editorTab === 'health' && <HealthTab />}
               {editorTab === 'settings' && (
                 <PersonaSettingsTab
                   draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
@@ -214,8 +205,7 @@ export function EditorBody() {
                 />
               )}
             </Suspense>
-          </motion.div>
-        </AnimatePresence>
+          </div>
       </div>
 
       <UnsavedChangesModal

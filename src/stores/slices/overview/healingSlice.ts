@@ -1,6 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
-import { useAgentStore } from "../../agentStore";
+import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { HealingTimelineEvent } from "@/lib/bindings/HealingTimelineEvent";
@@ -69,7 +69,7 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
 
   fetchRetryChain: async (executionId: string, personaId?: string) => {
     try {
-      const callerPersonaId = personaId ?? useAgentStore.getState().selectedPersona?.id ?? '';
+      const callerPersonaId = personaId ?? storeBus.get<string | undefined>(AccessorKey.AGENTS_SELECTED_PERSONA_ID) ?? '';
       const chain = await getRetryChain(executionId, callerPersonaId);
       set({ retryChain: chain });
     } catch (err) {

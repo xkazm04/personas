@@ -2,8 +2,13 @@
 //!
 //! Validates that outbound HTTP requests target external hosts only,
 //! blocking loopback, private RFC 1918, link-local, and metadata endpoints.
+//!
+//! Includes a [`SsrfSafeResolver`] that implements `reqwest::dns::Resolve`
+//! to reject private IPs at connect time, closing the DNS-rebinding window
+//! that exists when validation and request use separate DNS lookups (CWE-367).
 
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
+use std::sync::Arc;
 
 /// Check whether an IP address is in a private, loopback, or link-local range
 /// that should not be reachable from outbound HTTP requests.
@@ -156,6 +161,68 @@ pub fn validate_url_safety(url_str: &str) -> Result<(), String> {
     }
 }
 
+/// A DNS resolver for `reqwest` that rejects private/internal IPs at connect
+/// time, preventing DNS-rebinding SSRF attacks.
+///
+/// When a hostname resolves to *any* private IP the entire resolution is
+/// rejected so the HTTP request never reaches a local service.
+pub struct SsrfSafeResolver;
+
+impl reqwest::dns::Resolve for SsrfSafeResolver {
+    fn resolve(&self, name: reqwest::dns::Name) -> reqwest::dns::Resolving {
+        let host = name.as_str().to_string();
+        Box::pin(async move {
+            let host_for_resolve = host.clone();
+            let addrs: Vec<SocketAddr> = tokio::task::spawn_blocking(move || {
+                // Resolve using the system resolver (getaddrinfo).
+                // Port 0 is a placeholder; reqwest overrides it with the URL port.
+                let lookup = format!("{host_for_resolve}:0");
+                lookup.to_socket_addrs().map(|iter| iter.collect::<Vec<_>>())
+            })
+            .await
+            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+                Box::new(std::io::Error::new(std::io::ErrorKind::Other, e))
+            })?
+            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { Box::new(e) })?;
+
+            if addrs.is_empty() {
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("DNS resolution returned no addresses for '{host}'"),
+                )) as Box<dyn std::error::Error + Send + Sync>);
+            }
+
+            // Reject if ANY resolved address is private/internal
+            for addr in &addrs {
+                if is_private_ip(addr.ip()) {
+                    return Err(Box::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!(
+                            "SSRF protection: '{host}' resolves to private address {}",
+                            addr.ip()
+                        ),
+                    ))
+                        as Box<dyn std::error::Error + Send + Sync>);
+                }
+            }
+
+            let addrs: reqwest::dns::Addrs = Box::new(addrs.into_iter());
+            Ok(addrs)
+        })
+    }
+}
+
+/// Build a `reqwest::Client` that uses [`SsrfSafeResolver`] to reject
+/// private IPs at connect time, preventing DNS-rebinding SSRF bypasses.
+pub fn build_ssrf_safe_client(timeout: std::time::Duration) -> reqwest::Client {
+    reqwest::Client::builder()
+        .timeout(timeout)
+        .user_agent("Personas-Polling/1.0")
+        .dns_resolver(Arc::new(SsrfSafeResolver))
+        .build()
+        .unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -254,5 +321,21 @@ mod tests {
     fn test_dns_failure_is_blocked() {
         // A hostname that won't resolve should be rejected (fail-closed)
         assert!(validate_url_safety("http://this-domain-will-never-resolve-3829482.example.test/secret").is_err());
+    }
+
+    #[tokio::test]
+    async fn test_resolver_blocks_loopback() {
+        use reqwest::dns::Resolve;
+        let resolver = SsrfSafeResolver;
+        let name: reqwest::dns::Name = "localhost".parse().unwrap();
+        let result = resolver.resolve(name).await;
+        // localhost resolves to 127.0.0.1 which must be rejected
+        assert!(result.is_err(), "SsrfSafeResolver must reject localhost");
+    }
+
+    #[test]
+    fn test_build_ssrf_safe_client() {
+        // Smoke test: client construction should not panic
+        let _client = build_ssrf_safe_client(std::time::Duration::from_secs(10));
     }
 }

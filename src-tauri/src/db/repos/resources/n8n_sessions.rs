@@ -1,4 +1,4 @@
-use rusqlite::{named_params, params, Row};
+use rusqlite::{named_params, params};
 
 use crate::db::models::{CreateN8nSessionInput, N8nSessionSummary, N8nTransformSession, UpdateN8nSessionInput};
 use crate::db::DbPool;
@@ -6,24 +6,12 @@ use crate::error::AppError;
 
 // -- Row mapper ------------------------------------------------
 
-fn row_to_session(row: &Row) -> rusqlite::Result<N8nTransformSession> {
-    Ok(N8nTransformSession {
-        id: row.get("id")?,
-        workflow_name: row.get("workflow_name")?,
-        status: row.get("status")?,
-        raw_workflow_json: row.get("raw_workflow_json")?,
-        parser_result: row.get("parser_result")?,
-        draft_json: row.get("draft_json")?,
-        user_answers: row.get("user_answers")?,
-        step: row.get("step")?,
-        error: row.get("error")?,
-        persona_id: row.get("persona_id")?,
-        transform_id: row.get("transform_id")?,
-        questions_json: row.get("questions_json")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_session -> N8nTransformSession {
+    id, workflow_name, status, raw_workflow_json,
+    parser_result, draft_json, user_answers, step,
+    error, persona_id, transform_id, questions_json,
+    created_at, updated_at,
+});
 
 // -- CRUD ------------------------------------------------------
 

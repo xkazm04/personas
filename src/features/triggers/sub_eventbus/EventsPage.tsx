@@ -1,17 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ExternalLink, Radio } from "lucide-react";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { listAllTriggers, getTriggerHealthMap } from '@/api/pipeline/triggers';
 import type { PersonaTrigger } from '@/lib/types/types';
+import { lazy, Suspense } from "react";
 import { LiveStreamTab } from '../sub_live_stream/LiveStreamTab';
 import { RateLimitDashboard } from '../sub_rate_limits/RateLimitDashboard';
 import { TestTab } from '../sub_test/TestTab';
 import { SmeeRelayTab } from '../sub_smee_relay/SmeeRelayTab';
 import { CloudWebhooksTab } from '../sub_cloud_webhooks/CloudWebhooksTab';
 
+const EventCanvas = lazy(() => import('../sub_canvas/EventCanvas').then(m => ({ default: m.EventCanvas })));
+const SharedEventsTab = lazy(() => import('../sub_shared/SharedEventsTab').then(m => ({ default: m.SharedEventsTab })));
+
 type BusHealth = "healthy" | "degraded" | "failing" | null;
+
+function LazyWrap({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Loading...</div>}>
+      {children}
+    </Suspense>
+  );
+}
 
 export function EventsPage() {
   const personas = useAgentStore((s) => s.personas);
@@ -68,6 +80,8 @@ export function EventsPage() {
       />
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {eventBusTab === "canvas" && <LazyWrap><EventCanvas allTriggers={allTriggers} /></LazyWrap>}
+        {eventBusTab === "shared" && <LazyWrap><SharedEventsTab /></LazyWrap>}
         {eventBusTab === "live-stream" && <LiveStreamTab />}
         {eventBusTab === "rate-limits" && <RateLimitDashboard triggers={allTriggers} />}
         {eventBusTab === "test" && <TestTab />}

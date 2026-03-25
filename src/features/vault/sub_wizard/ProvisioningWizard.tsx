@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -82,12 +81,9 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
       : 'AI-guided credential setup';
 
   return (
-    <motion.div
+    <div
       key="wizard-inline"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="bg-secondary/35 border border-primary/15 rounded-xl overflow-hidden"
+      className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
@@ -112,35 +108,25 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
 
       {/* Body */}
       <div className="px-5 py-5">
-        <AnimatePresence mode="wait">
-          {phase === 'detect' && (
-            <motion.div
+        {phase === 'detect' && (
+            <div className="animate-fade-slide-in"
               key="wizard-detect"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
               <WizardDetectPhase onSelect={handleSelect} />
-            </motion.div>
+            </div>
           )}
 
           {phase === 'batch' && (
-            <motion.div
+            <div className="animate-fade-slide-in"
               key="wizard-batch"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
               <WizardBatchPhase
                 connectors={selectedConnectors}
                 onDone={handleBatchDone}
               />
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </div>
-    </motion.div>
+    </div>
   );
 }

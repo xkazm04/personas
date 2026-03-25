@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Network, Shield, Route, ScrollText } from 'lucide-react';
+import { Network, Shield, Route, ScrollText, KeyRound } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useByomSettings } from '../libs/useByomSettings';
@@ -8,9 +9,13 @@ import { ByomProviderList } from './ByomProviderList';
 import { ByomRoutingRules } from './ByomRoutingRules';
 import { ByomComplianceRules } from './ByomComplianceRules';
 import { ByomAuditLog } from './ByomAuditLog';
+import { ByomApiKeyManager } from './ByomApiKeyManager';
+import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
+import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
 
 const SECTION_TABS: { id: ByomSection; label: string; icon: typeof Shield }[] = [
   { id: 'policy', label: 'Providers', icon: Shield },
+  { id: 'keys', label: 'API Keys', icon: KeyRound },
   { id: 'routing', label: 'Cost Routing', icon: Route },
   { id: 'compliance', label: 'Compliance', icon: Shield },
   { id: 'audit', label: 'Audit Log', icon: ScrollText },
@@ -18,6 +23,13 @@ const SECTION_TABS: { id: ByomSection; label: string; icon: typeof Shield }[] = 
 
 export default function ByomSettings() {
   const bm = useByomSettings();
+
+  const guardCallbacks = useMemo(() => ({
+    onSave: () => bm.handleSave(),
+    onDiscard: () => bm.discardChanges(),
+  }), [bm.handleSave, bm.discardChanges]);
+
+  const guard = useUnsavedGuard(bm.isDirty, guardCallbacks, { guardSettingsTab: true });
 
   if (!bm.loaded) {
     return (
@@ -41,6 +53,9 @@ export default function ByomSettings() {
         subtitle="Configure approved providers, compliance restrictions, and cost-optimized routing"
         actions={
           <div className="flex items-center gap-2">
+            {bm.isDirty && (
+              <span className="text-xs text-amber-400/80 mr-1">Unsaved changes</span>
+            )}
             <button
               onClick={bm.handleReset}
               className="px-3 py-1.5 text-sm rounded-xl border border-primary/10 text-muted-foreground hover:bg-secondary/50 transition-colors"
@@ -49,7 +64,11 @@ export default function ByomSettings() {
             </button>
             <button
               onClick={bm.handleSave}
-              className="px-3 py-1.5 text-sm rounded-xl bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-colors"
+              className={`px-3 py-1.5 text-sm rounded-xl border transition-colors ${
+                bm.isDirty
+                  ? 'bg-primary/25 text-primary border-primary/40 hover:bg-primary/35'
+                  : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'
+              }`}
             >
               Save Policy
             </button>
@@ -111,13 +130,19 @@ export default function ByomSettings() {
             <ByomProviderList
               policy={bm.policy}
               usageStats={bm.usageStats}
+              usageTimeseries={bm.usageTimeseries}
               toggleProvider={bm.toggleProvider}
             />
+          )}
+
+          {bm.activeSection === 'keys' && (
+            <ByomApiKeyManager />
           )}
 
           {bm.activeSection === 'routing' && (
             <ByomRoutingRules
               rules={bm.policy.routing_rules}
+              warnings={bm.routingWarnings}
               onAdd={bm.addRoutingRule}
               onUpdate={bm.updateRoutingRule}
               onRemove={bm.removeRoutingRule}
@@ -127,6 +152,7 @@ export default function ByomSettings() {
           {bm.activeSection === 'compliance' && (
             <ByomComplianceRules
               rules={bm.policy.compliance_rules}
+              warnings={bm.complianceWarnings}
               onAdd={bm.addComplianceRule}
               onUpdate={bm.updateComplianceRule}
               onRemove={bm.removeComplianceRule}
@@ -138,6 +164,12 @@ export default function ByomSettings() {
           )}
         </div>
       </ContentBody>
+
+      <UnsavedChangesModal
+        isOpen={guard.isOpen}
+        onAction={guard.resolve}
+        changedSections={['BYOM Policy']}
+      />
     </ContentBox>
   );
 }

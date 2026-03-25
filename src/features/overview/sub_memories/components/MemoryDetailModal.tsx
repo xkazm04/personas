@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { X, Tag, ExternalLink, Bot } from 'lucide-react';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
@@ -31,19 +30,12 @@ export default function MemoryDetailModal({
   const tags = parseTags(memory.tags);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+    <div
+      className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
+      <div
+        className="animate-fade-slide-in bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -135,7 +127,7 @@ export default function MemoryDetailModal({
             Close
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

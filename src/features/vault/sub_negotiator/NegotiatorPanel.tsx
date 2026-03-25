@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, X, Zap } from 'lucide-react';
 import { useCredentialNegotiator, type NegotiatorContext } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
@@ -49,12 +48,8 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={MOTION_TIMING.FLOW}
-      className="overflow-hidden"
+    <div
+      className="animate-fade-slide-in overflow-hidden"
     >
       <div className="rounded-xl border border-violet-500/20 bg-gradient-to-b from-violet-500/5 to-transparent">
         {/* Header */}
@@ -84,15 +79,11 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
 
         {/* Body */}
         <div className="p-4">
-          <AnimatePresence mode="wait">
-            {/* Idle -- show the start button */}
+          {/* Idle -- show the start button */}
             {negotiator.phase === 'idle' && (
-              <motion.div
+              <div
                 key="neg-idle"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-3"
+                className="animate-fade-slide-in space-y-3"
               >
                 <p className="text-sm text-foreground/90">
                   Let the AI guide you step-by-step through obtaining {designResult.connector.label} API credentials.
@@ -110,7 +101,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
                     Takes ~{Math.ceil(60 / 60)}-2 minutes
                   </span>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Planning */}
@@ -143,11 +134,9 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
 
             {/* Done */}
             {negotiator.phase === 'done' && (
-              <motion.div
+              <div
                 key="neg-done"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center py-6 gap-3"
+                className="animate-fade-slide-in flex flex-col items-center py-6 gap-3"
               >
                 <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
                   <Zap className="w-5 h-5 text-emerald-400" />
@@ -162,16 +151,14 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
                 >
                   Apply to credential form
                 </button>
-              </motion.div>
+              </div>
             )}
 
             {/* Error */}
             {negotiator.phase === 'error' && (
-              <motion.div
+              <div
                 key="neg-error"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="space-y-3"
+                className="animate-fade-slide-in space-y-3"
               >
                 <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                   <p className="text-sm text-red-300">{negotiator.error}</p>
@@ -190,11 +177,10 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
                     Close
                   </button>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

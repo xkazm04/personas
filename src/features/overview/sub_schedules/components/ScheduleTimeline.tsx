@@ -1,6 +1,7 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useMemo, useState, useCallback, lazy, Suspense } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import {
   CalendarClock, RefreshCw, Pause, Plus, Calendar,
 } from 'lucide-react';
@@ -69,7 +70,7 @@ export default function ScheduleTimeline() {
   useEffect(() => {
     let cancelled = false;
     const unlisten = listen<{ recovered: number; timestamp: string }>(
-      'overdue-triggers-fired',
+      EventName.OVERDUE_TRIGGERS_FIRED,
       () => {
         if (cancelled) return;
         fetchCronAgents();
@@ -113,6 +114,7 @@ export default function ScheduleTimeline() {
       <ScheduleRow
         key={entry.agent.trigger_id}
         entry={entry}
+        existingEntries={entries}
         isExecuting={actionState.executing === entry.agent.trigger_id}
         isEditing={actionState.editing === entry.agent.trigger_id}
         onManualExecute={() => manualExecute(entry.agent)}
@@ -320,8 +322,75 @@ export default function ScheduleTimeline() {
             )}
           </div>
         )}
+
+        {/* CLI Fallback Scheduling */}
+        <CliFallbackSection entries={entries} />
       </ContentBody>
     </ContentBox>
+  );
+}
+
+function CliFallbackSection({ entries }: { entries: import('../libs/scheduleHelpers').ScheduleEntry[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const [commands, setCommands] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
+  const loadCommands = async () => {
+    setLoading(true);
+    const results: Record<string, string> = {};
+    for (const entry of entries.slice(0, 10)) {
+      try {
+        const resp = await fetch(`http://127.0.0.1:9420/api/settings/cli-fallback/${entry.personaId}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data?.data?.command) {
+            results[entry.personaId] = data.data.cron_instruction;
+          }
+        }
+      } catch { break; } // Management API not running
+    }
+    setCommands(results);
+    setLoading(false);
+  };
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="mt-4 rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
+      <button
+        data-testid="cli-fallback-section"
+        onClick={() => { setExpanded(!expanded); if (!expanded && Object.keys(commands).length === 0) loadCommands(); }}
+        className="w-full flex items-center gap-2 px-4 py-3 text-xs font-medium text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+      >
+        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.2"/><path d="M4 7l2 2-2 2M8 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        Claude CLI Fallback Scheduling
+        <span className="text-[10px] text-muted-foreground/40 ml-1">
+          {expanded ? '(click to collapse)' : '— run agents when the app is closed'}
+        </span>
+      </button>
+      {expanded && (
+        <div className="px-4 pb-3 space-y-2 border-t border-primary/5">
+          <p className="text-[11px] text-muted-foreground/50 py-2">
+            Use these commands with your OS scheduler (cron / Task Scheduler) to execute agents via Claude CLI + Personas MCP server when the desktop app is not running.
+          </p>
+          {loading ? (
+            <p className="text-xs text-muted-foreground/40 py-2">Loading commands...</p>
+          ) : Object.keys(commands).length === 0 ? (
+            <p className="text-xs text-muted-foreground/40 py-2">Management API not available. Start the Personas app first.</p>
+          ) : (
+            Object.entries(commands).map(([pid, cmd]) => {
+              const entry = entries.find(e => e.personaId === pid);
+              return (
+                <div key={pid} className="rounded-lg bg-black/20 p-2.5">
+                  <p className="text-[11px] font-medium text-foreground/70 mb-1">{entry?.personaName || pid}</p>
+                  <pre className="text-[10px] text-muted-foreground/60 font-mono whitespace-pre-wrap break-all select-all">{cmd}</pre>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

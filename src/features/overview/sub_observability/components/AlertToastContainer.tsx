@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Info, XCircle, X } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
-import type { FiredAlert } from '@/stores/slices/overview/alertSlice';
+import type { FiredAlert } from '@/lib/bindings/FiredAlert';
 
 const SEVERITY_STYLES: Record<string, { border: string; bg: string; icon: typeof Info; iconColor: string }> = {
   info: { border: 'border-blue-500/30', bg: 'bg-blue-500/10', icon: Info, iconColor: 'text-blue-400' },
@@ -22,25 +21,20 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
   }, [onDismiss]);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, x: 80, scale: 0.95 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 80, scale: 0.95 }}
-      transition={{ duration: 0.25 }}
-      className={`pointer-events-auto w-80 rounded-xl border ${style.border} ${style.bg} backdrop-blur-sm shadow-lg p-3`}
+    <div
+      className={`animate-fade-slide-in pointer-events-auto w-80 rounded-xl border ${style.border} ${style.bg} backdrop-blur-sm shadow-lg p-3`}
     >
       <div className="flex items-start gap-2.5">
         <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.iconColor}`} />
         <div className="flex-1 min-w-0">
-          <p className="typo-heading text-foreground truncate">{alert.ruleName}</p>
+          <p className="typo-heading text-foreground truncate">{alert.rule_name}</p>
           <p className="text-xs text-muted-foreground/80 mt-0.5">{alert.message}</p>
         </div>
         <button onClick={onDismiss} className="p-0.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors shrink-0">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -52,11 +46,9 @@ export function AlertToastContainer() {
 
   return (
     <div className="fixed top-4 right-4 z-[9990] flex flex-col gap-2 pointer-events-none">
-      <AnimatePresence mode="popLayout">
-        {activeToasts.slice(0, 5).map((alert) => (
+      {activeToasts.slice(0, 5).map((alert) => (
           <AlertToast key={alert.id} alert={alert} onDismiss={() => dismissToast(alert.id)} />
         ))}
-      </AnimatePresence>
     </div>
   );
 }

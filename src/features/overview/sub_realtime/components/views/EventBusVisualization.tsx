@@ -1,5 +1,4 @@
 import { useMemo, useRef, useEffect, useState, useCallback, useId } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import type { ProcessingInfo, ReturnFlow, DiscoveredSource } from '../../libs/visualizationHelpers';
@@ -146,14 +145,12 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
         {/* Legend */}
         {seenTypes.length > 0 && (
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 bg-background/70 backdrop-blur-md border border-purple-500/15 rounded-2xl px-4 py-2 flex items-center gap-3">
-            <AnimatePresence initial={false}>
-              {seenTypes.slice(0, 6).map(type => (
+            {seenTypes.slice(0, 6).map(type => (
                 <div key={type} className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: EVENT_TYPE_HEX_COLORS[type] ?? '#818cf8' }} />
                   <span className="text-sm font-mono text-muted-foreground/80">{EVENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ')}</span>
                 </div>
               ))}
-            </AnimatePresence>
           </div>
         )}
 

@@ -5,21 +5,11 @@ use crate::db::models::{SmeeRelay, CreateSmeeRelayInput, UpdateSmeeRelayInput};
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn row_to_relay(row: &rusqlite::Row) -> rusqlite::Result<SmeeRelay> {
-    Ok(SmeeRelay {
-        id: row.get("id")?,
-        label: row.get("label")?,
-        channel_url: row.get("channel_url")?,
-        status: row.get("status")?,
-        event_filter: row.get("event_filter")?,
-        target_persona_id: row.get("target_persona_id")?,
-        events_relayed: row.get("events_relayed")?,
-        last_event_at: row.get("last_event_at")?,
-        error: row.get("error")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_relay -> SmeeRelay {
+    id, label, channel_url, status, event_filter,
+    target_persona_id, events_relayed, last_event_at,
+    error, created_at, updated_at,
+});
 
 pub fn list(pool: &DbPool) -> Result<Vec<SmeeRelay>, AppError> {
     let conn = pool.get()?;

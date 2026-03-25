@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
-import { X, Clock, Check } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, Clock, Check, AlertTriangle } from 'lucide-react';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { CronPreview } from '@/api/pipeline/triggers';
-import { CRON_PRESETS } from '../libs/scheduleHelpers';
+import { CRON_PRESETS, type ScheduleEntry } from '../libs/scheduleHelpers';
+import { previewConflicts } from '../libs/calendarHelpers';
 import { useThemeStore } from '@/stores/themeStore';
 
 interface FrequencyEditorProps {
   agent: CronAgent;
   currentSchedule: string;
+  existingEntries?: ScheduleEntry[];
   onSave: (cron: string | null, intervalSeconds: number | null) => void;
   onCancel: () => void;
   onPreviewCron: (expression: string) => Promise<CronPreview | null>;
@@ -16,6 +18,7 @@ interface FrequencyEditorProps {
 export default function FrequencyEditor({
   agent,
   currentSchedule,
+  existingEntries,
   onSave,
   onCancel,
   onPreviewCron,
@@ -31,6 +34,21 @@ export default function FrequencyEditor({
   const [previewLoading, setPreviewLoading] = useState(false);
   const timezone = useThemeStore((s) => s.timezone);
   const tzLabel = timezone === 'local' ? 'Local' : timezone === 'utc' ? 'UTC' : timezone.split('/').pop()?.replace(/_/g, ' ') || timezone;
+
+  // Overlap detection: how many times in the next 7 days does this schedule conflict?
+  const overlapCount = useMemo(() => {
+    if (!existingEntries || existingEntries.length === 0) return 0;
+    if (mode === 'custom' && cronInput.trim()) {
+      return previewConflicts(existingEntries, cronInput.trim(), null, agent.trigger_id);
+    }
+    if (mode === 'preset' && intervalInput) {
+      const secs = parseInt(intervalInput, 10);
+      if (!isNaN(secs) && secs > 0) {
+        return previewConflicts(existingEntries, null, secs, agent.trigger_id);
+      }
+    }
+    return 0;
+  }, [existingEntries, cronInput, intervalInput, mode, agent.trigger_id]);
 
   // Live preview for custom cron
   useEffect(() => {
@@ -192,6 +210,17 @@ export default function FrequencyEditor({
             />
           )}
         </div>
+
+        {/* Overlap warning */}
+        {overlapCount > 0 && (
+          <div className="mx-6 mb-1 flex items-start gap-2 p-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-amber-400/90">
+            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <span>
+              This schedule overlaps with {overlapCount} other execution{overlapCount > 1 ? 's' : ''} in the next 7 days.
+              Concurrent agents compete for API quota and system resources.
+            </span>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-primary/10 bg-primary/[0.03]">

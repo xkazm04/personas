@@ -29,8 +29,8 @@
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@floating-ui/react": "^0.27.19",
-    "@sentry/react": "^10.42.0",
-    "@tanstack/react-virtual": "^3.13.21",
+    "@sentry/react": "^10.45.0",
+    "@tanstack/react-virtual": "^3.13.23",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-deep-link": "^2.4.7",
     "@tauri-apps/plugin-dialog": "^2.6.0",
@@ -38,7 +38,7 @@
     "@tauri-apps/plugin-shell": "^2.3.5",
     "@tauri-apps/plugin-updater": "^2.10.0",
     "@xyflow/react": "^12.10.1",
-    "dompurify": "^3.3.2",
+    "dompurify": "^3.3.3",
     "framer-motion": "^12.38.0",
     "js-yaml": "^4.1.1",
     "lucide-react": "^0.577.0",
@@ -48,11 +48,11 @@
     "recharts": "^3.8.0",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@tailwindcss/vite": "^4.2.1",
+    "@tailwindcss/vite": "^4.2.2",
     "@tauri-apps/cli": "^2.10.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -62,16 +62,16 @@
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.4",
-    "better-sqlite3": "^12.6.2",
-    "eslint": "^10.0.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "better-sqlite3": "^12.8.0",
+    "eslint": "^10.1.0",
     "globals": "^17.4.0",
-    "jsdom": "^28.1.0",
+    "jsdom": "^29.0.1",
     "rollup-plugin-visualizer": "^7.0.1",
-    "tailwindcss": "^4.2.1",
+    "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "typescript-eslint": "^8.57.1",
+    "vite": "^8.0.1",
+    "vitest": "^4.1.0"
   }
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Wrench, Clock, ChevronDown, ChevronRight, Hash } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { formatDuration } from '@/lib/utils/formatters';
 import type { ToolCallStep } from './inspectorTypes';
 import { durationColor } from './inspectorTypes';
@@ -41,20 +40,14 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
             {showInput ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             Input
           </button>
-          <AnimatePresence>
-            {showInput && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.15 }}
+          {showInput && (
+              <div className="animate-fade-slide-in"
               >
                 <pre className="px-4 pb-3 typo-code text-foreground/90 whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
                   {step.input_preview}
                 </pre>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
 
@@ -68,20 +61,14 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
             {showOutput ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             Output
           </button>
-          <AnimatePresence>
-            {showOutput && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.15 }}
+          {showOutput && (
+              <div className="animate-fade-slide-in"
               >
                 <pre className="px-4 pb-3 typo-code text-foreground/90 whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
                   {step.output_preview}
                 </pre>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
     </div>

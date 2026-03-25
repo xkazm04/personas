@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Loader2, AlertCircle } from 'lucide-react';
 import { PIPELINE_STAGES, STAGE_META, type PipelineStage } from '@/lib/execution/pipeline';
 import { STAGE_COLORS } from '../../libs/waterfallHelpers';
@@ -142,12 +141,10 @@ export function PipelineStageIndicator({
               {state === 'error' ? (
                 <AlertCircle className="w-3 h-3 text-red-400 shrink-0" />
               ) : state === 'active' ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                <div className="animate-fade-in"
                 >
                   <Loader2 className={`w-3 h-3 ${colors.text} shrink-0`} />
-                </motion.div>
+                </div>
               ) : state === 'completed' ? (
                 <CheckCircle2 className={`w-3 h-3 ${colors.text} shrink-0`} />
               ) : (

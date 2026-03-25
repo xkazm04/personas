@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import {
   FlaskConical,
   X,
@@ -37,11 +36,8 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
   const sev = SEVERITY_STYLES[simulation.severity];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 8 }}
-      className="rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
+    <div
+      className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/30 overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
@@ -208,6 +204,6 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

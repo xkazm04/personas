@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
 import { CheckSquare, Square, X, MessageSquare, PanelRightClose, PanelRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
@@ -106,23 +105,14 @@ export function ReviewInboxPanel({
 
       <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
         {/* Left: Inbox list */}
-        <motion.div
+        <div
           data-inbox-list
-          layout
-          className={`flex-shrink-0 border-r border-primary/10 flex flex-col overflow-hidden`}
-          animate={{
-            width: IS_MOBILE
-              ? '100%'
-              : viewMode === 'table'
-                ? '100%'
-                : undefined,
-          }}
+          className={`animate-fade-in flex-shrink-0 border-r border-primary/10 flex flex-col overflow-hidden`}
           style={
             !IS_MOBILE && viewMode === 'default'
               ? { width: sidebarWidth != null ? `${sidebarWidth}px` : 'clamp(340px, 30%, 420px)' }
               : undefined
           }
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         >
           <div className="flex-1 overflow-y-auto">
             {filteredReviews.map((review) => (
@@ -152,7 +142,7 @@ export function ReviewInboxPanel({
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Resize handle */}
         {!IS_MOBILE && viewMode === 'default' && (
@@ -167,15 +157,10 @@ export function ReviewInboxPanel({
         )}
 
         {/* Right: Conversation thread (split mode) */}
-        <AnimatePresence>
-          {!IS_MOBILE && viewMode === 'default' && (
-            <motion.div
+        {!IS_MOBILE && viewMode === 'default' && (
+            <div
               key="split-panel"
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="flex-1 min-w-0 flex flex-col overflow-hidden"
+              className="animate-fade-slide-in flex-1 min-w-0 flex flex-col overflow-hidden"
             >
               {activeReview ? (
                 <ConversationThread
@@ -192,20 +177,14 @@ export function ReviewInboxPanel({
                   </div>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
         {/* Slide-over panel (table mode) */}
-        <AnimatePresence>
-          {!IS_MOBILE && viewMode === 'table' && slideOverOpen && activeReview && (
-            <motion.div
+        {!IS_MOBILE && viewMode === 'table' && slideOverOpen && activeReview && (
+            <div
               key="slide-over"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="absolute right-0 top-0 bottom-0 w-[480px] 2xl:w-[560px] bg-background border-l border-primary/10 shadow-2xl shadow-black/20 flex flex-col z-20"
+              className="animate-fade-in absolute right-0 top-0 bottom-0 w-[480px] 2xl:w-[560px] bg-background border-l border-primary/10 shadow-2xl shadow-black/20 flex flex-col z-20"
             >
               <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 flex-shrink-0 bg-secondary/20">
                 <span className="typo-caption text-foreground/70">Review Detail</span>
@@ -224,9 +203,8 @@ export function ReviewInboxPanel({
                   isProcessing={isProcessing}
                 />
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
         {/* Mobile: Full-screen overlay */}
         {IS_MOBILE && activeReview && (

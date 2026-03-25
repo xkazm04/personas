@@ -1,5 +1,4 @@
 import { X } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { CompilationStepper } from './CompilationStepper';
 import type { AgentIR } from '@/lib/types/designTypes';
@@ -12,13 +11,9 @@ interface DesignPhaseRefiningProps {
 
 export function DesignPhaseRefining({ outputLines, result, onCancel }: DesignPhaseRefiningProps) {
   return (
-    <motion.div
+    <div
       key="refining"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.15 }}
-      className="space-y-3"
+      className="animate-fade-slide-in space-y-3"
     >
       {result && (
         <div className="bg-secondary/30 rounded-xl px-4 py-3 border border-primary/20">
@@ -38,6 +33,6 @@ export function DesignPhaseRefining({ outputLines, result, onCancel }: DesignPha
         <X className="w-3.5 h-3.5" />
         Cancel
       </button>
-    </motion.div>
+    </div>
   );
 }

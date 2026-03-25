@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { BookOpen, X } from 'lucide-react';
 import { RecipePageFlipLoader } from '../../shared/RecipePageFlipLoader';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
@@ -72,15 +71,9 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
 
   return (
     <div className="grid gap-3 p-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-      <AnimatePresence mode="popLayout">
-        {recipes.map((recipe) => (
-          <motion.div
+      {recipes.map((recipe) => (
+          <div className="animate-fade-slide-in"
             key={recipe.id}
-            layout
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.15 }}
           >
             <RecipeCard
               recipe={recipe}
@@ -115,9 +108,8 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
                 />
               </div>
             )}
-          </motion.div>
+          </div>
         ))}
-      </AnimatePresence>
     </div>
   );
 }

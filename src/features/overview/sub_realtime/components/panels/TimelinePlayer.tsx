@@ -1,5 +1,4 @@
 import { memo, useCallback, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, X, Gauge, Calendar, History,
   ChevronRight, SkipBack,
@@ -101,7 +100,7 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar(props: Props) {
   const cursorTime = rangeStart + cursorMs;
 
   return (
-    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.25, ease: 'easeOut' }} className="flex flex-col bg-gradient-to-r from-background via-secondary/20 to-background border-t border-cyan-500/15">
+    <div className="animate-fade-slide-in flex flex-col bg-gradient-to-r from-background via-secondary/20 to-background border-t border-cyan-500/15">
       <div ref={trackRef} className="relative h-1.5 w-full cursor-pointer group" role="slider" tabIndex={0} aria-label="Timeline position" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} onClick={handleTrackClick} onMouseMove={handleTrackDrag} onKeyDown={handleSliderKeyDown}>
         <div className="absolute inset-0 bg-primary/5" />
         <EventDensityMarkers timestamps={eventTimestamps} rangeStart={rangeStart} rangeEnd={rangeEnd} />
@@ -123,14 +122,14 @@ const ActiveTimelineBar = memo(function ActiveTimelineBar(props: Props) {
         <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/30 border border-primary/8 text-sm text-muted-foreground/50 font-bold tracking-wider"><History className="w-3 h-3" />{range === '1d' ? '24H' : '7D'}</div>
         <button onClick={onExitReplay} aria-label="Exit replay" className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/8 border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/15 transition-all active:scale-[0.93]" title="Exit replay"><X className="w-3.5 h-3.5" /></button>
       </div>
-    </motion.div>
+    </div>
   );
 });
 
 export default function TimelinePlayer(props: Props) {
   return (
-    <AnimatePresence mode="wait">
+    <>
       {props.active ? <ActiveTimelineBar key="active" {...props} /> : <ReplayEntryBar key="entry" loading={props.loading} onEnterReplay={props.onEnterReplay} />}
-    </AnimatePresence>
+    </>
   );
 }

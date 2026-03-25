@@ -1,3 +1,4 @@
+pub mod alert_rules;
 pub mod events;
 pub mod manual_reviews;
 pub mod messages;
@@ -5,3 +6,4 @@ pub mod reviews;
 pub mod template_feedback;
 pub mod chat;
 pub mod smee_relays;
+pub mod shared_events;

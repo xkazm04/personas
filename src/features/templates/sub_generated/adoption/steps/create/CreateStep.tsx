@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Wrench, Workflow } from 'lucide-react';
 import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
@@ -115,8 +114,8 @@ export function CreateStep() {
   if (!draft) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          className="w-8 h-8 rounded-full border-2 border-muted-foreground/20 border-t-violet-400/60" />
+        <div
+          className="animate-fade-in w-8 h-8 rounded-full border-2 border-muted-foreground/20 border-t-violet-400/60" />
         <p className="text-sm text-muted-foreground/60">Waiting for persona draft...</p>
       </div>
     );

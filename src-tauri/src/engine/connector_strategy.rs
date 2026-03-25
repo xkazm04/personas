@@ -22,15 +22,20 @@ pub struct ResolvedToken {
     /// `None` when the provider didn't include `expires_in` or the credential
     /// is not OAuth (e.g. API key).
     pub expires_in_secs: Option<u64>,
+    /// Rotated refresh token returned by the provider during token exchange.
+    /// Many providers (Google, Microsoft, GitHub) may return a new refresh_token
+    /// alongside the access_token. Must be persisted to avoid credential death
+    /// when providers enforce refresh token rotation (RFC 6749 Section 6).
+    pub refresh_token: Option<String>,
 }
 
 impl ResolvedToken {
     pub fn plain(token: String) -> Self {
-        Self { token, expires_in_secs: None }
+        Self { token, expires_in_secs: None, refresh_token: None }
     }
 
     pub fn with_expiry(token: String, expires_in_secs: u64) -> Self {
-        Self { token, expires_in_secs: Some(expires_in_secs) }
+        Self { token, expires_in_secs: Some(expires_in_secs), refresh_token: None }
     }
 }
 
@@ -424,10 +429,15 @@ async fn exchange_google_refresh_token(
         .ok_or_else(|| AppError::Internal("Google token refresh did not return access_token".into()))?;
 
     let expires_in = value.get("expires_in").and_then(|v| v.as_u64());
+    let new_refresh_token = value
+        .get("refresh_token")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
-    Ok(match expires_in {
-        Some(secs) => ResolvedToken::with_expiry(token, secs),
-        None => ResolvedToken::plain(token),
+    Ok(ResolvedToken {
+        token,
+        expires_in_secs: expires_in,
+        refresh_token: new_refresh_token,
     })
 }
 
@@ -513,10 +523,15 @@ async fn exchange_microsoft_refresh_token(
         .ok_or_else(|| AppError::Internal("Microsoft token refresh did not return access_token".into()))?;
 
     let expires_in = value.get("expires_in").and_then(|v| v.as_u64());
+    let new_refresh_token = value
+        .get("refresh_token")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
-    Ok(match expires_in {
-        Some(secs) => ResolvedToken::with_expiry(token, secs),
-        None => ResolvedToken::plain(token),
+    Ok(ResolvedToken {
+        token,
+        expires_in_secs: expires_in,
+        refresh_token: new_refresh_token,
     })
 }
 

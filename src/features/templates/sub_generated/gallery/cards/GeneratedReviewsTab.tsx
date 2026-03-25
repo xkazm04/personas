@@ -64,6 +64,8 @@ export default function GeneratedReviewsTab({
     }
   };
   const [componentFilter, setComponentFilter] = useState<string[]>([]);
+  const [difficultyFilter, setDifficultyFilter] = useState<string[]>([]);
+  const [setupFilter, setSetupFilter] = useState<string[]>([]);
   const modals = useModalStack<TemplateModal>();
 
   useAdoptionCompletionNotifier(templateAdoptActive, modals.isOpen('adopt'));
@@ -75,6 +77,7 @@ export default function GeneratedReviewsTab({
     gallery.allItems, gallery.total, gallery.sortBy,
     credentials, connectorDefinitions, gallery.refresh,
     gallery.unfilteredTotal, gallery.coverageFilter, componentFilter,
+    difficultyFilter, setupFilter,
   );
 
   const handlePersonaCreated = () => {
@@ -182,6 +185,8 @@ export default function GeneratedReviewsTab({
         aiCliLog={gallery.aiCliLog}
         hasRecommendations={gallery.recommendedTemplates.length > 0}
         onOpenRecommended={() => modals.open({ type: 'recommended' })}
+        onDifficultyFilterChange={setDifficultyFilter}
+        onSetupFilterChange={setSetupFilter}
       />
 
       {viewMode === 'list' && showTrending && (
@@ -199,6 +204,7 @@ export default function GeneratedReviewsTab({
           availableCategories={gallery.availableCategories}
           allItems={gallery.allItems}
           readyTemplates={gallery.readyTemplates}
+          userServiceTypes={credentialServiceTypesArray}
           onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setViewMode('list'); }}
           onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
         />

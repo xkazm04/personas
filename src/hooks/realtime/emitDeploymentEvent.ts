@@ -9,6 +9,7 @@
  */
 
 import { emit } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 
 export type DeploymentEventType =
@@ -52,7 +53,7 @@ export function emitDeploymentEvent(opts: EmitOptions): void {
   };
 
   // Emit through Tauri's event system -- the singleton listener picks it up
-  emit('event-bus', event).catch(() => {
+  emit(EventName.EVENT_BUS, event).catch(() => {
     // If Tauri emit fails (e.g. in tests), silently ignore
   });
 }

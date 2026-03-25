@@ -7,6 +7,7 @@ import type { PersonaTrigger } from "@/lib/bindings/PersonaTrigger";
 import type { PersonaEventSubscription } from "@/lib/bindings/PersonaEventSubscription";
 import type { PersonaAutomation } from "@/lib/bindings/PersonaAutomation";
 import type { CreatePersonaInput } from "@/lib/bindings/CreatePersonaInput";
+import type { EffectiveModelConfig } from "@/lib/bindings/EffectiveModelConfig";
 import type { UpdatePersonaInput } from "@/lib/bindings/UpdatePersonaInput";
 
 /** Batched persona detail returned by the single `get_persona_detail` IPC command. */
@@ -54,6 +55,10 @@ export const getPersonaSummaries = () =>
 export const getPersonaDetail = (id: string) =>
   invoke<PersonaDetailResponse>("get_persona_detail", { id });
 
+/** Resolve the effective model config for a persona (global -> workspace -> agent cascade). */
+export const resolveEffectiveConfig = (personaId: string) =>
+  invoke<EffectiveModelConfig>("resolve_effective_config", { personaId });
+
 // ============================================================================
 // Import / Export
 // ============================================================================
@@ -94,6 +99,7 @@ export interface PartialPersonaUpdate {
   max_turns?: number | null;
   design_context?: string | null;
   group_id?: string | null;
+  parameters?: string | null;
 }
 
 // ============================================================================
@@ -164,6 +170,12 @@ export interface UpdateNotificationsOp {
   notification_channels: string;
 }
 
+/** Update free parameters (lightweight, no rebuild). */
+export interface UpdateParametersOp {
+  kind: 'UpdateParameters';
+  parameters: string | null;
+}
+
 /**
  * Discriminated union of all persona mutation intents.
  * Each variant maps to specific fields in PartialPersonaUpdate but preserves
@@ -178,7 +190,8 @@ export type PersonaOperation =
   | UpdateDesignContextOp
   | ApplyDesignResultOp
   | UpdateBudgetOp
-  | UpdateNotificationsOp;
+  | UpdateNotificationsOp
+  | UpdateParametersOp;
 
 /** Map a named operation to its underlying PartialPersonaUpdate. */
 export function operationToPartial(op: PersonaOperation): PartialPersonaUpdate {
@@ -204,6 +217,8 @@ export function operationToPartial(op: PersonaOperation): PartialPersonaUpdate {
       return { max_budget_usd: op.max_budget_usd };
     case 'UpdateNotifications':
       return { notification_channels: op.notification_channels };
+    case 'UpdateParameters':
+      return { parameters: op.parameters };
   }
 }
 
@@ -236,5 +251,6 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     max_turns: partial.max_turns !== undefined ? partial.max_turns : null,
     design_context: partial.design_context !== undefined ? partial.design_context : null,
     group_id: partial.group_id !== undefined ? partial.group_id : null,
+    parameters: partial.parameters !== undefined ? partial.parameters : null,
   };
 }

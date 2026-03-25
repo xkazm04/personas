@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
 import { ToastContainer } from "@/features/shared/components/feedback/ToastContainer";
@@ -10,6 +9,7 @@ import { AriaLiveProvider } from "@/features/shared/components/feedback/AriaLive
 import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
 import TitleBar from "@/features/shared/components/layout/TitleBar";
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Lazy-load overlays and background services — none needed for first paint.
 // BackgroundServices hosts hooks that import domain stores (~300 KB deferred).
@@ -20,6 +20,8 @@ const GuidedTour = lazy(() => import("@/features/onboarding/components/GuidedTou
 const ExecutionMiniPlayer = lazy(() => import("@/features/execution/components/ExecutionMiniPlayer"));
 const HealingToast = lazy(() => import("@/features/shared/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const AlertToastContainer = lazy(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
+const NotificationCenter = lazy(() => import("@/features/gitlab/components/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
+const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 
 export default function App() {
   const [consented, setConsented] = useState(hasUserConsented);
@@ -28,8 +30,9 @@ export default function App() {
     // Dynamic imports: event bridge + middleware + background hooks.
     // These pull in all 5 domain stores — loading them async keeps
     // them out of the main bundle (~300 KB savings).
+    void import("@/lib/storeBusWiring").then(m => m.initStoreBus());
     void import("@/lib/eventBridge").then(m => m.initAllListeners());
-    void import("@/lib/execution/knowledgeMiddleware").then(m => m.registerKnowledgeMiddleware());
+    void import("@/lib/execution/middleware").then(m => m.registerAllMiddleware());
     void useAuthStore.getState().initialize();
     // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.
     // Only loaded in dev builds; tree-shaken from production.
@@ -37,6 +40,8 @@ export default function App() {
       void import("@/test/automation/bridge");
     }
   }, []);
+
+  const { t } = useTranslation();
 
   // Dev-mode mobile preview toggle: Ctrl+Shift+M
   const isMobilePreview = useMobilePreview();
@@ -54,15 +59,14 @@ export default function App() {
   }, []);
 
   return (
-    <MotionConfig reducedMotion="user">
-      <VibeThemeProvider>
+    <VibeThemeProvider>
         <AriaLiveProvider>
         <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:fixed focus:top-1 focus:left-1 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            Skip to content
+            {t.chrome.skip_to_content}
           </a>
           <TitleBar />
           {!consented && <FirstUseConsentModal onAccept={() => setConsented(true)} />}
@@ -78,6 +82,8 @@ export default function App() {
             <GuidedTour />
             <ExecutionMiniPlayer />
             <CommandPalette />
+            <NotificationCenter />
+            <ShareLinkHandler />
           </Suspense>
           <ToastContainer />
           {import.meta.env.DEV && isMobilePreview && (
@@ -88,6 +94,5 @@ export default function App() {
         </div>
         </AriaLiveProvider>
       </VibeThemeProvider>
-    </MotionConfig>
   );
 }

@@ -35,6 +35,7 @@ const bulkSummaryCache = createModuleCache<'latest', BulkSummary>();
 // -- Hook -------------------------------------------------------------
 
 const CONCURRENCY = 3;
+const STORE_FLUSH_INTERVAL = 5;
 
 export function useBulkHealthcheck() {
   const [isRunning, setIsRunning] = useState(false);
@@ -64,6 +65,20 @@ export function useBulkHealthcheck() {
 
     const results: BulkResult[] = [];
     let doneCount = 0;
+
+    // Batch store updates: collect patched credentials and flush periodically
+    const pendingUpdates = new Map<string, CredentialMetadata>();
+    let updatesSinceFlush = 0;
+
+    const flushStoreUpdates = () => {
+      if (pendingUpdates.size === 0) return;
+      const patches = new Map(pendingUpdates);
+      pendingUpdates.clear();
+      updatesSinceFlush = 0;
+      useVaultStore.setState((s) => ({
+        credentials: s.credentials.map((c) => patches.get(c.id) ?? c),
+      }));
+    };
 
     // Process in batches of CONCURRENCY
     const queue = [...credentials];
@@ -95,9 +110,11 @@ export function useBulkHealthcheck() {
             try {
               const updatedRaw = await credApi.patchCredentialMetadata(cred.id, patch);
               const updated = toCredentialMetadata(updatedRaw);
-              useVaultStore.setState((s) => ({
-                credentials: s.credentials.map((c) => (c.id === cred.id ? updated : c)),
-              }));
+              pendingUpdates.set(cred.id, updated);
+              updatesSinceFlush++;
+              if (updatesSinceFlush >= STORE_FLUSH_INTERVAL) {
+                flushStoreUpdates();
+              }
             } catch { /* intentional: non-critical -- healthcheck metadata persistence is best-effort */ }
           } catch (e) {
             success = false;
@@ -123,6 +140,9 @@ export function useBulkHealthcheck() {
     // Launch CONCURRENCY workers
     const workers = Array.from({ length: Math.min(CONCURRENCY, credentials.length) }, () => worker());
     await Promise.all(workers);
+
+    // Flush any remaining batched store updates
+    flushStoreUpdates();
 
     // Build summary
     const passed = results.filter((r) => r.success).length;

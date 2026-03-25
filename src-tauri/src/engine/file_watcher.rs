@@ -12,6 +12,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::Mutex;
@@ -27,10 +28,20 @@ pub struct RawFsEvent {
     pub paths: Vec<String>,
 }
 
+/// Default debounce window in milliseconds. During file-save bursts (IDE
+/// auto-save, git operations) hundreds of FS events can arrive for the same
+/// path in milliseconds. Events for a given path are suppressed for this
+/// duration after the first trigger-match, reducing work from
+/// O(burst_size × triggers) to O(unique_paths × triggers).
+const DEBOUNCE_MS: u64 = 500;
+
 /// Shared state for the file watcher.
 pub struct FileWatcherState {
     watcher: Option<RecommendedWatcher>,
     registered: HashMap<String, HashSet<String>>,
+    /// Tracks when each normalized path last caused a trigger publish.
+    /// Used to suppress duplicate events within the debounce window.
+    last_fired: HashMap<String, Instant>,
 }
 
 impl FileWatcherState {
@@ -38,6 +49,7 @@ impl FileWatcherState {
         Self {
             watcher: None,
             registered: HashMap::new(),
+            last_fired: HashMap::new(),
         }
     }
 }
@@ -91,7 +103,10 @@ pub async fn file_watcher_tick(
         tracing::warn!("file_watcher reconcile error: {e}");
     }
 
-    // Phase 2: Drain queued events
+    // Phase 2: Drain queued events and coalesce by normalized path.
+    // During FS bursts (IDE auto-save, git checkout) the same path appears
+    // many times — coalescing reduces matching work from O(burst × triggers)
+    // to O(unique_paths × triggers).
     let mut raw_events = Vec::new();
     {
         let mut receiver = rx.lock().await;
@@ -104,19 +119,54 @@ pub async fn file_watcher_tick(
         return;
     }
 
+    // Coalesce: keep one event per normalized path, with the latest event kind
+    // and all unique kinds merged into the payload.
+    let coalesced = coalesce_events(&raw_events);
+
+    let debounce_window = Duration::from_millis(DEBOUNCE_MS);
+    let now = Instant::now();
+
+    // Filter out paths that fired within the debounce window
+    let mut fw_state = state.lock().await;
+    let coalesced: Vec<_> = coalesced
+        .into_iter()
+        .filter(|(norm_path, _, _)| {
+            if let Some(last) = fw_state.last_fired.get(norm_path.as_str()) {
+                now.duration_since(*last) >= debounce_window
+            } else {
+                true
+            }
+        })
+        .collect();
+
+    if coalesced.is_empty() {
+        // Prune stale last_fired entries while we hold the lock
+        prune_last_fired(&mut fw_state.last_fired, debounce_window, now);
+        drop(fw_state);
+        return;
+    }
+
+    // Release lock during trigger matching (CPU-bound) to avoid blocking
+    // other file-watcher events. Re-acquire only for last_fired updates.
+    drop(fw_state);
+
     // Phase 3: Match triggers to events (reusing already-loaded triggers)
+    let now_utc = chrono::Utc::now();
     let fw_triggers: Vec<_> = triggers
         .iter()
+        .filter(|t| t.is_within_active_window(now_utc))
         .map(|t| {
             let config = t.parse_config();
             (t.id.clone(), t.persona_id.clone(), t.use_case_id.clone(), config)
         })
         .collect();
 
-    // Phase 4: Match and publish
-    for raw in &raw_events {
+    // Phase 4: Match and publish (over coalesced, debounced events)
+    let mut fired_paths: Vec<String> = Vec::new();
+    for (norm_path, kind, paths) in &coalesced {
+        let mut matched = false;
         for (trigger_id, persona_id, use_case_id, config) in &fw_triggers {
-            if !matches_trigger(config, &raw.kind, &raw.paths) {
+            if !matches_trigger(config, kind, paths) {
                 continue;
             }
 
@@ -127,8 +177,8 @@ pub async fn file_watcher_tick(
             };
 
             let payload = serde_json::json!({
-                "event_kind": raw.kind,
-                "paths": raw.paths,
+                "event_kind": kind,
+                "paths": paths,
             });
 
             let input = CreatePersonaEventInput {
@@ -144,8 +194,57 @@ pub async fn file_watcher_tick(
             if let Err(e) = event_repo::publish(pool, input) {
                 tracing::warn!(trigger_id = %trigger_id, "file_watcher publish error: {e}");
             }
+            matched = true;
+        }
+        if matched {
+            fired_paths.push(norm_path.clone());
         }
     }
+
+    // Re-acquire lock briefly for last_fired bookkeeping
+    let mut fw_state = state.lock().await;
+    for path in fired_paths {
+        fw_state.last_fired.insert(path, now);
+    }
+    // Prune stale last_fired entries to prevent unbounded growth
+    prune_last_fired(&mut fw_state.last_fired, debounce_window, now);
+    drop(fw_state);
+}
+
+/// Normalize a path for dedup: lowercase + forward slashes.
+fn normalize_path(p: &str) -> String {
+    p.to_lowercase().replace('\\', "/")
+}
+
+/// Coalesce raw FS events by normalized path. Returns
+/// `(normalized_path, latest_kind, original_paths)` tuples, one per unique path.
+fn coalesce_events(raw: &[RawFsEvent]) -> Vec<(String, String, Vec<String>)> {
+    let mut map: HashMap<String, (String, Vec<String>)> = HashMap::new();
+    for evt in raw {
+        for path in &evt.paths {
+            let norm = normalize_path(path);
+            map.entry(norm)
+                .and_modify(|(kind, _)| {
+                    // Keep the latest event kind (last write wins)
+                    *kind = evt.kind.clone();
+                })
+                .or_insert_with(|| (evt.kind.clone(), vec![path.clone()]));
+        }
+    }
+    map.into_iter()
+        .map(|(norm, (kind, paths))| (norm, kind, paths))
+        .collect()
+}
+
+/// Remove `last_fired` entries older than 2× the debounce window to prevent
+/// unbounded growth. Entries within the window are kept for active debouncing.
+fn prune_last_fired(
+    last_fired: &mut HashMap<String, Instant>,
+    debounce: Duration,
+    now: Instant,
+) {
+    let prune_threshold = debounce * 2;
+    last_fired.retain(|_, t| now.duration_since(*t) < prune_threshold);
 }
 
 fn matches_trigger(config: &TriggerConfig, kind: &str, paths: &[String]) -> bool {
@@ -229,13 +328,13 @@ async fn reconcile_watches(
                 let paths: Vec<String> = event.paths.iter()
                     .filter_map(|p| p.to_str().map(String::from))
                     .collect();
-                if !paths.is_empty() {
-                    if tx.try_send(RawFsEvent {
+                if !paths.is_empty()
+                    && tx.try_send(RawFsEvent {
                         kind: kind_str.into(),
                         paths,
-                    }).is_err() {
-                        dropped.fetch_add(1, Ordering::Relaxed);
-                    }
+                    }).is_err()
+                {
+                    dropped.fetch_add(1, Ordering::Relaxed);
                 }
             }
         })
@@ -307,7 +406,7 @@ async fn reconcile_watches(
 /// Returns the set of paths that should be `unwatch()`-ed. A path is stale when:
 /// - Its owning trigger was deleted (`removed_trigger_paths`)
 /// - Its owning trigger changed watch_paths (`changed_trigger_old_paths`)
-/// …AND the path is not still required by another trigger in `active_paths`.
+///   …AND the path is not still required by another trigger in `active_paths`.
 fn compute_stale_paths(
     registered: &HashMap<String, HashSet<String>>,
     wanted_ids: &HashSet<String>,
@@ -329,10 +428,11 @@ fn compute_stale_paths(
         }
     }
 
-    // Build active set: paths still registered (after retain) + new paths from changes
+    // Build active set: paths still registered (excluding changed triggers) + new paths from changes
+    let changed_ids: HashSet<&str> = changed_triggers.iter().map(|(id, _)| id.as_str()).collect();
     let mut active: HashSet<String> = HashSet::new();
     for (trigger_id, paths) in registered {
-        if wanted_ids.contains(trigger_id) {
+        if wanted_ids.contains(trigger_id) && !changed_ids.contains(trigger_id.as_str()) {
             active.extend(paths.iter().cloned());
         }
     }
@@ -458,5 +558,63 @@ mod tests {
         let state = FileWatcherState::new();
         assert!(state.watcher.is_none());
         assert!(state.registered.is_empty());
+        assert!(state.last_fired.is_empty());
+    }
+
+    #[test]
+    fn test_coalesce_deduplicates_same_path() {
+        let events = vec![
+            RawFsEvent { kind: "modify".into(), paths: vec!["/src/main.rs".into()] },
+            RawFsEvent { kind: "modify".into(), paths: vec!["/src/main.rs".into()] },
+            RawFsEvent { kind: "modify".into(), paths: vec!["/src/main.rs".into()] },
+        ];
+        let coalesced = coalesce_events(&events);
+        assert_eq!(coalesced.len(), 1);
+        assert_eq!(coalesced[0].1, "modify");
+    }
+
+    #[test]
+    fn test_coalesce_keeps_distinct_paths() {
+        let events = vec![
+            RawFsEvent { kind: "modify".into(), paths: vec!["/src/a.rs".into()] },
+            RawFsEvent { kind: "create".into(), paths: vec!["/src/b.rs".into()] },
+        ];
+        let coalesced = coalesce_events(&events);
+        assert_eq!(coalesced.len(), 2);
+    }
+
+    #[test]
+    fn test_coalesce_last_kind_wins() {
+        let events = vec![
+            RawFsEvent { kind: "create".into(), paths: vec!["/src/file.rs".into()] },
+            RawFsEvent { kind: "modify".into(), paths: vec!["/src/file.rs".into()] },
+        ];
+        let coalesced = coalesce_events(&events);
+        assert_eq!(coalesced.len(), 1);
+        assert_eq!(coalesced[0].1, "modify");
+    }
+
+    #[test]
+    fn test_coalesce_normalizes_backslashes() {
+        let events = vec![
+            RawFsEvent { kind: "modify".into(), paths: vec!["C:\\src\\file.rs".into()] },
+            RawFsEvent { kind: "modify".into(), paths: vec!["c:/src/file.rs".into()] },
+        ];
+        let coalesced = coalesce_events(&events);
+        assert_eq!(coalesced.len(), 1);
+    }
+
+    #[test]
+    fn test_prune_last_fired_removes_old() {
+        let mut map = HashMap::new();
+        let now = Instant::now();
+        let debounce = Duration::from_millis(500);
+        // This entry is older than 2× debounce → should be pruned
+        map.insert("/old".into(), now - Duration::from_secs(2));
+        // This entry is recent → should be kept
+        map.insert("/recent".into(), now - Duration::from_millis(100));
+        prune_last_fired(&mut map, debounce, now);
+        assert!(!map.contains_key("/old"));
+        assert!(map.contains_key("/recent"));
     }
 }

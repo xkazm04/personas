@@ -10,16 +10,27 @@
   "services": [
     { "toolName": "read_file", "label": "Read File" },
     { "toolName": "list_files", "label": "List Files" },
-    { "toolName": "search_code", "label": "Search Code" }
+    { "toolName": "search_code", "label": "Search Code" },
+    { "toolName": "get_contexts", "label": "Get Context Map" },
+    { "toolName": "get_context_detail", "label": "Get Context Detail" },
+    { "toolName": "list_ideas", "label": "List Ideas" },
+    { "toolName": "create_idea", "label": "Create Idea" },
+    { "toolName": "update_idea_status", "label": "Triage Idea" },
+    { "toolName": "list_tasks", "label": "List Tasks" },
+    { "toolName": "create_task", "label": "Create Task" }
   ],
-  "events": [],
+  "events": [
+    { "id": "idea_created", "name": "Idea Created", "description": "Fired when a new idea is added to the backlog" },
+    { "id": "task_completed", "name": "Task Completed", "description": "Fired when a dev task finishes execution" },
+    { "id": "scan_completed", "name": "Scan Completed", "description": "Fired when a codebase scan finishes with new ideas" }
+  ],
   "metadata": {
     "template_enabled": true,
     "is_builtin": true,
     "always_active": true,
     "connection_mode": "desktop_bridge",
     "min_tier": "builder",
-    "summary": "Access local codebases registered in Dev Tools. Enables agents to read, search, and analyze project files for implementation tasks, impact analysis, and code review.",
+    "summary": "Access local codebases registered in Dev Tools. Provides file access, context maps for quick orientation, and idea/task management for backlog tracking. Enables agents to read, search, analyze project files, create and triage ideas, and execute implementation tasks.",
     "auth_type": "builtin",
     "auth_type_label": "Project",
     "auth_methods": [

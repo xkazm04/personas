@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Radio, Trash2, Zap } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
@@ -43,24 +42,18 @@ function InlineDeleteButton({
       data-inline-delete={id}
       className="p-1 text-muted-foreground/70 hover:text-red-400 transition-colors"
     >
-      <AnimatePresence mode="wait" initial={false}>
-        {confirming ? (
-          <motion.span
+      {confirming ? (
+          <span
             key="confirm"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: [1, 1.04, 1] }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            className="text-sm font-semibold text-red-400"
+            className="animate-fade-slide-in text-sm font-semibold text-red-400"
           >
             Confirm?
-          </motion.span>
+          </span>
         ) : (
-          <motion.span key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <Trash2 className="w-3 h-3" />
-          </motion.span>
+          <span key="icon">
+            <Trash2 className="animate-fade-slide-in w-3 h-3" />
+          </span>
         )}
-      </AnimatePresence>
     </button>
   );
 }

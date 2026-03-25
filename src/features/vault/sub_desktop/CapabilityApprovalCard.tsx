@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Shield } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import {
@@ -17,11 +16,8 @@ interface CapabilityApprovalCardProps {
 
 export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, approving }: CapabilityApprovalCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      className="overflow-hidden"
+    <div
+      className="animate-fade-slide-in overflow-hidden"
     >
       <div className="p-4 rounded-xl border border-orange-500/20 bg-gradient-to-b from-orange-500/5 to-transparent space-y-3">
         <div className="flex items-center gap-2">
@@ -100,6 +96,6 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

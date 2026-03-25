@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Trash2, ChevronRight, GitBranch, GitFork } from 'lucide-react';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
@@ -26,12 +25,9 @@ export function TeamCard({
   onConfirmDelete,
 }: TeamCardProps) {
   return (
-    <motion.div
+    <div
       key={team.id}
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.25 }}
-      className="group relative p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
+      className="animate-fade-slide-in group relative p-4 rounded-xl bg-secondary/40 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
       onClick={() => onSelect(team.id)}
     >
       {/* Color accent bar */}
@@ -73,14 +69,10 @@ export function TeamCard({
           >
             <GitFork className="w-3.5 h-3.5" />
           </button>
-          <AnimatePresence mode="wait">
-            {confirmDeleteId === team.id ? (
-              <motion.div
+          {confirmDeleteId === team.id ? (
+              <div
                 key="confirm"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="flex items-center gap-1.5"
+                className="animate-fade-slide-in flex items-center gap-1.5"
               >
                 <button
                   onClick={() => {
@@ -97,20 +89,16 @@ export function TeamCard({
                 >
                   Cancel
                 </button>
-              </motion.div>
+              </div>
             ) : (
-              <motion.button
+              <button
                 key="trash"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
                 onClick={() => onConfirmDelete(team.id)}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-all"
+                className="animate-fade-slide-in opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground/80 hover:text-red-400 transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </motion.button>
+              </button>
             )}
-          </AnimatePresence>
         </div>
       </div>
 
@@ -148,6 +136,6 @@ export function TeamCard({
         </div>
         <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-indigo-400/60 group-hover:translate-x-0.5 transition-all" />
       </div>
-    </motion.div>
+    </div>
   );
 }

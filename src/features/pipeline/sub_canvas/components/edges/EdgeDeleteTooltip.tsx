@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Trash2, X } from 'lucide-react';
 import { useViewportClampFixed } from '@/hooks/utility/interaction/useViewportClamp';
 import { CONNECTION_TYPE_STYLES, getConnectionStyle } from '../../libs/teamConstants';
@@ -45,13 +44,9 @@ export default function EdgeDeleteTooltip({
   }, [onClose]);
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial={{ opacity: 0, scale: 0.85 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.85 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-      className="fixed z-50 flex flex-col gap-2 p-3 rounded-xl bg-secondary/95 backdrop-blur-md border border-primary/15 shadow-xl shadow-black/20 min-w-[180px]"
+      className="animate-fade-slide-in fixed z-50 flex flex-col gap-2 p-3 rounded-xl bg-secondary/95 backdrop-blur-md border border-primary/15 shadow-xl shadow-black/20 min-w-[180px]"
       style={{ left: clampedPos.x, top: clampedPos.y, transform: 'translate(-50%, -120%)' }}
     >
       {/* Header */}
@@ -128,6 +123,6 @@ export default function EdgeDeleteTooltip({
         <Trash2 className="w-3 h-3" />
         Delete Connection
       </button>
-    </motion.div>
+    </div>
   );
 }

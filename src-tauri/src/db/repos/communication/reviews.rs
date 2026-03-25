@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{
     CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, PersonaDesignPattern,
@@ -16,7 +16,8 @@ fn escape_like(input: &str) -> String {
 // Row mappers
 // ============================================================================
 
-fn row_to_review(row: &Row) -> rusqlite::Result<PersonaDesignReview> {
+// row_to_review uses custom logic (had_references, adoption_count) -- keep manual
+fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaDesignReview> {
     Ok(PersonaDesignReview {
         id: row.get("id")?,
         test_case_id: row.get("test_case_id")?,
@@ -46,20 +47,11 @@ fn row_to_review(row: &Row) -> rusqlite::Result<PersonaDesignReview> {
     })
 }
 
-fn row_to_pattern(row: &Row) -> rusqlite::Result<PersonaDesignPattern> {
-    Ok(PersonaDesignPattern {
-        id: row.get("id")?,
-        pattern_type: row.get("pattern_type")?,
-        pattern_text: row.get("pattern_text")?,
-        trigger_condition: row.get("trigger_condition")?,
-        confidence: row.get("confidence")?,
-        source_review_ids: row.get("source_review_ids")?,
-        usage_count: row.get("usage_count")?,
-        last_validated_at: row.get("last_validated_at")?,
-        is_active: row.get::<_, i32>("is_active")? != 0,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_pattern -> PersonaDesignPattern {
+    id, pattern_type, pattern_text, trigger_condition,
+    confidence, source_review_ids, usage_count,
+    last_validated_at, is_active [bool], created_at,
+});
 
 // ============================================================================
 // Design Reviews

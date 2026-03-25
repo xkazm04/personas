@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { motion } from 'framer-motion';
 import { Check, AlertTriangle, Sparkles, CircleDot } from 'lucide-react';
 import { ROLE_COLORS, PersonaAvatar } from '../../libs/teamConstants';
 
@@ -111,17 +110,15 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
         </div>
       )}
 
-      <motion.div
-        className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        animate={handleGlowAnimation}
-        transition={handleGlowTransition}
+      <div
+        className="animate-fade-in absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full"
       >
         <Handle
           type="target"
           position={Position.Top}
           className="!w-3.5 !h-3.5 !rounded-full !border-2 !border-indigo-500/40 !bg-background group-hover:!scale-150 group-hover:!border-indigo-400 !transition-transform"
         />
-      </motion.div>
+      </div>
 
       <div className="flex items-center gap-2.5">
         <PersonaAvatar icon={icon} color={color} />
@@ -137,17 +134,15 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
         </div>
       </div>
 
-      <motion.div
-        className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 rounded-full"
-        animate={handleGlowAnimation}
-        transition={handleGlowTransition}
+      <div
+        className="animate-fade-in absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 rounded-full"
       >
         <Handle
           type="source"
           position={Position.Bottom}
           className="!w-3.5 !h-3.5 !rounded-full !border-2 !border-indigo-500/40 !bg-background group-hover:!scale-150 group-hover:!border-indigo-400 !transition-transform"
         />
-      </motion.div>
+      </div>
     </div>
   );
 }

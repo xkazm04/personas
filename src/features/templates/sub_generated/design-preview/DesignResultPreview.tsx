@@ -49,7 +49,8 @@ export function DesignResultPreview({
   onTriggerEnabledToggle,
   feasibility,
 }: DesignResultPreviewProps) {
-  const suggestedChannels = result.suggested_notification_channels ?? [];
+  const rawChannels = result.suggested_notification_channels;
+  const suggestedChannels = Array.isArray(rawChannels) ? rawChannels : [];
 
   return (
     <div className="space-y-6">

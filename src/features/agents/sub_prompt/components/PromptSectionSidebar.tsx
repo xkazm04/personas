@@ -1,7 +1,5 @@
 import { useMemo, useRef, useEffect, useCallback } from 'react';
 import { Check, Save } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-
 export type SubTab = 'identity' | 'instructions' | 'toolGuidance' | 'examples' | 'errorHandling' | 'webSearch' | 'custom';
 
 export interface SidebarEntry {
@@ -149,19 +147,14 @@ export function PromptSectionSidebar({
 
       {/* Save status */}
       <div className="flex items-center gap-2 px-1 py-1 flex-shrink-0">
-        <AnimatePresence>
-          {showSaved && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="flex items-center gap-1 text-sm text-emerald-400"
+        {showSaved && (
+            <div
+              className="animate-fade-slide-in flex items-center gap-1 text-sm text-emerald-400"
             >
               <Check className="w-3 h-3" />
               Saved
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
         {isSaving && (
           <div className="flex items-center gap-1 text-sm text-muted-foreground/90">
             <Save className="w-3 h-3 animate-pulse" />

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { X, FolderOpen, Plus, Minus } from 'lucide-react';
 import { kbIngestDirectory } from '@/api/vault/database/vectorKb';
 
@@ -57,20 +56,14 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+    <div
+      className="animate-fade-slide-in fixed inset-0 z-[60] flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        className="relative w-full max-w-md bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      <div
+        className="animate-fade-slide-in relative w-full max-w-md bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-primary/10">
@@ -177,7 +170,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
             )}
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

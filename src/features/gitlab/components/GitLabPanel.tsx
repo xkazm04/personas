@@ -11,13 +11,15 @@ import { GitLabConnectionForm } from '@/features/gitlab/components/GitLabConnect
 import { GitLabAgentList } from '@/features/gitlab/components/GitLabAgentList';
 import { GitLabDeployModal } from '@/features/gitlab/components/GitLabDeployModal';
 import { GitLabPipelineViewer } from '@/features/gitlab/components/GitLabPipelineViewer';
+import { GitOpsVersionHistory } from '@/features/gitlab/components/GitOpsVersionHistory';
+import { DeploymentHistoryTab } from '@/features/gitlab/components/DeploymentHistoryTab';
 import type { CiCdTemplate } from '../data/cicdTemplates';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type TabId = 'connection' | 'agents' | 'deploy' | 'pipelines';
+type TabId = 'connection' | 'agents' | 'deploy' | 'history' | 'pipelines' | 'gitops';
 
 interface TabDef {
   id: TabId;
@@ -29,6 +31,8 @@ const TABS: TabDef[] = [
   { id: 'connection', label: 'Connection', disabledWhenOffline: false },
   { id: 'deploy', label: 'Deploy', disabledWhenOffline: true },
   { id: 'agents', label: 'Agents', disabledWhenOffline: true },
+  { id: 'history', label: 'History', disabledWhenOffline: true },
+  { id: 'gitops', label: 'GitOps', disabledWhenOffline: true },
   { id: 'pipelines', label: 'Pipelines', disabledWhenOffline: true },
 ];
 
@@ -53,12 +57,20 @@ export default function GitLabPanel() {
   const disconnect = useSystemStore((s) => s.gitlabDisconnectAction);
   const fetchProjects = useSystemStore((s) => s.gitlabFetchProjects);
   const deployPersona = useSystemStore((s) => s.gitlabDeployPersona);
+  const deployPersonaVersioned = useSystemStore((s) => s.gitlabDeployPersonaVersioned);
   const fetchAgents = useSystemStore((s) => s.gitlabFetchAgents);
   const undeployAgent = useSystemStore((s) => s.gitlabUndeployAgent);
+  const redeployAgent = useSystemStore((s) => s.gitlabRedeployAgent);
+  const redeployingAgentId = useSystemStore((s) => s.gitlabRedeployingAgentId);
   const clearError = useSystemStore((s) => s.gitlabClearError);
   const createPersona = useAgentStore((s) => s.createPersona);
 
   const isConnected = config?.isConnected ?? false;
+
+  const personaOptions = useMemo(
+    () => personas.map((p) => ({ id: p.id, name: p.name, icon: p.icon })),
+    [personas],
+  );
 
   const gitlabCredential = useMemo(
     () => credentials.find((c) => c.service_type === 'gitlab'),
@@ -69,10 +81,10 @@ export default function GitLabPanel() {
     initialize();
   }, [initialize]);
 
-  const handleConnect = async () => {
+  const handleConnect = async (instanceUrl?: string) => {
     if (!gitlabCredential) return;
     try {
-      await connectFromVault(gitlabCredential.id);
+      await connectFromVault(gitlabCredential.id, instanceUrl);
     } catch {
       // intentional: error state handled locally via store + ErrorBanner
     }
@@ -134,6 +146,7 @@ export default function GitLabPanel() {
             <GitLabConnectionForm
               isConnected={isConnected}
               username={config?.username ?? ''}
+              baseUrl={config?.baseUrl ?? 'https://gitlab.com'}
               isConnecting={isConnecting}
               onConnect={handleConnect}
               onDisconnect={handleDisconnect}
@@ -142,11 +155,12 @@ export default function GitLabPanel() {
           {activeTab === 'deploy' && isConnected && (
             <GitLabDeployModal
               projects={projects}
-              personas={personas.map((p) => ({ id: p.id, name: p.name, icon: p.icon }))}
+              personas={personaOptions}
               selectedProjectId={selectedProjectId}
               onSelectProject={handleSelectProject}
               onFetchProjects={fetchProjects}
               onDeploy={deployPersona}
+              onDeployVersioned={deployPersonaVersioned}
               onDeploySuccess={handleDeploySuccess}
               onCreateFromTemplate={handleCreateFromTemplate}
               gitlabTier="free"
@@ -158,7 +172,15 @@ export default function GitLabPanel() {
               agents={agents}
               onFetchAgents={fetchAgents}
               onUndeploy={undeployAgent}
+              onRedeploy={redeployAgent}
+              redeployingAgentId={redeployingAgentId}
             />
+          )}
+          {activeTab === 'history' && isConnected && (
+            <DeploymentHistoryTab projectId={selectedProjectId} />
+          )}
+          {activeTab === 'gitops' && isConnected && (
+            <GitOpsVersionHistory projectId={selectedProjectId} />
           )}
           {activeTab === 'pipelines' && isConnected && (
             <GitLabPipelineViewer projectId={selectedProjectId} />

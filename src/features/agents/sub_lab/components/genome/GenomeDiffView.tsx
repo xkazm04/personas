@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, ChevronRight, GitCompare, Layers, Wrench,
   Cpu, Settings2, Plus, Minus as MinusIcon, ArrowLeftRight,
@@ -177,14 +176,9 @@ function DiffSection({
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {open && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2 space-y-1">
               {entries.map((entry, i) => (
@@ -203,9 +197,8 @@ function DiffSection({
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

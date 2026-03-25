@@ -1,5 +1,4 @@
 import { Suspense, useState, startTransition } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, BarChart3, Radio } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
@@ -51,14 +50,9 @@ export default function DashboardWithSubtabs() {
       </div>
 
       {/* Content -- DashboardHome is eager, others lazy */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
+      <div
           key={subtab}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="flex-1 min-h-0 flex flex-col"
+          className="animate-fade-slide-in flex-1 min-h-0 flex flex-col"
         >
           {subtab === 'overview' ? (
             <ErrorBoundary name="Dashboard/overview">
@@ -71,8 +65,7 @@ export default function DashboardWithSubtabs() {
               </Suspense>
             </ErrorBoundary>
           )}
-        </motion.div>
-      </AnimatePresence>
+        </div>
     </div>
   );
 }

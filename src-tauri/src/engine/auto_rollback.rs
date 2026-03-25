@@ -8,6 +8,7 @@
 use serde::Serialize;
 use tauri::Emitter;
 
+use super::event_registry::event_name;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::settings;
@@ -304,7 +305,7 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
                 current_error_rate,
                 previous_error_rate,
             };
-            if let Err(e) = app.emit("auto-rollback-triggered", &event) {
+            if let Err(e) = app.emit(event_name::AUTO_ROLLBACK_TRIGGERED, &event) {
                 tracing::warn!(
                     persona_id = %persona.id,
                     error = %e,

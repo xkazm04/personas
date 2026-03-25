@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Rocket, Play } from 'lucide-react';
 import { ExecutionComparison } from '../comparison/ExecutionComparison';
 import { ExecutionListHeader } from './ExecutionListHeader';
@@ -73,11 +72,8 @@ export function ExecutionList() {
       />
 
       {executions.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col items-center text-center py-12 px-6 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl"
+        <div
+          className="animate-fade-slide-in flex flex-col items-center text-center py-12 px-6 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl"
         >
           <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mb-4">
             <Rocket className="w-5.5 h-5.5 text-primary/40" />
@@ -95,7 +91,7 @@ export function ExecutionList() {
             <Play className="w-3.5 h-3.5" />
             Try it now
           </button>
-        </motion.div>
+        </div>
       ) : (
         <div className="overflow-hidden border border-primary/20 rounded-xl backdrop-blur-sm bg-secondary/40">
           {/* Header (desktop only) */}

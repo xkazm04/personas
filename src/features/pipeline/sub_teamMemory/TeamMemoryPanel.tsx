@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Brain, ChevronDown, ChevronUp, Search, List, GitCommitVertical, GitCompareArrows, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
@@ -88,12 +87,8 @@ export default function TeamMemoryPanel({
   const hasRunData = stats?.run_counts && stats.run_counts.length > 0;
 
   return (
-    <motion.div
-      initial={{ x: -280, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: -280, opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="absolute top-14 left-3 z-30 w-72 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-xl shadow-2xl overflow-hidden"
+    <div
+      className="animate-fade-slide-in absolute top-14 left-3 z-30 w-72 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-xl shadow-2xl overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-primary/10">
@@ -296,6 +291,6 @@ export default function TeamMemoryPanel({
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

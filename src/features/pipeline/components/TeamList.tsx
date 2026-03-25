@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { Plus, Users, Zap } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -157,7 +156,7 @@ export default function TeamList() {
 
         {/* Empty State */}
         {teams.length === 0 && !showCreate && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
+          <div className="animate-fade-slide-in text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Users className="w-8 h-8 text-indigo-400/50" />
             </div>
@@ -185,7 +184,7 @@ export default function TeamList() {
                 Create Blank Team
               </Button>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Pipeline Template Gallery */}

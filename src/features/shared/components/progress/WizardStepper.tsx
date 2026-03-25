@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
 export interface WizardStep {
@@ -26,11 +25,8 @@ export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
               {/* Rail connecting to previous node */}
               {i > 0 && (
                 <div className="w-8 h-0.5 bg-primary/10 relative overflow-hidden">
-                  <motion.div
-                    className="absolute inset-y-0 left-0 bg-emerald-500/50"
-                    initial={{ width: '0%' }}
-                    animate={{ width: isCompleted || isActive ? '100%' : '0%' }}
-                    transition={RAIL_SPRING}
+                  <div
+                    className="animate-fade-in absolute inset-y-0 left-0 bg-emerald-500/50"
                   />
                 </div>
               )}
@@ -39,15 +35,12 @@ export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
               <div className="relative flex items-center justify-center">
                 {/* Pulse ring for active node */}
                 {isActive && (
-                  <motion.div
-                    className="absolute inset-0 rounded-full bg-violet-500/20"
-                    initial={{ scale: 1, opacity: 0.5 }}
-                    animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  <div
+                    className="animate-fade-slide-in absolute inset-0 rounded-full bg-violet-500/20"
                   />
                 )}
-                <motion.div
-                  className={`w-5 h-5 rounded-full flex items-center justify-center typo-heading transition-colors relative z-10 ${
+                <div
+                  className={`animate-fade-in w-5 h-5 rounded-full flex items-center justify-center typo-heading transition-colors relative z-10 ${
                     isCompleted
                       ? 'bg-emerald-500/40 text-emerald-200'
                       : isActive
@@ -55,15 +48,13 @@ export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
                         : 'bg-primary/10 text-muted-foreground/40'
                   }`}
                   data-testid={`wizard-step-node-${i}`}
-                  layout
-                  transition={RAIL_SPRING}
                 >
                   {isCompleted ? (
                     <Check className="w-3 h-3" />
                   ) : (
                     <span>{i + 1}</span>
                   )}
-                </motion.div>
+                </div>
               </div>
             </div>
           );

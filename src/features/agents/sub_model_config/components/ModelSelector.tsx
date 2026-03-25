@@ -1,9 +1,12 @@
 import { Cpu, Check, Settings2 } from 'lucide-react';
-import type { ModelProvider } from '@/lib/types/frontendTypes';
+import type { ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
+import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '../libs/OllamaCloudPresets';
 import { OllamaApiKeyField } from './OllamaApiKeyField';
 import { CustomModelConfigForm } from './CustomModelConfigForm';
 import { BudgetControls } from './BudgetControls';
+import { PromptCacheControls } from './PromptCacheControls';
+import { EffectiveConfigPanel } from './EffectiveConfigPanel';
 
 // -- Provider brand colors --
 const PROVIDER_COLORS: Record<string, string> = {
@@ -110,10 +113,17 @@ interface ModelSelectorProps {
   maxTurns?: number | null | '';
   onMaxBudgetChange?: (v: number | null | '') => void;
   onMaxTurnsChange?: (v: number | null | '') => void;
+  /** Prompt caching controls */
+  promptCachePolicy?: PromptCachePolicy;
+  onPromptCachePolicyChange?: (v: PromptCachePolicy) => void;
   /** Show unsaved indicator */
   dirty?: boolean;
   /** Hide the section header (when embedded inside another card) */
   hideHeader?: boolean;
+  /** Effective config with inheritance metadata -- shows cascade panel when provided */
+  effectiveConfig?: EffectiveModelConfig | null;
+  /** Whether the effective config is still loading */
+  effectiveConfigLoading?: boolean;
 }
 
 export function ModelSelector({
@@ -124,8 +134,12 @@ export function ModelSelector({
   maxTurns,
   onMaxBudgetChange,
   onMaxTurnsChange,
+  promptCachePolicy,
+  onPromptCachePolicyChange,
   dirty,
   hideHeader,
+  effectiveConfig,
+  effectiveConfigLoading,
 }: ModelSelectorProps) {
   return (
     <div className="space-y-3">
@@ -211,6 +225,18 @@ export function ModelSelector({
             onMaxBudgetChange={onMaxBudgetChange}
             onMaxTurnsChange={onMaxTurnsChange}
           />
+        )}
+
+        {onPromptCachePolicyChange && (
+          <PromptCacheControls
+            value={promptCachePolicy ?? 'none'}
+            onChange={onPromptCachePolicyChange}
+          />
+        )}
+
+        {/* Effective config inheritance panel */}
+        {(effectiveConfig || effectiveConfigLoading) && (
+          <EffectiveConfigPanel config={effectiveConfig ?? null} loading={effectiveConfigLoading} />
         )}
 
         {/* Dirty indicator */}

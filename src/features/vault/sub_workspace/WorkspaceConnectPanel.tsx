@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   Globe,
@@ -261,17 +260,14 @@ function ProviderSection({
 
 export function WorkspaceConnectPanel({ onBack, onComplete }: WorkspaceConnectPanelProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="bg-secondary/35 border border-primary/15 rounded-xl p-4"
+    <div
+      className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl p-4"
     >
       <ProviderSection
         provider={GOOGLE_WORKSPACE}
         onBack={onBack}
         onComplete={onComplete}
       />
-    </motion.div>
+    </div>
   );
 }

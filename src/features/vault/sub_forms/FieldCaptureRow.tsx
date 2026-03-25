@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Copy, ClipboardPaste, Eye, EyeOff, Check } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
 type FieldCaptureSource = 'schema' | 'negotiator' | 'auto';
@@ -125,13 +124,10 @@ export function FieldCaptureRow({
                 data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}
               >
                 {copied ? (
-                  <motion.div
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.15 }}
+                  <div className="animate-fade-scale-in"
                   >
                     <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  </motion.div>
+                  </div>
                 ) : (
                   <Copy className="w-3.5 h-3.5" />
                 )}

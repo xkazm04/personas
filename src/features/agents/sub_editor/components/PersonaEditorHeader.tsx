@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
-import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
@@ -98,16 +97,14 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
             size="md"
             className={effective.enabled ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
           />
-          <AnimatePresence>
-            {showReadinessTooltip && readiness.reasons.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 4, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4, scale: 0.95 }} className="absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-lg shadow-xl p-2.5 z-50">
+          {showReadinessTooltip && readiness.reasons.length > 0 && (
+              <div className="animate-fade-slide-in absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-lg shadow-xl p-2.5 z-50">
                 <p className="typo-heading text-amber-400 mb-1.5 flex items-center gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5" /> Cannot enable agent
                 </p>
                 {readiness.reasons.map((r, i) => <p key={i} className="typo-body text-muted-foreground/80 pl-5">{r}</p>)}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       }
     />

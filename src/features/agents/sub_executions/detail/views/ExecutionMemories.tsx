@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Brain } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
@@ -40,9 +39,8 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
         <Brain className="w-4 h-4 text-violet-400" />
         Memories Created ({executionMemories.length})
       </button>
-      <AnimatePresence>
-        {showMemories && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-1.5">
+      {showMemories && (
+          <div className="animate-fade-slide-in space-y-1.5">
             {executionMemories.map((mem) => {
               const defaultCat = { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' };
               const cat = MEMORY_CATEGORY_COLORS[mem.category] ?? defaultCat;
@@ -58,9 +56,8 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
                 </div>
               );
             })}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

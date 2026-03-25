@@ -120,6 +120,23 @@ export function groupLogEntries(logs: BrowserLogEntry[]): GroupedEntry[] {
   return groups;
 }
 
+// -- Phase derivation for log timeline ------------------------------------
+
+export function deriveEntryPhase(group: GroupedEntry): SessionState {
+  if (group.kind === 'action_block') return 'working';
+  const t = group.entry.type;
+  if (t === 'warning' || t === 'input_request') return 'action_required';
+  if (t === 'url') return 'opening_url';
+  return 'working';
+}
+
+export const PHASE_LABELS: Record<SessionState, string> = {
+  connecting: 'Connecting',
+  working: 'Automating',
+  action_required: 'Action needed',
+  opening_url: 'Navigating to URL',
+};
+
 // -- Rich message URL splitting ------------------------------------------
 
 export const URL_REGEX = /https?:\/\/[^\s)>\]"'`*_]+/g;

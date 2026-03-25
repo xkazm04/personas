@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Shield, ChevronDown, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
@@ -114,9 +113,8 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
         <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+      {expanded && (
+          <div className="animate-fade-slide-in overflow-hidden">
             <div className="mt-2 space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {unresolvedConflicts.length === 0 ? (
                 <div className="text-center py-6 text-sm text-muted-foreground/60">
@@ -137,9 +135,8 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
                 ))
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

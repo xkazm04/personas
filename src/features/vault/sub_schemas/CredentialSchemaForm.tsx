@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { CredentialEditForm } from '@/features/vault/sub_forms/CredentialEditForm';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
@@ -151,11 +150,8 @@ export function CredentialSchemaForm({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+    <div
+      className="animate-fade-slide-in space-y-4"
     >
       {showHeader && (
         <div className="flex items-center gap-3">
@@ -260,6 +256,6 @@ export function CredentialSchemaForm({
       ))}
 
       {error && <p id="schema-form-error" role="alert" className="text-sm text-red-400">{error}</p>}
-    </motion.div>
+    </div>
   );
 }

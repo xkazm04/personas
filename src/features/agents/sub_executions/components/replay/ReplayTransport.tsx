@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
   Pause,
@@ -83,13 +82,9 @@ export function ReplayTransport({
       </div>
 
       {/* Fork button */}
-      <AnimatePresence>
-        {forkPoint != null && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, x: -8 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.9, x: -8 }}
-            className="ml-auto flex items-center gap-2"
+      {forkPoint != null && (
+          <div
+            className="animate-fade-slide-in ml-auto flex items-center gap-2"
           >
             <button
               onClick={onClearFork}
@@ -105,9 +100,8 @@ export function ReplayTransport({
               <GitFork className="w-3 h-3" />
               Fork after step {forkPoint + 1}
             </button>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

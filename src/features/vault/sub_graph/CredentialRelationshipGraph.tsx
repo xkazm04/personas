@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Network, ArrowRight } from 'lucide-react';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
-import { AnimatePresence } from 'framer-motion';
-import { motion } from 'framer-motion';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -221,8 +219,7 @@ export function CredentialRelationshipGraph() {
 
         {/* Right: detail panel */}
         <div className="space-y-2">
-          <AnimatePresence mode="wait">
-            {selectedBlast ? (
+          {selectedBlast ? (
               <BlastRadiusPanel
                 key={selectedBlast.credentialId}
                 blast={selectedBlast}
@@ -241,21 +238,17 @@ export function CredentialRelationshipGraph() {
                 onNodeClick={handleNodeClick}
               />
             ) : (
-              <motion.div
+              <div
                 key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="rounded-xl border border-primary/10 bg-secondary/20 p-6"
+                className="animate-fade-slide-in rounded-xl border border-primary/10 bg-secondary/20 p-6"
               >
                 <EmptyIllustration
                   icon={Network}
                   heading="No credential selected"
                   description="Select a credential to see its blast radius and dependencies."
                 />
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
 
           {/* Edge summary */}
           <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">

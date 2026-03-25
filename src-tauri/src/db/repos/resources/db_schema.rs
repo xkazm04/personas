@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{DbSavedQuery, DbSchemaTable};
 use crate::db::DbPool;
@@ -8,19 +8,11 @@ use crate::error::AppError;
 // Schema Tables
 // ============================================================================
 
-fn row_to_schema_table(row: &Row) -> rusqlite::Result<DbSchemaTable> {
-    Ok(DbSchemaTable {
-        id: row.get("id")?,
-        credential_id: row.get("credential_id")?,
-        table_name: row.get("table_name")?,
-        display_label: row.get("display_label")?,
-        column_hints: row.get("column_hints")?,
-        is_favorite: row.get::<_, i32>("is_favorite")? != 0,
-        sort_order: row.get("sort_order")?,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-    })
-}
+row_mapper!(row_to_schema_table -> DbSchemaTable {
+    id, credential_id, table_name, display_label,
+    column_hints, is_favorite [bool], sort_order,
+    created_at, updated_at,
+});
 
 pub fn list_tables(pool: &DbPool, credential_id: &str) -> Result<Vec<DbSchemaTable>, AppError> {
     let conn = pool.get()?;
@@ -129,7 +121,8 @@ pub fn delete_table(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 // Saved Queries
 // ============================================================================
 
-fn row_to_saved_query(row: &Row) -> rusqlite::Result<DbSavedQuery> {
+// row_to_saved_query uses custom logic (last_run_ok map) -- keep manual
+fn row_to_saved_query(row: &rusqlite::Row) -> rusqlite::Result<DbSavedQuery> {
     Ok(DbSavedQuery {
         id: row.get("id")?,
         credential_id: row.get("credential_id")?,

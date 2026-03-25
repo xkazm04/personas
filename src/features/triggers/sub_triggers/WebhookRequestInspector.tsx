@@ -5,7 +5,6 @@ import {
   Clock,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { WebhookRequestLog } from '@/lib/bindings/WebhookRequestLog';
 import {
   listWebhookRequestLogs,
@@ -103,14 +102,9 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
         </span>
       </button>
 
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {isExpanded && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-primary/5">
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground/60">
@@ -160,9 +154,8 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
                 )}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -259,13 +252,9 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
+      {open && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="space-y-1.5 pt-1">
               {loading ? (
@@ -325,9 +314,8 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                 </>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </>
   );
 }

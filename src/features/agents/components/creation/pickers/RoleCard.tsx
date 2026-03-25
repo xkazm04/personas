@@ -1,5 +1,4 @@
 import { Plus, X, Key, Table2 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useVaultStore } from "@/stores/vaultStore";
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
@@ -61,21 +60,16 @@ export function RoleCard({
 
       {/* Assigned items */}
       <div className="flex-1 px-2.5 pb-2 space-y-1">
-        <AnimatePresence>
-          {components.map((comp) => {
+        {components.map((comp) => {
             const meta = getConnectorMeta(comp.connectorName);
             const credName = comp.credentialId
               ? credentials.find((c) => c.id === comp.credentialId)?.name
               : null;
             const isDb = comp.credentialId && isDatabaseConnector(comp.connectorName);
             return (
-              <motion.div
+              <div
                 key={comp.id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.12 }}
-                className="overflow-hidden"
+                className="animate-fade-slide-in overflow-hidden"
               >
                 <div className="flex items-center gap-1.5 px-2 py-1.5 bg-background/50 border border-primary/10 rounded-lg text-sm">
                   <ConnectorIcon meta={meta} size="w-4 h-4" />
@@ -130,10 +124,9 @@ export function RoleCard({
                     )}
                   </div>
                 )}
-              </motion.div>
+              </div>
             );
           })}
-        </AnimatePresence>
       </div>
 
       {/* Add button */}

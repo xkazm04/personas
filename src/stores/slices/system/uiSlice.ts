@@ -57,6 +57,10 @@ export interface UiSlice {
   contextScanActive: boolean;
   contextScanComplete: boolean;
 
+  // Canvas <-> Live Stream cross-linking
+  canvasEdgeFocus: { edgeId: string; eventType: string; sourceFilter: string | null } | null;
+  liveStreamHighlightEventId: string | null;
+
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
   setHomeTab: (tab: HomeTab) => void;
@@ -84,6 +88,8 @@ export interface UiSlice {
   setEventBusTab: (tab: EventBusTab) => void;
   setContextScanActive: (active: boolean) => void;
   setContextScanComplete: (complete: boolean) => void;
+  setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
+  setLiveStreamHighlightEventId: (id: string | null) => void;
 }
 
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
@@ -114,6 +120,8 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   adoptionDraft: null,
   contextScanActive: false,
   contextScanComplete: false,
+  canvasEdgeFocus: null,
+  liveStreamHighlightEventId: null,
 
   setSidebarSection: (section) => set({ sidebarSection: section }),
   setHomeTab: (tab) => set({ homeTab: tab }),
@@ -141,4 +149,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setEventBusTab: (tab) => set({ eventBusTab: tab }),
   setContextScanActive: (active) => set({ contextScanActive: active }),
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
+  setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
+  setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
 });

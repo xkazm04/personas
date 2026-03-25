@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, AlertTriangle, Wrench, Zap, Link, Clock, ExternalLink, Cpu } from 'lucide-react';
 import { TEAM_ROLES, PersonaAvatar } from '@/features/pipeline/sub_canvas';
 import { useAgentStore } from "@/stores/agentStore";
@@ -97,13 +96,8 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
   };
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ x: 300, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: 300, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        className="absolute top-0 right-0 bottom-0 w-72 bg-background/95 backdrop-blur-md border-l border-primary/15 z-20 flex flex-col"
+    <div
+        className="animate-fade-slide-in absolute top-0 right-0 bottom-0 w-72 bg-background/95 backdrop-blur-md border-l border-primary/15 z-20 flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
@@ -181,14 +175,10 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
 
         {/* Footer */}
         <div className="p-4 border-t border-primary/10">
-          <AnimatePresence mode="wait">
-            {confirmRemove ? (
-              <motion.div
+          {confirmRemove ? (
+              <div
                 key="confirm"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                className="space-y-2"
+                className="animate-fade-slide-in space-y-2"
               >
                 <div className="flex items-center gap-2 text-sm text-amber-400/70">
                   <AlertTriangle className="w-3.5 h-3.5" />
@@ -211,24 +201,19 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
                     Cancel
                   </button>
                 </div>
-              </motion.div>
+              </div>
             ) : (
-              <motion.button
+              <button
                 key="remove"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
                 onClick={() => setConfirmRemove(true)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-sm font-medium transition-all"
+                className="animate-fade-slide-in w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 text-sm font-medium transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Remove from Team
-              </motion.button>
+              </button>
             )}
-          </AnimatePresence>
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }
 

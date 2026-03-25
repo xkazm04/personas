@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { PipelineStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
-import { useAgentStore } from "../../agentStore";
+import { storeBus } from "@/lib/storeBus";
 import type { PersonaGroup } from "@/lib/types/types";
 import type { UpdatePersonaGroupInput } from "@/lib/bindings/UpdatePersonaGroupInput";
 import { createGroup, deleteGroup, listGroups, reorderGroups, updateGroup } from "@/api/pipeline/groups";
@@ -85,11 +85,10 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
       set((state) => ({
         groups: state.groups.filter((g) => g.id !== id),
       }));
-      useAgentStore.setState((state) => ({
-        personas: state.personas.map((p) =>
-          p.group_id === id ? { ...p, group_id: null } : p,
-        ),
-      }));
+      // Notify agent store to clear group_id on affected personas
+      storeBus.emit('trigger:changed', { personaId: '' }); // refresh detail view
+      // The backend already clears group_id on delete; a fetchPersonas will pick it up
+      storeBus.emit('network:personas-changed');
     } catch (err) {
       reportError(err, "Failed to delete group", set);
     }
@@ -110,7 +109,7 @@ export const createGroupSlice: StateCreator<PipelineStore, [], [], GroupSlice> =
 
   movePersonaToGroup: async (personaId, groupId) => {
     try {
-      await useAgentStore.getState().applyPersonaOp(personaId, { kind: 'MoveToGroup', group_id: groupId });
+      storeBus.emit('persona:move-to-group', { personaId, groupId });
     } catch (err) {
       reportError(err, "Failed to move persona", set);
     }

@@ -1,5 +1,4 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, AlertCircle, CheckCircle2, Clock, Loader2, ArrowRight, Search } from 'lucide-react';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
@@ -122,19 +121,15 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
             <span className="text-xs text-muted-foreground/40 font-mono">No events yet</span>
           </div>
         )}
-        <AnimatePresence initial={false}>
-          {filteredLog.map(entry => {
+        {filteredLog.map(entry => {
             const isExpanded = expandedId === entry.id;
             const statusMeta = STATUS_ICONS[entry.status] ?? STATUS_ICONS.pending!;
             const Icon = statusMeta.icon;
             const payloadPreview = tryParsePayload(entry.payload);
             return (
-              <motion.div
+              <div
                 key={entry.id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="border-b border-primary/5 last:border-b-0"
+                className="animate-fade-slide-in border-b border-primary/5 last:border-b-0"
               >
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : entry.id)}
@@ -162,13 +157,9 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
                   <ChevronRight className={`w-3 h-3 text-muted-foreground/20 flex-shrink-0 mt-0.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                 </button>
 
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
+                {isExpanded && (
+                    <div
+                      className="animate-fade-slide-in overflow-hidden"
                     >
                       <div className="px-3 pb-2 pt-0.5 ml-5 space-y-1.5">
                         <div className="grid grid-cols-2 gap-1">
@@ -217,13 +208,11 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
                           Open in detail drawer &rarr;
                         </button>
                       </div>
-                    </motion.div>
+                    </div>
                   )}
-                </AnimatePresence>
-              </motion.div>
+              </div>
             );
           })}
-        </AnimatePresence>
       </div>
     </div>
   );

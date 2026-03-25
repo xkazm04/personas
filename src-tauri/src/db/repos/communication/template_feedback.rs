@@ -1,26 +1,45 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{CreateTemplateFeedbackInput, TemplateFeedback, TemplatePerformance};
 use crate::db::DbPool;
 use crate::error::AppError;
 
-fn row_to_feedback(row: &Row) -> rusqlite::Result<TemplateFeedback> {
-    Ok(TemplateFeedback {
-        id: row.get("id")?,
-        review_id: row.get("review_id")?,
-        persona_id: row.get("persona_id")?,
-        execution_id: row.get("execution_id")?,
-        rating: row.get("rating")?,
-        labels: row.get("labels")?,
-        comment: row.get("comment")?,
-        source: row.get("source")?,
-        created_at: row.get("created_at")?,
-    })
-}
+row_mapper!(row_to_feedback -> TemplateFeedback {
+    id, review_id, persona_id, execution_id, rating,
+    labels, comment, source, created_at,
+});
 
 /// Create a new template feedback entry.
+/// Validates that both review_id and persona_id reference existing records before inserting.
 pub fn create(pool: &DbPool, input: CreateTemplateFeedbackInput) -> Result<TemplateFeedback, AppError> {
     let conn = pool.get()?;
+
+    // Validate review_id exists in persona_design_reviews
+    let review_exists: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM persona_design_reviews WHERE id = ?1)",
+        params![input.review_id],
+        |row| row.get(0),
+    )?;
+    if !review_exists {
+        return Err(AppError::NotFound(format!(
+            "Design review '{}' does not exist",
+            input.review_id
+        )));
+    }
+
+    // Validate persona_id exists in personas
+    let persona_exists: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM personas WHERE id = ?1)",
+        params![input.persona_id],
+        |row| row.get(0),
+    )?;
+    if !persona_exists {
+        return Err(AppError::NotFound(format!(
+            "Persona '{}' does not exist",
+            input.persona_id
+        )));
+    }
+
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let labels_json = serde_json::to_string(&input.labels).unwrap_or_else(|_| "[]".to_string());
@@ -51,8 +70,22 @@ pub fn list_for_review(pool: &DbPool, review_id: &str, limit: Option<i64>) -> Re
 }
 
 /// Get aggregated performance metrics for a template.
+/// Returns NotFound if the review_id does not reference an existing design review.
 pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerformance, AppError> {
     let conn = pool.get()?;
+
+    // Verify the review exists before aggregating metrics
+    let review_exists: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM persona_design_reviews WHERE id = ?1)",
+        params![review_id],
+        |row| row.get(0),
+    )?;
+    if !review_exists {
+        return Err(AppError::NotFound(format!(
+            "Design review '{}' does not exist",
+            review_id
+        )));
+    }
 
     // Adoption count from the design review
     let total_adoptions: i64 = conn

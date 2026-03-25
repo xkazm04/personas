@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Send, Check, RefreshCw, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { DesignResultPreview } from '@/features/templates/sub_generated';
 import { IntentResultExtras } from '../IntentResultExtras';
 
@@ -77,13 +76,9 @@ export function DesignPhasePreview({
   }, [confirmDiscard]);
 
   return (
-    <motion.div
+    <div
       key="preview"
-      initial={{ opacity: 0, scale: 0.96, y: 6 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.98, y: -6 }}
-      transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
       ref={containerRef}
       tabIndex={-1}
     >
@@ -189,6 +184,6 @@ export function DesignPhasePreview({
         </button>
       </div>
       <p className="text-sm text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>
-    </motion.div>
+    </div>
   );
 }

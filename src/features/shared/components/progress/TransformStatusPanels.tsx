@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
   CheckCircle2,
@@ -35,22 +34,18 @@ export function TransformStatusPanels({
     return (
       <div className="space-y-3">
         {isRestoring && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
+          <div
+            className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20"
           >
             <RotateCcw className="w-3.5 h-3.5 text-amber-400/70" />
             <span className="typo-body text-amber-400/80">Resuming previous transformation session...</span>
-          </motion.div>
+          </div>
         )}
 
         <div className="flex items-center gap-4">
           <div className="relative flex-shrink-0">
-            <motion.div
-              className="absolute inset-0 w-12 h-12 rounded-xl bg-violet-500/15"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            <div
+              className="animate-fade-in absolute inset-0 w-12 h-12 rounded-xl bg-violet-500/15"
             />
             <div className="w-12 h-12 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
               <PhaseIcon className="w-6 h-6 text-violet-400" />
@@ -58,28 +53,19 @@ export function TransformStatusPanels({
           </div>
 
           <div className="flex-1 min-w-0">
-            <AnimatePresence mode="wait">
-              <motion.p
+            <p
                 key={transformPhase?.label ?? 'processing'}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.15 }}
-                className="typo-heading text-foreground/80"
+                className="animate-fade-slide-in typo-heading text-foreground/80"
               >
                 {transformPhase?.label ?? 'Starting transformation...'}
-              </motion.p>
-            </AnimatePresence>
+              </p>
             <p className="typo-body text-muted-foreground/80 mt-0.5">
               {transformPhase ? `Step ${transformPhase.step} of ${transformPhase.total}` : 'Starting...'}
             </p>
 
             <div className="mt-3 h-1.5 rounded-full bg-secondary/40 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-violet-500/60 to-violet-400/40"
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercent}%` }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+              <div
+                className="animate-fade-in h-full rounded-full bg-gradient-to-r from-violet-500/60 to-violet-400/40" style={{ width: `${progressPercent}%` }}
               />
             </div>
 
@@ -106,14 +92,11 @@ export function TransformStatusPanels({
   if (phase === 'completed') {
     return (
       <div className="flex items-center gap-4">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', damping: 12, stiffness: 300 }}
-          className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center"
+        <div
+          className="animate-fade-scale-in w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center"
         >
           <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-        </motion.div>
+        </div>
         <div>
           <p className="typo-heading text-emerald-400">Draft generated successfully</p>
           <p className="typo-body text-muted-foreground/80 mt-0.5">

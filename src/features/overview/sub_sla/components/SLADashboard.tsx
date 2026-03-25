@@ -1,5 +1,6 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect } from 'react';
+import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { getSlaDashboard } from '@/api/overview/sla';
@@ -11,17 +12,18 @@ export default function SLADashboard() {
   const [data, setData] = useState<SlaDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState<number>(30);
+  const debouncedDays = useDebounce(days, 300);
   const [expandedPersona, setExpandedPersona] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    getSlaDashboard(days)
+    getSlaDashboard(debouncedDays)
       .then((d) => { if (!cancelled) setData(d); })
       .catch(silentCatch("SLADashboard:fetchSlaDashboard"))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [days]);
+  }, [debouncedDays]);
 
   const togglePersona = (id: string) => setExpandedPersona((prev) => (prev === id ? null : id));
 

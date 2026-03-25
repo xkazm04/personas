@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Wifi, WifiOff, Radio, Users, AlertTriangle, Hash,
   MessageSquare, Link2, RefreshCw, ChevronDown,
   ArrowUpRight, ArrowDownLeft,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useSystemStore } from "@/stores/systemStore";
+import { usePolling } from '@/hooks/utility/timing/usePolling';
 import type {
   ConnectionHealth,
   MessagingMetrics,
@@ -90,19 +90,13 @@ function MetricsSection({
           className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
+      {open && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2 divide-y divide-border/50">{children}</div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -238,12 +232,10 @@ export function NetworkDashboard() {
   const connectionMetrics = useSystemStore((s) => s.connectionMetrics);
   const manifestSyncMetrics = useSystemStore((s) => s.manifestSyncMetrics);
   const fetchNetworkSnapshot = useSystemStore((s) => s.fetchNetworkSnapshot);
-
-  useEffect(() => {
-    fetchNetworkSnapshot();
-    const interval = setInterval(fetchNetworkSnapshot, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  // Primary updates arrive via Tauri event (network:snapshot-updated) pushed
+  // from the Rust P2P engine whenever state changes. This 30-second poll is
+  // a staleness-detection fallback only.
+  usePolling(fetchNetworkSnapshot, { interval: 30_000, enabled: true });
 
   const isRunning = networkStatus?.is_running ?? false;
   const color = healthColor(health);
@@ -321,10 +313,8 @@ export function NetworkDashboard() {
                     style={{ backgroundColor: color }}
                   />
                   {health && health.connectedCount > 0 && (
-                    <motion.span
-                      animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0.2, 0.6] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="absolute w-2.5 h-2.5 rounded-full"
+                    <span
+                      className="animate-fade-in absolute w-2.5 h-2.5 rounded-full"
                       style={{ backgroundColor: color }}
                     />
                   )}

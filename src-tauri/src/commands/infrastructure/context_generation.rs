@@ -17,6 +17,7 @@ use tokio_util::sync::CancellationToken;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::repos::dev_tools as repo;
+use crate::engine::event_registry::event_name;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
 use crate::engine::types::StreamLineType;
@@ -33,8 +34,8 @@ struct ContextGenExtra;
 
 static CONTEXT_GEN_JOBS: BackgroundJobManager<ContextGenExtra> = BackgroundJobManager::new(
     "context-generation lock poisoned",
-    "context-gen-status",
-    "context-gen-output",
+    event_name::CONTEXT_GEN_STATUS,
+    event_name::CONTEXT_GEN_OUTPUT,
 );
 
 // =============================================================================
@@ -93,14 +94,21 @@ You are analyzing a codebase to create a **Context Map** — a structured invent
 4. **Create Contexts** within each group, listing the relevant files, entry points, keywords, and tech stack.
 
 ## Context Group Guidelines
-- Create 3-8 groups that represent the major business domains
-- Each group should have a descriptive name and a color from: red, orange, amber, emerald, blue, indigo, violet, pink
+- Create 4-10 groups representing major **business domains** (not layers)
+- **Naming**: Use Title Case, domain-oriented names (e.g., "User Authentication", "Payment Processing", "Analytics Dashboard"). Never use technical layer names like "Components", "Hooks", "Utils"
+- Each group should have a color from: red, orange, amber, emerald, blue, indigo, violet, pink
 - Groups should be mutually exclusive (a file should belong to only one context)
 
 ## Context Guidelines
-- Each context should contain 5-30 related files
-- Include: file_paths (JSON array of relative paths), entry_points (main files), keywords (domain terms), tech_stack (frameworks/languages used)
-- Write a meaningful description explaining what this context does from a business perspective
+- **Granularity**: Each context should contain **5-15 related files** (prefer smaller, focused contexts over large catch-alls). If a context exceeds 15 files, split it into sub-contexts
+- **Naming**: Use kebab-style descriptive names (e.g., "login-flow", "invoice-generation", "metric-aggregation")
+- **Description (REQUIRED)**: Write 2-3 sentences explaining: (1) what business problem this code solves, (2) how it works at a high level, (3) key dependencies or data flows
+- **file_paths**: JSON array of relative paths. Be precise — list individual files, not directories
+- **entry_points**: The 1-3 files a developer would read first to understand this context
+- **keywords**: 5-10 domain terms that would help search (e.g., "oauth", "jwt", "session", "login", "2fa")
+- **db_tables**: If this context reads/writes database tables, list them (e.g., ["users", "sessions", "auth_tokens"])
+- **api_surface**: If this context exposes or consumes APIs, describe them briefly (e.g., "POST /api/auth/login, GET /api/auth/session")
+- **cross_refs**: List other context names this code depends on or is depended on by (e.g., ["user-profile", "notification-service"])
 
 ## Protocol Messages
 
@@ -113,7 +121,7 @@ To create a context group:
 
 To create a context within a group:
 ```
-{{"context_map_context": {{"project_id": "{project_id}", "group_name": "Group Name", "name": "Context Name", "description": "What this context does", "file_paths": ["src/foo.ts", "src/bar.ts"], "entry_points": ["src/foo.ts"], "keywords": ["authentication", "login"], "tech_stack": ["React", "TypeScript"]}}}}
+{{"context_map_context": {{"project_id": "{project_id}", "group_name": "Group Name", "name": "context-name", "description": "2-3 sentence description of business purpose, how it works, and key dependencies", "file_paths": ["src/foo.ts", "src/bar.ts"], "entry_points": ["src/foo.ts"], "keywords": ["authentication", "login"], "db_tables": ["users", "sessions"], "api_surface": "POST /api/auth/login", "cross_refs": ["user-profile"], "tech_stack": ["React", "TypeScript"]}}}}
 ```
 
 At the end, output a summary:
@@ -129,12 +137,17 @@ At the end, output a summary:
 5. Output the group and context creation protocol messages
 6. Output the summary
 
-## Important Rules
+## Quality Rules
 - Be thorough but efficient — read directory listings before diving into individual files
 - Focus on source code directories, skip node_modules, target, dist, build, .git
 - Each file should appear in exactly one context
 - Prefer business-domain grouping over technical-layer grouping
 - The file_paths in each context should be relative to the project root
+- Every context MUST have a description — no empty or placeholder descriptions
+- If a context has more than 15 files, split it into focused sub-contexts
+- For each context, populate db_tables if it touches a database, api_surface if it exposes/calls APIs, and cross_refs for dependencies between contexts
+- Use kebab-case for context names (e.g., "user-auth-flow" not "User Auth Flow")
+- Use Title Case for group names (e.g., "User Management" not "user-management")
 
 Begin by exploring the codebase structure."#
     )
@@ -159,6 +172,9 @@ enum ContextMapProtocol {
         file_paths: Vec<String>,
         entry_points: Vec<String>,
         keywords: Vec<String>,
+        db_tables: Vec<String>,
+        api_surface: Option<String>,
+        cross_refs: Vec<String>,
         tech_stack: Vec<String>,
     },
     #[allow(dead_code)]
@@ -213,6 +229,9 @@ fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
             file_paths: arr_to_vec("file_paths"),
             entry_points: arr_to_vec("entry_points"),
             keywords: arr_to_vec("keywords"),
+            db_tables: arr_to_vec("db_tables"),
+            api_surface: ctx.get("api_surface").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            cross_refs: arr_to_vec("cross_refs"),
             tech_stack: arr_to_vec("tech_stack"),
         });
     }
@@ -382,7 +401,7 @@ pub async fn dev_tools_scan_codebase(
         match result {
             Ok(summary) => {
                 CONTEXT_GEN_JOBS.set_status(&app_handle, &scan_id_for_task, "completed", None);
-                let _ = app_handle.emit("context-gen-complete", &summary);
+                let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
                 // OS notification
                 crate::notifications::send(
                     &app_handle,
@@ -597,18 +616,21 @@ async fn run_context_generation(
                             }
                             ContextMapProtocol::Context {
                                 project_id: pid, group_name, name, description,
-                                file_paths, entry_points, keywords, tech_stack,
+                                file_paths, entry_points, keywords, db_tables,
+                                api_surface, cross_refs, tech_stack,
                             } => {
                                 let group_id = group_name_to_id.get(&group_name).cloned();
                                 let file_count = file_paths.len() as i32;
                                 let fp_json = serde_json::to_string(&file_paths).unwrap_or_else(|_| "[]".into());
                                 let ep_json = serde_json::to_string(&entry_points).unwrap_or_else(|_| "[]".into());
                                 let kw_json = serde_json::to_string(&keywords).unwrap_or_else(|_| "[]".into());
+                                let db_json = if db_tables.is_empty() { None } else { Some(serde_json::to_string(&db_tables).unwrap_or_else(|_| "[]".into())) };
+                                let cr_json = if cross_refs.is_empty() { None } else { Some(serde_json::to_string(&cross_refs).unwrap_or_else(|_| "[]".into())) };
                                 let ts_json = serde_json::to_string(&tech_stack).unwrap_or_else(|_| "[]".into());
 
                                 match repo::create_context(
                                     pool, &pid, &name, group_id.as_deref(), description.as_deref(),
-                                    Some(&fp_json), Some(&ep_json), None, Some(&kw_json), None, None, Some(&ts_json),
+                                    Some(&fp_json), Some(&ep_json), db_json.as_deref(), Some(&kw_json), api_surface.as_deref(), cr_json.as_deref(), Some(&ts_json),
                                 ) {
                                     Ok(_) => {
                                         contexts_created += 1;

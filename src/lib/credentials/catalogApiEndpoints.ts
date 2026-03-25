@@ -1083,7 +1083,35 @@ const obsidian: EP[] = [
   ep('POST', '/commands/{commandId}/', 'Execute a command', [pathP('commandId', 'Command ID to execute')], ['Commands']),
 ];
 
+// -- Alpha Vantage ------------------------------------------------
+
+const alpha_vantage: EP[] = [
+  ep('GET', '/query?function=GLOBAL_QUOTE', 'Get real-time stock quote', [
+    queryP('symbol', true, 'Stock ticker (e.g. AAPL)'),
+  ], ['Stocks']),
+  ep('GET', '/query?function=SYMBOL_SEARCH', 'Search for ticker symbols', [
+    queryP('keywords', true, 'Search keywords'),
+  ], ['Search']),
+  ep('GET', '/query?function=TIME_SERIES_DAILY', 'Daily time series (OHLCV)', [
+    queryP('symbol', true, 'Stock ticker'),
+    queryP('outputsize', false, 'compact (default) or full'),
+  ], ['Time Series']),
+  ep('GET', '/query?function=TIME_SERIES_INTRADAY', 'Intraday time series', [
+    queryP('symbol', true, 'Stock ticker'),
+    queryP('interval', true, '1min, 5min, 15min, 30min, 60min'),
+  ], ['Time Series']),
+  ep('GET', '/query?function=MARKET_STATUS', 'Global market open/close status', [], ['Market']),
+  ep('GET', '/query?function=NEWS_SENTIMENT', 'Market news and sentiment', [
+    queryP('tickers', false, 'Comma-separated tickers for targeted sentiment'),
+  ], ['Intelligence']),
+  ep('GET', '/query?function=TOP_GAINERS_LOSERS', 'Top gainers, losers, and most active', [], ['Market']),
+  ep('GET', '/query?function=OVERVIEW', 'Company overview and fundamentals', [
+    queryP('symbol', true, 'Stock ticker'),
+  ], ['Fundamentals']),
+];
+
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
+  alpha_vantage,
   azure_devops,
   github,
   gitlab,

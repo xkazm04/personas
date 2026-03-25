@@ -2,7 +2,6 @@ import {
   CheckCircle2, AlertCircle, ChevronDown, Pencil,
   Rocket, GitBranch, Zap,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
@@ -42,7 +41,7 @@ export function AutomationConditionStep({
   fallbackMode, setFallbackMode, timeoutSecs, setTimeoutSecs, deployError,
 }: AutomationConditionStepProps) {
   return (
-    <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+    <div key="preview" className="animate-fade-slide-in space-y-6">
       {designResult.platform_reasoning && (
         <div className="px-3.5 py-2.5 rounded-xl bg-accent/5 border border-accent/15">
           <p className="text-sm text-foreground/80">
@@ -136,9 +135,8 @@ export function AutomationConditionStep({
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
       </button>
 
-      <AnimatePresence>
-        {showAdvanced && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden space-y-4">
+      {showAdvanced && (
+          <div className="animate-fade-slide-in overflow-hidden space-y-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Input Schema</label>
               <textarea placeholder='{ "file_url": "string" }' value={inputSchema} onChange={(e) => setInputSchema(e.target.value)} rows={3}
@@ -166,9 +164,8 @@ export function AutomationConditionStep({
                 <span className="text-sm text-muted-foreground">seconds</span>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {deployError && (
         <div className="flex items-start gap-2.5 p-3 rounded-xl bg-brand-rose/5 border border-brand-rose/15">
@@ -179,6 +176,6 @@ export function AutomationConditionStep({
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

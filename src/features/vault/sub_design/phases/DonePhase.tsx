@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, RefreshCw, PackagePlus } from 'lucide-react';
 
 interface DonePhaseProps {
@@ -28,12 +27,9 @@ export function DonePhase({
   };
 
   return (
-    <motion.div
+    <div
       key="done"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-center py-12 gap-4"
+      className="animate-fade-slide-in flex flex-col items-center justify-center py-12 gap-4"
     >
       <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center">
         <CheckCircle className="w-6 h-6 text-emerald-400" />
@@ -48,18 +44,15 @@ export function DonePhase({
         </p>
       </div>
       {registeredConnectorName && (
-        <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 max-w-md"
+        <div
+          className="animate-fade-slide-in flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 max-w-md"
         >
           <PackagePlus className="w-4 h-4 shrink-0 text-violet-400" />
           <p className="text-sm text-foreground/80">
             <span className="text-violet-400 font-medium">{registeredConnectorName}</span>
             {' '}connector added to your catalog -- now available for other personas and template adoption.
           </p>
-        </motion.div>
+        </div>
       )}
 
       <div className="flex items-center gap-2 mt-2">
@@ -111,6 +104,6 @@ export function DonePhase({
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

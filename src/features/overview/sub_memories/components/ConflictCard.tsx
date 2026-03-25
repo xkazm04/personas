@@ -1,5 +1,4 @@
 import { Check, GitMerge, ChevronDown, Bot, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import type { MemoryConflict, ConflictResolution } from '../libs/memoryConflicts';
@@ -105,9 +104,8 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
         <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0 transition-transform ${isActive ? 'rotate-180' : ''}`} />
       </button>
 
-      <AnimatePresence>
-        {isActive && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+      {isActive && (
+          <div className="animate-fade-slide-in overflow-hidden">
             <div className="px-3 pb-3 space-y-3 border-t border-primary/10 pt-3">
               <p className="text-xs text-muted-foreground/70">{conflict.reason}</p>
               <div className="grid grid-cols-2 gap-2">
@@ -123,9 +121,8 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
                 <ResolutionButton icon={X} label="Dismiss" variant="muted" disabled={isProcessing} onClick={() => onResolve('dismiss')} />
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

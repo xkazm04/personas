@@ -1,7 +1,8 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
-import { useAgentStore } from "../../agentStore";
+import { storeBus, AccessorKey } from "@/lib/storeBus";
+import type { Persona } from "@/lib/types/types";
 import type { PersonaMessage } from "@/lib/types/types";
 import { enrichWithPersona } from "@/lib/types/types";
 import { deleteMessage, getMessageCount, getUnreadMessageCount, listMessages, markAllMessagesRead, markMessageRead } from "@/api/overview/messages";
@@ -40,7 +41,7 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
         getUnreadMessageCount(),
       ]);
       // Enrich with persona info
-      const { personas } = useAgentStore.getState();
+      const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS);
       const enriched: PersonaMessage[] = enrichWithPersona(rawMessages, personas);
       if (reset) {
         set({ messages: enriched, messagesTotal: totalCount, unreadMessageCount: unreadCount });

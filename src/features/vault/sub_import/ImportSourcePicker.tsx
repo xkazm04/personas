@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { FileText, KeyRound, Cloud, Shield, Lock, ArrowLeft } from 'lucide-react';
 import { IMPORT_SOURCES, type ImportSourceId } from './importTypes';
 
@@ -17,11 +16,8 @@ interface ImportSourcePickerProps {
 
 export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="space-y-4"
+    <div
+      className="animate-fade-slide-in space-y-4"
     >
       <div className="flex items-center gap-2">
         <button
@@ -66,6 +62,6 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 }

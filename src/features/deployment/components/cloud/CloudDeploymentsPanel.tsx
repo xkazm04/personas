@@ -7,6 +7,7 @@ import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { BUDGET_PRESETS } from './cloudDeploymentHelpers';
 import { DeploymentCard } from './DeploymentCard';
+import { useDeploymentTest } from '../../hooks/useDeploymentTest';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -41,6 +42,7 @@ export function CloudDeploymentsPanel({
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [selectedBudget, setSelectedBudget] = useState<number | undefined>(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { tests, runTest, dismissResult } = useDeploymentTest();
 
   const personaName = (id: string) =>
     personas.find((p) => p.id === id)?.name ?? id.slice(0, 8);
@@ -161,6 +163,10 @@ export function CloudDeploymentsPanel({
               onPause={onPause}
               onResume={onResume}
               onRemove={onRemove}
+              testRunning={tests[d.id]?.running}
+              testResult={tests[d.id]?.result}
+              onTest={runTest}
+              onDismissTest={dismissResult}
             />
           ))}
         </div>

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload, FileJson, ChevronRight, ClipboardPaste, Link2,
 } from 'lucide-react';
@@ -67,8 +66,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
         ))}
       </div>
 
-      <AnimatePresence mode="wait">
-        {mode === 'file' && (
+      {mode === 'file' && (
           <FileUploadTab
             fileInputRef={fileInputRef}
             isDragging={isDragging}
@@ -104,7 +102,6 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
             handleUrlImport={handleUrlImport}
           />
         )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -128,8 +125,8 @@ function FileUploadTab({
   handleManualProceed: () => void;
 }) {
   return (
-    <motion.div key="file" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}>
-      <motion.div
+    <div className="animate-fade-slide-in" key="file">
+      <div
         onClick={() => fileInputRef.current?.click()}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
         onDragOver={handleDragOver}
@@ -140,21 +137,19 @@ function FileUploadTab({
         tabIndex={0}
         aria-label="Drop workflow file or click to browse"
         data-testid="n8n-upload-dropzone"
-        className={`relative flex flex-col items-center justify-center gap-4 p-12 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 ${
+        className={`animate-fade-in relative flex flex-col items-center justify-center gap-4 p-12 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 ${
           isDragging
             ? 'border-violet-400/60 bg-violet-500/10 scale-[1.01]'
             : 'border-primary/15 bg-secondary/20 hover:border-primary/30 hover:bg-secondary/30'
         } focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
       >
-        <motion.div
-          animate={isDragging ? { scale: 1.1, y: -4 } : { scale: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className={`w-16 h-16 rounded-xl border flex items-center justify-center transition-colors duration-200 ${
+        <div
+          className={`animate-fade-in w-16 h-16 rounded-xl border flex items-center justify-center transition-colors duration-200 ${
             isDragging ? 'bg-violet-500/25 border-violet-400/40' : 'bg-violet-500/15 border-violet-500/25'
           }`}
         >
           <Upload className={`w-8 h-8 transition-colors duration-200 ${isDragging ? 'text-violet-300' : 'text-violet-400'}`} />
-        </motion.div>
+        </div>
         <div className="text-center">
           <p className="text-sm font-medium text-foreground/80">
             {isDragging ? 'Drop your workflow file here' : 'Import a workflow from any platform'}
@@ -165,17 +160,17 @@ function FileUploadTab({
         </div>
         <PlatformLabels />
         <input ref={fileInputRef} type="file" accept={getAcceptedExtensions()} onChange={handleFileInputChange} className="hidden" data-testid="n8n-file-input" />
-      </motion.div>
+      </div>
       <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
       {preview?.kind === 'valid' && (
-        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-4 flex flex-col items-start gap-1.5">
+        <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
           <button onClick={handleManualProceed} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
           <p className="text-sm text-muted-foreground/70">Press Enter or click to continue</p>
-        </motion.div>
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -189,8 +184,8 @@ function PasteTab({
   handlePasteImport: () => void;
 }) {
   return (
-    <motion.div key="paste" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}>
-      <div className="rounded-xl border border-primary/15 bg-secondary/20 overflow-hidden">
+    <div key="paste">
+      <div className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/20 overflow-hidden">
         <div className="px-4 py-2.5 border-b border-primary/8 flex items-center gap-2">
           <ClipboardPaste className="w-4 h-4 text-violet-400" />
           <span className="text-sm font-medium text-foreground/80">Paste workflow JSON</span>
@@ -224,7 +219,7 @@ function PasteTab({
         </div>
       </div>
       <PreviewCard preview={pastePreview} FileIcon={FileJson} onClick={pastePreview?.kind === 'valid' ? handlePasteImport : undefined} />
-    </motion.div>
+    </div>
   );
 }
 
@@ -241,8 +236,8 @@ function UrlTab({
   handleUrlImport: () => void;
 }) {
   return (
-    <motion.div key="url" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}>
-      <div className="rounded-xl border border-primary/15 bg-secondary/20 p-4 space-y-4">
+    <div key="url">
+      <div className="animate-fade-slide-in rounded-xl border border-primary/15 bg-secondary/20 p-4 space-y-4">
         <div className="flex items-center gap-2">
           <Link2 className="w-4 h-4 text-violet-400 flex-shrink-0" />
           <span className="text-sm font-medium text-foreground/80">Import from URL</span>
@@ -288,13 +283,13 @@ function UrlTab({
       </div>
       <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />
       {urlPreview?.kind === 'valid' && (
-        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-4 flex flex-col items-start gap-1.5">
+        <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
           <button onClick={handleUrlImport} className="px-4 py-2.5 text-sm font-semibold rounded-xl bg-violet-500 text-white hover:bg-violet-400 transition-colors">
             Continue
           </button>
           <p className="text-sm text-muted-foreground/70">Press Enter or click to continue</p>
-        </motion.div>
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 }

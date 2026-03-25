@@ -54,6 +54,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'payment_processing',  label: 'Payment Processing',   members: ['stripe', 'paddle'] },
   { role: 'accounting',          label: 'Accounting',           members: ['quickbooks', 'xero'] },
   { role: 'banking_fintech',     label: 'Banking & Fintech',    members: ['plaid'] },
+  { role: 'market_data',         label: 'Market Data',          members: ['alpha_vantage'] },
   { role: 'e_commerce',          label: 'E-Commerce',           members: ['shopify', 'shipstation', 'woocommerce', 'lemonsqueezy'] },
 
   // -- Scheduling & Forms ----------------------------------------
@@ -105,7 +106,7 @@ export const PURPOSE_GROUPS: PurposeGroup[] = [
   { purpose: 'support',        label: 'Support',             roles: ['support_ticketing'] },
   { purpose: 'social',         label: 'Social',              roles: ['social_media', 'advertising'] },
   { purpose: 'cms',            label: 'CMS',                 roles: ['cms'] },
-  { purpose: 'finance',        label: 'Finance',             roles: ['payment_processing', 'accounting', 'banking_fintech'] },
+  { purpose: 'finance',        label: 'Finance',             roles: ['payment_processing', 'accounting', 'banking_fintech', 'market_data'] },
   { purpose: 'ecommerce',      label: 'E-Commerce',          roles: ['e_commerce'] },
   { purpose: 'scheduling',     label: 'Scheduling',          roles: ['scheduling'] },
   { purpose: 'forms',          label: 'Forms',               roles: ['form_survey'] },

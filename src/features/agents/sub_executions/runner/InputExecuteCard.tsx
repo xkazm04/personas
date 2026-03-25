@@ -1,6 +1,5 @@
 import { ChevronDown, ChevronRight, Cloud } from 'lucide-react';
 import { IdleIcon, FailedIcon } from '../components/ExecutionLifecycleIcons';
-import { motion, AnimatePresence } from 'framer-motion';
 import { JsonEditor } from '@/features/shared/components/editors/JsonEditor';
 
 interface InputExecuteCardProps {
@@ -44,12 +43,8 @@ export function InputExecuteCard({
           Sample Input (Optional)
         </button>
 
-        <AnimatePresence>
-          {showInputEditor && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+        {showInputEditor && (
+            <div className="animate-fade-slide-in"
             >
               <JsonEditor
                 value={inputData}
@@ -62,9 +57,8 @@ export function InputExecuteCard({
               {jsonError && (
                 <p className="text-red-400/80 typo-body mt-1">{jsonError}</p>
               )}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </div>
 
       {/* Execute Button */}

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Sparkles, Check, X } from 'lucide-react';
 import type { TopologySuggestion } from '@/lib/bindings/TopologySuggestion';
 
@@ -113,14 +112,11 @@ export default function OptimizerResults({
         const isHovered = hoveredSuggestion === s.id;
 
         return (
-          <motion.div
+          <div
             key={s.id}
-            initial={{ opacity: 0, x: 8 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -8 }}
             onMouseEnter={() => setHoveredSuggestion(s.id)}
             onMouseLeave={() => setHoveredSuggestion(null)}
-            className={`px-3 py-2.5 border-b border-primary/8 last:border-b-0 transition-colors ${
+            className={`animate-fade-slide-in px-3 py-2.5 border-b border-primary/8 last:border-b-0 transition-colors ${
               isHovered ? 'bg-primary/5' : ''
             }`}
           >
@@ -159,7 +155,7 @@ export default function OptimizerResults({
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         );
       })}
     </div>

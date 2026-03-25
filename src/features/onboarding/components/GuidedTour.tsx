@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, X, MapPin, Sparkles } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -86,24 +85,20 @@ export default function GuidedTour() {
 
   if (isMinimized) {
     return (
-      <motion.button
-        initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }}
+      <button
         onClick={() => { setIsMinimized(false); navigateToStep(currentIndex); }}
-        className={`fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background/95 backdrop-blur-xl border border-l-0 ${colors.border} shadow-lg ${colors.glow} hover:shadow-xl transition-shadow cursor-pointer group`}
+        className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background/95 backdrop-blur-xl border border-l-0 ${colors.border} shadow-lg ${colors.glow} hover:shadow-xl transition-shadow cursor-pointer group`}
       >
         <MapPin className={`w-4 h-4 ${colors.text}`} />
         <span className="text-[10px] font-medium text-foreground/80 [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
-      </motion.button>
+      </button>
     );
   }
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
+    <div
         key="tour-panel"
-        initial={{ opacity: 0, x: -20, scale: 0.97 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: -20, scale: 0.97 }}
-        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed left-0 top-[36px] bottom-0 z-[9999] w-[380px]"
+        className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999] w-[380px]"
       >
         <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.border} bg-background/95 backdrop-blur-xl shadow-2xl ${colors.glow} overflow-hidden flex flex-col`}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
@@ -135,7 +130,6 @@ export default function GuidedTour() {
             onJump={handleJump}
           />
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }

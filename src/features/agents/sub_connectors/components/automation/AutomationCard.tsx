@@ -3,7 +3,6 @@ import {
   ExternalLink, Activity, Pause, ShieldCheck,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion } from 'framer-motion';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import { AUTOMATION_STATUS_CONFIG, PLATFORM_CONFIG, formatRelativeTime } from '../../libs/automationTypes';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
@@ -41,9 +40,9 @@ export function AutomationCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-foreground/80 truncate" title={automation.name}>{automation.name}</p>
-            <motion.span layout className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border ${statusConfig.bg} ${statusConfig.color}`}>
+            <span className={`animate-fade-in inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border ${statusConfig.bg} ${statusConfig.color}`}>
               <StatusIcon className="w-2.5 h-2.5" /> {statusConfig.label}
-            </motion.span>
+            </span>
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className={`inline-flex items-center px-1.5 py-0 text-sm font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{platformConfig.label}</span>

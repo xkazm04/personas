@@ -1,5 +1,4 @@
 import { Star } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { PersonaCredential } from '@/lib/types/types';
 
 // ============================================================================
@@ -26,14 +25,10 @@ export function CredentialPicker({
   onLinkCredential,
 }: CredentialPickerProps) {
   return (
-    <AnimatePresence>
+    <>
       {isOpen && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="overflow-hidden"
+        <div
+          className="animate-fade-slide-in overflow-hidden"
         >
           <div className="mt-3 border border-primary/10 rounded-lg bg-background/40 max-h-48 overflow-y-auto">
             {matchingCreds.length > 0 && (
@@ -84,8 +79,8 @@ export function CredentialPicker({
               </p>
             )}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

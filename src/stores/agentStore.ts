@@ -21,6 +21,7 @@ export const useAgentStore = create<AgentStore>()(
   persist(
     (...a) => ({
       error: null,
+      errorKind: null,
       isLoading: false,
       ...createPersonaSlice(...a),
       ...createToolSlice(...a),
@@ -37,6 +38,8 @@ export const useAgentStore = create<AgentStore>()(
       name: "persona-ui-agents",
       partialize: (state) => ({
         selectedPersonaId: state.selectedPersonaId,
+        activeChatSessionId: state.activeChatSessionId,
+        chatMode: state.chatMode,
       }),
     },
   ),

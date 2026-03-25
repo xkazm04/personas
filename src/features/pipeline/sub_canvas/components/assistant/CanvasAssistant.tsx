@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { Sparkles, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import AssistantInput from './AssistantInput';
 import AssistantMessages from './AssistantMessages';
@@ -64,26 +63,19 @@ export default function CanvasAssistant({
     <>
       {/* Toggle button */}
       {!isOpen && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+        <button
           onClick={() => setIsOpen(true)}
-          className="absolute top-14 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 text-sm font-medium transition-all shadow-lg backdrop-blur-sm"
+          className="animate-fade-slide-in absolute top-14 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 text-sm font-medium transition-all shadow-lg backdrop-blur-sm"
         >
           <Sparkles className="w-3.5 h-3.5" />
           Assistant
-        </motion.button>
+        </button>
       )}
 
       {/* Panel */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-14 left-3 z-30 w-80 rounded-xl bg-background/95 backdrop-blur-md border border-primary/20 shadow-2xl overflow-hidden"
+      {isOpen && (
+          <div
+            className="animate-fade-slide-in absolute top-14 left-3 z-30 w-80 rounded-xl bg-background/95 backdrop-blur-md border border-primary/20 shadow-2xl overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
@@ -121,9 +113,8 @@ export default function CanvasAssistant({
               onTogglePreview={() => setPreviewExpanded(!previewExpanded)}
               onApply={handleApply}
             />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </>
   );
 }

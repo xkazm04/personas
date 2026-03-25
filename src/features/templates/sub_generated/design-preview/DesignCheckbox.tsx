@@ -1,6 +1,4 @@
 import { Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-
 interface DesignCheckboxProps {
   checked: boolean;
   onChange: () => void;
@@ -31,18 +29,12 @@ export function DesignCheckbox({ checked, onChange, disabled = false, color = 'p
             }`
       }`}
     >
-      <AnimatePresence>
-        {checked && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 15, stiffness: 400, duration: 0.15 }}
+      {checked && (
+          <div className="animate-fade-slide-in"
           >
             <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </button>
   );
 }

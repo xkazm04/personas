@@ -1,5 +1,4 @@
 import { forwardRef } from 'react';
-import { motion } from 'framer-motion';
 import {
   Bot,
   User,
@@ -43,12 +42,9 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
 
         {/* Messages */}
         {messages.map((msg) => (
-          <motion.div
+          <div
             key={msg.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.15 }}
-            className="flex items-start gap-3"
+            className="animate-fade-slide-in flex items-start gap-3"
           >
             {msg.role === 'user' ? (
               <div className="w-7 h-7 rounded-lg bg-secondary/50 border border-primary/10 flex items-center justify-center shrink-0 mt-0.5">
@@ -62,12 +58,12 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
             <p className="text-sm text-foreground/80 whitespace-pre-wrap pt-1 min-w-0">
               {msg.content}
             </p>
-          </motion.div>
+          </div>
         ))}
 
         {/* Thinking indicator */}
         {isThinking && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-3">
+          <div className="animate-fade-slide-in flex items-start gap-3">
             <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
@@ -75,7 +71,7 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
               <LoadingSpinner size="sm" className="text-primary/50" />
               <span className="text-sm text-muted-foreground/60">{thinkingLabel}</span>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Error */}

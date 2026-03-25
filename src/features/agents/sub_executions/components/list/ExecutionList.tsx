@@ -1,61 +1,37 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { Rocket, Play, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { listExecutions } from "@/api/agents/executions";
 import { getRetryChain } from '@/api/overview/healing';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { ExecutionComparison } from './ExecutionComparison';
 import { useToastStore } from '@/stores/toastStore';
-import { getSampleInput } from '../../libs/useExecutionList';
+import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
 import { ExecutionListFilters } from './ExecutionListFilters';
 import { ExecutionListRow } from './ExecutionListRow';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 
 export function ExecutionList() {
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
-  const isExecuting = useAgentStore((state) => state.isExecuting);
   const setRerunInputData = useSystemStore((state) => state.setRerunInputData);
-  const [executions, setExecutions] = useState<PersonaExecution[]>([]);
+
+  const personaId = selectedPersona?.id || '';
+  const { executions, loading } = useExecutionList(personaId);
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { copied: hasCopied, copy: copyToClipboard } = useCopyToClipboard();
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const prevIsExecutingRef = useRef(isExecuting);
   const [showRaw, setShowRaw] = useState(false);
   const [compareMode, setCompareMode] = useState(false);
   const [compareLeft, setCompareLeft] = useState<string | null>(null);
   const [compareRight, setCompareRight] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
-  const personaId = selectedPersona?.id || '';
 
   const sampleInput = useMemo(() => getSampleInput(selectedPersona?.name), [selectedPersona]);
 
   const handleTryIt = () => {
     setRerunInputData(sampleInput === '{}' ? '{}' : sampleInput);
   };
-
-  const fetchExecutions = async () => {
-    if (!personaId) return;
-    setLoading(true);
-    try {
-      const data = await listExecutions(personaId);
-      setExecutions(data || []);
-    } catch (error) {
-      console.error('Failed to fetch executions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { if (personaId) fetchExecutions(); }, [personaId]);
-
-  useEffect(() => {
-    if (prevIsExecutingRef.current && !isExecuting && personaId) fetchExecutions();
-    prevIsExecutingRef.current = isExecuting;
-  }, [isExecuting, personaId]);
 
   const handleAutoCompareRetry = useCallback(async (executionId: string) => {
     if (!personaId) return;
@@ -121,8 +97,8 @@ export function ExecutionList() {
       </div>
 
       {executions.length === 0 ? (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col items-center text-center py-12 px-6 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl">
+        <div
+          className="animate-fade-slide-in flex flex-col items-center text-center py-12 px-6 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-xl">
           <div className="w-12 h-12 rounded-xl bg-primary/8 border border-primary/20 flex items-center justify-center mb-4">
             <Rocket className="w-5.5 h-5.5 text-primary/40" />
           </div>
@@ -131,7 +107,7 @@ export function ExecutionList() {
           <button onClick={handleTryIt} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
             <Play className="w-3.5 h-3.5" />Try it now
           </button>
-        </motion.div>
+        </div>
       ) : (
         <div className="overflow-hidden border border-primary/20 rounded-xl backdrop-blur-sm bg-secondary/40">
           <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 typo-code text-muted-foreground/80 uppercase tracking-wider">

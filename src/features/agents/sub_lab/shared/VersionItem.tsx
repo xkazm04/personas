@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   RotateCcw, ChevronDown, ChevronRight,
   Shield, Archive, Beaker, Clock, AlertTriangle, XCircle,
@@ -66,10 +65,8 @@ export function VersionItem({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`group relative rounded-xl border transition-all cursor-pointer ${
+    <div
+      className={`animate-fade-slide-in group relative rounded-xl border transition-all cursor-pointer ${
         isSelected
           ? 'border-primary/30 bg-primary/5'
           : 'border-primary/10 bg-secondary/20 hover:bg-secondary/30 hover:border-primary/20'
@@ -134,13 +131,9 @@ export function VersionItem({
         </button>
       </div>
 
-      <AnimatePresence>
-        {showActions && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
+      {showActions && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="flex flex-wrap gap-1.5 px-3 pb-3 border-t border-primary/10 pt-2">
               {version.tag !== 'production' &&
@@ -199,9 +192,8 @@ export function VersionItem({
                 </button>
               </div>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

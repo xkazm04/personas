@@ -42,6 +42,9 @@ mod oauth_token_metric;
 mod output_assertion;
 mod genome;
 mod evolution;
+mod signing;
+mod ocr;
+mod shared_event;
 
 pub use persona::*;
 pub use tool::*;
@@ -86,3 +89,6 @@ pub use oauth_token_metric::*;
 pub use output_assertion::*;
 pub use genome::*;
 pub use evolution::*;
+pub use signing::*;
+pub use ocr::*;
+pub use shared_event::*;

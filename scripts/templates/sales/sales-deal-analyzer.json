@@ -273,5 +273,6 @@
       "icon": "TrendingUp",
       "color": "#10b981"
     }
-  }
+  },
+  "is_published": false
 }

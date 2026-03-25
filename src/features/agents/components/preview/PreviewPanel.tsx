@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
   Check,
@@ -41,13 +40,8 @@ export function PreviewPanel({
   if (!result) return null;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ width: 0, opacity: 0 }}
-        animate={{ width: 260, opacity: 1 }}
-        exit={{ width: 0, opacity: 0 }}
-        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        className="border-l border-primary/10 overflow-y-auto overflow-x-hidden"
+    <div
+        className="animate-fade-slide-in border-l border-primary/10 overflow-y-auto overflow-x-hidden"
       >
         <div className="p-3 space-y-3 w-[260px]">
           {/* Preview header */}
@@ -63,10 +57,8 @@ export function PreviewPanel({
           </button>
 
           {previewExpanded && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-2.5"
+            <div
+              className="animate-fade-slide-in space-y-2.5"
             >
               {/* Identity */}
               <PreviewSection icon={Bot} label="Identity">
@@ -148,7 +140,7 @@ export function PreviewPanel({
                   </p>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
 
           {/* Activate button */}
@@ -173,17 +165,13 @@ export function PreviewPanel({
             {isActivating ? 'Activating...' : completeness >= 80 ? 'Activate Agent' : 'Create Agent'}
           </button>
           {completeness < 40 && !isActivating && !isThinking && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.15 }}
-              className="text-muted-foreground text-xs mt-1.5 text-center"
+            <p
+              className="animate-fade-slide-in text-muted-foreground text-xs mt-1.5 text-center"
             >
               Add more detail to reach 40% completeness
-            </motion.p>
+            </p>
           )}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }

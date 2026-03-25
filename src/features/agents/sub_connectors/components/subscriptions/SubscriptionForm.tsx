@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Radio, Trash2 } from 'lucide-react';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
@@ -46,24 +45,18 @@ export function SubscriptionRow({
         data-sub-delete={sub.id}
         className="p-1 text-muted-foreground/80 hover:text-red-400 transition-colors focus-ring"
       >
-        <AnimatePresence mode="wait" initial={false}>
-          {confirmingDeleteId === sub.id ? (
-            <motion.span
+        {confirmingDeleteId === sub.id ? (
+            <span
               key="confirm"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: [1, 1.04, 1] }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.2 }}
-              className="text-sm font-semibold text-red-400"
+              className="animate-fade-slide-in text-sm font-semibold text-red-400"
             >
               Confirm?
-            </motion.span>
+            </span>
           ) : (
-            <motion.span key="trash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <Trash2 className="w-3.5 h-3.5" />
-            </motion.span>
+            <span key="trash">
+              <Trash2 className="animate-fade-slide-in w-3.5 h-3.5" />
+            </span>
           )}
-        </AnimatePresence>
       </button>
     </SectionCard>
   );

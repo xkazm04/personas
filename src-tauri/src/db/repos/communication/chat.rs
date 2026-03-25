@@ -1,6 +1,9 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{ChatMessage, ChatSession, CreateChatMessageInput};
+use crate::db::models::{
+    ChatMessage, ChatSession, ChatSessionContext, CreateChatMessageInput,
+    UpsertSessionContextInput,
+};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -101,9 +104,108 @@ pub fn create(pool: &DbPool, input: CreateChatMessageInput) -> Result<ChatMessag
 
 pub fn delete_session(pool: &DbPool, persona_id: &str, session_id: &str) -> Result<i64, AppError> {
     let conn = pool.get()?;
+    // Also remove session context when deleting a session
+    conn.execute(
+        "DELETE FROM chat_session_context WHERE session_id = ?1 AND persona_id = ?2",
+        params![session_id, persona_id],
+    )?;
     let rows = conn.execute(
         "DELETE FROM chat_messages WHERE persona_id = ?1 AND session_id = ?2",
         params![persona_id, session_id],
     )?;
     Ok(rows as i64)
+}
+
+// -- Session Context persistence ------------------------------------------------
+
+fn row_to_session_context(row: &Row) -> rusqlite::Result<ChatSessionContext> {
+    Ok(ChatSessionContext {
+        session_id: row.get("session_id")?,
+        persona_id: row.get("persona_id")?,
+        title: row.get("title")?,
+        summary: row.get("summary")?,
+        system_prompt_hash: row.get("system_prompt_hash")?,
+        working_memory: row.get("working_memory")?,
+        chat_mode: row.get("chat_mode")?,
+        claude_session_id: row.get("claude_session_id")?,
+        updated_at: row.get("updated_at")?,
+        created_at: row.get("created_at")?,
+    })
+}
+
+pub fn get_session_context(
+    pool: &DbPool,
+    session_id: &str,
+) -> Result<Option<ChatSessionContext>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM chat_session_context WHERE session_id = ?1",
+    )?;
+    let mut rows = stmt.query_map(params![session_id], row_to_session_context)?;
+    match rows.next() {
+        Some(Ok(ctx)) => Ok(Some(ctx)),
+        Some(Err(e)) => Err(AppError::Database(e)),
+        None => Ok(None),
+    }
+}
+
+pub fn upsert_session_context(
+    pool: &DbPool,
+    input: UpsertSessionContextInput,
+) -> Result<ChatSessionContext, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+
+    conn.execute(
+        "INSERT INTO chat_session_context
+         (session_id, persona_id, title, summary, system_prompt_hash, working_memory, chat_mode, claude_session_id, updated_at, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?9, ?8, ?8)
+         ON CONFLICT(session_id) DO UPDATE SET
+           title = COALESCE(?3, title),
+           summary = COALESCE(?4, summary),
+           system_prompt_hash = COALESCE(?5, system_prompt_hash),
+           working_memory = COALESCE(?6, working_memory),
+           chat_mode = COALESCE(?7, chat_mode),
+           claude_session_id = COALESCE(?9, claude_session_id),
+           updated_at = ?8",
+        params![
+            input.session_id,
+            input.persona_id,
+            input.title,
+            input.summary,
+            input.system_prompt_hash,
+            input.working_memory,
+            input.chat_mode.unwrap_or_else(|| "ops".to_string()),
+            now,
+            input.claude_session_id,
+        ],
+    )?;
+
+    let ctx = conn
+        .query_row(
+            "SELECT * FROM chat_session_context WHERE session_id = ?1",
+            params![input.session_id],
+            row_to_session_context,
+        )
+        .map_err(AppError::Database)?;
+    Ok(ctx)
+}
+
+pub fn get_latest_session(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Option<ChatSessionContext>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM chat_session_context
+         WHERE persona_id = ?1
+         ORDER BY updated_at DESC
+         LIMIT 1",
+    )?;
+    let mut rows = stmt.query_map(params![persona_id], row_to_session_context)?;
+    match rows.next() {
+        Some(Ok(ctx)) => Ok(Some(ctx)),
+        Some(Err(e)) => Err(AppError::Database(e)),
+        None => Ok(None),
+    }
 }

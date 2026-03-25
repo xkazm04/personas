@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Copy, Check, Cloud, Unplug, AlertCircle, Clock, Hash, FolderOpen } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { X } from 'lucide-react';
@@ -35,8 +34,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
   };
 
   return (
-    <AnimatePresence>
-      <BaseModal
+    <BaseModal
         isOpen
         onClose={onClose}
         titleId="event-detail-modal-title"
@@ -171,7 +169,6 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           )}
         </div>
       </BaseModal>
-    </AnimatePresence>
   );
 }
 

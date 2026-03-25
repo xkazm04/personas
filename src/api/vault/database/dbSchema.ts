@@ -57,10 +57,16 @@ export const updateDbSavedQuery = (
 export const deleteDbSavedQuery = (id: string) =>
   invoke<boolean>('delete_db_saved_query', { id });
 
+// -- Query Safety Classification ----------------------------------------
+
+/** Returns `true` if the query is classified as a mutation (INSERT, UPDATE, DELETE, DROP, etc.). */
+export const classifyDbQuery = (queryText: string) =>
+  invoke<boolean>('classify_db_query', { queryText });
+
 // -- Query Execution ----------------------------------------------------
 
-export const executeDbQuery = (credentialId: string, queryText: string, savedQueryId?: string) =>
-  invoke<QueryResult>('execute_db_query', { credentialId, queryText, savedQueryId });
+export const executeDbQuery = (credentialId: string, queryText: string, savedQueryId?: string, allowMutation?: boolean) =>
+  invoke<QueryResult>('execute_db_query', { credentialId, queryText, savedQueryId, allowMutation });
 
 // -- Schema Introspection ----------------------------------------------
 

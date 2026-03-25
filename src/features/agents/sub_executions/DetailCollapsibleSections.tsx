@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
 import { ChevronDown, ChevronRight, FileText, Loader2, Brain } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { getExecutionLog } from '@/api/agents/executions';
 import { listMemoriesByExecution } from '@/api/overview/memories';
@@ -75,13 +74,11 @@ export function DetailCollapsibleSections({ execution, showRaw }: DetailCollapsi
             {showInputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             Input Data
           </button>
-          <AnimatePresence>
-            {showInputData && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+          {showInputData && (
+              <div className="animate-fade-slide-in">
                 <HighlightedJsonBlock raw={showRaw ? execution.input_data : maskSensitiveJson(execution.input_data) as string | null} />
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
 
@@ -95,13 +92,11 @@ export function DetailCollapsibleSections({ execution, showRaw }: DetailCollapsi
             {showOutputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             Output Data
           </button>
-          <AnimatePresence>
-            {showOutputData && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+          {showOutputData && (
+              <div className="animate-fade-slide-in">
                 <HighlightedJsonBlock raw={showRaw ? execution.output_data : maskSensitiveJson(execution.output_data) as string | null} />
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
 
@@ -116,9 +111,8 @@ export function DetailCollapsibleSections({ execution, showRaw }: DetailCollapsi
             <Brain className="w-4 h-4 text-violet-400" />
             Memories Created ({executionMemories.length})
           </button>
-          <AnimatePresence>
-            {showMemories && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-1.5">
+          {showMemories && (
+              <div className="animate-fade-slide-in space-y-1.5">
                 {executionMemories.map((mem) => {
                   const defaultCat = { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' };
                   const cat = MEMORY_CATEGORY_COLORS[mem.category] ?? defaultCat;
@@ -134,9 +128,8 @@ export function DetailCollapsibleSections({ execution, showRaw }: DetailCollapsi
                     </div>
                   );
                 })}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
 
@@ -151,11 +144,10 @@ export function DetailCollapsibleSections({ execution, showRaw }: DetailCollapsi
             <FileText className="w-4 h-4" />
             Execution Log
           </button>
-          <AnimatePresence>
-            {showLog && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+          {showLog && (
+              <div>
                 {logLoading && (
-                  <div className="flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-xl typo-body text-muted-foreground/80">
+                  <div className="animate-fade-slide-in flex items-center gap-2 p-4 bg-background/50 border border-border/30 rounded-xl typo-body text-muted-foreground/80">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Loading log...
                   </div>
@@ -178,9 +170,8 @@ export function DetailCollapsibleSections({ execution, showRaw }: DetailCollapsi
                     })}
                   </div>
                 )}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
     </>

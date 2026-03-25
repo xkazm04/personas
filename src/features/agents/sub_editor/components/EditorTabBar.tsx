@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Link, Settings, FlaskConical, Wand2, Check, Activity, HeartPulse, MessageCircle, Grid3X3 } from 'lucide-react';
+import { ListChecks, FileText, Link, Settings, FlaskConical, Check, Activity, MessageCircle, Grid3X3 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { EditorTab } from '@/lib/types/types';
 import { isTabDirty } from '../libs/editorTabConstants';
@@ -13,8 +13,6 @@ const tabDefs: Array<{ id: EditorTab; label: string; icon: typeof FileText; devO
   { id: 'lab', label: 'Lab', icon: FlaskConical },
   { id: 'connectors', label: 'Connectors', icon: Link },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
-  { id: 'design', label: 'Design', icon: Wand2 },
-  { id: 'health', label: 'Health', icon: HeartPulse },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -54,8 +52,6 @@ function TabBadge({ variant, count }: { variant: TabBadgeVariant; count?: number
 export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps) {
   const editorTab = useSystemStore((s) => s.editorTab);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
-  const showDesignNudge = useSystemStore((s) => s.showDesignNudge);
-
   return (
     <div className="border-b border-primary/10 bg-primary/5">
       <div className={`flex overflow-x-auto ${IS_MOBILE ? 'px-1 gap-0' : 'px-6 gap-1'} scrollbar-none`}>
@@ -77,13 +73,11 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing }: EditorTabBarProps
               {!IS_MOBILE && tab.label}
               {tab.id === 'connectors' && connectorsMissing > 0
                 ? <TabBadge variant="error" count={connectorsMissing} />
-                : tab.id === 'design' && showDesignNudge && !isActive
-                  ? <TabBadge variant="attention" />
-                  : tabDirty
-                    ? <TabBadge variant="dirty" />
-                    : isActive && !tabDirty
-                      ? <TabBadge variant="success" />
-                      : null}
+                : tabDirty
+                  ? <TabBadge variant="dirty" />
+                  : isActive && !tabDirty
+                    ? <TabBadge variant="success" />
+                    : null}
               {isActive && (
                 <motion.div
                   layoutId="personaEditorTab"

@@ -15,17 +15,18 @@ use tauri::{Emitter, Manager, State};
 use ts_rs::TS;
 
 use crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect;
+use crate::engine::event_registry::event_name;
 use crate::engine::prompt::build_cli_args;
 use crate::engine::types::StreamLineType;
 use crate::ipc_auth::require_privileged;
 use crate::AppState;
 
 /// Event names for auto-cred browser progress.
-const STATUS_EVENT: &str = "auto-cred-browser-status";
-const PROGRESS_EVENT: &str = "auto-cred-browser-progress";
+const STATUS_EVENT: &str = event_name::AUTO_CRED_BROWSER_STATUS;
+const PROGRESS_EVENT: &str = event_name::AUTO_CRED_BROWSER_PROGRESS;
 
 /// Event emitted when a URL should be opened in the user's browser.
-const OPEN_URL_EVENT: &str = "auto-cred-open-url";
+const OPEN_URL_EVENT: &str = event_name::AUTO_CRED_OPEN_URL;
 
 /// Model for browser automation tasks -- needs tool use capabilities.
 const BROWSER_MODEL: &str = "claude-sonnet-4-6";
@@ -59,6 +60,10 @@ pub struct AutoCredBrowserRequest {
     pub saved_procedure: Option<String>,
     /// Force guided mode even if Playwright is available.
     pub force_guided: Option<bool>,
+    /// Universal mode: service URL to navigate to (no pre-defined connector).
+    pub service_url: Option<String>,
+    /// Universal mode: free-text description of what credentials are needed.
+    pub service_description: Option<String>,
 }
 
 #[derive(Debug, Deserialize, TS)]
@@ -81,6 +86,10 @@ pub struct AutoCredBrowserResult {
     pub procedure_log: String,
     /// True when values were salvaged via partial extraction (not all fields found).
     pub partial: bool,
+    /// Universal mode: dynamically discovered field definitions.
+    pub discovered_fields: Option<serde_json::Value>,
+    /// Universal mode: auto-generated connector definition.
+    pub discovered_connector: Option<serde_json::Value>,
 }
 
 /// Structured error info serialized as JSON in the Err(String) variant.
@@ -407,6 +416,149 @@ IMPORTANT:
     )
 }
 
+/// Build the prompt for universal mode (no pre-defined connector).
+/// Claude discovers fields dynamically and auto-generates a connector definition.
+fn build_universal_browser_prompt(req: &AutoCredBrowserRequest) -> String {
+    let service_url = req.service_url.as_deref().unwrap_or("the service's website");
+    let service_desc = req.service_description.as_deref().unwrap_or("API credentials");
+
+    format!(
+r##"You are an automated credential discovery and extraction assistant. Your job is to use the Playwright browser tools to find and create API credentials for a web service.
+
+## Goal
+Navigate to the service, locate the developer settings or API key management page, create a new API key or credential, and extract ALL the generated values.
+
+## Service Information
+- URL: {service_url}
+- Description: {service_desc}
+
+## Instructions
+1. Use `mcp__playwright__browser_navigate` to open: {service_url}
+2. Use `mcp__playwright__browser_snapshot` to read the page content.
+3. Look for links or menus related to: API, Developer, Settings, Integrations, API Keys, Access Tokens, or similar.
+4. Navigate to the credential/API key creation page.
+5. When you encounter a login page, CAPTCHA, or 2FA prompt, output a message like "WAITING: Login required -- please authenticate in the browser" and use `mcp__playwright__browser_wait_for_navigation` to wait for the user.
+6. Create a new API key or credential. Note what permissions/scopes are available.
+7. Extract ALL generated values (API key, secret, token, client ID, etc.).
+8. Determine the field schema based on what was discovered.
+
+## Output Format
+Output the final result as a JSON object with exactly this format:
+
+```json
+{{
+  "extracted_values": {{
+    "field_key": "extracted_value"
+  }},
+  "discovered_fields": [
+    {{
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "help_text": "Description of this field"
+    }}
+  ],
+  "connector_definition": {{
+    "name": "service_name",
+    "label": "Service Name",
+    "category": "api",
+    "color": "#hexcolor",
+    "healthcheck_url": "https://api.example.com/health-or-verify-endpoint"
+  }},
+  "procedure_log": "Step-by-step description of what was done"
+}}
+```
+
+IMPORTANT:
+- Output ONLY the JSON block at the end, no other text after it.
+- Use snake_case for field keys (e.g. api_key, client_secret).
+- Set field type to "password" for secrets/tokens, "text" for identifiers.
+- Mark fields as required if they are essential for API access.
+- Choose an appropriate color hex for the service brand.
+- If a field value is not available, use an empty string.
+- Be methodical: snapshot the page before and after each action.
+- If you hit a dead end, try alternative navigation paths.
+- When you need the user to open a URL in their browser, output: OPEN_URL:https://the-url-here
+"##,
+        service_url = service_url,
+        service_desc = service_desc,
+    )
+}
+
+/// Build the guided prompt for universal mode (no browser automation).
+fn build_universal_guided_prompt(req: &AutoCredBrowserRequest) -> String {
+    let service_url = req.service_url.as_deref().unwrap_or("the service's website");
+    let service_desc = req.service_description.as_deref().unwrap_or("API credentials");
+
+    format!(
+r##"You are a guided credential discovery assistant. Browser automation is NOT available. You will guide the user step-by-step through finding and creating API credentials for a web service.
+
+## Communication Protocol
+
+You have special output prefixes that trigger actions in the desktop app:
+
+1. **OPEN_URL:https://example.com** -- Opens the URL in the user's default browser.
+   Use this whenever you reference a URL the user should visit.
+   Output it on its own line, with no surrounding text on that line.
+
+2. **WAITING: <message>** -- Indicates you're waiting for the user to complete a step.
+   After outputting a WAITING message, the app will pause for user confirmation.
+
+## Service Information
+- URL: {service_url}
+- Description: {service_desc}
+
+## Your Task
+
+1. First, output OPEN_URL:{service_url} to open the service in the user's browser.
+2. Guide them to find the API/developer settings, API keys, or access token page.
+3. Provide clear, numbered instructions for creating a new API key or token.
+4. For each step, tell the user exactly what to click, fill in, or select.
+5. When the user needs to perform an action, output a WAITING message.
+6. After credentials are created, ask the user to copy each value.
+7. Based on what was discovered, determine the field schema.
+
+## Output Format
+Once you have all values, output the final result as JSON:
+
+```json
+{{
+  "extracted_values": {{
+    "field_key": "value_from_user"
+  }},
+  "discovered_fields": [
+    {{
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "help_text": "Description of this field"
+    }}
+  ],
+  "connector_definition": {{
+    "name": "service_name",
+    "label": "Service Name",
+    "category": "api",
+    "color": "#hexcolor",
+    "healthcheck_url": "https://api.example.com/health-or-verify-endpoint"
+  }},
+  "procedure_log": "Step-by-step description of what was done"
+}}
+```
+
+IMPORTANT:
+- Always use OPEN_URL: prefix for any URL you mention (each on its own line).
+- Be specific: name exact buttons, menu items, and page sections.
+- For services with multiple auth methods, prefer API tokens over OAuth.
+- Output ONLY the JSON block at the very end, no other text after it.
+- Use snake_case for field keys, "password" type for secrets, "text" for identifiers.
+"##,
+        service_url = service_url,
+        service_desc = service_desc,
+    )
+}
+
 /// Determine the mode (playwright or guided) and return the appropriate config.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -455,6 +607,9 @@ pub async fn start_auto_cred_browser(
     // the NamedTempFile auto-deletes it, so it must outlive spawn_claude_and_collect.
     let mut _mcp_config_file: Option<tempfile::NamedTempFile> = None;
 
+    // Universal mode: service_url is set → use discovery prompts
+    let is_universal = request.service_url.is_some();
+
     let (prompt, timeout) = match mode {
         AutoCredMode::Playwright => {
             // Add Playwright MCP server configuration via secure temp file.
@@ -467,7 +622,12 @@ pub async fn start_auto_cred_browser(
             cli_args.args.push("--allowedTools".to_string());
             cli_args.args.push("mcp__playwright__*".to_string());
 
-            (build_browser_prompt(&request), BROWSER_TIMEOUT_SECS)
+            let prompt = if is_universal {
+                build_universal_browser_prompt(&request)
+            } else {
+                build_browser_prompt(&request)
+            };
+            (prompt, BROWSER_TIMEOUT_SECS)
         }
         AutoCredMode::Guided => {
             // No MCP needed -- guided mode uses only text output
@@ -475,7 +635,12 @@ pub async fn start_auto_cred_browser(
             cli_args.args.push("--allowedTools".to_string());
             cli_args.args.push("".to_string());
 
-            (build_guided_prompt(&request), GUIDED_TIMEOUT_SECS)
+            let prompt = if is_universal {
+                build_universal_guided_prompt(&request)
+            } else {
+                build_guided_prompt(&request)
+            };
+            (prompt, GUIDED_TIMEOUT_SECS)
         }
     };
 
@@ -771,7 +936,7 @@ pub async fn start_auto_cred_browser(
         Ok(spawn_result) => {
             // Try to extract JSON from the output
             match extract_browser_result(&spawn_result.text_output) {
-                Some((values, procedure_log)) => {
+                Some((values, procedure_log, discovered_fields, discovered_connector)) => {
                     let _ = app.emit(STATUS_EVENT, json!({
                         "session_id": session_id,
                         "status": "completed",
@@ -781,6 +946,8 @@ pub async fn start_auto_cred_browser(
                         extracted_values: values,
                         procedure_log,
                         partial: false,
+                        discovered_fields,
+                        discovered_connector,
                     })
                 }
                 None => {
@@ -800,6 +967,8 @@ pub async fn start_auto_cred_browser(
                             extracted_values: partial_values,
                             procedure_log: String::new(),
                             partial: true,
+                            discovered_fields: None,
+                            discovered_connector: None,
                         })
                     } else {
                         // Build guidance that includes the last assistant message
@@ -1158,7 +1327,19 @@ fn extract_partial_values(text: &str, field_keys: &[String]) -> Option<serde_jso
 
 /// Extract the JSON result from Claude's text output.
 /// Looks for a JSON block containing `extracted_values`.
-fn extract_browser_result(text: &str) -> Option<(serde_json::Value, String)> {
+/// Returns (values, procedure_log, discovered_fields, connector_definition).
+fn extract_browser_result(text: &str) -> Option<(serde_json::Value, String, Option<serde_json::Value>, Option<serde_json::Value>)> {
+    fn extract_from_parsed(parsed: &serde_json::Value) -> Option<(serde_json::Value, String, Option<serde_json::Value>, Option<serde_json::Value>)> {
+        let values = parsed.get("extracted_values")?;
+        let log = parsed.get("procedure_log")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let discovered_fields = parsed.get("discovered_fields").cloned();
+        let discovered_connector = parsed.get("connector_definition").cloned();
+        Some((values.clone(), log, discovered_fields, discovered_connector))
+    }
+
     // Try to find a JSON block in the output
     // Look for ```json ... ``` blocks first
     if let Some(start) = text.find("```json") {
@@ -1166,12 +1347,8 @@ fn extract_browser_result(text: &str) -> Option<(serde_json::Value, String)> {
         if let Some(end) = text[json_start..].find("```") {
             let json_str = text[json_start..json_start + end].trim();
             if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(json_str) {
-                if let Some(values) = parsed.get("extracted_values") {
-                    let log = parsed.get("procedure_log")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    return Some((values.clone(), log));
+                if let Some(result) = extract_from_parsed(&parsed) {
+                    return Some(result);
                 }
             }
         }
@@ -1182,12 +1359,8 @@ fn extract_browser_result(text: &str) -> Option<(serde_json::Value, String)> {
         let trimmed = line.trim();
         if trimmed.starts_with('{') && trimmed.contains("extracted_values") {
             if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(trimmed) {
-                if let Some(values) = parsed.get("extracted_values") {
-                    let log = parsed.get("procedure_log")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    return Some((values.clone(), log));
+                if let Some(result) = extract_from_parsed(&parsed) {
+                    return Some(result);
                 }
             }
         }
@@ -1196,12 +1369,8 @@ fn extract_browser_result(text: &str) -> Option<(serde_json::Value, String)> {
     // Last resort: try to parse the entire output as JSON
     let trimmed = text.trim();
     if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(trimmed) {
-        if let Some(values) = parsed.get("extracted_values") {
-            let log = parsed.get("procedure_log")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            return Some((values.clone(), log));
+        if let Some(result) = extract_from_parsed(&parsed) {
+            return Some(result);
         }
     }
 

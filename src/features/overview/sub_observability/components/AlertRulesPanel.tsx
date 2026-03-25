@@ -1,15 +1,14 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } from 'lucide-react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useAgentStore } from '@/stores/agentStore';
+import type { AlertRule } from '@/lib/bindings/AlertRule';
 import {
   ALERT_METRIC_OPTIONS,
   ALERT_SEVERITY_OPTIONS,
   type AlertMetric,
   type AlertOperator,
   type AlertSeverity,
-  type AlertRule,
   type AlertEvalHealth,
 } from '@/stores/slices/overview/alertSlice';
 
@@ -160,7 +159,7 @@ function RuleRow({
 }) {
   const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === rule.metric);
   const sevInfo = ALERT_SEVERITY_OPTIONS.find(s => s.value === rule.severity);
-  const scopeName = rule.personaId ? personas.find(p => p.id === rule.personaId)?.name ?? 'Unknown' : 'Global';
+  const scopeName = rule.persona_id ? personas.find(p => p.id === rule.persona_id)?.name ?? 'Unknown' : 'Global';
 
   return (
     <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${rule.enabled ? 'border-primary/15 bg-secondary/20' : 'border-primary/8 bg-secondary/10 opacity-60'}`}>
@@ -232,34 +231,37 @@ export function AlertRulesPanel() {
   const deleteAlertRule = useOverviewStore((s) => s.deleteAlertRule);
   const toggleAlertRule = useOverviewStore((s) => s.toggleAlertRule);
   const alertEvalHealth = useOverviewStore((s) => s.alertEvalHealth);
+  const fetchAlertRules = useOverviewStore((s) => s.fetchAlertRules);
   const personas = useAgentStore((s) => s.personas);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  useEffect(() => { void fetchAlertRules(); }, [fetchAlertRules]);
+
   const personaList = personas.map(p => ({ id: p.id, name: p.name }));
 
   const handleAdd = (data: RuleFormData) => {
-    addAlertRule({
+    void addAlertRule({
       name: data.name.trim(),
       metric: data.metric,
       operator: data.operator,
       threshold: parseFloat(data.threshold),
       severity: data.severity,
-      personaId: data.personaId,
+      persona_id: data.personaId,
       enabled: true,
     });
     setShowForm(false);
   };
 
   const handleEdit = (id: string, data: RuleFormData) => {
-    updateAlertRule(id, {
+    void updateAlertRule(id, {
       name: data.name.trim(),
       metric: data.metric,
       operator: data.operator,
       threshold: parseFloat(data.threshold),
       severity: data.severity,
-      personaId: data.personaId,
+      persona_id: data.personaId,
     });
     setEditingId(null);
   };
@@ -279,13 +281,11 @@ export function AlertRulesPanel() {
         </button>
       </div>
 
-      <AnimatePresence mode="popLayout">
-        {showForm && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+      {showForm && (
+          <div className="animate-fade-slide-in">
             <RuleForm personas={personaList} onSubmit={handleAdd} onCancel={() => setShowForm(false)} />
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {alertRules.length === 0 && !showForm && (
         <p className="text-sm text-muted-foreground/50 text-center py-6">
@@ -298,14 +298,6 @@ export function AlertRulesPanel() {
           editingId === rule.id ? (
             <RuleForm
               key={rule.id}
-              initial={{
-                name: rule.name,
-                metric: rule.metric,
-                operator: rule.operator,
-                threshold: String(rule.threshold),
-                severity: rule.severity,
-                personaId: rule.personaId,
-              }}
               personas={personaList}
               onSubmit={(data) => handleEdit(rule.id, data)}
               onCancel={() => setEditingId(null)}
@@ -315,8 +307,8 @@ export function AlertRulesPanel() {
               key={rule.id}
               rule={rule}
               personas={personaList}
-              onToggle={() => toggleAlertRule(rule.id)}
-              onDelete={() => deleteAlertRule(rule.id)}
+              onToggle={() => void toggleAlertRule(rule.id)}
+              onDelete={() => void deleteAlertRule(rule.id)}
               onEdit={() => { setEditingId(rule.id); setShowForm(false); }}
             />
           )

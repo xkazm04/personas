@@ -1,6 +1,6 @@
 import { listen } from '@tauri-apps/api/event';
-import type { PlaywrightAdapter } from './useAutoCredSession';
-import type { AutoCredConnectorContext, BrowserLogEntry, ExtractedValues } from './types';
+import type { PlaywrightAdapter, AdapterResult } from './useAutoCredSession';
+import type { AutoCredConnectorContext, BrowserLogEntry, ExtractedValues, DiscoveredField, DiscoveredConnector } from './types';
 import { startAutoCredBrowser, getPlaywrightProcedure, cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import { openExternalUrl } from '@/api/system/system';
 
@@ -28,7 +28,7 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
     ctx: AutoCredConnectorContext,
     onLog: (entry: BrowserLogEntry) => void,
     signal: AbortSignal,
-  ): Promise<{ values: ExtractedValues; partial: boolean }> {
+  ): Promise<AdapterResult> {
     const sessionId = crypto.randomUUID();
 
     // Check for saved procedure (only in playwright mode)
@@ -116,6 +116,8 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
         })),
         saved_procedure: savedProcedure,
         force_guided: this.forceGuided,
+        service_url: ctx.serviceUrl ?? undefined,
+        service_description: ctx.serviceDescription ?? undefined,
       });
 
       // Parse extracted values
@@ -131,7 +133,32 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
         (values as Record<string, string>).__procedure_log = result.procedure_log;
       }
 
-      return { values, partial: result.partial ?? false };
+      // Parse discovered fields and connector from universal mode
+      let discoveredFields: DiscoveredField[] | undefined;
+      let discoveredConnector: DiscoveredConnector | undefined;
+
+      if (result.discovered_fields && Array.isArray(result.discovered_fields)) {
+        discoveredFields = result.discovered_fields.map((f: Record<string, unknown>) => ({
+          key: String(f.key ?? ''),
+          label: String(f.label ?? ''),
+          type: String(f.type ?? 'text'),
+          required: Boolean(f.required),
+          help_text: f.help_text ? String(f.help_text) : undefined,
+        }));
+      }
+
+      if (result.discovered_connector && typeof result.discovered_connector === 'object') {
+        const dc = result.discovered_connector;
+        discoveredConnector = {
+          name: String(dc.name ?? ''),
+          label: String(dc.label ?? ''),
+          category: String(dc.category ?? 'api'),
+          color: String(dc.color ?? '#6366f1'),
+          healthcheck_url: dc.healthcheck_url ? String(dc.healthcheck_url) : undefined,
+        };
+      }
+
+      return { values, partial: result.partial ?? false, discoveredFields, discoveredConnector };
     } finally {
       signal.removeEventListener('abort', abortHandler);
       unlisten();

@@ -213,7 +213,98 @@ impl std::fmt::Debug for EncryptedToken {
     }
 }
 
-static MASTER_KEY: OnceLock<[u8; 32]> = OnceLock::new();
+// ---------------------------------------------------------------------------
+// ProtectedKey -- mlock-pinned, zeroize-on-drop master key wrapper
+// ---------------------------------------------------------------------------
+
+/// A wrapper for the 32-byte master encryption key that:
+/// 1. Zeroizes key material on drop via `Zeroizing<[u8; 32]>`
+/// 2. Locks the memory page (VirtualLock / mlock) to prevent swapping to disk
+///
+/// This ensures the master key cannot be recovered from swap files, crash dumps
+/// uploaded via Windows Error Reporting, or pagefile forensics.
+struct ProtectedKey {
+    inner: zeroize::Zeroizing<[u8; 32]>,
+}
+
+impl ProtectedKey {
+    fn new(mut key: [u8; 32]) -> Self {
+        let inner = zeroize::Zeroizing::new(key);
+        // Zeroize the stack copy immediately
+        key.zeroize();
+
+        // Lock the heap-allocated key bytes to prevent the OS from paging them
+        // to disk. Best-effort: failure is logged but not fatal, since the key
+        // is still DPAPI-protected at rest on Windows.
+        let ptr = inner.as_ptr() as *const u8;
+        let len = std::mem::size_of::<[u8; 32]>();
+        if !memory_lock(ptr, len) {
+            tracing::warn!(
+                "Failed to lock master key memory page -- key may be swappable to disk"
+            );
+        }
+
+        Self { inner }
+    }
+
+    /// Return a short-lived reference to the raw key bytes.
+    fn expose_key(&self) -> &[u8; 32] {
+        &self.inner
+    }
+}
+
+impl Drop for ProtectedKey {
+    fn drop(&mut self) {
+        // Unlock the memory page before Zeroizing<T> zeroizes the bytes
+        let ptr = self.inner.as_ptr() as *const u8;
+        let len = std::mem::size_of::<[u8; 32]>();
+        memory_unlock(ptr, len);
+        // Zeroizing<[u8; 32]> handles zeroing the key material on drop
+    }
+}
+
+// -- Platform memory locking ------------------------------------------------
+
+#[cfg(windows)]
+extern "system" {
+    fn VirtualLock(lpAddress: *mut std::ffi::c_void, dwSize: usize) -> i32;
+    fn VirtualUnlock(lpAddress: *mut std::ffi::c_void, dwSize: usize) -> i32;
+}
+
+/// Lock a memory region so it cannot be paged to swap.
+#[cfg(windows)]
+fn memory_lock(ptr: *const u8, len: usize) -> bool {
+    unsafe { VirtualLock(ptr as *mut std::ffi::c_void, len) != 0 }
+}
+
+#[cfg(windows)]
+fn memory_unlock(ptr: *const u8, len: usize) {
+    unsafe { VirtualUnlock(ptr as *mut std::ffi::c_void, len); }
+}
+
+#[cfg(unix)]
+extern "C" {
+    fn mlock(addr: *const std::ffi::c_void, len: usize) -> i32;
+    fn munlock(addr: *const std::ffi::c_void, len: usize) -> i32;
+}
+
+#[cfg(unix)]
+fn memory_lock(ptr: *const u8, len: usize) -> bool {
+    unsafe { mlock(ptr as *const std::ffi::c_void, len) == 0 }
+}
+
+#[cfg(unix)]
+fn memory_unlock(ptr: *const u8, len: usize) {
+    unsafe { munlock(ptr as *const std::ffi::c_void, len); }
+}
+
+#[cfg(not(any(windows, unix)))]
+fn memory_lock(_ptr: *const u8, _len: usize) -> bool {
+    false // Cannot lock memory on this platform
+}
+
+#[cfg(not(any(windows, unix)))]
+fn memory_unlock(_ptr: *const u8, _len: usize) {}
 
 /// Tracks where the master key was loaded from, so we can upgrade later.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
@@ -256,6 +347,10 @@ impl From<CryptoError> for AppError {
 
 /// Get or create the 32-byte master key. Cached in OnceLock after first call.
 ///
+/// The key is stored in a `ProtectedKey` wrapper that:
+/// - Zeroizes the key material on drop (`Zeroizing<[u8; 32]>`)
+/// - Locks the memory page (VirtualLock/mlock) to prevent swapping to disk
+///
 /// **Fail-closed**: If the OS keychain is completely inaccessible (e.g. the
 /// platform backend cannot be initialised), this returns `Err` rather than
 /// silently falling through to an unprotected local file.
@@ -266,14 +361,13 @@ impl From<CryptoError> for AppError {
 /// 2. `PERSONAS_ALLOW_FALLBACK_KEY=1` is explicitly set -- for CI, headless
 ///    environments, or tests where no keychain daemon is available.
 pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
-    // OnceLock stores Result so we can propagate the error on every call.
-    static KEY_RESULT: OnceLock<Result<[u8; 32], String>> = OnceLock::new();
+    static KEY_STORE: OnceLock<Result<ProtectedKey, String>> = OnceLock::new();
 
-    let result = KEY_RESULT.get_or_init(|| {
+    let result = KEY_STORE.get_or_init(|| {
         match try_keychain() {
             Ok(key) => {
                 let _ = KEY_SOURCE.set(KeySource::Keychain);
-                Ok(key)
+                Ok(ProtectedKey::new(key))
             }
             Err(e) => {
                 // Desktop app: auto-fallback to DPAPI-protected local key file.
@@ -295,17 +389,13 @@ pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
                     e
                 );
                 let _ = KEY_SOURCE.set(KeySource::LocalFallback);
-                Ok(derive_fallback_key())
+                Ok(ProtectedKey::new(derive_fallback_key()))
             }
         }
     });
 
     match result {
-        Ok(key) => {
-            // Cache in the original MASTER_KEY OnceLock for backwards compat with key_source()
-            let _ = MASTER_KEY.set(*key);
-            Ok(MASTER_KEY.get().unwrap())
-        }
+        Ok(protected) => Ok(protected.expose_key()),
         Err(msg) => Err(CryptoError::KeyManagement(format!(
             "Master key not available (fail-closed): {}. \
              Set PERSONAS_ALLOW_FALLBACK_KEY=1 to allow local fallback.",
@@ -323,8 +413,9 @@ fn try_keychain() -> Result<[u8; 32], CryptoError> {
     // Try to get existing key
     match entry.get_password() {
         Ok(encoded) => {
-            let bytes = B64.decode(&encoded)?;
+            let mut bytes = B64.decode(&encoded)?;
             if bytes.len() != 32 {
+                bytes.zeroize();
                 return Err(CryptoError::KeyManagement(format!(
                     "Stored key has wrong length: {} (expected 32)",
                     bytes.len()
@@ -332,6 +423,7 @@ fn try_keychain() -> Result<[u8; 32], CryptoError> {
             }
             let mut key = [0u8; 32];
             key.copy_from_slice(&bytes);
+            bytes.zeroize(); // Zeroize decoded buffer immediately
             tracing::info!("Master key loaded from OS keychain");
             Ok(key)
         }
@@ -454,7 +546,7 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
     };
     let trimmed = raw.trim();
 
-    let key_bytes = if let Some(protected_b64) = trimmed.strip_prefix(DPAPI_PREFIX) {
+    let mut key_bytes = if let Some(protected_b64) = trimmed.strip_prefix(DPAPI_PREFIX) {
         let protected_bytes = B64.decode(protected_b64)?;
         platform_unprotect(&protected_bytes)?
     } else {
@@ -473,6 +565,7 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
     };
 
     if key_bytes.len() != 32 {
+        key_bytes.zeroize();
         return Err(CryptoError::KeyManagement(format!(
             "Local key has wrong length: {} (expected 32)",
             key_bytes.len()
@@ -481,6 +574,7 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
 
     let mut key = [0u8; 32];
     key.copy_from_slice(&key_bytes);
+    key_bytes.zeroize(); // Zeroize decoded buffer immediately
     Ok(Some(key))
 }
 
@@ -1086,6 +1180,200 @@ pub fn migrate_plaintext_notification_secrets(pool: &DbPool) -> Result<(usize, u
 }
 
 // ---------------------------------------------------------------------------
+// Trigger config encryption: field-level encryption for sensitive trigger fields
+// ---------------------------------------------------------------------------
+
+/// Sensitive keys inside trigger config JSON that must be encrypted at rest.
+/// - Webhook: `webhook_secret` (HMAC key)
+/// - Polling: `headers` (may contain Authorization tokens)
+const SENSITIVE_TRIGGER_KEYS: &[&str] = &["webhook_secret", "headers"];
+
+/// Encrypt sensitive fields within a trigger config JSON string.
+///
+/// For each key in `SENSITIVE_TRIGGER_KEYS`, if present and not already encrypted
+/// (no `_enc` counterpart), the plaintext value is replaced with `key_enc` and
+/// `key_iv` pairs. Non-sensitive fields are left untouched so that SQL
+/// `json_extract()` continues to work for querying trigger properties.
+///
+/// Returns the updated JSON string.
+pub fn encrypt_trigger_config(config_json: &str) -> Result<String, CryptoError> {
+    let mut val: serde_json::Value = serde_json::from_str(config_json)
+        .map_err(|e| CryptoError::Encrypt(format!("Invalid trigger config JSON: {e}")))?;
+
+    let obj = match val.as_object_mut() {
+        Some(o) => o,
+        None => return Ok(config_json.to_string()), // not an object, pass through
+    };
+
+    for &key in SENSITIVE_TRIGGER_KEYS {
+        // Skip if already encrypted
+        if obj.contains_key(&format!("{key}_enc")) {
+            continue;
+        }
+
+        let plaintext = match obj.get(key) {
+            Some(v) if !v.is_null() => v.to_string(), // serialize the value (string or object)
+            _ => continue,
+        };
+
+        // Don't encrypt empty strings
+        if plaintext == "\"\"" {
+            continue;
+        }
+
+        let (ciphertext, nonce) = encrypt_for_db(&plaintext)?;
+        obj.remove(key);
+        obj.insert(format!("{key}_enc"), serde_json::Value::String(ciphertext));
+        obj.insert(format!("{key}_iv"), serde_json::Value::String(nonce));
+    }
+
+    serde_json::to_string(&val)
+        .map_err(|e| CryptoError::Encrypt(format!("JSON serialize error: {e}")))
+}
+
+/// Decrypt sensitive fields within a trigger config JSON string.
+///
+/// For each key in `SENSITIVE_TRIGGER_KEYS`, if `key_enc`/`key_iv` pairs are
+/// present, they are decrypted and the original `key` is restored with the
+/// plaintext value. If neither the encrypted pair nor the plaintext key exists,
+/// the field is skipped.
+///
+/// Transparently handles legacy plaintext configs (no `_enc` keys) by
+/// returning the JSON unchanged.
+pub fn decrypt_trigger_config(config_json: &str) -> Result<String, CryptoError> {
+    let mut val: serde_json::Value = serde_json::from_str(config_json)
+        .map_err(|e| CryptoError::Decrypt(format!("Invalid trigger config JSON: {e}")))?;
+
+    let obj = match val.as_object_mut() {
+        Some(o) => o,
+        None => return Ok(config_json.to_string()),
+    };
+
+    for &key in SENSITIVE_TRIGGER_KEYS {
+        let enc_key = format!("{key}_enc");
+        let iv_key = format!("{key}_iv");
+
+        let ciphertext = match obj.get(&enc_key).and_then(|v| v.as_str()) {
+            Some(ct) => ct.to_string(),
+            None => continue, // plaintext or absent — nothing to decrypt
+        };
+        let nonce = match obj.get(&iv_key).and_then(|v| v.as_str()) {
+            Some(n) => n.to_string(),
+            None => continue,
+        };
+
+        let plaintext_json = decrypt_from_db(&ciphertext, &nonce)?;
+
+        // Restore the original value (parse back from the serialized form)
+        let restored: serde_json::Value = serde_json::from_str(&plaintext_json)
+            .unwrap_or(serde_json::Value::String(plaintext_json));
+
+        obj.remove(&enc_key);
+        obj.remove(&iv_key);
+        obj.insert(key.to_string(), restored);
+    }
+
+    serde_json::to_string(&val)
+        .map_err(|e| CryptoError::Decrypt(format!("JSON serialize error: {e}")))
+}
+
+/// Migrate plaintext trigger config secrets to encrypted form.
+/// Scans all persona_triggers with webhook_secret or headers in their config,
+/// encrypts the values if not already encrypted.
+/// Runs inside a transaction for atomicity.
+/// Returns `(migrated_count, skipped_count)`.
+pub fn migrate_plaintext_trigger_secrets(pool: &DbPool) -> Result<(usize, usize), CryptoError> {
+    let mut conn = pool
+        .get()
+        .map_err(|e| CryptoError::KeyManagement(format!("DB pool error: {e}")))?;
+
+    // Find triggers that have plaintext sensitive fields:
+    // webhook triggers with webhook_secret but no webhook_secret_enc,
+    // polling triggers with headers but no headers_enc.
+    let (rows, parse_failures): (Vec<(String, String)>, usize) = {
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, config FROM persona_triggers
+                 WHERE config IS NOT NULL
+                   AND (
+                     (trigger_type = 'webhook'
+                       AND json_extract(config, '$.webhook_secret') IS NOT NULL
+                       AND json_extract(config, '$.webhook_secret_enc') IS NULL)
+                     OR
+                     (trigger_type = 'polling'
+                       AND json_extract(config, '$.headers') IS NOT NULL
+                       AND json_extract(config, '$.headers_enc') IS NULL)
+                   )",
+            )
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?;
+
+        let mut result: Vec<(String, String)> = Vec::new();
+        let mut failures = 0usize;
+        for (idx, r) in stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?
+            .enumerate()
+        {
+            match r {
+                Ok(row) => result.push(row),
+                Err(e) => {
+                    failures += 1;
+                    tracing::error!(
+                        "migrate_plaintext_trigger_secrets: failed to parse row at index {}: {}",
+                        idx, e
+                    );
+                }
+            }
+        }
+        (result, failures)
+    };
+
+    if rows.is_empty() && parse_failures == 0 {
+        return Ok((0, 0));
+    }
+
+    let tx = conn
+        .transaction()
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction begin error: {e}")))?;
+
+    let mut migrated = 0;
+
+    for (id, config_json) in &rows {
+        match encrypt_trigger_config(config_json) {
+            Ok(encrypted_json) => {
+                if encrypted_json != *config_json {
+                    tx.execute(
+                        "UPDATE persona_triggers SET config = ?1 WHERE id = ?2",
+                        rusqlite::params![encrypted_json, id],
+                    )
+                    .map_err(|e| {
+                        CryptoError::KeyManagement(format!(
+                            "Update error for trigger {id}: {e}"
+                        ))
+                    })?;
+                    migrated += 1;
+                }
+            }
+            Err(e) => {
+                tracing::error!("Failed to encrypt trigger config for {}: {}", id, e);
+            }
+        }
+    }
+
+    tx.commit()
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction commit error: {e}")))?;
+
+    if migrated > 0 {
+        tracing::info!(
+            "Migrated trigger config secrets for {} trigger(s) to encrypted storage",
+            migrated
+        );
+    }
+
+    Ok((migrated, parse_failures))
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -1170,5 +1458,72 @@ mod tests {
         // Roundtrip
         let decrypted = decrypt_from_db(&ct, &nonce).unwrap();
         assert_eq!(decrypted, json);
+    }
+
+    #[test]
+    fn test_trigger_config_webhook_roundtrip() {
+        let config = r#"{"webhook_secret":"my-hmac-key","event_type":"deploy"}"#;
+        let encrypted = encrypt_trigger_config(config).unwrap();
+
+        // Plaintext secret should be gone
+        let val: serde_json::Value = serde_json::from_str(&encrypted).unwrap();
+        assert!(val.get("webhook_secret").is_none());
+        assert!(val.get("webhook_secret_enc").is_some());
+        assert!(val.get("webhook_secret_iv").is_some());
+        // Non-sensitive field preserved
+        assert_eq!(val.get("event_type").unwrap().as_str().unwrap(), "deploy");
+
+        // Decrypt roundtrip
+        let decrypted = decrypt_trigger_config(&encrypted).unwrap();
+        let dec_val: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
+        assert_eq!(dec_val.get("webhook_secret").unwrap().as_str().unwrap(), "my-hmac-key");
+        assert!(dec_val.get("webhook_secret_enc").is_none());
+    }
+
+    #[test]
+    fn test_trigger_config_polling_headers_roundtrip() {
+        let config = r#"{"url":"https://api.example.com","headers":{"Authorization":"Bearer tok123"},"interval_seconds":60}"#;
+        let encrypted = encrypt_trigger_config(config).unwrap();
+
+        let val: serde_json::Value = serde_json::from_str(&encrypted).unwrap();
+        assert!(val.get("headers").is_none());
+        assert!(val.get("headers_enc").is_some());
+        assert!(val.get("headers_iv").is_some());
+        // Non-sensitive fields preserved
+        assert_eq!(val.get("url").unwrap().as_str().unwrap(), "https://api.example.com");
+        assert_eq!(val.get("interval_seconds").unwrap().as_u64().unwrap(), 60);
+
+        let decrypted = decrypt_trigger_config(&encrypted).unwrap();
+        let dec_val: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
+        let headers = dec_val.get("headers").unwrap().as_object().unwrap();
+        assert_eq!(headers.get("Authorization").unwrap().as_str().unwrap(), "Bearer tok123");
+    }
+
+    #[test]
+    fn test_trigger_config_plaintext_passthrough() {
+        // Config without sensitive fields should pass through unchanged
+        let config = r#"{"cron":"0 * * * *","event_type":"build_check"}"#;
+        let encrypted = encrypt_trigger_config(config).unwrap();
+        let val: serde_json::Value = serde_json::from_str(&encrypted).unwrap();
+        assert_eq!(val.get("cron").unwrap().as_str().unwrap(), "0 * * * *");
+
+        // Decrypt of non-encrypted config should also pass through
+        let decrypted = decrypt_trigger_config(config).unwrap();
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&decrypted).unwrap(),
+            serde_json::from_str::<serde_json::Value>(config).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_trigger_config_already_encrypted_skipped() {
+        let config = r#"{"webhook_secret":"my-key","event_type":"deploy"}"#;
+        let encrypted = encrypt_trigger_config(config).unwrap();
+        // Encrypting again should be a no-op (already has _enc keys)
+        let double_encrypted = encrypt_trigger_config(&encrypted).unwrap();
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&encrypted).unwrap(),
+            serde_json::from_str::<serde_json::Value>(&double_encrypted).unwrap()
+        );
     }
 }

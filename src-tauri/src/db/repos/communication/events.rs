@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, PersonaEvent,
@@ -84,7 +84,7 @@ fn validate_event_input(input: &CreatePersonaEventInput) -> Result<(), AppError>
 // Row Mappers
 // ============================================================================
 
-fn row_to_event(row: &Row) -> rusqlite::Result<PersonaEvent> {
+fn row_to_event(row: &rusqlite::Row) -> rusqlite::Result<PersonaEvent> {
     let raw_payload: Option<String> = row.get("payload")?;
     let payload_iv: Option<String> = row.get("payload_iv").unwrap_or(None);
 
@@ -118,18 +118,16 @@ fn row_to_event(row: &Row) -> rusqlite::Result<PersonaEvent> {
     })
 }
 
-fn row_to_subscription(row: &Row) -> rusqlite::Result<PersonaEventSubscription> {
-    Ok(PersonaEventSubscription {
-        id: row.get("id")?,
-        persona_id: row.get("persona_id")?,
-        event_type: row.get("event_type")?,
-        source_filter: row.get("source_filter")?,
-        enabled: row.get::<_, i32>("enabled")? != 0,
-        created_at: row.get("created_at")?,
-        updated_at: row.get("updated_at")?,
-        use_case_id: row.get("use_case_id")?,
-    })
-}
+row_mapper!(row_to_subscription -> PersonaEventSubscription {
+    id,
+    persona_id,
+    event_type,
+    source_filter,
+    enabled [bool],
+    created_at,
+    updated_at,
+    use_case_id,
+});
 
 // ============================================================================
 // Events
@@ -178,20 +176,7 @@ pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaE
     get_by_id(pool, &id)
 }
 
-pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_events WHERE id = ?1",
-        params![id],
-        row_to_event,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("PersonaEvent {id}"))
-        }
-        other => AppError::Database(other),
-    })
-}
+crud_get_by_id!(PersonaEvent, "persona_events", "PersonaEvent", row_to_event);
 
 pub fn get_pending(
     pool: &DbPool,

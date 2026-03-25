@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Chrome, LogOut, User } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function AuthButton() {
   const user = useAuthStore((s) => s.user);
@@ -12,6 +12,7 @@ export default function AuthButton() {
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const logout = useAuthStore((s) => s.logout);
 
+  const { t } = useTranslation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -42,7 +43,7 @@ export default function AuthButton() {
           />
         }
         className="group border border-transparent hover:border-primary/20 hover:bg-primary/10"
-        title="Sign in with Google"
+        title={t.chrome.sign_in_google}
       />
     );
   }
@@ -54,7 +55,7 @@ export default function AuthButton() {
         size="icon-lg"
         onClick={() => setDropdownOpen(!dropdownOpen)}
         className="relative hover:bg-secondary/50"
-        title={user?.display_name ?? user?.email ?? "Account"}
+        title={user?.display_name ?? user?.email ?? t.sidebar.account}
       >
         {user?.avatar_url ? (
           <img
@@ -74,14 +75,9 @@ export default function AuthButton() {
         )}
       </Button>
 
-      <AnimatePresence>
-        {dropdownOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 4, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-full ml-2 mb-0 w-56 rounded-xl
+      {dropdownOpen && (
+          <div
+            className="animate-fade-slide-in absolute bottom-full left-full ml-2 mb-0 w-56 rounded-xl
               bg-secondary border border-primary/15 shadow-elevation-3 z-50 py-1 overflow-hidden"
           >
             {/* User info */}
@@ -97,7 +93,7 @@ export default function AuthButton() {
               {isOffline && (
                 <span className="inline-block mt-1.5 px-1.5 py-0.5 typo-label rounded-full
                   bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  Offline
+                  {t.chrome.offline}
                 </span>
               )}
             </div>
@@ -114,11 +110,10 @@ export default function AuthButton() {
               }}
               className="justify-start text-foreground/90 rounded-none"
             >
-              Sign out
+              {t.chrome.sign_out}
             </Button>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

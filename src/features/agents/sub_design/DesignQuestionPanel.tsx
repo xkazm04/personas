@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Send, MessageCircleQuestion } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 
 export interface DesignQuestion {
@@ -50,13 +49,9 @@ export function DesignQuestionPanel({
   }, [question.options, onAnswerQuestion]);
 
   return (
-    <motion.div
+    <div
       key="awaiting-input"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.15 }}
-      className="space-y-4"
+      className="animate-fade-slide-in space-y-4"
     >
       {/* Terminal output so far */}
       <TransformProgress mode="analysis" lines={outputLines} isRunning={false} />
@@ -152,6 +147,6 @@ export function DesignQuestionPanel({
       >
         Cancel Design
       </button>
-    </motion.div>
+    </div>
   );
 }

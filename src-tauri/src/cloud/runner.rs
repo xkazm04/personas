@@ -3,6 +3,8 @@ use std::sync::Arc;
 
 use tauri::{AppHandle, Emitter};
 
+use crate::engine::event_registry::event_name;
+
 use super::client::CloudClient;
 
 /// Result of a cloud execution polling loop.
@@ -76,7 +78,7 @@ pub async fn run_cloud_execution(
 
                 if consecutive_errors >= max_consecutive_errors {
                     let _ = app.emit(
-                        "execution-status",
+                        event_name::EXECUTION_STATUS,
                         serde_json::json!({
                             "execution_id": local_execution_id,
                             "status": "failed",
@@ -95,7 +97,7 @@ pub async fn run_cloud_execution(
                 // Notify UI that polling is degraded
                 if consecutive_errors == 1 {
                     let _ = app.emit(
-                        "execution-status",
+                        event_name::EXECUTION_STATUS,
                         serde_json::json!({
                             "execution_id": local_execution_id,
                             "status": "warning",
@@ -111,7 +113,7 @@ pub async fn run_cloud_execution(
         // Emit execution progress if available (stage, tool, percent)
         if let Some(progress) = &poll.progress {
             let _ = app.emit(
-                "execution-progress",
+                event_name::EXECUTION_PROGRESS,
                 serde_json::json!({
                     "execution_id": local_execution_id,
                     "progress": progress,
@@ -123,7 +125,7 @@ pub async fn run_cloud_execution(
         if let Some(reviews) = &poll.pending_reviews {
             if !reviews.is_empty() {
                 let _ = app.emit(
-                    "execution-review-request",
+                    event_name::EXECUTION_REVIEW_REQUEST,
                     serde_json::json!({
                         "execution_id": local_execution_id,
                         "reviews": reviews,
@@ -147,7 +149,7 @@ pub async fn run_cloud_execution(
         };
         for line in new_lines {
             let _ = app.emit(
-                "execution-output",
+                event_name::EXECUTION_OUTPUT,
                 serde_json::json!({
                     "execution_id": local_execution_id,
                     "line": line,
@@ -160,7 +162,7 @@ pub async fn run_cloud_execution(
         match poll.status.as_str() {
             "completed" => {
                 let _ = app.emit(
-                    "execution-status",
+                    event_name::EXECUTION_STATUS,
                     serde_json::json!({
                         "execution_id": local_execution_id,
                         "status": "completed",
@@ -175,7 +177,7 @@ pub async fn run_cloud_execution(
             }
             "failed" | "cancelled" | "error" => {
                 let _ = app.emit(
-                    "execution-status",
+                    event_name::EXECUTION_STATUS,
                     serde_json::json!({
                         "execution_id": local_execution_id,
                         "status": poll.status,
@@ -196,7 +198,7 @@ pub async fn run_cloud_execution(
 
     // Timed out waiting for cloud execution
     let _ = app.emit(
-        "execution-status",
+        event_name::EXECUTION_STATUS,
         serde_json::json!({
             "execution_id": local_execution_id,
             "status": "failed",

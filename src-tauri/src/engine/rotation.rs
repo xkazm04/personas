@@ -22,6 +22,7 @@ use tauri::Emitter;
 
 use super::connector_strategy;
 use super::cron;
+use super::event_registry::event_name;
 
 // ---------------------------------------------------------------------------
 // Windowed anomaly scoring constants
@@ -455,7 +456,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                     "Rotation: successful -- {}",
                     detail
                 );
-                let _ = app.emit("rotation-completed", serde_json::json!({
+                let _ = app.emit(event_name::ROTATION_COMPLETED, serde_json::json!({
                     "credential_id": policy.credential_id,
                     "status": "success",
                     "detail": detail,
@@ -589,7 +590,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                         );
                     }
                 }
-                let _ = app.emit("rotation-completed", serde_json::json!({
+                let _ = app.emit(event_name::ROTATION_COMPLETED, serde_json::json!({
                     "credential_id": policy.credential_id,
                     "status": "failed",
                     "detail": msg,
@@ -716,7 +717,7 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
                     remediation = %score.remediation.as_str(),
                     "Rotation anomaly detected via windowed scoring"
                 );
-                let _ = app.emit("rotation-anomaly", serde_json::json!({
+                let _ = app.emit(event_name::ROTATION_ANOMALY, serde_json::json!({
                     "credential_id": cred.id,
                     "remediation": score.remediation.as_str(),
                     "failure_rate_1h": score.failure_rate_1h,

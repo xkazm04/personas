@@ -6,6 +6,7 @@ use tokio_util::sync::CancellationToken;
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::n8n_transform::run_claude_prompt_text_inner;
 use crate::engine::db_query;
+use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged;
@@ -115,7 +116,7 @@ fn sanitize_db_error(err: &str) -> String {
 // -- Static job manager --------------------------------------------------
 
 static QUERY_DEBUG_JOBS: BackgroundJobManager<()> =
-    BackgroundJobManager::new("query debug job lock", "query-debug-status", "query-debug-output");
+    BackgroundJobManager::new("query debug job lock", event_name::QUERY_DEBUG_STATUS, event_name::QUERY_DEBUG_OUTPUT);
 
 /// Maximum number of fix-and-retry cycles.
 const MAX_RETRIES: usize = 3;
@@ -294,7 +295,7 @@ async fn run_query_debug(params: RunParams) {
         emit_line(&app, &debug_id, &format!("> Attempt {} -- executing extracted query...", attempt + 1));
 
         // Execute the extracted query
-        match db_query::execute_query(&pool, &credential_id, &query_to_run, None).await {
+        match db_query::execute_query(&pool, &credential_id, &query_to_run, None, true).await {
             Ok(result) => {
                 let summary = format!(
                     "> Query succeeded: {} row{} in {}ms",
@@ -307,7 +308,7 @@ async fn run_query_debug(params: RunParams) {
                 // Emit sanitized result -- redact sensitive columns, cap rows
                 let sanitized_result = sanitize_query_result(&result);
                 let _ = app.emit(
-                    "query-debug-status",
+                    event_name::QUERY_DEBUG_STATUS,
                     serde_json::json!({
                         "job_id": debug_id,
                         "status": "completed",

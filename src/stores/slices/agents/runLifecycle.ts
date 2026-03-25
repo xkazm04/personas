@@ -1,5 +1,5 @@
 /**
- * Shared run lifecycle abstraction for evaluation-style slices (testSlice, labSlice).
+ * Shared run lifecycle abstraction for all run systems (executionSlice, testSlice, labSlice).
  *
  * Encapsulates the common pattern:
  * - isRunning boolean + progress tracking

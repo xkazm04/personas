@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { DraftEditStep } from '@/features/shared/components/editors/draft-editor/DraftEditStep';
@@ -21,13 +20,9 @@ interface DescribeStepProps {
 
 export function DescribeStep({ templateName, description, error, reducer }: DescribeStepProps) {
   return (
-    <motion.div
+    <div
       key="describe"
-      initial={stepInitial}
-      animate={stepAnimate}
-      exit={stepExit}
-      transition={stepTransition}
-      className="p-6 space-y-6"
+      className="animate-fade-in p-6 space-y-6"
     >
       <div className="space-y-1.5">
         <label className="text-sm font-semibold text-muted-foreground/80 uppercase tracking-wider">
@@ -63,7 +58,7 @@ export function DescribeStep({ templateName, description, error, reducer }: Desc
           {error}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -79,13 +74,9 @@ interface GenerateStepProps {
 
 export function GenerateStep({ generateLines, generatePhase, backgroundGenId, onRetry, onCancel }: GenerateStepProps) {
   return (
-    <motion.div
+    <div
       key="generate"
-      initial={stepInitial}
-      animate={stepAnimate}
-      exit={stepExit}
-      transition={stepTransition}
-      className="p-6"
+      className="animate-fade-in p-6"
     >
       <TransformProgress
         lines={generateLines}
@@ -95,7 +86,7 @@ export function GenerateStep({ generateLines, generatePhase, backgroundGenId, on
         onRetry={onRetry}
         onCancel={onCancel}
       />
-    </motion.div>
+    </div>
   );
 }
 
@@ -127,13 +118,9 @@ export function ReviewStep({
   onApplyAdjustment,
 }: ReviewStepProps) {
   return (
-    <motion.div
+    <div
       key="review"
-      initial={stepInitial}
-      animate={stepAnimate}
-      exit={stepExit}
-      transition={stepTransition}
-      className="p-6 h-[60vh]"
+      className="animate-fade-in p-6 h-[60vh]"
     >
       <DraftEditStep
         draft={draft}
@@ -148,6 +135,6 @@ export function ReviewStep({
         onAdjustmentChange={(text) => reducer.setAdjustment(text)}
         onApplyAdjustment={onApplyAdjustment}
       />
-    </motion.div>
+    </div>
   );
 }

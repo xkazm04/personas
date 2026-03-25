@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 import { deriveArchCategories, type ArchCategory } from './architecturalCategories';
@@ -26,6 +26,9 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
 
 import { MatrixCellRenderer, CellBullets, type MatrixCell } from './MatrixCellRenderer';
+import { DimensionQuickConfig, serializeQuickConfig, describeTriggerConfig, type QuickConfigState } from '@/features/agents/components/matrix/DimensionQuickConfig';
+import { useHealthyConnectors } from '@/features/agents/components/matrix/useHealthyConnectors';
+import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import {
   extractTriggers, extractHumanReview, extractMemory, extractErrorStrategies,
   cellRevealVariants,
@@ -207,6 +210,29 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   // Pre-build: creation mode before the build process has started — enlarge command hub, minimize dimension cells
   const isPreBuild = isCreationMode && !hasBuildStates && !designResult && (!buildPhase || buildPhase === 'initializing');
 
+  // Quick-config overlay state (pre-build only)
+  const [quickConfig, setQuickConfig] = useState<QuickConfigState>({ frequency: null, days: ['mon'], monthDay: 1, time: '09:00', selectedConnectors: [] });
+  const quickConfigRef = useRef(quickConfig);
+  quickConfigRef.current = quickConfig;
+  const handleQuickConfigChange = useCallback((state: QuickConfigState) => {
+    setQuickConfig(state);
+  }, []);
+
+  // Healthy connectors for cell preview labels
+  const healthyConnectors = useHealthyConnectors();
+
+  // Wrap onLaunch to append quick-config hints to intent text before build starts.
+  // The parent (UnifiedMatrixEntry) reads intent from a ref, so updating state
+  // and calling launch synchronously works — the ref always has the latest value.
+  const handleLaunchWithConfig = useCallback(() => {
+    if (!onLaunch) return;
+    const hint = serializeQuickConfig(quickConfigRef.current);
+    if (hint && onIntentChange && intentText !== undefined) {
+      onIntentChange(intentText + hint);
+    }
+    onLaunch();
+  }, [onLaunch, onIntentChange, intentText]);
+
   // Handle cell click for editing in draft phase
   const handleCellEditClick = (cellKey: string) => {
     if (!isCreationMode || !isDraftPhase) return;
@@ -270,12 +296,34 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         ? () => <DimensionEditPanel cellKey={key} onDirty={handleEditDirty} />
         : undefined;
 
+      // Quick-config preview for triggers & connectors cells
+      const triggerLines = describeTriggerConfig(quickConfig);
+      const selectedConnectorMetas = quickConfig.selectedConnectors.map((name) => ({
+        name,
+        meta: getConnectorMeta(name),
+      }));
+
       return [
         { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => null, editRender: editPanel('use-cases') },
         { key: 'connectors', label: CELL_LABELS['connectors'] ?? 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400',
-          render: () => cellConnectors.length > 0 ? <ConnectorsCellContent connectors={cellConnectors} /> : null,
+          render: () => {
+            if (cellConnectors.length > 0) return <ConnectorsCellContent connectors={cellConnectors} />;
+            if (selectedConnectorMetas.length > 0) return (
+              <div className="flex flex-wrap gap-2">
+                {selectedConnectorMetas.map((c) => (
+                  <div key={c.name} className="flex items-center gap-1.5">
+                    <ConnectorIcon meta={c.meta} size="w-3.5 h-3.5" />
+                    <span className="text-xs text-foreground/60">{c.meta.label}</span>
+                  </div>
+                ))}
+              </div>
+            );
+            return null;
+          },
           editRender: editPanel('connectors') },
-        { key: 'triggers', label: CELL_LABELS['triggers'] ?? 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400', render: () => null, editRender: editPanel('triggers') },
+        { key: 'triggers', label: CELL_LABELS['triggers'] ?? 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400',
+          render: () => triggerLines.length > 0 ? <CellBullets items={triggerLines} color="text-amber-400/70" /> : null,
+          editRender: editPanel('triggers') },
         { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => badge('human-review'), editRender: editPanel('human-review') },
         { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => badge('messages'), editRender: editPanel('messages') },
         { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => badge('memory'), editRender: editPanel('memory') },
@@ -290,7 +338,8 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     const triggers = extractTriggers(designResult.suggested_triggers ?? []);
     const review = extractHumanReview(designResult.protocol_capabilities);
     const memory = extractMemory(designResult.protocol_capabilities);
-    const channels = designResult.suggested_notification_channels ?? [];
+    const rawChannels = designResult.suggested_notification_channels;
+    const channels = Array.isArray(rawChannels) ? rawChannels : [];
     const errorStrategies = extractErrorStrategies(designResult.structured_prompt?.errorHandling ?? '');
     const events: SuggestedEventSubscription[] = designResult.suggested_event_subscriptions ?? [];
     const editProps = isEditMode ? props as PersonaMatrixEditProps : null;
@@ -313,7 +362,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         render: () => { const dotColor = review.level === 'required' ? 'bg-rose-400' : review.level === 'optional' ? 'bg-amber-400' : 'bg-emerald-400'; return (<div className="space-y-1.5"><div className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} /><span className="text-sm font-medium text-foreground/80">{review.label}</span></div><p className="text-sm text-muted-foreground/60 leading-snug pl-[16px]">{review.context.length > 55 ? review.context.slice(0, 53) + '\u2026' : review.context}</p></div>); },
         editRender: editProps ? () => (<ReviewEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'messages', label: CELL_LABELS['messages']!, watermark: MessagesIcon, watermarkColor: 'text-blue-400', filled: channels.length > 0,
-        render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-muted-foreground/50" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground/70" />; },
+        render: () => { if (channels.length === 0) return <CellBullets items={['In-app notifications only']} color="text-muted-foreground/50" />; const bullets = channels.slice(0, 3).map((ch) => { const prefix = ch.type.charAt(0).toUpperCase() + ch.type.slice(1); return ch.description && ch.description.length > 3 && ch.description.length <= 40 ? `${prefix}: ${ch.description}` : `${prefix} channel`; }); return <CellBullets items={bullets} color="text-foreground/70" />; },
         editRender: editProps ? () => (<MessagesEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'memory', label: CELL_LABELS['memory']!, watermark: MemoryIcon, filled: memory.active,
         watermarkColor: memory.active ? 'text-purple-400' : 'text-zinc-400',
@@ -324,16 +373,17 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         editRender: editProps ? () => (<ErrorEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
       { key: 'events', label: CELL_LABELS['events']!, watermark: EventsIcon, filled: events.length > 0,
         watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-muted-foreground',
-        render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
+        render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description && ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode, draftConnectors, protocolByCellKey,
-    isDraftPhase, buildDraft, cellConnectors, connectorsCellRaw, handleEditDirty,
+    isDraftPhase, buildDraft, cellConnectors, connectorsCellRaw, handleEditDirty, quickConfig, healthyConnectors,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
   // Creation mode is interactive (textarea + launch orb) even without mode="edit"
   const commandCenterEditMode = isEditMode || isCreationMode || isSavedMode;
-  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={onLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} isPreBuild={isPreBuild} />);
+  const effectiveLaunch = isPreBuild ? handleLaunchWithConfig : onLaunch;
+  const commandCenter = (<MatrixCommandCenter designResult={designResult} isEditMode={commandCenterEditMode} isRunning={isRunning} onLaunch={effectiveLaunch} launchDisabled={launchDisabled} launchLabel={launchLabel} variant={variant} questions={questions} userAnswers={userAnswers} onAnswerUpdated={onAnswerUpdated} onSubmitAnswers={onSubmitAllAnswers ?? onSubmitAnswers} buildCompleted={buildCompleted} phaseLabel={phaseLabel} intentText={intentText} onIntentChange={onIntentChange} completeness={completeness} hasDesignResult={hasDesignResult} onContinue={onContinue} onRefine={onRefine} onCreateAgent={onCreateAgent} agentName={agentName} onAgentNameChange={onAgentNameChange} cliOutputLines={cliOutputLines} designQuestion={designQuestion} onAnswerQuestion={onAnswerQuestion} buildPhase={buildPhase} onStartTest={onStartTest} onApproveTest={onApproveTest} onRejectTest={onRejectTest} testOutputLines={testOutputLines} testPassed={testPassed} testError={testError} toolTestResults={toolTestResults} testSummary={testSummary} onViewAgent={onViewAgent} cellBuildStates={cellBuildStates} buildActivity={buildActivity} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} isPreBuild={isPreBuild} />);
 
   // When cellBuildStates are provided or in creation mode, render even without designResult (ghosted outlines)
   if ((!designResult && !hasBuildStates && !isCreationMode && !isSavedMode) || cells.length === 0) return (<div className="flex items-center justify-center py-12 text-sm text-muted-foreground/60">Matrix data unavailable.</div>);
@@ -343,6 +393,10 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
 
   return (
     <div className="flex flex-col gap-3 w-full h-full">
+      {/* Quick-config overlay for pre-build creation mode */}
+      {isPreBuild && (
+        <DimensionQuickConfig onChange={handleQuickConfigChange} />
+      )}
       {!hideHeader && (
         <div className="flex items-center gap-2.5">
           <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center border border-primary/25 shadow-sm shadow-primary/20">
@@ -351,15 +405,19 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
         </div>
       )}
-      <div className={`grid grid-rows-[1fr_1fr_1fr] gap-2.5 flex-1 min-h-0 w-full min-w-[1100px] ${
-        isPreBuild ? 'grid-cols-[1fr_4fr_1fr]' : 'grid-cols-[2fr_2.6fr_2fr]'
-      }`}>
+      <div
+        className="grid grid-rows-[1fr_1fr_1fr] gap-2.5 flex-1 min-h-0 w-full min-w-[1100px]"
+        style={{
+          gridTemplateColumns: isPreBuild ? '1fr 4fr 1fr' : '2fr 2.6fr 2fr',
+          transition: 'grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
         {firstFour.map((cell) => (
           <motion.div key={cell.key} custom={cell.key} variants={cellRevealVariants} initial={shouldAnimate ? "hidden" : false} animate="visible">
             <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={(isDraftPhase && isCreationMode) || isSavedMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
           </motion.div>
         ))}
-        <div className={`relative rounded-xl border border-primary/40 p-5 ${isPreBuild ? 'min-h-[280px]' : 'min-h-[200px]'} ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
+        <div className={`relative rounded-xl border border-primary/40 p-5 ${isPreBuild ? 'min-h-[280px]' : 'min-h-[200px]'} ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden transition-[min-height] duration-400 ease-out${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
           {/* Corner glows -- stronger at corners, thinner mid-lanes */}
           <div className="absolute inset-0 pointer-events-none matrix-center-corner-glow" />
           {/* Subtle mid-lane fill */}

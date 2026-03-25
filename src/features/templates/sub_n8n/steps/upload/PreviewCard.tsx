@@ -1,4 +1,3 @@
-import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, ChevronRight } from 'lucide-react';
 import type { FilePreview } from './n8nUploadTypes';
 
@@ -12,14 +11,10 @@ export function PreviewCard({
   onClick?: () => void;
 }) {
   return (
-    <AnimatePresence>
+    <>
       {preview && (
-        <motion.div
+        <div
           key={preview.kind}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 6 }}
-          transition={{ duration: 0.2 }}
           data-testid="file-validation-preview"
           data-status={preview.kind}
           onClick={onClick}
@@ -31,7 +26,7 @@ export function PreviewCard({
           }}
           role={onClick ? 'button' : undefined}
           tabIndex={onClick ? 0 : -1}
-          className={`mt-3 flex items-center gap-3 px-4 rounded-xl border ${
+          className={`animate-fade-slide-in mt-3 flex items-center gap-3 px-4 rounded-xl border ${
             preview.kind === 'valid'
               ? 'border-primary/10 bg-zinc-900/50 py-2 cursor-pointer hover:bg-zinc-800/60 transition-colors'
               : 'border-red-400/40 bg-red-500/5 h-12'
@@ -58,8 +53,8 @@ export function PreviewCard({
               <span className="text-sm text-red-400 truncate">{preview.message}</span>
             </>
           )}
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

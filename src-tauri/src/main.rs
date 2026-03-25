@@ -4,7 +4,7 @@
 fn main() {
     // Install the rustls CryptoProvider before any TLS connections are made.
     // Required since rustls 0.23 when no single default feature is enabled.
-    if let Err(_) = rustls::crypto::ring::default_provider().install_default() {
+    if rustls::crypto::ring::default_provider().install_default().is_err() {
         // Already installed by a dependency — safe to continue
     }
 
@@ -144,7 +144,7 @@ mod pii {
     fn base64_blob_re() -> &'static Regex {
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
-            Regex::new(r"(?<![a-zA-Z0-9/+])[A-Za-z0-9+/]{32,}={0,2}(?![a-zA-Z0-9/+=])").unwrap()
+            Regex::new(r"(^|[^a-zA-Z0-9/+])([A-Za-z0-9+/]{32,}={0,2})([^a-zA-Z0-9/+=]|$)").unwrap()
         })
     }
 
@@ -176,7 +176,7 @@ mod pii {
         result = prefixed_token_re().replace_all(&result, "[credential-redacted]").into_owned();
 
         // 6. Redact long base64-encoded strings (potential encrypted blobs)
-        result = base64_blob_re().replace_all(&result, "[encrypted-blob-redacted]").into_owned();
+        result = base64_blob_re().replace_all(&result, "${1}[encrypted-blob-redacted]${3}").into_owned();
 
         // 7. Redact quoted strings (credential names, persona names, etc.)
         result = quoted_re().replace_all(&result, "[redacted]").into_owned();

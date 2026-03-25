@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { ArrowRight, Download, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 
@@ -61,11 +60,8 @@ export function FooterActions({
       </div>
 
       {!loading && !hasIssues && !ipcError && personas.length === 0 && !onboardingCompleted && !onboardingActive && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
-          className="rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/8 to-indigo-500/5 p-4"
+        <div
+          className="animate-fade-slide-in rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/8 to-indigo-500/5 p-4"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0">
@@ -86,7 +82,7 @@ export function FooterActions({
               Get Started
             </Button>
           </div>
-        </motion.div>
+        </div>
       )}
     </>
   );

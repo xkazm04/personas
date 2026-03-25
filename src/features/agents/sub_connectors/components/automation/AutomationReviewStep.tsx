@@ -1,6 +1,5 @@
 import { CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { motion } from 'framer-motion';
 import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
 import type { DeployAutomationResult } from '@/api/agents/automations';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
@@ -22,7 +21,7 @@ export function AutomationReviewStep({
 }: AutomationReviewStepProps) {
   if (phase === 'deploying') {
     return (
-      <motion.div key="deploying" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-12 space-y-4">
+      <div key="deploying" className="animate-fade-slide-in flex flex-col items-center justify-center py-12 space-y-4">
         <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
           <LoadingSpinner size="lg" className="text-accent" />
         </div>
@@ -37,13 +36,13 @@ export function AutomationReviewStep({
             {platform === 'custom' && 'Saving automation configuration'}
           </p>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   if (phase === 'success' && deployResult) {
     return (
-      <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-12 space-y-4">
+      <div key="success" className="animate-fade-slide-in flex flex-col items-center justify-center py-12 space-y-4">
         <div className="w-12 h-12 rounded-full bg-brand-emerald/10 border border-brand-emerald/20 flex items-center justify-center">
           <CheckCircle2 className="w-5 h-5 text-brand-emerald" />
         </div>
@@ -68,13 +67,13 @@ export function AutomationReviewStep({
         >
           Done
         </button>
-      </motion.div>
+      </div>
     );
   }
 
   // Error phase
   return (
-    <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+    <div key="error" className="animate-fade-slide-in space-y-4">
       <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-brand-rose/5 border border-brand-rose/15">
         <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
         <div>
@@ -90,6 +89,6 @@ export function AutomationReviewStep({
           Try Again
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

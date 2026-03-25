@@ -14,7 +14,7 @@ name: string,
  */
 task_complexity: TaskComplexity, 
 /**
- * Provider to route to (as engine kind string: "claude_code", "gemini_cli", etc.).
+ * Provider to route to (as engine kind string: "claude_code", "codex_cli", etc.).
  */
 provider: string, 
 /**

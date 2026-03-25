@@ -16,8 +16,8 @@ export const getExportStats = () =>
 export const exportFull = () =>
   invoke<boolean>("export_full");
 
-export const exportSelective = (personaIds: string[], teamIds: string[]) =>
-  invoke<boolean>("export_selective", { personaIds, teamIds });
+export const exportSelective = (personaIds: string[], teamIds: string[], connectorIds: string[]) =>
+  invoke<boolean>("export_selective", { personaIds, teamIds, connectorIds });
 
 export const importPortabilityBundle = () =>
   invoke<PortabilityImportResult | null>("import_portability_bundle");

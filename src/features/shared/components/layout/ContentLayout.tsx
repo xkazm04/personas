@@ -120,7 +120,7 @@ interface ContentBodyProps {
   centered?: boolean;
   /** Skip default padding. */
   noPadding?: boolean;
-  /** Use flex-col layout on the scroll container (for empty-state centering). */
+  /** Use flex-col on the scroll container (for empty-state centering). */
   flex?: boolean;
 }
 

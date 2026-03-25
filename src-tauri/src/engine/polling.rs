@@ -127,6 +127,14 @@ pub async fn poll_due_triggers(
             continue; // Only process polling triggers in this loop
         }
 
+        // Active window gate: skip polling outside configured active hours,
+        // but still advance the schedule so it doesn't pile up as overdue.
+        if !trigger.is_within_active_window(now) {
+            let next = sched_logic::compute_next_trigger_at(&trigger, now);
+            let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+            continue;
+        }
+
         // Skip triggers in backoff from prior mark_triggered failures
         if is_in_backoff(&trigger.id) {
             continue;

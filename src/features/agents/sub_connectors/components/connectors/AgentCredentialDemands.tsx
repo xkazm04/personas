@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { Key, Plug, ArrowRight, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
@@ -158,13 +157,9 @@ function DemandCard({
       </div>
 
       {/* Reusable credentials dropdown */}
-      <AnimatePresence>
-        {isLinking && hasReusable && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
+      {isLinking && hasReusable && (
+          <div
+            className="animate-fade-slide-in overflow-hidden"
           >
             <div className="px-3 pb-2.5 pt-1 border-t border-primary/10 space-y-1">
               <p className="text-xs text-muted-foreground/50 mb-1.5">
@@ -188,9 +183,8 @@ function DemandCard({
                 </button>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { listen } from '@tauri-apps/api/event';
+import { EventName } from '@/lib/eventRegistry';
 import type { KbIngestProgress } from '@/api/vault/database/vectorKb';
 
 interface IngestProgressBarProps {
@@ -22,13 +23,13 @@ export function IngestProgressBar({ jobId, onComplete }: IngestProgressBarProps)
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const setup = async () => {
-      unlisten1 = await listen<KbIngestProgress>('kb:ingest_progress', (event) => {
+      unlisten1 = await listen<KbIngestProgress>(EventName.KB_INGEST_PROGRESS, (event) => {
         if (event.payload.jobId === jobId) {
           setProgress(event.payload);
         }
       });
 
-      unlisten2 = await listen<KbIngestProgress>('kb:ingest_complete', (event) => {
+      unlisten2 = await listen<KbIngestProgress>(EventName.KB_INGEST_COMPLETE, (event) => {
         if (event.payload.jobId === jobId) {
           setProgress(event.payload);
           setDone(true);

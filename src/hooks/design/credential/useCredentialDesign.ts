@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { cancelCredentialDesign, startCredentialDesign } from "@/api/vault/credentialDesignApi";
+import { EventName } from '@/lib/eventRegistry';
 
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
@@ -39,12 +40,13 @@ export function useCredentialDesign() {
 
   const flow = useAiArtifactTask<[string], CredentialDesignResult>({
     progressEvent: 'credential-design-output',
-    statusEvent: 'credential-design-status',
+    statusEvent: EventName.CREDENTIAL_DESIGN_STATUS,
     runningPhase: 'analyzing',
     completedPhase: 'preview',
     startFn: startCredentialDesign,
     cancelFn: cancelCredentialDesign,
     errorMessage: 'Credential design failed',
+    traceOperation: 'credential_design',
   });
 
   const save = useCallback(async (

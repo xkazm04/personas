@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
@@ -38,8 +37,7 @@ export default function DryRunDebugger({
   return (
     <div className="absolute bottom-0 left-0 right-0 z-30">
       {/* Data Inspector Panel */}
-      <AnimatePresence>
-        {dbg.inspectedData && !dbg.panelCollapsed && (
+      {dbg.inspectedData && !dbg.panelCollapsed && (
           <DebuggerVariables
             inspectedData={dbg.inspectedData}
             agentName={agentNameForInspected}
@@ -47,7 +45,6 @@ export default function DryRunDebugger({
             onClose={() => dbg.setInspectedNode(null)}
           />
         )}
-      </AnimatePresence>
 
       {/* Cycle Warning Banner */}
       {dbg.cycleNodeIds.size > 0 && (
