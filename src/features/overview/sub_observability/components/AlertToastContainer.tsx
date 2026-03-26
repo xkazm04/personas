@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AlertTriangle, Info, XCircle, X } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import type { FiredAlert } from '@/lib/bindings/FiredAlert';
 
 const SEVERITY_STYLES: Record<string, { border: string; bg: string; icon: typeof Info; iconColor: string }> = {
@@ -39,8 +40,10 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
 }
 
 export function AlertToastContainer() {
-  const activeToasts = useOverviewStore((s) => s.activeToasts);
-  const dismissToast = useOverviewStore((s) => s.dismissToast);
+  const { activeToasts, dismissToast } = useOverviewStore(useShallow((s) => ({
+    activeToasts: s.activeToasts,
+    dismissToast: s.dismissToast,
+  })));
 
   if (activeToasts.length === 0) return null;
 

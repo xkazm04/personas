@@ -7,6 +7,9 @@ import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator
 import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import type { NotificationChannelType, ModelProfile, ModelProvider, TestFixture } from '@/lib/types/frontendTypes';
 import { resolveEffectiveModel, type ModelOption } from './useCaseDetailHelpers';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("use-case-detail");
 
 export function useUseCaseDetail(useCaseId: string) {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -39,7 +42,7 @@ export function useUseCaseDetail(useCaseId: string) {
         });
         setIsDirty(false);
       } catch (error) {
-        console.error('Failed to update use case:', error);
+        logger.error('Failed to update use case', { error });
         setSaveError(error instanceof Error ? error.message : 'Failed to save changes');
       }
     },

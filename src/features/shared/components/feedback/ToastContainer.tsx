@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
 import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
 import type { StandardToast, HealingToast } from '@/stores/toastStore';
-import { resolveError, friendlySeverity } from '@/lib/errors/errorRegistry';
+import { classifyErrorFull } from '@/lib/errors/errorPipeline';
+import { friendlySeverity } from '@/lib/errors/errorRegistry';
 import { formatElapsed } from '@/lib/utils/formatters';
 
 // ---------------------------------------------------------------------------
@@ -48,7 +49,8 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
   const elapsedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
 
-  const friendly = toast.type === 'error' ? resolveError(toast.message) : null;
+  const classified = toast.type === 'error' ? classifyErrorFull(toast.message) : null;
+  const friendly = classified?.friendly ?? null;
   const displayMessage = friendly?.message ?? toast.message;
 
   useEffect(() => {

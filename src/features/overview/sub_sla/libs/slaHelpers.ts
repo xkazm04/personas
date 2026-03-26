@@ -4,11 +4,8 @@ export function formatPercent(rate: number): string {
   return `${(rate * 100).toFixed(1)}%`;
 }
 
-export function formatDuration(ms: number): string {
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${(ms / 60_000).toFixed(1)}m`;
-}
+import { formatDuration as _formatDuration } from '@/lib/utils/formatters';
+export const formatDuration = (ms: number) => _formatDuration(ms, { precision: 'decimal' });
 
 export function formatMtbf(seconds: number): string {
   if (seconds < 60) return `${Math.round(seconds)}s`;

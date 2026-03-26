@@ -17,11 +17,8 @@ export const COLOR_MAP: Record<string, { text: string; bg: string; border: strin
   amber: { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
 };
 
-export function formatDuration(ms: number): string {
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${(ms / 60000).toFixed(1)}m`;
-}
+import { formatDuration as _formatDuration } from '@/lib/utils/formatters';
+export const formatDuration = (ms: number) => _formatDuration(ms, { precision: 'decimal' });
 
 export function formatCost(usd: number): string {
   if (usd < 0.01) return `$${usd.toFixed(4)}`;

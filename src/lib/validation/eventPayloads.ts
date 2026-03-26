@@ -1,3 +1,7 @@
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("event-payloads");
+
 /**
  * Typed payload validators for Tauri event listeners.
  *
@@ -55,7 +59,7 @@ export function validatePayload<S extends Record<string, FieldDef>>(
 
     if (value === undefined || value === null) {
       if (!def.optional) {
-        console.warn(`[event:${eventName}] Missing required field "${key}"`);
+        logger.warn("Missing required field in event payload", { event: eventName, field: key });
         return null;
       }
       continue;
@@ -64,9 +68,7 @@ export function validatePayload<S extends Record<string, FieldDef>>(
     const actualType = Array.isArray(value) ? 'array' : typeof value;
     if (actualType !== def.type) {
       if (!def.optional) {
-        console.warn(
-          `[event:${eventName}] Field "${key}" expected ${def.type}, got ${actualType}`,
-        );
+        logger.warn("Event payload field type mismatch", { event: eventName, field: key, expected: def.type, got: actualType });
         return null;
       }
       // Optional field with wrong type — skip it silently

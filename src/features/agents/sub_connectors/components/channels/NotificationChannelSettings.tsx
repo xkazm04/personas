@@ -6,7 +6,11 @@ import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types'
 import { useEditorDirty } from '@/features/agents/sub_editor';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { ChannelList, channelTypes } from './ChannelList';
+import { DeliveryHealthBadge } from './DeliveryHealthBadge';
 import { TOOLS_BORDER } from '@/lib/utils/designTokens';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("notification-channel-settings");
 
 interface NotificationChannelSettingsProps {
   personaId?: string;
@@ -102,7 +106,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
     setIsSaving(true);
     try { await applyPersonaOp(personaId, { kind: 'UpdateNotifications', notification_channels: JSON.stringify(effectiveChannels) }); setIsDirty(false); }
     catch (error) {
-      console.error('Failed to save notification channels:', error);
+      logger.error('Failed to save notification channels', { error });
       setSaveError('Could not save notification channels. Please check your connection and try again.');
       setIsDirty(true);
     }
@@ -137,6 +141,9 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
         <div className="px-3 py-2 mt-2 rounded-xl border border-red-500/20 bg-red-500/10 text-sm text-red-400/80">
           {saveError}
         </div>
+      )}
+      {!isDraftMode && effectiveChannels.length > 0 && (
+        <DeliveryHealthBadge channelTypes={effectiveChannels.filter(c => c.enabled).map(c => c.type)} />
       )}
     </div>
   );

@@ -1,9 +1,11 @@
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { VaultErrorBanner } from '@/features/vault/sub_card/banners/VaultErrorBanner';
+import { ReauthBanner } from '@/features/vault/sub_card/banners/ReauthBanner';
 import { CredentialDeleteDialog } from '@/features/vault/sub_card/CredentialDeleteDialog';
 import { useCredentialManagerState } from './useCredentialManagerState';
 import { CredentialManagerHeader, CredentialToolbar } from './CredentialManagerHeader';
 import { CredentialManagerViews } from './CredentialManagerViews';
+import { VaultBreadcrumb } from './VaultBreadcrumb';
 
 export function CredentialManager() {
   const state = useCredentialManagerState();
@@ -27,6 +29,8 @@ export function CredentialManager() {
     viewState,
     handleRotateAll,
     undoDelete,
+    dispatch,
+    breadcrumbs,
   } = state;
 
   if (loading) return null;
@@ -53,7 +57,11 @@ export function CredentialManager() {
         isDailyRun={isDailyRun}
       />
 
+      <VaultBreadcrumb segments={breadcrumbs} dispatch={dispatch} />
+
       <ContentBody>
+        <ReauthBanner />
+
         {bannerError && (
           <VaultErrorBanner
             message={bannerError}

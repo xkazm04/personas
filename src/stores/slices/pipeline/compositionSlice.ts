@@ -8,6 +8,9 @@
 import type { StateCreator } from "zustand";
 import type { PipelineStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("composition");
 import type {
   Workflow,
   WorkflowNode,
@@ -263,7 +266,7 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
       };
       set({ workflowExecution: execution });
 
-      console.debug(`[workflow] started workflow=${workflowId} nodes=${sorted.length}`);
+      logger.debug("Workflow started", { workflowId, nodeCount: sorted.length });
 
       // Helper: derive next state from the latest accumulated store state,
       // ensuring completed node outputs are never lost when a later node fails.
@@ -363,9 +366,7 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
             const timedOut = elapsed >= maxWait;
 
             if (timedOut) {
-              console.warn(
-                `[workflow] node=${nodeId} (${node.label}) timed out after ${maxWait}ms — execution may still be running in the background`,
-              );
+              logger.warn("Workflow node timed out", { nodeId, nodeLabel: node.label, maxWaitMs: maxWait });
             }
 
             // Capture output
@@ -412,9 +413,7 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
             };
             setExecution(timedOut ? { status: "failed", completedAt } : {});
 
-            console.debug(
-              `[workflow] node=${nodeId} (${node.label}) ${timedOut ? "timed_out" : "completed"} duration=${duration_ms}ms exec=${executionMs ?? "?"}ms cost=$${nodeCostUsd?.toFixed(4) ?? "?"} tokens=${nodeInputTokens ?? 0}/${nodeOutputTokens ?? 0}`,
-            );
+            logger.debug("Workflow node finished", { nodeId, nodeLabel: node.label, status: timedOut ? "timed_out" : "completed", durationMs: duration_ms, executionMs: executionMs ?? null, costUsd: nodeCostUsd ?? null, inputTokens: nodeInputTokens ?? 0, outputTokens: nodeOutputTokens ?? 0 });
 
             if (timedOut) return;
           } catch (err) {
@@ -430,7 +429,7 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
               duration_ms,
             };
             setExecution({ status: "failed", completedAt });
-            console.error(`[workflow] node=${nodeId} (${node.label}) failed duration=${duration_ms}ms error=${msg}`);
+            logger.error("Workflow node failed", { nodeId, nodeLabel: node.label, durationMs: duration_ms, error: msg });
             return;
           }
         }
@@ -466,7 +465,7 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
         total_output_tokens: totalOut || undefined,
       });
 
-      console.debug(`[workflow] ${finalStatus} workflow=${workflowId} total_duration=${total_duration_ms}ms cost=$${totalCost.toFixed(4)} tokens=${totalIn}/${totalOut} trace=${workflowTraceId}`);
+      logger.debug("Workflow completed", { workflowId, status: finalStatus, totalDurationMs: total_duration_ms, totalCostUsd: totalCost, totalInputTokens: totalIn, totalOutputTokens: totalOut, traceId: workflowTraceId });
     });
   },
 

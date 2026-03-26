@@ -124,8 +124,9 @@ export interface ProtocolCapability {
   context: string;
 }
 
-/** Phase of the design analysis lifecycle */
-export type DesignPhase = "idle" | "analyzing" | "preview" | "applying" | "applied" | "refining" | "awaiting-input" | "error";
+/** Phase of the design analysis lifecycle.
+ * Canonical FSM definition lives in `@/lib/fsm` (`designPhaseFSM`). */
+export type { DesignPhaseState as DesignPhase } from '@/lib/fsm';
 
 /** Result of a design feasibility test */
 export interface DesignTestResult {
@@ -165,8 +166,10 @@ export interface AdoptionQuestion {
   use_case_ids?: string[];
   /** Which connector names this question is relevant to */
   connector_names?: string[];
-  /** Category for grouping: 'configuration', 'credentials', 'human_in_the_loop', 'memory', 'notifications' */
+  /** Category for grouping: 'domain', 'configuration', 'quality', 'credentials', 'human_in_the_loop', 'memory', 'notifications' */
   category?: string;
+  /** Which matrix dimension this question configures (e.g., 'connectors', 'use-cases', 'triggers') */
+  dimension?: string;
 }
 
 /** Readiness status for a connector in a template */

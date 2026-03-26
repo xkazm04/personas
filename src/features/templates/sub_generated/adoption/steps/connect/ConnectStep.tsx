@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Plug, ChevronDown, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { healthcheckCredential } from '@/api/vault/credentials';
 import { ConnectorPipeline } from '../../../shared/ConnectorPipeline';
@@ -53,7 +53,7 @@ export function ConnectStep() {
   const onCredentialCreated = ctx.handleCredentialCreated;
   const onSwapConnector = ctx.wizard.swapConnector;
 
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
   const [inlineStartMode, setInlineStartMode] = useState<'pick' | 'design-query'>('pick');
   const [showPipeline, setShowPipeline] = useState(false);
   const [testingAll, setTestingAll] = useState(false);

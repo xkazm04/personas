@@ -2,6 +2,9 @@
  * confirmSave and cleanupAll actions for useAsyncTransform.
  */
 import { silentCatch } from "@/lib/silentCatch";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("template-adoption");
 import { useCallback, type MutableRefObject } from 'react';
 import {
   clearTemplateAdoptSnapshot,
@@ -112,7 +115,7 @@ export function useConfirmSave({
 
       if (response.entity_errors?.length) {
         const failedNames = response.entity_errors.map((e) => `${e.entity_type} "${e.entity_name}"`).join(', ');
-        console.warn(`[adopt] Persona created with ${response.entity_errors.length} entity errors: ${failedNames}`);
+        logger.warn("Persona created with entity errors", { count: response.entity_errors.length, failedNames });
       }
       traceSession.complete();
       wizard.confirmCompleted();

@@ -172,11 +172,68 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is the primary source of your survey responses?",
+        "type": "select",
+        "options": [
+          "Google Forms",
+          "Typeform",
+          "SurveyMonkey",
+          "Qualtrics",
+          "Database/CSV",
+          "Other"
+        ],
+        "default": "Google Forms",
+        "context": "Identifies where survey data is collected so the agent can connect to the right source.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "How deep should the analysis go for each survey batch?",
+        "type": "select",
+        "options": [
+          "Summary only",
+          "Summary with themes",
+          "Full analysis with sentiment and recommendations"
+        ],
+        "default": "Full analysis with sentiment and recommendations",
+        "context": "Controls the depth of insight extraction, from quick summaries to comprehensive reports.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "What format should insight reports be delivered in?",
+        "type": "select",
+        "options": [
+          "Notion page",
+          "In-app message",
+          "Email digest",
+          "Slack summary"
+        ],
+        "default": "Notion page",
+        "context": "Determines where and how the generated insight reports are delivered to you.",
+        "dimension": "messages"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should low-confidence theme extractions be flagged for review?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, uncertain pattern detections are sent for human validation before inclusion in reports.",
+        "dimension": "human-review"
+      }
+    ],
     "persona_meta": {
       "name": "T: Survey Insights Analyzer",
       "icon": "Sparkles",
       "color": "#8b5cf6"
     }
-  },
-  "is_published": false
+  }
 }

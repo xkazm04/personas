@@ -1,4 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('credential-negotiator');
 import {
   startCredentialNegotiation,
   cancelCredentialNegotiation,
@@ -36,6 +39,15 @@ export interface NegotiationPlan {
   tips: string[];
 }
 
+/** Subset of AuthDetection relevant to the negotiator. */
+export interface AuthDetectionInfo {
+  serviceType: string;
+  method: string;
+  authenticated: boolean;
+  identity: string | null;
+  confidence: string;
+}
+
 /** Runtime context passed to the hook for step graph evaluation. */
 export interface NegotiatorContext {
   /** Values already captured by autoCred or previously saved credentials */
@@ -44,6 +56,8 @@ export interface NegotiatorContext {
   hasOAuth?: boolean;
   /** Whether the connector has a healthcheck endpoint configured */
   hasHealthcheck?: boolean;
+  /** Auth detection results for services the user is already authenticated to */
+  authenticatedServices?: AuthDetectionInfo[];
 }
 
 const EMPTY_RESOLVED: ResolvedSteps = {
@@ -65,7 +79,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
   /** Tracks completed steps via ref to avoid stale closure in completeStep callback. */
   const completedStepsRef = useRef<Set<number>>(new Set());
 
-  const flow = useAiArtifactTask<[string, Record<string, unknown>, string[]], NegotiationPlan>({
+  const flow = useAiArtifactTask<[string, Record<string, unknown>, string[], Array<Record<string, unknown>> | undefined], NegotiationPlan>({
     progressEvent: 'credential-negotiation-progress',
     statusEvent: EventName.CREDENTIAL_NEGOTIATION_STATUS,
     runningPhase: 'planning',
@@ -83,6 +97,8 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
 
   const prefilled = context?.prefilledValues ?? {};
 
+  const authServices = context?.authenticatedServices ?? [];
+
   const graphContext = useMemo<StepGraphContext>(() => {
     const fieldKeys = flow.result
       ? flow.result.steps.flatMap((s) =>
@@ -97,8 +113,9 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
       hasOAuth: context?.hasOAuth ?? false,
       allFieldsPrefilled,
       hasHealthcheck: context?.hasHealthcheck ?? true,
+      authenticatedServices: authServices,
     };
-  }, [flow.result, prefilled, context?.hasOAuth, context?.hasHealthcheck]);
+  }, [flow.result, prefilled, context?.hasOAuth, context?.hasHealthcheck, authServices]);
 
   const resolved = useMemo<ResolvedSteps>(() => {
     if (!flow.result) return EMPTY_RESOLVED;
@@ -139,10 +156,21 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
       connector: connector as unknown as CredentialDesignConnector,
       setup_instructions: '',
       summary: '',
-    }, 'negotiator').catch((err) => { console.warn('Failed to cache recipe from negotiator (non-critical):', err); });
+    }, 'negotiator').catch((err) => { logger.warn('Failed to cache recipe from negotiator (non-critical)', { error: String(err) }); });
 
-    await flow.start(serviceName, connector, fieldKeys);
-  }, [flow.start, flow.setResult, flow.setPhase, sp.reset]);
+    // Convert AuthDetectionInfo[] to plain records for the backend invoke
+    const authForBackend = authServices.length > 0
+      ? authServices.filter((s) => s.authenticated).map((s) => ({
+          service_type: s.serviceType,
+          method: s.method,
+          authenticated: s.authenticated,
+          identity: s.identity,
+          confidence: s.confidence,
+        }))
+      : undefined;
+
+    await flow.start(serviceName, connector, fieldKeys, authForBackend);
+  }, [flow.start, flow.setResult, flow.setPhase, sp.reset, authServices]);
 
   // completeStep operates on visible indices -- translates to original for refs/playbook
   const completeStep = useCallback((visibleIndex: number) => {

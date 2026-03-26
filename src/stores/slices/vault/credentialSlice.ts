@@ -143,12 +143,8 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
 
   updateCredentialField: async (id, key, value, isSensitive) => {
     try {
-      let session_encrypted_value: string | undefined = undefined;
-      if (isSensitive) {
-        session_encrypted_value = await encryptWithSessionKey(value);
-      }
-
-      await updateCredentialField(id, key, value, isSensitive, session_encrypted_value);
+      const sessionEncryptedValue = await encryptWithSessionKey(value);
+      await updateCredentialField(id, key, isSensitive, sessionEncryptedValue);
       await get().fetchCredentials();
       set({ error: null });
     } catch (err) {
@@ -170,7 +166,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       // Encrypt field values before sending over IPC
       const session_encrypted_data = await encryptWithSessionKey(JSON.stringify(fieldValues));
       
-      const result = await healthcheckCredentialPreview(serviceType, {}, session_encrypted_data);
+      const result = await healthcheckCredentialPreview(serviceType, session_encrypted_data);
       return result;
     } catch (err) {
       return { success: false, message: errMsg(err, "Healthcheck failed") };

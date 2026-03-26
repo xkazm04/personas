@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { BORDER_DEFAULT } from '@/lib/utils/designTokens';
 import { DraftEditStep } from '@/features/shared/components/editors/draft-editor/DraftEditStep';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 
@@ -65,7 +66,7 @@ export function CreateEditDetails({
           <div
             className="animate-fade-slide-in overflow-hidden"
           >
-            <div className="min-h-[400px] rounded-xl border border-primary/10 bg-secondary/10 p-4">
+            <div className={`min-h-[400px] rounded-xl border ${BORDER_DEFAULT} bg-secondary/10 p-4`}>
               <DraftEditStep
                 draft={draft}
                 draftJson={draftJson}

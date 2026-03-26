@@ -9,13 +9,16 @@
  */
 
 import { addMiddleware, type PipelineMiddleware } from '@/lib/execution/pipeline';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger("audit-middleware");
 
 const auditCreateRecord: PipelineMiddleware<'create_record'> = (
   _stage,
   payload,
   _trace,
 ) => {
-  console.info('[pipeline:audit] execution created', {
+  logger.info('Execution created', {
     executionId: payload.executionId,
     stage: 'create_record',
   });
@@ -27,7 +30,7 @@ const auditFinalizeStatus: PipelineMiddleware<'finalize_status'> = (
   payload,
   _trace,
 ) => {
-  console.info('[pipeline:audit] execution finalized', {
+  logger.info('Execution finalized', {
     executionId: payload.executionId,
     status: payload.status,
     durationMs: payload.durationMs,
@@ -39,6 +42,6 @@ const auditFinalizeStatus: PipelineMiddleware<'finalize_status'> = (
 };
 
 export function registerAuditMiddleware(): void {
-  addMiddleware('create_record', auditCreateRecord);
-  addMiddleware('finalize_status', auditFinalizeStatus);
+  addMiddleware('create_record', 'audit-create-record', auditCreateRecord);
+  addMiddleware('finalize_status', 'audit-finalize-status', auditFinalizeStatus);
 }

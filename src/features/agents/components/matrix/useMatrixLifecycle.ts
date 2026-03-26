@@ -18,6 +18,9 @@ import {
 } from "@/api/agents/personas";
 import type { PromoteBuildResult, ToolTestResult } from "@/lib/types/buildTypes";
 import { useAgentStore } from "@/stores/agentStore";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("matrix-lifecycle");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -113,7 +116,7 @@ export function useMatrixLifecycle({
     const sessionId = state.buildSessionId;
 
     if (!sessionId || !effectivePersonaId) {
-      console.warn("[handleStartTest] Cannot start test: missing sessionId or personaId",
+      logger.warn("Cannot start test: missing sessionId or personaId",
         { sessionId, storePersonaId: state.buildPersonaId, closurePersonaId: personaId, buildPhase: state.buildPhase });
       return;
     }
@@ -160,7 +163,7 @@ export function useMatrixLifecycle({
       try {
         await answerBuildQuestion(sessionId, "_refine", feedback);
       } catch (err) {
-        console.error("Refinement failed:", err);
+        logger.error("Refinement failed", { error: err });
       }
     },
     [],
@@ -249,7 +252,7 @@ export function useMatrixLifecycle({
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Promotion failed";
-      console.error("handlePromote failed:", message);
+      logger.error("handlePromote failed", { message });
       return emptyResult;
     }
   }, [personaId]);

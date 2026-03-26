@@ -7,6 +7,7 @@ use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use hmac::{Hmac, Mac};
 use sha2::{Sha256, Digest};
 use tauri::State;
 use tokio::io::AsyncWriteExt;
@@ -24,6 +25,10 @@ use crate::AppState;
 
 const GOOGLE_OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
+
+/// Hard cap on concurrent OAuth sessions per map. When exceeded, the oldest
+/// sessions are evicted to prevent unbounded memory growth from abandoned flows.
+const MAX_OAUTH_SESSIONS: usize = 50;
 
 // -- Shared OAuth Callback Server ---------------------------------
 
@@ -81,8 +86,13 @@ where
 
     match accept_result {
         Ok(Ok((mut socket, _addr))) => {
-            let mut buffer = [0_u8; 8192];
+            let mut buffer = [0_u8; 32768]; // 32KB to handle long OAuth callbacks (enterprise Azure AD, etc.)
             let read_n = socket.read(&mut buffer).await.unwrap_or(0);
+            if read_n == buffer.len() {
+                return OAuthCallbackOutcome::Error(
+                    "OAuth callback URL exceeded maximum buffer size (32KB). This may indicate an unusually long authorization response.".into(),
+                );
+            }
             let request_text = String::from_utf8_lossy(&buffer[..read_n]).to_string();
             let first_line = request_text.lines().next().unwrap_or("");
             let path_part = first_line.split_whitespace().nth(1).unwrap_or("/");
@@ -96,8 +106,10 @@ where
                     let error_desc = url.query_pairs().find_map(|(k, v)| (k == "error_description").then(|| v.into_owned()));
                     let callback_state = url.query_pairs().find_map(|(k, v)| (k == "state").then(|| v.into_owned()));
 
-                    // Validate state parameter to prevent CSRF
-                    let state_valid = callback_state.as_deref() == Some(&expected_state);
+                    // Validate state: must match expected value AND pass HMAC verification
+                    // to prevent both CSRF and cross-instance replay attacks.
+                    let state_valid = callback_state.as_deref() == Some(&expected_state)
+                        && verify_oauth_state(&expected_state);
                     if !state_valid {
                         OAuthCallbackOutcome::Error(
                             "OAuth state mismatch -- possible CSRF attack. Please retry the authorization.".into(),
@@ -181,10 +193,35 @@ fn now_unix_secs() -> u64 {
         .unwrap_or(0)
 }
 
+/// Evict the oldest sessions from a map when it exceeds `max_size`.
+/// `get_created_at` extracts the creation timestamp from a session value.
+fn evict_oldest_sessions<V>(
+    sessions: &mut HashMap<String, V>,
+    max_size: usize,
+    get_created_at: fn(&V) -> u64,
+) {
+    if sessions.len() <= max_size {
+        return;
+    }
+    let to_evict = sessions.len() - max_size;
+    let mut entries: Vec<(String, u64)> = sessions
+        .iter()
+        .map(|(k, v)| (k.clone(), get_created_at(v)))
+        .collect();
+    entries.sort_by_key(|(_, ts)| *ts);
+    for (key, _) in entries.into_iter().take(to_evict) {
+        sessions.remove(&key);
+    }
+    tracing::info!(evicted = to_evict, remaining = sessions.len(), "Evicted oldest OAuth sessions (cap: {max_size})");
+}
+
 fn cleanup_google_oauth_sessions() {
     let now = now_unix_secs();
     let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
+    // Remove expired sessions
     sessions.retain(|_, session| now.saturating_sub(session.created_at) <= GOOGLE_OAUTH_SESSION_TTL_SECS);
+    // Evict oldest sessions if over the hard cap
+    evict_oldest_sessions(&mut sessions, MAX_OAUTH_SESSIONS, |s| s.created_at);
 }
 
 // -- Token encryption helpers ------------------------------------
@@ -820,12 +857,142 @@ fn generate_pkce_pair() -> (SecureString, String) {
     (SecureString::new(code_verifier), code_challenge)
 }
 
-/// Generate a cryptographically random OAuth state parameter (RFC 6749 §10.12).
+/// Per-install HMAC secret for binding OAuth state tokens to this app instance.
+/// Lazily initialized: generated once and persisted in the OS keyring so it
+/// survives restarts but is unique per install.
+///
+/// The secret is 32 random bytes, stored as base64 in the keyring.
+fn get_or_create_oauth_hmac_secret() -> [u8; 32] {
+    use aes_gcm::aead::rand_core::{OsRng, RngCore};
+
+    #[cfg(feature = "desktop")]
+    {
+        const SERVICE: &str = "personas-desktop";
+        const KEY: &str = "oauth-state-hmac-secret";
+
+        // Try to load existing secret from keyring
+        if let Ok(entry) = keyring::Entry::new(SERVICE, KEY) {
+            if let Ok(b64) = entry.get_password() {
+                if let Ok(bytes) = URL_SAFE_NO_PAD.decode(&b64) {
+                    if bytes.len() == 32 {
+                        let mut arr = [0u8; 32];
+                        arr.copy_from_slice(&bytes);
+                        return arr;
+                    }
+                }
+            }
+        }
+
+        // Generate a new secret
+        let mut secret = [0u8; 32];
+        OsRng.fill_bytes(&mut secret);
+
+        // Persist to keyring (best-effort; if it fails we still use the ephemeral secret)
+        if let Ok(entry) = keyring::Entry::new(SERVICE, KEY) {
+            let _ = entry.set_password(&URL_SAFE_NO_PAD.encode(secret));
+        }
+
+        secret
+    }
+
+    #[cfg(not(feature = "desktop"))]
+    {
+        // No keyring on mobile — use a per-process ephemeral secret.
+        static EPHEMERAL: OnceLock<[u8; 32]> = OnceLock::new();
+        *EPHEMERAL.get_or_init(|| {
+            let mut s = [0u8; 32];
+            OsRng.fill_bytes(&mut s);
+            s
+        })
+    }
+}
+
+type HmacSha256 = Hmac<Sha256>;
+
+/// Maximum age of an OAuth state parameter (10 minutes), matching the session TTL.
+const OAUTH_STATE_MAX_AGE_SECS: u64 = 600;
+
+/// Generate an HMAC-signed OAuth state parameter bound to this app instance.
+///
+/// Format: `{nonce}.{timestamp}.{hmac}` where all components are URL-safe base64.
+/// The HMAC covers `{nonce}.{timestamp}` using a per-install secret from the
+/// keyring, preventing cross-instance state replay (RFC 6749 §10.12).
 fn generate_oauth_state() -> String {
     use aes_gcm::aead::rand_core::{OsRng, RngCore};
-    let mut state_bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut state_bytes);
-    URL_SAFE_NO_PAD.encode(state_bytes)
+
+    let mut nonce_bytes = [0u8; 16];
+    OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = URL_SAFE_NO_PAD.encode(nonce_bytes);
+
+    let timestamp = now_unix_secs();
+    let message = format!("{nonce}.{timestamp}");
+
+    let secret = get_or_create_oauth_hmac_secret();
+    let mut mac = HmacSha256::new_from_slice(&secret)
+        .expect("HMAC accepts any key size");
+    mac.update(message.as_bytes());
+    let tag = URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
+
+    format!("{message}.{tag}")
+}
+
+/// Verify an HMAC-signed OAuth state parameter.
+///
+/// Checks that:
+/// 1. The format is `{nonce}.{timestamp}.{hmac}`
+/// 2. The HMAC is valid for this app instance's secret
+/// 3. The timestamp is within `OAUTH_STATE_MAX_AGE_SECS`
+///
+/// Returns `true` if the state is valid.
+fn verify_oauth_state(state: &str) -> bool {
+    // Split into exactly 3 parts: nonce, timestamp, hmac
+    let parts: Vec<&str> = state.rsplitn(2, '.').collect();
+    if parts.len() != 2 {
+        return false;
+    }
+    let tag_b64 = parts[0];
+    let message = parts[1];
+
+    // message must be "nonce.timestamp"
+    let dot_pos = match message.rfind('.') {
+        Some(p) => p,
+        None => return false,
+    };
+    let timestamp_str = &message[dot_pos + 1..];
+
+    // Verify HMAC first (constant-time comparison via the hmac crate)
+    let secret = get_or_create_oauth_hmac_secret();
+    let mut mac = match HmacSha256::new_from_slice(&secret) {
+        Ok(m) => m,
+        Err(_) => return false,
+    };
+    mac.update(message.as_bytes());
+
+    let expected_tag = match URL_SAFE_NO_PAD.decode(tag_b64) {
+        Ok(t) => t,
+        Err(_) => return false,
+    };
+
+    if mac.verify_slice(&expected_tag).is_err() {
+        tracing::warn!("OAuth state HMAC verification failed — possible cross-instance replay");
+        return false;
+    }
+
+    // Verify timestamp freshness
+    let timestamp: u64 = match timestamp_str.parse() {
+        Ok(t) => t,
+        Err(_) => return false,
+    };
+    let now = now_unix_secs();
+    if now.saturating_sub(timestamp) > OAUTH_STATE_MAX_AGE_SECS {
+        tracing::warn!(
+            age_secs = now.saturating_sub(timestamp),
+            "OAuth state expired"
+        );
+        return false;
+    }
+
+    true
 }
 
 // -- Universal OAuth Sessions -------------------------------------
@@ -860,7 +1027,10 @@ fn oauth_sessions() -> &'static Mutex<HashMap<String, OAuthSession>> {
 fn cleanup_oauth_sessions() {
     let now = now_unix_secs();
     let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
+    // Remove expired sessions
     sessions.retain(|_, s| now.saturating_sub(s.created_at) <= OAUTH_SESSION_TTL_SECS);
+    // Evict oldest sessions if over the hard cap
+    evict_oldest_sessions(&mut sessions, MAX_OAUTH_SESSIONS, |s| s.created_at);
 }
 
 // -- Universal OAuth Commands -------------------------------------

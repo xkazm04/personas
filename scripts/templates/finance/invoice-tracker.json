@@ -273,11 +273,90 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "How do invoices typically arrive?",
+        "type": "select",
+        "options": [
+          "Email attachments (Gmail)",
+          "Manual upload",
+          "Shared drive",
+          "API from accounting software"
+        ],
+        "default": "Email attachments (Gmail)",
+        "context": "Determines the primary connector used to ingest invoice documents.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Above what amount should invoices require manual approval?",
+        "type": "select",
+        "options": [
+          "$100",
+          "$500",
+          "$1,000",
+          "$5,000",
+          "No threshold"
+        ],
+        "default": "$1,000",
+        "context": "Invoices above this amount are flagged for human review before processing.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "What is the primary currency for your invoices?",
+        "type": "select",
+        "options": [
+          "USD",
+          "EUR",
+          "GBP",
+          "CAD",
+          "AUD",
+          "Other"
+        ],
+        "default": "USD",
+        "context": "Sets the default currency for amount parsing and display.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "How many days before the due date should overdue reminders be sent?",
+        "type": "select",
+        "options": [
+          "1 day",
+          "3 days",
+          "7 days",
+          "14 days"
+        ],
+        "default": "3 days",
+        "context": "Controls how far in advance the agent alerts you about upcoming payment deadlines.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_config_3",
+        "category": "configuration",
+        "question": "Where should overdue invoice alerts be delivered?",
+        "type": "select",
+        "options": [
+          "In-app notification",
+          "Email",
+          "Slack",
+          "All channels"
+        ],
+        "default": "In-app notification",
+        "context": "Determines the notification channel for payment deadline alerts.",
+        "dimension": "messages"
+      }
+    ],
     "persona_meta": {
       "name": "T: Invoice Tracker",
       "icon": "Receipt",
       "color": "#10b981"
     }
-  },
-  "is_published": false
+  }
 }

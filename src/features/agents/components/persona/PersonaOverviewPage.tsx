@@ -13,6 +13,9 @@ import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
 import { ViewPresetBar, DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './ViewPresetBar';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("persona-overview");
 
 // -- Status helpers --
 
@@ -254,7 +257,7 @@ export default function PersonaOverviewPage() {
         return next;
       });
     } catch (err) {
-      console.error('Failed to delete persona:', err);
+      logger.error('Failed to delete persona', { error: err });
     }
   }, [deletePersona]);
 
@@ -266,7 +269,7 @@ export default function PersonaOverviewPage() {
       try {
         await deletePersona(id);
       } catch (err) {
-        console.error(`Failed to delete persona ${id}:`, err);
+        logger.error('Failed to delete persona', { id, error: err });
       }
     }
   }, [selectedIds, deletePersona]);

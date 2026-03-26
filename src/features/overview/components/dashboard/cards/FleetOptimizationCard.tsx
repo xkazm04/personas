@@ -18,6 +18,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import {
   generateFleetRecommendation,
   type FleetRecommendation,
@@ -159,8 +160,10 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
 }
 
 export default function FleetOptimizationCard() {
-  const executionDashboard = useOverviewStore((s) => s.executionDashboard);
-  const healingIssues = useOverviewStore((s) => s.healingIssues);
+  const { executionDashboard, healingIssues } = useOverviewStore(useShallow((s) => ({
+    executionDashboard: s.executionDashboard,
+    healingIssues: s.healingIssues,
+  })));
 
   const recommendation = useMemo(
     () => generateFleetRecommendation(executionDashboard, healingIssues),

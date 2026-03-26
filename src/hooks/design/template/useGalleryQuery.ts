@@ -1,4 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('gallery-query');
 import { useSystemStore } from "@/stores/systemStore";
 import { silentCatch } from "@/lib/silentCatch";
 import {
@@ -108,6 +111,10 @@ export function useGalleryQuery(
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchIdRef = useRef(0);
   const currentPageRef = useRef(0);
+  /** Synchronous guard — prevents concurrent fetchMore calls from racing. */
+  const fetchMoreLockRef = useRef(false);
+  /** Set to true when a fetchMore was requested while another was in-flight. */
+  const fetchMoreQueuedRef = useRef(false);
 
   const setSearch = useCallback((value: string) => {
     setSearchRaw(value);
@@ -130,7 +137,6 @@ export function useGalleryQuery(
   const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
     const id = ++fetchIdRef.current;
     if (pageNum === 0) setIsLoading(true);
-    else setIsFetchingMore(true);
 
     try {
       // 'readiness' is computed client-side; fall back to 'trending' for backend fetch
@@ -151,11 +157,10 @@ export function useGalleryQuery(
       setTotal(result.total);
       setItems(prev => append ? [...prev, ...result.items] : result.items);
     } catch (err) {
-      console.error('Failed to fetch paginated reviews:', err);
+      logger.error('Failed to fetch paginated reviews', { err });
     } finally {
       if (id === fetchIdRef.current) {
         setIsLoading(false);
-        setIsFetchingMore(false);
       }
     }
   }, [debouncedSearch, connectorFilter, categoryFilter, sortBy, sortDir, perPage]);
@@ -164,18 +169,44 @@ export function useGalleryQuery(
   useEffect(() => {
     if (!aiSearchActive) {
       currentPageRef.current = 0;
+      fetchMoreLockRef.current = false;
+      fetchMoreQueuedRef.current = false;
       fetchPage(0, false);
     }
   }, [fetchPage, aiSearchActive]);
 
-  // Fetch more: load the next page and append
+  // Fetch more: load the next page and append.
+  // Uses a synchronous ref lock to prevent concurrent fetches from racing.
+  // If called while a fetch is in-flight, the request is queued and runs after
+  // the current fetch completes — this guarantees pages arrive in order.
   const fetchMore = useCallback(() => {
-    if (isFetchingMore || isLoading || aiSearchActive) return;
+    if (isLoading || aiSearchActive) return;
     if (items.length >= total) return;
+
+    if (fetchMoreLockRef.current) {
+      fetchMoreQueuedRef.current = true;
+      return;
+    }
+
+    fetchMoreLockRef.current = true;
+    fetchMoreQueuedRef.current = false;
+
     const nextPage = currentPageRef.current + 1;
     currentPageRef.current = nextPage;
-    fetchPage(nextPage, true);
-  }, [isFetchingMore, isLoading, aiSearchActive, items.length, total, fetchPage]);
+
+    setIsFetchingMore(true);
+    fetchPage(nextPage, true).finally(() => {
+      fetchMoreLockRef.current = false;
+      setIsFetchingMore(false);
+
+      // If another fetchMore was requested while we were fetching, drain the queue
+      if (fetchMoreQueuedRef.current) {
+        fetchMoreQueuedRef.current = false;
+        // Re-check conditions before recursing
+        fetchMore();
+      }
+    });
+  }, [isLoading, aiSearchActive, items.length, total, fetchPage]);
 
   const hasMore = items.length < total;
 

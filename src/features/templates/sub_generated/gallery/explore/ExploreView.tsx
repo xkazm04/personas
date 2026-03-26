@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Download } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -81,7 +81,7 @@ export function ExploreView({
     return map;
   }, [allItems]);
 
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 2xl:px-8 3xl:px-12 4xl:px-16">

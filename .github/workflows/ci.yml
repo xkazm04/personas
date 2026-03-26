@@ -66,10 +66,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Typecheck + lint
+        run: npm run check
 
-      - name: Typecheck + build
+      - name: Build
         run: npm run build
 
       - name: Check bundle size budget

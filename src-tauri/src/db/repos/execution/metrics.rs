@@ -8,6 +8,7 @@ use crate::db::models::{
     VersionMarker, MetricAnomaly,
     DashboardDailyPoint, DashboardCostAnomaly, DashboardTopPersona,
     ExecutionDashboardData, PersonaCostEntry,
+    AnomalyDrilldownData, CorrelatedEvent, RootCauseSuggestion,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -957,6 +958,365 @@ pub fn get_execution_dashboard(
         projected_monthly_cost,
         burn_rate,
     })
+}
+
+// =============================================================================
+// Anomaly Drill-Down: Cross-reference anomaly with correlated events
+// =============================================================================
+
+/// Given an anomaly date, metric, value, and baseline, query prompt versions,
+/// credential rotations, healing issues, and fired alerts within ±1 day and
+/// return correlated events ranked by relevance plus root-cause suggestions.
+#[instrument(skip(pool), fields(anomaly_date, persona_id))]
+pub fn get_anomaly_drilldown(
+    pool: &DbPool,
+    anomaly_date: &str,
+    anomaly_metric: &str,
+    anomaly_value: f64,
+    anomaly_baseline: f64,
+    anomaly_deviation_pct: f64,
+    persona_id: Option<&str>,
+) -> Result<AnomalyDrilldownData, AppError> {
+    let start = std::time::Instant::now();
+    let conn = pool.get()?;
+
+    // Parse the anomaly date as midday UTC so ±1 day window is clean
+    let anomaly_dt = chrono::NaiveDate::parse_from_str(anomaly_date, "%Y-%m-%d")
+        .map_err(|e| AppError::Validation(format!("Invalid anomaly_date: {e}")))?
+        .and_hms_opt(12, 0, 0)
+        .unwrap();
+    let window_start = (anomaly_dt - chrono::Duration::days(1)).format("%Y-%m-%dT00:00:00").to_string();
+    let window_end = (anomaly_dt + chrono::Duration::days(1)).format("%Y-%m-%dT23:59:59").to_string();
+
+    let mut correlated: Vec<CorrelatedEvent> = Vec::new();
+
+    // 1. Prompt version deployments in window
+    {
+        let query = if persona_id.is_some() {
+            "SELECT id, persona_id, version_number, tag, created_at, change_summary
+             FROM persona_prompt_versions
+             WHERE created_at BETWEEN ?1 AND ?2 AND persona_id = ?3
+             ORDER BY created_at"
+        } else {
+            "SELECT id, persona_id, version_number, tag, created_at, change_summary
+             FROM persona_prompt_versions
+             WHERE created_at BETWEEN ?1 AND ?2
+             ORDER BY created_at"
+        };
+        let mut stmt = conn.prepare(query)?;
+        let rows: Vec<(String, String, i32, String, String, Option<String>)> = if let Some(pid) = persona_id {
+            stmt.query_map(params![&window_start, &window_end, pid], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
+            })?.collect::<Result<Vec<_>, _>>()?
+        } else {
+            stmt.query_map(params![&window_start, &window_end], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
+            })?.collect::<Result<Vec<_>, _>>()?
+        };
+        for (_id, pid, ver_num, tag, created_at, summary) in rows {
+            let offset = compute_offset_seconds(&created_at, &anomaly_dt);
+            let relevance = compute_relevance(offset, persona_id.is_some());
+            correlated.push(CorrelatedEvent {
+                timestamp: created_at,
+                event_type: "prompt_deployment".into(),
+                label: format!("Prompt v{ver_num} ({tag})"),
+                detail: summary,
+                persona_id: Some(pid),
+                offset_seconds: offset,
+                relevance,
+            });
+        }
+    }
+
+    // 2. Credential rotations in window
+    {
+        let mut stmt = conn.prepare(
+            "SELECT r.id, r.credential_id, c.name, r.rotation_type, r.status, r.detail, r.created_at
+             FROM credential_rotation_history r
+             LEFT JOIN credentials c ON c.id = r.credential_id
+             WHERE r.created_at BETWEEN ?1 AND ?2
+             ORDER BY r.created_at"
+        )?;
+        let rows: Vec<(String, String, Option<String>, String, String, Option<String>, String)> = stmt
+            .query_map(params![&window_start, &window_end], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        for (_id, _cred_id, cred_name, rot_type, status, detail, created_at) in rows {
+            let offset = compute_offset_seconds(&created_at, &anomaly_dt);
+            let relevance = compute_relevance(offset, false);
+            let name_part = cred_name.as_deref().unwrap_or("unknown");
+            correlated.push(CorrelatedEvent {
+                timestamp: created_at,
+                event_type: "credential_rotation".into(),
+                label: format!("Rotation {status} · {name_part} ({rot_type})"),
+                detail,
+                persona_id: None,
+                offset_seconds: offset,
+                relevance,
+            });
+        }
+    }
+
+    // 3. Healing issues in window
+    {
+        let query = if persona_id.is_some() {
+            "SELECT id, persona_id, title, description, is_circuit_breaker, severity, category, created_at
+             FROM persona_healing_issues
+             WHERE created_at BETWEEN ?1 AND ?2 AND persona_id = ?3
+             ORDER BY created_at"
+        } else {
+            "SELECT id, persona_id, title, description, is_circuit_breaker, severity, category, created_at
+             FROM persona_healing_issues
+             WHERE created_at BETWEEN ?1 AND ?2
+             ORDER BY created_at"
+        };
+        let mut stmt = conn.prepare(query)?;
+        let rows: Vec<(String, String, String, String, bool, String, String, String)> = if let Some(pid) = persona_id {
+            stmt.query_map(params![&window_start, &window_end, pid], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?, row.get(7)?))
+            })?.collect::<Result<Vec<_>, _>>()?
+        } else {
+            stmt.query_map(params![&window_start, &window_end], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?, row.get(7)?))
+            })?.collect::<Result<Vec<_>, _>>()?
+        };
+        for (_id, pid, title, desc, is_cb, severity, category, created_at) in rows {
+            let offset = compute_offset_seconds(&created_at, &anomaly_dt);
+            let mut relevance = compute_relevance(offset, persona_id.is_some());
+            if is_cb { relevance = (relevance + 0.2).min(1.0); }
+            let etype = if is_cb { "circuit_breaker" } else { "healing_issue" };
+            correlated.push(CorrelatedEvent {
+                timestamp: created_at,
+                event_type: etype.into(),
+                label: title,
+                detail: Some(format!("[{severity}/{category}] {desc}")),
+                persona_id: Some(pid),
+                offset_seconds: offset,
+                relevance,
+            });
+        }
+    }
+
+    // 4. Fired alerts in window
+    {
+        let mut stmt = conn.prepare(
+            "SELECT id, rule_name, metric, severity, message, fired_at
+             FROM fired_alerts
+             WHERE fired_at BETWEEN ?1 AND ?2
+             ORDER BY fired_at"
+        )?;
+        let rows: Vec<(String, String, String, String, String, String)> = stmt
+            .query_map(params![&window_start, &window_end], |row| {
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        for (_id, rule_name, metric, severity, message, fired_at) in rows {
+            let offset = compute_offset_seconds(&fired_at, &anomaly_dt);
+            let mut relevance = compute_relevance(offset, false);
+            // Boost relevance if alert metric matches anomaly metric
+            if metric == anomaly_metric { relevance = (relevance + 0.3).min(1.0); }
+            correlated.push(CorrelatedEvent {
+                timestamp: fired_at,
+                event_type: "alert".into(),
+                label: format!("Alert: {rule_name} [{severity}]"),
+                detail: Some(message),
+                persona_id: None,
+                offset_seconds: offset,
+                relevance,
+            });
+        }
+    }
+
+    // Sort by relevance descending
+    correlated.sort_by(|a, b| b.relevance.partial_cmp(&a.relevance).unwrap_or(std::cmp::Ordering::Equal));
+
+    // Generate root cause suggestions from top correlated events
+    let suggestions = generate_root_cause_suggestions(&correlated, anomaly_metric, anomaly_deviation_pct);
+
+    info!(
+        duration_ms = start.elapsed().as_millis() as u64,
+        correlated_events = correlated.len(),
+        suggestions = suggestions.len(),
+        "get_anomaly_drilldown completed"
+    );
+
+    Ok(AnomalyDrilldownData {
+        anomaly_date: anomaly_date.to_string(),
+        anomaly_metric: anomaly_metric.to_string(),
+        anomaly_value,
+        anomaly_baseline,
+        anomaly_deviation_pct,
+        correlated_events: correlated,
+        root_cause_suggestions: suggestions,
+    })
+}
+
+/// Compute signed offset in seconds between a timestamp string and the anomaly midpoint.
+fn compute_offset_seconds(timestamp: &str, anomaly_midpoint: &chrono::NaiveDateTime) -> f64 {
+    if let Ok(ts) = chrono::NaiveDateTime::parse_from_str(timestamp, "%Y-%m-%dT%H:%M:%S%.f") {
+        (ts - *anomaly_midpoint).num_seconds() as f64
+    } else if let Ok(ts) = chrono::NaiveDateTime::parse_from_str(timestamp, "%Y-%m-%dT%H:%M:%S") {
+        (ts - *anomaly_midpoint).num_seconds() as f64
+    } else if let Ok(d) = chrono::NaiveDate::parse_from_str(timestamp, "%Y-%m-%d") {
+        let dt = d.and_hms_opt(12, 0, 0).unwrap();
+        (dt - *anomaly_midpoint).num_seconds() as f64
+    } else {
+        // Fallback: try chrono's DateTime parser for RFC-3339
+        timestamp.parse::<chrono::DateTime<chrono::Utc>>()
+            .map(|dt| (dt.naive_utc() - *anomaly_midpoint).num_seconds() as f64)
+            .unwrap_or(86400.0) // push to edge if unparseable
+    }
+}
+
+/// Compute a 0.0–1.0 relevance score based on temporal proximity and persona match.
+fn compute_relevance(offset_seconds: f64, persona_matched: bool) -> f64 {
+    let abs_offset = offset_seconds.abs();
+    // Decay: events within 1h get ~1.0, events at 24h get ~0.15
+    let time_score = (-abs_offset / 28800.0).exp(); // 8-hour half-life
+    let persona_boost = if persona_matched { 0.15 } else { 0.0 };
+    (time_score + persona_boost).min(1.0)
+}
+
+/// Generate ranked root-cause suggestions from the correlated events.
+fn generate_root_cause_suggestions(
+    events: &[CorrelatedEvent],
+    anomaly_metric: &str,
+    deviation_pct: f64,
+) -> Vec<RootCauseSuggestion> {
+    let mut suggestions: Vec<RootCauseSuggestion> = Vec::new();
+
+    // Group by event_type and pick the highest-relevance event per type
+    let mut best_by_type: std::collections::HashMap<&str, &CorrelatedEvent> = std::collections::HashMap::new();
+    for event in events {
+        let entry = best_by_type.entry(event.event_type.as_str()).or_insert(event);
+        if event.relevance > entry.relevance {
+            *entry = event;
+        }
+    }
+
+    // Prompt deployment → likely root cause for any metric
+    if let Some(ev) = best_by_type.get("prompt_deployment") {
+        let confidence = (ev.relevance * 0.9).min(0.95);
+        suggestions.push(RootCauseSuggestion {
+            rank: 0,
+            title: "Prompt version change".into(),
+            description: format!(
+                "\"{}\" was deployed {:.0}s {} the anomaly. Prompt changes can affect {anomaly_metric} \
+                 by altering token usage, error rates, or model behavior.",
+                ev.label,
+                ev.offset_seconds.abs(),
+                if ev.offset_seconds < 0.0 { "before" } else { "after" },
+            ),
+            confidence,
+            event_type: "prompt_deployment".into(),
+            related_event_timestamp: Some(ev.timestamp.clone()),
+        });
+    }
+
+    // Credential rotation → likely cause of errors or latency
+    if let Some(ev) = best_by_type.get("credential_rotation") {
+        let metric_relevance = match anomaly_metric {
+            "error_rate" => 0.95,
+            "latency" => 0.7,
+            _ => 0.5,
+        };
+        let confidence = (ev.relevance * metric_relevance).min(0.95);
+        suggestions.push(RootCauseSuggestion {
+            rank: 0,
+            title: "Credential rotation".into(),
+            description: format!(
+                "\"{}\" occurred {:.0}s {} the anomaly. Failed or in-progress rotations \
+                 can cause authentication errors and increased latency.",
+                ev.label,
+                ev.offset_seconds.abs(),
+                if ev.offset_seconds < 0.0 { "before" } else { "after" },
+            ),
+            confidence,
+            event_type: "credential_rotation".into(),
+            related_event_timestamp: Some(ev.timestamp.clone()),
+        });
+    }
+
+    // Circuit breaker → strong signal for error_rate spikes
+    if let Some(ev) = best_by_type.get("circuit_breaker") {
+        let confidence = (ev.relevance * 0.95).min(0.95);
+        suggestions.push(RootCauseSuggestion {
+            rank: 0,
+            title: "Circuit breaker tripped".into(),
+            description: format!(
+                "\"{}\" triggered {:.0}s {} the anomaly. Circuit breakers indicate \
+                 sustained failures that directly cause {anomaly_metric} degradation.",
+                ev.label,
+                ev.offset_seconds.abs(),
+                if ev.offset_seconds < 0.0 { "before" } else { "after" },
+            ),
+            confidence,
+            event_type: "circuit_breaker".into(),
+            related_event_timestamp: Some(ev.timestamp.clone()),
+        });
+    }
+
+    // Healing issue (non-circuit-breaker)
+    if let Some(ev) = best_by_type.get("healing_issue") {
+        let confidence = (ev.relevance * 0.7).min(0.85);
+        suggestions.push(RootCauseSuggestion {
+            rank: 0,
+            title: "Self-healing event".into(),
+            description: format!(
+                "\"{}\" was detected {:.0}s {} the anomaly. The healing system \
+                 identified an issue that may have contributed to the {anomaly_metric} spike ({deviation_pct:.0}% deviation).",
+                ev.label,
+                ev.offset_seconds.abs(),
+                if ev.offset_seconds < 0.0 { "before" } else { "after" },
+            ),
+            confidence,
+            event_type: "healing_issue".into(),
+            related_event_timestamp: Some(ev.timestamp.clone()),
+        });
+    }
+
+    // Alert
+    if let Some(ev) = best_by_type.get("alert") {
+        let confidence = (ev.relevance * 0.6).min(0.8);
+        suggestions.push(RootCauseSuggestion {
+            rank: 0,
+            title: "Alert fired".into(),
+            description: format!(
+                "\"{}\" fired {:.0}s {} the anomaly, confirming the system was under stress.",
+                ev.label,
+                ev.offset_seconds.abs(),
+                if ev.offset_seconds < 0.0 { "before" } else { "after" },
+            ),
+            confidence,
+            event_type: "alert".into(),
+            related_event_timestamp: Some(ev.timestamp.clone()),
+        });
+    }
+
+    // If no correlated events were found, suggest external factors
+    if suggestions.is_empty() {
+        suggestions.push(RootCauseSuggestion {
+            rank: 1,
+            title: "No correlated internal events".into(),
+            description: format!(
+                "No prompt deployments, credential rotations, healing events, or alerts were found \
+                 within ±24h of this {anomaly_metric} anomaly ({deviation_pct:.0}% deviation). \
+                 Consider external factors: API provider degradation, upstream data changes, or traffic spikes."
+            ),
+            confidence: 0.3,
+            event_type: "external".into(),
+            related_event_timestamp: None,
+        });
+    }
+
+    // Sort by confidence descending and assign ranks
+    suggestions.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+    for (i, s) in suggestions.iter_mut().enumerate() {
+        s.rank = (i + 1) as i32;
+    }
+
+    suggestions
 }
 
 #[cfg(test)]

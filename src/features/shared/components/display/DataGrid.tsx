@@ -38,6 +38,10 @@ export interface DataGridProps<T> {
   onSort?: (key: string) => void;
   /** Page size. 0 = no pagination */
   pageSize?: number;
+  /** Available page size options for the selector. Defaults to [10, 25, 50, 100]. */
+  pageSizeOptions?: number[];
+  /** Callback when user changes page size via the selector */
+  onPageSizeChange?: (size: number) => void;
   /** Loading state */
   isLoading?: boolean;
   loadingLabel?: string;
@@ -89,6 +93,8 @@ export function DataGrid<T>({
   sortDirection = 'desc',
   onSort,
   pageSize = 0,
+  pageSizeOptions = [10, 25, 50, 100],
+  onPageSizeChange,
   isLoading = false,
   loadingLabel = 'Loading...',
   emptyIcon: EmptyIcon,
@@ -101,7 +107,16 @@ export function DataGrid<T>({
   onSelectAll,
 }: DataGridProps<T>) {
   const [page, setPage] = useState(1);
-  const effectivePageSize = simplified && pageSize === 0 ? 5 : pageSize;
+  const [internalPageSize, setInternalPageSize] = useState(
+    simplified && pageSize === 0 ? 5 : pageSize,
+  );
+
+  // Sync internal page size when the prop changes
+  useEffect(() => {
+    setInternalPageSize(simplified && pageSize === 0 ? 5 : pageSize);
+  }, [pageSize, simplified]);
+
+  const effectivePageSize = internalPageSize;
 
   // Reset page when data length changes significantly (filters changed)
   useEffect(() => { setPage(1); }, [data.length]);
@@ -263,11 +278,33 @@ export function DataGrid<T>({
       )}
 
       {/* Pagination */}
-      {effectivePageSize > 0 && totalPages > 1 && (
+      {effectivePageSize > 0 && (
         <div className="flex items-center justify-between px-4 py-2 border-t border-primary/10 bg-background/60 shrink-0">
-          <span className="typo-code text-foreground/60">
-            Page {page} of {totalPages}
-          </span>
+          {/* Left: page-size selector + item range */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <span className="typo-code text-foreground/50 text-[11px]">Rows</span>
+              <select
+                value={effectivePageSize}
+                onChange={(e) => {
+                  const newSize = Number(e.target.value);
+                  setInternalPageSize(newSize);
+                  setPage(1);
+                  onPageSizeChange?.(newSize);
+                }}
+                className="typo-code text-[11px] bg-secondary/30 border border-primary/10 rounded-md px-1.5 py-0.5 text-foreground/80 hover:bg-secondary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer appearance-auto"
+              >
+                {pageSizeOptions.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+            <span className="typo-code text-foreground/60 text-[11px]">
+              Showing {Math.min((page - 1) * effectivePageSize + 1, data.length)}–{Math.min(page * effectivePageSize, data.length)} of {data.length} items
+            </span>
+          </div>
+          {/* Right: page buttons */}
+          {totalPages > 1 && (
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(Math.max(1, page - 1))}
@@ -304,6 +341,7 @@ export function DataGrid<T>({
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
+          )}
         </div>
       )}
     </div>

@@ -93,10 +93,12 @@ pub async fn rotate_credential_now(
         Ok(_) => ("credential_rotated", "manual rotation succeeded".to_string()),
         Err(e) => ("credential_rotation_failed", format!("manual rotation failed: {e}")),
     };
-    let _ = audit_log::insert(
+    if let Err(e) = audit_log::insert(
         &state.db, &credential_id, &credential_id,
         op, None, None, Some(&detail),
-    );
+    ) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for rotation");
+    }
     result
 }
 
@@ -112,10 +114,12 @@ pub async fn refresh_credential_oauth_now(
         Ok(_) => ("credential_oauth_refreshed", "manual OAuth token refresh succeeded".to_string()),
         Err(e) => ("credential_oauth_refresh_failed", format!("manual OAuth refresh failed: {e}")),
     };
-    let _ = audit_log::insert(
+    if let Err(e) = audit_log::insert(
         &state.db, &credential_id, &cred.name,
         op, None, None, Some(&detail),
-    );
+    ) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for OAuth refresh");
+    }
     result
 }
 

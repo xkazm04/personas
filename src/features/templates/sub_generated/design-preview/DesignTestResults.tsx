@@ -77,9 +77,9 @@ export function DesignTestResults({ result }: DesignTestResultsProps) {
     <div className="space-y-3 py-1">
       {/* Feasibility badge */}
       <div className="flex items-center gap-3">
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${colors.bgColor} border ${colors.borderColor}`}>
-          <Icon className={`w-4 h-4 ${colors.color}`} />
-          <span className={`text-sm font-medium ${colors.color}`}>{meta.label}</span>
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${colors.bg} border ${colors.border}`}>
+          <Icon className={`w-4 h-4 ${colors.text}`} />
+          <span className={`text-sm font-medium ${colors.text}`}>{meta.label}</span>
         </div>
         <span className="text-sm text-muted-foreground/90">Feasibility Assessment</span>
       </div>

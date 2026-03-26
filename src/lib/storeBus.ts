@@ -54,6 +54,10 @@ export const AccessorKey = {
 // Implementation
 // ---------------------------------------------------------------------------
 
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("store-bus");
+
 type Handler = (...args: never[]) => void;
 
 const _listeners = new Map<string, Set<Handler>>();
@@ -69,7 +73,7 @@ function emit<K extends keyof StoreBusEventMap>(
     try {
       (fn as (p: StoreBusEventMap[K]) => void)(payload!);
     } catch (e) {
-      console.error(`[storeBus] handler error for "${event}"`, e);
+      logger.error("Handler error", { event, detail: String(e) });
     }
   }
 }

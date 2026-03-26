@@ -16,6 +16,9 @@ import { rankCredentialsForConnector, matchCredentialToConnector } from "@/featu
 import { answerBuildQuestion } from "@/api/agents/buildSession";
 import { MatrixCredentialPicker } from "./MatrixCredentialPicker";
 import type { DraftConnector } from "./useMatrixCredentialGap";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("connectors-cell");
 
 interface ConnectorsCellContentProps {
   connectors: DraftConnector[];
@@ -68,7 +71,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
       );
       setHasChanges(false);
     } catch (err) {
-      console.error("Swap failed:", err);
+      logger.error("Swap failed", { error: err });
     }
     setRecalculating(false);
   };
@@ -91,7 +94,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
       await answerBuildQuestion(sessionId, '_refine', `Connector credentials updated: ${summary}. Recalculate affected dimensions.`);
       setHasChanges(false);
     } catch (err) {
-      console.error('Recalculate failed:', err);
+      logger.error('Recalculate failed', { error: err });
     }
     setRecalculating(false);
   };

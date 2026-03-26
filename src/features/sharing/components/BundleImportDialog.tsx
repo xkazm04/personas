@@ -10,6 +10,9 @@ import type { EnclaveVerifyResult } from '@/api/network/enclave';
 import { EnclaveVerificationView } from './EnclaveVerificationView';
 import { ImportSuccessCelebration } from './ImportSuccessCelebration';
 import { BundlePreviewContent } from './BundlePreviewContent';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("bundle-import");
 
 type Phase = 'pick' | 'previewing' | 'preview' | 'importing' | 'done';
 
@@ -106,7 +109,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleImportDialog] Failed to load file', { error: msg });
+      logger.warn('Failed to load file', { error: msg });
       setError(msg || 'Failed to load file');
       setPhase('pick');
     }
@@ -131,7 +134,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       setPhase('preview');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleImportDialog] Failed to paste from clipboard', { error: msg });
+      logger.warn('Failed to paste from clipboard', { error: msg });
       setError(msg || 'Failed to read clipboard');
       setClipboardData(null);
       setPhase('pick');
@@ -156,7 +159,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       setPhase('preview');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleImportDialog] Failed to preview share link', { error: msg });
+      logger.warn('Failed to preview share link', { error: msg });
       setError(msg || 'Failed to load share link');
       setShareLinkUrl(null);
       setPhase('pick');
@@ -184,7 +187,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       addToast(`Imported ${result.imported} resource${result.imported !== 1 ? 's' : ''}`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleImportDialog] Failed to import bundle', { filePath, clipboard: !!clipboardData, error: msg });
+      logger.warn('Failed to import bundle', { filePath, clipboard: !!clipboardData, error: msg });
       setError(msg || 'Failed to import bundle');
       setPhase('preview');
     }

@@ -45,6 +45,8 @@ export const useSystemStore = create<SystemStore>()(
         cloudTab: state.cloudTab,
         settingsTab: state.settingsTab,
         onboardingCompleted: state.onboardingCompleted,
+        onboardingDismissedAtStep: state.onboardingDismissedAtStep,
+        onboardingStepCompleted: state.onboardingStepCompleted,
         tourCompleted: state.tourCompleted,
         tourDismissed: state.tourDismissed,
         viewMode: state.viewMode,

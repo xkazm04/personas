@@ -24,5 +24,5 @@ const budgetInvalidationMiddleware: PipelineMiddleware<'frontend_complete'> = (
 };
 
 export function registerBudgetMiddleware(): void {
-  addMiddleware('frontend_complete', budgetInvalidationMiddleware);
+  addMiddleware('frontend_complete', { key: 'budget-invalidation', priority: 20 }, budgetInvalidationMiddleware);
 }

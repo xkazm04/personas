@@ -1,8 +1,8 @@
 use rusqlite::params;
 
 use crate::db::models::{
-    CreateEventSubscriptionInput, CreatePersonaEventInput, PersonaEvent,
-    PersonaEventSubscription, UpdateEventSubscriptionInput,
+    CreateEventSubscriptionInput, CreatePersonaEventInput, EventFilterInput,
+    PersonaEvent, PersonaEventSubscription, UpdateEventSubscriptionInput,
 };
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
@@ -88,18 +88,26 @@ fn row_to_event(row: &rusqlite::Row) -> rusqlite::Result<PersonaEvent> {
     let raw_payload: Option<String> = row.get("payload")?;
     let payload_iv: Option<String> = row.get("payload_iv").unwrap_or(None);
 
-    // Decrypt payload if IV is present (encrypted at rest), otherwise return as-is
-    let payload = match (raw_payload, payload_iv) {
+    // Decrypt payload if IV is present (encrypted at rest), otherwise return as-is.
+    // On decrypt failure, return None instead of leaking ciphertext to the frontend,
+    // and surface the error in the error_message field.
+    let raw_error: Option<String> = row.get("error_message")?;
+    let (payload, error_message) = match (raw_payload, payload_iv) {
         (Some(ct), Some(ref iv)) if !iv.is_empty() => {
             match crypto::decrypt_from_db(&ct, iv) {
-                Ok(pt) => Some(pt),
+                Ok(pt) => (Some(pt), raw_error),
                 Err(e) => {
                     tracing::warn!("Failed to decrypt event payload: {}", e);
-                    Some(ct) // Fall back to raw value on decrypt failure
+                    let decrypt_err = format!("[Decryption failed: {}]", e);
+                    let combined = match raw_error {
+                        Some(existing) => Some(format!("{existing}; {decrypt_err}")),
+                        None => Some(decrypt_err),
+                    };
+                    (None, combined)
                 }
             }
         }
-        (p, _) => p, // Plaintext or no payload
+        (p, _) => (p, raw_error), // Plaintext or no payload
     };
 
     Ok(PersonaEvent {
@@ -111,7 +119,7 @@ fn row_to_event(row: &rusqlite::Row) -> rusqlite::Result<PersonaEvent> {
         target_persona_id: row.get("target_persona_id")?,
         payload,
         status: row.get("status")?,
-        error_message: row.get("error_message")?,
+        error_message,
         processed_at: row.get("processed_at")?,
         created_at: row.get("created_at")?,
         use_case_id: row.get("use_case_id")?,
@@ -205,6 +213,30 @@ pub fn get_pending(
         let rows = stmt.query_map(params![limit], row_to_event)?;
         Ok(collect_rows(rows, "get_pending"))
     }
+}
+
+/// Atomically claim pending events by setting their status to 'processing'
+/// in a single UPDATE…RETURNING statement. This prevents duplicate processing
+/// when tick intervals overlap (the next tick cannot see rows that have already
+/// been claimed by a previous tick).
+pub fn claim_pending(
+    pool: &DbPool,
+    limit: i64,
+) -> Result<Vec<PersonaEvent>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "UPDATE persona_events
+         SET status = 'processing'
+         WHERE id IN (
+             SELECT id FROM persona_events
+             WHERE status = 'pending'
+             ORDER BY created_at ASC
+             LIMIT ?1
+         )
+         RETURNING *",
+    )?;
+    let rows = stmt.query_map(params![limit], row_to_event)?;
+    Ok(collect_rows(rows, "claim_pending"))
 }
 
 pub fn update_status(
@@ -312,6 +344,93 @@ pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppEr
     )?;
 
     Ok(rows as i64)
+}
+
+// ============================================================================
+// Filtered search
+// ============================================================================
+
+pub fn search(
+    pool: &DbPool,
+    filter: &EventFilterInput,
+) -> Result<(Vec<PersonaEvent>, bool), AppError> {
+    let limit = filter.limit.unwrap_or(100).max(1);
+    let fetch = limit + 1;
+    let conn = pool.get()?;
+
+    let mut clauses: Vec<String> = Vec::new();
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let mut idx = 1u32;
+
+    if let Some(ref v) = filter.event_type {
+        clauses.push(format!("event_type = ?{idx}"));
+        param_values.push(Box::new(v.clone()));
+        idx += 1;
+    }
+    if let Some(ref v) = filter.source_type {
+        clauses.push(format!("source_type = ?{idx}"));
+        param_values.push(Box::new(v.clone()));
+        idx += 1;
+    }
+    if let Some(ref v) = filter.status {
+        clauses.push(format!("status = ?{idx}"));
+        param_values.push(Box::new(v.clone()));
+        idx += 1;
+    }
+    if let Some(ref v) = filter.target_persona_id {
+        clauses.push(format!("target_persona_id = ?{idx}"));
+        param_values.push(Box::new(v.clone()));
+        idx += 1;
+    }
+    if let Some(ref v) = filter.since {
+        clauses.push(format!("created_at >= ?{idx}"));
+        param_values.push(Box::new(v.clone()));
+        idx += 1;
+    }
+    if let Some(ref v) = filter.until {
+        clauses.push(format!("created_at <= ?{idx}"));
+        param_values.push(Box::new(v.clone()));
+        idx += 1;
+    }
+    if let Some(ref v) = filter.search {
+        if !v.is_empty() {
+            // Full-text search on payload (plaintext stored after encryption roundtrip is
+            // not searchable, so we search the raw column which may be ciphertext).
+            // Also search event_type and source_type for broader match.
+            let pattern = format!("%{v}%");
+            clauses.push(format!(
+                "(event_type LIKE ?{idx} OR source_type LIKE ?{} OR payload LIKE ?{})",
+                idx + 1,
+                idx + 2
+            ));
+            param_values.push(Box::new(pattern.clone()));
+            param_values.push(Box::new(pattern.clone()));
+            param_values.push(Box::new(pattern));
+            idx += 3;
+        }
+    }
+
+    let where_clause = if clauses.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", clauses.join(" AND "))
+    };
+
+    let sql = format!(
+        "SELECT * FROM persona_events {where_clause} ORDER BY created_at DESC LIMIT ?{idx}"
+    );
+    param_values.push(Box::new(fetch));
+
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_ref.as_slice(), row_to_event)?;
+    let mut events = collect_rows(rows, "search_events");
+    let has_more = events.len() as i64 > limit;
+    if has_more {
+        events.truncate(limit as usize);
+    }
+    Ok((events, has_more))
 }
 
 // ============================================================================
@@ -993,5 +1112,280 @@ mod tests {
             },
         );
         assert!(result.is_ok(), "payload at exactly MAX_PAYLOAD_BYTES should be accepted");
+    }
+
+    // ------------------------------------------------------------------
+    // Search / filter tests
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn test_search_no_filters() {
+        let pool = init_test_db().unwrap();
+        for i in 0..3 {
+            publish(
+                &pool,
+                CreatePersonaEventInput {
+                    event_type: format!("search_evt_{i}"),
+                    source_type: "test".into(),
+                    project_id: None,
+                    source_id: None,
+                    target_persona_id: None,
+                    payload: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+
+        let filter = EventFilterInput {
+            event_type: None,
+            source_type: None,
+            status: None,
+            target_persona_id: None,
+            since: None,
+            until: None,
+            search: None,
+            limit: None,
+        };
+        let (events, _) = search(&pool, &filter).unwrap();
+        assert_eq!(events.len(), 3);
+    }
+
+    #[test]
+    fn test_search_by_event_type() {
+        let pool = init_test_db().unwrap();
+        publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "webhook_received".into(),
+                source_type: "webhook".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "deploy_started".into(),
+                source_type: "ci".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let filter = EventFilterInput {
+            event_type: Some("webhook_received".into()),
+            source_type: None,
+            status: None,
+            target_persona_id: None,
+            since: None,
+            until: None,
+            search: None,
+            limit: None,
+        };
+        let (events, _) = search(&pool, &filter).unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].event_type, "webhook_received");
+    }
+
+    #[test]
+    fn test_search_by_status() {
+        let pool = init_test_db().unwrap();
+        let evt = publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "status_test".into(),
+                source_type: "test".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        update_status(&pool, &evt.id, "failed", Some("boom".into())).unwrap();
+
+        let filter = EventFilterInput {
+            event_type: None,
+            source_type: None,
+            status: Some("failed".into()),
+            target_persona_id: None,
+            since: None,
+            until: None,
+            search: None,
+            limit: None,
+        };
+        let (events, _) = search(&pool, &filter).unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].status, "failed");
+    }
+
+    #[test]
+    fn test_search_with_text() {
+        let pool = init_test_db().unwrap();
+        publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "webhook_received".into(),
+                source_type: "github".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "deploy_started".into(),
+                source_type: "ci".into(),
+                project_id: None,
+                source_id: None,
+                target_persona_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // Search by event type substring
+        let filter = EventFilterInput {
+            event_type: None,
+            source_type: None,
+            status: None,
+            target_persona_id: None,
+            since: None,
+            until: None,
+            search: Some("webhook".into()),
+            limit: None,
+        };
+        let (events, _) = search(&pool, &filter).unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].event_type, "webhook_received");
+
+        // Search by source type substring
+        let filter2 = EventFilterInput {
+            event_type: None,
+            source_type: None,
+            status: None,
+            target_persona_id: None,
+            since: None,
+            until: None,
+            search: Some("github".into()),
+            limit: None,
+        };
+        let (events2, _) = search(&pool, &filter2).unwrap();
+        assert_eq!(events2.len(), 1);
+    }
+
+    #[test]
+    fn test_search_pagination() {
+        let pool = init_test_db().unwrap();
+        for i in 0..5 {
+            publish(
+                &pool,
+                CreatePersonaEventInput {
+                    event_type: format!("page_evt_{i}"),
+                    source_type: "test".into(),
+                    project_id: None,
+                    source_id: None,
+                    target_persona_id: None,
+                    payload: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+
+        let filter = EventFilterInput {
+            event_type: None,
+            source_type: Some("test".into()),
+            status: None,
+            target_persona_id: None,
+            since: None,
+            until: None,
+            search: None,
+            limit: Some(3),
+        };
+        let (events, has_more) = search(&pool, &filter).unwrap();
+        assert_eq!(events.len(), 3);
+        assert!(has_more);
+    }
+
+    #[test]
+    fn test_claim_pending_atomicity() {
+        let pool = init_test_db().unwrap();
+
+        // Publish 3 pending events
+        for i in 0..3 {
+            publish(
+                &pool,
+                CreatePersonaEventInput {
+                    event_type: format!("claim_test_{i}"),
+                    source_type: "test".into(),
+                    project_id: None,
+                    source_id: None,
+                    target_persona_id: None,
+                    payload: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+
+        // First claim should get all 3 and set them to 'processing'
+        let claimed = claim_pending(&pool, 10).unwrap();
+        assert_eq!(claimed.len(), 3);
+        for ev in &claimed {
+            assert_eq!(ev.status, "processing");
+        }
+
+        // Second claim should get 0 — all are already 'processing'
+        let second = claim_pending(&pool, 10).unwrap();
+        assert_eq!(second.len(), 0);
+
+        // get_pending should also return 0
+        let pending = get_pending(&pool, None, None).unwrap();
+        assert_eq!(pending.len(), 0);
+    }
+
+    #[test]
+    fn test_claim_pending_respects_limit() {
+        let pool = init_test_db().unwrap();
+
+        for i in 0..5 {
+            publish(
+                &pool,
+                CreatePersonaEventInput {
+                    event_type: format!("limit_test_{i}"),
+                    source_type: "test".into(),
+                    project_id: None,
+                    source_id: None,
+                    target_persona_id: None,
+                    payload: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+
+        // Claim only 2
+        let claimed = claim_pending(&pool, 2).unwrap();
+        assert_eq!(claimed.len(), 2);
+
+        // 3 should still be pending
+        let remaining = get_pending(&pool, None, None).unwrap();
+        assert_eq!(remaining.len(), 3);
     }
 }

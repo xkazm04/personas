@@ -112,9 +112,9 @@ export function RotationPolicyControls({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? ROTATION_STATUS.color : 'text-muted-foreground/80'}`} />
+            <ShieldCheck className={`w-4 h-4 ${rotationStatus.policy_enabled ? ROTATION_STATUS.text : 'text-muted-foreground/80'}`} />
             <div className="text-sm">
-              <span className={rotationStatus.policy_enabled ? `${ROTATION_STATUS.color} font-medium` : 'text-muted-foreground/90'}>
+              <span className={rotationStatus.policy_enabled ? `${ROTATION_STATUS.text} font-medium` : 'text-muted-foreground/90'}>
                 {rotationStatus.policy_enabled
                   ? (isOAuth
                     ? `OAuth token refresh active${rotationStatus.policy_type === 'oauth_keepalive' ? ' (auto)' : ''}`
@@ -150,7 +150,7 @@ export function RotationPolicyControls({
               }}
               disabled={isRotating}
               data-testid="rotation-rotate-now-btn"
-              className={`hover:opacity-90 ${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.color}`}
+              className={`hover:opacity-90 ${ROTATION_STATUS.bg} ${ROTATION_STATUS.border} ${ROTATION_STATUS.text}`}
             >
               Rotate Now
             </Button>
@@ -190,9 +190,9 @@ export function RotationPolicyControls({
                 value={rotationDays}
                 onChange={setRotationDays}
                 layoutId={`rotation-edit-${credentialId}`}
-                activeBg={ROTATION_STATUS.bgColor}
-                activeText={ROTATION_STATUS.color}
-                activeBorder={ROTATION_STATUS.borderColor}
+                activeBg={ROTATION_STATUS.bg}
+                activeText={ROTATION_STATUS.text}
+                activeBorder={ROTATION_STATUS.border}
                 customInput={
                   <input
                     type="number"
@@ -223,7 +223,7 @@ export function RotationPolicyControls({
                   }
                 }}
                 data-testid="rotation-save-period-btn"
-                className={`hover:opacity-90 ${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.color}`}
+                className={`hover:opacity-90 ${ROTATION_STATUS.bg} ${ROTATION_STATUS.border} ${ROTATION_STATUS.text}`}
               >
                 Save
               </Button>
@@ -268,9 +268,9 @@ export function RotationPolicyControls({
           value={rotationDays}
           onChange={setRotationDays}
           layoutId={`rotation-presets-${credentialId}`}
-          activeBg={ROTATION_STATUS.bgColor}
-          activeText={ROTATION_STATUS.color}
-          activeBorder={ROTATION_STATUS.borderColor}
+          activeBg={ROTATION_STATUS.bg}
+          activeText={ROTATION_STATUS.text}
+          activeBorder={ROTATION_STATUS.border}
           customInput={
             <input
               type="number"
@@ -312,7 +312,7 @@ export function RotationPolicyControls({
         disabled={isEnablingPolicy}
         loading={isEnablingPolicy}
         data-testid="rotation-enable-btn"
-        className={`hover:opacity-90 ${ROTATION_STATUS.bgColor} ${ROTATION_STATUS.borderColor} ${ROTATION_STATUS.color}`}
+        className={`hover:opacity-90 ${ROTATION_STATUS.bg} ${ROTATION_STATUS.border} ${ROTATION_STATUS.text}`}
       >
         {isEnablingPolicy ? 'Enabling...' : 'Enable Rotation'}
       </Button>

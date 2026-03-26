@@ -2,7 +2,7 @@ import { useMemo, type RefObject } from 'react';
 import { Search, Key, X, RotateCw, CheckCircle2, HeartPulse, AlertCircle, HelpCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { VaultStatusBadge } from '@/features/vault/sub_card/badges/VaultStatusBadge';
 import type { VaultStatus } from "@/api/vault/credentials";
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -78,7 +78,7 @@ export function CredentialToolbar({
     return { healthy, failing, untested };
   }, [credentials]);
 
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
 
   return (
     <div className="flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-secondary/20 flex-shrink-0">

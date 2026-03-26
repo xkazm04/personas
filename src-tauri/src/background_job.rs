@@ -309,6 +309,45 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         Ok(())
     }
 
+    /// Atomically check that a job is NOT running, then set it to "running"
+    /// with a new cancel token. Returns `Err` if the job is already running,
+    /// preventing duplicate concurrent tasks for the same job ID.
+    ///
+    /// Also emits a status event on success.
+    pub fn resume_running(
+        &self,
+        app: &tauri::AppHandle,
+        job_id: &str,
+        token: CancellationToken,
+    ) -> Result<(), AppError> {
+        {
+            let mut jobs = self.lock()?;
+            if let Some(existing) = jobs.get(job_id) {
+                if existing.status == "running" {
+                    return Err(AppError::Validation(
+                        "Job is already running".into(),
+                    ));
+                }
+            }
+            let entry = jobs
+                .entry(job_id.to_string())
+                .or_insert_with(JobEntry::default);
+            entry.status = "running".to_string();
+            entry.error = None;
+            entry.cancel_token = Some(token);
+        }
+
+        let _ = app.emit(
+            self.status_event_name,
+            StatusEvent {
+                job_id: job_id.to_string(),
+                status: "running".to_string(),
+                error: None,
+            },
+        );
+        Ok(())
+    }
+
     /// Remove a job by ID.
     pub fn remove(&self, job_id: &str) -> Result<(), AppError> {
         let mut jobs = self.lock()?;

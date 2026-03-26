@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Check, AlertTriangle, Loader2, Clock, X, DollarSign, Zap } from 'lucide-react';
 import type { WorkflowExecution, WorkflowNode, WorkflowNodeExecution } from '@/lib/types/compositionTypes';
-
-function formatDuration(ms: number | undefined): string {
-  if (ms == null) return '—';
-  if (ms < 1_000) return `${ms}ms`;
-  return `${(ms / 1_000).toFixed(1)}s`;
-}
+import { formatDuration } from '@/lib/utils/formatters';
 
 function formatCost(usd: number | undefined): string {
   if (usd == null) return '—';

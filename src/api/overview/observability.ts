@@ -8,6 +8,7 @@ import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { PromptAbTestResult } from "@/lib/bindings/PromptAbTestResult";
 import type { PromptPerformanceData } from "@/lib/bindings/PromptPerformanceData";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
+import type { AnomalyDrilldownData } from "@/lib/bindings/AnomalyDrilldownData";
 
 // ============================================================================
 // Observability
@@ -54,6 +55,27 @@ export const getPromptPerformance = (personaId: string, days?: number) =>
 export const getExecutionDashboard = (days?: number) =>
   invoke<ExecutionDashboardData>("get_execution_dashboard", {
     days: days,
+  });
+
+// ============================================================================
+// Anomaly Drill-Down
+// ============================================================================
+
+export const getAnomalyDrilldown = (params: {
+  anomalyDate: string;
+  anomalyMetric: string;
+  anomalyValue: number;
+  anomalyBaseline: number;
+  anomalyDeviationPct: number;
+  personaId?: string | null;
+}) =>
+  invoke<AnomalyDrilldownData>("get_anomaly_drilldown", {
+    anomalyDate: params.anomalyDate,
+    anomalyMetric: params.anomalyMetric,
+    anomalyValue: params.anomalyValue,
+    anomalyBaseline: params.anomalyBaseline,
+    anomalyDeviationPct: params.anomalyDeviationPct,
+    personaId: params.personaId ?? null,
   });
 
 // ============================================================================

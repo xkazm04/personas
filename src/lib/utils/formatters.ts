@@ -58,28 +58,8 @@ export function getStatusEntry(status: string): ExecutionStatusEntry {
   return EXECUTION_STATUS_MAP[status] ?? DEFAULT_STATUS_ENTRY;
 }
 
-/**
- * @deprecated Use EXECUTION_STATUS_MAP or getStatusEntry() instead.
- * Kept for backward compatibility -- derives BadgeColors from the canonical map.
- */
-export const EXECUTION_STATUS_COLORS: Record<string, BadgeColors> = (() => {
-  const map: Record<string, BadgeColors> = {};
-  for (const [k, v] of Object.entries(EXECUTION_STATUS_MAP)) {
-    map[k] = { bg: v.bg, text: v.text, border: v.border };
-  }
-  // Legacy alias
-  map.pending = map.queued!;
-  return map;
-})();
 
-export const EVENT_STATUS_COLORS: Record<string, BadgeColors> = {
-  pending:    { bg: 'bg-status-pending/10',    text: 'text-status-pending',    border: 'border-status-pending/20' },
-  processing: { bg: 'bg-status-processing/10', text: 'text-status-processing', border: 'border-status-processing/20' },
-  completed:  { bg: 'bg-status-success/10',    text: 'text-status-success',    border: 'border-status-success/20' },
-  processed:  { bg: 'bg-status-success/10',    text: 'text-status-success',    border: 'border-status-success/20' },
-  failed:     { bg: 'bg-status-error/10',      text: 'text-status-error',      border: 'border-status-error/20' },
-  skipped:    { bg: 'bg-status-neutral/10',    text: 'text-status-neutral',    border: 'border-status-neutral/20' },
-};
+// EVENT_STATUS_COLORS is now re-exported from '@/lib/design/eventTokens' above.
 
 export const SEVERITY_COLORS: Record<string, BadgeColors> = {
   low:      { bg: 'bg-status-info/10',    text: 'text-status-info',    border: 'border-status-info/20' },
@@ -106,27 +86,10 @@ export const MEMORY_CATEGORY_COLORS: Record<string, BadgeColors & { label: strin
 
 export const ALL_MEMORY_CATEGORIES = Object.keys(MEMORY_CATEGORY_COLORS) as PersonaMemoryCategory[];
 
-export interface EventTypeColor {
-  tailwind: string;
-  hex: string;
-}
-
-export const EVENT_TYPE_COLORS: Record<string, EventTypeColor> = {
-  webhook_received: { tailwind: 'text-blue-400', hex: '#60a5fa' },
-  execution_completed: { tailwind: 'text-emerald-400', hex: '#34d399' },
-  persona_action: { tailwind: 'text-purple-400', hex: '#a78bfa' },
-  credential_event: { tailwind: 'text-amber-400', hex: '#fbbf24' },
-  task_created: { tailwind: 'text-cyan-400', hex: '#22d3ee' },
-  custom: { tailwind: 'text-primary', hex: '#818cf8' },
-  // Deployment lifecycle events
-  deploy_started: { tailwind: 'text-sky-400', hex: '#38bdf8' },
-  deploy_succeeded: { tailwind: 'text-green-400', hex: '#4ade80' },
-  deploy_failed: { tailwind: 'text-red-400', hex: '#f87171' },
-  deploy_paused: { tailwind: 'text-orange-400', hex: '#fb923c' },
-  deploy_resumed: { tailwind: 'text-teal-400', hex: '#2dd4bf' },
-  agent_undeployed: { tailwind: 'text-rose-400', hex: '#fb7185' },
-  credential_provisioned: { tailwind: 'text-yellow-400', hex: '#facc15' },
-};
+// Re-export event color tokens from the centralized design tokens file.
+// All new code should import directly from '@/lib/design/eventTokens'.
+export { EVENT_TYPE_COLORS, EVENT_STATUS_COLORS, EVENT_TYPE_FALLBACK, EVENT_STATUS_FALLBACK, getEventTypeColor, getEventStatusColor, getEventColor } from '@/lib/design/eventTokens';
+export type { EventTypeColor, EventStatusColor, EventColorResult } from '@/lib/design/eventTokens';
 
 /** Format seconds into a human-readable interval like "1 hour" or "2 hours 30 minutes" */
 export function formatInterval(seconds: number): string {
@@ -151,12 +114,23 @@ export function formatCountdown(seconds: number): string {
 }
 
 /**
- * Format an elapsed millisecond count as a human-readable duration.
+ * Format an elapsed duration as a human-readable string.
  * - `compact` (default): "30s", "2m 30s", "1h 5m"
  * - `clock`: "MM:SS" or "HH:MM:SS" with zero-padding
+ *
+ * @param value  The duration value.
+ * @param opts   Either a format string (`'compact' | 'clock'`) for backward
+ *               compatibility, or an options object `{ unit?, format? }`.
+ *               `unit` defaults to `'ms'`; set to `'s'` when the value is in seconds.
  */
-export function formatElapsed(ms: number, format: 'compact' | 'clock' = 'compact'): string {
-  const totalSeconds = Math.floor(ms / 1000);
+export function formatElapsed(
+  value: number,
+  opts?: 'compact' | 'clock' | { unit?: 'ms' | 's'; format?: 'compact' | 'clock' },
+): string {
+  const resolved = typeof opts === 'string' ? { format: opts } : opts;
+  const { unit = 'ms', format = 'compact' } = resolved ?? {};
+  const totalSeconds = unit === 's' ? Math.floor(value) : Math.floor(value / 1000);
+
   if (format === 'clock') {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -197,9 +171,29 @@ export function formatSimpleStatus(status: string): { level: SimpleStatus; label
   return { level: 'warning', label: SIMPLE_MODE.STATUS.warning.label };
 }
 
-export function formatDuration(ms: number | null): string {
-  if (ms === null || ms === undefined) return '-';
-  if (ms < 1000) return `${ms}ms`;
+/**
+ * Format a duration as a human-readable string.
+ *
+ * @param value      The duration value (ms by default, or seconds with `unit: 's'`).
+ * @param opts.unit  Input unit — `'ms'` (default) or `'s'`.
+ * @param opts.precision  `'integer'` (default) rounds to whole units;
+ *                        `'decimal'` uses one decimal place for sub-minute values.
+ */
+export function formatDuration(
+  value: number | null | undefined,
+  opts?: { unit?: 'ms' | 's'; precision?: 'integer' | 'decimal' },
+): string {
+  if (value == null) return '\u2014';
+  const { unit = 'ms', precision = 'integer' } = opts ?? {};
+  const ms = unit === 's' ? value * 1000 : value;
+
+  if (precision === 'decimal') {
+    if (ms < 1000) return `${Math.round(ms)}ms`;
+    if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+    return `${(ms / 60_000).toFixed(1)}m`;
+  }
+
+  if (ms < 1000) return `${Math.round(ms)}ms`;
   const totalSeconds = Math.floor(ms / 1000);
   if (totalSeconds < 60) return `${totalSeconds}s`;
   const minutes = Math.floor(totalSeconds / 60);

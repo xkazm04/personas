@@ -13,7 +13,7 @@ import {
   FileCode,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { PromptTabsPreview } from '@/features/shared/components/editors/PromptTabsPreview';
 import { DesignConnectorGrid } from '@/features/shared/components/display/DesignConnectorGrid';
 import { BaseModal } from '../../shared/BaseModal';
@@ -53,7 +53,7 @@ export function TemplateDetailModal({
   onViewFlows,
   onTryIt,
 }: TemplateDetailModalProps) {
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
 
   if (!isOpen || !review) return null;

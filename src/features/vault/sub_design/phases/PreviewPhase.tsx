@@ -65,11 +65,11 @@ export function PreviewPhase() {
 
       {/* Match existing banner */}
       {result.match_existing && (
-        <div className={`flex items-start gap-3 px-4 py-3 border rounded-xl ${INFO_STATUS.bgColor} ${INFO_STATUS.borderColor}`}>
-          <Plug className={`w-4 h-4 mt-0.5 shrink-0 ${INFO_STATUS.color}`} />
+        <div className={`flex items-start gap-3 px-4 py-3 border rounded-xl ${INFO_STATUS.bg} ${INFO_STATUS.border}`}>
+          <Plug className={`w-4 h-4 mt-0.5 shrink-0 ${INFO_STATUS.text}`} />
           <div className="text-sm">
-            <span className={`${INFO_STATUS.color} font-medium`}>Existing connector found: </span>
-            <span className={INFO_STATUS.color}>{result.match_existing}</span>
+            <span className={`${INFO_STATUS.text} font-medium`}>Existing connector found: </span>
+            <span className={INFO_STATUS.text}>{result.match_existing}</span>
             <p className="text-foreground/70 text-sm mt-1">
               Your credential will be linked to the existing connector definition.
             </p>
@@ -79,10 +79,10 @@ export function PreviewPhase() {
 
       {/* New connector discovery banner */}
       {!result.match_existing && (
-        <div className={`flex items-start gap-3 px-4 py-3 border rounded-xl ${AI_STATUS.bgColor} ${AI_STATUS.borderColor}`}>
-          <PackagePlus className={`w-4 h-4 mt-0.5 shrink-0 ${AI_STATUS.color}`} />
+        <div className={`flex items-start gap-3 px-4 py-3 border rounded-xl ${AI_STATUS.bg} ${AI_STATUS.border}`}>
+          <PackagePlus className={`w-4 h-4 mt-0.5 shrink-0 ${AI_STATUS.text}`} />
           <div className="text-sm">
-            <span className={`${AI_STATUS.color} font-medium`}>New connector discovered </span>
+            <span className={`${AI_STATUS.text} font-medium`}>New connector discovered </span>
             <span className="text-foreground/80">
               -- no existing <span className="font-mono text-foreground/90">{result.connector.name}</span> connector was found in your catalog.
             </span>
@@ -154,18 +154,18 @@ export function PreviewPhase() {
           {!showNegotiator ? (
             <div
               key="neg-trigger"
-              className={`animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-xl border ${AI_STATUS.bgColor} ${AI_STATUS.borderColor}`}
+              className={`animate-fade-slide-in flex items-center gap-3 px-4 py-3 rounded-xl border ${AI_STATUS.bg} ${AI_STATUS.border}`}
             >
-              <Bot className={`w-4 h-4 shrink-0 ${AI_STATUS.color}`} />
+              <Bot className={`w-4 h-4 shrink-0 ${AI_STATUS.text}`} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground/90">
-                  <span className={`${AI_STATUS.color} font-medium`}>Auto-provision available</span>{' '}
+                  <span className={`${AI_STATUS.text} font-medium`}>Auto-provision available</span>{' '}
                   -- let AI guide you through obtaining your {result.connector.label} credentials step-by-step.
                 </p>
               </div>
               <button
                 onClick={() => setShowNegotiator(true)}
-                className={`shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color} hover:opacity-90`}
+                className={`shrink-0 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
               >
                 Start
               </button>
@@ -201,8 +201,8 @@ export function PreviewPhase() {
       </div>
 
       {/* Credential fields form */}
-      <div className={`flex items-start gap-2.5 px-3 py-2 rounded-xl border ${SUCCESS_STATUS.bgColor} ${SUCCESS_STATUS.borderColor}`}>
-        <Shield className={`w-4 h-4 mt-0.5 shrink-0 ${SUCCESS_STATUS.color}`} />
+      <div className={`flex items-start gap-2.5 px-3 py-2 rounded-xl border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border}`}>
+        <Shield className={`w-4 h-4 mt-0.5 shrink-0 ${SUCCESS_STATUS.text}`} />
         <p className="text-sm text-foreground/80">
           Credentials are stored securely in the app vault and are available for agent tool execution.
         </p>
@@ -240,7 +240,7 @@ export function PreviewPhase() {
 
       {canSaveCredential && lastSuccessfulTestAt && (
         <div
-          className={`animate-fade-slide-in inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-sm ${SUCCESS_STATUS.bgColor} ${SUCCESS_STATUS.borderColor} ${SUCCESS_STATUS.color}`}
+          className={`animate-fade-slide-in inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-sm ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`}
         >
           <CheckCircle className="w-3.5 h-3.5" />
           Tested successfully at {lastSuccessfulTestAt}

@@ -9,8 +9,8 @@
  *   Errored -> Active | Paused | Disabled
  *   Disabled -> Active
  *
- * The DB stores `enabled INTEGER` (0|1). For backwards compatibility,
- * use [`TriggerStatus::from_enabled`] / [`TriggerStatus::is_enabled`]
- * to bridge the gap until a full migration adds a status column.
+ * Persisted in the `status TEXT` column on `persona_triggers`.
+ * The legacy `enabled INTEGER` column is kept in sync for backwards
+ * compatibility with queries that filter on `enabled = 1`.
  */
 export type TriggerStatus = "active" | "paused" | "errored" | "disabled";

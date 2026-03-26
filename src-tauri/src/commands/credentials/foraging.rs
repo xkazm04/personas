@@ -147,10 +147,13 @@ fn mask_value(val: &str) -> String {
 }
 
 /// Scan environment variables for known credential patterns.
+///
+/// Values are masked immediately on read — raw secrets are never accumulated
+/// in intermediate collections, preventing plaintext exposure in memory dumps.
 fn scan_env_vars() -> Vec<ForagedCredential> {
     let mut results = Vec::new();
-    // Group env vars by service_type so we can merge fields.
-    let mut service_fields: HashMap<String, HashMap<String, String>> = HashMap::new();
+    // Group already-masked display values by service_type.
+    let mut masked_fields: HashMap<String, HashMap<String, String>> = HashMap::new();
     let mut service_vars: HashMap<String, Vec<String>> = HashMap::new();
 
     for &(env_key, service_type, field_key) in ENV_PATTERNS {
@@ -158,10 +161,15 @@ fn scan_env_vars() -> Vec<ForagedCredential> {
             if value.is_empty() {
                 continue;
             }
-            service_fields
+            // Mask immediately — the raw value is dropped at the end of this
+            // scope and never stored in any collection.
+            let masked = mask_value(&value);
+            // `value` (the plain String) is dropped here.
+
+            masked_fields
                 .entry(service_type.to_string())
                 .or_default()
-                .insert(field_key.to_string(), value);
+                .insert(field_key.to_string(), masked);
             service_vars
                 .entry(service_type.to_string())
                 .or_default()
@@ -169,17 +177,13 @@ fn scan_env_vars() -> Vec<ForagedCredential> {
         }
     }
 
-    for (service_type, fields) in service_fields {
+    for (service_type, display_fields) in masked_fields {
         let var_names = service_vars.get(&service_type).cloned().unwrap_or_default();
         let label_suffix = if var_names.len() == 1 {
             format!(" ({})", var_names[0])
         } else {
             format!(" ({} vars)", var_names.len())
         };
-        let display_fields: HashMap<String, String> = fields
-            .iter()
-            .map(|(k, v)| (k.clone(), mask_value(v)))
-            .collect();
 
         results.push(ForagedCredential {
             id: format!("env:{service_type}"),
@@ -196,6 +200,8 @@ fn scan_env_vars() -> Vec<ForagedCredential> {
 }
 
 /// Scan ~/.aws/credentials for AWS profiles.
+///
+/// Values are masked immediately on parse — raw secrets are never stored.
 fn scan_aws_credentials() -> Vec<ForagedCredential> {
     let mut results = Vec::new();
     let Some(home) = home_dir() else { return results };
@@ -207,22 +213,19 @@ fn scan_aws_credentials() -> Vec<ForagedCredential> {
     };
 
     let mut current_profile: Option<String> = None;
-    let mut current_fields: HashMap<String, String> = HashMap::new();
+    // Store already-masked values only.
+    let mut current_masked_fields: HashMap<String, String> = HashMap::new();
 
-    let flush = |profile: &str, fields: &HashMap<String, String>, out: &mut Vec<ForagedCredential>| {
-        if fields.is_empty() {
+    let flush = |profile: &str, masked_fields: &HashMap<String, String>, out: &mut Vec<ForagedCredential>| {
+        if masked_fields.is_empty() {
             return;
         }
-        let display_fields: HashMap<String, String> = fields
-            .iter()
-            .map(|(k, v)| (k.clone(), mask_value(v)))
-            .collect();
         out.push(ForagedCredential {
             id: format!("aws:profile:{profile}"),
             label: format!("AWS -- {profile}"),
             service_type: "aws".to_string(),
             source: ForageSource::AwsCredentials,
-            fields: display_fields,
+            fields: masked_fields.clone(),
             already_imported: false,
             confidence: ForageConfidence::High,
         });
@@ -233,21 +236,22 @@ fn scan_aws_credentials() -> Vec<ForagedCredential> {
         if trimmed.starts_with('[') && trimmed.ends_with(']') {
             // Flush previous profile
             if let Some(ref profile) = current_profile {
-                flush(profile, &current_fields, &mut results);
+                flush(profile, &current_masked_fields, &mut results);
             }
             current_profile = Some(trimmed[1..trimmed.len() - 1].to_string());
-            current_fields.clear();
+            current_masked_fields.clear();
         } else if let Some(eq_pos) = trimmed.find('=') {
             let key = trimmed[..eq_pos].trim().to_string();
-            let val = trimmed[eq_pos + 1..].trim().to_string();
+            let val = trimmed[eq_pos + 1..].trim();
             if !val.is_empty() {
-                current_fields.insert(key, val);
+                // Mask immediately — raw value is never stored.
+                current_masked_fields.insert(key, mask_value(val));
             }
         }
     }
     // Flush last profile
     if let Some(ref profile) = current_profile {
-        flush(profile, &current_fields, &mut results);
+        flush(profile, &current_masked_fields, &mut results);
     }
 
     results
@@ -661,6 +665,18 @@ pub fn import_foraged_credential(
     }))
 }
 
+/// Check that a string component contains no path traversal sequences or
+/// directory separators that could escape expected filesystem boundaries.
+fn is_safe_path_component(s: &str) -> bool {
+    !s.contains("..")
+        && !s.contains('/')
+        && !s.contains('\\')
+        && !s.contains('\0')
+}
+
+/// The only dotenv source labels the scanner produces.
+const ALLOWED_DOTENV_SOURCES: &[&str] = &[".env (cwd)", "~/.env"];
+
 /// Re-read the actual (unmasked) credential values from the original source.
 fn resolve_real_values(
     foraged_id: &str,
@@ -675,6 +691,9 @@ fn resolve_real_values(
         "env" => {
             // Re-read env vars for this service
             let svc = parts.get(1).unwrap_or(&"");
+            if !is_safe_path_component(svc) {
+                return Err("Invalid service type in foraged ID".to_string());
+            }
             let mut fields = HashMap::new();
             for &(env_key, service_type, field_key) in ENV_PATTERNS {
                 if service_type == *svc {
@@ -690,16 +709,31 @@ fn resolve_real_values(
         "aws" => {
             // Re-read ~/.aws/credentials for the specific profile
             let profile = parts.get(2).unwrap_or(&"default");
+            if !is_safe_path_component(profile) {
+                return Err("Invalid AWS profile name in foraged ID".to_string());
+            }
             resolve_aws_profile(profile)
         }
         "dotenv" => {
-            // Re-read from .env file
+            // Re-read from .env file — source MUST match a known scanner label
             let source = parts.get(1).unwrap_or(&"");
             let key = parts.get(2).unwrap_or(&"");
+            if !ALLOWED_DOTENV_SOURCES.contains(source) {
+                return Err("Invalid dotenv source in foraged ID".to_string());
+            }
+            // key must be a known env pattern name
+            let key_known = ENV_PATTERNS.iter().any(|&(env_key, _, _)| env_key == *key);
+            if !key_known {
+                return Err("Unknown key in foraged ID".to_string());
+            }
             resolve_dotenv_value(source, key)
         }
         "ghcli" => {
-            resolve_github_cli_token(parts.get(1).unwrap_or(&"github.com"))
+            let host = parts.get(1).unwrap_or(&"github.com");
+            if !is_safe_path_component(host) {
+                return Err("Invalid host in foraged ID".to_string());
+            }
+            resolve_github_cli_token(host)
         }
         "npmrc" => {
             resolve_npmrc_token()

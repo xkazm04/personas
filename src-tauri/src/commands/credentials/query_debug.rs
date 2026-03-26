@@ -5,6 +5,8 @@ use tokio_util::sync::CancellationToken;
 
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::n8n_transform::run_claude_prompt_text_inner;
+use crate::db::repos::resources::audit_log;
+use crate::engine::ai_helpers;
 use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
@@ -81,10 +83,17 @@ fn sanitize_query_result(result: &crate::db::models::QueryResult) -> serde_json:
 }
 
 /// Truncate a JSON value's string content if it exceeds `max_len` characters.
+/// Uses char_indices to find a safe UTF-8 boundary instead of slicing at byte
+/// offsets, which would panic on multi-byte characters (emoji, CJK, accented).
 fn truncate_value(val: &serde_json::Value, max_len: usize) -> serde_json::Value {
     match val {
-        serde_json::Value::String(s) if s.len() > max_len => {
-            serde_json::Value::String(format!("{}...[truncated]", &s[..max_len]))
+        serde_json::Value::String(s) if s.chars().count() > max_len => {
+            let byte_end = s
+                .char_indices()
+                .nth(max_len)
+                .map(|(i, _)| i)
+                .unwrap_or(s.len());
+            serde_json::Value::String(format!("{}...[truncated]", &s[..byte_end]))
         }
         other => other.clone(),
     }
@@ -151,7 +160,7 @@ pub async fn start_query_debug(
     QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "running", None);
 
     // Gather schema context (best-effort -- don't fail if introspection errors)
-    let schema_context = build_schema_context(&state.db, &credential_id).await;
+    let schema_context = ai_helpers::build_schema_context(&state.db, &credential_id, None).await;
 
     let pool = state.db.clone();
     let cred_id = credential_id.clone();
@@ -277,7 +286,7 @@ async fn run_query_debug(params: RunParams) {
             return;
         }
 
-        let extracted = extract_code_block(&output, language);
+        let extracted = ai_helpers::extract_fenced_block(&output, language);
         let query_to_run = match extracted {
             Some(q) => q,
             None => {
@@ -293,6 +302,21 @@ async fn run_query_debug(params: RunParams) {
         };
 
         emit_line(&app, &debug_id, &format!("> Attempt {} -- executing extracted query...", attempt + 1));
+
+        // Audit log the query execution (log a length fingerprint, not raw query text)
+        let query_fingerprint = format!("len={}, attempt={}", query_to_run.len(), attempt + 1);
+        let is_mutation = {
+            let upper = query_to_run.trim().to_uppercase();
+            upper.starts_with("INSERT") || upper.starts_with("UPDATE") || upper.starts_with("DELETE") || upper.starts_with("DROP") || upper.starts_with("ALTER") || upper.starts_with("CREATE")
+        };
+        let mutation_label = if is_mutation { "mutation" } else { "read" };
+        if let Err(e) = audit_log::insert(
+            &pool, &credential_id, &credential_id,
+            "db_query_execute", None, None,
+            Some(&format!("{mutation_label}, {query_fingerprint}")),
+        ) {
+            tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for DB query execution");
+        }
 
         // Execute the extracted query
         match db_query::execute_query(&pool, &credential_id, &query_to_run, None, true).await {
@@ -347,7 +371,7 @@ async fn run_query_debug(params: RunParams) {
                 emit_line(&app, &debug_id, "> Resuming AI session with error context...");
 
                 let resume_prompt = format!(
-                    "The query you suggested failed with this error:\n\n{err_msg}\n\n\
+                    "The query you suggested failed with this error:\n\n{safe_msg}\n\n\
                      Please fix the query and output the corrected version in a single ```{language} code block.",
                 );
 
@@ -373,7 +397,7 @@ async fn run_query_debug(params: RunParams) {
                         language,
                         &schema_context,
                         &query_to_run,
-                        Some(&err_msg),
+                        Some(&safe_msg),
                     );
                     run_claude_prompt_text_inner(
                         fresh_prompt,
@@ -446,131 +470,6 @@ fn build_prompt(
     prompt
 }
 
-/// Extract the best fenced code block from Claude's output.
-///
-/// Prefers blocks tagged with a matching language (sql, redis, mongodb) over
-/// generic or non-matching blocks (javascript, typescript, etc.).
-fn extract_code_block(text: &str, language: &str) -> Option<String> {
-    let mut blocks: Vec<(String, bool)> = Vec::new(); // (content, language_matches)
-    let mut in_block = false;
-    let mut current_matches = false;
-    let mut content = String::new();
-
-    // Language tags that match for SQL-family queries
-    let sql_tags = ["sql", "postgresql", "postgres", "mysql", "pgsql"];
-    let redis_tags = ["redis", ""];
-    let mongo_tags = ["mongodb", "mongo", "js", "javascript"];
-
-    for line in text.lines() {
-        if !in_block && line.trim_start().starts_with("```") {
-            in_block = true;
-            let tag = line.trim_start().trim_start_matches('`').trim().to_lowercase();
-            current_matches = match language {
-                "sql" => tag.is_empty() || sql_tags.iter().any(|t| tag == *t),
-                "redis" => tag.is_empty() || redis_tags.iter().any(|t| tag == *t),
-                "mongodb" => tag.is_empty() || mongo_tags.iter().any(|t| tag == *t),
-                _ => tag.is_empty() || tag == language,
-            };
-            // Explicitly exclude non-matching code blocks (JS in SQL context, etc.)
-            if language == "sql"
-                && ["javascript", "typescript", "js", "ts", "python", "py", "rust", "go"]
-                    .iter()
-                    .any(|t| tag == *t)
-            {
-                current_matches = false;
-            }
-            continue;
-        }
-        if in_block {
-            if line.trim_start().starts_with("```") {
-                let trimmed = content.trim().to_string();
-                if !trimmed.is_empty() {
-                    blocks.push((trimmed, current_matches));
-                }
-                in_block = false;
-                content.clear();
-                continue;
-            }
-            content.push_str(line);
-            content.push('\n');
-        }
-    }
-
-    // Handle unclosed block
-    let trimmed = content.trim().to_string();
-    if in_block && !trimmed.is_empty() {
-        blocks.push((trimmed, current_matches));
-    }
-
-    // Prefer language-matching blocks; fall back to first block
-    blocks
-        .iter()
-        .find(|(_, matches)| *matches)
-        .or_else(|| blocks.first())
-        .map(|(content, _)| content.clone())
-}
-
-/// Build a text summary of available tables and columns for the prompt.
-async fn build_schema_context(
-    pool: &crate::db::DbPool,
-    credential_id: &str,
-) -> String {
-    let tables_result = match db_query::introspect_tables(pool, credential_id, None).await {
-        Ok(r) => r,
-        Err(_) => return String::new(),
-    };
-
-    let name_idx = tables_result.columns.iter().position(|c| c == "table_name");
-    let name_idx = match name_idx {
-        Some(i) => i,
-        None => return String::new(),
-    };
-
-    let table_names: Vec<String> = tables_result
-        .rows
-        .iter()
-        .filter_map(|row| row.get(name_idx).and_then(|v| v.as_str()).map(String::from))
-        .collect();
-
-    if table_names.is_empty() {
-        return String::new();
-    }
-
-    let mut ctx = String::new();
-
-    for table_name in &table_names {
-        let cols = match db_query::introspect_columns(pool, credential_id, table_name, None).await {
-            Ok(r) => r,
-            Err(_) => {
-                ctx.push_str(&format!("- {table_name}\n"));
-                continue;
-            }
-        };
-
-        let col_name_idx = cols.columns.iter().position(|c| c == "column_name");
-        let col_type_idx = cols
-            .columns
-            .iter()
-            .position(|c| c == "data_type" || c == "column_type");
-
-        if let (Some(ni), Some(ti)) = (col_name_idx, col_type_idx) {
-            let col_strs: Vec<String> = cols
-                .rows
-                .iter()
-                .filter_map(|row| {
-                    let name = row.get(ni).and_then(|v| v.as_str())?;
-                    let dtype = row.get(ti).and_then(|v| v.as_str()).unwrap_or("?");
-                    Some(format!("{name} {dtype}"))
-                })
-                .collect();
-            ctx.push_str(&format!("- {} ({})\n", table_name, col_strs.join(", ")));
-        } else {
-            ctx.push_str(&format!("- {table_name}\n"));
-        }
-    }
-
-    ctx
-}
 
 #[cfg(test)]
 mod tests {
@@ -664,64 +563,5 @@ mod tests {
         assert!(!msg.contains("database driver"));
     }
 
-    // -- Code block extraction tests ---------------------------------
-
-    #[test]
-    fn test_extract_code_block_sql() {
-        let text = "Here's the fix:\n```sql\nSELECT * FROM users LIMIT 10;\n```\nDone.";
-        assert_eq!(
-            extract_code_block(text, "sql"),
-            Some("SELECT * FROM users LIMIT 10;".into()),
-        );
-    }
-
-    #[test]
-    fn test_extract_code_block_bare() {
-        let text = "```\nGET mykey\n```";
-        assert_eq!(
-            extract_code_block(text, "redis"),
-            Some("GET mykey".into()),
-        );
-    }
-
-    #[test]
-    fn test_extract_code_block_none() {
-        let text = "No code block here.";
-        assert_eq!(extract_code_block(text, "sql"), None);
-    }
-
-    #[test]
-    fn test_extract_code_block_multiline() {
-        let text = "```sql\nSELECT id,\n       name\nFROM users\nWHERE active = true;\n```";
-        let result = extract_code_block(text, "sql").unwrap();
-        assert!(result.contains("SELECT id,"));
-        assert!(result.contains("WHERE active = true;"));
-    }
-
-    #[test]
-    fn test_extract_code_block_unclosed() {
-        let text = "```sql\nSELECT * FROM users;";
-        assert_eq!(
-            extract_code_block(text, "sql"),
-            Some("SELECT * FROM users;".into()),
-        );
-    }
-
-    #[test]
-    fn test_extract_code_block_prefers_sql_over_js() {
-        let text = "Here's the JS client code:\n```javascript\nconst { data } = await supabase.from('users').select('*');\n```\n\nAnd the raw SQL:\n```sql\nSELECT * FROM users LIMIT 100;\n```";
-        assert_eq!(
-            extract_code_block(text, "sql"),
-            Some("SELECT * FROM users LIMIT 100;".into()),
-        );
-    }
-
-    #[test]
-    fn test_extract_code_block_falls_back_to_first() {
-        let text = "```python\nprint('hello')\n```";
-        assert_eq!(
-            extract_code_block(text, "sql"),
-            Some("print('hello')".into()),
-        );
-    }
+    // Code block extraction tests have moved to engine::ai_helpers::tests
 }

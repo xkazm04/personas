@@ -1,4 +1,4 @@
-import { memo, useId, useMemo } from 'react';
+import { memo, useId, useMemo, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   AreaChart, Area, PieChart, Pie, Cell, Legend, ReferenceLine,
@@ -7,6 +7,7 @@ import { CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/ove
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
+import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import type { ChartAnnotationRecord } from '../libs/chartAnnotations';
 import { getAnnotationColor } from '../libs/chartAnnotations';
 
@@ -22,14 +23,52 @@ export interface MetricsChartsProps {
   annotations?: ChartAnnotationRecord[];
   /** Called when a failure bar is clicked with the date string (YYYY-MM-DD). */
   onFailureBarClick?: (date: string) => void;
+  /** Called when an anomaly marker is clicked. */
+  onAnomalyClick?: (anomaly: MetricAnomaly) => void;
 }
 
-export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, annotations = [], onFailureBarClick }: MetricsChartsProps) {
+/** Detect cost anomalies using rolling 5-day average with >100% deviation threshold. */
+function detectCostAnomalies(chartData: MetricsChartPoint[]): MetricAnomaly[] {
+  const anomalies: MetricAnomaly[] = [];
+  const window = 5;
+  for (let i = 0; i < chartData.length; i++) {
+    const point = chartData[i]!;
+    const value = point.cost;
+    if (value === 0) continue;
+    const start = Math.max(0, i - window);
+    const preceding = chartData.slice(start, i).map((p) => p.cost);
+    if (preceding.length === 0) continue;
+    const baseline = preceding.reduce((a, b) => a + b, 0) / preceding.length;
+    if (baseline === 0) continue;
+    const deviationPct = ((value - baseline) / baseline) * 100;
+    if (deviationPct > 100) {
+      anomalies.push({
+        date: point.date,
+        metric: 'cost',
+        value,
+        baseline,
+        deviation_pct: deviationPct,
+        execution_id: null,
+      });
+    }
+  }
+  return anomalies;
+}
+
+export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, annotations = [], onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
   const costGradId = useId();
   const visibleAnnotations = useMemo(() => {
     const chartDates = new Set(chartData.map((point) => point.date));
     return annotations.filter((annotation) => chartDates.has(annotation.date));
   }, [chartData, annotations]);
+
+  const costAnomalies = useMemo(() => detectCostAnomalies(chartData), [chartData]);
+
+  const handleAnomalyMarkerClick = useCallback((date: string) => {
+    if (!onAnomalyClick) return;
+    const anomaly = costAnomalies.find((a) => a.date === date);
+    if (anomaly) onAnomalyClick(anomaly);
+  }, [onAnomalyClick, costAnomalies]);
 
   return (
     <div className="space-y-6">
@@ -56,6 +95,41 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
                     <g>
                       <title>{`${annotation.label} * ${new Date(annotation.timestamp).toLocaleString()}`}</title>
                       <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
+                    </g>
+                  );
+                }}
+              />
+            ))}
+            {/* Anomaly markers — clickable pulsing diamonds */}
+            {costAnomalies.map((anomaly) => (
+              <ReferenceLine
+                key={`anomaly-${anomaly.date}`}
+                x={anomaly.date}
+                stroke="#ef4444"
+                strokeDasharray="2 3"
+                strokeOpacity={0.5}
+                label={({ viewBox }) => {
+                  if (!viewBox) return null;
+                  const cx = viewBox.x ?? 0;
+                  const cy = (viewBox.y ?? 0) - 10;
+                  return (
+                    <g
+                      style={{ cursor: onAnomalyClick ? 'pointer' : undefined }}
+                      onClick={() => handleAnomalyMarkerClick(anomaly.date)}
+                    >
+                      <title>{`Anomaly: cost +${anomaly.deviation_pct.toFixed(0)}% vs baseline — click to drill down`}</title>
+                      {/* Pulse ring */}
+                      <circle cx={cx} cy={cy} r={6} fill="none" stroke="#ef4444" strokeWidth={1} opacity={0.3}>
+                        <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
+                      </circle>
+                      {/* Diamond marker */}
+                      <polygon
+                        points={`${cx},${cy - 4} ${cx + 4},${cy} ${cx},${cy + 4} ${cx - 4},${cy}`}
+                        fill="#ef4444"
+                        stroke="#fff"
+                        strokeWidth={0.5}
+                      />
                     </g>
                   );
                 }}
@@ -92,6 +166,18 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
           </PieChart>
         </MetricChart>
       </div>
+
+      {/* Anomaly summary strip */}
+      {costAnomalies.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-500/20 bg-amber-500/5">
+          <span className="text-xs text-amber-400/80 font-medium">
+            {costAnomalies.length} cost anomal{costAnomalies.length === 1 ? 'y' : 'ies'} detected
+          </span>
+          <span className="text-[10px] text-muted-foreground/50">
+            Click a diamond marker on the chart to investigate
+          </span>
+        </div>
+      )}
 
       {/* Charts Row 2 */}
       <MetricChart title="Execution Health" height={240}>

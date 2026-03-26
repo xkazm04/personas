@@ -1,7 +1,8 @@
-import { useEffect, useCallback, useMemo, useState } from 'react';
-import { Activity, RefreshCw, Heart, AlertTriangle, Shield, Zap, WifiOff } from 'lucide-react';
+import { useEffect, useCallback, useMemo, useState, lazy, Suspense } from 'react';
+import { Activity, RefreshCw, Heart, AlertTriangle, Shield, Zap, WifiOff, LayoutGrid, Rows3 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useShallow } from 'zustand/react/shallow';
 import { PersonaHealthCard } from './PersonaHealthCard';
 import { BurnRateProjection } from './BurnRateProjection';
 import { CascadeVisualization } from './CascadeVisualization';
@@ -10,19 +11,29 @@ import { HeartbeatIndicator } from './HeartbeatIndicator';
 import { CircuitBreakerIndicator } from '@/features/agents/sub_executions/components/CircuitBreakerIndicator';
 import type { HealthGrade, DataSourceStatusMap, DataSourceName } from '@/stores/slices/overview/personaHealthSlice';
 
+const StatusPageView = lazy(() => import('./StatusPageView').then(m => ({ default: m.StatusPageView })));
+
+type HealthView = 'heartbeats' | 'status-page';
 type FilterGrade = 'all' | HealthGrade;
 
 export default function PersonaHealthDashboard() {
-  const healthSignals = useOverviewStore((s) => s.healthSignals);
-  const cascadeLinks = useOverviewStore((s) => s.cascadeLinks);
-  const routingRecommendations = useOverviewStore((s) => s.routingRecommendations);
-  const healthLoading = useOverviewStore((s) => s.healthLoading);
-  const healthError = useOverviewStore((s) => s.healthError);
-  const healthLastRefreshedAt = useOverviewStore((s) => s.healthLastRefreshedAt);
-  const dataSourceStatus = useOverviewStore((s) => s.dataSourceStatus);
-  const refreshHealthDashboard = useOverviewStore((s) => s.refreshHealthDashboard);
+  const {
+    healthSignals, cascadeLinks, routingRecommendations,
+    healthLoading, healthError, healthLastRefreshedAt,
+    dataSourceStatus, refreshHealthDashboard,
+  } = useOverviewStore(useShallow((s) => ({
+    healthSignals: s.healthSignals,
+    cascadeLinks: s.cascadeLinks,
+    routingRecommendations: s.routingRecommendations,
+    healthLoading: s.healthLoading,
+    healthError: s.healthError,
+    healthLastRefreshedAt: s.healthLastRefreshedAt,
+    dataSourceStatus: s.dataSourceStatus,
+    refreshHealthDashboard: s.refreshHealthDashboard,
+  })));
 
   const [gradeFilter, setGradeFilter] = useState<FilterGrade>('all');
+  const [healthView, setHealthView] = useState<HealthView>('heartbeats');
 
   // Initial load
   useEffect(() => {
@@ -77,6 +88,32 @@ export default function PersonaHealthDashboard() {
         subtitle="Live health signals, predictive alerts, and cost projections"
         actions={
           <>
+            {/* View toggle */}
+            <div className="flex items-center border border-primary/10 rounded-lg overflow-hidden mr-2">
+              <button
+                onClick={() => setHealthView('heartbeats')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
+                  healthView === 'heartbeats'
+                    ? 'bg-primary/10 text-foreground/90'
+                    : 'text-muted-foreground/60 hover:bg-secondary/40'
+                }`}
+                title="Heartbeats view"
+              >
+                <LayoutGrid className="w-3 h-3" /> Heartbeats
+              </button>
+              <button
+                onClick={() => setHealthView('status-page')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
+                  healthView === 'status-page'
+                    ? 'bg-primary/10 text-foreground/90'
+                    : 'text-muted-foreground/60 hover:bg-secondary/40'
+                }`}
+                title="Status page view"
+              >
+                <Rows3 className="w-3 h-3" /> Status Page
+              </button>
+            </div>
+
             {lastRefreshLabel && (
               <span className="text-xs text-muted-foreground/50 mr-2">Updated {lastRefreshLabel}</span>
             )}
@@ -93,6 +130,11 @@ export default function PersonaHealthDashboard() {
       />
 
       <ContentBody>
+        {healthView === 'status-page' ? (
+          <Suspense fallback={<div className="flex items-center justify-center py-16 text-muted-foreground/50 text-sm">Loading status page...</div>}>
+            <StatusPageView />
+          </Suspense>
+        ) : (
         <div className="space-y-6">
           {/* Error Banner */}
           {healthError && (
@@ -172,6 +214,7 @@ export default function PersonaHealthDashboard() {
             </div>
           </div>
         </div>
+        )}
       </ContentBody>
     </ContentBox>
   );

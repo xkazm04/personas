@@ -12,11 +12,13 @@ export const startCredentialNegotiation = (
   serviceName: string,
   connector: Record<string, unknown>,
   fieldKeys: string[],
+  authenticatedServices?: Array<Record<string, unknown>>,
 ) =>
   invoke<NegotiationStartResult>("start_credential_negotiation", {
     serviceName,
     connector,
     fieldKeys,
+    authenticatedServices: authenticatedServices ?? null,
   });
 
 export const cancelCredentialNegotiation = () =>

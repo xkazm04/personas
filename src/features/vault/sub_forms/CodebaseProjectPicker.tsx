@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Code2, FolderOpen, ArrowRight, Loader2 } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('codebase-project-picker');
 import { listProjects } from '@/api/devTools/devTools';
 import { useSystemStore } from '@/stores/systemStore';
 
@@ -33,7 +36,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
         const result = await listProjects('active');
         setProjects(result);
       } catch (err) {
-        console.error('Failed to load projects:', err);
+        logger.error('Failed to load projects', { error: String(err) });
       } finally {
         setLoading(false);
       }

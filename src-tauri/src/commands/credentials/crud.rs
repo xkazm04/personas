@@ -65,7 +65,9 @@ pub fn create_credential(
     // Create credential + save fields in a single transaction to prevent orphaned rows
     let cred = repo::create_with_fields(&state.db, db_input, &field_map)?;
 
-    let _ = audit_log::insert(&state.db, &cred.id, &name, "create", None, None, None);
+    if let Err(e) = audit_log::insert(&state.db, &cred.id, &name, "create", None, None, None) {
+        tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential create");
+    }
 
     // Auto-provision a keepalive rotation policy for OAuth credentials
     crate::engine::rotation::auto_provision_single(&state.db, &cred.id);
@@ -103,23 +105,19 @@ pub fn update_credential(
     };
 
     // Strip blob columns -- all secrets live in credential_fields now.
+    // Update metadata + fields in a single transaction to prevent inconsistent state.
     let metadata_input = UpdateCredentialInput {
         encrypted_data: None,
         iv: None,
         session_encrypted_data: None,
         ..input
     };
-    let cred = repo::update(&state.db, &id, metadata_input)?;
-
-    // Persist per-field encrypted rows when credential data changes
-    if let Some(fields) = field_map {
-        if !fields.is_empty() {
-            repo::save_fields(&state.db, &id, &fields)?;
-        }
-    }
+    let cred = repo::update_with_fields(&state.db, &id, metadata_input, field_map.as_ref())?;
 
     let detail = if has_data_change { "credential data changed" } else { "metadata updated" };
-    let _ = audit_log::insert(&state.db, &id, &cred.name, "update", None, None, Some(detail));
+    if let Err(e) = audit_log::insert(&state.db, &id, &cred.name, "update", None, None, Some(detail)) {
+        tracing::warn!(credential_id = %id, error = %e, "Failed to write audit log for credential update");
+    }
 
     // Auto-provision a keepalive rotation policy if this is now an OAuth credential
     if has_data_change {
@@ -169,7 +167,9 @@ pub fn delete_credential(
         .unwrap_or_else(|_| id.clone());
     let result = repo::delete(&state.db, &id)?;
     if result {
-        let _ = audit_log::insert(&state.db, &id, &name, "delete", None, None, None);
+        if let Err(e) = audit_log::insert(&state.db, &id, &name, "delete", None, None, None) {
+            tracing::warn!(credential_id = %id, error = %e, "Failed to write audit log for credential delete");
+        }
     }
     Ok(result)
 }
@@ -232,41 +232,22 @@ pub async fn healthcheck_credential(
     let name = cred.as_ref().map(|c| c.name.clone())
         .unwrap_or_else(|| credential_id.clone());
     let detail = if result.success { "passed" } else { &result.message };
-    let _ = audit_log::insert(&state.db, &credential_id, &name, "healthcheck", None, None, Some(detail));
+    if let Err(e) = audit_log::insert(&state.db, &credential_id, &name, "healthcheck", None, None, Some(detail)) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for credential healthcheck");
+    }
 
     // Record credential usage
-    let _ = repo::record_usage(&state.db, &credential_id);
+    if let Err(e) = repo::record_usage(&state.db, &credential_id) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to record credential usage");
+    }
 
-    // Append to healthcheck ring buffer for windowed anomaly scoring
-    if let Some(ref c) = cred {
-        let metadata: serde_json::Value = c
-            .metadata
-            .as_deref()
-            .and_then(|s| serde_json::from_str(s).ok())
-            .unwrap_or(serde_json::Value::Null);
-
-        let existing = crate::engine::rotation::parse_healthcheck_entries(&metadata);
-        let updated = crate::engine::rotation::append_healthcheck_entry(
-            &existing,
-            result.success,
-            &result.message,
-        );
-
-        let mut meta_obj = metadata.as_object().cloned().unwrap_or_default();
-        meta_obj.insert(
-            "healthcheck_results".to_string(),
-            serde_json::to_value(&updated).unwrap_or_default(),
-        );
-        // Also update legacy fields for backward compatibility
-        meta_obj.insert("healthcheck_last_success".to_string(), serde_json::Value::Bool(result.success));
-        if result.success {
-            meta_obj.insert(
-                "healthcheck_last_success_at".to_string(),
-                serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
-            );
+    // Append to healthcheck ring buffer atomically to prevent concurrent overwrites
+    if cred.is_some() {
+        if let Err(e) = repo::append_healthcheck_metadata(
+            &state.db, &credential_id, result.success, &result.message,
+        ) {
+            tracing::warn!(credential_id = %credential_id, error = %e, "Failed to update healthcheck metadata");
         }
-        let updated_meta = serde_json::to_string(&meta_obj).ok();
-        let _ = repo::update_metadata(&state.db, &credential_id, updated_meta.as_deref());
     }
 
     Ok(serde_json::json!({
@@ -279,24 +260,18 @@ pub async fn healthcheck_credential(
 pub async fn healthcheck_credential_preview(
     state: State<'_, Arc<AppState>>,
     service_type: String,
-    mut field_values: HashMap<String, String>,
-    session_encrypted_data: Option<String>,
+    session_encrypted_data: String,
 ) -> Result<serde_json::Value, AppError> {
     require_privileged(&state, "healthcheck_credential_preview").await?;
-    // Decrypt session-encrypted data if provided (asymmetric IPC protection)
-    if let Some(encrypted) = session_encrypted_data {
-        match state.session_key.decrypt(&encrypted) {
-            Ok(decrypted) => {
-                if let Ok(decrypted_fields) = serde_json::from_str::<HashMap<String, String>>(&decrypted) {
-                    field_values.extend(decrypted_fields);
-                }
-            }
-            Err(e) => {
-                tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
-                return Err(AppError::Internal("Decryption failed".into()));
-            }
+    // Decrypt mandatory session-encrypted field values (RSA-OAEP + AES-GCM transit encryption)
+    let field_values: HashMap<String, String> = match state.session_key.decrypt(&session_encrypted_data) {
+        Ok(decrypted) => serde_json::from_str(&decrypted)
+            .map_err(|e| AppError::Validation(format!("Invalid decrypted field data: {}", e)))?,
+        Err(e) => {
+            tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
+            return Err(AppError::Internal("Decryption failed".into()));
         }
-    }
+    };
 
     let result = crate::engine::healthcheck::run_healthcheck_with_fields(
         &state.db,
@@ -373,28 +348,23 @@ pub fn update_credential_field(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     field_key: String,
-    mut field_value: String,
     is_sensitive: bool,
-    session_encrypted_value: Option<String>,
+    session_encrypted_value: String,
 ) -> Result<bool, AppError> {
     require_privileged_sync(&state, "update_credential_field")?;
-    // Decrypt session-encrypted value if provided (asymmetric IPC protection)
-    if let Some(encrypted) = session_encrypted_value {
-        match state.session_key.decrypt(&encrypted) {
-            Ok(decrypted) => {
-                field_value = decrypted;
-            }
-            Err(e) => {
-                tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
-                return Err(AppError::Internal("Decryption failed".into()));
-            }
+    // Decrypt mandatory session-encrypted value (RSA-OAEP + AES-GCM transit encryption)
+    let field_value = match state.session_key.decrypt(&session_encrypted_value) {
+        Ok(decrypted) => decrypted,
+        Err(e) => {
+            tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
+            return Err(AppError::Internal("Decryption failed".into()));
         }
-    }
+    };
 
     repo::upsert_field(&state.db, &credential_id, &field_key, &field_value, is_sensitive)?;
 
     let cred = repo::get_by_id(&state.db, &credential_id)?;
-    let _ = audit_log::insert(
+    if let Err(e) = audit_log::insert(
         &state.db,
         &credential_id,
         &cred.name,
@@ -402,7 +372,9 @@ pub fn update_credential_field(
         None,
         None,
         Some(&format!("field '{field_key}' updated")),
-    );
+    ) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for field update");
+    }
     Ok(true)
 }
 

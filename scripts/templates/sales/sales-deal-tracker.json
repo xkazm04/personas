@@ -33,6 +33,79 @@
     ],
     "full_prompt_markdown": "# Sales Deal Tracker\n\n## Identity\n\nYou are a proactive sales pipeline monitor with expertise in CRM data analysis and sales process optimization.\n\n---\n\n## Instructions\n\n1. Poll Salesforce opportunities API every 3 minutes to detect stage changes\n2. Compare current deal stages against stored memory to identify transitions\n3. When stage changes detected, send immediate notification via: {\"user_message\": {\"title\": \"Deal Stage Change\", \"content\": \"[Deal Name] moved from [Old Stage] to [New Stage]. Value: $[Amount], Probability: [%], Owner: [Name]\", \"content_type\": \"success\", \"priority\": \"high\"}}\n4. Store updated deal states via: {\"agent_memory\": {\"title\": \"Deal Stage Update\", \"content\": \"[Opportunity ID]: [Stage] at [Timestamp]\", \"category\": \"tracking\"}}\n5. Generate daily pipeline summary with total value by stage and recent changes\n6. Record insights about deal patterns via: {\"knowledge_annotation\": {\"scope\": \"tool:salesforce_api\", \"note\": \"insight about sales patterns\"}}\n7. Emit stage change events via: {\"emit_event\": {\"type\": \"deal_stage_changed\", \"data\": {\"opportunity_id\": \"...\", \"old_stage\": \"...\", \"new_stage\": \"...\", \"value\": \"...\"}}}\n\n---\n\n## Tool Guidance\n\nUse Salesforce connector to query Opportunity objects. Filter by LastModifiedDate to optimize API calls. Focus on Stage, Amount, Probability, and Owner fields. Handle API rate limits gracefully.\n\n---\n\n## Examples\n\nDeal moved from 'Qualified' to 'Proposal': immediately notify with deal details and updated pipeline metrics. New deal created: log in memory but only notify if above threshold value.\n\n---\n\n## Error Handling\n\nIf Salesforce API fails, retry with exponential backoff. If multiple consecutive failures, skip current cycle and alert administrator. Never duplicate notifications for the same stage change.",
     "summary": "Monitors Salesforce deal stages and sends automatic notifications when deals progress through the pipeline, with periodic deal value summaries",
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "Which CRM system holds your deal pipeline?",
+        "type": "select",
+        "options": [
+          "Salesforce",
+          "HubSpot",
+          "Pipedrive",
+          "Local Database"
+        ],
+        "default": "Salesforce",
+        "context": "The agent connects to this CRM to poll for deal stage changes.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What is the minimum deal size worth tracking?",
+        "type": "select",
+        "options": [
+          "All deals",
+          "$5,000+",
+          "$10,000+",
+          "$25,000+",
+          "$50,000+"
+        ],
+        "default": "All deals",
+        "context": "Filters out small deals so notifications focus on high-value pipeline movement.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "Where should deal stage change notifications be sent?",
+        "type": "select",
+        "options": [
+          "In-app only",
+          "Slack channel",
+          "Email",
+          "In-app + Slack"
+        ],
+        "default": "In-app + Slack",
+        "context": "Controls the notification channel for real-time deal movement alerts.",
+        "dimension": "messages"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should deals moving to 'Closed Lost' trigger a human review request?",
+        "type": "boolean",
+        "options": [],
+        "default": true,
+        "context": "Flags lost deals for manual review so the team can capture loss reasons.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "How frequently should pipeline value summaries be generated?",
+        "type": "select",
+        "options": [
+          "Daily",
+          "Weekly",
+          "Bi-weekly",
+          "Monthly"
+        ],
+        "default": "Daily",
+        "context": "Sets how often the agent compiles and sends a total pipeline value report.",
+        "dimension": "triggers"
+      }
+    ],
     "design_highlights": [
       {
         "category": "Intelligence",
@@ -267,6 +340,5 @@
       "icon": "TrendingUp",
       "color": "#8b5cf6"
     }
-  },
-  "is_published": false
+  }
 }

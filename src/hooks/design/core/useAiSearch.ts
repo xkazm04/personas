@@ -3,6 +3,9 @@ import { smartSearchTemplates } from '@/api/overview/intelligence/smartSearch';
 import { getDesignReview } from '@/api/overview/reviews';
 import { silentCatchNull } from "@/lib/silentCatch";
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('ai-search');
 
 export interface UseAiSearchReturn {
   aiSearchMode: boolean;
@@ -71,7 +74,7 @@ export function useAiSearch(
         setAiSearchRationale(result.rationale);
       } catch (err: unknown) {
         if (searchId !== aiSearchIdRef.current) return;
-        console.warn('AI search failed, falling back to keyword search:', err);
+        logger.warn('AI search failed, falling back to keyword search', { err: err instanceof Error ? err.message : String(err) });
         const errMsg = err instanceof Error ? err.message : String(err);
         setAiSearchRationale(`AI search failed: ${errMsg}`);
         setAiSearchActive(false);

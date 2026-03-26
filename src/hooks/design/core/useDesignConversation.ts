@@ -15,6 +15,9 @@ import type {
 } from '@/lib/types/designTypes';
 import { parseConversationMessages } from '@/lib/types/designTypes';
 import { useToastStore } from '@/stores/toastStore';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('design-conversation');
 
 /**
  * Manages persistent design conversations alongside the design analysis flow.
@@ -132,7 +135,7 @@ export function useDesignConversation(personaId: string | null) {
       const { message, lastResult } = buildMessage(conv);
       const messages = parseConversationMessages(conv.messages);
       if (!messages) {
-        console.warn('[design-conversation] Skipping append: conversation messages JSON is corrupt. Existing history preserved.');
+        logger.warn('Skipping append: conversation messages JSON is corrupt. Existing history preserved.');
         return;
       }
       messages.push(message);

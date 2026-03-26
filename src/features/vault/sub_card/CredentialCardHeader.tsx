@@ -1,7 +1,7 @@
 import { Trash2, Key, Plug } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { Button } from '@/features/shared/components/buttons';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 import type { RotationStatus } from '@/api/vault/rotation';
@@ -28,7 +28,7 @@ export function CredentialCardHeader({
   onSelect,
   onDelete,
 }: CredentialCardHeaderProps) {
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
 
   return (
     <div

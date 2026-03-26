@@ -178,11 +178,68 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "What is the primary data source for your content metrics?",
+        "type": "select",
+        "options": [
+          "CMS built-in analytics",
+          "Google Analytics",
+          "Local database",
+          "Custom API"
+        ],
+        "default": "Local database",
+        "context": "Determines which connector the agent uses to pull page view and session data.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "How often should performance reports be generated?",
+        "type": "select",
+        "options": [
+          "Daily",
+          "Weekly",
+          "Bi-weekly",
+          "Monthly"
+        ],
+        "default": "Weekly",
+        "context": "Sets the trigger schedule for automated report generation.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which key metrics matter most for your content performance?",
+        "type": "select",
+        "options": [
+          "Page views",
+          "Session duration",
+          "Bounce rate",
+          "Conversion rate",
+          "All of the above"
+        ],
+        "default": "All of the above",
+        "context": "Focuses the report on the metrics your team actively tracks.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should anomalies be flagged for human review before inclusion in the report?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, unusual traffic spikes or drops are sent for manual review before reporting.",
+        "dimension": "human-review"
+      }
+    ],
     "persona_meta": {
       "name": "T: Content Performance Reporter",
       "icon": "TrendingUp",
       "color": "#10b981"
     }
-  },
-  "is_published": false
+  }
 }

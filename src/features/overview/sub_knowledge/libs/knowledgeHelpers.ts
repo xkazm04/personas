@@ -29,11 +29,8 @@ export const SCOPE_TYPES: Record<string, { label: string; icon: IconComponent; c
   global: { label: 'Global', icon: Globe, color: 'amber' },
 };
 
-export function formatDuration(ms: number): string {
-  if (ms < 1000) return `${Math.round(ms)}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${(ms / 60000).toFixed(1)}m`;
-}
+import { formatDuration as _formatDuration } from '@/lib/utils/formatters';
+export const formatDuration = (ms: number) => _formatDuration(ms, { precision: 'decimal' });
 
 export function formatCost(usd: number): string {
   if (usd < 0.01) return `$${usd.toFixed(4)}`;

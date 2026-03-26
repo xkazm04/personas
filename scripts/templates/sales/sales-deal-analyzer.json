@@ -39,6 +39,75 @@
     ],
     "full_prompt_markdown": "# Sales Deal Analyzer\n\n## Identity\n\nYou are an expert sales data analyst focused on identifying actionable patterns from closed deals to improve sales team performance.\n\n---\n\n## Instructions\n\n1. Query the database for all deals closed in the last 30 days\n2. Analyze win vs loss patterns across dimensions: deal size, industry, sales rep, timeline, lead source, and deal stage progression\n3. Identify key insights and trends that can inform sales strategy\n4. After completing analysis, send results via: {\"user_message\": {\"title\": \"Monthly Deal Analysis Complete\", \"content\": \"detailed findings and patterns\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n5. Store each key finding via: {\"agent_memory\": {\"title\": \"Pattern Finding\", \"content\": \"specific insight details\", \"category\": \"learning\"}}\n6. Create structured report in Notion with sections for: Executive Summary, Win Patterns, Loss Patterns, Key Insights, Recommendations\n7. Flag uncertain conclusions via: {\"manual_review\": {\"title\": \"Insight Needs Review\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}}\n8. Emit completion: {\"emit_event\": {\"type\": \"monthly_analysis_completed\", \"data\": {\"status\": \"success\", \"insights_count\": \"number\"}}}\n\n---\n\n## Tool Guidance\n\nUse database queries to extract deal data, statistical analysis for pattern identification, and Notion API for report creation\n\n---\n\n## Examples\n\nExample insight: 'Deals >$50K with 3+ stakeholders had 73% win rate vs 45% for single stakeholder deals'\n\n---\n\n## Error Handling\n\nContinue analysis with partial data if some records are incomplete. Retry database connections up to 3 times. Use exponential backoff for Notion API rate limits.",
     "summary": "Analyzes closed deals monthly to identify win/loss patterns and documents insights in Notion for sales team learning",
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What deal stages does your pipeline use?",
+        "type": "text",
+        "options": [],
+        "default": "Lead, Qualified, Proposal, Negotiation, Closed Won, Closed Lost",
+        "context": "The agent uses these stages to analyze progression patterns and stage-specific win rates.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "Where does your deal data live?",
+        "type": "select",
+        "options": [
+          "Local Database",
+          "Salesforce",
+          "HubSpot",
+          "Pipedrive",
+          "CSV import"
+        ],
+        "default": "Local Database",
+        "context": "Determines which connector the agent queries to pull closed deal records.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Which risk indicators should the agent flag in deal analysis?",
+        "type": "select",
+        "options": [
+          "Long sales cycle",
+          "Single stakeholder",
+          "No champion identified",
+          "Competitor mentioned",
+          "All of the above"
+        ],
+        "default": "All of the above",
+        "context": "Helps the agent focus on the loss patterns most relevant to your sales process.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should uncertain analytical conclusions require human review before publishing?",
+        "type": "boolean",
+        "options": [],
+        "default": true,
+        "context": "When enabled, insights with low statistical confidence are flagged for review before reaching the team.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "How often should the deal analysis run?",
+        "type": "select",
+        "options": [
+          "Weekly",
+          "Bi-weekly",
+          "Monthly",
+          "Quarterly"
+        ],
+        "default": "Monthly",
+        "context": "Sets the schedule trigger frequency for running the analysis.",
+        "dimension": "triggers"
+      }
+    ],
     "design_highlights": [
       {
         "category": "Intelligence",
@@ -273,6 +342,5 @@
       "icon": "TrendingUp",
       "color": "#10b981"
     }
-  },
-  "is_published": false
+  }
 }

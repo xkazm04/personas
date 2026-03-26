@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { SearchEmptyState } from '../explore/EmptyState';
 import { CompactRow } from './CompactRow';
 import { ComfortableRow } from './ComfortableRow';
 import type { Density } from '../search/filters/DensityToggle';
@@ -80,11 +81,7 @@ export function TemplateVirtualList({
   }, [virtualizer.getVirtualItems(), displayItems.length, hasMore, isFetchingMore, isLoading, fetchMore]);
 
   if (displayItems.length === 0) {
-    return (
-      <div className="flex items-center justify-center flex-1 min-h-[200px] text-sm text-muted-foreground/60 w-full">
-        No templates match your search
-      </div>
-    );
+    return <SearchEmptyState />;
   }
 
   return (

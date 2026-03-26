@@ -27,6 +27,19 @@ row_mapper!(row_to_credential_event -> CredentialEvent {
 });
 
 // ============================================================================
+// Non-sensitive field keys (single source of truth)
+// ============================================================================
+
+/// Field keys that are stored as queryable plaintext rather than encrypted.
+/// Used by both `create_with_fields` and `save_fields` to classify sensitivity.
+pub const NON_SENSITIVE_KEYS: &[&str] = &[
+    "base_url", "url", "host", "hostname", "server",
+    "port", "database", "project", "organization", "org",
+    "workspace", "team", "region", "scope", "scopes",
+    "oauth_client_mode", "token_type",
+];
+
+// ============================================================================
 // Credential CRUD
 // ============================================================================
 
@@ -96,14 +109,6 @@ pub fn create_with_fields(
             now,
         ],
     )?;
-
-    // Non-sensitive field keys (stored as queryable plaintext)
-    const NON_SENSITIVE_KEYS: &[&str] = &[
-        "base_url", "url", "host", "hostname", "server",
-        "port", "database", "project", "organization", "org",
-        "workspace", "team", "region", "scope", "scopes",
-        "oauth_client_mode", "token_type",
-    ];
 
     for (key, value) in fields {
         let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
@@ -186,15 +191,109 @@ pub fn update(
     get_by_id(pool, id)
 }
 
+/// Update credential metadata and save fields in a single SQLite transaction.
+/// Prevents inconsistent state where metadata succeeds but field save fails.
+pub fn update_with_fields(
+    pool: &DbPool,
+    id: &str,
+    input: UpdateCredentialInput,
+    fields: Option<&HashMap<String, String>>,
+) -> Result<PersonaCredential, AppError> {
+    // Verify exists
+    get_by_id(pool, id)?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
+    // -- 1. Update credential metadata --
+    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+    let mut param_idx = 2u32;
+
+    push_field!(input.name, "name", sets, param_idx);
+    push_field!(input.service_type, "service_type", sets, param_idx);
+    push_field!(input.encrypted_data, "encrypted_data", sets, param_idx);
+    push_field!(input.iv, "iv", sets, param_idx);
+    push_field!(input.metadata, "metadata", sets, param_idx);
+
+    let sql = format!(
+        "UPDATE persona_credentials SET {} WHERE id = ?{}",
+        sets.join(", "),
+        param_idx
+    );
+
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now.clone())];
+
+    if let Some(ref v) = input.name {
+        param_values.push(Box::new(v.clone()));
+    }
+    if let Some(ref v) = input.service_type {
+        param_values.push(Box::new(v.clone()));
+    }
+    if let Some(ref v) = input.encrypted_data {
+        param_values.push(Box::new(v.clone()));
+    }
+    if let Some(ref v) = input.iv {
+        param_values.push(Box::new(v.clone()));
+    }
+    if let Some(ref v) = input.metadata {
+        param_values.push(Box::new(v.clone()));
+    }
+    param_values.push(Box::new(id.to_string()));
+
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
+    tx.execute(&sql, params_ref.as_slice())?;
+
+    // -- 2. Save fields if provided --
+    if let Some(field_map) = fields {
+        if !field_map.is_empty() {
+            // Delete existing fields and re-insert within the same transaction
+            tx.execute(
+                "DELETE FROM credential_fields WHERE credential_id = ?1",
+                params![id],
+            )?;
+
+            for (key, value) in field_map {
+                let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+                let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+                    .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
+
+                let field_type = classify_field_type(key);
+                let field_id = uuid::Uuid::new_v4().to_string();
+
+                tx.execute(
+                    "INSERT INTO credential_fields
+                     (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                    params![
+                        field_id, id, key, enc_val, field_iv,
+                        field_type, is_sensitive as i32, now,
+                    ],
+                )?;
+            }
+        }
+    }
+
+    tx.commit().map_err(AppError::Database)?;
+    get_by_id(pool, id)
+}
+
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
     // Explicitly clean up dependent rows to guarantee no orphans even if
     // PRAGMA foreign_keys is not active on this connection.
-    conn.execute("DELETE FROM credential_fields WHERE credential_id = ?1", params![id])?;
-    conn.execute("DELETE FROM credential_rotation_history WHERE credential_id = ?1", params![id])?;
-    conn.execute("DELETE FROM credential_rotation_policies WHERE credential_id = ?1", params![id])?;
-    conn.execute("DELETE FROM credential_events WHERE credential_id = ?1", params![id])?;
-    let rows = conn.execute("DELETE FROM persona_credentials WHERE id = ?1", params![id])?;
+    // All deletes are wrapped in a single transaction so a crash mid-sequence
+    // won't leave orphaned rows in dependent tables.
+    tx.execute("DELETE FROM credential_fields WHERE credential_id = ?1", params![id])?;
+    tx.execute("DELETE FROM credential_rotation_history WHERE credential_id = ?1", params![id])?;
+    tx.execute("DELETE FROM credential_rotation_policies WHERE credential_id = ?1", params![id])?;
+    tx.execute("DELETE FROM credential_events WHERE credential_id = ?1", params![id])?;
+    let rows = tx.execute("DELETE FROM persona_credentials WHERE id = ?1", params![id])?;
+
+    tx.commit().map_err(AppError::Database)?;
     Ok(rows > 0)
 }
 
@@ -362,6 +461,65 @@ pub fn patch_metadata_atomic(
 
     tx.commit()?;
     get_by_id(pool, id)
+}
+
+/// Atomically append a healthcheck entry to the metadata ring buffer.
+///
+/// Performs the read-modify-write inside a single SQLite transaction to prevent
+/// concurrent healthcheck invocations from overwriting each other's results.
+pub fn append_healthcheck_metadata(
+    pool: &DbPool,
+    credential_id: &str,
+    success: bool,
+    message: &str,
+) -> Result<(), AppError> {
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+
+    let current_raw: Option<String> = tx
+        .query_row(
+            "SELECT metadata FROM persona_credentials WHERE id = ?1",
+            params![credential_id],
+            |row| row.get::<_, Option<String>>(0),
+        )
+        .optional()?
+        .flatten();
+
+    let metadata: serde_json::Value = current_raw
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or(serde_json::Value::Null);
+
+    let existing = crate::engine::rotation::parse_healthcheck_entries(&metadata);
+    let updated = crate::engine::rotation::append_healthcheck_entry(&existing, success, message);
+
+    let mut meta_obj = metadata.as_object().cloned().unwrap_or_default();
+    meta_obj.insert(
+        "healthcheck_results".to_string(),
+        serde_json::to_value(&updated).unwrap_or_default(),
+    );
+    meta_obj.insert(
+        "healthcheck_last_success".to_string(),
+        serde_json::Value::Bool(success),
+    );
+    if success {
+        meta_obj.insert(
+            "healthcheck_last_success_at".to_string(),
+            serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
+        );
+    }
+
+    let next_meta = serde_json::to_string(&serde_json::Value::Object(meta_obj))?;
+    let sanitized = sanitize_secrets(&next_meta);
+    let now = chrono::Utc::now().to_rfc3339();
+
+    tx.execute(
+        "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
+        params![sanitized, now, credential_id],
+    )?;
+
+    tx.commit()?;
+    Ok(())
 }
 
 /// Record a usage event for a credential: increment usage_count and set last_used_at.
@@ -586,14 +744,6 @@ pub fn save_fields(
 ) -> Result<usize, AppError> {
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
-
-    // Non-sensitive field keys (stored as queryable plaintext)
-    const NON_SENSITIVE_KEYS: &[&str] = &[
-        "base_url", "url", "host", "hostname", "server",
-        "port", "database", "project", "organization", "org",
-        "workspace", "team", "region", "scope", "scopes",
-        "oauth_client_mode", "token_type",
-    ];
 
     // Remove existing field rows and re-insert atomically
     tx.execute(

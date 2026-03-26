@@ -6,10 +6,14 @@ use super::design::extract_json_by_key;
 
 /// Build a prompt that instructs Claude to produce a step-by-step provisioning plan
 /// for obtaining API credentials from a service's developer portal.
+///
+/// When `authenticated_services` is non-empty, the prompt instructs Claude to skip
+/// account-creation and authentication steps that are already satisfied.
 pub fn build_negotiation_prompt(
     service_name: &str,
     connector_json: &serde_json::Value,
     field_keys: &[String],
+    authenticated_services: &[serde_json::Value],
 ) -> String {
     let mut prompt = String::new();
 
@@ -21,6 +25,24 @@ pub fn build_negotiation_prompt(
     prompt.push_str("## Service\n");
     prompt.push_str(service_name);
     prompt.push_str("\n\n");
+
+    // Include auth detection results so the AI can adapt the plan
+    if !authenticated_services.is_empty() {
+        prompt.push_str("## Detected Authentication Sessions\n");
+        prompt.push_str("The following services were detected as already authenticated on this machine. ");
+        prompt.push_str("If the target service is among them, **skip account-creation and sign-in steps** ");
+        prompt.push_str("and instead start from the API key / token generation page directly.\n\n");
+        for svc in authenticated_services {
+            let stype = svc.get("service_type").and_then(|v| v.as_str()).unwrap_or("unknown");
+            let method = svc.get("method").and_then(|v| v.as_str()).unwrap_or("unknown");
+            let identity = svc.get("identity").and_then(|v| v.as_str()).unwrap_or("unknown");
+            let confidence = svc.get("confidence").and_then(|v| v.as_str()).unwrap_or("low");
+            prompt.push_str(&format!(
+                "- **{stype}**: authenticated via {method} as `{identity}` (confidence: {confidence})\n"
+            ));
+        }
+        prompt.push('\n');
+    }
 
     prompt.push_str("## Connector Definition\n");
     prompt.push_str(
@@ -191,11 +213,35 @@ mod tests {
             "GitHub",
             &sample_connector(),
             &["personal_access_token".into()],
+            &[],
         );
         assert!(prompt.contains("GitHub"));
         assert!(prompt.contains("personal_access_token"));
         assert!(prompt.contains("# API Credential Provisioning Plan"));
         assert!(prompt.contains("Required Output Format"));
+        // No auth section when no detections provided
+        assert!(!prompt.contains("Detected Authentication Sessions"));
+    }
+
+    #[test]
+    fn test_build_negotiation_prompt_includes_auth_detections() {
+        let auth = vec![serde_json::json!({
+            "service_type": "github",
+            "method": "cli",
+            "authenticated": true,
+            "identity": "gh:octocat",
+            "confidence": "high"
+        })];
+        let prompt = build_negotiation_prompt(
+            "GitHub",
+            &sample_connector(),
+            &["personal_access_token".into()],
+            &auth,
+        );
+        assert!(prompt.contains("Detected Authentication Sessions"));
+        assert!(prompt.contains("github"));
+        assert!(prompt.contains("gh:octocat"));
+        assert!(prompt.contains("skip account-creation and sign-in steps"));
     }
 
     #[test]

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import * as credApi from '@/api/vault/credentials';
 import { testCredentialDesignHealthcheck, type CredentialDesignHealthcheckResult } from '@/api/vault/credentialDesign';
+import { encryptWithSessionKey } from '@/lib/utils/platform/crypto';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
@@ -177,7 +178,8 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
   /** Check unsaved credential values against a known service type. */
   const checkPreview = useCallback(async (serviceType: string, fieldValues: Record<string, string>) => {
     await check(async () => {
-      return await credApi.healthcheckCredentialPreview(serviceType, fieldValues);
+      const encrypted = await encryptWithSessionKey(JSON.stringify(fieldValues));
+      return await credApi.healthcheckCredentialPreview(serviceType, encrypted);
     });
   }, [check]);
 

@@ -17,6 +17,9 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("event-bridge");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -101,7 +104,7 @@ const registry: EventRegistration[] = [
         EventName.AUTH_ERROR,
         (payload) => {
           const msg = payload?.error ?? "Authentication failed";
-          console.error("[auth-error]", msg);
+          logger.error("Auth error", { detail: msg });
           useAuthStore.setState({
             isLoading: false,
             error: msg,
@@ -155,10 +158,7 @@ const registry: EventRegistration[] = [
         EventName.ZOMBIE_EXECUTIONS_DETECTED,
         (payload) => {
           const { zombie_ids, count } = payload;
-          console.warn(
-            `[zombie-sweep] ${count} stale execution(s) transitioned to incomplete:`,
-            zombie_ids,
-          );
+          logger.warn("Zombie executions transitioned to incomplete", { count, zombie_ids });
           const state = useAgentStore.getState();
           if (
             state.activeExecutionId &&
@@ -283,8 +283,7 @@ const registry: EventRegistration[] = [
 ];
 
 function tracing(...args: unknown[]) {
-  // eslint-disable-next-line no-console
-  console.info(...args);
+  logger.info(args.map(String).join(" "));
 }
 
 // ---------------------------------------------------------------------------
@@ -307,7 +306,7 @@ export async function initAllListeners(): Promise<void> {
     if (result.status === "fulfilled") {
       unlisteners.push(...result.value);
     } else {
-      console.error("[EventBridge] Failed to attach listener:", result.reason);
+      logger.error("Failed to attach listener", { reason: String(result.reason) });
     }
   }
 

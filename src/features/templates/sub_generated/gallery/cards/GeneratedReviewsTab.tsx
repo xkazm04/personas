@@ -1,4 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('template-gallery');
 import { useSystemStore } from "@/stores/systemStore";
 import { useTemplateGallery } from '@/hooks/design/template/useTemplateGallery';
 import { TemplateSearchBar } from '../search/TemplateSearchBar';
@@ -93,7 +96,7 @@ export default function GeneratedReviewsTab({
         const parsed = JSON.parse(raw) as { templateName?: string };
         const match = gallery.allItems.find((r: PersonaDesignReview) => r.test_case_name === parsed.templateName);
         if (match) { modals.open({ type: 'adopt', review: match }); return; }
-        console.warn(`[ResumeAdoption] Template "${parsed.templateName}" not found.`);
+        logger.warn('Template not found for resume adoption', { templateName: parsed.templateName });
       }
     } catch { /* intentional: non-critical */ }
   };
@@ -101,7 +104,7 @@ export default function GeneratedReviewsTab({
   const handleResumeDraft = (draft: import('@/stores/slices/system/uiSlice').AdoptionDraft) => {
     const match = gallery.allItems.find((r: PersonaDesignReview) => r.id === draft.reviewId);
     if (match) { modals.open({ type: 'adopt', review: match }); }
-    else { console.warn(`[ResumeDraft] Review "${draft.reviewId}" not found.`); setAdoptionDraft(null); }
+    else { logger.warn('Review not found for resume draft', { reviewId: draft.reviewId }); setAdoptionDraft(null); }
   };
 
   if (gallery.isLoading && gallery.allItems.length === 0 && gallery.total === 0) {

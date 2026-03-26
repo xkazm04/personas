@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Activity, Users, Clock, Shield, AlertTriangle, Link2 } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('credential-intelligence');
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { formatTimestamp } from '@/lib/utils/formatters';
 import {
@@ -48,7 +51,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
         setDependents(d);
         setAuditLog(a);
       })
-      .catch((err) => { console.error('Failed to load credential intelligence:', err); })
+      .catch((err) => { logger.error('Failed to load credential intelligence', { error: String(err) }); })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -74,7 +77,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
             size="sm"
             onClick={() => setTab(t)}
             className={tab === t
-              ? `${AI_STATUS.bgColor} ${AI_STATUS.color} border ${AI_STATUS.borderColor}`
+              ? `${AI_STATUS.bg} ${AI_STATUS.text} border ${AI_STATUS.border}`
               : 'text-muted-foreground/80 hover:text-foreground/95 hover:bg-secondary/40'
             }
           >
@@ -90,35 +93,35 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
         <div className="space-y-3">
           <div className="grid grid-cols-4 3xl:grid-cols-6 4xl:grid-cols-8 gap-2">
             <StatCard
-              icon={<Activity className={`w-3.5 h-3.5 ${INFO_STATUS.color}`} />}
+              icon={<Activity className={`w-3.5 h-3.5 ${INFO_STATUS.text}`} />}
               label="Total Accesses"
               value={stats.total_accesses.toString()}
             />
             <StatCard
-              icon={<Users className={`w-3.5 h-3.5 ${AI_STATUS.color}`} />}
+              icon={<Users className={`w-3.5 h-3.5 ${AI_STATUS.text}`} />}
               label="Distinct Personas"
               value={stats.distinct_personas.toString()}
             />
             <StatCard
-              icon={<Clock className={`w-3.5 h-3.5 ${WARNING_STATUS.color}`} />}
+              icon={<Clock className={`w-3.5 h-3.5 ${WARNING_STATUS.text}`} />}
               label="Last 24h"
               value={stats.accesses_last_24h.toString()}
             />
             <StatCard
-              icon={<Shield className={`w-3.5 h-3.5 ${SUCCESS_STATUS.color}`} />}
+              icon={<Shield className={`w-3.5 h-3.5 ${SUCCESS_STATUS.text}`} />}
               label="Last 7 Days"
               value={stats.accesses_last_7d.toString()}
             />
           </div>
 
           {!hasActivity && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bgColor} border ${WARNING_STATUS.borderColor} ${WARNING_STATUS.color}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               No recorded usage. This credential may be unused.
             </div>
           )}
           {unusedDays !== null && unusedDays > 30 && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bgColor} border ${WARNING_STATUS.borderColor} ${WARNING_STATUS.color}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${WARNING_STATUS.bg} border ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               Last accessed {unusedDays} days ago. Consider reviewing if still needed.
             </div>
@@ -158,8 +161,8 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
                     <span className="text-sm text-foreground/80 truncate">{dep.persona_name}</span>
                     <span className={`text-sm px-1.5 py-0.5 rounded-lg border ${
                       dep.link_type === 'tool_connector'
-                        ? `${INFO_STATUS.bgColor} ${INFO_STATUS.borderColor} ${INFO_STATUS.color}`
-                        : `${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color}`
+                        ? `${INFO_STATUS.bg} ${INFO_STATUS.border} ${INFO_STATUS.text}`
+                        : `${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`
                     }`}>
                       {dep.link_type === 'tool_connector' ? 'structural' : 'observed'}
                     </span>

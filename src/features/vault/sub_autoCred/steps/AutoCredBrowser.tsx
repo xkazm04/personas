@@ -1,5 +1,8 @@
 import { useRef, useCallback, useMemo, useEffect } from 'react';
 import { MonitorX, Clock } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('auto-cred-browser');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { BrowserLogEntry, AutoCredMode } from '../helpers/types';
 import { openExternalUrl } from '@/api/system/system';
@@ -47,7 +50,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
   }, [visibleLogs.length]);
 
   const handleUrlClick = useCallback((url: string) => {
-    openExternalUrl(url).catch(console.error);
+    openExternalUrl(url).catch((err) => { logger.error('Failed to open URL', { error: String(err) }); });
   }, []);
 
   const groupedEntries = useMemo(() => groupLogEntries(visibleLogs), [visibleLogs]);

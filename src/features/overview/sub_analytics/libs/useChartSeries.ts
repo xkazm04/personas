@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { pivotToolUsageOverTime } from '@/features/overview/sub_usage/libs/pivotToolUsage';
@@ -12,12 +13,16 @@ import type { PieDataPoint } from '@/features/overview/sub_observability/compone
  * for the analytics dashboard. No side-effects or fetches.
  */
 export function useChartSeries() {
-  const observabilityMetrics = useOverviewStore((s) => s.observabilityMetrics);
+  const {
+    observabilityMetrics, executionDashboard, setOverviewTab,
+  } = useOverviewStore(useShallow((s) => ({
+    observabilityMetrics: s.observabilityMetrics,
+    executionDashboard: s.executionDashboard,
+    setOverviewTab: s.setOverviewTab,
+  })));
   const toolUsageSummary = useAgentStore((s) => s.toolUsageSummary);
   const toolUsageOverTime = useAgentStore((s) => s.toolUsageOverTime);
-  const executionDashboard = useOverviewStore((s) => s.executionDashboard);
   const personas = useAgentStore((s) => s.personas);
-  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   const { effectiveDays, compareEnabled } = useOverviewFilterValues();
   const { setFailureDrilldownDate } = useOverviewFilterActions();

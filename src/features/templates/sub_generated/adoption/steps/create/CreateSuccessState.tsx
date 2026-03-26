@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AdoptEntityError } from '../../state/adoptTypes';
+import { BORDER_DEFAULT } from '@/lib/utils/designTokens';
 
 interface CreateSuccessStateProps {
   draft: N8nPersonaDraft;
@@ -71,7 +72,7 @@ export function CreateSuccessState({
         </button>
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-xl border border-primary/15 text-muted-foreground/70 hover:bg-secondary/30 transition-colors"
+          className={`flex items-center gap-2 px-4 py-2 text-sm rounded-xl border ${BORDER_DEFAULT} text-muted-foreground/70 hover:bg-secondary/30 transition-colors`}
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Adopt Another

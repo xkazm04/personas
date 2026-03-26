@@ -1,86 +1,25 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, LazyLock};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
+use crate::keyed_pool::{KeyedResourcePool, PoolHandle};
 
-/// Tracks a per-credential mutex with an explicit active-user count.
-/// `active` is incremented/decremented exclusively while holding the outer map lock,
-/// so pruning decisions are race-free (unlike `Arc::strong_count` which is advisory).
-struct CredentialLockEntry {
-    mutex: Arc<Mutex<()>>,
-    active: usize,
-}
+/// Per-credential mutex pool to prevent concurrent OAuth token refreshes from
+/// racing. Uses [`KeyedResourcePool`] with RAII handles and automatic pruning
+/// (every 32 acquisitions, threshold 8 entries).
+static CREDENTIAL_REFRESH_LOCKS: LazyLock<KeyedResourcePool<String, Arc<Mutex<()>>>> =
+    LazyLock::new(|| KeyedResourcePool::new(32, 8));
 
-/// Per-credential mutex to prevent concurrent OAuth token refreshes from racing.
-/// Keyed by credential ID. The outer std::sync::Mutex guards brief map access;
-/// the inner tokio::sync::Mutex is held across the async refresh + DB persist.
-static CREDENTIAL_REFRESH_LOCKS: OnceLock<std::sync::Mutex<HashMap<String, CredentialLockEntry>>> =
-    OnceLock::new();
-
-/// Pruning interval: clean up stale entries every N acquisitions to amortize cost.
-const CREDENTIAL_LOCK_PRUNE_INTERVAL: usize = 32;
-/// Counter for acquisitions since last prune.
-static CREDENTIAL_LOCK_ACQUIRE_COUNT: std::sync::atomic::AtomicUsize =
-    std::sync::atomic::AtomicUsize::new(0);
-
-/// RAII handle returned by [`credential_refresh_lock`]. Decrements the entry's
-/// active-user count when dropped, making it eligible for future pruning.
-struct CredentialLockHandle {
-    credential_id: String,
-    mutex: Arc<Mutex<()>>,
-}
-
-impl Drop for CredentialLockHandle {
-    fn drop(&mut self) {
-        let map_mutex =
-            CREDENTIAL_REFRESH_LOCKS.get_or_init(|| std::sync::Mutex::new(HashMap::new()));
-        let mut map = map_mutex.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(entry) = map.get_mut(&self.credential_id) {
-            entry.active = entry.active.saturating_sub(1);
-        }
-    }
-}
-
-impl CredentialLockHandle {
-    async fn lock(&self) -> tokio::sync::MutexGuard<'_, ()> {
-        self.mutex.lock().await
-    }
-}
-
-fn credential_refresh_lock(credential_id: &str) -> CredentialLockHandle {
-    let map_mutex = CREDENTIAL_REFRESH_LOCKS.get_or_init(|| std::sync::Mutex::new(HashMap::new()));
-    let mut map = map_mutex.lock().unwrap_or_else(|e| e.into_inner());
-
-    // Periodically prune entries with zero active users.
-    // Because `active` is only modified under this same map lock, the check is race-free.
-    let count = CREDENTIAL_LOCK_ACQUIRE_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if count % CREDENTIAL_LOCK_PRUNE_INTERVAL == 0 && map.len() > 8 {
-        let before = map.len();
-        map.retain(|_, entry| entry.active > 0);
-        let pruned = before - map.len();
-        if pruned > 0 {
-            tracing::debug!(pruned, remaining = map.len(), "Pruned stale credential refresh locks");
-        }
-    }
-
-    let entry = map
-        .entry(credential_id.to_string())
-        .or_insert_with(|| CredentialLockEntry {
-            mutex: Arc::new(Mutex::new(())),
-            active: 0,
-        });
-    entry.active += 1;
-    let mutex = entry.mutex.clone();
-
-    CredentialLockHandle {
-        credential_id: credential_id.to_string(),
-        mutex,
-    }
+/// Acquire a per-credential refresh lock. The returned [`PoolHandle`] holds a
+/// clone of the `Arc<Mutex<()>>` and decrements the active-user count when
+/// dropped, making the entry eligible for future pruning.
+fn credential_refresh_lock(credential_id: &str) -> PoolHandle<String, Arc<Mutex<()>>> {
+    CREDENTIAL_REFRESH_LOCKS.acquire(credential_id.to_string(), || Arc::new(Mutex::new(())))
 }
 
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
@@ -1712,8 +1651,8 @@ pub(crate) async fn inject_credential(
     // For app_managed credentials (no client_id in fields), resolve from platform env.
     // Locked per credential ID to prevent concurrent refreshes from racing.
     if fields.get("refresh_token").is_some_and(|v| !v.is_empty()) {
-        let refresh_lock = credential_refresh_lock(&cred.id);
-        let _guard = refresh_lock.lock().await;
+        let refresh_handle = credential_refresh_lock(&cred.id);
+        let _guard = refresh_handle.value.lock().await;
 
         // Re-read the credential inside the lock to pick up any token refreshed
         // by a concurrent execution that held the lock before us.

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Search, X, Send, GraduationCap, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SearchAutocomplete } from './SearchAutocomplete';
@@ -27,6 +28,9 @@ export function SearchChipInput({
   autocompletePrefix, autocompleteQuery,
   aiSearchMode, aiSearchLoading, onAiSearchSubmit, availableCategories,
 }: SearchChipInputProps) {
+  const [activeDescendant, setActiveDescendant] = useState<string | undefined>(undefined);
+  const showAutocomplete = !!autocompletePrefix && !aiSearchMode;
+
   return (
     <div className={`relative flex-1 min-w-0 flex items-center flex-wrap gap-1 bg-secondary/40 border rounded-xl transition-all ${
       aiSearchMode
@@ -66,8 +70,9 @@ export function SearchChipInput({
             {Icon && <Icon className="w-3 h-3" style={{ color: chipColor }} />}
             {chip.label}
             <button onClick={() => removeChip(i)}
+              aria-label={`Remove ${chip.label} filter`}
               className="ml-0.5 p-0.5 hover:text-white transition-colors rounded-full hover:bg-white/10">
-              <X className="w-2.5 h-2.5" />
+              <X className="w-2.5 h-2.5" aria-hidden="true" />
             </button>
           </span>
         );
@@ -76,6 +81,11 @@ export function SearchChipInput({
       <input
         data-testid="template-search-input"
         type="text" value={inputValue}
+        role="combobox"
+        aria-expanded={showAutocomplete}
+        aria-controls={showAutocomplete ? "search-suggestions-listbox" : undefined}
+        aria-autocomplete="list"
+        aria-activedescendant={showAutocomplete ? activeDescendant : undefined}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && aiSearchMode && onAiSearchSubmit && inputValue.trim()) {
@@ -98,35 +108,37 @@ export function SearchChipInput({
         {aiSearchMode ? (
           <>
             {inputValue && (
-              <button onClick={clearAll} className="p-1 text-muted-foreground/50 hover:text-foreground/70">
-                <X className="w-3.5 h-3.5" />
+              <button onClick={clearAll} aria-label="Clear search" className="p-1 text-muted-foreground/50 hover:text-foreground/70">
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
             <button onClick={() => onAiSearchSubmit?.(inputValue.trim())}
               disabled={!inputValue.trim() || aiSearchLoading}
               className="p-1.5 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              title="Search with AI">
-              {aiSearchLoading ? <LoadingSpinner size="sm" /> : <Send className="w-3.5 h-3.5" />}
+              aria-label="Search with AI">
+              {aiSearchLoading ? <LoadingSpinner size="sm" /> : <Send className="w-3.5 h-3.5" aria-hidden="true" />}
             </button>
           </>
         ) : (
           (inputValue || chips.length > 0) && (
-            <button onClick={clearAll} className="p-1 text-muted-foreground/50 hover:text-foreground/70">
-              <X className="w-3.5 h-3.5" />
+            <button onClick={clearAll} aria-label="Clear search" className="p-1 text-muted-foreground/50 hover:text-foreground/70">
+              <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           )
         )}
       </div>
 
-      {autocompletePrefix && !aiSearchMode && (
+      {showAutocomplete && (
         <SearchAutocomplete
-          prefix={autocompletePrefix} query={autocompleteQuery}
+          prefix={autocompletePrefix!} query={autocompleteQuery}
           availableCategories={availableCategories} activeChips={chips}
           onSelect={(chip) => addChip(chip)}
           onDismiss={() => {
+            setActiveDescendant(undefined);
             const words = inputValue.split(/\s+/);
             setInputValue(words.slice(0, -1).join(' '));
           }}
+          onFocusChange={setActiveDescendant}
         />
       )}
     </div>

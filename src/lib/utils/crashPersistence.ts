@@ -1,4 +1,33 @@
 import { reportFrontendCrash } from "@/api/system/system";
+import { sanitizeErrorMessage } from "@/lib/utils/sanitizers/maskSensitive";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("crash-persistence");
+
+// ── Crash-log sanitization ────────────────────────────────────────────────
+// Strips secrets, URL query/fragment params, and function arguments from
+// stack traces before anything is written to localStorage or sent to the
+// backend.  Builds on the existing `sanitizeErrorMessage` (file paths, IPs,
+// inline secrets, prefixed tokens) and adds crash-specific passes.
+
+/** Strip query strings and fragments from URLs so tokens/keys in params don't leak. */
+const URL_QUERY_RE = /(https?:\/\/[^\s"']+?)\?[^\s"')]+/g;
+const URL_FRAGMENT_RE = /(https?:\/\/[^\s"']+?)#[^\s"')]+/g;
+
+/** Redact argument values in stack-trace frames, e.g. `at fn(secret)` → `at fn(…)` */
+const STACK_ARG_RE = /(\bat\s+[\w$.]+)\(([^)]+)\)/g;
+
+function sanitizeCrashString(raw: string): string {
+  let out = raw;
+  // 1. Strip URL query/fragment params
+  out = out.replace(URL_QUERY_RE, '$1?[query]');
+  out = out.replace(URL_FRAGMENT_RE, '$1#[fragment]');
+  // 2. Redact stack-trace argument values
+  out = out.replace(STACK_ARG_RE, '$1(…)');
+  // 3. Apply the shared sensitive-data sanitizer (paths, IPs, secrets, emails)
+  out = sanitizeErrorMessage(out);
+  return out;
+}
 
 export const CRASH_STORAGE_KEY = "__personas_frontend_crashes";
 export const CRASH_MAX_ENTRIES = 20;
@@ -53,9 +82,14 @@ export function persistCrash(
   error: unknown,
   componentStack?: string,
 ): void {
-  const message = error instanceof Error ? error.message : String(error);
-  const stack = error instanceof Error ? error.stack?.slice(0, 2000) : undefined;
-  const compStack = componentStack?.slice(0, 1000);
+  const rawMessage = error instanceof Error ? error.message : String(error);
+  const rawStack = error instanceof Error ? error.stack?.slice(0, 2000) : undefined;
+  const rawCompStack = componentStack?.slice(0, 1000);
+
+  // Sanitize all strings before persisting to localStorage / backend
+  const message = sanitizeCrashString(rawMessage);
+  const stack = rawStack ? sanitizeCrashString(rawStack) : undefined;
+  const compStack = rawCompStack ? sanitizeCrashString(rawCompStack) : undefined;
 
   // 1. localStorage (synchronous, best-effort)
   try {
@@ -85,7 +119,7 @@ export function persistCrash(
         try {
           sessionStorage.setItem(CRASH_STORAGE_KEY, JSON.stringify(halved));
         } catch {
-          console.warn("[crashPersistence] unable to persist crash locally — storage full");
+          logger.warn("Unable to persist crash locally — storage full");
         }
       }
     }

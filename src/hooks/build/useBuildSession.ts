@@ -49,6 +49,9 @@ import {
   getActiveBuildSession,
 } from "@/api/agents/buildSession";
 import type { BuildEvent } from "@/lib/types/buildTypes";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("build-session");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -172,10 +175,7 @@ export function useBuildSession(
 
       // Prevent double-start
       if (channelRef.current && sessionIdRef.current) {
-        console.warn(
-          "[useBuildSession] Session already active:",
-          sessionIdRef.current,
-        );
+        logger.warn("Session already active", { sessionId: sessionIdRef.current });
         return sessionIdRef.current;
       }
 

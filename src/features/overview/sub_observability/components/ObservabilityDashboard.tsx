@@ -1,5 +1,5 @@
 import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, AlertTriangle, Bell, Activity } from 'lucide-react';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -11,8 +11,10 @@ import { HealingIssuesPanel } from './HealingIssuesPanel';
 import { AlertRulesPanel } from './AlertRulesPanel';
 import { AlertHistoryPanel } from './AlertHistoryPanel';
 import { useObservabilityData } from '../libs/useObservabilityData';
+import { useHealingPanelState } from '../libs/useHealingPanelState';
+import { useAnomalyDrilldown } from '../libs/useAnomalyDrilldown';
 import { useOverviewStore } from '@/stores/overviewStore';
-import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
+import AnomalyDrilldownPanel from './AnomalyDrilldownPanel';
 import SystemTraceViewer from './SystemTraceViewer';
 
 export default function ObservabilityDashboard() {
@@ -24,57 +26,15 @@ export default function ObservabilityDashboard() {
     return count;
   });
 
-  // --- Healing UI state (split from data hook to avoid chart rerenders) ---
-  const [selectedIssue, setSelectedIssue] = useState<PersonaHealingIssue | null>(null);
-  const [issueFilter, setIssueFilter] = useState<'all' | 'open' | 'auto-fixed'>('all');
-  const [analysisResult, setAnalysisResult] = useState<{
-    failures_analyzed: number;
-    issues_created: number;
-    auto_fixed: number;
-  } | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [healingViewMode, setHealingViewMode] = useState<'list' | 'timeline'>('list');
+  const drilldown = useAnomalyDrilldown();
 
-  const handleRunAnalysis = useCallback(async () => {
-    setAnalysisResult(null);
-    setAnalysisError(null);
-    try {
-      const result = await d.triggerHealing(d.selectedPersonaId || d.personas[0]?.id);
-      if (result) {
-        setAnalysisResult(result);
-      } else {
-        setAnalysisError('Healing analysis failed. Please try again.');
-      }
-    } catch (err) {
-      setAnalysisError(err instanceof Error ? err.message : 'Healing analysis failed');
-    }
-  }, [d.triggerHealing, d.selectedPersonaId, d.personas]);
-
-  // Fetch timeline when switching to timeline view or when persona changes
-  useEffect(() => {
-    if (healingViewMode === 'timeline') {
-      const pid = d.selectedPersonaId || d.personas[0]?.id;
-      if (pid) d.fetchHealingTimeline(pid);
-    }
-  }, [healingViewMode, d.selectedPersonaId, d.personas, d.fetchHealingTimeline]);
-
-  const { issueCounts, sortedFilteredIssues } = useMemo(() => {
-    let open = 0, autoFixed = 0;
-    for (const i of d.healingIssues) {
-      if (i.auto_fixed) autoFixed++;
-      else open++;
-    }
-    const counts = { all: d.healingIssues.length, open, autoFixed };
-    const filtered = issueFilter === 'all' ? d.healingIssues
-      : issueFilter === 'open' ? d.healingIssues.filter(i => !i.auto_fixed)
-      : d.healingIssues.filter(i => i.auto_fixed);
-    const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-    const sorted = [...filtered].sort((a, b) => {
-      if (a.auto_fixed !== b.auto_fixed) return a.auto_fixed ? 1 : -1;
-      return (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99);
-    });
-    return { issueCounts: counts, sortedFilteredIssues: sorted };
-  }, [d.healingIssues, issueFilter]);
+  const healing = useHealingPanelState({
+    healingIssues: d.healingIssues,
+    triggerHealing: d.triggerHealing,
+    selectedPersonaId: d.selectedPersonaId,
+    personas: d.personas,
+    fetchHealingTimeline: d.fetchHealingTimeline,
+  });
 
   // --- Memoized sparkline data (stable references prevent SummaryCard rerenders) ---
   const sparklineCost = useMemo(() => d.chartData.slice(-7).map((p) => p.cost), [d.chartData]);
@@ -90,6 +50,10 @@ export default function ObservabilityDashboard() {
     d.setFailureDrilldownDate(date);
     d.setOverviewTab('knowledge');
   }, [d.setFailureDrilldownDate, d.setOverviewTab]);
+
+  const handleAnomalyClick = useCallback((anomaly: import('@/lib/bindings/MetricAnomaly').MetricAnomaly) => {
+    drilldown.openDrilldown(anomaly, d.selectedPersonaId);
+  }, [drilldown.openDrilldown, d.selectedPersonaId]);
 
   return (
     <ContentBox>
@@ -190,6 +154,7 @@ export default function ObservabilityDashboard() {
         pieData={d.pieData}
         annotations={d.chartAnnotations}
         onFailureBarClick={handleFailureBarClick}
+        onAnomalyClick={handleAnomalyClick}
       />
 
       {/* IPC Performance */}
@@ -208,19 +173,19 @@ export default function ObservabilityDashboard() {
       <HealingIssuesPanel
         healingIssues={d.healingIssues}
         healingRunning={d.healingRunning}
-        handleRunAnalysis={handleRunAnalysis}
+        handleRunAnalysis={healing.handleRunAnalysis}
         resolveHealingIssue={d.resolveHealingIssue}
-        setSelectedIssue={setSelectedIssue}
-        issueFilter={issueFilter}
-        setIssueFilter={setIssueFilter}
-        issueCounts={issueCounts}
-        sortedFilteredIssues={sortedFilteredIssues}
-        analysisResult={analysisResult}
-        setAnalysisResult={() => setAnalysisResult(null)}
-        analysisError={analysisError}
-        setAnalysisError={() => setAnalysisError(null)}
-        viewMode={healingViewMode}
-        setViewMode={setHealingViewMode}
+        setSelectedIssue={healing.setSelectedIssue}
+        issueFilter={healing.issueFilter}
+        setIssueFilter={healing.setIssueFilter}
+        issueCounts={healing.issueCounts}
+        sortedFilteredIssues={healing.sortedFilteredIssues}
+        analysisResult={healing.analysisResult}
+        setAnalysisResult={() => healing.setAnalysisResult(null)}
+        analysisError={healing.analysisError}
+        setAnalysisError={() => healing.setAnalysisError(null)}
+        viewMode={healing.healingViewMode}
+        setViewMode={healing.setHealingViewMode}
         timelineEvents={d.healingTimeline}
         timelineLoading={d.healingTimelineLoading}
       />
@@ -229,11 +194,22 @@ export default function ObservabilityDashboard() {
       </ContentBody>
 
       {/* Healing Issue Detail Modal */}
-      {selectedIssue && (
+      {healing.selectedIssue && (
         <HealingIssueModal
-          issue={selectedIssue}
-          onResolve={(id) => { d.resolveHealingIssue(id); setSelectedIssue(null); }}
-          onClose={() => setSelectedIssue(null)}
+          issue={healing.selectedIssue}
+          onResolve={(id) => { d.resolveHealingIssue(id); healing.setSelectedIssue(null); }}
+          onClose={() => healing.setSelectedIssue(null)}
+        />
+      )}
+
+      {/* Anomaly Drill-Down Modal */}
+      {drilldown.selectedAnomaly && (
+        <AnomalyDrilldownPanel
+          anomaly={drilldown.selectedAnomaly}
+          data={drilldown.drilldownData}
+          loading={drilldown.loading}
+          error={drilldown.error}
+          onClose={drilldown.closeDrilldown}
         />
       )}
     </ContentBox>

@@ -1,6 +1,9 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useAgentStore } from "@/stores/agentStore";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("persona-execution");
 import { useCorrelatedCliStream } from './useCorrelatedCliStream';
 import { EventName } from '@/lib/eventRegistry';
 import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/execution/pipeline';
@@ -79,7 +82,7 @@ export function usePersonaExecution() {
           durationMs: duration_ms ?? null,
           costUsd: cost_usd ?? null,
         };
-        void runMiddleware('finalize_status', finalizePayload, trace).catch((err) => { console.warn('[execution] finalize_status middleware failed:', err); });
+        void runMiddleware('finalize_status', finalizePayload, trace).catch((err) => { logger.warn('finalize_status middleware failed', { executionId: store.activeExecutionId, error: String(err) }); });
       }
     }
     if (error) {

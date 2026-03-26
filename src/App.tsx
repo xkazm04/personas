@@ -39,6 +39,16 @@ export default function App() {
     if (import.meta.env.DEV) {
       void import("@/test/automation/bridge");
     }
+
+    // Report frontend time-to-interactive to the Rust backend.
+    // __BOOT_TIME__ is set in index.html before any JS loads.
+    const bootTime = (window as unknown as Record<string, unknown>).__BOOT_TIME__;
+    if (typeof bootTime === "number") {
+      const tti = performance.now() - bootTime;
+      import("@tauri-apps/api/core").then(({ invoke }) => {
+        invoke("report_frontend_ready", { ttiMs: tti }).catch(() => {});
+      });
+    }
   }, []);
 
   const { t } = useTranslation();

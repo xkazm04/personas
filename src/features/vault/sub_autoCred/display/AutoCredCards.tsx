@@ -2,6 +2,9 @@ import { useState, useCallback } from 'react';
 import { ExternalLink, MessageSquare, Hand, Check } from 'lucide-react';
 import type { BrowserLogEntry } from '../helpers/types';
 import { openExternalUrl } from '@/api/system/system';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('auto-cred-cards');
 
 /** Prominent amber card for WAITING: messages */
 export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLatest: boolean }) {
@@ -14,7 +17,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
   })();
 
   const handleOpenUrl = useCallback(() => {
-    if (url) openExternalUrl(url).catch(console.error);
+    if (url) openExternalUrl(url).catch((err) => { logger.error('Failed to open URL', { error: String(err) }); });
   }, [url]);
 
   if (confirmed && !isLatest) {

@@ -21,5 +21,5 @@ const notificationMiddleware: PipelineMiddleware<'frontend_complete'> = (
 };
 
 export function registerNotificationMiddleware(): void {
-  addMiddleware('frontend_complete', notificationMiddleware);
+  addMiddleware('frontend_complete', { key: 'notification', priority: 10 }, notificationMiddleware);
 }

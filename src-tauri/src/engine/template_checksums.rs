@@ -12,15 +12,38 @@ use std::sync::LazyLock;
 /// Embedded checksum manifest: maps relative template path → expected hash.
 /// Populated at compile time from the same source of truth as the frontend.
 static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
-    let mut m = HashMap::with_capacity(88);
+    let mut m = HashMap::with_capacity(89);
+    m.insert("content/content-performance-reporter.json", "000a2eb4107c5dc4");
+    m.insert("content/newsletter-curator.json", "0007f5729c380e36");
     m.insert("devops/devops-guardian.json", "00191a118384bf31");
+    m.insert("devops/incident-logger.json", "001bcbf2bae91f67");
     m.insert("devops/sentry-production-monitor.json", "001ee39aba1ded16");
     m.insert("finance/budget-spending-monitor.json", "0010da3539bfc201");
     m.insert("finance/financial-stocks-signaller.json", "0005eeb9976fbd12");
     m.insert("finance/freelancer-invoice-autopilot.json", "00001d171ba0a8dc");
+    m.insert("finance/invoice-tracker.json", "0016a5769fc68bbd");
+    m.insert("hr/onboarding-tracker.json", "001941670dfe1a96");
     m.insert("marketing/visual-brand-asset-factory.json", "0000d76233262c49");
     m.insert("marketing/web-marketing.json", "001b8d0d2a1d49a4");
+    m.insert("productivity/daily-standup-compiler.json", "0017cf58d997af2a");
+    m.insert("productivity/email-follow-up-tracker.json", "001d43707cda850c");
+    m.insert("productivity/email-morning-digest.json", "001b19e155c85af8");
+    m.insert("productivity/email-task-extractor.json", "000a5e141b83c46b");
     m.insert("productivity/idea-harvester.json", "001bf490524fca47");
+    m.insert("productivity/survey-insights-analyzer.json", "00077750e38b4868");
+    m.insert("project-management/technical-decision-tracker.json", "001b85d64f319998");
+    m.insert("research/database-performance-monitor.json", "0014d87287cb2d95");
+    m.insert("research/research-knowledge-curator.json", "0011d62dc9d2e6a1");
+    m.insert("research/research-paper-indexer.json", "0008ee9b83f9692d");
+    m.insert("sales/contact-enrichment-agent.json", "0005a6a4f411d75e");
+    m.insert("sales/contact-sync-manager.json", "00144b6af3ca33ca");
+    m.insert("sales/email-lead-extractor.json", "000965abdf6b8bf2");
+    m.insert("sales/sales-deal-analyzer.json", "000848e041a8e637");
+    m.insert("sales/sales-deal-tracker.json", "001bdcca3d169cbf");
+    m.insert("sales/sales-proposal-generator.json", "00025a1fb56e4754");
+    m.insert("security/access-request-manager.json", "0019e1546a41d55e");
+    m.insert("support/email-support-assistant.json", "0019c1536ee3958e");
+    m.insert("support/support-email-router.json", "000edcfba828686f");
     m
 });
 

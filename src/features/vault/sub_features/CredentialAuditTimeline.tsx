@@ -1,5 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Shield, AlertTriangle, Clock, Eye, Users, Activity, ScrollText } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('credential-audit-timeline');
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import {
@@ -108,7 +111,7 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
         setEntries(log);
         setStats(s);
       })
-      .catch((err) => console.error('Failed to load audit timeline:', err))
+      .catch((err) => logger.error('Failed to load audit timeline', { error: String(err) }))
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
@@ -142,12 +145,12 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
           </>
         )}
         {anomalyCount > 0 ? (
-          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-lg border ${WARNING_STATUS.bgColor} ${WARNING_STATUS.borderColor} ${WARNING_STATUS.color}`}>
+          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-lg border ${WARNING_STATUS.bg} ${WARNING_STATUS.border} ${WARNING_STATUS.text}`}>
             <AlertTriangle className="w-3 h-3" />
             {anomalyCount} anomal{anomalyCount === 1 ? 'y' : 'ies'}
           </span>
         ) : entries.length > 0 ? (
-          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-lg border ${SUCCESS_STATUS.bgColor} ${SUCCESS_STATUS.borderColor} ${SUCCESS_STATUS.color}`}>
+          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-lg border ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`}>
             <Shield className="w-3 h-3" />
             No anomalies
           </span>
@@ -207,8 +210,8 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
                           key={i}
                           className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded border ${
                             a.type === 'burst' || a.type === 'rapid_decrypt'
-                              ? `${ERROR_STATUS.bgColor} ${ERROR_STATUS.borderColor} ${ERROR_STATUS.color}`
-                              : `${WARNING_STATUS.bgColor} ${WARNING_STATUS.borderColor} ${WARNING_STATUS.color}`
+                              ? `${ERROR_STATUS.bg} ${ERROR_STATUS.border} ${ERROR_STATUS.text}`
+                              : `${WARNING_STATUS.bg} ${WARNING_STATUS.border} ${WARNING_STATUS.text}`
                           }`}
                         >
                           {a.type === 'off_hours' && <Eye className="w-2.5 h-2.5" />}

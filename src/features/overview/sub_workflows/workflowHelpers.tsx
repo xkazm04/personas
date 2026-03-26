@@ -11,13 +11,8 @@ export const JOB_TYPE_LABELS: Record<string, string> = {
 export const STATUS_FILTER_OPTIONS = ['all', 'running', 'completed', 'failed'] as const;
 export type StatusFilter = (typeof STATUS_FILTER_OPTIONS)[number];
 
-export function formatElapsed(secs: number): string {
-  if (secs < 60) return `${secs}s`;
-  if (secs < 3600) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
-  const h = Math.floor(secs / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  return `${h}h ${m}m`;
-}
+import { formatElapsed as _formatElapsed } from '@/lib/utils/formatters';
+export const formatElapsed = (secs: number) => _formatElapsed(secs, { unit: 's' });
 
 export function statusBadgeClass(status: string): string {
   if (status === 'running') return 'bg-blue-500/15 text-blue-400 border-blue-500/25';

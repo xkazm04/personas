@@ -5,13 +5,18 @@
  * This replaces the 5-step wizard with a single-screen matrix experience.
  */
 import { useCallback, useEffect, useState, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("template-adoption");
 import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
+import { BuildQuestionnaireModal } from "../gallery/matrix/BuildQuestionnaireModal";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
+import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
 
 interface MatrixAdoptionViewProps {
   review: PersonaDesignReview;
@@ -26,10 +31,20 @@ function extractDimensionData(ir: unknown): CellDataMap {
   const d = ir as Record<string, unknown>;
   const data: CellDataMap = {};
 
-  // Use cases
-  const useCases = (d.use_cases ?? (d.design_context as Record<string, unknown> | undefined)?.use_cases ?? []) as unknown[];
+  // Use cases — check use_cases first, fall back to use_case_flows
+  let useCases = (d.use_cases ?? (d.design_context as Record<string, unknown> | undefined)?.use_cases ?? []) as unknown[];
+  if (useCases.length === 0) {
+    const flows = ((d.use_case_flows ?? []) as Record<string, unknown>[]);
+    useCases = flows.map((f) => ({ name: f.name, description: f.description }));
+  }
   if (useCases.length > 0) {
-    data["use-cases"] = { items: useCases.map((uc) => typeof uc === "string" ? uc : String((uc as Record<string, unknown>)?.name ?? uc)) };
+    data["use-cases"] = { items: useCases.map((uc) => {
+      if (typeof uc === "string") return uc;
+      const o = uc as Record<string, unknown>;
+      const name = String(o.name ?? o.title ?? uc);
+      const desc = o.description ? String(o.description) : "";
+      return desc ? `${name} — ${desc.slice(0, 120)}` : name;
+    }) };
   }
 
   // Connectors
@@ -66,11 +81,17 @@ function extractDimensionData(ir: unknown): CellDataMap {
   const memoryCaps = caps.filter((c) => (c as Record<string, unknown>).type === "agent_memory");
   data["memory"] = { items: memoryCaps.length > 0 ? memoryCaps.map((c) => String((c as Record<string, unknown>).context ?? "Memory enabled")) : ["Stateless — no memory between runs"] };
 
-  // Error handling
+  // Error handling — parse bullet points (-/*) or bold headers (**)
   const sp = d.structured_prompt as Record<string, unknown> | undefined;
   if (sp?.errorHandling && typeof sp.errorHandling === "string") {
-    const lines = (sp.errorHandling as string).split("\n").filter((l) => l.trim().startsWith("-") || l.trim().startsWith("*"));
-    data["error-handling"] = { items: lines.length > 0 ? lines.map((l) => l.replace(/^[\s\-*]+/, "").trim()).slice(0, 6) : ["Default error handling"] };
+    const ehText = sp.errorHandling as string;
+    // Try bullet lines first, then bold headers
+    let lines = ehText.split("\n").filter((l) => l.trim().startsWith("-") || (l.trim().startsWith("*") && !l.trim().startsWith("**")));
+    if (lines.length === 0) {
+      // Fall back to **bold** section headers
+      lines = ehText.split("\n").filter((l) => /^\*\*[^*]+\*\*/.test(l.trim()));
+    }
+    data["error-handling"] = { items: lines.length > 0 ? lines.map((l) => l.replace(/^[\s\-*]+/, "").replace(/\*\*/g, "").trim()).slice(0, 6) : ["Default error handling"] };
   } else {
     data["error-handling"] = { items: ["Default error handling"] };
   }
@@ -100,6 +121,30 @@ export function MatrixAdoptionView({ review }: MatrixAdoptionViewProps) {
 
   const templateName = review.test_case_name ?? "Template";
 
+  // Adoption questions from template
+  const adoptionQuestions = (designResult?.adoption_questions ?? []) as TransformQuestionResponse[];
+  const hasAdoptionQuestions = adoptionQuestions.length > 0;
+  const [adoptionAnswers, setAdoptionAnswers] = useState<Record<string, string>>({});
+  const [questionsComplete, setQuestionsComplete] = useState(false);
+  const defaultsLoaded = useRef(false);
+
+  // Pre-populate default answers from template questions
+  useEffect(() => {
+    if (!hasAdoptionQuestions || defaultsLoaded.current) return;
+    defaultsLoaded.current = true;
+    const defaults: Record<string, string> = {};
+    for (const q of adoptionQuestions) {
+      if (q.default) defaults[q.id] = String(q.default);
+    }
+    if (Object.keys(defaults).length > 0) setAdoptionAnswers(defaults);
+  }, [hasAdoptionQuestions, adoptionQuestions]);
+
+  // Transition to draft_ready when questions are completed
+  useEffect(() => {
+    if (!questionsComplete || !seeded) return;
+    useAgentStore.setState({ buildPhase: "draft_ready" });
+  }, [questionsComplete, seeded]);
+
   // Seed the matrix cells from the template on first render
   useEffect(() => {
     if (seedDone.current || !designResult) return;
@@ -124,7 +169,7 @@ export function MatrixAdoptionView({ review }: MatrixAdoptionViewProps) {
 
         // Create an adoption build session so test_build_draft can work
         const agentIrJson = JSON.stringify(designResult);
-        const sessionId = await invoke<string>("create_adoption_session", {
+        const sessionId = await invokeWithTimeout<string>("create_adoption_session", {
           personaId: persona.id,
           intent: review.instruction || templateName,
           agentIrJson,
@@ -133,14 +178,14 @@ export function MatrixAdoptionView({ review }: MatrixAdoptionViewProps) {
         useAgentStore.setState({
           buildPersonaId: persona.id,
           buildSessionId: sessionId,
-          buildPhase: "draft_ready",
+          buildPhase: hasAdoptionQuestions && !questionsComplete ? "awaiting_input" : "draft_ready",
           buildCellStates: cellStates,
           buildCellData: dimensionData,
           buildDraft: designResult,
         });
         setSeeded(true);
       } catch (err) {
-        console.error("Failed to create draft persona for adoption:", err);
+        logger.error("Failed to create draft persona for adoption", { err });
       }
     })();
   }, [designResult, templateName, review.instruction, createPersona]);
@@ -205,6 +250,17 @@ export function MatrixAdoptionView({ review }: MatrixAdoptionViewProps) {
         onDiscardEdits={handleDiscardEdits}
         onSubmitAllAnswers={build.handleSubmitAnswers}
       />
+
+      {/* Adoption questions modal — shown before draft_ready when template has pre-defined questions */}
+      {hasAdoptionQuestions && !questionsComplete && seeded && (
+        <BuildQuestionnaireModal
+          questions={adoptionQuestions}
+          userAnswers={adoptionAnswers}
+          onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
+          onSubmit={() => setQuestionsComplete(true)}
+          onClose={() => setQuestionsComplete(true)}
+        />
+      )}
     </div>
   );
 }

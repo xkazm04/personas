@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, GitBranch, Trash2, ToggleLeft, ToggleRight, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, GitBranch, Trash2, ToggleLeft, ToggleRight, Sparkles, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { usePipelineStore } from '@/stores/pipelineStore';
 
@@ -17,6 +17,7 @@ export default function WorkflowList() {
   const [newName, setNewName] = useState('');
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeDescription, setComposeDescription] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWorkflows();
@@ -152,16 +153,40 @@ export default function WorkflowList() {
                 )}
               </button>
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteWorkflow(wf.id);
-                }}
-                className="p-1.5 rounded-lg hover:bg-red-500/15 transition-colors opacity-0 group-hover:opacity-100"
-                title="Delete workflow"
-              >
-                <Trash2 className="w-4 h-4 text-red-400" />
-              </button>
+              {pendingDeleteId === wf.id ? (
+                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  <span className="text-xs text-amber-400/70 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                    Delete?
+                  </span>
+                  <button
+                    onClick={() => {
+                      deleteWorkflow(wf.id);
+                      setPendingDeleteId(null);
+                    }}
+                    className="px-2 py-1 bg-red-500 hover:bg-red-600 text-foreground rounded-lg text-xs font-medium transition-colors"
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={() => setPendingDeleteId(null)}
+                    className="px-2 py-1 bg-secondary/50 text-foreground/80 rounded-lg text-xs transition-colors hover:bg-secondary/70"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPendingDeleteId(wf.id);
+                  }}
+                  className="p-1.5 rounded-lg hover:bg-red-500/15 transition-colors opacity-0 group-hover:opacity-100"
+                  title="Delete workflow"
+                >
+                  <Trash2 className="w-4 h-4 text-red-400" />
+                </button>
+              )}
             </div>
           ))}
         </div>

@@ -40,6 +40,78 @@
     ],
     "full_prompt_markdown": "# Support Email Router\n\n## Identity\n\nYou are an AI agent specialized in customer support email triage and ticket management. Your role is to efficiently process incoming emails, categorize them by priority, and create well-structured support tickets with appropriate SLA tracking.\n\n---\n\n## Instructions\n\n1. Check Gmail inbox for unread emails every 3 minutes\n2. For each unread email:\n   - Analyze subject and content for priority keywords (urgent, bug, outage, billing = High; feature request, question = Medium; general inquiry = Low)\n   - Extract customer information and issue details\n   - Create Notion ticket with: title, description, priority, customer email, timestamp, SLA deadline\n   - Set SLA deadlines: High=4hrs, Medium=24hrs, Low=72hrs\n   - Mark email as read in Gmail\n3. Send results via: {\"user_message\": {\"title\": \"Email Processing Report\", \"content\": \"processed X emails, created Y tickets\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n4. Store processed email IDs via: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"email_id_list\", \"category\": \"deduplication\"}}\n5. Flag unclear emails via: {\"manual_review\": {\"title\": \"Unclear Priority\", \"description\": \"email content analysis\", \"severity\": \"low\"}}\n6. Emit ticket creation: {\"emit_event\": {\"type\": \"ticket_created\", \"data\": {\"ticket_id\": \"notion_id\", \"priority\": \"level\"}}}\n7. Track SLA deadlines and emit approaching deadline events\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to read unread emails and mark as processed. Use Notion connector to create tickets in support database. Store email IDs in memory to prevent duplicate processing. Use web search if needed to understand technical terms in emails.\n\n---\n\n## Examples\n\nEmail: 'URGENT: Login system down' → High priority ticket with 4-hour SLA\nEmail: 'Feature request for dark mode' → Medium priority with 24-hour SLA\nEmail: 'How do I reset password?' → Low priority with 72-hour SLA\n\n---\n\n## Error Handling\n\nRetry Gmail/Notion API calls with exponential backoff. Flag parsing errors for manual review. Queue failed ticket creations for retry.",
     "summary": "Automatically processes unread Gmail emails, categorizes by priority, and creates structured tickets in Notion with SLA tracking",
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What routing categories should emails be classified into?",
+        "type": "select",
+        "options": [
+          "Bug, Feature Request, Billing, General",
+          "Technical, Account, Sales, Other",
+          "Product, Engineering, Finance, Support",
+          "Custom categories"
+        ],
+        "default": "Bug, Feature Request, Billing, General",
+        "context": "Defines the category labels the agent assigns to each incoming email for proper routing.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "How many priority levels should the router use?",
+        "type": "select",
+        "options": [
+          "2 (High / Low)",
+          "3 (High / Medium / Low)",
+          "4 (Critical / High / Medium / Low)",
+          "5 (P0 through P4)"
+        ],
+        "default": "3 (High / Medium / Low)",
+        "context": "Sets the granularity of priority classification and corresponding SLA tiers.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "Where should routed tickets be created?",
+        "type": "select",
+        "options": [
+          "Notion database",
+          "Jira",
+          "Linear",
+          "Local Database only"
+        ],
+        "default": "Notion database",
+        "context": "Determines the destination system where the agent creates structured support tickets.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should emails with unclear priority be flagged for human triage?",
+        "type": "boolean",
+        "options": [],
+        "default": true,
+        "context": "When enabled, ambiguous emails are sent to manual review instead of being auto-classified.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What SLA deadlines should apply per priority level?",
+        "type": "select",
+        "options": [
+          "High=4h, Med=24h, Low=72h",
+          "High=1h, Med=8h, Low=48h",
+          "High=2h, Med=12h, Low=72h",
+          "Custom SLAs"
+        ],
+        "default": "High=4h, Med=24h, Low=72h",
+        "context": "Sets the response time targets attached to each ticket based on its priority.",
+        "dimension": "events"
+      }
+    ],
     "design_highlights": [
       {
         "category": "Intelligence",
@@ -292,6 +364,5 @@
       "icon": "Mail",
       "color": "#dc2626"
     }
-  },
-  "is_published": false
+  }
 }

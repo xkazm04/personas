@@ -10,6 +10,9 @@ import { IdentitySettings } from './IdentitySettings';
 import { InlineConfirm } from './InlineConfirm';
 import { NetworkDashboard } from './NetworkDashboard';
 import { PeerList } from './PeerList';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("exposure-manager");
 
 const ACCESS_ICONS = {
   read: Eye,
@@ -227,7 +230,7 @@ export default function ExposureManager() {
       addToast(`Resource "${res.display_name || res.resource_id}" exposed`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[ExposureManager] Failed to expose resource', { resource_type: input.resource_type, resource_id: input.resource_id, error: msg });
+      logger.warn('Failed to expose resource', { resource_type: input.resource_type, resource_id: input.resource_id, error: msg });
       addToast(`Failed to expose resource: ${msg}`, 'error');
     }
   };
@@ -238,7 +241,7 @@ export default function ExposureManager() {
       addToast('Resource exposure removed', 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[ExposureManager] Failed to remove exposure', { id, error: msg });
+      logger.warn('Failed to remove exposure', { id, error: msg });
       addToast(`Failed to remove exposure: ${msg}`, 'error');
     }
   };

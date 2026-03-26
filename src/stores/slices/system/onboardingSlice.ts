@@ -16,9 +16,12 @@ export interface OnboardingSlice {
   onboardingStepCompleted: Record<OnboardingStep, boolean>;
   onboardingSelectedReviewId: string | null;
   onboardingCreatedPersonaId: string | null;
+  /** Non-null when onboarding was dismissed mid-flow — stores the step where the user left off. */
+  onboardingDismissedAtStep: OnboardingStep | null;
 
   // Actions
   startOnboarding: () => void;
+  resumeOnboarding: () => void;
   setOnboardingStep: (step: OnboardingStep) => void;
   completeOnboardingStep: (step: OnboardingStep) => void;
   setOnboardingSelectedReview: (reviewId: string | null) => void;
@@ -74,6 +77,7 @@ export const createOnboardingSlice: StateCreator<
   onboardingStepCompleted: { ...INITIAL_STEP_STATUS },
   onboardingSelectedReviewId: null,
   onboardingCreatedPersonaId: null,
+  onboardingDismissedAtStep: null,
 
   startOnboarding: () => {
     // Don't start if already completed or if user has personas already
@@ -89,6 +93,22 @@ export const createOnboardingSlice: StateCreator<
       onboardingStepCompleted: { ...INITIAL_STEP_STATUS },
       onboardingSelectedReviewId: null,
       onboardingCreatedPersonaId: null,
+      onboardingDismissedAtStep: null,
+    });
+  },
+
+  resumeOnboarding: () => {
+    const { onboardingDismissedAtStep, onboardingCompleted } = get();
+    if (onboardingCompleted || !onboardingDismissedAtStep) return;
+    try {
+      Sentry.metrics.count("onboarding.resumed", 1, { attributes: { at_step: onboardingDismissedAtStep } });
+    } catch {
+      // intentional: non-critical -- Sentry may not be initialized in dev
+    }
+    set({
+      onboardingActive: true,
+      onboardingStep: onboardingDismissedAtStep,
+      onboardingDismissedAtStep: null,
     });
   },
 
@@ -116,14 +136,16 @@ export const createOnboardingSlice: StateCreator<
       onboardingActive: false,
       onboardingCompleted: true,
       onboardingStep: "discover",
+      onboardingDismissedAtStep: null,
     });
   },
 
   dismissOnboarding: () => {
-    trackOnboardingDismissed(get().onboardingStep);
+    const currentStep = get().onboardingStep;
+    trackOnboardingDismissed(currentStep);
     set({
       onboardingActive: false,
-      onboardingCompleted: true,
+      onboardingDismissedAtStep: currentStep,
     });
   },
 });

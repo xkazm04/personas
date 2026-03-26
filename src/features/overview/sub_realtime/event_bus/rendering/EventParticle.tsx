@@ -36,6 +36,8 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
 
   // Burst effect on completion/failure
   const showBurst = event._phase === 'delivering' && (isCompleted || isFailed);
+  const isDelivering = event._phase === 'delivering';
+  const isDone = event._phase === 'done';
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -51,7 +53,13 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
       tabIndex={0}
       role="button"
       aria-label={`Event: ${event.event_type} -- ${event.status}`}
-      style={{ cursor: 'pointer' }}
+      style={{
+        cursor: 'pointer',
+        willChange: 'transform, opacity',
+        transform: isDelivering ? 'scale(1.1)' : 'scale(1)',
+        opacity: isDone ? 0 : 1,
+        transition: 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), opacity 1500ms ease-out',
+      }}
     >
       {/* Invisible hit-area for easier clicking */}
       <circle className="animate-fade-in"

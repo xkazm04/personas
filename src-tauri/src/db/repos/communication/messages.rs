@@ -1,6 +1,6 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreateMessageInput, PersonaMessage, PersonaMessageDelivery};
+use crate::db::models::{CreateMessageInput, MessageThreadSummary, PersonaMessage, PersonaMessageDelivery};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -22,6 +22,7 @@ fn row_to_message(row: &Row) -> rusqlite::Result<PersonaMessage> {
         metadata: row.get("metadata")?,
         created_at: row.get("created_at")?,
         read_at: row.get("read_at")?,
+        thread_id: row.get("thread_id")?,
     })
 }
 
@@ -121,11 +122,17 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
     let content_type = input.content_type.unwrap_or_else(|| "text".into());
     let priority = input.priority.unwrap_or_else(|| "normal".into());
 
+    // Auto-assign thread_id: use explicit value, fall back to execution_id, then self-id.
+    let thread_id = input
+        .thread_id
+        .or_else(|| input.execution_id.clone())
+        .unwrap_or_else(|| id.clone());
+
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_messages
-         (id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, ?9)",
+         (id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, thread_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, ?9, ?10)",
         params![
             id,
             input.persona_id,
@@ -136,10 +143,134 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
             priority,
             input.metadata,
             now,
+            thread_id,
         ],
     )?;
 
     get_by_id(pool, &id)
+}
+
+pub fn get_by_thread(
+    pool: &DbPool,
+    thread_id: &str,
+) -> Result<Vec<PersonaMessage>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT * FROM persona_messages
+         WHERE thread_id = ?1
+         ORDER BY created_at ASC",
+    )?;
+    let rows = stmt.query_map(params![thread_id], row_to_message)?;
+    Ok(collect_rows(rows, "messages::get_by_thread"))
+}
+
+/// Returns thread summaries for a page of messages, ordered by latest activity.
+/// Each summary contains the earliest message in the thread (the parent),
+/// plus the reply count and timestamp of the most recent reply.
+pub fn get_thread_summaries(
+    pool: &DbPool,
+    limit: Option<i64>,
+    offset: Option<i64>,
+    persona_id: Option<&str>,
+) -> Result<Vec<MessageThreadSummary>, AppError> {
+    let limit = limit.unwrap_or(50);
+    let offset = offset.unwrap_or(0);
+    let conn = pool.get()?;
+
+    // Get distinct threads ordered by latest activity
+    let (sql, params_vec): (String, Vec<Box<dyn rusqlite::ToSql>>) = if let Some(pid) = persona_id
+    {
+        (
+            "SELECT thread_id,
+                    MIN(created_at) AS first_at,
+                    MAX(created_at) AS last_at,
+                    COUNT(*) AS cnt
+             FROM persona_messages
+             WHERE thread_id IS NOT NULL AND persona_id = ?1
+             GROUP BY thread_id
+             ORDER BY last_at DESC
+             LIMIT ?2 OFFSET ?3"
+                .to_string(),
+            vec![
+                Box::new(pid.to_string()) as Box<dyn rusqlite::ToSql>,
+                Box::new(limit),
+                Box::new(offset),
+            ],
+        )
+    } else {
+        (
+            "SELECT thread_id,
+                    MIN(created_at) AS first_at,
+                    MAX(created_at) AS last_at,
+                    COUNT(*) AS cnt
+             FROM persona_messages
+             WHERE thread_id IS NOT NULL
+             GROUP BY thread_id
+             ORDER BY last_at DESC
+             LIMIT ?1 OFFSET ?2"
+                .to_string(),
+            vec![
+                Box::new(limit) as Box<dyn rusqlite::ToSql>,
+                Box::new(offset),
+            ],
+        )
+    };
+
+    let mut stmt = conn.prepare(&sql)?;
+    let param_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
+    let thread_rows = stmt.query_map(param_refs.as_slice(), |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,      // first_at
+            row.get::<_, Option<String>>(2)?, // last_at
+            row.get::<_, i64>(3)?,         // cnt
+        ))
+    })?;
+
+    let mut summaries = Vec::new();
+    for row in thread_rows {
+        let (tid, _first_at, last_at, cnt) = row.map_err(AppError::Database)?;
+        // Fetch the parent (earliest message in the thread)
+        let parent = conn.query_row(
+            "SELECT * FROM persona_messages WHERE thread_id = ?1 ORDER BY created_at ASC LIMIT 1",
+            params![tid],
+            row_to_message,
+        ).map_err(AppError::Database)?;
+
+        let reply_count = cnt - 1; // exclude the parent itself
+        let latest_reply_at = if reply_count > 0 { last_at } else { None };
+
+        summaries.push(MessageThreadSummary {
+            thread_id: tid,
+            parent,
+            reply_count,
+            latest_reply_at,
+        });
+    }
+
+    Ok(summaries)
+}
+
+pub fn get_thread_count(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+) -> Result<i64, AppError> {
+    let conn = pool.get()?;
+    if let Some(pid) = persona_id {
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(DISTINCT thread_id) FROM persona_messages WHERE thread_id IS NOT NULL AND persona_id = ?1",
+            params![pid],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    } else {
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(DISTINCT thread_id) FROM persona_messages WHERE thread_id IS NOT NULL",
+            [],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    }
 }
 
 pub fn mark_as_read(pool: &DbPool, id: &str) -> Result<(), AppError> {
@@ -204,6 +335,43 @@ pub fn get_delivery_by_id(pool: &DbPool, id: &str) -> Result<PersonaMessageDeliv
         }
         other => AppError::Database(other),
     })
+}
+
+/// Returns delivery status summary (delivered, pending, failed counts) for a batch of message IDs.
+pub fn get_bulk_delivery_summaries(
+    pool: &DbPool,
+    message_ids: &[String],
+) -> Result<Vec<(String, i64, i64, i64)>, AppError> {
+    if message_ids.is_empty() {
+        return Ok(vec![]);
+    }
+    let conn = pool.get()?;
+    let placeholders: String = message_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect::<Vec<_>>().join(", ");
+    let sql = format!(
+        "SELECT message_id,
+                SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered,
+                SUM(CASE WHEN status IN ('pending', 'queued') THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
+         FROM persona_message_deliveries
+         WHERE message_id IN ({})
+         GROUP BY message_id",
+        placeholders,
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let params_vec: Vec<&dyn rusqlite::ToSql> = message_ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+    let rows = stmt.query_map(params_vec.as_slice(), |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, i64>(1)?,
+            row.get::<_, i64>(2)?,
+            row.get::<_, i64>(3)?,
+        ))
+    })?;
+    let mut result = Vec::new();
+    for row in rows {
+        if let Ok(r) = row { result.push(r); }
+    }
+    Ok(result)
 }
 
 pub fn get_deliveries_by_message(

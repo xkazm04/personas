@@ -5,6 +5,7 @@ import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tool
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
+import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
 
 interface ChartDataPoint {
   date: string;
@@ -24,7 +25,7 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
   const errorGradId = `${id}-error`;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm p-4 space-y-4 relative overflow-hidden">
+    <div className={`${CARD_CONTAINER} p-4 space-y-4 relative overflow-hidden`} aria-label="Traffic and errors chart">
       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
       <div className="flex items-center justify-between relative z-10">
         <h3 className="typo-label text-foreground/80 flex items-center gap-2">

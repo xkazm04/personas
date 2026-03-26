@@ -26,6 +26,9 @@ import { InputExecuteCard } from './InputExecuteCard';
 import { usePhaseTracker } from './usePhaseTracker';
 import { useTerminalResize } from './useTerminalResize';
 import { useRunnerActions } from './useRunnerActions';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger("persona-runner");
 
 
 export function PersonaRunner() {
@@ -104,7 +107,7 @@ export function PersonaRunner() {
       if (event.payload.persona_id !== personaId) return;
       setHealingNotification(event.payload);
     }).then((fn) => { if (cancelled) fn(); else unlistenFn = fn; })
-      .catch((err) => { console.warn('[PersonaRunner] Failed to listen for healing events:', err); });
+      .catch((err) => { logger.warn('Failed to listen for healing events', { error: err }); });
     return () => { cancelled = true; unlistenFn?.(); };
   }, [personaId]);
 
@@ -142,7 +145,7 @@ export function PersonaRunner() {
       />
 
       {isExecuting && isThisPersonasExecution && (
-        <ProgressIndicator elapsedMs={elapsedMs} typicalDurationMs={typicalDurationMs} />
+        <ProgressIndicator elapsedMs={elapsedMs} typicalDurationMs={typicalDurationMs} staleLevel={staleLevel} />
       )}
 
       {!isExecuting && isThisPersonasExecution && executionSummary && (

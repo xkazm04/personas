@@ -241,8 +241,11 @@ pub async fn validate_trigger(
             if let Some(cron_expr) = config.get("cron").or(config.get("cron_expression")).and_then(|v| v.as_str()) {
                 match crate::engine::cron::parse_cron(cron_expr) {
                     Ok(schedule) => {
-                        let next_msg = crate::engine::cron::next_fire_time(&schedule, chrono::Utc::now())
-                            .map(|t| format!("Valid -- next fire: {}", t.format("%Y-%m-%d %H:%M UTC")))
+                        let next_msg = crate::engine::cron::next_fire_time_local(&schedule, chrono::Utc::now())
+                            .map(|t| {
+                                let local = t.with_timezone(&chrono::Local);
+                                format!("Valid -- next fire: {}", local.format("%Y-%m-%d %H:%M"))
+                            })
                             .unwrap_or_else(|| "Valid syntax (no upcoming fire time)".into());
                         checks.push(TriggerValidationCheck {
                             label: "Cron syntax".into(),
@@ -703,11 +706,11 @@ pub fn preview_cron_schedule(
         }
     };
 
-    // Compute next N fire times
+    // Compute next N fire times (cron evaluated in local timezone)
     let mut runs = Vec::with_capacity(count);
     let mut from = chrono::Utc::now();
     for _ in 0..count {
-        match crate::engine::cron::next_fire_time(&schedule, from) {
+        match crate::engine::cron::next_fire_time_local(&schedule, from) {
             Some(next) => {
                 runs.push(next.to_rfc3339());
                 from = next;
@@ -756,23 +759,23 @@ fn cron_to_human(expr: &str) -> String {
 
     // Daily at specific time
     if dom == "*" && mon == "*" && dow == "*" {
-        return format!("Daily at {time_str} UTC");
+        return format!("Daily at {time_str}");
     }
 
     // Specific days of week
     if dom == "*" && mon == "*" && dow != "*" {
         let days = format_dow(dow);
-        return format!("Every {days} at {time_str} UTC");
+        return format!("Every {days} at {time_str}");
     }
 
     // Specific day of month
     if dom != "*" && mon == "*" && dow == "*" {
         let ordinal = format_dom(dom);
-        return format!("Monthly on the {ordinal} at {time_str} UTC");
+        return format!("Monthly on the {ordinal} at {time_str}");
     }
 
     // Fallback
-    format!("Cron: {expr} (UTC)")
+    format!("Cron: {expr}")
 }
 
 fn format_time_from_cron(min: &str, hour: &str) -> String {

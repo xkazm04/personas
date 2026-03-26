@@ -159,6 +159,12 @@ export const EventName = {
   P2P_MANIFEST_SYNC_PROGRESS: 'p2p:manifest-sync-progress',
   NETWORK_SNAPSHOT_UPDATED: 'network:snapshot-updated',
 
+  // Notification delivery
+  NOTIFICATION_DELIVERY: 'notification-delivery',
+
+  // Credential reauth (OAuth grant revoked)
+  CREDENTIAL_REAUTH_REQUIRED: 'credential-reauth-required',
+
   // Share link (deep link received from OS)
   SHARE_LINK_RECEIVED: 'share-link-received',
 
@@ -379,6 +385,23 @@ export interface EventPayloadMap {
     messagingMetrics: import('@/api/network/discovery').MessagingMetrics;
     connectionMetrics: import('@/api/network/discovery').ConnectionMetricsSnapshot;
     manifestSyncMetrics: import('@/api/network/discovery').ManifestSyncMetrics;
+  };
+
+  // Notification delivery
+  [EventName.NOTIFICATION_DELIVERY]: {
+    channelType: string;
+    success: boolean;
+    latencyMs: number;
+    error: string | null;
+    consecutiveFailures: number;
+  };
+
+  // Credential reauth (OAuth grant revoked)
+  [EventName.CREDENTIAL_REAUTH_REQUIRED]: {
+    credentialId: string;
+    credentialName: string;
+    serviceType: string;
+    reason: string;
   };
 
   // Share link

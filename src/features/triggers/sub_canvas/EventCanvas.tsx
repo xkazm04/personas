@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createLogger } from "@/lib/log";
 import {
   ReactFlow, ReactFlowProvider, Background, Controls,
   useNodesState, useEdgesState, useReactFlow,
@@ -39,6 +40,8 @@ import {
   reconcileCanvasWithTriggers, saveLayout,
   type EventSourceNodeData, type PersonaConsumerNodeData, type SavedStickyNote,
 } from './libs/eventCanvasReconcile';
+
+const logger = createLogger("event-canvas");
 
 const nodeTypes = {
   [NODE_TYPE_EVENT_SOURCE]: EventSourceNode,
@@ -86,10 +89,13 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
       const triggers = await listAllTriggers();
       setAllTriggers(triggers);
       const { nodes: n, edges: e } = reconcileCanvasWithTriggers(triggers, personas);
-      setNodes(n); setEdges(e);
+      setNodes(n);
+      setEdges(e);
       const raw = localStorage.getItem('event_canvas_layout');
       if (raw) { try { const l = JSON.parse(raw); if (l.stickyNotes?.length) dispatch({ type: 'SET_STICKY_NOTES', notes: l.stickyNotes }); } catch {} }
-    } catch (err) { console.error('[EventCanvas] Failed to load:', err); }
+    } catch (err) {
+      logger.error('Failed to load canvas', { error: String(err) });
+    }
   }, [personas, setNodes, setEdges, dispatch]);
 
   useEffect(() => { void loadCanvas(); }, [loadCanvas]);

@@ -1,6 +1,9 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("execution");
 import type { PersonaExecution } from "@/lib/types/types";
 import type { PipelineTrace } from "@/lib/execution/pipeline";
 import {
@@ -18,7 +21,7 @@ import type {
 import type { Continuation } from "@/lib/bindings/Continuation";
 import type { DesignDriftEvent } from "@/lib/design/designDrift";
 import { loadDriftEvents, saveDriftEvents } from "@/lib/design/designDrift";
-import { cancelExecution, executePersona, listExecutions } from "@/api/agents/executions";
+import { cancelExecution, executePersona, getExecution, listExecutions } from "@/api/agents/executions";
 
 import { executionSink } from "@/lib/execution/executionSink";
 import { classifyLine } from "@/lib/utils/terminalColors";
@@ -108,6 +111,35 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     } catch { /* ignore corrupt localStorage */ }
     return null;
   })();
+
+  // Reconcile recovered execution against the backend. If the execution already
+  // reached a terminal state (completed/cancelled/failed) while the app was closed,
+  // clear the stale isExecuting flag so the UI doesn't show a phantom active run.
+  const TERMINAL_STATUSES = new Set(['completed', 'cancelled', 'failed', 'error', 'timed_out']);
+
+  if (recoveredState) {
+    const { activeExecutionId, executionPersonaId } = recoveredState;
+    // Fire-and-forget -- reconciliation should not block store creation.
+    void (async () => {
+      try {
+        const execution = await getExecution(activeExecutionId, executionPersonaId ?? activeExecutionId);
+        if (TERMINAL_STATUSES.has(execution.status)) {
+          logger.info("Recovered execution already finished — clearing stale state", { executionId: activeExecutionId, status: execution.status });
+          executionLifecycle.markFinished(set);
+          set({ activeExecutionId: null, lastExecutionId: activeExecutionId, executionPersonaId: null });
+          try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
+        } else {
+          logger.info("Recovered execution still active — keeping state", { executionId: activeExecutionId, status: execution.status });
+        }
+      } catch {
+        // Backend unreachable or execution not found — clear stale state to unblock UI.
+        logger.warn("Could not verify recovered execution — clearing stale state", { executionId: activeExecutionId });
+        executionLifecycle.markFinished(set);
+        set({ activeExecutionId: null, executionPersonaId: null });
+        try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
+      }
+    })();
+  }
 
   // Deduplication: track in-flight fetch so concurrent callers reuse the same promise.
   let inflightFetch: { personaId: string; promise: Promise<void> } | null = null;
@@ -291,7 +323,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         errorMessage: statusData?.errorMessage,
       };
       void runMiddleware('frontend_complete', completePayload, trace).catch((err) => {
-        console.warn('[execution] frontend_complete middleware failed', { executionId: execId, personaId: execPersonaId, error: String(err) });
+        logger.warn("frontend_complete middleware failed", { executionId: execId, personaId: execPersonaId, error: String(err) });
       });
     }
 

@@ -18,6 +18,9 @@ import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBui
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("unified-matrix-entry");
 
 // ---------------------------------------------------------------------------
 // Types
@@ -173,7 +176,7 @@ export function UnifiedMatrixEntry(_props: UnifiedMatrixEntryProps) {
         setDraftPersonaId(personaId);
       } catch (err) {
         setLaunchError("Failed to create draft agent.");
-        console.error("Failed to create draft persona:", err);
+        logger.error("Failed to create draft persona", { error: err });
         return;
       }
     }
@@ -186,7 +189,7 @@ export function UnifiedMatrixEntry(_props: UnifiedMatrixEntryProps) {
         parserResultJson ?? undefined,
       );
     } catch (err) {
-      console.error("Build session failed to start:", err);
+      logger.error("Build session failed to start", { error: err });
       setLaunchError(
         err instanceof Error ? err.message : "Build failed to start. Check CLI configuration.",
       );

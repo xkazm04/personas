@@ -3,6 +3,9 @@ import { RotateCw, CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Play } fr
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { listExecutionsForUseCase } from '@/api/agents/executions';
 import { formatRelativeTime, formatDuration } from '@/lib/utils/formatters';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("use-case-history");
 
 const STATUS_ICONS: Record<string, { Icon: typeof CheckCircle2; className: string }> = {
   completed:  { Icon: CheckCircle2,  className: 'text-emerald-400' },
@@ -43,7 +46,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
         setExecutions(data);
       })
       .catch((err) => {
-        console.warn('[UseCaseHistory] Failed to load executions:', err);
+        logger.warn('Failed to load executions', { error: err });
         if (fetchSeqRef.current !== seq) return;
         setExecutions([]);
       })

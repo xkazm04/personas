@@ -52,12 +52,12 @@ fn sweep_adopt_jobs() {
     }
 }
 
-fn set_adopt_draft(adopt_id: &str, draft: &N8nPersonaOutput) {
-    if let Ok(serialized) = serde_json::to_value(draft) {
-        ADOPT_JOBS.update_extra(adopt_id, |extra| {
-            extra.draft = Some(serialized);
-        });
-    }
+fn set_adopt_draft(adopt_id: &str, draft: &N8nPersonaOutput) -> Result<(), AppError> {
+    let serialized = serde_json::to_value(draft)?;
+    ADOPT_JOBS.update_extra(adopt_id, |extra| {
+        extra.draft = Some(serialized);
+    });
+    Ok(())
 }
 
 fn set_adopt_questions(adopt_id: &str, questions: serde_json::Value) {
@@ -333,11 +333,10 @@ pub async fn continue_template_adopt(
     let claude_session_id = get_adopt_claude_session(&adopt_id)
         .ok_or_else(|| AppError::NotFound("No Claude session found for this adoption".into()))?;
 
-    // Update job state
-    ADOPT_JOBS.set_status(&app, &adopt_id, "running", None);
-
+    // Atomically guard against duplicate concurrent continue calls:
+    // check not-running + set status + set cancel token in one lock scope.
     let cancel_token = CancellationToken::new();
-    ADOPT_JOBS.set_cancel_token(&adopt_id, cancel_token.clone())?;
+    ADOPT_JOBS.resume_running(&app, &adopt_id, cancel_token.clone())?;
 
     let app_handle = app.clone();
     let adopt_id_for_task = adopt_id.clone();
@@ -719,7 +718,13 @@ fn handle_adopt_result(
 ) {
     match result {
         Ok((draft, _)) => {
-            set_adopt_draft(adopt_id, &draft);
+            if let Err(err) = set_adopt_draft(adopt_id, &draft) {
+                let msg = format!("Failed to serialize adoption draft: {err}");
+                tracing::error!(adopt_id = %adopt_id, error = %msg, "draft serialization failed");
+                ADOPT_JOBS.set_status(app, adopt_id, "failed", Some(msg));
+                crate::notifications::notify_n8n_transform_completed(app, template_name, false);
+                return;
+            }
             ADOPT_JOBS.set_status(app, adopt_id, "completed", None);
             crate::notifications::notify_n8n_transform_completed(app, template_name, true);
         }

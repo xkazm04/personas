@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Monitor, Download, RefreshCw } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('vault-discovery');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import {
   discoverDesktopApps,
@@ -40,7 +43,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       const discovered = await discoverDesktopApps();
       setApps(discovered);
     } catch (e) {
-      console.error('Failed to discover desktop apps:', e);
+      logger.error('Failed to discover desktop apps', { error: String(e) });
     } finally {
       setScanning(false);
     }
@@ -52,7 +55,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       const servers = await importClaudeMcpServers();
       setMcpServers(servers);
     } catch (e) {
-      console.error('Failed to import Claude MCP servers:', e);
+      logger.error('Failed to import Claude MCP servers', { error: String(e) });
     } finally {
       setImportingMcp(false);
     }
@@ -69,7 +72,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       const m = await getDesktopConnectorManifest(connectorName);
       setManifest(m);
     } catch (e) {
-      console.error('Failed to get manifest:', e);
+      logger.error('Failed to get manifest', { error: String(e) });
     }
   };
 
@@ -82,7 +85,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       setManifest(null);
       onCredentialCreated?.();
     } catch (e) {
-      console.error('Failed to approve capabilities:', e);
+      logger.error('Failed to approve capabilities', { error: String(e) });
     } finally {
       setApproving(false);
     }
@@ -95,7 +98,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       setImportedServers((prev) => new Set([...prev, server.name]));
       onCredentialCreated?.();
     } catch (e) {
-      console.error('Failed to import MCP server:', e);
+      logger.error('Failed to import MCP server', { error: String(e) });
     } finally {
       setImportingServer(null);
     }

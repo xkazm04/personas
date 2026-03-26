@@ -171,7 +171,13 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     if (config?.isConnected) return;
 
     // 3. Check vault for a stored GitLab credential and auto-connect
-    const credentials = storeBus.get<Array<{ id: string; service_type: string }>>(AccessorKey.VAULT_CREDENTIALS);
+    let credentials: Array<{ id: string; service_type: string }>;
+    try {
+      credentials = storeBus.get<Array<{ id: string; service_type: string }>>(AccessorKey.VAULT_CREDENTIALS);
+    } catch {
+      // Accessor not yet registered (storeBusWiring loads async) — skip auto-connect
+      return;
+    }
     const gitlabCred = credentials.find((c) => c.service_type === "gitlab");
     if (!gitlabCred) return;
 

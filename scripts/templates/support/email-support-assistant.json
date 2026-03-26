@@ -40,6 +40,78 @@
     ],
     "full_prompt_markdown": "# Email Support Assistant\n\n## Identity\n\nYou are a customer support AI assistant integrated with Email and a knowledge base. Your role is to automatically respond to customer questions with accurate, helpful information.\n\n---\n\n## Instructions\n\n1. Process all incoming email messages to identify customer questions and support requests\n2. For each customer question, search the knowledge base using relevant keywords and context\n3. Generate professional, helpful email replies based on knowledge base content\n4. Send high-confidence replies automatically (confidence ≥ 0.8)\n5. Flag uncertain responses for manual review using: {\"manual_review\": {\"title\": \"Low Confidence Reply\", \"description\": \"reason for uncertainty\", \"severity\": \"medium\"}}\n6. Report successful activities using: {\"user_message\": {\"title\": \"Support Activity Summary\", \"content\": \"summary of replies sent and questions handled\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n7. Store processed email IDs using: {\"agent_memory\": {\"title\": \"Processed Emails\", \"content\": \"gmail_message_ids\", \"category\": \"tracking\"}}\n8. Emit completion events using: {\"emit_event\": {\"type\": \"email_reply_sent\", \"data\": {\"status\": \"success\", \"confidence\": \"score\"}}}\n\n---\n\n## Tool Guidance\n\nUse Email connector to read messages and send replies. Use personas_database connector to query knowledge base. Calculate confidence scores based on knowledge base match quality and answer completeness.\n\n---\n\n## Examples\n\nExample workflow: 1) Detect new email asking about product pricing 2) Query knowledge base for pricing information 3) Generate reply with current pricing details 4) If confidence > 0.8, send automatically; otherwise flag for review\n\n---\n\n## Error Handling\n\nRetry Email API calls up to 3 times with exponential backoff. If knowledge base is unavailable, flag all questions for manual review. Log all errors and continue processing other emails.",
     "summary": "Automatically processes incoming email messages, matches customer questions against a knowledge base, and sends AI-generated replies with human review for uncertain cases.",
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What support tiers does your team use?",
+        "type": "select",
+        "options": [
+          "Single tier (all agents)",
+          "Tier 1 / Tier 2",
+          "Tier 1 / Tier 2 / Tier 3",
+          "No tiers - AI handles all"
+        ],
+        "default": "Tier 1 / Tier 2",
+        "context": "Determines how the agent categorizes issues and when to escalate beyond AI-generated replies.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "What is your target response SLA for customer emails?",
+        "type": "select",
+        "options": [
+          "Under 1 hour",
+          "Under 4 hours",
+          "Under 24 hours",
+          "Best effort"
+        ],
+        "default": "Under 4 hours",
+        "context": "Sets the time window the agent aims to reply within before flagging overdue items.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "At what confidence threshold should replies be sent automatically vs. flagged for review?",
+        "type": "select",
+        "options": [
+          "60% - send most replies automatically",
+          "70% - balanced",
+          "80% - conservative",
+          "90% - review nearly all"
+        ],
+        "default": "80% - conservative",
+        "context": "Controls the trade-off between automation speed and human oversight of replies.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What should happen when a question cannot be answered from the knowledge base?",
+        "type": "select",
+        "options": [
+          "Escalate to human agent",
+          "Send a general acknowledgment",
+          "Search the web for answers",
+          "Queue for next business day"
+        ],
+        "default": "Escalate to human agent",
+        "context": "Defines the fallback behavior when the AI has no confident knowledge base match.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "Should the agent remember past interactions with the same customer?",
+        "type": "boolean",
+        "options": [],
+        "default": true,
+        "context": "Enables memory-based context so follow-up emails reference previous conversation history.",
+        "dimension": "memory"
+      }
+    ],
     "design_highlights": [
       {
         "category": "Intelligence",
@@ -267,6 +339,5 @@
       "icon": "Mail",
       "color": "#3b82f6"
     }
-  },
-  "is_published": false
+  }
 }

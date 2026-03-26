@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Bell, CheckCircle2, Trash2, AlertTriangle, Info, XCircle } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import type { FiredAlert } from '@/lib/bindings/FiredAlert';
 
 const SEVERITY_CONFIG: Record<string, { icon: typeof Info; color: string }> = {
@@ -50,10 +51,14 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
 }
 
 export function AlertHistoryPanel() {
-  const alertHistory = useOverviewStore((s) => s.alertHistory);
-  const dismissAlert = useOverviewStore((s) => s.dismissAlert);
-  const clearAlertHistory = useOverviewStore((s) => s.clearAlertHistory);
-  const fetchAlertHistory = useOverviewStore((s) => s.fetchAlertHistory);
+  const {
+    alertHistory, dismissAlert, clearAlertHistory, fetchAlertHistory,
+  } = useOverviewStore(useShallow((s) => ({
+    alertHistory: s.alertHistory,
+    dismissAlert: s.dismissAlert,
+    clearAlertHistory: s.clearAlertHistory,
+    fetchAlertHistory: s.fetchAlertHistory,
+  })));
 
   useEffect(() => { void fetchAlertHistory(); }, [fetchAlertHistory]);
 

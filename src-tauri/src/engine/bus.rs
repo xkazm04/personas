@@ -249,6 +249,7 @@ mod tests {
             trigger_type: "event_listener".into(),
             config: Some(serde_json::to_string(&config).unwrap()),
             enabled: true,
+            status: "active".into(),
             last_triggered_at: None,
             next_trigger_at: None,
             created_at: "2026-01-15T10:00:00Z".into(),

@@ -168,6 +168,14 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         );"
     )?;
 
+    // -- Message threading: add thread_id column ---------------------------------
+    let _ = conn.execute_batch(
+        "ALTER TABLE persona_messages ADD COLUMN thread_id TEXT;"
+    ); // ignore "duplicate column" error on re-run
+    let _ = conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_pmsg_thread ON persona_messages(thread_id);"
+    );
+
     tracing::info!("Database migrations complete");
     Ok(())
 }
@@ -409,11 +417,13 @@ CREATE TABLE IF NOT EXISTS persona_messages (
     is_read      INTEGER NOT NULL DEFAULT 0,
     metadata     TEXT,
     created_at   TEXT NOT NULL,
-    read_at      TEXT
+    read_at      TEXT,
+    thread_id    TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_pmsg_persona ON persona_messages(persona_id);
 CREATE INDEX IF NOT EXISTS idx_pmsg_is_read ON persona_messages(is_read);
 CREATE INDEX IF NOT EXISTS idx_pmsg_created ON persona_messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pmsg_thread ON persona_messages(thread_id);
 
 -- ============================================================================
 -- Message Deliveries
@@ -3086,6 +3096,11 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added idempotency_key column to persona_executions");
     }
 
+    // -- Index source_type on persona_events for filtered search ----------
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_pev_source_type ON persona_events(source_type);"
+    )?;
+
     // Add free parameters column to personas (adjustable without rebuild)
     let has_parameters: bool = conn
         .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'parameters'")?
@@ -3095,6 +3110,28 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if !has_parameters {
         conn.execute_batch("ALTER TABLE personas ADD COLUMN parameters TEXT;")?;
         tracing::info!("Added parameters column to personas");
+    }
+
+    // -- Add status TEXT column to persona_triggers ----------------------------
+    // Replaces the lossy `enabled INTEGER` → TriggerStatus bridge with a column
+    // that stores all four states (active, paused, errored, disabled).
+    let has_trigger_status: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_triggers') WHERE name = 'status'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_trigger_status {
+        conn.execute_batch(
+            "ALTER TABLE persona_triggers ADD COLUMN status TEXT NOT NULL DEFAULT 'active';"
+        )?;
+        // Backfill: enabled=1 → 'active', enabled=0 → 'disabled'
+        conn.execute_batch(
+            "UPDATE persona_triggers SET status = CASE WHEN enabled = 1 THEN 'active' ELSE 'disabled' END;"
+        )?;
+        conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_ptr_status ON persona_triggers(status);"
+        )?;
+        tracing::info!("Added status column to persona_triggers and backfilled from enabled");
     }
 
     Ok(())

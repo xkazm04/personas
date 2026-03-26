@@ -175,11 +175,72 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How many team members contribute to the standup?",
+        "type": "select",
+        "options": [
+          "1-5",
+          "6-10",
+          "11-20",
+          "20+"
+        ],
+        "default": "6-10",
+        "context": "Helps the agent optimize report grouping and formatting for your team size.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "What format should the standup report use?",
+        "type": "select",
+        "options": [
+          "Done / Doing / Blocked",
+          "Yesterday / Today / Blockers",
+          "Status changes only",
+          "Full task list"
+        ],
+        "default": "Status changes only",
+        "context": "Determines how task updates are organized in the compiled report.",
+        "dimension": "messages"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "What time should the standup report be generated?",
+        "type": "select",
+        "options": [
+          "7:00 AM",
+          "8:00 AM",
+          "9:00 AM",
+          "10:00 AM"
+        ],
+        "default": "9:00 AM",
+        "context": "Sets the daily trigger time for automated report compilation.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_config_3",
+        "category": "configuration",
+        "question": "Where should the compiled standup be delivered?",
+        "type": "select",
+        "options": [
+          "In-app notification",
+          "Slack channel",
+          "Email",
+          "Notion page"
+        ],
+        "default": "In-app notification",
+        "context": "Determines the output channel for the daily standup summary.",
+        "dimension": "connectors"
+      }
+    ],
     "persona_meta": {
       "name": "T: Daily Standup Compiler",
       "icon": "Users",
       "color": "#8b5cf6"
     }
-  },
-  "is_published": false
+  }
 }

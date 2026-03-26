@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::n8n_transform::run_claude_prompt_text_inner;
+use crate::engine::ai_helpers;
 use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
@@ -205,7 +206,7 @@ async fn run_schema_proposal(params: RunParams) {
     emit_line(&app, &proposal_id, "> Starting schema proposal...");
 
     // Build schema context from existing tables
-    let schema_context = build_schema_context(&pool, &user_db).await;
+    let schema_context = ai_helpers::build_schema_context(&pool, "personas_database", Some(&user_db)).await;
 
     if cancel_token.is_cancelled() {
         emit_line(&app, &proposal_id, "> Cancelled.");
@@ -260,7 +261,7 @@ async fn run_schema_proposal(params: RunParams) {
     match cli_result {
         Ok((output, _session_id, _)) => {
             // Extract SQL from code block
-            let sql = extract_sql_block(&output);
+            let sql = ai_helpers::extract_fenced_block(&output, "sql");
             let explanation = extract_explanation(&output);
 
             match sql {
@@ -379,53 +380,6 @@ fn build_prompt(
     prompt
 }
 
-/// Extract the SQL code block from Claude's output.
-fn extract_sql_block(text: &str) -> Option<String> {
-    let mut in_block = false;
-    let mut is_sql = false;
-    let mut content = String::new();
-    let mut blocks: Vec<(String, bool)> = Vec::new();
-
-    for line in text.lines() {
-        if !in_block && line.trim_start().starts_with("```") {
-            in_block = true;
-            let tag = line
-                .trim_start()
-                .trim_start_matches('`')
-                .trim()
-                .to_lowercase();
-            is_sql = tag.is_empty()
-                || ["sql", "sqlite", "sqlite3"].iter().any(|t| tag == *t);
-            continue;
-        }
-        if in_block {
-            if line.trim_start().starts_with("```") {
-                let trimmed = content.trim().to_string();
-                if !trimmed.is_empty() {
-                    blocks.push((trimmed, is_sql));
-                }
-                in_block = false;
-                content.clear();
-                continue;
-            }
-            content.push_str(line);
-            content.push('\n');
-        }
-    }
-
-    // Handle unclosed block
-    let trimmed = content.trim().to_string();
-    if in_block && !trimmed.is_empty() {
-        blocks.push((trimmed, is_sql));
-    }
-
-    // Prefer SQL-tagged blocks; fall back to first block
-    blocks
-        .iter()
-        .find(|(_, is_match)| *is_match)
-        .or_else(|| blocks.first())
-        .map(|(content, _)| content.clone())
-}
 
 /// Extract the explanation text that comes after the SQL code block.
 fn extract_explanation(text: &str) -> Option<String> {
@@ -457,114 +411,12 @@ fn extract_explanation(text: &str) -> Option<String> {
     }
 }
 
-/// Build a text summary of available tables and columns for the prompt.
-async fn build_schema_context(
-    pool: &crate::db::DbPool,
-    user_db: &crate::db::UserDbPool,
-) -> String {
-    // Use the built-in database credential for introspection
-    let credential_id = "personas_database";
-
-    let tables_result = match db_query::introspect_tables(pool, credential_id, Some(user_db)).await
-    {
-        Ok(r) => r,
-        Err(_) => return String::new(),
-    };
-
-    let name_idx = match tables_result
-        .columns
-        .iter()
-        .position(|c| c == "table_name")
-    {
-        Some(i) => i,
-        None => return String::new(),
-    };
-
-    let table_names: Vec<String> = tables_result
-        .rows
-        .iter()
-        .filter_map(|row| row.get(name_idx).and_then(|v| v.as_str()).map(String::from))
-        .collect();
-
-    if table_names.is_empty() {
-        return String::new();
-    }
-
-    let mut ctx = String::new();
-
-    for table_name in &table_names {
-        let cols =
-            match db_query::introspect_columns(pool, credential_id, table_name, Some(user_db))
-                .await
-            {
-                Ok(r) => r,
-                Err(_) => {
-                    ctx.push_str(&format!("- {table_name}\n"));
-                    continue;
-                }
-            };
-
-        let col_name_idx = cols.columns.iter().position(|c| c == "column_name");
-        let col_type_idx = cols
-            .columns
-            .iter()
-            .position(|c| c == "data_type" || c == "column_type");
-
-        if let (Some(ni), Some(ti)) = (col_name_idx, col_type_idx) {
-            let col_strs: Vec<String> = cols
-                .rows
-                .iter()
-                .filter_map(|row| {
-                    let name = row.get(ni).and_then(|v| v.as_str())?;
-                    let dtype = row.get(ti).and_then(|v| v.as_str()).unwrap_or("?");
-                    Some(format!("{name} {dtype}"))
-                })
-                .collect();
-            ctx.push_str(&format!("- {} ({})\n", table_name, col_strs.join(", ")));
-        } else {
-            ctx.push_str(&format!("- {table_name}\n"));
-        }
-    }
-
-    ctx
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_extract_sql_block_basic() {
-        let text = "Here's the schema:\n```sql\nCREATE TABLE foo (id INTEGER PRIMARY KEY);\n```\nDone.";
-        assert_eq!(
-            extract_sql_block(text),
-            Some("CREATE TABLE foo (id INTEGER PRIMARY KEY);".into()),
-        );
-    }
-
-    #[test]
-    fn test_extract_sql_block_bare() {
-        let text = "```\nCREATE TABLE bar (id TEXT);\n```";
-        assert_eq!(
-            extract_sql_block(text),
-            Some("CREATE TABLE bar (id TEXT);".into()),
-        );
-    }
-
-    #[test]
-    fn test_extract_sql_block_none() {
-        let text = "No code blocks here.";
-        assert_eq!(extract_sql_block(text), None);
-    }
-
-    #[test]
-    fn test_extract_sql_block_prefers_sql_tag() {
-        let text = "```javascript\nconsole.log('hi');\n```\n\n```sql\nCREATE TABLE t (x INT);\n```";
-        assert_eq!(
-            extract_sql_block(text),
-            Some("CREATE TABLE t (x INT);".into()),
-        );
-    }
+    // SQL block extraction tests have moved to engine::ai_helpers::tests
 
     #[test]
     fn test_extract_explanation() {

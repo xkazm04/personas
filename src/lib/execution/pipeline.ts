@@ -46,46 +46,53 @@ export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 /** Human-readable descriptions for each stage (documentation-as-code). */
 export const STAGE_META: Record<
   PipelineStage,
-  { label: string; boundary: string; description: string }
+  { label: string; simpleLabel: string; boundary: string; description: string }
 > = {
   initiate: {
     label: 'Initiate',
+    simpleLabel: 'Starting up...',
     boundary: 'Frontend -> Store',
     description:
       'User triggers execution via UI. Store dispatches executePersona with persona ID, optional input data, and use-case ID.',
   },
   validate: {
     label: 'Validate',
+    simpleLabel: 'Checking configuration...',
     boundary: 'Tauri Command',
     description:
       'execute_persona command validates concurrency limits, budget caps, and loads persona + tools from DB.',
   },
   create_record: {
     label: 'Create Record',
+    simpleLabel: 'Preparing workspace...',
     boundary: 'Command -> DB',
     description:
       'Creates PersonaExecution row in DB with status "queued", then updates to "running". Returns execution record with ID.',
   },
   spawn_engine: {
     label: 'Spawn Engine',
+    simpleLabel: 'Connecting to AI...',
     boundary: 'Engine -> Tokio Task',
     description:
       'ExecutionEngine.start_execution registers in ConcurrencyTracker, creates cancellation flag, spawns tokio task that calls runner::run_execution.',
   },
   stream_output: {
     label: 'Stream Output',
+    simpleLabel: 'Processing data...',
     boundary: 'Runner -> Frontend Events',
     description:
       'Runner spawns Claude CLI process, parses stream-json stdout line by line, emits "execution-output" and protocol messages via Tauri events.',
   },
   finalize_status: {
     label: 'Finalize Status',
+    simpleLabel: 'Wrapping up...',
     boundary: 'Runner -> DB + Events',
     description:
       'Runner completes, writes final status (completed/failed/cancelled) with metrics to DB, emits "execution-status" event, triggers healing/chain/notification.',
   },
   frontend_complete: {
     label: 'Frontend Complete',
+    simpleLabel: 'Done!',
     boundary: 'Events -> Store',
     description:
       'usePersonaExecution receives terminal status event, passes typed statusData to finishExecution to clear isExecuting and refresh history.',
@@ -398,33 +405,79 @@ export type PipelineMiddleware<S extends PipelineStage = PipelineStage> = (
   trace: UnifiedTrace,
 ) => StagePayloadMap[S] | Promise<StagePayloadMap[S]>;
 
-/**
- * Registry of middleware functions keyed by stage.
- * Use addMiddleware/removeMiddleware to manage the registry.
- */
-const middlewareRegistry = new Map<PipelineStage, PipelineMiddleware[]>();
+/** Options for registering a middleware. */
+export interface MiddlewareOptions {
+  /**
+   * Unique deduplication key. If a middleware with the same key already exists
+   * for the stage, it is replaced. This prevents HMR from accumulating
+   * duplicate entries when a component re-mounts with a new closure.
+   */
+  key: string;
+  /**
+   * Execution priority within the stage. Lower numbers run first.
+   * Middleware with equal priority run in insertion order.
+   * @default 100
+   */
+  priority?: number;
+}
 
+interface MiddlewareEntry {
+  key: string;
+  priority: number;
+  fn: PipelineMiddleware;
+  /** Insertion counter for stable sort among equal priorities. */
+  seq: number;
+}
+
+let _entrySeq = 0;
+
+/**
+ * Registry of middleware entries keyed by stage.
+ * Entries are kept sorted by (priority, seq) after every mutation.
+ */
+const middlewareRegistry = new Map<PipelineStage, MiddlewareEntry[]>();
+
+function sortEntries(entries: MiddlewareEntry[]): void {
+  entries.sort((a, b) => a.priority - b.priority || a.seq - b.seq);
+}
+
+/**
+ * Register a middleware for a pipeline stage.
+ *
+ * @param stage  - Pipeline stage to attach to.
+ * @param opts   - Key (deduplication) and optional priority.
+ * @param fn     - The middleware function.
+ */
 export function addMiddleware<S extends PipelineStage>(
   stage: S,
+  opts: MiddlewareOptions | string,
   fn: PipelineMiddleware<S>,
 ): void {
+  const { key, priority = 100 } = typeof opts === 'string' ? { key: opts } : opts;
   const list = middlewareRegistry.get(stage) ?? [];
-  list.push(fn as unknown as PipelineMiddleware);
+
+  // Remove existing entry with the same key (deduplication)
+  const existingIdx = list.findIndex((e) => e.key === key);
+  if (existingIdx >= 0) list.splice(existingIdx, 1);
+
+  list.push({ key, priority, fn: fn as unknown as PipelineMiddleware, seq: ++_entrySeq });
+  sortEntries(list);
   middlewareRegistry.set(stage, list);
 }
 
-export function removeMiddleware<S extends PipelineStage>(
-  stage: S,
-  fn: PipelineMiddleware<S>,
-): void {
+/**
+ * Remove a middleware by its deduplication key.
+ */
+export function removeMiddleware(stage: PipelineStage, key: string): void {
   const list = middlewareRegistry.get(stage);
   if (!list) return;
-  const idx = list.indexOf(fn as unknown as PipelineMiddleware);
+  const idx = list.findIndex((e) => e.key === key);
   if (idx >= 0) list.splice(idx, 1);
 }
 
 /**
  * Run all registered middleware for a stage, threading the payload through.
+ * Entries execute in priority order (lower first, insertion-order tiebreak).
  */
 export async function runMiddleware<S extends PipelineStage>(
   stage: S,
@@ -435,8 +488,8 @@ export async function runMiddleware<S extends PipelineStage>(
   if (!list || list.length === 0) return payload;
 
   let current = payload;
-  for (const fn of list) {
-    current = (await fn(stage, current, trace)) as StagePayloadMap[S];
+  for (const entry of list) {
+    current = (await entry.fn(stage, current, trace)) as StagePayloadMap[S];
   }
   return current;
 }
@@ -484,4 +537,31 @@ export function pipelineSpans(trace: UnifiedTrace): UnifiedSpan[] {
 /** Extract backend engine spans (non-pipeline) from a unified trace. */
 export function engineSpans(trace: UnifiedTrace): UnifiedSpan[] {
   return trace.spans.filter((s) => !isPipelineStage(s.span_type));
+}
+
+/**
+ * Derive the current stage label and progress fraction from a trace.
+ * Returns a user-friendly label (from simpleLabel) and a 0–1 fraction.
+ */
+export function traceProgress(trace: UnifiedTrace | null): {
+  label: string;
+  fraction: number;
+} {
+  if (!trace) return { label: 'Starting up...', fraction: 0 };
+
+  const stages = pipelineSpans(trace);
+  if (stages.length === 0) return { label: 'Starting up...', fraction: 0 };
+
+  const lastStage = stages[stages.length - 1]!;
+  const stageType = lastStage.span_type as PipelineStage;
+  const idx = PIPELINE_STAGES.indexOf(stageType);
+  const isComplete = trace.completedAt != null;
+
+  const label = isComplete
+    ? 'Done!'
+    : STAGE_META[stageType]?.simpleLabel ?? 'Running...';
+
+  const fraction = isComplete ? 1 : (idx + 1) / PIPELINE_STAGES.length;
+
+  return { label, fraction };
 }

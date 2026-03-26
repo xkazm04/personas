@@ -3,6 +3,9 @@ import { RefreshCw, ChevronDown, ChevronRight, Copy, Check, Home, LifeBuoy } fro
 import { useState } from 'react';
 import { persistCrash } from '@/lib/utils/crashPersistence';
 import { useSystemStore } from "@/stores/systemStore";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("error-boundary");
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -39,6 +42,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // Log to console for dev tools
     console.error(`[ErrorBoundary:${this.props.name || 'unknown'}] Caught error:`, error);
     console.error('Component stack:', info);
+
+    // Structured log alongside console for observability pipeline
+    logger.error('Caught render error', { name: this.props.name ?? 'unknown', error: error.message, componentStack: info });
 
     // Persist to localStorage for crash reporting
     persistCrash(this.props.name || 'unknown', error, info);

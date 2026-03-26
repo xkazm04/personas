@@ -10,6 +10,7 @@ import {
   ChannelsSection,
   EventsSection,
 } from './ReviewSections';
+import { BORDER_DEFAULT, DIVIDE_SUBTLE } from '@/lib/utils/designTokens';
 
 interface TemplateReviewStepProps {
   designResult: AgentIR;
@@ -108,7 +109,7 @@ export function TemplateReviewStep({
       </div>
 
       {/* Sections card */}
-      <div className="rounded-xl border border-primary/10 bg-secondary/20 divide-y divide-primary/10">
+      <div className={`rounded-xl border ${BORDER_DEFAULT} bg-secondary/20 divide-y ${DIVIDE_SUBTLE}`}>
         {hasUseCases && (
           <UseCasesSection
             useCaseFlows={useCaseFlows}
@@ -155,7 +156,7 @@ export function TemplateReviewStep({
 
       {/* Connector Readiness */}
       {readinessStatuses.length > 0 && (
-        <div className="rounded-xl border border-primary/10 bg-secondary/20 p-4">
+        <div className={`rounded-xl border ${BORDER_DEFAULT} bg-secondary/20 p-4`}>
           <ConnectorReadiness statuses={readinessStatuses} compact={false} />
         </div>
       )}

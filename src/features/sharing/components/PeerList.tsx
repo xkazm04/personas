@@ -4,6 +4,9 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { PeerCard } from './PeerCard';
 import { PeerDetailDrawer } from './PeerDetailDrawer';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("peer-list");
 
 function useRelativeTime(ts: number | null): string {
   const [, tick] = useState(0);
@@ -62,7 +65,7 @@ export function PeerList() {
       addToast('Connected to peer', 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[PeerList] Failed to connect to peer', { peerId, error: msg });
+      logger.warn('Failed to connect to peer', { peerId, error: msg });
       addToast(`Failed to connect to peer: ${msg}`, 'error');
     } finally {
       setConnectingPeers((prev) => {
@@ -79,7 +82,7 @@ export function PeerList() {
       addToast('Disconnected from peer', 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[PeerList] Failed to disconnect', { peerId, error: msg });
+      logger.warn('Failed to disconnect', { peerId, error: msg });
       addToast(`Failed to disconnect: ${msg}`, 'error');
     }
   };

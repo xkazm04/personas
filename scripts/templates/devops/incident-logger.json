@@ -269,11 +269,76 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "Which severity levels should your team use?",
+        "type": "select",
+        "options": [
+          "Critical / High / Medium / Low",
+          "P1 / P2 / P3 / P4",
+          "Blocker / Major / Minor / Trivial"
+        ],
+        "default": "Critical / High / Medium / Low",
+        "context": "Defines the severity classification scale used when logging incidents.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "Where should critical incident alerts be sent?",
+        "type": "select",
+        "options": [
+          "In-app messaging only",
+          "Slack channel",
+          "Email",
+          "PagerDuty"
+        ],
+        "default": "In-app messaging only",
+        "context": "Determines the notification channel for urgent incident alerts.",
+        "dimension": "messages"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Should unresolved incidents auto-escalate after a timeout?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, incidents without resolution are escalated to a higher severity or team lead.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should incident reports require human review before closing?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "Ensures a team member verifies resolution details before an incident is marked closed.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_config_3",
+        "category": "configuration",
+        "question": "How should incident data be stored?",
+        "type": "select",
+        "options": [
+          "Local database",
+          "Notion",
+          "Google Sheets",
+          "External API"
+        ],
+        "default": "Local database",
+        "context": "Determines the persistence layer for incident records and history.",
+        "dimension": "connectors"
+      }
+    ],
     "persona_meta": {
       "name": "T: Incident Logger",
       "icon": "AlertTriangle",
       "color": "#dc2626"
     }
-  },
-  "is_published": false
+  }
 }

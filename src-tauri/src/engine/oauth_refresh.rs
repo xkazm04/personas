@@ -11,15 +11,22 @@ use crate::db::repos::resources::oauth_token_metrics as metrics_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+use serde::Serialize;
+use tauri::AppHandle;
+
 /// Threshold: refresh tokens that expire within this many seconds.
 const REFRESH_THRESHOLD_SECS: i64 = 900; // 15 minutes
 
 /// Default token lifetime fallback when the provider omits `expires_in`.
 const DEFAULT_FALLBACK_LIFETIME_SECS: u64 = 3600;
 
+/// Exponential backoff steps for failed OAuth refreshes (in seconds).
+/// 15 min → 1 hr → 4 hr → 24 hr (capped).
+const REFRESH_BACKOFF_STEPS: &[i64] = &[900, 3600, 14400, 86400];
+
 /// Scan all credentials, find OAuth ones with tokens expiring soon, and refresh them.
-pub async fn oauth_refresh_tick(pool: &DbPool) {
-    if let Err(e) = refresh_expiring_tokens(pool).await {
+pub async fn oauth_refresh_tick(pool: &DbPool, app: Option<&AppHandle>) {
+    if let Err(e) = refresh_expiring_tokens(pool, app).await {
         tracing::warn!(error = %e, "OAuth refresh tick failed");
     }
 }
@@ -29,7 +36,7 @@ pub async fn oauth_refresh_tick(pool: &DbPool) {
 /// that expired while the app was closed (e.g., Google's 1-hour access tokens).
 ///
 /// Returns `(refreshed, failed)` counts.
-pub async fn startup_oauth_sweep(pool: &DbPool) -> (u32, u32) {
+pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32, u32) {
     let all_creds = match cred_repo::get_all(pool) {
         Ok(c) => c,
         Err(e) => {
@@ -77,11 +84,22 @@ pub async fn startup_oauth_sweep(pool: &DbPool) -> (u32, u32) {
             Ok(_) => refreshed += 1,
             Err(e) => {
                 failed += 1;
-                tracing::warn!(
-                    credential_id = %cred.id,
-                    error = %e,
-                    "Startup OAuth sweep: failed to refresh token"
-                );
+                if matches!(e, AppError::OAuthRevoked(_)) {
+                    tracing::warn!(
+                        credential_id = %cred.id,
+                        credential_name = %cred.name,
+                        error = %e,
+                        "Startup OAuth sweep: grant revoked — needs re-authorization"
+                    );
+                    mark_needs_reauth(pool, &cred.id);
+                    emit_reauth_required(app, &cred.id, &cred.name, &cred.service_type, &e.to_string());
+                } else {
+                    tracing::warn!(
+                        credential_id = %cred.id,
+                        error = %e,
+                        "Startup OAuth sweep: failed to refresh token"
+                    );
+                }
             }
         }
     }
@@ -97,7 +115,7 @@ pub async fn startup_oauth_sweep(pool: &DbPool) -> (u32, u32) {
     (refreshed, failed)
 }
 
-async fn refresh_expiring_tokens(pool: &DbPool) -> Result<(), AppError> {
+async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Result<(), AppError> {
     let all_creds = cred_repo::get_all(pool)?;
     let now = chrono::Utc::now();
     let total_scanned = all_creds.len();
@@ -133,6 +151,24 @@ async fn refresh_expiring_tokens(pool: &DbPool) -> Result<(), AppError> {
 
         approaching_expiry += 1;
 
+        // Check backoff: skip credentials still in backoff from a previous failure
+        let backoff_until = meta
+            .as_ref()
+            .and_then(|m| m.get("oauth_refresh_backoff_until"))
+            .and_then(|v| v.as_str())
+            .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok());
+
+        if let Some(until) = backoff_until {
+            if until > now {
+                tracing::debug!(
+                    credential_id = %cred.id,
+                    backoff_until = %until,
+                    "Skipping OAuth refresh — credential is in backoff"
+                );
+                continue;
+            }
+        }
+
         tracing::info!(
             credential_id = %cred.id,
             credential_name = %cred.name,
@@ -141,14 +177,33 @@ async fn refresh_expiring_tokens(pool: &DbPool) -> Result<(), AppError> {
         );
 
         match refresh_single_credential(pool, cred).await {
-            Ok(_) => refreshed += 1,
+            Ok(_) => {
+                refreshed += 1;
+                // Clear backoff on success
+                clear_refresh_backoff(pool, &cred.id);
+            }
             Err(e) => {
                 failed += 1;
-                tracing::warn!(
-                    credential_id = %cred.id,
-                    error = %e,
-                    "Failed to proactively refresh OAuth token"
-                );
+
+                // If the error is a revocation, mark the credential and notify the user
+                if matches!(e, AppError::OAuthRevoked(_)) {
+                    tracing::warn!(
+                        credential_id = %cred.id,
+                        credential_name = %cred.name,
+                        error = %e,
+                        "OAuth grant revoked — credential needs re-authorization"
+                    );
+                    mark_needs_reauth(pool, &cred.id);
+                    emit_reauth_required(app, &cred.id, &cred.name, &cred.service_type, &e.to_string());
+                } else {
+                    tracing::warn!(
+                        credential_id = %cred.id,
+                        error = %e,
+                        "Failed to proactively refresh OAuth token"
+                    );
+                }
+                // Set exponential backoff so we don't retry a doomed refresh every tick
+                set_refresh_backoff(pool, &cred.id, &meta);
             }
         }
     }
@@ -348,6 +403,10 @@ pub async fn refresh_single_credential(
         serde_json::json!(new_expiry),
     );
 
+    // Clear any previous revocation flag on successful refresh
+    patch.insert("needs_reauth".to_string(), serde_json::Value::Null);
+    patch.insert("needs_reauth_at".to_string(), serde_json::Value::Null);
+
     cred_repo::patch_metadata_atomic(pool, &cred.id, patch)?;
 
     // Audit log
@@ -386,6 +445,101 @@ pub async fn refresh_single_credential(
         current_count + 1,
         expiry_secs,
     ))
+}
+
+/// Set an exponential backoff timestamp on a credential after a failed OAuth refresh.
+/// Reads the current failure count from metadata to determine the backoff step.
+fn set_refresh_backoff(pool: &DbPool, credential_id: &str, meta: &Option<serde_json::Value>) {
+    let fail_count = meta
+        .as_ref()
+        .and_then(|m| m.get("oauth_refresh_fail_count"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+
+    let step_idx = (fail_count as usize).min(REFRESH_BACKOFF_STEPS.len() - 1);
+    let backoff_secs = REFRESH_BACKOFF_STEPS[step_idx];
+    let backoff_until = (chrono::Utc::now() + chrono::Duration::seconds(backoff_secs)).to_rfc3339();
+
+    let mut patch = serde_json::Map::new();
+    patch.insert("oauth_refresh_backoff_until".to_string(), serde_json::json!(backoff_until));
+    patch.insert("oauth_refresh_fail_count".to_string(), serde_json::json!(fail_count + 1));
+
+    if let Err(e) = cred_repo::patch_metadata_atomic(pool, credential_id, patch) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to set OAuth refresh backoff");
+    } else {
+        tracing::info!(
+            credential_id = %credential_id,
+            backoff_secs,
+            fail_count = fail_count + 1,
+            "Set OAuth refresh backoff"
+        );
+    }
+}
+
+/// Clear the backoff fields after a successful OAuth refresh.
+fn clear_refresh_backoff(pool: &DbPool, credential_id: &str) {
+    let mut patch = serde_json::Map::new();
+    patch.insert("oauth_refresh_backoff_until".to_string(), serde_json::Value::Null);
+    patch.insert("oauth_refresh_fail_count".to_string(), serde_json::Value::Null);
+
+    if let Err(e) = cred_repo::patch_metadata_atomic(pool, credential_id, patch) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to clear OAuth refresh backoff");
+    }
+}
+
+/// Payload emitted when a credential's OAuth grant has been revoked and the
+/// user must re-authorize. Listened to by the frontend to show a re-auth prompt.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CredentialReauthRequiredEvent {
+    pub credential_id: String,
+    pub credential_name: String,
+    pub service_type: String,
+    pub reason: String,
+}
+
+/// Mark a credential's metadata with `needs_reauth: true` so the frontend can
+/// surface it even without a live event (e.g. on next app launch).
+fn mark_needs_reauth(pool: &DbPool, credential_id: &str) {
+    let mut patch = serde_json::Map::new();
+    patch.insert("needs_reauth".to_string(), serde_json::json!(true));
+    patch.insert(
+        "needs_reauth_at".to_string(),
+        serde_json::json!(chrono::Utc::now().to_rfc3339()),
+    );
+    if let Err(e) = cred_repo::patch_metadata_atomic(pool, credential_id, patch) {
+        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to mark credential as needs_reauth");
+    }
+}
+
+/// Emit a Tauri event and OS notification when OAuth re-authorization is required.
+fn emit_reauth_required(
+    app: Option<&AppHandle>,
+    credential_id: &str,
+    credential_name: &str,
+    service_type: &str,
+    reason: &str,
+) {
+    let Some(app) = app else { return };
+    use crate::engine::event_registry::{emit_event, event_name};
+
+    let payload = CredentialReauthRequiredEvent {
+        credential_id: credential_id.to_string(),
+        credential_name: credential_name.to_string(),
+        service_type: service_type.to_string(),
+        reason: reason.to_string(),
+    };
+    emit_event(app, event_name::CREDENTIAL_REAUTH_REQUIRED, &payload);
+
+    // Also send an OS notification so the user sees it even if the app is in the background
+    crate::notifications::send(
+        app,
+        "Credential needs re-authorization",
+        &format!(
+            "{} ({}) -- access was revoked. Open Vault to reconnect.",
+            credential_name, service_type,
+        ),
+    );
 }
 
 /// Look up the connector_definitions row to get metadata for strategy resolution.

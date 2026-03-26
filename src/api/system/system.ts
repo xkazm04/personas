@@ -88,3 +88,6 @@ export const cancelSetupInstall = () =>
 
 export const sendAppNotification = (title: string, body: string) =>
   invoke<void>("send_app_notification", { title, body });
+
+export const getNotificationDeliveryStats = () =>
+  invoke<import('@/lib/bindings/NotificationDeliveryStats').NotificationDeliveryStats>("get_notification_delivery_stats");

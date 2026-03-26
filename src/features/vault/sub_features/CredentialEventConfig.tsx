@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Zap } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('credential-event-config');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
 import type { CredentialTemplateEvent, CredentialEvent } from '@/lib/types/types';
@@ -42,7 +45,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
     try {
       await fetchCredentialEvents();
     } catch (err) {
-      console.error('Failed to fetch credential events:', err);
+      logger.error('Failed to fetch credential events', { error: String(err) });
     } finally {
       setLoading(false);
     }
@@ -77,7 +80,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
 
       await fetchCredentialEvents();
     } catch (err) {
-      console.error('Failed to toggle event:', err);
+      logger.error('Failed to toggle event', { error: String(err) });
     } finally {
       toggleInFlightRef.current.delete(eventTemplateId);
       setSaving(null);
@@ -95,7 +98,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
       await updateCredentialEvent(eventId, { config: updatedConfig });
       await fetchCredentialEvents();
     } catch (err) {
-      console.error('Failed to update event config:', err);
+      logger.error('Failed to update event config', { error: String(err) });
     } finally {
       setSaving(null);
     }

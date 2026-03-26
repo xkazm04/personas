@@ -196,11 +196,82 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "Where are your curated content links stored?",
+        "type": "select",
+        "options": [
+          "Notion database",
+          "Google Sheets",
+          "Airtable",
+          "Manual input"
+        ],
+        "default": "Notion database",
+        "context": "Determines which connector the agent uses to fetch content links.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "How often do you send newsletters?",
+        "type": "select",
+        "options": [
+          "Daily",
+          "Weekly",
+          "Bi-weekly",
+          "Monthly"
+        ],
+        "default": "Weekly",
+        "context": "Sets the compilation and send schedule for the newsletter.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Who is the primary target audience for your newsletter?",
+        "type": "select",
+        "options": [
+          "Internal team",
+          "Customers",
+          "Industry professionals",
+          "General subscribers"
+        ],
+        "default": "General subscribers",
+        "context": "Influences the tone and content selection criteria for the newsletter.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should the newsletter be reviewed before sending?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, the compiled newsletter is sent for human approval before distribution.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_config_3",
+        "category": "configuration",
+        "question": "How should the newsletter be delivered?",
+        "type": "select",
+        "options": [
+          "Gmail",
+          "Mailchimp",
+          "In-app notification",
+          "Slack"
+        ],
+        "default": "Gmail",
+        "context": "Determines the output channel used for newsletter distribution.",
+        "dimension": "messages"
+      }
+    ],
     "persona_meta": {
       "name": "T: Newsletter Curator",
       "icon": "Mail",
       "color": "#8b5cf6"
     }
-  },
-  "is_published": false
+  }
 }

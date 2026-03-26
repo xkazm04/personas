@@ -1,4 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('n8n-import');
 import {
   isSupportedFile,
   countElements,
@@ -53,15 +56,15 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
     const content = validatedContentRef.current;
     const file = validatedFileRef.current;
     if (!content || !file) {
-      console.warn('[n8n-import] forwardContent: no validated content/file');
+      logger.warn('forwardContent: no validated content/file');
       return;
     }
     const cb = onContentPasteRef.current;
     if (!cb) {
-      console.warn('[n8n-import] forwardContent: onContentPaste callback is undefined');
+      logger.warn('forwardContent: onContentPaste callback is undefined');
       return;
     }
-    console.log('[n8n-import] forwarding content for:', file.name, `(${content.length} bytes)`);
+    logger.debug('Forwarding content', { fileName: file.name, bytes: content.length });
     cb(content, file.name);
   }, []);
 
@@ -84,7 +87,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
         return;
       }
 
-      console.log('[n8n-import] reading file:', file.name, formatFileSize(file.size));
+      logger.debug('Reading file', { fileName: file.name, size: formatFileSize(file.size) });
 
       const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
       const reader = new FileReader();
@@ -97,7 +100,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
           return;
         }
 
-        console.log('[n8n-import] file read OK:', content.length, 'bytes');
+        logger.debug('File read OK', { bytes: content.length });
 
         if (ext === '.yml' || ext === '.yaml') {
           if (!content.includes('jobs:') && !content.includes('jobs :')) {
@@ -128,7 +131,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
         const workflowName = typeof json.name === 'string' && json.name ? json.name
           : typeof json.title === 'string' && json.title ? json.title : 'Untitled Workflow';
 
-        console.log('[n8n-import] validation OK:', platform, workflowName, count, 'elements');
+        logger.debug('Validation OK', { platform, workflowName, elementCount: count });
 
         validatedFileRef.current = file;
         validatedContentRef.current = content;
@@ -136,7 +139,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
       };
       reader.onerror = () => {
         if (!mountedRef.current || generation !== validationGenerationRef.current) return;
-        console.warn('[n8n-import] FileReader error for:', file.name);
+        logger.warn('FileReader error', { fileName: file.name });
         setPreview({ kind: 'error', fileName: file.name, message: 'Failed to read the file.' });
       };
       reader.readAsText(file);
@@ -154,7 +157,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
 
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.log('[n8n-import] file input change:', file?.name ?? 'no file');
+    logger.debug('File input change', { fileName: file?.name ?? 'no file' });
     if (file) validateAndPreview(file);
   }, [validateAndPreview]);
 

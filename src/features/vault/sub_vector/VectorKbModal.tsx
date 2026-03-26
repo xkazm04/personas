@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('vector-kb-modal');
 import { X, FileText, Search, Settings, Brain } from 'lucide-react';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { KnowledgeBase } from '@/api/vault/database/vectorKb';
@@ -38,7 +41,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
       const data = await getKnowledgeBase(kbId);
       setKb(data);
     } catch (err) {
-      console.error('Failed to load knowledge base:', err);
+      logger.error('Failed to load knowledge base', { error: String(err) });
     } finally {
       setLoading(false);
     }

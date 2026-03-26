@@ -189,11 +189,70 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What type of database are you monitoring?",
+        "type": "select",
+        "options": [
+          "PostgreSQL",
+          "MySQL",
+          "MongoDB",
+          "Redis",
+          "SQLite",
+          "SQL Server",
+          "Other"
+        ],
+        "default": "PostgreSQL",
+        "context": "Determines which performance metrics and query patterns the agent should focus on.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "At what threshold multiplier should alerts be triggered?",
+        "type": "select",
+        "options": [
+          "1.5x baseline (sensitive)",
+          "2x baseline (balanced)",
+          "3x baseline (conservative)",
+          "Custom threshold"
+        ],
+        "default": "2x baseline (balanced)",
+        "context": "Sets how much deviation from the historical baseline is required before an alert is sent.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "What metrics should be included in monitoring scope?",
+        "type": "select",
+        "options": [
+          "Response time only",
+          "Response time + throughput",
+          "Response time + throughput + connections",
+          "Full metrics (response time, throughput, connections, disk I/O, locks)"
+        ],
+        "default": "Response time + throughput",
+        "context": "Controls which database performance dimensions are tracked and compared against baselines.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should critical alerts (>3x baseline) require manual acknowledgment?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, severe performance anomalies are flagged for human review before any automated response.",
+        "dimension": "human-review"
+      }
+    ],
     "persona_meta": {
       "name": "T: Database Performance Monitor",
       "icon": "Activity",
       "color": "#ef4444"
     }
-  },
-  "is_published": false
+  }
 }

@@ -3,6 +3,7 @@ import { Brain, Plus, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { MemoryRow } from './MemoryCard';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
@@ -14,6 +15,9 @@ import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import type { MemoryReviewResult } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/types/types';
 import { seedMockMemory } from '@/api/overview/memories';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("memories-page");
 
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -21,11 +25,15 @@ interface SortState { column: SortColumn; direction: SortDirection }
 
 export default function MemoriesPage() {
   const personas = useAgentStore((s) => s.personas);
-  const memories = useOverviewStore((s) => s.memories);
-  const memoriesTotal = useOverviewStore((s) => s.memoriesTotal);
-  const fetchMemories = useOverviewStore((s) => s.fetchMemories);
-  const deleteMemory = useOverviewStore((s) => s.deleteMemory);
-  const reviewMemories = useOverviewStore((s) => s.reviewMemories);
+  const {
+    memories, memoriesTotal, fetchMemories, deleteMemory, reviewMemories,
+  } = useOverviewStore(useShallow((s) => ({
+    memories: s.memories,
+    memoriesTotal: s.memoriesTotal,
+    fetchMemories: s.fetchMemories,
+    deleteMemory: s.deleteMemory,
+    reviewMemories: s.reviewMemories,
+  })));
 
   const [search, setSearch] = useState('');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
@@ -87,7 +95,7 @@ export default function MemoriesPage() {
 
   const handleSeedMemory = useCallback(async () => {
     try { await seedMockMemory(); await fetchMemories({}); }
-    catch (err) { console.error('Failed to seed mock memory:', err); }
+    catch (err) { logger.error('Failed to seed mock memory', { error: err }); }
   }, [fetchMemories]);
 
   return (

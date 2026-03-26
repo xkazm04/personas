@@ -1,4 +1,4 @@
-import { LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -14,6 +14,7 @@ import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import RemoteControlCard from '@/features/overview/components/dashboard/cards/RemoteControlCard';
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
+import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { DASHBOARD_GRID } from '@/features/overview/utils/dashboardGrid';
 import { DashboardHeaderBadges } from './widgets/DashboardHeaderBadges';
@@ -25,7 +26,7 @@ export default function DashboardHome() {
   const personas = useAgentStore((s) => s.personas);
   const {
     globalExecutions, globalExecutionsTotal, pendingReviewCount,
-    unreadMessageCount, memoryActions, executionDashboard,
+    unreadMessageCount, memoryActions, executionDashboard, alertHistory, pipelineError,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
     globalExecutionsTotal: s.globalExecutionsTotal,
@@ -33,12 +34,15 @@ export default function DashboardHome() {
     unreadMessageCount: s.unreadMessageCount,
     memoryActions: s.memoryActions,
     executionDashboard: s.executionDashboard,
+    alertHistory: s.alertHistory,
+    pipelineError: s.pipelineError,
   })));
   const {
-    setOverviewTab, dismissMemoryAction,
+    setOverviewTab, dismissMemoryAction, setPipelineError,
   } = useOverviewStore(useShallow((s) => ({
     setOverviewTab: s.setOverviewTab,
     dismissMemoryAction: s.dismissMemoryAction,
+    setPipelineError: s.setPipelineError,
   })));
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
@@ -50,6 +54,12 @@ export default function DashboardHome() {
   // All data fetches (globalExecutions, healingIssues, etc.) are centralized
   // in useExecutionDashboardPipeline at the OverviewContent level to avoid
   // redundant re-fetches on subtab switches.
+
+  const activeAlertCount = useMemo(() => {
+    let count = 0;
+    for (const a of alertHistory) { if (!a.dismissed) count++; }
+    return count;
+  }, [alertHistory]);
 
   const stats = useMemo(() => {
     const execs = globalExecutions;
@@ -100,6 +110,7 @@ export default function DashboardHome() {
             globalExecutionsTotal={globalExecutionsTotal}
             successRate={stats.successRate}
             activeAgents={stats.activeAgents}
+            activeAlertCount={activeAlertCount}
             setOverviewTab={setOverviewTab}
           />
         }
@@ -121,7 +132,22 @@ export default function DashboardHome() {
             <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
           </div>
 
+          {pipelineError && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="typo-heading text-red-300">Dashboard data may be stale</p>
+                  <p className="text-sm text-red-400/70 mt-0.5">{pipelineError}</p>
+                </div>
+                <button onClick={() => setPipelineError(null)} className="flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
+                  <RefreshCw className="w-3 h-3" /> Dismiss
+                </button>
+              </div>
+            </div>
+          )}
           {IS_MOBILE && <RemoteControlCard />}
+          <ResumeSetupCard />
           <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
           <FleetOptimizationCard />
 

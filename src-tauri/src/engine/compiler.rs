@@ -1,67 +1,19 @@
-//! PersonaCompiler -- explicit multi-stage compilation pipeline for persona design.
+//! PersonaCompiler -- persona design compilation via the staged pipeline framework.
 //!
-//! The design workflow is structurally a compiler:
-//!   wizard input -> NL instruction -> LLM prompt -> Claude CLI -> raw output -> parsed JSON -> feasibility check -> DB persist
+//! This module implements `CompilationPipeline` for persona design:
+//!   wizard input → NL instruction → LLM prompt → Claude CLI → raw output →
+//!   parsed JSON → feasibility check → DB persist
 //!
-//! This module makes the stages explicit so that refinement is simply
-//! recompilation with additional constraints, and new stages (validation,
-//! optimization, dry-run) can be added without touching the UI layer.
-
-use serde::Serialize;
-use ts_rs::TS;
+//! The public API (`assemble_prompt`, `parse_output`, `run_feasibility`) is
+//! preserved for backward compatibility; each delegates to the pipeline impl.
 
 use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
+use crate::engine::compilation_pipeline::{CompilationPipeline, PipelineOutcome};
 use crate::engine::design;
 
-// ============================================================================
-// Compilation Stages
-// ============================================================================
-
-/// Named stages of the persona compilation pipeline.
-///
-/// The pipeline always runs these in order. Each stage produces an output
-/// that feeds into the next. A stage can short-circuit the pipeline
-/// (e.g. `Parse` may yield a clarification question instead of a result).
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "snake_case")]
-pub enum CompilationStage {
-    /// Build the LLM prompt from persona + tools + connectors + instruction.
-    PromptAssembly,
-    /// Spawn the Claude CLI and stream output.
-    LlmGeneration,
-    /// Parse the raw LLM output into a structured result or question.
-    ResultParsing,
-    /// Validate the parsed result against available tools/connectors.
-    FeasibilityCheck,
-    /// Persist the final result to the database.
-    Persist,
-}
-
-#[allow(dead_code)]
-impl CompilationStage {
-    pub fn label(&self) -> &'static str {
-        match self {
-            Self::PromptAssembly => "Assembling prompt",
-            Self::LlmGeneration => "Generating with AI",
-            Self::ResultParsing => "Parsing output",
-            Self::FeasibilityCheck => "Checking feasibility",
-            Self::Persist => "Saving result",
-        }
-    }
-
-    /// Return all stages in pipeline order.
-    pub fn all() -> &'static [CompilationStage] {
-        &[
-            Self::PromptAssembly,
-            Self::LlmGeneration,
-            Self::ResultParsing,
-            Self::FeasibilityCheck,
-            Self::Persist,
-        ]
-    }
-}
+// Re-export the shared stage enum so existing `use crate::engine::compiler::CompilationStage`
+// continues to work without changing every import site.
+pub use crate::engine::compilation_pipeline::CompilationStage;
 
 // ============================================================================
 // Compilation Input
@@ -83,7 +35,74 @@ pub struct CompilationInput<'a> {
 }
 
 // ============================================================================
-// Prompt Assembly (Stage 1)
+// Parse Outcome (backward-compatible alias)
+// ============================================================================
+
+/// The outcome of parsing LLM output -- either a design result, a question, or failure.
+///
+/// This is now a thin wrapper around `PipelineOutcome<serde_json::Value>`.
+pub enum ParseOutcome {
+    /// A complete design result was extracted.
+    Result(serde_json::Value),
+    /// The LLM asked a clarification question.
+    Question(serde_json::Value),
+    /// No valid JSON could be extracted.
+    Failed,
+}
+
+impl From<PipelineOutcome<serde_json::Value>> for ParseOutcome {
+    fn from(outcome: PipelineOutcome<serde_json::Value>) -> Self {
+        match outcome {
+            PipelineOutcome::Result(v) => ParseOutcome::Result(v),
+            PipelineOutcome::Question(v) => ParseOutcome::Question(v),
+            PipelineOutcome::Failed => ParseOutcome::Failed,
+        }
+    }
+}
+
+// ============================================================================
+// PersonaCompiler (pipeline implementation)
+// ============================================================================
+
+/// The persona design compiler — implements the generic pipeline for
+/// persona prompt assembly, output parsing, and feasibility validation.
+pub struct PersonaCompiler {
+    /// Tool names available for feasibility checking (stage 4).
+    pub tool_names: Vec<String>,
+    /// Connector names available for feasibility checking (stage 4).
+    pub connector_names: Vec<String>,
+}
+
+impl CompilationPipeline for PersonaCompiler {
+    type Input = CompilationInput<'static>;
+    type Output = serde_json::Value;
+
+    fn assemble_prompt(&self, input: &Self::Input) -> String {
+        assemble_prompt(input)
+    }
+
+    fn parse_output(&self, raw: &str) -> PipelineOutcome<Self::Output> {
+        if let Some(question) = design::extract_design_question(raw) {
+            return PipelineOutcome::Question(question);
+        }
+        if let Some(result) = design::extract_design_result(raw) {
+            return PipelineOutcome::Result(result);
+        }
+        PipelineOutcome::Failed
+    }
+
+    fn validate(&self, output: &mut Self::Output) -> Result<(), String> {
+        run_feasibility(output, &self.tool_names, &self.connector_names);
+        Ok(())
+    }
+
+    fn pipeline_name(&self) -> &'static str {
+        "persona"
+    }
+}
+
+// ============================================================================
+// Backward-compatible free functions
 // ============================================================================
 
 /// Assemble the LLM prompt for the given compilation input.
@@ -93,7 +112,6 @@ pub struct CompilationInput<'a> {
 /// `build_refinement_prompt_with_history`.
 pub fn assemble_prompt(input: &CompilationInput) -> String {
     if let Some(existing) = input.existing_result {
-        // Refinement / recompilation -- instruction is the feedback
         design::build_refinement_prompt_with_history(
             existing,
             input.instruction,
@@ -101,7 +119,6 @@ pub fn assemble_prompt(input: &CompilationInput) -> String {
             input.conversation_history,
         )
     } else {
-        // Initial compilation
         design::build_design_prompt(
             input.persona,
             input.tools,
@@ -113,36 +130,16 @@ pub fn assemble_prompt(input: &CompilationInput) -> String {
     }
 }
 
-// ============================================================================
-// Result Parsing (Stage 3)
-// ============================================================================
-
-/// The outcome of parsing LLM output -- either a design result, a question, or failure.
-pub enum ParseOutcome {
-    /// A complete design result was extracted.
-    Result(serde_json::Value),
-    /// The LLM asked a clarification question.
-    Question(serde_json::Value),
-    /// No valid JSON could be extracted.
-    Failed,
-}
-
 /// Parse raw LLM output into a structured outcome.
 pub fn parse_output(raw_output: &str) -> ParseOutcome {
-    // Check for clarification question first
     if let Some(question) = design::extract_design_question(raw_output) {
         return ParseOutcome::Question(question);
     }
-    // Then check for a full design result
     if let Some(result) = design::extract_design_result(raw_output) {
         return ParseOutcome::Result(result);
     }
     ParseOutcome::Failed
 }
-
-// ============================================================================
-// Feasibility Check (Stage 4)
-// ============================================================================
 
 /// Run feasibility check and attach the result to the design JSON.
 pub fn run_feasibility(
@@ -173,6 +170,7 @@ pub fn run_feasibility(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::compilation_pipeline::CompilationStage;
 
     fn test_persona() -> Persona {
         Persona {
@@ -290,5 +288,21 @@ mod tests {
         assert_eq!(stages.len(), 5);
         assert_eq!(stages[0], CompilationStage::PromptAssembly);
         assert_eq!(stages[4], CompilationStage::Persist);
+    }
+
+    #[test]
+    fn test_persona_compiler_pipeline_trait() {
+        let compiler = PersonaCompiler {
+            tool_names: vec![],
+            connector_names: vec![],
+        };
+        assert_eq!(compiler.pipeline_name(), "persona");
+
+        // parse_output via trait
+        let raw = "Some text that doesn't contain any valid JSON";
+        match compiler.parse_output(raw) {
+            PipelineOutcome::Failed => {}
+            _ => panic!("Expected Failed"),
+        }
     }
 }

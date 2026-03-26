@@ -10,6 +10,7 @@ import {
   type IpcCallRecord,
 } from '@/lib/ipcMetrics';
 import { latencyToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
+import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
 
 function useIpcSnapshot() {
   const generation = useSyncExternalStore(subscribeIpcMetrics, getIpcTotalCount);
@@ -95,7 +96,7 @@ export default function IpcPerformancePanel() {
   if (summary.totalCalls === 0) return null;
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden">
+    <div className={`${CARD_CONTAINER} overflow-hidden`}>
       <button onClick={toggleExpanded} className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none transition-colors">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 shadow-inner flex items-center justify-center">

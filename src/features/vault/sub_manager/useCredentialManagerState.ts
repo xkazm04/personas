@@ -33,7 +33,7 @@ export function useCredentialManagerState() {
   const bulk = useBulkHealthcheck();
   const [isDailyRun, setIsDailyRun] = useState(false);
 
-  const { state: viewState, dispatch, filteredConnectors, catalogFormData } = useCredentialViewFSM(connectorDefinitions);
+  const { state: viewState, dispatch, filteredConnectors, catalogFormData, breadcrumbs } = useCredentialViewFSM(connectorDefinitions);
 
   // Rotation
   const { isRotatingAll, rotateAllResult, rotatableCount, handleRotateAll } = useRotateAll({
@@ -152,6 +152,7 @@ export function useCredentialManagerState() {
     dispatch,
     filteredConnectors,
     catalogFormData,
+    breadcrumbs,
     // Catalog / OAuth
     ...catalog,
     // Handlers

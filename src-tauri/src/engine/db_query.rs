@@ -19,6 +19,7 @@ use crate::db::models::QueryResult;
 use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::{DbPool, UserDbPool};
+use crate::engine::safe_json;
 use crate::error::AppError;
 
 /// Maximum rows returned per query to prevent memory exhaustion.
@@ -525,7 +526,7 @@ async fn fetch_supabase_openapi_spec(
         )));
     }
 
-    serde_json::from_str(&body)
+    safe_json::from_str_as(&body)
         .map_err(|e| AppError::Internal(format!("Failed to parse OpenAPI spec: {e}")))
 }
 
@@ -563,13 +564,18 @@ pub(crate) async fn execute_supabase(
         )
     })?;
 
-    let mut url = format!("{}/rest/v1/{}?select={}", base, parsed.table, parsed.select);
+    let mut url = format!(
+        "{}/rest/v1/{}?select={}",
+        base,
+        urlencoding::encode(&parsed.table),
+        urlencoding::encode(&parsed.select)
+    );
 
     if let Some(limit) = parsed.limit {
         url.push_str(&format!("&limit={limit}"));
     }
     if let Some(ref order) = parsed.order {
-        url.push_str(&format!("&order={order}"));
+        url.push_str(&format!("&order={}", urlencoding::encode(order)));
     }
     for filter in &parsed.filters {
         url.push_str(&format!("&{filter}"));
@@ -599,6 +605,23 @@ pub(crate) async fn execute_supabase(
     }
 
     parse_postgres_json_response(&body)
+}
+
+/// Validate that a SQL identifier contains only safe characters (alphanumeric, underscore, dot).
+/// Returns `None` if the identifier is empty or contains unsafe characters that could enable
+/// parameter pollution or URL injection in PostgREST filter URLs.
+fn validate_sql_identifier(ident: &str) -> Option<&str> {
+    if ident.is_empty() {
+        return None;
+    }
+    if ident
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.')
+    {
+        Some(ident)
+    } else {
+        None
+    }
 }
 
 /// Parsed SELECT query components for PostgREST conversion.
@@ -653,18 +676,24 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
         table
     };
 
+    // Validate table name to prevent URL injection
+    validate_sql_identifier(&table)?;
+
     let remainder = after_from[table_end..].trim();
     let remainder_upper = after_from_upper[table_end..].trim().to_string();
 
-    // Parse SELECT columns
+    // Parse SELECT columns with identifier validation
     let select = if select_part == "*" {
         "*".to_string()
     } else {
-        select_part
+        let cols: Vec<&str> = select_part
             .split(',')
             .map(|c| c.trim().trim_matches(|ch: char| ch == '"' || ch == '`'))
-            .collect::<Vec<_>>()
-            .join(",")
+            .collect();
+        for col in &cols {
+            validate_sql_identifier(col)?;
+        }
+        cols.join(",")
     };
 
     let mut limit: Option<u32> = None;
@@ -689,27 +718,30 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
             .unwrap_or(after_order.len());
         let order_str = after_order[..end].trim();
 
-        let order_parts: Vec<String> = order_str
-            .split(',')
-            .map(|part| {
-                let part = part.trim();
-                let upper_part = part.to_uppercase();
-                if upper_part.ends_with(" DESC") {
-                    let col = part[..part.len() - 5]
+        let mut order_parts: Vec<String> = Vec::new();
+        for part in order_str.split(',') {
+            let part = part.trim();
+            let upper_part = part.to_uppercase();
+            let (col, dir) = if upper_part.ends_with(" DESC") {
+                (
+                    part[..part.len() - 5]
                         .trim()
-                        .trim_matches(|c: char| c == '"' || c == '`');
-                    format!("{col}.desc")
-                } else if upper_part.ends_with(" ASC") {
-                    let col = part[..part.len() - 4]
+                        .trim_matches(|c: char| c == '"' || c == '`'),
+                    "desc",
+                )
+            } else if upper_part.ends_with(" ASC") {
+                (
+                    part[..part.len() - 4]
                         .trim()
-                        .trim_matches(|c: char| c == '"' || c == '`');
-                    format!("{col}.asc")
-                } else {
-                    let col = part.trim_matches(|c: char| c == '"' || c == '`');
-                    format!("{col}.asc")
-                }
-            })
-            .collect();
+                        .trim_matches(|c: char| c == '"' || c == '`'),
+                    "asc",
+                )
+            } else {
+                (part.trim_matches(|c: char| c == '"' || c == '`'), "asc")
+            };
+            validate_sql_identifier(col)?;
+            order_parts.push(format!("{col}.{dir}"));
+        }
 
         order = Some(order_parts.join(","));
     }
@@ -760,6 +792,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
         let col = cond[..cond.len() - 11]
             .trim()
             .trim_matches(|c: char| c == '"' || c == '`');
+        validate_sql_identifier(col)?;
         return Some(format!("{col}=not.is.null"));
     }
     // IS NULL
@@ -767,6 +800,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
         let col = cond[..cond.len() - 7]
             .trim()
             .trim_matches(|c: char| c == '"' || c == '`');
+        validate_sql_identifier(col)?;
         return Some(format!("{col}=is.null"));
     }
 
@@ -786,6 +820,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
             let col = cond[..pos]
                 .trim()
                 .trim_matches(|c: char| c == '"' || c == '`');
+            validate_sql_identifier(col)?;
             let val = cond[pos + op.len()..]
                 .trim()
                 .trim_matches(|c: char| c == '\'' || c == '"');
@@ -798,6 +833,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
         let col = cond[..pos]
             .trim()
             .trim_matches(|c: char| c == '"' || c == '`');
+        validate_sql_identifier(col)?;
         let val = cond[pos + 6..]
             .trim()
             .trim_matches(|c: char| c == '\'' || c == '"')
@@ -808,6 +844,7 @@ fn parse_postgrest_filter(cond: &str) -> Option<String> {
         let col = cond[..pos]
             .trim()
             .trim_matches(|c: char| c == '"' || c == '`');
+        validate_sql_identifier(col)?;
         let val = cond[pos + 7..]
             .trim()
             .trim_matches(|c: char| c == '\'' || c == '"')
@@ -1088,7 +1125,7 @@ async fn execute_planetscale_parameterized(
 /// Parse a generic Postgres-style JSON response (array of objects).
 pub(crate) fn parse_postgres_json_response(body: &str) -> Result<QueryResult, AppError> {
     let parsed: serde_json::Value =
-        serde_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
+        safe_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
 
     // Response may be an array of row objects or wrapped in a result key
     let rows_val = if parsed.is_array() {
@@ -1155,7 +1192,7 @@ pub(crate) fn parse_postgres_json_response(body: &str) -> Result<QueryResult, Ap
 /// Parse Neon serverless response.
 pub(crate) fn parse_neon_response(body: &str) -> Result<QueryResult, AppError> {
     let parsed: serde_json::Value =
-        serde_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
+        safe_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
 
     // Neon response: { fields: [{name, dataTypeID}], rows: [[val, ...]], ...}
     let columns: Vec<String> = if let Some(fields) = parsed.get("fields").and_then(|f| f.as_array()) {
@@ -1195,7 +1232,7 @@ pub(crate) fn parse_neon_response(body: &str) -> Result<QueryResult, AppError> {
 /// Parse Upstash Redis REST response.
 pub(crate) fn parse_upstash_response(body: &str) -> Result<QueryResult, AppError> {
     let parsed: serde_json::Value =
-        serde_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
+        safe_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
 
     // Upstash response: { result: <value> } or { result: [items...] }
     let result = parsed.get("result").cloned().unwrap_or(parsed.clone());
@@ -1235,7 +1272,7 @@ pub(crate) fn parse_upstash_response(body: &str) -> Result<QueryResult, AppError
 /// Parse PlanetScale Vitess HTTP response.
 pub(crate) fn parse_planetscale_response(body: &str) -> Result<QueryResult, AppError> {
     let parsed: serde_json::Value =
-        serde_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
+        safe_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
 
     // PlanetScale response has { result: { fields: [...], rows: [...] } }
     let result = parsed.get("result").unwrap_or(&parsed);
@@ -1342,7 +1379,7 @@ async fn execute_convex(
 
     // If it looks like JSON, treat as a raw function call
     if trimmed.starts_with('{') {
-        let body: Value = serde_json::from_str(trimmed).map_err(|e| {
+        let body: Value = safe_json::from_str(trimmed).map_err(|e| {
             AppError::Validation(format!("Invalid JSON body: {e}"))
         })?;
 
@@ -1388,6 +1425,14 @@ async fn execute_convex(
     let table_name = trimmed
         .trim_matches('"')
         .trim_matches('\'');
+
+    // Validate table name: only alphanumeric and underscores allowed
+    if !table_name.chars().all(|c| c.is_alphanumeric() || c == '_') {
+        return Err(AppError::Validation(
+            "Invalid Convex table name: only alphanumeric characters and underscores are allowed".into(),
+        ));
+    }
+
     convex_list_snapshot(&deployment_url, &deploy_key, Some(table_name)).await
 }
 
@@ -1399,7 +1444,7 @@ async fn convex_list_snapshot(
 ) -> Result<QueryResult, AppError> {
     let mut url = format!("{deployment_url}/api/list_snapshot?format=json");
     if let Some(tn) = table_name {
-        url.push_str(&format!("&tableName={tn}"));
+        url.push_str(&format!("&tableName={}", urlencoding::encode(tn)));
     }
 
     let client = http_client();

@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("subscription-lifecycle");
 import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator';
 import { listTriggers, createTrigger, deleteTrigger } from '@/api/pipeline/triggers';
 import { listSubscriptions, createSubscription, deleteSubscription } from '@/api/overview/events';
@@ -133,7 +136,7 @@ export function useSubscriptionManager(
       }
     } catch (e) {
       if (controller.signal.aborted) return;
-      console.error('Failed to activate subscription:', e);
+      logger.error('Failed to activate subscription', { error: e });
       setError(`Failed to activate ${item.kind === 'trigger' ? 'trigger' : 'subscription'}`);
     } finally {
       controllersRef.current.delete(item.key);
@@ -154,7 +157,7 @@ export function useSubscriptionManager(
         setDbSubscriptions((prev) => prev.filter((s) => s.id !== item.dbSubscriptionId));
       }
     } catch (e) {
-      console.error('Failed to retire subscription:', e);
+      logger.error('Failed to retire subscription', { error: e });
       setError(`Failed to delete ${item.kind === 'trigger' ? 'trigger' : 'subscription'}`);
     }
   }, [persona]);

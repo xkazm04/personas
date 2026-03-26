@@ -47,6 +47,9 @@ pub enum AppError {
     #[error("Forbidden: {0}")]
     Forbidden(String),
 
+    #[error("OAuth grant revoked: {0}")]
+    OAuthRevoked(String),
+
     #[error("{0}")]
     Internal(String),
 }
@@ -98,6 +101,7 @@ impl Serialize for AppError {
                 AppError::GitLab(_) => "gitlab",
                 AppError::RateLimited(_) => "rate_limited",
                 AppError::Forbidden(_) => "forbidden",
+                AppError::OAuthRevoked(_) => "oauth_revoked",
                 AppError::Internal(_) => "internal",
             },
         )?;

@@ -9,4 +9,6 @@ export interface TemplatePerformance {
   top_positive_labels: string[];
   top_negative_labels: string[];
   derived_quality_score: number;
+  /** False when one or more metric sub-queries failed and defaults were substituted. */
+  data_available: boolean;
 }

@@ -7,7 +7,7 @@ import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { SettingsStatusBar } from './SettingsStatusBar';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { useAgentStore } from '@/stores/agentStore';
 
 interface PersonaSettingsTabProps {
@@ -38,7 +38,7 @@ export function PersonaSettingsTab({
 
   useEffect(() => {
     if (!personaId) return;
-    invoke<string | null>('get_setting', { key: `execution_retention_months:${personaId}` })
+    invokeWithTimeout<string | null>('get_setting', { key: `execution_retention_months:${personaId}` })
       .then((val: string | null) => { if (val) setRetentionMonths(parseInt(val, 10) || 2); })
       .catch(() => { /* use default */ });
   }, [personaId]);
@@ -46,7 +46,7 @@ export function PersonaSettingsTab({
   const handleRetentionChange = useCallback((months: number) => {
     setRetentionMonths(months);
     if (!personaId) return;
-    invoke('set_setting', { key: `execution_retention_months:${personaId}`, value: String(months) }).catch(() => { /* ignore */ });
+    invokeWithTimeout('set_setting', { key: `execution_retention_months:${personaId}`, value: String(months) }).catch(() => { /* ignore */ });
   }, [personaId]);
 
   return (

@@ -32,7 +32,7 @@ export const sections: SectionDef[] = [
   { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'personas', icon: Bot, label: 'Agents' },
   { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
-  { id: 'credentials', icon: Key, label: 'Keys' },
+  { id: 'credentials', icon: Key, label: 'Connections' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
   { id: 'plugins', icon: Puzzle, label: 'Plugins' },
   { id: 'settings', icon: Settings, label: 'Settings' },
@@ -57,12 +57,12 @@ export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> 
 
 export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; minTier?: Tier; simpleHidden?: boolean }> = [
   { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
-  { id: 'executions', icon: Activity, label: 'Executions', minTier: TIERS.TEAM },
-  { id: 'manual-review', icon: ClipboardCheck, label: 'Manual Review', minTier: TIERS.TEAM },
+  { id: 'executions', icon: Activity, label: 'Activity', minTier: TIERS.TEAM },
+  { id: 'manual-review', icon: ClipboardCheck, label: 'Approvals', minTier: TIERS.TEAM },
   { id: 'messages', icon: MessageSquare, label: 'Messages' },
   { id: 'events', icon: Zap, label: 'Events', minTier: TIERS.TEAM },
   { id: 'knowledge', icon: Brain, label: 'Knowledge', minTier: TIERS.TEAM },
-  { id: 'sla', icon: Shield, label: 'SLA', minTier: TIERS.TEAM },
+  { id: 'sla', icon: Shield, label: 'Reliability', minTier: TIERS.TEAM },
   { id: 'schedules', icon: CalendarClock, label: 'Schedules', minTier: TIERS.TEAM },
   { id: 'health', icon: Heart, label: 'Health' },
 ];
@@ -71,7 +71,7 @@ export const credentialItems: SubNavItem[] = [
   { id: 'credentials', label: 'Credentials', icon: Key },
   { id: 'databases', label: 'Databases', icon: Database, minTier: TIERS.TEAM },
   { id: 'from-template', label: 'Catalog', icon: LayoutTemplate, minTier: TIERS.TEAM },
-  { id: 'graph', label: 'Graph', icon: Network },
+  { id: 'graph', label: 'Dependencies', icon: Network },
   { id: 'add-new', label: 'Add new', icon: Plus },
 ];
 
@@ -79,7 +79,7 @@ export const eventBusItems: SubNavItem[] = [
   { id: 'canvas', label: 'Canvas', icon: Network },
   { id: 'shared', label: 'Marketplace', icon: Store },
   { id: 'live-stream', label: 'Live Stream', icon: Activity },
-  { id: 'rate-limits', label: 'Throttling', icon: Gauge },
+  { id: 'rate-limits', label: 'Speed Limits', icon: Gauge },
   { id: 'test', label: 'Test', icon: Zap },
   { id: 'smee-relay', label: 'Local Relay', icon: Unplug },
   { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook },
@@ -100,7 +100,7 @@ export const devToolsItems: SubNavItem[] = [
 
 export const cloudItems: SubNavItem[] = [
   { id: 'unified', label: 'All Deployments', icon: LayoutDashboard },
-  { id: 'cloud', label: 'Cloud Execution', icon: Cloud },
+  { id: 'cloud', label: 'Cloud Runs', icon: Cloud },
   { id: 'gitlab', label: 'GitLab', icon: GitBranch },
 ];
 
@@ -111,7 +111,7 @@ export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },
-    { id: 'byom', label: 'BYOM', icon: Network, devOnly: true },
+    { id: 'byom', label: 'Custom Models', icon: Network, devOnly: true },
     { id: 'portability', label: 'Data', icon: HardDriveDownload, minTier: TIERS.TEAM },
     { id: 'network', label: 'Network', icon: Share2, devOnly: true },
     { id: 'admin', label: 'Admin', icon: Shield, devOnly: true },

@@ -41,5 +41,5 @@ const analyticsMiddleware: PipelineMiddleware<'finalize_status'> = (
 };
 
 export function registerAnalyticsMiddleware(): void {
-  addMiddleware('finalize_status', analyticsMiddleware);
+  addMiddleware('finalize_status', 'analytics', analyticsMiddleware);
 }

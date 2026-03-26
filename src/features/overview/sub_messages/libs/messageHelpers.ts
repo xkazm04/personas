@@ -17,11 +17,12 @@ export const FILTER_LABELS: Record<FilterType, string> = {
 export const COLUMN_WIDTHS = {
   persona: '140px',
   priority: '180px',
+  delivery: '100px',
   status: '70px',
   created: '100px',
 } as const;
 
-export const GRID_TEMPLATE_COLUMNS = `${COLUMN_WIDTHS.persona} minmax(0,2fr) ${COLUMN_WIDTHS.priority} ${COLUMN_WIDTHS.status} ${COLUMN_WIDTHS.created}`;
+export const GRID_TEMPLATE_COLUMNS = `${COLUMN_WIDTHS.persona} minmax(0,2fr) ${COLUMN_WIDTHS.priority} ${COLUMN_WIDTHS.delivery} ${COLUMN_WIDTHS.status} ${COLUMN_WIDTHS.created}`;
 
 export const deliveryStatusConfig: Record<string, { icon: typeof CheckCircle2; color: string; bgColor: string; borderColor: string; label: string }> = {
   delivered: { icon: CheckCircle2, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30', label: 'Delivered' },

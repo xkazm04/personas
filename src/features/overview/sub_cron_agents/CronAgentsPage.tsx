@@ -11,12 +11,15 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 
 export default function CronAgentsPage() {
-  const cronAgents = useOverviewStore((s) => s.cronAgents);
-  const loading = useOverviewStore((s) => s.cronAgentsLoading);
-  const fetchCronAgents = useOverviewStore((s) => s.fetchCronAgents);
+  const { cronAgents, loading, fetchCronAgents } = useOverviewStore(useShallow((s) => ({
+    cronAgents: s.cronAgents,
+    loading: s.cronAgentsLoading,
+    fetchCronAgents: s.fetchCronAgents,
+  })));
 
   useEffect(() => { fetchCronAgents(); }, [fetchCronAgents]);
 

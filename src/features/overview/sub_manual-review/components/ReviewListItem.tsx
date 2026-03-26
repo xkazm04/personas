@@ -87,7 +87,7 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
           <p className="text-sm text-muted-foreground/70 truncate mt-0.5">{review.content.slice(0, 80)}</p>
           <div className="flex items-center gap-2 mt-1">
             <SeverityIndicator severity={review.severity} />
-            <span className={`inline-block px-1.5 py-0.5 rounded typo-caption border ${status.bgColor} ${status.color} ${status.borderColor}`}>
+            <span className={`inline-block px-1.5 py-0.5 rounded typo-caption border ${status.bg} ${status.text} ${status.border}`}>
               {statusLabel}
             </span>
             {review.source === 'cloud' && (

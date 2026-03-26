@@ -1,3 +1,7 @@
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("pricing");
+
 /** Price per 1M tokens (input / output). Keyed by model family prefix. */
 export const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   // Anthropic
@@ -73,9 +77,7 @@ export function estimateCost(
   }
 
   // Unknown model -- zero cost to avoid false budget alerts
-  console.warn(
-    `[pricing] Unknown model "${model}" -- cost defaulting to $0. Budget totals may undercount actual spend.`,
-  );
+  logger.warn("Unknown model; cost defaulting to $0 — budget totals may undercount actual spend", { model });
   return { inputCost: 0, outputCost: 0, totalCost: 0, estimated: true };
 }
 

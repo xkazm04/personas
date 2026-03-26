@@ -253,11 +253,69 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What research domains are you curating content for?",
+        "type": "select",
+        "options": [
+          "AI/Machine Learning",
+          "Software Engineering",
+          "Business/Strategy",
+          "Science/Healthcare",
+          "Finance/Economics",
+          "Mixed/General"
+        ],
+        "default": "Mixed/General",
+        "context": "Helps the agent apply domain-specific tagging and cross-referencing logic to extracted content.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "What types of sources should be prioritized for curation?",
+        "type": "select",
+        "options": [
+          "Academic papers",
+          "Blog posts and articles",
+          "News and reports",
+          "All source types equally"
+        ],
+        "default": "All source types equally",
+        "context": "Guides how the agent weights and organizes different content types in your knowledge base.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "How often should the knowledge base be updated with new content?",
+        "type": "select",
+        "options": [
+          "On demand only",
+          "Daily digest",
+          "Weekly batch",
+          "Real-time as URLs are provided"
+        ],
+        "default": "On demand only",
+        "context": "Sets the frequency at which new URLs are processed and added to the Notion knowledge base.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should auto-generated tags be reviewed before applying to Notion pages?",
+        "type": "boolean",
+        "options": [],
+        "default": "false",
+        "context": "When enabled, AI-generated tags are queued for your approval before being applied to knowledge base entries.",
+        "dimension": "human-review"
+      }
+    ],
     "persona_meta": {
       "name": "T: Research Knowledge Curator",
       "icon": "Sparkles",
       "color": "#8b5cf6"
     }
-  },
-  "is_published": false
+  }
 }

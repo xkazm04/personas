@@ -34,6 +34,10 @@ const NEGOTIATION_MESSAGES: AiArtifactMessages = AiArtifactMessages {
 // -- Commands ----------------------------------------------------
 
 /// Start a credential negotiation -- generates a step-by-step provisioning plan.
+///
+/// `authenticated_services` is an optional list of auth detection results that
+/// inform the AI prompt to skip account-creation / sign-in steps for services
+/// the user is already authenticated to.
 #[tauri::command]
 pub async fn start_credential_negotiation(
     state: State<'_, Arc<AppState>>,
@@ -41,12 +45,15 @@ pub async fn start_credential_negotiation(
     service_name: String,
     connector: serde_json::Value,
     field_keys: Vec<String>,
+    authenticated_services: Option<Vec<serde_json::Value>>,
 ) -> Result<serde_json::Value, AppError> {
     require_privileged(&state, "start_credential_negotiation").await?;
+    let auth_services = authenticated_services.unwrap_or_default();
     let negotiation_prompt = credential_negotiator::build_negotiation_prompt(
         &service_name,
         &connector,
         &field_keys,
+        &auth_services,
     );
 
     let cli_args = build_credential_task_cli_args();

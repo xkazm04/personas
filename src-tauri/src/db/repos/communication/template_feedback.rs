@@ -87,6 +87,10 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         )));
     }
 
+    // Track whether any sub-query failed so the frontend can distinguish
+    // real zero-data from query failures with substituted defaults.
+    let mut data_available = true;
+
     // Adoption count from the design review
     let total_adoptions: i64 = conn
         .query_row(
@@ -96,6 +100,7 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         )
         .unwrap_or_else(|e| {
             tracing::warn!(review_id = %review_id, error = %e, "Failed to query adoption count, defaulting to 0");
+            data_available = false;
             0
         });
 
@@ -111,6 +116,7 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         )
         .unwrap_or_else(|e| {
             tracing::warn!(review_id = %review_id, error = %e, "Failed to query execution stats, defaulting to (0, 0)");
+            data_available = false;
             (0, 0)
         });
 
@@ -131,6 +137,7 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         )
         .unwrap_or_else(|e| {
             tracing::warn!(review_id = %review_id, error = %e, "Failed to query avg cost, defaulting to 0.0");
+            data_available = false;
             0.0
         });
 
@@ -143,6 +150,7 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         )
         .unwrap_or_else(|e| {
             tracing::warn!(review_id = %review_id, error = %e, "Failed to query positive feedback count, defaulting to 0");
+            data_available = false;
             0
         });
 
@@ -154,6 +162,7 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         )
         .unwrap_or_else(|e| {
             tracing::warn!(review_id = %review_id, error = %e, "Failed to query negative feedback count, defaulting to 0");
+            data_available = false;
             0
         });
 
@@ -204,6 +213,7 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         )
         .unwrap_or_else(|e| {
             tracing::warn!(review_id = %review_id, error = %e, "Failed to query structural/semantic scores, defaulting to (50, 50)");
+            data_available = false;
             (50.0, 50.0)
         });
 
@@ -221,5 +231,6 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         top_positive_labels: top_positive.into_iter().take(5).map(|(l, _)| l).collect(),
         top_negative_labels: top_negative.into_iter().take(5).map(|(l, _)| l).collect(),
         derived_quality_score,
+        data_available,
     })
 }

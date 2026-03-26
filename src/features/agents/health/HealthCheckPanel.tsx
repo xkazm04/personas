@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useAgentStore } from "@/stores/agentStore";
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
 import type { DryRunIssue, DryRunResult } from './types';
@@ -25,7 +25,7 @@ interface HealthCheckPanelProps {
 }
 
 export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
   const { phase, result, score, error, runHealthCheck, markIssueResolved, reset } = healthCheck;
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const handleApplyFix = useApplyHealthFix();
@@ -157,7 +157,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <ScoreBadge score={score} />
-            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-medium ${statusTokens.bgColor} ${statusTokens.color} border ${statusTokens.borderColor}`}>
+            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-medium ${statusTokens.bg} ${statusTokens.text} border ${statusTokens.border}`}>
               {dryRun.status === 'ready' ? <CheckCircle2 className="w-3 h-3" /> : dryRun.status === 'blocked' ? <XCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
               {dryRun.status.charAt(0).toUpperCase() + dryRun.status.slice(1)}
             </div>

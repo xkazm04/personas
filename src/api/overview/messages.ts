@@ -2,6 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaMessage } from "@/lib/bindings/PersonaMessage";
 import type { PersonaMessageDelivery } from "@/lib/bindings/PersonaMessageDelivery";
+import type { MessageThreadSummary } from "@/lib/bindings/MessageThreadSummary";
 
 // ============================================================================
 // Messages
@@ -35,6 +36,33 @@ export const getMessageCount = () =>
 
 export const getMessageDeliveries = (messageId: string) =>
   invoke<PersonaMessageDelivery[]>("get_message_deliveries", { messageId });
+
+export interface MessageDeliverySummary {
+  messageId: string;
+  delivered: number;
+  pending: number;
+  failed: number;
+}
+
+export const getBulkDeliverySummaries = (messageIds: string[]) =>
+  invoke<MessageDeliverySummary[]>("get_bulk_delivery_summaries", { messageIds });
+
+// ============================================================================
+// Threads
+// ============================================================================
+
+export const getMessagesByThread = (threadId: string) =>
+  invoke<PersonaMessage[]>("get_messages_by_thread", { threadId });
+
+export const getThreadSummaries = (limit?: number, offset?: number, personaId?: string) =>
+  invoke<MessageThreadSummary[]>("get_thread_summaries", { limit, offset, personaId });
+
+export const getThreadCount = (personaId?: string) =>
+  invoke<number>("get_thread_count", { personaId });
+
+// ============================================================================
+// Dev
+// ============================================================================
 
 export const seedMockMessage = () =>
   invoke<PersonaMessage>("seed_mock_message", {});

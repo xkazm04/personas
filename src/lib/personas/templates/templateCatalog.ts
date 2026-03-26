@@ -14,11 +14,14 @@ import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import { computeContentHashSync, registerBuiltinTemplates } from '@/lib/templates/templateVerification';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { TEMPLATE_CHECKSUMS } from './templateChecksums';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('template-catalog');
 
 const modules = import.meta.glob<TemplateCatalogEntry>(
   [
-    '../../../scripts/templates/**/*.json',
-    '!../../../scripts/templates/_*/**',
+    '../../../../scripts/templates/**/*.json',
+    '!../../../../scripts/templates/_*/**',
   ],
   { eager: true, import: 'default' },
 );
@@ -48,14 +51,14 @@ for (const [modulePath, template] of Object.entries(modules)) {
   const expectedChecksum = TEMPLATE_CHECKSUMS[relPath];
 
   if (!expectedChecksum) {
-    console.warn(`[template-catalog] Missing checksum for built-in template: ${relPath}. Skipping.`);
+    logger.warn('Missing checksum for built-in template, skipping', { relPath });
     continue;
   }
 
   const canonicalContent = JSON.stringify(template);
   const actualChecksum = computeContentHashSync(canonicalContent);
   if (actualChecksum !== expectedChecksum) {
-    console.warn(`[template-catalog] Integrity mismatch for ${relPath}. Expected ${expectedChecksum}, got ${actualChecksum}. Skipping.`);
+    logger.warn('Integrity mismatch for built-in template, skipping', { relPath, expectedChecksum, actualChecksum });
     continue;
   }
 
@@ -112,21 +115,18 @@ export async function verifyTemplatesWithBackend(): Promise<BackendIntegrityResu
 
     if (!result.allValid) {
       const invalid = result.results.filter((r) => r.isKnownTemplate && !r.valid);
-      console.error(
-        `[template-catalog] SECURITY: ${invalid.length} template(s) failed backend integrity check. ` +
-        `These templates may have been tampered with:`,
-        invalid.map((r) => r.path),
-      );
+      logger.error('SECURITY: template(s) failed backend integrity check, may have been tampered with', {
+        count: invalid.length,
+        paths: invalid.map((r) => r.path),
+      });
     } else {
-      console.info(
-        `[template-catalog] Backend integrity verified: ${result.validCount}/${result.total} templates OK.`,
-      );
+      logger.info('Backend integrity verified', { validCount: result.validCount, total: result.total });
     }
 
     return result;
   } catch (err) {
     // Backend verification is defense-in-depth; don't break the app if unavailable
-    console.warn('[template-catalog] Backend integrity verification unavailable:', err);
+    logger.warn('Backend integrity verification unavailable', { err });
     return null;
   }
 }

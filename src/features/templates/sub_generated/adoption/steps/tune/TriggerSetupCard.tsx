@@ -1,6 +1,7 @@
 import { Zap } from 'lucide-react';
 import { cardClass, descClass, fieldClass, inputClass, labelClass, TRIGGER_ICONS } from './tuneStepConstants';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';
+import { BORDER_SUBTLE } from '@/lib/utils/designTokens';
 
 interface SelectedTriggerEntry {
   trigger: SuggestedTrigger;
@@ -128,7 +129,7 @@ export function TriggerSetupCard({
 
                 {/* Separator between triggers */}
                 {selectedTriggers.length > 1 && originalIndex !== selectedTriggers[selectedTriggers.length - 1]?.originalIndex && (
-                  <div className="border-t border-primary/5 mt-1" />
+                  <div className={`border-t ${BORDER_SUBTLE} mt-1`} />
                 )}
               </div>
             );

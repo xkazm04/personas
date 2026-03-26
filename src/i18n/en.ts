@@ -187,7 +187,7 @@ export const en = {
     agents: "Agents",
     events: "Events",
     // "Keys" = credential/API key management section
-    keys: "Keys",
+    keys: "Connections",
     templates: "Templates",
     teams: "Teams",
     cloud: "Cloud",
@@ -199,15 +199,15 @@ export const en = {
 
     // Sub-nav items under "Overview"
     dashboard: "Dashboard",
-    executions: "Executions",
+    executions: "Activity",
     // "Manual Review" = human-in-the-loop approval queue
-    manual_review: "Manual Review",
+    manual_review: "Approvals",
     messages: "Messages",
     // "Knowledge" = the learned patterns knowledge graph
     knowledge: "Knowledge",
     // "SLA" = Service Level Agreement / reliability metrics
-    sla: "SLA",
-    cron_agents: "Cron Agents",
+    sla: "Reliability",
+    cron_agents: "Scheduled Agents",
     schedules: "Schedules",
     // "Health" = agent and system health overview
     health: "Health",
@@ -215,7 +215,7 @@ export const en = {
     // Sub-nav items under "Events" (event bus)
     live_stream: "Live Stream",
     // "Throttling" = rate limiting controls for event processing
-    throttling: "Throttling",
+    throttling: "Speed Limits",
     test: "Test",
     // "Local Relay" = Smee.io webhook forwarding for local development
     local_relay: "Local Relay",
@@ -230,7 +230,7 @@ export const en = {
     databases: "Databases",
     catalog: "Catalog",
     // "Graph" = credential dependency graph visualization
-    graph: "Graph",
+    graph: "Dependencies",
     add_new: "Add new",
 
     // Top-level Plugins section
@@ -242,7 +242,7 @@ export const en = {
 
     // Sub-nav items under "Cloud" (deployment)
     all_deployments: "All Deployments",
-    cloud_execution: "Cloud Execution",
+    cloud_execution: "Cloud Runs",
     gitlab: "GitLab",
 
     // Sub-nav items under "Settings"
@@ -251,7 +251,7 @@ export const en = {
     notifications: "Notifications",
     engine: "Engine",
     // "BYOM" = Bring Your Own Model
-    byom: "BYOM",
+    byom: "Custom Models",
     data: "Data",
     admin: "Admin",
 
@@ -304,7 +304,7 @@ export const en = {
     greeting_afternoon: "Good Afternoon",
     greeting_evening: "Good Evening",
     // "Operator" = the user's role/title on the home page header
-    operator: "Operator",
+    operator: "User",
     summary_empty: "Get started by creating your first agent or exploring the platform.",
     // {personasCount}, {personasPlural}, {credentialsCount}, {credentialsPlural} are injected
     summary_stats: "You have {personasCount} agent{personasPlural} and {credentialsCount} credential{credentialsPlural} configured.",
@@ -335,7 +335,7 @@ export const en = {
       choose_role: "Choose your role",
       choose_role_hint: "We'll tailor the experience to match how you work.",
       pick_tool: "Pick your favorite tool",
-      pick_tool_hint: "This will be your first connector integration.",
+      pick_tool_hint: "This will be your first service connection.",
       describe_goal: "What do you want to automate?",
       describe_goal_hint: "Describe your first automation goal — we'll help you set it up.",
       goal_placeholder: "e.g. Automatically sync new Jira tickets to a Slack channel...",
@@ -344,7 +344,7 @@ export const en = {
       step_role: "Your Role",
       step_role_hint: "Tell us your role so we can tailor the experience.",
       step_tool: "Favorite Tool",
-      step_tool_hint: "Pick the first connector you want to integrate.",
+      step_tool_hint: "Pick the first service you want to connect.",
       step_goal: "Automation Goal",
       step_goal_hint: "Describe what you would like to automate first.",
       // Gate messages
@@ -367,35 +367,35 @@ export const en = {
     nav: {
       overview: {
         label: "Overview",
-        description: "Dashboard analytics, execution history, and real-time system monitoring across all agents",
+        description: "See how your agents are performing, what they've done recently, and monitor everything in one place",
       },
       personas: {
         label: "Agents",
-        description: "Create, configure, and manage AI agent personas with custom behaviors and capabilities",
+        description: "Create, set up, and manage your AI agents -- give them custom behaviors and connect them to your tools",
       },
       events: {
         label: "Events",
-        description: "Configure event triggers, webhook listeners, and schedule-driven automations",
+        description: "Set up what triggers your agents to run -- schedules, incoming notifications, or changes you define",
       },
       credentials: {
-        label: "Keys",
-        description: "Manage API credentials, database connections, OAuth tokens, and encrypted secrets",
+        label: "Connections",
+        description: "Manage your service logins, database connections, and passwords that let agents access your tools",
       },
       "design-reviews": {
         label: "Templates",
-        description: "Import n8n workflows, browse the template gallery, and generate agent blueprints",
+        description: "Browse ready-made agent blueprints, import workflows, and generate new agent designs",
       },
       team: {
         label: "Teams",
-        description: "Build multi-agent team pipelines with drag-and-drop orchestration and routing",
+        description: "Combine multiple agents into a team that works together on multi-step workflows",
       },
       cloud: {
         label: "Cloud",
-        description: "Deploy agents to cloud infrastructure, manage schedules, and integrate GitLab CI",
+        description: "Run your agents in the cloud so they work even when your computer is off",
       },
       settings: {
         label: "Settings",
-        description: "Account preferences, appearance themes, notification rules, and engine configuration",
+        description: "Your account, how the app looks, notification preferences, and advanced options",
       },
     },
   },
@@ -409,7 +409,7 @@ export const en = {
 
     // Agent overview page (grid of all agents)
     overview: {
-      title: "Agent Surface",
+      title: "My Agents",
       // {count} = total agent count
       subtitle_one: "{count} agent -- sorted by relevance",
       subtitle_other: "{count} agents -- sorted by relevance",
@@ -496,7 +496,7 @@ export const en = {
       try_design_wizard: "Try Design Wizard",
 
       // Cloud upsell banners
-      cloud_banner_connect: "Connect a cloud orchestrator to run personas remotely",
+      cloud_banner_connect: "Connect to the cloud to run your agents remotely",
       cloud_banner_signin: "Sign in to unlock cloud features and remote execution",
       sign_in: "Sign In",
       set_up_cloud: "Set up Cloud",
@@ -505,7 +505,7 @@ export const en = {
     // Agent header bar (top of the editor -- name, status toggle, warnings)
     header: {
       // Warning tooltips shown next to the status toggle
-      no_triggers_warning: "No triggers or event subscriptions configured",
+      no_triggers_warning: "No triggers set up -- this agent won't run automatically",
       // {credentials} = comma-separated list of missing credential names
       missing_credentials: "Missing credentials: {credentials}",
       toggle_failed: "Failed to toggle persona -- check your connection",
@@ -569,7 +569,7 @@ export const en = {
       no_credentials: "No authenticated services detected. Select manually below.",
       delete_confirm: "Delete this credential?",
       // "Blast Radius" = impact analysis showing what breaks if this credential is removed
-      blast_radius: "Blast Radius",
+      blast_radius: "What's Affected",
       no_dependencies: "No agents depend on this credential. Safe to modify or remove.",
       affected_agents: "Affected Agents",
       affected_events: "Affected Events",
@@ -580,9 +580,9 @@ export const en = {
       select_all: "Select all",
       deselect_all: "None",
       // "Sync mode" = keep credentials in sync with the external source
-      enable_sync: "Enable sync mode",
+      enable_sync: "Keep in sync automatically",
       source_ref: "Source reference",
-      poll_interval: "Poll interval",
+      poll_interval: "How often to check",
       intervals: {
         min15: "15 min",
         min30: "30 min",
@@ -593,7 +593,7 @@ export const en = {
     },
     features: {
       // Alert shown when a credential starts failing unexpectedly
-      anomaly_detected: "Anomaly detected: credential suddenly failing after previous success. Possible revocation.",
+      anomaly_detected: "Unusual activity: this connection suddenly stopped working after it was fine before. The password or key may have been changed or revoked.",
       history: "History",
       event_triggers: "Event Triggers",
       rotation_policy: {
@@ -625,24 +625,24 @@ export const en = {
       anomaly: {
         // Remediation level labels
         healthy: "Healthy",
-        transient_issues: "Transient Issues",
-        degrading: "Degrading",
-        permanent_errors: "Permanent Errors",
+        transient_issues: "Temporary Issues",
+        degrading: "Getting Worse",
+        permanent_errors: "Ongoing Errors",
         critical: "Critical",
-        stale: "stale",
+        stale: "outdated",
         // {count} = number of healthcheck samples
-        samples: "{count} samples",
+        samples: "{count} checks",
         // Error classification labels
-        permanent: "Permanent: {rate}",
-        transient: "Transient: {rate}",
+        permanent: "Ongoing: {rate}",
+        transient: "Temporary: {rate}",
         tolerance: "Tolerance: {rate}",
       },
       // Rotation insight badge (compact header badge)
       rotation_badge: {
         disabled: "Disabled",
-        perm_errors: "Perm Errors",
-        degrading: "Degrading",
-        backoff: "Backoff",
+        perm_errors: "Ongoing Errors",
+        degrading: "Getting Worse",
+        backoff: "Waiting to Retry",
       },
       // Audit log table
       audit: {
@@ -652,7 +652,7 @@ export const en = {
         op_created: "Created",
         op_updated: "Updated",
         op_deleted: "Deleted",
-        op_healthcheck: "Healthcheck",
+        op_healthcheck: "Connection Test",
         // Filter labels (includes "all" + operation types)
         filter_all: "all",
       },
@@ -664,21 +664,21 @@ export const en = {
     },
     negotiator: {
       // "Negotiator" = the AI-guided credential provisioning wizard
-      title: "AI Credential Negotiator",
-      subtitle: "Automated API key provisioning",
+      title: "AI Connection Setup",
+      subtitle: "Automatically set up your service credentials",
       initializing: "Initializing negotiator...",
       prerequisites: "Prerequisites",
       all_steps_completed: "All steps completed",
       captured: "Credentials captured",
       error_title: "Something went wrong",
       // {label} = the connector/service name (e.g. "GitHub", "Slack")
-      start_description: "Let the AI guide you step-by-step through obtaining {label} API credentials. It will open the right pages, tell you exactly what to click, and auto-capture your keys.",
-      start_button: "Start auto-provisioning",
+      start_description: "Let the AI guide you step-by-step through setting up {label} access. It will open the right pages, tell you exactly what to click, and save your login details automatically.",
+      start_button: "Start guided setup",
       // Estimated time -- {minutes} is a number
       estimated_time: "Takes ~{minutes} minutes",
-      planning_description: "AI is analyzing the developer portal and generating a step-by-step provisioning plan...",
+      planning_description: "AI is looking at the service and creating a step-by-step setup guide...",
       // {label} = the connector/service name
-      provisioning_label: "Provisioning {label}",
+      provisioning_label: "Setting up {label}",
       // {count} = number of captured credential fields
       fields_captured: "{count} field(s) auto-filled from the provisioning flow.",
       apply_button: "Apply to credential form",
@@ -716,9 +716,9 @@ export const en = {
       auth_api_key: "API Key",
       auth_mcp: "MCP",
       // Healthcheck result display
-      healthcheck_passed: "Healthcheck passed",
-      healthcheck_failed: "Healthcheck failed",
-      healthcheck_running: "Running healthcheck...",
+      healthcheck_passed: "Connection test passed",
+      healthcheck_failed: "Connection test failed",
+      healthcheck_running: "Testing connection...",
       technical_details: "Technical details",
       // Setup guide section
       // {label} = connector name (e.g. "GitHub", "Slack")
@@ -768,7 +768,7 @@ export const en = {
       // {name} = service name (e.g. "Google")
       authorizing: "Authorizing with {name}...",
       authorize_with: "Authorize with {name}",
-      authorize_hint: "Launches app-managed {name} consent and updates refresh token after approval.",
+      authorize_hint: "Opens {name} sign-in and saves your access after you approve.",
       // {time} = timestamp when consent was completed
       consent_completed: "{name} consent completed at {time}",
       update_failed: "Failed to update credential",
@@ -787,7 +787,7 @@ export const en = {
       guided_setup: "Guided Setup",
       auto_setup: "Auto-Setup",
       guided_consent_body: "Claude will guide you step-by-step through creating credentials. URLs will open in your browser automatically.",
-      auto_consent_body: "Claude designed the credential schema. Now Playwright will open a browser to create the actual credential on your behalf.",
+      auto_consent_body: "Claude designed the connection details. Now a browser window will open to create the actual credential on your behalf.",
       what_will_happen: "What will happen:",
       log_in_first: "Log in first.",
       // {label} = service name
@@ -826,11 +826,11 @@ export const en = {
       documents_tab: "Documents",
       search_tab: "Search",
       settings_tab: "Settings",
-      ingest_title: "Ingest Documents",
+      ingest_title: "Add Documents",
       ingest_hint: "Drop files here or click to browse",
-      ingest_drop: "Drop files to ingest",
+      ingest_drop: "Drop files to add",
       ingest_supported: "Supported: txt, md, html, csv, json, yaml, code files",
-      starting_ingestion: "Starting ingestion...",
+      starting_ingestion: "Processing files...",
       no_valid_files: "No valid file paths found. Try dropping individual files.",
       no_documents: "No documents yet",
       no_documents_hint: "Drop files here, paste text, or scan a directory to start building your knowledge base.",
@@ -842,21 +842,21 @@ export const en = {
       document_count_one: "{count} document",
       document_count_other: "{count} documents",
       // Search result card
-      show_full: "Show full chunk",
+      show_full: "Show full excerpt",
       show_less: "Show less",
       copy_content: "Copy content",
       // Settings tab
       kb_info: "Knowledge Base Info",
-      embedding_model: "Embedding Model",
+      embedding_model: "Search Model",
       dimensions: "Dimensions",
-      chunk_size: "Chunk Size",
-      chunk_overlap: "Chunk Overlap",
+      chunk_size: "Section Size",
+      chunk_overlap: "Section Overlap",
       statistics: "Statistics",
       documents: "Documents",
-      chunks: "Chunks",
-      local_embedding: "Local Embedding",
+      chunks: "Sections",
+      local_embedding: "Local Search",
       // {model} = embedding model name, {dims} = dimension count
-      local_embedding_hint: "Embeddings are generated locally using {model} ({dims}-dim). No data leaves your machine. The model (~23MB) is downloaded on first use and cached locally.",
+      local_embedding_hint: "Search indexing runs locally using {model} ({dims}-dim). No data leaves your machine. The model (~23MB) is downloaded on first use and saved locally.",
     },
     // Credential design modal (AI-guided credential creation)
     design_modal: {
@@ -950,14 +950,14 @@ export const en = {
   // -------------------------------------------------------------------
   deployment: {
     title: "Deployment",
-    orchestrator_url: "Orchestrator URL",
+    orchestrator_url: "Cloud Server URL",
     api_key: "API Key",
     connecting: "Connecting...",
-    sr_connecting: "Connecting to cloud orchestrator...",
+    sr_connecting: "Connecting to cloud server...",
     auth_code: "Authorization Code",
     deploying: "Deploying...",
     sr_deploying: "Deploying persona to cloud",
-    no_targets: "No deployment targets connected",
+    no_targets: "No cloud services connected",
     status: {
       connected: "Connected",
       loading: "Loading cloud status...",
@@ -979,15 +979,15 @@ export const en = {
 
     // Cloud status panel
     cloud_status: {
-      workers: "Workers",
+      workers: "Runners",
       // Worker states
       worker_idle: "Idle",
-      worker_executing: "Executing",
+      worker_executing: "Running",
       worker_disconnected: "Disconnected",
       activity: "Activity",
-      queue_length: "Queue Length",
-      active_executions: "Active Executions",
-      active_execution: "Active Execution",
+      queue_length: "Waiting in Line",
+      active_executions: "Currently Running",
+      active_execution: "Currently Running",
       claude_token: "Claude Token",
     },
 
@@ -1035,7 +1035,7 @@ export const en = {
     no_output: "No output yet",
     no_background_jobs: "No background jobs running or recent",
     // Subtitle explaining what appears in the background jobs panel
-    background_jobs_hint: "Jobs appear here when you run N8n transforms, template adoptions, template generation, or query debugging",
+    background_jobs_hint: "Tasks appear here when you import workflows, set up templates, generate agents, or run diagnostics",
 
     filters: {
       start_date: "Start Date",
@@ -1083,7 +1083,7 @@ export const en = {
       in_window: "in window",
     },
     observability: {
-      persona_disabled: "Persona auto-disabled",
+      persona_disabled: "Agent auto-paused",
       auto_resolved: "This issue was automatically resolved",
       mark_resolved: "Mark as Resolved",
       manual_fix: "(manual fix applied)",
@@ -1124,10 +1124,10 @@ export const en = {
       title: "Schedule Timeline",
       subtitle: "Aggregated view of all scheduled agent executions",
       // Scheduler engine controls
-      engine_on: "Engine On",
-      engine_off: "Engine Off",
-      engine_on_tooltip: "Scheduler running -- click to pause",
-      engine_off_tooltip: "Scheduler stopped -- click to start",
+      engine_on: "Running",
+      engine_off: "Stopped",
+      engine_on_tooltip: "Schedules are active -- click to pause all",
+      engine_off_tooltip: "Schedules are paused -- click to resume all",
       // {count} = number of active/paused schedules
       active_count: "{count} active",
       paused_count: "{count} paused",
@@ -1135,8 +1135,8 @@ export const en = {
       view_grouped: "Grouped",
       view_timeline: "Timeline",
       // Schedule stats
-      triggers_fired: "Triggers fired: ",
-      events_processed: "Events processed: ",
+      triggers_fired: "Times triggered: ",
+      events_processed: "Events handled: ",
       delivered: "Delivered: ",
       failed_label: "Failed: ",
       loading: "Loading schedules...",
@@ -1156,7 +1156,7 @@ export const en = {
       pause_schedule: "Pause schedule",
       resume_schedule: "Resume schedule",
       // "headless" = agent runs without UI interaction
-      headless_badge: "headless",
+      headless_badge: "background",
     },
 
     // Frequency editor modal (change schedule frequency)
@@ -1164,11 +1164,11 @@ export const en = {
       title: "Change Frequency",
       current: "Current: ",
       quick_presets: "Quick presets",
-      cron_expression: "Cron expression",
-      interval_seconds: "Interval (seconds)",
+      cron_expression: "Schedule expression",
+      interval_seconds: "Repeat every (seconds)",
       previewing: "Previewing...",
       next_runs: "Next runs",
-      invalid_cron: "Invalid cron expression",
+      invalid_cron: "Invalid schedule expression",
     },
 
     // Skipped/missed execution recovery panel
@@ -1194,23 +1194,23 @@ export const en = {
 
     // SLA / reliability dashboard
     sla: {
-      title: "Agent Reliability SLA",
-      subtitle: "Uptime, failure rates, and healing metrics across your agent fleet",
-      loading: "Loading SLA data...",
+      title: "Agent Reliability",
+      subtitle: "How well your agents are performing -- success rates, response times, and auto-recovery across all agents",
+      loading: "Loading reliability data...",
       no_data: "No execution data available.",
       // Summary stat labels
       success_rate: "Success Rate",
       // {successful}/{total} execution count
       executions_summary: "{successful}/{total} executions",
-      avg_latency: "Avg Latency",
+      avg_latency: "Avg Response Time",
       // {count} = number of active agents
       active_agents: "{count} active agents",
       open_issues: "Open Issues",
       // {count} = number of circuit breakers tripped
-      circuit_breakers: "{count} circuit breakers",
-      auto_healed: "Auto-Healed",
+      circuit_breakers: "{count} auto-paused",
+      auto_healed: "Auto-Fixed",
       // {count} = number of known failure patterns
-      known_patterns: "{count} known patterns",
+      known_patterns: "{count} known issues",
       // {days} = number of days in the chart range
       daily_success_rate: "Daily Success Rate -- {days} Days",
       per_agent: "Per-Agent Reliability",
@@ -1218,27 +1218,27 @@ export const en = {
       // SLA card metric labels
       metric_successful: "Successful",
       metric_failed: "Failed",
-      metric_avg_latency: "Avg Latency",
-      metric_p95_latency: "P95 Latency",
+      metric_avg_latency: "Avg Response Time",
+      metric_p95_latency: "Slowest 5%",
       metric_cost: "Cost",
       // "MTBF" = Mean Time Between Failures (reliability metric)
-      metric_mtbf: "MTBF",
-      metric_auto_healed: "Auto-Healed",
+      metric_mtbf: "Time Between Failures",
+      metric_auto_healed: "Auto-Fixed",
       metric_cancelled: "Cancelled",
     },
 
     // Knowledge graph dashboard
     knowledge: {
-      title: "Knowledge Graph",
+      title: "Knowledge",
       // {count} = total entries in the knowledge graph
-      subtitle: "{count} patterns learned from execution history",
-      total_patterns: "Total Patterns",
-      tool_sequences: "Tool Sequences",
-      tool_sequences_hint: "Learned tool chains",
-      failure_patterns: "Failure Patterns",
-      failure_patterns_hint: "Known error signatures",
-      model_insights: "Model Insights",
-      model_insights_hint: "Performance by model",
+      subtitle: "{count} things learned from past runs",
+      total_patterns: "Total Learnings",
+      tool_sequences: "Action Sequences",
+      tool_sequences_hint: "Learned step-by-step workflows",
+      failure_patterns: "Known Issues",
+      failure_patterns_hint: "Recognized error types",
+      model_insights: "AI Model Insights",
+      model_insights_hint: "How each AI model performs",
       // Persona filter -- default option to show global data
       all_personas: "All Personas (Global)",
       all_types: "All Types",
@@ -1248,14 +1248,14 @@ export const en = {
       failure_drilldown_empty: "No matching patterns found -- try selecting a specific persona above.",
       unavailable: "Knowledge data unavailable",
       empty: "No knowledge patterns yet",
-      empty_hint: "Run executions to build the knowledge graph. Every execution teaches the system about tool sequences, failure patterns, and cost-quality tradeoffs.",
+      empty_hint: "Run your agents to start building knowledge. Every run teaches the system about workflows, common issues, and what works best.",
       recent_learnings: "Recent Learnings",
       // Knowledge row metric labels
       successes: "Successes",
       failures: "Failures",
       avg_cost: "Avg Cost",
       avg_duration: "Avg Duration",
-      pattern_data: "Pattern Data",
+      pattern_data: "Details",
     },
 
     // Memory conflict review panel
@@ -1275,8 +1275,8 @@ export const en = {
   templates: {
     // Gallery view
     gallery: {
-      ready_to_deploy: "Ready to Deploy",
-      ready_to_deploy_hint: "Templates with all connectors configured",
+      ready_to_deploy: "Ready to Use",
+      ready_to_deploy_hint: "Templates with all services connected",
       // {count} = number of times template was adopted
       adopted: "{count} adopted",
       // Badge for popular templates
@@ -1291,7 +1291,7 @@ export const en = {
       triggers: "Triggers",
       no_flows: "No flows",
       // Readiness percentage tooltip -- {percent}% of connectors are ready
-      readiness_tooltip: "{percent}% of connectors ready",
+      readiness_tooltip: "{percent}% of services connected",
     },
 
     // Template card action buttons
@@ -1363,8 +1363,8 @@ export const en = {
     connect: {
       all_set: "No connectors needed -- you're all set!",
       title: "Connect Services",
-      subtitle: "Link your credentials to the connectors this template requires.",
-      service_flow: "Service flow",
+      subtitle: "Connect your accounts to the services this template needs.",
+      service_flow: "How services connect",
       // {configured}/{total} connectors linked
       configured_count: "{configured} of {total} configured",
       // {names} = comma-separated list of missing connector names
@@ -1386,8 +1386,8 @@ export const en = {
       phase_tools: "Configuring tools...",
       phase_triggers: "Setting up triggers...",
       phase_prompt: "Building persona prompt...",
-      phase_connectors: "Wiring connectors...",
-      phase_validating: "Validating draft...",
+      phase_connectors: "Connecting services...",
+      phase_validating: "Checking everything...",
       phase_finalizing: "Finalizing...",
       phase_generating: "Generating persona...",
       // Shown below progress bar -- {count} connectors being wired
@@ -1438,7 +1438,7 @@ export const en = {
       // Cron/schedule trigger
       when_label: "When should this run?",
       cron_placeholder: "Every weekday at 9am",
-      cron_hint: "Natural language (e.g. \"Every weekday at 9am\") or cron (e.g. \"0 9 * * 1-5\")",
+      cron_hint: "Plain English (e.g. \"Every weekday at 9am\") or a schedule expression (e.g. \"0 9 * * 1-5\")",
       // Webhook trigger
       webhook_url: "Webhook URL",
       webhook_placeholder: "https://...",
@@ -1576,24 +1576,24 @@ export const en = {
     // Sandbox/trust warning banners
     sandbox: {
       // Sandbox restriction labels
-      restriction_events: "Event emission disabled",
-      restriction_chains: "Chain triggers disabled",
-      restriction_webhooks: "Webhook triggers disabled",
-      restriction_polling: "Polling triggers disabled",
-      restriction_review: "Human review required",
-      restriction_budget: "Budget cap enforced",
+      restriction_events: "Cannot send events",
+      restriction_chains: "Cannot trigger other agents",
+      restriction_webhooks: "Cannot receive web notifications",
+      restriction_polling: "Cannot auto-check for changes",
+      restriction_review: "Needs your approval before acting",
+      restriction_budget: "Spending limit enforced",
       // {max} = maximum concurrent runs allowed
       restriction_concurrent_one: "Max {max} concurrent run",
       restriction_concurrent_other: "Max {max} concurrent runs",
       // Banner titles -- "Unverified" = from unknown source, "Community" = from community
       title_unverified: "Unverified Template",
-      title_community: "Community Template -- Sandbox Mode",
+      title_community: "Community Template -- Restricted Mode",
       // Banner descriptions
       desc_unverified: "This template comes from an unknown source and has not been verified. It will run with restricted capabilities to protect your system.",
-      desc_community: "This community template has not been officially verified. It will run in sandbox mode with restricted capabilities.",
+      desc_community: "This community template has not been officially verified. It will run in restricted mode with limited capabilities.",
       // Compact badge labels
       badge_unverified: "Unverified",
-      badge_sandbox: "Sandbox Mode",
+      badge_sandbox: "Restricted Mode",
     },
   },
 
@@ -1601,11 +1601,11 @@ export const en = {
   //  TRIGGERS -- event triggers, chains, subscriptions
   // -------------------------------------------------------------------
   triggers: {
-    title: "Triggers & Chains",
-    subtitle: "Automate agent workflows with event triggers and chained actions",
+    title: "Triggers & Automations",
+    subtitle: "Set up what causes your agents to run automatically",
     // Tab labels
     tab_triggers: "Triggers",
-    tab_chains: "Chains",
+    tab_chains: "Automations",
     tab_subscriptions: "Subscriptions",
     // Health indicator tooltips
     health_failing: "One or more triggers failing",
@@ -1622,12 +1622,12 @@ export const en = {
     // Trigger type display labels (shown in trigger rows and summaries)
     type_schedule: "Schedule",
     type_webhook: "Webhook",
-    type_polling: "Polling",
+    type_polling: "Auto-Check",
     type_event_listener: "Event Listener",
     type_file_watcher: "File Watcher",
     type_clipboard: "Clipboard",
     type_app_focus: "App Focus",
-    type_composite: "Composite",
+    type_composite: "Combined",
 
     // Trigger status summary (collapsed row config badges)
     webhook_listener: "webhook listener",
@@ -1652,7 +1652,7 @@ export const en = {
       mode_interval: "Interval",
       mode_cron: "Cron",
       // Cron config
-      cron_label: "Cron Expression",
+      cron_label: "Schedule Expression",
       cron_placeholder: "0 9 * * 1-5",
       cron_loading: "Previewing...",
       // Cron presets
@@ -1662,7 +1662,7 @@ export const en = {
       cron_weekly_monday: "Weekly Monday",
       // Schedule preview
       next_runs: "Next runs",
-      invalid_cron: "Invalid cron expression",
+      invalid_cron: "Invalid schedule expression",
     },
 
     // Trigger add form
@@ -1678,9 +1678,9 @@ export const en = {
       test_firing: "Firing...",
       validate_and_fire: "Validate trigger config, then fire",
       validating: "Validating...",
-      dry_run: "Dry Run",
+      dry_run: "Test Run",
       dry_running: "Running...",
-      simulate_hint: "Simulate trigger without executing",
+      simulate_hint: "Preview what would happen without actually running",
       simulating: "Simulating...",
       delete: "Delete",
       delete_confirm: "Confirm delete",
@@ -1690,7 +1690,7 @@ export const en = {
       no_activity: "No activity recorded yet",
       // Webhook details
       webhook_url: "Webhook URL",
-      webhook_secret: "HMAC Secret",
+      webhook_secret: "Security Key",
       copied: "Copied!",
       copy_curl: "Copy sample curl",
       // Execution history section
@@ -1704,7 +1704,7 @@ export const en = {
     // Trigger list (main list view)
     list: {
       empty_title: "No triggers configured yet",
-      empty_hint: "Triggers let your agents react to events automatically -- schedules, webhooks, file changes, and more.",
+      empty_hint: "Triggers let your agents run automatically -- on a schedule, when a file changes, when data arrives, and more.",
       create_first: "Create Your First Trigger",
       // Section header
       event_triggers: "Event Triggers",
@@ -1732,18 +1732,18 @@ export const en = {
 
     // Polling trigger config
     polling: {
-      endpoint_label: "Endpoint URL",
+      endpoint_label: "URL to Check",
       endpoint_placeholder: "https://api.example.com/status",
       // {interval} = polling interval
       check_interval: "Check every {interval}",
-      content_hash: "Content hash diffing",
+      content_hash: "Detect changes only",
     },
 
     // Webhook trigger config
     webhook: {
       url_label: "Webhook URL",
-      secret_label: "HMAC Secret (optional)",
-      secret_placeholder: "Signing secret for payload verification",
+      secret_label: "Security Key (optional)",
+      secret_placeholder: "Secret key to verify incoming data",
     },
 
     // File watcher trigger config
@@ -1756,7 +1756,7 @@ export const en = {
       event_create: "Create",
       event_delete: "Delete",
       recursive: "Recursive",
-      glob_filter: "Glob Filter",
+      glob_filter: "File Pattern",
       glob_placeholder: "*.json",
     },
 
@@ -1765,7 +1765,7 @@ export const en = {
       content_type: "Content Type",
       type_text: "Text",
       type_image: "Image",
-      pattern_label: "Match Pattern (regex)",
+      pattern_label: "Match Pattern",
       pattern_placeholder: "e.g. https?://.*",
       interval_label: "Check Interval (seconds)",
     },
@@ -1792,29 +1792,29 @@ export const en = {
     composite: {
       conditions_label: "Conditions",
       add_condition: "Add condition",
-      operator_all: "All conditions (AND)",
-      operator_any: "Any condition (OR)",
+      operator_all: "All conditions must match",
+      operator_any: "Any condition can match",
       window_label: "Time Window (seconds)",
     },
 
     // Rate limit controls
     rate_limit: {
-      title: "Rate Limiting",
-      max_fires: "Max fires",
-      per_window: "Per window",
+      title: "Speed Limits",
+      max_fires: "Max runs",
+      per_window: "Time period",
       window_seconds: "{seconds}s",
       window_minutes: "{minutes}m",
       window_hours: "{hours}h",
-      currently_limited: "Currently rate-limited",
+      currently_limited: "Currently paused (limit reached)",
     },
 
     // Dry run result display
     dry_run: {
-      title: "Dry Run Result",
-      would_fire: "Would fire",
-      would_not_fire: "Would not fire",
-      matched_conditions: "Matched conditions",
-      payload_preview: "Payload preview",
+      title: "Test Run Result",
+      would_fire: "Would run",
+      would_not_fire: "Would not run",
+      matched_conditions: "Conditions met",
+      payload_preview: "Data preview",
     },
   },
 
@@ -1823,7 +1823,7 @@ export const en = {
   // -------------------------------------------------------------------
   teams: {
     title: "Agent Teams",
-    subtitle: "Design multi-agent pipelines with visual canvas",
+    subtitle: "Combine agents into teams that work together on multi-step tasks",
     // "Auto-Team" = AI automatically groups agents into a team
     auto_team: "Auto-Team",
     new_team: "New Team",
@@ -1857,26 +1857,26 @@ export const en = {
     notifications: {
       // Severity level descriptions (shown in notification settings)
       // "Circuit breaker tripped" = an agent was auto-disabled due to repeated failures
-      severity_critical: "Circuit breaker tripped, CLI not found",
-      severity_high: "Credential errors, session limits, repeated timeouts",
-      severity_medium: "Rate limits, first timeouts (auto-fixable)",
+      severity_critical: "Agent auto-paused due to repeated failures, required tools not found",
+      severity_high: "Login errors, usage limits reached, repeated timeouts",
+      severity_medium: "Speed limits, first timeouts (usually fixes itself)",
       severity_low: "Informational issues",
       // Weekly digest toggle
       weekly_digest: "Weekly Health Digest",
       digest_title: "Agent Health Digest",
       digest_description: "Weekly notification summarizing health issues across all agents with a total health score",
       // Healing alerts section
-      healing_alerts_hint: "Control which healing alerts trigger notifications",
-      healing_severity: "Healing Alert Severity",
+      healing_alerts_hint: "Control which auto-fix alerts trigger notifications",
+      healing_severity: "Auto-Fix Alert Level",
       // Explanation of how desktop notifications work
       notification_hint: "Desktop notifications use the native OS notification system. In-app toasts appear for critical and high severity issues regardless of these settings.",
     },
 
     engine: {
-      loading_capabilities: "Loading engine capabilities...",
-      detecting_providers: "Detecting installed providers...",
-      subtitle: "Configure which CLI providers handle each operation",
-      capability_map: "Operation Capability Map",
+      loading_capabilities: "Loading AI capabilities...",
+      detecting_providers: "Finding installed AI providers...",
+      subtitle: "Choose which AI provider handles each type of task",
+      capability_map: "Task Assignment Map",
       reset_defaults: "Reset to defaults",
       // Provider status labels
       provider_installed: "installed",
@@ -1887,8 +1887,8 @@ export const en = {
       legend_unsupported: "Unsupported (locked)",
       legend_not_installed: "Not installed",
       // Explanation of how defaults were determined
-      defaults_heading: "Defaults from Integration Tests",
-      defaults_description: "The default map is derived from Round 9 business-level integration tests that validate each provider against the exact JSON schemas the backend parses. Enabling a provider for an operation it failed may cause unparseable responses. Claude Code is the only provider that passed all operations at 100%.",
+      defaults_heading: "How Defaults Were Chosen",
+      defaults_description: "The default assignments are based on thorough testing of each AI provider. Changing a provider for a task it wasn't tested for may cause errors. Claude Code is the only provider that works with all task types.",
     },
   },
 
@@ -1900,16 +1900,16 @@ export const en = {
 
     // Compilation stage labels -- shown during AI-powered persona generation
     stages: {
-      assembling_label: "Assembling prompt",
-      assembling_desc: "Building the LLM prompt from persona configuration and instruction",
+      assembling_label: "Preparing instructions",
+      assembling_desc: "Putting together the agent instructions from your settings",
       generating_label: "Generating with AI",
-      generating_desc: "Running Claude to produce the persona design",
-      parsing_label: "Parsing output",
-      parsing_desc: "Extracting structured JSON from the LLM response",
-      checking_label: "Checking feasibility",
-      checking_desc: "Validating suggested tools and connectors are available",
+      generating_desc: "Running Claude to create the agent design",
+      parsing_label: "Reading results",
+      parsing_desc: "Processing the AI response into a usable format",
+      checking_label: "Checking everything works",
+      checking_desc: "Making sure the suggested tools and services are available",
       saving_label: "Saving result",
-      saving_desc: "Writing the compiled design to the database",
+      saving_desc: "Saving the finished design",
     },
   },
 
@@ -1973,13 +1973,13 @@ export const en = {
 
     // Performance charts
     performance: {
-      cost_per_execution: "Cost per Execution",
-      cost_delta: "Cost Delta",
-      prod_baseline: "prod baseline",
-      latency_distribution: "Latency Distribution",
-      latency_delta: "Latency Delta",
-      error_rate_trend: "Error Rate Trend",
-      error_delta: "Error Delta",
+      cost_per_execution: "Cost per Run",
+      cost_delta: "Cost Change",
+      prod_baseline: "current version",
+      latency_distribution: "Response Time Spread",
+      latency_delta: "Speed Change",
+      error_rate_trend: "Error Rate Over Time",
+      error_delta: "Error Change",
     },
   },
 
@@ -1987,8 +1987,8 @@ export const en = {
   //  TESTS -- sandbox test runner, test suites
   // -------------------------------------------------------------------
   tests: {
-    title: "Sandbox Test Runner",
-    subtitle: "Test your persona across multiple LLM models with auto-generated scenarios",
+    title: "Test Runner",
+    subtitle: "Test your agent with different AI models using auto-generated scenarios",
     // Warnings shown when agent is missing configuration
     no_prompt: "This persona has no prompt configured. Add a prompt first.",
     no_tools: "This persona has no tools assigned. Add tools for richer testing.",
@@ -2135,7 +2135,7 @@ export const en = {
     not_found: "The requested resource was not found",
     validation: "Invalid input: {detail}",
     auth: "Authentication failed -- check your credentials",
-    rate_limited: "Too many requests -- try again in a moment",
+    rate_limited: "Too many requests -- please wait a moment and try again",
     network_offline: "No internet connection",
     database: "Database error -- please restart the app",
     internal: "An unexpected error occurred",
@@ -2152,7 +2152,7 @@ export const en = {
     credentials_subtitle: "Add API keys and service connections so your agents can interact with external tools.",
     // Triggers empty state
     triggers_title: "This agent runs manually only",
-    triggers_subtitle: "Add a trigger to automate it -- schedules, webhooks, or event-driven.",
+    triggers_subtitle: "Add a trigger to automate it -- run on a schedule, when data arrives, or when something changes.",
     // Executions empty state (with onboarding steps)
     executions_title: "No executions yet",
     executions_subtitle: "Get started in three steps to see activity here.",
@@ -2163,8 +2163,8 @@ export const en = {
     events_title: "No event subscriptions yet",
     events_subtitle: "Subscribe to events so this agent reacts automatically when things happen.",
     // Tools/connectors empty state
-    tools_title: "No tools or connectors configured",
-    tools_subtitle: "Link external services so your agent can take actions and access data.",
+    tools_title: "No tools or services connected",
+    tools_subtitle: "Connect external services so your agent can take actions and access data.",
     // Use cases empty state
     use_cases_title: "No use cases defined yet",
     use_cases_subtitle: "Define what this agent should do -- import from a workflow or describe it in plain language.",
@@ -2186,8 +2186,8 @@ export const en = {
     required: "{field} is required",
     min_length: "{field} must be at least {min} characters",
     min_value: "{field} must be at least {min}",
-    invalid_cron: "Invalid cron expression",
-    invalid_separator: "Source filter contains an invalid separator sequence",
+    invalid_cron: "Invalid schedule expression",
+    invalid_separator: "The filter contains an invalid separator",
     passphrase_min: "Passphrase must be at least 8 characters",
     passphrase_prompt: "Please enter the passphrase used during export",
     at_least_one: "At least one {field} is required",
@@ -2241,7 +2241,7 @@ export const en = {
     trigger_config_ok: "Config OK. Execution {id} started",
     // {detail} = validation failure reason
     trigger_validation_failed: "Validation failed -- {detail}",
-    dry_run_failed: "Dry run failed",
+    dry_run_failed: "Test run failed",
     activity_log_failed: "Failed to load activity log",
 
     // Schedule operations
@@ -2266,7 +2266,7 @@ export const en = {
 
     // Vault/credentials
     credential_delete_failed: "Failed to delete recipe",
-    credentials_expired: "Credentials expired or revoked. Please reconnect to the cloud orchestrator.",
+    credentials_expired: "Credentials expired or revoked. Please reconnect to the cloud server.",
 
     // Automation store
     automations_load_failed: "Failed to load automations",

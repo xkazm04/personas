@@ -47,13 +47,8 @@ export function StatusIcon({ status }: { status: string }) {
   }
 }
 
-export function formatDuration(seconds: number | null): string {
-  if (seconds == null) return '\u2014';
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}m ${s}s` : `${m}m`;
-}
+import { formatDuration as _formatDuration } from '@/lib/utils/formatters';
+export const formatDuration = (seconds: number | null) => _formatDuration(seconds, { unit: 's' });
 
 export function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();

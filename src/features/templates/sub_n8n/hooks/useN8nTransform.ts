@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('n8n-transform');
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
@@ -271,7 +274,7 @@ export function useN8nTransform(
         unlisten = fn;
       }
     }).catch((err) => {
-      console.warn('[useN8nTransform] Failed to listen for section events:', err);
+      logger.warn('Failed to listen for section events', { err });
     });
     return () => {
       cancelled = true;

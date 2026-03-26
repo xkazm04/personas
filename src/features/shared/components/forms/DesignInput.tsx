@@ -4,6 +4,9 @@ import { Button } from '@/features/shared/components/buttons';
 import type { DesignFileType, DesignFile, DesignContext } from '@/lib/types/frontendTypes';
 import { ACCEPTED_EXTENSIONS, detectFileType } from './designInputHelpers';
 import { TypeSelectorModal, AttachedFilesRow, ReferencesTextarea } from './DesignInputAttachments';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("design-input");
 
 interface DesignInputProps {
   instruction: string;
@@ -34,11 +37,16 @@ export function DesignInput({
   const onDesignContextChangeRef = useRef(onDesignContextChange);
   onDesignContextChangeRef.current = onDesignContextChange;
 
+  const MAX_HEIGHT_VH = 60;
+
   const handleTextareaInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onInstructionChange(e.target.value);
     const el = e.target;
     el.style.height = 'auto';
-    el.style.height = `${Math.max(200, el.scrollHeight)}px`;
+    const maxPx = window.innerHeight * (MAX_HEIGHT_VH / 100);
+    const desired = Math.max(200, el.scrollHeight);
+    el.style.height = `${Math.min(desired, maxPx)}px`;
+    el.style.overflowY = desired > maxPx ? 'auto' : 'hidden';
   }, [onInstructionChange]);
 
   const acceptedSet = useRef(new Set(ACCEPTED_EXTENSIONS.split(',').map((e) => e.trim())));
@@ -64,7 +72,7 @@ export function DesignInput({
       }
     };
     reader.onerror = () => {
-      console.error('Failed to read file:', file.name, reader.error);
+      logger.error('Failed to read file', { fileName: file.name, error: reader.error });
     };
     reader.readAsText(file);
   }, []);
@@ -169,7 +177,7 @@ export function DesignInput({
           placeholder={`Describe what this persona should do...\n\nExamples:\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\n  - Watch GitHub webhooks and post summaries to Slack\n  - Analyze our API logs daily and flag anomalies`}
           className="w-full min-h-[200px] bg-background/50 border border-primary/15 rounded-xl p-4 pb-12 typo-body text-foreground resize-none focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
           spellCheck
-          style={{ overflow: 'hidden' }}
+          style={{ overflow: 'hidden', maxHeight: `${MAX_HEIGHT_VH}vh` }}
         />
 
         {/* Action bar */}
@@ -208,11 +216,16 @@ export function DesignInput({
             References
           </Button>
 
-          {(designContext?.files?.length ?? 0) > 0 && (
-            <span className="ml-auto typo-body text-muted-foreground/80">
-              {designContext.files.length} file{designContext.files.length !== 1 ? 's' : ''} attached
+          <span className="ml-auto flex items-center gap-2">
+            {(designContext?.files?.length ?? 0) > 0 && (
+              <span className="typo-body text-muted-foreground/80">
+                {designContext.files.length} file{designContext.files.length !== 1 ? 's' : ''} attached
+              </span>
+            )}
+            <span className={`typo-body tabular-nums ${instruction.length > 5000 ? 'text-amber-400/80' : 'text-muted-foreground/50'}`}>
+              {instruction.length.toLocaleString()}
             </span>
-          )}
+          </span>
         </div>
       </div>
       <p className="typo-body text-muted-foreground/60 px-1">Press Enter to submit, Shift+Enter for new line.</p>

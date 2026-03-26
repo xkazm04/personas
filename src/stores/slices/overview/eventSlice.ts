@@ -3,6 +3,9 @@ import type { OverviewStore } from "../../storeTypes";
 import type { PersonaEvent } from "@/lib/types/types";
 import { listEvents } from "@/api/overview/events";
 import { deduplicateKeyedFetch } from "@/lib/utils/deduplicateFetch";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("events");
 
 
 export interface EventSlice {
@@ -29,7 +32,7 @@ export const createEventSlice: StateCreator<OverviewStore, [], [], EventSlice> =
       for (const e of events) eventIndex.set(e.id, e);
       set({ recentEvents: events, pendingEventCount: events.filter((e) => e.status === "pending").length });
     } catch (err) {
-      console.warn("[eventSlice] fetchRecentEvents failed:", err);
+      logger.warn("fetchRecentEvents failed", { error: String(err) });
     }
   }),
 

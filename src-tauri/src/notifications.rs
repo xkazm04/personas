@@ -1,8 +1,11 @@
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicU64, Ordering};
 use tauri::AppHandle;
 use tauri_plugin_notification::NotificationExt;
+use ts_rs::TS;
 
 use crate::engine::crypto::SecureString;
+use crate::engine::event_registry::{emit_event, event_name};
 
 /// Per-persona notification preferences parsed from `notification_channels` JSON.
 #[derive(Debug, Deserialize)]
@@ -69,11 +72,139 @@ fn parse_channels(json: Option<&str>) -> Vec<ExternalChannel> {
 }
 
 // ---------------------------------------------------------------------------
+// Delivery metrics (in-memory, process-scoped)
+// ---------------------------------------------------------------------------
+
+/// Per-channel-type delivery counters. Uses atomics for lock-free concurrent access
+/// from multiple tokio::spawn tasks.
+struct ChannelMetrics {
+    attempted: AtomicU64,
+    succeeded: AtomicU64,
+    failed: AtomicU64,
+    /// Cumulative latency in milliseconds (divide by succeeded for average).
+    total_latency_ms: AtomicU64,
+    /// Maximum observed latency in milliseconds.
+    max_latency_ms: AtomicU64,
+    /// Consecutive failures (resets on success).
+    consecutive_failures: AtomicU64,
+}
+
+impl ChannelMetrics {
+    const fn new() -> Self {
+        Self {
+            attempted: AtomicU64::new(0),
+            succeeded: AtomicU64::new(0),
+            failed: AtomicU64::new(0),
+            total_latency_ms: AtomicU64::new(0),
+            max_latency_ms: AtomicU64::new(0),
+            consecutive_failures: AtomicU64::new(0),
+        }
+    }
+
+    fn record_success(&self, latency_ms: u64) {
+        self.attempted.fetch_add(1, Ordering::Relaxed);
+        self.succeeded.fetch_add(1, Ordering::Relaxed);
+        self.total_latency_ms.fetch_add(latency_ms, Ordering::Relaxed);
+        self.consecutive_failures.store(0, Ordering::Relaxed);
+        // Update max latency (CAS loop)
+        let mut current = self.max_latency_ms.load(Ordering::Relaxed);
+        while latency_ms > current {
+            match self.max_latency_ms.compare_exchange_weak(
+                current, latency_ms, Ordering::Relaxed, Ordering::Relaxed,
+            ) {
+                Ok(_) => break,
+                Err(actual) => current = actual,
+            }
+        }
+    }
+
+    fn record_failure(&self) {
+        self.attempted.fetch_add(1, Ordering::Relaxed);
+        self.failed.fetch_add(1, Ordering::Relaxed);
+        self.consecutive_failures.fetch_add(1, Ordering::Relaxed);
+    }
+
+    fn snapshot(&self) -> ChannelDeliveryStats {
+        let attempted = self.attempted.load(Ordering::Relaxed);
+        let succeeded = self.succeeded.load(Ordering::Relaxed);
+        let failed = self.failed.load(Ordering::Relaxed);
+        let total_latency_ms = self.total_latency_ms.load(Ordering::Relaxed);
+        let avg_latency_ms = if succeeded > 0 { total_latency_ms as f64 / succeeded as f64 } else { 0.0 };
+        ChannelDeliveryStats {
+            attempted,
+            succeeded,
+            failed,
+            avg_latency_ms,
+            max_latency_ms: self.max_latency_ms.load(Ordering::Relaxed),
+            consecutive_failures: self.consecutive_failures.load(Ordering::Relaxed),
+        }
+    }
+}
+
+struct DeliveryMetrics {
+    slack: ChannelMetrics,
+    telegram: ChannelMetrics,
+    email: ChannelMetrics,
+}
+
+impl DeliveryMetrics {
+    fn for_channel(&self, channel_type: &str) -> &ChannelMetrics {
+        match channel_type {
+            "slack" => &self.slack,
+            "telegram" => &self.telegram,
+            "email" => &self.email,
+            // Unknown channels fall back to slack (won't be reached in practice)
+            _ => &self.slack,
+        }
+    }
+}
+
+static DELIVERY_METRICS: DeliveryMetrics = DeliveryMetrics {
+    slack: ChannelMetrics::new(),
+    telegram: ChannelMetrics::new(),
+    email: ChannelMetrics::new(),
+};
+
+/// Per-channel stats returned to the frontend.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ChannelDeliveryStats {
+    pub attempted: u64,
+    pub succeeded: u64,
+    pub failed: u64,
+    pub avg_latency_ms: f64,
+    pub max_latency_ms: u64,
+    pub consecutive_failures: u64,
+}
+
+/// Aggregated delivery stats for all channel types.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationDeliveryStats {
+    pub slack: ChannelDeliveryStats,
+    pub telegram: ChannelDeliveryStats,
+    pub email: ChannelDeliveryStats,
+}
+
+/// Payload emitted via Tauri event after each delivery attempt.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationDeliveryEvent {
+    pub channel_type: String,
+    pub success: bool,
+    pub latency_ms: u64,
+    pub error: Option<String>,
+    pub consecutive_failures: u64,
+}
+
+// ---------------------------------------------------------------------------
 // Multi-channel delivery
 // ---------------------------------------------------------------------------
 
 /// Deliver a notification to all enabled external channels (fire-and-forget).
-fn deliver_to_channels(channels_json: Option<&str>, title: &str, body: &str) {
+fn deliver_to_channels(app: &AppHandle, channels_json: Option<&str>, title: &str, body: &str) {
     let channels = parse_channels(channels_json);
     let enabled: Vec<_> = channels.into_iter().filter(|c| c.enabled).collect();
     if enabled.is_empty() {
@@ -81,8 +212,11 @@ fn deliver_to_channels(channels_json: Option<&str>, title: &str, body: &str) {
     }
     let title = title.to_owned();
     let body = body.to_owned();
+    let app = app.clone();
     tokio::spawn(async move {
         for ch in enabled {
+            let metrics = DELIVERY_METRICS.for_channel(&ch.channel_type);
+            let start = std::time::Instant::now();
             let result = match ch.channel_type.as_str() {
                 "slack" => deliver_slack(&ch, &title, &body).await,
                 "telegram" => deliver_telegram(&ch, &title, &body).await,
@@ -92,9 +226,33 @@ fn deliver_to_channels(channels_json: Option<&str>, title: &str, body: &str) {
                     Ok(())
                 }
             };
-            if let Err(e) = result {
-                tracing::warn!("Failed to deliver to {} channel: {}", ch.channel_type, e);
-            }
+            let latency_ms = start.elapsed().as_millis() as u64;
+
+            let (success, error) = match &result {
+                Ok(()) => {
+                    metrics.record_success(latency_ms);
+                    (true, None)
+                }
+                Err(e) => {
+                    metrics.record_failure();
+                    tracing::warn!(
+                        channel_type = %ch.channel_type,
+                        consecutive_failures = metrics.consecutive_failures.load(Ordering::Relaxed),
+                        latency_ms,
+                        "Failed to deliver to {} channel: {}", ch.channel_type, e
+                    );
+                    (false, Some(e.clone()))
+                }
+            };
+
+            let event = NotificationDeliveryEvent {
+                channel_type: ch.channel_type.clone(),
+                success,
+                latency_ms,
+                error,
+                consecutive_failures: metrics.consecutive_failures.load(Ordering::Relaxed),
+            };
+            emit_event(&app, event_name::NOTIFICATION_DELIVERY, &event);
         }
     });
 }
@@ -337,7 +495,7 @@ pub fn notify_execution_completed_rich(
         }
     }
     send(app, &title, &body);
-    deliver_to_channels(channels, &title, &body);
+    deliver_to_channels(app, channels, &title, &body);
 }
 
 pub fn notify_manual_review(
@@ -352,7 +510,7 @@ pub fn notify_manual_review(
     let heading = "Manual Review Needed";
     let body = format!("{}: {}", persona_name, title);
     send(app, heading, &body);
-    deliver_to_channels(channels, heading, &body);
+    deliver_to_channels(app, channels, heading, &body);
 }
 
 pub fn notify_new_message(
@@ -366,7 +524,7 @@ pub fn notify_new_message(
     }
     let heading = format!("Message from {}", persona_name);
     send(app, &heading, title);
-    deliver_to_channels(channels, &heading, title);
+    deliver_to_channels(app, channels, &heading, title);
 }
 
 pub fn notify_healing_issue(
@@ -391,7 +549,7 @@ pub fn notify_healing_issue(
     };
     let heading = format!("Healing Alert ({})", severity);
     send(app, &heading, &body);
-    deliver_to_channels(channels, &heading, &body);
+    deliver_to_channels(app, channels, &heading, &body);
 }
 
 pub fn notify_n8n_transform_completed(
@@ -449,6 +607,19 @@ pub async fn test_notification_channel(
     }
 
     Ok("Notification delivered successfully".into())
+}
+
+// ---------------------------------------------------------------------------
+// Delivery stats query command
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn get_notification_delivery_stats() -> NotificationDeliveryStats {
+    NotificationDeliveryStats {
+        slack: DELIVERY_METRICS.slack.snapshot(),
+        telegram: DELIVERY_METRICS.telegram.snapshot(),
+        email: DELIVERY_METRICS.email.snapshot(),
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -254,11 +254,67 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "What time should the morning digest be generated?",
+        "type": "select",
+        "options": [
+          "6:00 AM",
+          "7:00 AM",
+          "8:00 AM",
+          "9:00 AM"
+        ],
+        "default": "7:00 AM",
+        "context": "Sets the daily trigger time for digest generation.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "Which email accounts should be included in the digest?",
+        "type": "select",
+        "options": [
+          "Primary inbox only",
+          "Primary + promotions",
+          "All folders",
+          "Custom label/filter"
+        ],
+        "default": "Primary inbox only",
+        "context": "Determines which email sources the agent scans for unread messages.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How detailed should email summaries be?",
+        "type": "select",
+        "options": [
+          "Subject line only",
+          "1-sentence summary",
+          "2-3 sentence summary",
+          "Full preview"
+        ],
+        "default": "1-sentence summary",
+        "context": "Controls the length of each email summary in the digest report.",
+        "dimension": "messages"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should the agent learn and improve sender importance rankings over time?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "Uses agent memory to refine which senders are prioritized in future digests.",
+        "dimension": "memory"
+      }
+    ],
     "persona_meta": {
       "name": "T: Email Morning Digest",
       "icon": "Mail",
       "color": "#3b82f6"
     }
-  },
-  "is_published": false
+  }
 }

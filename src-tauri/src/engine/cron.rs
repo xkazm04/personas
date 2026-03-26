@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Timelike, Utc, Duration};
+use chrono::{DateTime, Datelike, Timelike, Utc, Local, Duration};
 
 /// Parsed cron schedule (5-field standard cron) using bitfield matching.
 ///
@@ -180,7 +180,7 @@ fn day_matches(schedule: &CronSchedule, day: u32, weekday: u32) -> bool {
     }
 }
 
-/// Check if a datetime matches the schedule.
+/// Check if a datetime matches the schedule (evaluated in UTC).
 fn matches(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
     let minute = dt.minute();
     let hour = dt.hour();
@@ -194,7 +194,24 @@ fn matches(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
         && day_matches(schedule, day, weekday)
 }
 
-/// Compute the next fire time strictly after `from`.
+/// Check if a UTC datetime matches the schedule when interpreted in the system's
+/// local timezone. This ensures cron "9" means 9:00 local, consistent with
+/// ActiveWindow which also operates in local time.
+fn matches_local(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
+    let local = dt.with_timezone(&Local);
+    let minute = local.minute();
+    let hour = local.hour();
+    let day = local.day();
+    let month = local.month();
+    let weekday = local.weekday().num_days_from_sunday(); // 0=Sun
+
+    schedule.has_minute(minute)
+        && schedule.has_hour(hour)
+        && schedule.has_month(month)
+        && day_matches(schedule, day, weekday)
+}
+
+/// Compute the next fire time strictly after `from` (cron evaluated in UTC).
 /// Returns None if no valid time found within 4 years (safety limit).
 pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<DateTime<Utc>> {
     let start = from
@@ -244,6 +261,81 @@ pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<Da
 
         if !schedule.has_hour(current.hour()) {
             current = (current + Duration::hours(1)).with_minute(0).unwrap();
+            continue;
+        }
+
+        current += Duration::minutes(1);
+    }
+
+    None
+}
+
+/// Compute the next fire time strictly after `from`, evaluating the cron
+/// expression in the system's local timezone.
+///
+/// This matches user expectations: cron "0 9 * * *" fires at 9:00 local time,
+/// consistent with how `ActiveWindow::is_active_at()` interprets hours.
+/// The returned `DateTime<Utc>` is the UTC instant when the local clock
+/// reaches the next matching minute.
+pub fn next_fire_time_local(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<DateTime<Utc>> {
+    let start = from
+        .with_second(0)
+        .unwrap()
+        .with_nanosecond(0)
+        .unwrap()
+        + Duration::minutes(1);
+
+    let max_iterations = 4 * 366 * 24 * 60; // ~4 years of minutes
+    let mut current = start;
+
+    for _ in 0..max_iterations {
+        if matches_local(schedule, &current) {
+            return Some(current);
+        }
+
+        // Optimization: skip ahead using local-time components
+        let local = current.with_timezone(&Local);
+
+        if !schedule.has_month(local.month()) {
+            let next_month = if local.month() == 12 {
+                local
+                    .with_year(local.year() + 1)
+                    .unwrap()
+                    .with_month(1)
+                    .unwrap()
+                    .with_day(1)
+                    .unwrap()
+            } else {
+                local
+                    .with_month(local.month() + 1)
+                    .unwrap()
+                    .with_day(1)
+                    .unwrap()
+            };
+            current = next_month
+                .with_hour(0)
+                .unwrap()
+                .with_minute(0)
+                .unwrap()
+                .with_timezone(&Utc);
+            continue;
+        }
+
+        if !day_matches(schedule, local.day(), local.weekday().num_days_from_sunday()) {
+            current = (local + Duration::days(1))
+                .with_hour(0)
+                .unwrap()
+                .with_minute(0)
+                .unwrap()
+                .with_timezone(&Utc);
+            continue;
+        }
+
+        if !schedule.has_hour(local.hour()) {
+            current = (local + Duration::hours(1))
+                .with_minute(0)
+                .unwrap()
+                .with_timezone(&Utc);
             continue;
         }
 

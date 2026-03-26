@@ -4,7 +4,8 @@ import { RotateCw, Copy, Check, ArrowLeftRight } from 'lucide-react';
 import { formatTimestamp } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { maskSensitiveJson, sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
+import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
+import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 
 interface ExecutionRowExpandedProps {
   execution: PersonaExecution;
@@ -77,7 +78,7 @@ export function ExecutionRowExpanded({
       {execution.error_message && (
         <div>
           <span className="text-red-400/70 typo-code uppercase">Error</span>
-          <p className="mt-1 typo-body text-red-400/80">{showRaw ? execution.error_message : sanitizeErrorMessage(execution.error_message)}</p>
+          <p className="mt-1 typo-body text-red-400/80">{showRaw ? execution.error_message : sanitizeErrorForDisplay(execution.error_message, 'execution-row-expanded')}</p>
         </div>
       )}
       {/* Action buttons */}

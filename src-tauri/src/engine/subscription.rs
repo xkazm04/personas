@@ -156,6 +156,7 @@ pub struct AutoRollbackSubscription {
 /// OAuth token refresh subscription: proactively refresh tokens before expiry.
 pub struct OAuthRefreshSubscription {
     pub pool: DbPool,
+    pub app: AppHandle,
 }
 
 /// Periodic sweep for zombie executions stuck in 'running' state.
@@ -496,7 +497,7 @@ impl ReactiveSubscription for OAuthRefreshSubscription {
     }
 
     async fn tick(&self) {
-        super::oauth_refresh::oauth_refresh_tick(&self.pool).await;
+        super::oauth_refresh::oauth_refresh_tick(&self.pool, Some(&self.app)).await;
     }
 }
 

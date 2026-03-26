@@ -43,8 +43,8 @@ export const COMPILATION_STAGES: CompilationStageInfo[] = [
     description: 'Extracting structured JSON from the LLM response',
   },
   {
-    stage: 'feasibility_check',
-    label: 'Checking feasibility',
+    stage: 'validation',
+    label: 'Validating result',
     description: 'Validating suggested tools and connectors are available',
   },
   {
@@ -72,7 +72,7 @@ export function phaseToStage(phase: DesignPhase): CompilationStage | null {
       return 'llm_generation';
     case 'preview':
       // Preview means parsing and feasibility are complete
-      return 'feasibility_check';
+      return 'validation';
     case 'applying':
       // Applying means we're in the persist stage
       return 'persist';

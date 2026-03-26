@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
 export interface WizardStep {
@@ -25,8 +26,11 @@ export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
               {/* Rail connecting to previous node */}
               {i > 0 && (
                 <div className="w-8 h-0.5 bg-primary/10 relative overflow-hidden">
-                  <div
-                    className="animate-fade-in absolute inset-y-0 left-0 bg-emerald-500/50"
+                  <motion.div
+                    className="absolute inset-y-0 left-0 bg-emerald-500/50"
+                    initial={{ width: '0%' }}
+                    animate={{ width: i < currentIndex ? '100%' : '0%' }}
+                    transition={RAIL_SPRING}
                   />
                 </div>
               )}

@@ -9,6 +9,9 @@ import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscr
 import { AddSubscriptionForm } from './AddSubscriptionForm';
 import { SubscriptionRow, useConfirmDelete } from './SubscriptionForm';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("event-subscription-settings");
 
 interface EventSubscriptionSettingsProps {
   personaId: string;
@@ -47,7 +50,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
       setError(null);
       const updated = await updateSubscription(sub.id, { enabled: !sub.enabled, event_type: sub.event_type, source_filter: sub.source_filter });
       setSubscriptions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-    } catch (e) { setError('Failed to toggle subscription'); console.error('Failed to toggle subscription:', e); }
+    } catch (e) { setError('Failed to toggle subscription'); logger.error('Failed to toggle subscription', { error: e }); }
   };
 
   const handleDelete = async (id: string) => {
@@ -56,7 +59,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
       const deleted = await deleteSubscription(id);
       if (!deleted) { setError('Delete failed. Subscription may still exist.'); return; }
       setSubscriptions((prev) => prev.filter((s) => s.id !== id));
-    } catch (e) { setError('Failed to delete subscription'); console.error('Failed to delete subscription:', e); }
+    } catch (e) { setError('Failed to delete subscription'); logger.error('Failed to delete subscription', { error: e }); }
   };
 
   const handleAdd = async (eventType: string, sourceFilter: string) => {
@@ -64,7 +67,7 @@ export function EventSubscriptionSettings({ personaId }: EventSubscriptionSettin
       const created = await createSubscription({ persona_id: personaId, event_type: eventType, source_filter: sourceFilter || null, enabled: true, use_case_id: null });
       setSubscriptions((prev) => [...prev, created]);
       setShowAddForm(false);
-    } catch (e) { console.error('Failed to create subscription:', e); }
+    } catch (e) { logger.error('Failed to create subscription', { error: e }); }
   };
 
   return (

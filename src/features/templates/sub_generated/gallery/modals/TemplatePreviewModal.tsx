@@ -8,6 +8,7 @@ import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { getCachedDesignResult } from '../cards/reviewParseCache';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
+import { BORDER_SUBTLE, BORDER_DEFAULT } from '@/lib/utils/designTokens';
 
 /**
  * Build a minimal draft JSON from a AgentIR to pass to testN8nDraft.
@@ -94,10 +95,10 @@ export function TemplatePreviewModal({
       onClose={onClose}
       titleId="template-preview-title"
       maxWidthClass="max-w-5xl"
-      panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      panelClassName={`max-h-[85vh] bg-background border ${BORDER_DEFAULT} rounded-2xl shadow-2xl flex flex-col overflow-hidden`}
     >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between gap-4 flex-shrink-0">
+        <div className={`px-6 py-4 border-b ${BORDER_SUBTLE} flex items-center justify-between gap-4 flex-shrink-0`}>
           <div className="min-w-0 flex-1">
             <h2 id="template-preview-title" className="text-lg font-semibold text-foreground/90 truncate">
               Preview: {review.test_case_name}
@@ -160,7 +161,7 @@ export function TemplatePreviewModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-primary/10 flex items-center justify-between flex-shrink-0">
+        <div className={`px-6 py-3 border-t ${BORDER_SUBTLE} flex items-center justify-between flex-shrink-0`}>
           <div className="flex items-center gap-2">
             {phase === 'idle' && hasStarted && (
               <span className="text-sm text-muted-foreground/50">Ready</span>

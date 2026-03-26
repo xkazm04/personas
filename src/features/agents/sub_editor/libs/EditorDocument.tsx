@@ -1,5 +1,8 @@
 import { createContext, useContext, useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import type { PersonaOperation } from '@/api/agents/personas';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("editor-document");
 
 /**
  * EditorDocument -- unified dirty-state, save registry, optimistic transaction
@@ -157,7 +160,7 @@ function createDirtyStore(): DirtyStore {
         if (result.status === 'fulfilled') {
           succeededTabs.push(tab);
         } else {
-          console.error(`Failed to save tab "${tab}":`, result.reason);
+          logger.error(`Failed to save tab`, { tab, reason: result.reason });
           failedTabs.push(tab);
         }
       }
@@ -228,7 +231,7 @@ function createDirtyStore(): DirtyStore {
         // Push to redo so the user can re-apply
         redoStack.push(entry);
       } catch (err) {
-        console.error('Undo failed:', err);
+        logger.error('Undo failed', { error: err });
         // Put it back -- the undo didn't succeed
         undoStack.push(entry);
       }
@@ -243,7 +246,7 @@ function createDirtyStore(): DirtyStore {
         await entry.restore();
         undoStack.push(entry);
       } catch (err) {
-        console.error('Redo failed:', err);
+        logger.error('Redo failed', { error: err });
         redoStack.push(entry);
       }
       notify();

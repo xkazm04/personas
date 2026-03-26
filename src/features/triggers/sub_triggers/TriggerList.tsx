@@ -1,6 +1,9 @@
 import { useMemo, useState, useEffect } from 'react';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("trigger-list");
 import { ChevronRight, Zap, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { listAllTriggers } from "@/api/pipeline/triggers";
@@ -44,7 +47,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
         setAllTriggers(triggersMap);
         setTriggerHealthMap(healthMap as Record<string, TriggerHealth>);
       } catch (error) {
-        console.error('Failed to fetch triggers:', error);
+        logger.error('Failed to fetch triggers', { error: String(error) });
         if (!stale) {
           setAllTriggers({});
           setTriggerHealthMap({});

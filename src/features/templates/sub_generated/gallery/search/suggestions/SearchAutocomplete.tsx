@@ -19,6 +19,8 @@ interface SearchAutocompleteProps {
   onSelect: (chip: QueryChip) => void;
   /** Called to dismiss the dropdown */
   onDismiss: () => void;
+  /** Reports the focused option ID for aria-activedescendant on the input */
+  onFocusChange?: (optionId: string | undefined) => void;
 }
 
 export function SearchAutocomplete({
@@ -28,6 +30,7 @@ export function SearchAutocomplete({
   activeChips,
   onSelect,
   onDismiss,
+  onFocusChange,
 }: SearchAutocompleteProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [focusIndex, setFocusIndex] = useState(-1);
@@ -126,6 +129,11 @@ export function SearchAutocomplete({
 
   useClickOutside(containerRef, true, onDismiss);
 
+  // Report focused option ID to parent for aria-activedescendant
+  useEffect(() => {
+    onFocusChange?.(focusIndex >= 0 ? `search-suggestion-${focusIndex}` : undefined);
+  }, [focusIndex, onFocusChange]);
+
   if (suggestions.length === 0) return null;
 
   return (
@@ -133,6 +141,7 @@ export function SearchAutocomplete({
       <div
           className="animate-fade-slide-in bg-background border border-primary/15 rounded-xl shadow-lg overflow-hidden"
           role="listbox"
+          id="search-suggestions-listbox"
           aria-label="Search suggestions"
         >
           <div className="px-3 py-1.5 text-sm uppercase tracking-wider text-muted-foreground/50 border-b border-primary/10">
@@ -148,6 +157,7 @@ export function SearchAutocomplete({
               return (
                 <button
                   key={suggestion.chip.value}
+                  id={`search-suggestion-${idx}`}
                   role="option"
                   aria-selected={isFocused}
                   onClick={() => onSelect(suggestion.chip)}

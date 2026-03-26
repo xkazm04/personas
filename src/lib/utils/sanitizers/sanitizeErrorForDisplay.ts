@@ -8,6 +8,9 @@
  */
 
 import { sanitizeErrorMessage } from './maskSensitive';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("sanitize-error");
 
 /** Patterns that indicate the message contains internal implementation details */
 const INTERNAL_DETAIL_PATTERNS = [
@@ -61,7 +64,7 @@ export function sanitizeErrorForDisplay(raw: string | null | undefined, context?
   // Check for internal implementation details
   for (const pattern of INTERNAL_DETAIL_PATTERNS) {
     if (pattern.test(raw)) {
-      console.error(`[${context ?? 'error'}] Internal error detail redacted from UI:`, raw);
+      logger.error("Internal error detail redacted from UI", { context: context ?? 'error', raw });
       return GENERIC_ERROR;
     }
   }
@@ -79,7 +82,7 @@ export function sanitizeErrorForDisplay(raw: string | null | undefined, context?
   const redacted = sanitizeErrorMessage(raw);
   if (redacted !== raw) {
     // Something was redacted — the original had sensitive content
-    console.error(`[${context ?? 'error'}] Error message redacted for UI:`, raw);
+    logger.error("Error message redacted for UI", { context: context ?? 'error', raw });
   }
 
   return redacted;

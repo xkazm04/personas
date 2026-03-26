@@ -5,7 +5,7 @@
  * branches (e.g. OAuth when API key exists, capture when autoCred filled
  * values, verify when no healthcheck config).
  */
-import type { NegotiationStep } from './useCredentialNegotiator';
+import type { NegotiationStep, AuthDetectionInfo } from './useCredentialNegotiator';
 
 // -- Runtime context for predicate evaluation ----------------------
 
@@ -18,6 +18,8 @@ export interface StepGraphContext {
   allFieldsPrefilled: boolean;
   /** Whether the connector has a healthcheck endpoint */
   hasHealthcheck: boolean;
+  /** Auth detection results — services the user already has active sessions for */
+  authenticatedServices: AuthDetectionInfo[];
 }
 
 // -- Graph types ---------------------------------------------------
@@ -67,6 +69,31 @@ const SKIP_PREDICATES: SkipPredicate[] = [
     if (step.action_type !== 'create_account') return null;
     if (ctx.allFieldsPrefilled) return 'Account credentials already available';
     return null;
+  },
+
+  // Skip account creation when auth detection confirms an active session
+  // for this service (high or medium confidence)
+  (step, ctx) => {
+    if (step.action_type !== 'create_account') return null;
+    if (ctx.authenticatedServices.length === 0) return null;
+    const match = ctx.authenticatedServices.find(
+      (s) => s.authenticated && (s.confidence === 'high' || s.confidence === 'medium'),
+    );
+    if (!match) return null;
+    const label = match.identity ? ` (${match.identity})` : '';
+    return `Already authenticated via ${match.method}${label}`;
+  },
+
+  // Skip authorize steps when auth detection found an active OAuth/cookie session
+  (step, ctx) => {
+    if (step.action_type !== 'authorize') return null;
+    if (ctx.authenticatedServices.length === 0) return null;
+    const match = ctx.authenticatedServices.find(
+      (s) => s.authenticated && s.confidence === 'high',
+    );
+    if (!match) return null;
+    const label = match.identity ? ` (${match.identity})` : '';
+    return `Active session detected via ${match.method}${label}`;
   },
 ];
 

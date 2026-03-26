@@ -6,6 +6,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import { useTauriStream } from './useTauriStream';
 import { applyDesignResult, retryFailedOperations, type ApplyDesignSelections, type FailedOperation } from '../credential/applyDesignResult';
 import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTypes';
+import { designPhaseFSM } from '@/lib/fsm';
 import { SystemTraceSession } from '@/lib/execution/systemTrace';
 
 // -- Stream outcome discriminator ------------------------------------
@@ -24,8 +25,22 @@ const MAX_OUTPUT_LINES = 500;
 export function useDesignAnalysis() {
   // Design-specific state (layered on top of the generic stream)
   const [designResult, setDesignResult] = useState<AgentIR | null>(null);
-  const [designPhase, setDesignPhase] = useState<DesignPhase>('idle');
+  const [designPhase, setDesignPhaseRaw] = useState<DesignPhase>('idle');
   const [question, setQuestion] = useState<DesignQuestion | null>(null);
+
+  // FSM-validated phase setter -- logs warning and ignores invalid transitions
+  const designPhaseRef = useRef<DesignPhase>(designPhase);
+  designPhaseRef.current = designPhase;
+  const setDesignPhase = useCallback((next: DesignPhase | ((prev: DesignPhase) => DesignPhase)) => {
+    if (typeof next === 'function') {
+      setDesignPhaseRaw((prev) => {
+        const target = next(prev);
+        return designPhaseFSM.tryTransition(prev, target) ?? prev;
+      });
+    } else {
+      setDesignPhaseRaw((prev) => designPhaseFSM.tryTransition(prev, next) ?? prev);
+    }
+  }, []);
   const [applyWarnings, setApplyWarnings] = useState<string[]>([]);
   const [failedOperations, setFailedOperations] = useState<FailedOperation[]>([]);
 

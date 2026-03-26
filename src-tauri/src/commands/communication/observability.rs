@@ -5,7 +5,7 @@ use tauri::State;
 use tracing::{info, instrument};
 use ts_rs::TS;
 
-use crate::db::models::{AlertRule, CreateAlertRuleInput, FiredAlert, MetricsChartData, PersonaPromptVersion, PromptPerformanceData, ExecutionDashboardData, UpdateAlertRuleInput};
+use crate::db::models::{AlertRule, CreateAlertRuleInput, FiredAlert, MetricsChartData, PersonaPromptVersion, PromptPerformanceData, ExecutionDashboardData, UpdateAlertRuleInput, AnomalyDrilldownData};
 use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -137,6 +137,37 @@ pub fn get_execution_dashboard(
 }
 
 // =============================================================================
+// Anomaly Drill-Down
+// =============================================================================
+
+/// Returns correlated events and root-cause suggestions for a specific anomaly.
+#[tauri::command]
+#[instrument(skip(state), fields(anomaly_date, anomaly_metric))]
+pub fn get_anomaly_drilldown(
+    state: State<'_, Arc<AppState>>,
+    anomaly_date: String,
+    anomaly_metric: String,
+    anomaly_value: f64,
+    anomaly_baseline: f64,
+    anomaly_deviation_pct: f64,
+    persona_id: Option<String>,
+) -> Result<AnomalyDrilldownData, AppError> {
+    require_auth_sync(&state)?;
+    let start = std::time::Instant::now();
+    let result = repo::get_anomaly_drilldown(
+        &state.db,
+        &anomaly_date,
+        &anomaly_metric,
+        anomaly_value,
+        anomaly_baseline,
+        anomaly_deviation_pct,
+        persona_id.as_deref(),
+    );
+    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_anomaly_drilldown");
+    result
+}
+
+// =============================================================================
 // Prompt Lab -- Version Management
 // =============================================================================
 
@@ -179,35 +210,45 @@ pub fn rollback_prompt_version(
     require_auth_sync(&state)?;
     let version = repo::get_prompt_version_by_id(&state.db, &version_id)?;
 
-    // Update the persona's prompt to the version's prompt
-    let update_input = crate::db::models::UpdatePersonaInput {
-        structured_prompt: Some(version.structured_prompt.clone()),
-        system_prompt: version.system_prompt.clone(),
-        ..Default::default()
-    };
-    // Use a direct DB update to avoid re-triggering auto-versioning
+    // Wrap all writes in a single transaction to ensure atomicity
     let conn = state.db.get()?;
-    let now = chrono::Utc::now().to_rfc3339();
-    if let Some(ref sp) = update_input.structured_prompt {
-        conn.execute(
-            "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
-            rusqlite::params![sp, now, version.persona_id],
-        )?;
-    }
-    if let Some(ref sys) = update_input.system_prompt {
-        conn.execute(
-            "UPDATE personas SET system_prompt = ?1, updated_at = ?2 WHERE id = ?3",
-            rusqlite::params![sys, now, version.persona_id],
-        )?;
-    }
+    conn.execute_batch("BEGIN")?;
+    let result = (|| -> Result<(), AppError> {
+        let now = chrono::Utc::now().to_rfc3339();
+        if let Some(ref sp) = version.structured_prompt {
+            conn.execute(
+                "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![sp, now, version.persona_id],
+            )?;
+        }
+        if let Some(ref sys) = version.system_prompt {
+            conn.execute(
+                "UPDATE personas SET system_prompt = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![sys, now, version.persona_id],
+            )?;
+        }
 
-    // Demote current production, promote this version
-    if let Ok(Some(current_prod)) = repo::get_production_version(&state.db, &version.persona_id) {
-        if current_prod.id != version_id {
-            let _ = repo::update_prompt_version_tag(&state.db, &current_prod.id, "experimental");
+        // Demote current production, promote this version
+        if let Ok(Some(current_prod)) = repo::get_production_version(&state.db, &version.persona_id) {
+            if current_prod.id != version_id {
+                let _ = repo::update_prompt_version_tag(&state.db, &current_prod.id, "experimental");
+            }
+        }
+        repo::update_prompt_version_tag(&state.db, &version_id, "production")?;
+        Ok(())
+    })();
+
+    match result {
+        Ok(()) => {
+            conn.execute_batch("COMMIT")?;
+        }
+        Err(e) => {
+            let _ = conn.execute_batch("ROLLBACK");
+            return Err(e);
         }
     }
-    repo::update_prompt_version_tag(&state.db, &version_id, "production")
+
+    repo::get_prompt_version_by_id(&state.db, &version_id)
 }
 
 /// Get the recent error rate for a persona.
@@ -348,9 +389,13 @@ pub async fn run_prompt_ab_test(
         engine.start_execution(app, db_b, exec_b_id.clone(), persona_b, tools, input_json, None),
     );
 
-    // Allow execution start failures -- we still want to report results
-    let _ = res_a;
-    let _ = res_b;
+    // Check for execution start failures immediately instead of waiting for timeout
+    if let Err(e) = res_a {
+        return Err(AppError::Validation(format!("Execution A failed to start: {e}")));
+    }
+    if let Err(e) = res_b {
+        return Err(AppError::Validation(format!("Execution B failed to start: {e}")));
+    }
 
     // Await both completion signals with a 120-second timeout
     let timeout = std::time::Duration::from_secs(120);
@@ -428,6 +473,9 @@ pub fn create_alert_rule(
     input: CreateAlertRuleInput,
 ) -> Result<AlertRule, AppError> {
     require_auth_sync(&state)?;
+    if !input.threshold.is_finite() {
+        return Err(AppError::Validation("Threshold must be a finite number".into()));
+    }
     alert_repo::create_alert_rule(&state.db, input)
 }
 
@@ -439,6 +487,11 @@ pub fn update_alert_rule(
     input: UpdateAlertRuleInput,
 ) -> Result<AlertRule, AppError> {
     require_auth_sync(&state)?;
+    if let Some(t) = input.threshold {
+        if !t.is_finite() {
+            return Err(AppError::Validation("Threshold must be a finite number".into()));
+        }
+    }
     alert_repo::update_alert_rule(&state.db, &id, input)
 }
 

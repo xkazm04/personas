@@ -1,13 +1,15 @@
 import { silentCatch } from "@/lib/silentCatch";
-import { useEffect, useMemo, useState, useCallback, lazy, Suspense } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
+import { useElementVisible } from '@/hooks/utility/useElementVisible';
 import {
   CalendarClock, RefreshCw, Pause, Plus, Calendar,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import {
   parseScheduleEntry,
   sortByNextRun,
@@ -26,14 +28,21 @@ import SkippedRecoveryPanel from './SkippedRecoveryPanel';
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
 
 import type { ScheduleViewMode as ViewMode } from '@/lib/constants/uiModes';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("schedule-timeline");
 
 export default function ScheduleTimeline() {
-  const cronAgents = useOverviewStore((s) => s.cronAgents);
-  const loading = useOverviewStore((s) => s.cronAgentsLoading);
-  const fetchCronAgents = useOverviewStore((s) => s.fetchCronAgents);
+  const { cronAgents, loading, fetchCronAgents } = useOverviewStore(useShallow((s) => ({
+    cronAgents: s.cronAgents,
+    loading: s.cronAgentsLoading,
+    fetchCronAgents: s.fetchCronAgents,
+  })));
 
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
   const [schedulerStats, setSchedulerStats] = useState<SchedulerStats | null>(null);
+
+  const [containerRef, isVisible] = useElementVisible<HTMLDivElement>();
 
   const {
     state: actionState,
@@ -44,18 +53,20 @@ export default function ScheduleTimeline() {
     batchRecover,
   } = useScheduleActions();
 
-  // Load agents + scheduler status on mount
+  // Load agents + scheduler status when tab becomes visible
   useEffect(() => {
+    if (!isVisible) return;
     let cancelled = false;
     fetchCronAgents();
     getSchedulerStatus()
       .then((d) => { if (!cancelled) setSchedulerStats(d); })
       .catch(silentCatch("ScheduleTimeline:getSchedulerStatus"));
     return () => { cancelled = true; };
-  }, [fetchCronAgents]);
+  }, [fetchCronAgents, isVisible]);
 
-  // Auto-refresh every 30s
+  // Auto-refresh every 30s — only while visible
   useEffect(() => {
+    if (!isVisible) return;
     let cancelled = false;
     const interval = setInterval(() => {
       fetchCronAgents();
@@ -64,10 +75,11 @@ export default function ScheduleTimeline() {
         .catch(silentCatch("ScheduleTimeline:refreshSchedulerStatus"));
     }, 30_000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, [fetchCronAgents]);
+  }, [fetchCronAgents, isVisible]);
 
-  // Immediate refresh when backend fires overdue triggers (startup sweep or recovery)
+  // Immediate refresh when backend fires overdue triggers — only while visible
   useEffect(() => {
+    if (!isVisible) return;
     let cancelled = false;
     const unlisten = listen<{ recovered: number; timestamp: string }>(
       EventName.OVERDUE_TRIGGERS_FIRED,
@@ -80,7 +92,7 @@ export default function ScheduleTimeline() {
       },
     );
     return () => { cancelled = true; unlisten.then((fn) => fn()); };
-  }, [fetchCronAgents]);
+  }, [fetchCronAgents, isVisible]);
 
   // Parse all agents into schedule entries
   const entries = useMemo(
@@ -97,7 +109,7 @@ export default function ScheduleTimeline() {
 
   const handleSeedSchedule = useCallback(async () => {
     try { await seedMockCronAgent(); await fetchCronAgents(); }
-    catch (err) { console.error('Failed to seed mock schedule:', err); }
+    catch (err) { logger.error('Failed to seed mock schedule', { error: err }); }
   }, [fetchCronAgents]);
 
   const handleToggleScheduler = async () => {
@@ -125,6 +137,7 @@ export default function ScheduleTimeline() {
     ));
 
   return (
+    <div ref={containerRef}>
     <ContentBox>
       <ContentHeader
         icon={<CalendarClock className="w-5 h-5 text-blue-400" />}
@@ -178,39 +191,7 @@ export default function ScheduleTimeline() {
             </div>
 
             {/* View toggle */}
-            <div className="flex rounded-lg border border-primary/15 overflow-hidden">
-              <button
-                onClick={() => setViewMode('grouped')}
-                className={`px-2.5 py-1 text-xs transition-colors ${
-                  viewMode === 'grouped'
-                    ? 'bg-primary/10 text-foreground/90'
-                    : 'text-muted-foreground/60 hover:text-foreground/70'
-                }`}
-              >
-                Grouped
-              </button>
-              <button
-                onClick={() => setViewMode('timeline')}
-                className={`px-2.5 py-1 text-xs transition-colors ${
-                  viewMode === 'timeline'
-                    ? 'bg-primary/10 text-foreground/90'
-                    : 'text-muted-foreground/60 hover:text-foreground/70'
-                }`}
-              >
-                Timeline
-              </button>
-              <button
-                onClick={() => setViewMode('calendar')}
-                className={`px-2.5 py-1 text-xs flex items-center gap-1 transition-colors ${
-                  viewMode === 'calendar'
-                    ? 'bg-primary/10 text-foreground/90'
-                    : 'text-muted-foreground/60 hover:text-foreground/70'
-                }`}
-              >
-                <Calendar className="w-3 h-3" />
-                Calendar
-              </button>
-            </div>
+            <ScheduleViewTabs value={viewMode} onChange={setViewMode} />
 
             {/* Refresh */}
             <button
@@ -327,6 +308,65 @@ export default function ScheduleTimeline() {
         <CliFallbackSection entries={entries} />
       </ContentBody>
     </ContentBox>
+    </div>
+  );
+}
+
+// -- Segmented View Toggle (tablist) -------------------------------------------
+
+const VIEW_OPTIONS: { value: ViewMode; label: string; icon?: true }[] = [
+  { value: 'grouped', label: 'Grouped' },
+  { value: 'timeline', label: 'Timeline' },
+  { value: 'calendar', label: 'Calendar', icon: true },
+];
+
+function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: ViewMode) => void }) {
+  const tablistRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const idx = VIEW_OPTIONS.findIndex((o) => o.value === value);
+    let next = idx;
+    if (e.key === 'ArrowRight') next = (idx + 1) % VIEW_OPTIONS.length;
+    else if (e.key === 'ArrowLeft') next = (idx - 1 + VIEW_OPTIONS.length) % VIEW_OPTIONS.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = VIEW_OPTIONS.length - 1;
+    else return;
+
+    e.preventDefault();
+    onChange(VIEW_OPTIONS[next]!.value);
+    const tabs = tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    tabs?.[next]?.focus();
+  };
+
+  return (
+    <div
+      ref={tablistRef}
+      role="tablist"
+      aria-label="Schedule view"
+      className="flex rounded-lg border border-primary/15 overflow-hidden"
+      onKeyDown={handleKeyDown}
+    >
+      {VIEW_OPTIONS.map((opt) => {
+        const selected = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            role="tab"
+            aria-selected={selected}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(opt.value)}
+            className={`px-2.5 py-1 text-xs flex items-center gap-1 transition-colors ${
+              selected
+                ? 'bg-primary/10 text-foreground/90'
+                : 'text-muted-foreground/60 hover:text-foreground/70'
+            }`}
+          >
+            {opt.icon && <Calendar className="w-3 h-3" />}
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

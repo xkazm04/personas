@@ -6,8 +6,10 @@ mod engine;
 mod error;
 mod gitlab;
 pub mod ipc_auth;
+pub mod keyed_pool;
 mod logging;
 mod notifications;
+pub mod startup_timing;
 #[cfg(feature = "test-automation")]
 pub mod test_automation;
 #[cfg(feature = "desktop")]
@@ -21,6 +23,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 
 use db::DbPool;
 use engine::event_registry::event_name;
+use keyed_pool::KeyedResourcePool;
 use tauri::{Emitter, Manager};
 
 /// Shared HTTP client for all general-purpose HTTP callsites.
@@ -45,6 +48,15 @@ pub struct ActiveProcess {
     pub child_pid: Option<u32>,
 }
 
+/// Combined state for a multi-run entry: cancellation flag and optional child PID.
+///
+/// Replaces the previous two-HashMap split (`run_flags` + `run_pids`).
+#[derive(Clone)]
+pub struct RunEntry {
+    pub flag: Arc<AtomicBool>,
+    pub pid: Option<u32>,
+}
+
 /// Unified registry for all active child processes and cancellation flags.
 ///
 /// Consolidates two patterns into a single structure:
@@ -54,14 +66,13 @@ pub struct ActiveProcess {
 ///
 /// 2. **Multi-run domains** (test, pipeline, review, setup): multiple concurrent
 ///    runs per domain, each with an `AtomicBool` cancellation flag and optional
-///    child PID. Keyed by `"{domain}\0{run_id}"` internally.
+///    child PID. Stored in a single [`KeyedResourcePool`] keyed by
+///    `"{domain}\0{run_id}"`.
 pub struct ActiveProcessRegistry {
     /// Single-process domains: one active (id, pid) per domain.
     processes: Mutex<HashMap<String, ActiveProcess>>,
-    /// Multi-run cancellation flags keyed by `"{domain}\0{run_id}"`.
-    run_flags: Mutex<HashMap<String, Arc<AtomicBool>>>,
-    /// Multi-run child PIDs keyed by `"{domain}\0{run_id}"`.
-    run_pids: Mutex<HashMap<String, u32>>,
+    /// Multi-run entries keyed by `"{domain}\0{run_id}"`.
+    runs: KeyedResourcePool<String, RunEntry>,
 }
 
 impl Default for ActiveProcessRegistry {
@@ -74,8 +85,8 @@ impl ActiveProcessRegistry {
     pub fn new() -> Self {
         Self {
             processes: Mutex::new(HashMap::new()),
-            run_flags: Mutex::new(HashMap::new()),
-            run_pids: Mutex::new(HashMap::new()),
+            // No automatic pruning — entries are explicitly removed via unregister_run.
+            runs: KeyedResourcePool::new(0, 0),
         }
     }
 
@@ -148,50 +159,50 @@ impl ActiveProcessRegistry {
 
     /// Register a new run and return its cancellation flag (initialised to `false`).
     pub fn register_run(&self, domain: &str, run_id: &str) -> Arc<AtomicBool> {
-        let flag = Arc::new(AtomicBool::new(false));
         let key = Self::run_key(domain, run_id);
-        let mut map = self.run_flags.lock().unwrap_or_else(|e| e.into_inner());
-        map.insert(key, flag.clone());
+        let entry = RunEntry {
+            flag: Arc::new(AtomicBool::new(false)),
+            pid: None,
+        };
+        let flag = entry.flag.clone();
+        self.runs.insert(key, entry);
         flag
     }
 
     /// Set the cancellation flag for a run to `true`.
     pub fn cancel_run(&self, domain: &str, run_id: &str) {
         let key = Self::run_key(domain, run_id);
-        let map = self.run_flags.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(flag) = map.get(&key) {
-            flag.store(true, Ordering::Release);
+        if let Some(entry) = self.runs.get(&key) {
+            entry.flag.store(true, Ordering::Release);
         }
     }
 
-    /// Remove a run's cancellation flag (cleanup after completion).
+    /// Remove a run's entry (cleanup after completion).
     pub fn unregister_run(&self, domain: &str, run_id: &str) {
         let key = Self::run_key(domain, run_id);
-        let mut flags = self.run_flags.lock().unwrap_or_else(|e| e.into_inner());
-        flags.remove(&key);
-        let mut pids = self.run_pids.lock().unwrap_or_else(|e| e.into_inner());
-        pids.remove(&key);
+        self.runs.remove(&key);
     }
 
     /// Store a child PID for a multi-run.
     pub fn set_run_pid(&self, domain: &str, run_id: &str, pid: u32) {
         let key = Self::run_key(domain, run_id);
-        let mut map = self.run_pids.lock().unwrap_or_else(|e| e.into_inner());
-        map.insert(key, pid);
+        self.runs.with_mut(&key, |entry| {
+            entry.pid = Some(pid);
+        });
     }
 
     /// Take (remove and return) the child PID for a multi-run.
     pub fn take_run_pid(&self, domain: &str, run_id: &str) -> Option<u32> {
         let key = Self::run_key(domain, run_id);
-        let mut map = self.run_pids.lock().unwrap_or_else(|e| e.into_inner());
-        map.remove(&key)
+        self.runs.with_mut(&key, |entry| entry.pid.take()).flatten()
     }
 
     /// Remove a multi-run's child PID without returning it.
     pub fn clear_run_pid(&self, domain: &str, run_id: &str) {
         let key = Self::run_key(domain, run_id);
-        let mut map = self.run_pids.lock().unwrap_or_else(|e| e.into_inner());
-        map.remove(&key);
+        self.runs.with_mut(&key, |entry| {
+            entry.pid = None;
+        });
     }
 
     /// Register a run and return `(cancellation_flag, guard)`.
@@ -303,8 +314,23 @@ fn log_frontend_error(level: String, message: String) {
     }
 }
 
+/// Return the backend startup timing report to the frontend.
+#[tauri::command]
+fn get_startup_timing() -> Option<startup_timing::StartupTimingReport> {
+    startup_timing::get_full_report()
+}
+
+/// Called by the frontend to report its time-to-interactive.
+#[tauri::command]
+fn report_frontend_ready(tti_ms: f64) {
+    startup_timing::set_frontend_tti(tti_ms);
+    tracing::info!(tti_ms = tti_ms, "Frontend time-to-interactive reported");
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    startup_timing::mark_process_start();
+
     // Load .env file (project root) into process environment so that
     // runtime env vars like SUPABASE_URL are available without needing
     // them baked in at compile time.
@@ -344,6 +370,8 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            let mut st = startup_timing::StartupTimer::new();
+
             let app_data_dir = app
                 .path()
                 .app_data_dir()
@@ -351,9 +379,11 @@ pub fn run() {
 
             let pool = db::init_db(&app_data_dir)?;
             tracing::info!("Database pool ready (max_size=8)");
+            st.checkpoint("db_init");
 
             let user_db_pool = db::init_user_db(&app_data_dir)?;
             tracing::info!("User data database pool ready (max_size=4)");
+            st.checkpoint("user_db_init");
 
             // Seed built-in local credentials (database, vector KB, messaging)
             {
@@ -362,6 +392,7 @@ pub fn run() {
                     tracing::warn!("Failed to seed built-in credentials: {}", e);
                 }
             }
+            st.checkpoint("credential_seed");
 
             // Initialize P2P identity (Invisible Apps Phase 1)
             match engine::identity::get_or_create_identity(&pool) {
@@ -372,6 +403,7 @@ pub fn run() {
                     tracing::warn!("P2P identity initialization deferred: {}", e);
                 }
             }
+            st.checkpoint("p2p_identity");
 
             // Encrypt any legacy plaintext credentials
             match engine::crypto::migrate_plaintext_credentials(&pool) {
@@ -420,21 +452,25 @@ pub fn run() {
                     tracing::warn!("Trigger config secret migration skipped: {}", e);
                 }
             }
+            st.checkpoint("credential_migrations");
 
             // Initialise the connector strategy registry (healthcheck + rotation dispatch)
             engine::connector_strategy::init_registry();
+            st.checkpoint("connector_registry");
 
             // Install panic crash hook that writes to crash_logs/ before aborting
             logging::install_crash_hook(&app_data_dir);
 
             // Enable file-based logging for production diagnostics
             logging::add_file_layer(&app_data_dir);
+            st.checkpoint("file_logging");
 
             let log_dir = app_data_dir.join("logs");
 
             // Mark any executions left in running/queued state as failed
             // (their processes died when the app last exited)
             engine::ExecutionEngine::recover_stale_executions(&pool);
+            st.checkpoint("stale_execution_recovery");
 
             // Mark n8n transform sessions interrupted by app exit as failed
             // and clear their in-memory job entries (dead cancellation tokens,
@@ -462,6 +498,7 @@ pub fn run() {
                 Err(e) => tracing::warn!("Startup event cleanup failed: {}", e),
                 _ => {}
             }
+            st.checkpoint("event_cleanup");
 
             let scheduler = Arc::new(engine::background::SchedulerState::new());
             let engine = Arc::new(engine::ExecutionEngine::new(log_dir, scheduler.clone()));
@@ -475,6 +512,7 @@ pub fn run() {
             if cloud_client_opt.is_some() {
                 tracing::info!("Cloud orchestrator config restored from keyring");
             }
+            st.checkpoint("cloud_restore");
 
             // Restore GitLab client from keyring if previously connected
             let gitlab_client_opt = gitlab::config::load_gitlab_config()
@@ -485,6 +523,7 @@ pub fn run() {
             if gitlab_client_opt.is_some() {
                 tracing::info!("GitLab config restored from keyring");
             }
+            st.checkpoint("gitlab_restore");
 
             // Initialize P2P NetworkService (Phase 2: Invisible Apps)
             let network_service = match engine::identity::get_or_create_identity(&pool) {
@@ -510,10 +549,21 @@ pub fn run() {
                 }
             };
 
+            st.checkpoint("p2p_network_service");
+
             // Initialize vector knowledge base infrastructure
             let models_dir = app_data_dir.join("models").join("onnx");
             let embedding_manager = Arc::new(engine::embedder::EmbeddingManager::new(models_dir));
             let vector_store = Arc::new(engine::vector_store::SqliteVectorStore::new(user_db_pool.clone()));
+            st.checkpoint("vector_kb_init");
+
+            // Reconcile orphaned KB records left by crashes during creation
+            commands::credentials::vector_kb::reconcile_orphaned_kb_records(
+                &pool,
+                &user_db_pool,
+                &vector_store,
+            );
+            st.checkpoint("kb_reconciliation");
 
             let state_arc = Arc::new(AppState {
                 db: pool.clone(),
@@ -612,6 +662,25 @@ pub fn run() {
                 }
             }
 
+            st.checkpoint("app_state_and_handlers");
+
+            // Finalize startup timing and log the report
+            let total_ms = st.finalize();
+            tracing::info!(total_ms, "Backend setup completed");
+            if let Some(report) = startup_timing::get_report() {
+                let timing_text = startup_timing::format_boot_log(report);
+                tracing::info!("{}", timing_text);
+                // Append timing to last_boot.log
+                let boot_log = app_data_dir.join("logs").join("last_boot.log");
+                let _ = std::fs::OpenOptions::new()
+                    .append(true)
+                    .open(&boot_log)
+                    .and_then(|mut f| {
+                        use std::io::Write;
+                        f.write_all(timing_text.as_bytes())
+                    });
+            }
+
             // Auto-start scheduler after a brief delay
             let app_handle = app.handle().clone();
             let restore_handle = app.handle().clone();
@@ -672,6 +741,8 @@ pub fn run() {
             // Phase 1
             greet,
             log_frontend_error,
+            get_startup_timing,
+            report_frontend_ready,
             // Test automation (feature-gated)
             #[cfg(feature = "test-automation")]
             test_automation::__test_respond,
@@ -1116,6 +1187,7 @@ pub fn run() {
             // Communication -- Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,
+            commands::communication::events::search_events,
             commands::communication::events::publish_event,
             commands::communication::events::list_subscriptions,
             commands::communication::events::list_all_subscriptions,
@@ -1138,6 +1210,10 @@ pub fn run() {
             commands::communication::messages::get_unread_message_count,
             commands::communication::messages::get_message_count,
             commands::communication::messages::get_message_deliveries,
+            commands::communication::messages::get_bulk_delivery_summaries,
+            commands::communication::messages::get_messages_by_thread,
+            commands::communication::messages::get_thread_summaries,
+            commands::communication::messages::get_thread_count,
             // Communication -- Observability
             commands::communication::observability::get_metrics_summary,
             commands::communication::observability::get_metrics_chart_data,
@@ -1147,6 +1223,8 @@ pub fn run() {
             commands::communication::observability::get_prompt_performance,
             // Communication -- Execution Metrics Dashboard
             commands::communication::observability::get_execution_dashboard,
+            // Communication -- Anomaly Drill-Down
+            commands::communication::observability::get_anomaly_drilldown,
             // Communication -- Prompt Lab
             commands::communication::observability::tag_prompt_version,
             commands::communication::observability::rollback_prompt_version,
@@ -1476,6 +1554,7 @@ pub fn run() {
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,
+            notifications::get_notification_delivery_stats,
             // Network -- Identity (Invisible Apps Phase 1)
             commands::network::identity::get_local_identity,
             commands::network::identity::set_display_name,

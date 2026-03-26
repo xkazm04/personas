@@ -9,7 +9,7 @@
  * and returns formatted result strings for display in chat.
  */
 
-import { invoke } from "@tauri-apps/api/core";
+import { invokeWithTimeout } from "@/lib/tauriInvoke";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -53,9 +53,9 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
     switch (op.op) {
       case "health_check": {
         // Health check uses design_context from the persona
-        const persona = await invoke<{ design_context?: string | null }>("get_persona", { id: personaId });
+        const persona = await invokeWithTimeout<{ design_context?: string | null }>("get_persona", { id: personaId });
         const designResult = persona.design_context || "{}";
-        const result = await invoke<{ status: string; confirmed_capabilities?: string[]; issues?: { description: string; severity: string }[] }>(
+        const result = await invokeWithTimeout<{ status: string; confirmed_capabilities?: string[]; issues?: { description: string; severity: string }[] }>(
           "test_design_feasibility",
           { designResult },
         );
@@ -73,7 +73,7 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
 
       case "list_executions": {
         const limit = typeof op.limit === "number" ? op.limit : 5;
-        const execs = await invoke<{ id: string; status: string; started_at: string; duration_ms?: number; cost_usd?: number }[]>(
+        const execs = await invokeWithTimeout<{ id: string; status: string; started_at: string; duration_ms?: number; cost_usd?: number }[]>(
           "list_executions",
           { personaId, limit },
         );
@@ -95,7 +95,7 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
       }
 
       case "list_assertions": {
-        const assertions = await invoke<{ id: string; name: string; assertion_type: string; severity: string; enabled: boolean }[]>(
+        const assertions = await invokeWithTimeout<{ id: string; name: string; assertion_type: string; severity: string; enabled: boolean }[]>(
           "list_output_assertions",
           { personaId },
         );
@@ -113,7 +113,7 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
 
       case "list_memories": {
         const limit = typeof op.limit === "number" ? op.limit : 5;
-        const memories = await invoke<{ title: string; category: string; importance: number; created_at: string }[]>(
+        const memories = await invokeWithTimeout<{ title: string; category: string; importance: number; created_at: string }[]>(
           "list_memories",
           { personaId, limit },
         );
@@ -126,7 +126,7 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
 
       case "list_versions": {
         const limit = typeof op.limit === "number" ? op.limit : 5;
-        const versions = await invoke<{ id: string; tag?: string; created_at: string; change_summary?: string }[]>(
+        const versions = await invokeWithTimeout<{ id: string; tag?: string; created_at: string; change_summary?: string }[]>(
           "lab_get_versions",
           { personaId, limit },
         );
@@ -143,7 +143,7 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
 
       case "execute": {
         const inputData = typeof op.input === "string" ? op.input : undefined;
-        await invoke("execute_persona", {
+        await invokeWithTimeout("execute_persona", {
           personaId,
           triggerId: null,
           inputData: inputData ?? null,
@@ -160,10 +160,10 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
           return { op: "edit_prompt", success: false, summary: "Missing section or content." };
         }
         // Get current structured_prompt, update the section, save
-        const persona = await invoke<{ structured_prompt?: string | null }>("get_persona", { id: personaId });
+        const persona = await invokeWithTimeout<{ structured_prompt?: string | null }>("get_persona", { id: personaId });
         const sp = persona.structured_prompt ? JSON.parse(persona.structured_prompt) : {};
         sp[section] = content;
-        await invoke("update_persona", {
+        await invokeWithTimeout("update_persona", {
           id: personaId,
           input: { structured_prompt: JSON.stringify(sp) },
         });
@@ -175,7 +175,7 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
         const assertionType = typeof op.assertion_type === "string" ? op.assertion_type : "contains";
         const config = typeof op.config === "string" ? op.config : JSON.stringify(op.config ?? {});
         const severity = typeof op.severity === "string" ? op.severity : "warning";
-        await invoke("create_output_assertion", {
+        await invokeWithTimeout("create_output_assertion", {
           personaId,
           name,
           description: null,
@@ -192,7 +192,7 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
         const modelConfigs = models.map((m: unknown) =>
           typeof m === "string" ? { id: m, model: `claude-${m}-4-5`, provider: "anthropic" } : m,
         );
-        await invoke("lab_start_arena", { personaId, models: modelConfigs, useCaseFilter: null });
+        await invokeWithTimeout("lab_start_arena", { personaId, models: modelConfigs, useCaseFilter: null });
         return { op: "start_arena", success: true, summary: `Arena test started with ${modelConfigs.length} models.` };
       }
 
@@ -205,7 +205,7 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
           { id: "haiku", model: "claude-haiku-4-5", provider: "anthropic" },
           { id: "sonnet", model: "claude-sonnet-4-6", provider: "anthropic" },
         ];
-        await invoke("lab_start_matrix", { personaId, userInstruction: instruction, models, useCaseFilter: null });
+        await invokeWithTimeout("lab_start_matrix", { personaId, userInstruction: instruction, models, useCaseFilter: null });
         return { op: "start_matrix", success: true, summary: `Matrix improvement started: "${instruction.slice(0, 60)}..."` };
       }
 

@@ -14,6 +14,9 @@ import {
   addMiddleware,
   type PipelineMiddleware,
 } from '@/lib/execution/pipeline';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger("knowledge-middleware");
 
 /** Compile knowledge entries into a compact guidance string for the prompt. */
 function compileGuidance(entries: ExecutionKnowledge[]): string {
@@ -79,7 +82,7 @@ const knowledgeInjectionMiddleware: PipelineMiddleware<'validate'> = async (
       }
     }
   } catch (err) {
-    console.warn('[knowledgeMiddleware] Knowledge injection failed, continuing without:', err);
+    logger.warn('Knowledge injection failed, continuing without', { personaId: payload.personaId, error: String(err) });
   }
 
   return payload;
@@ -87,5 +90,5 @@ const knowledgeInjectionMiddleware: PipelineMiddleware<'validate'> = async (
 
 /** Register the knowledge injection middleware. Call once at app startup. */
 export function registerKnowledgeMiddleware(): void {
-  addMiddleware('validate', knowledgeInjectionMiddleware);
+  addMiddleware('validate', 'knowledge-injection', knowledgeInjectionMiddleware);
 }

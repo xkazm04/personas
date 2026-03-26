@@ -356,20 +356,13 @@ impl ConnectorStrategy for GoogleOAuthStrategy {
         _connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
     ) -> Result<Option<ResolvedToken>, AppError> {
-        // Prefer an existing access_token if present
-        if let Some(token) = find_nonempty(fields, &["access_token", "accessToken"]) {
-            return Ok(Some(ResolvedToken::plain(token)));
-        }
-
-        // Otherwise refresh using the refresh_token
-        let refresh_token = find_nonempty(fields, &["refresh_token", "refreshToken"])
-            .ok_or_else(|| AppError::Validation("Google credential is missing refresh_token".into()))?;
-
-        let (client_id, client_secret) =
-            super::google_oauth::resolve_google_desktop_oauth_credentials()?;
-        let resolved =
-            exchange_google_refresh_token(&client_id, &client_secret, &refresh_token).await?;
-        Ok(Some(resolved))
+        resolve_oauth_token(
+            "Google",
+            "https://oauth2.googleapis.com/token",
+            super::google_oauth::resolve_google_desktop_oauth_credentials,
+            fields,
+        )
+        .await
     }
 
     /// OAuth rotation = token refresh + persist + healthcheck verify.
@@ -378,67 +371,8 @@ impl ConnectorStrategy for GoogleOAuthStrategy {
         pool: &DbPool,
         credential: &PersonaCredential,
     ) -> Result<String, AppError> {
-        // Refresh the token via the shared oauth_refresh module
-        let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;
-
-        // Verify the refreshed token with a healthcheck
-        match super::healthcheck::run_healthcheck(pool, &credential.id).await {
-            Ok(hc) if hc.success => Ok(format!("{refresh_msg} -- verified: {}", hc.message)),
-            Ok(hc) => Ok(format!("{refresh_msg} -- healthcheck warning: {}", hc.message)),
-            Err(_) => Ok(format!("{refresh_msg} -- healthcheck skipped")),
-        }
+        rotate_via_refresh_and_healthcheck(pool, credential).await
     }
-}
-
-/// Exchange a Google refresh token for a fresh access token.
-async fn exchange_google_refresh_token(
-    client_id: &str,
-    client_secret: &str,
-    refresh_token: &str,
-) -> Result<ResolvedToken, AppError> {
-    let response = crate::SHARED_HTTP
-        .post("https://oauth2.googleapis.com/token")
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .form(&[
-            ("client_id", client_id),
-            ("client_secret", client_secret),
-            ("refresh_token", refresh_token),
-            ("grant_type", "refresh_token"),
-        ])
-        .send()
-        .await
-        .map_err(|e| AppError::Internal(format!("Google token refresh request failed: {e}")))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
-        return Err(AppError::Internal(format!(
-            "Google token refresh failed ({status}): {body}"
-        )));
-    }
-
-    let value = response
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| AppError::Internal(format!("Invalid Google token response JSON: {e}")))?;
-
-    let token = value
-        .get("access_token")
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string())
-        .ok_or_else(|| AppError::Internal("Google token refresh did not return access_token".into()))?;
-
-    let expires_in = value.get("expires_in").and_then(|v| v.as_u64());
-    let new_refresh_token = value
-        .get("refresh_token")
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
-
-    Ok(ResolvedToken {
-        token,
-        expires_in_secs: expires_in,
-        refresh_token: new_refresh_token,
-    })
 }
 
 // -- Microsoft OAuth ------------------------------------------------
@@ -456,18 +390,13 @@ impl ConnectorStrategy for MicrosoftOAuthStrategy {
         _connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
     ) -> Result<Option<ResolvedToken>, AppError> {
-        if let Some(token) = find_nonempty(fields, &["access_token", "accessToken"]) {
-            return Ok(Some(ResolvedToken::plain(token)));
-        }
-
-        let refresh_token = find_nonempty(fields, &["refresh_token", "refreshToken"])
-            .ok_or_else(|| AppError::Validation("Microsoft credential is missing refresh_token".into()))?;
-
-        let (client_id, client_secret) =
-            super::google_oauth::resolve_microsoft_oauth_credentials()?;
-        let resolved =
-            exchange_microsoft_refresh_token(&client_id, &client_secret, &refresh_token).await?;
-        Ok(Some(resolved))
+        resolve_oauth_token(
+            "Microsoft",
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            super::google_oauth::resolve_microsoft_oauth_credentials,
+            fields,
+        )
+        .await
     }
 
     async fn rotate(
@@ -475,23 +404,49 @@ impl ConnectorStrategy for MicrosoftOAuthStrategy {
         pool: &DbPool,
         credential: &PersonaCredential,
     ) -> Result<String, AppError> {
-        let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;
-        match super::healthcheck::run_healthcheck(pool, &credential.id).await {
-            Ok(hc) if hc.success => Ok(format!("{refresh_msg} -- verified: {}", hc.message)),
-            Ok(hc) => Ok(format!("{refresh_msg} -- healthcheck warning: {}", hc.message)),
-            Err(_) => Ok(format!("{refresh_msg} -- healthcheck skipped")),
-        }
+        rotate_via_refresh_and_healthcheck(pool, credential).await
     }
 }
 
-/// Exchange a Microsoft refresh token for a fresh access token via Azure AD.
-async fn exchange_microsoft_refresh_token(
+// -- Shared OAuth helpers -------------------------------------------
+
+/// Detect whether an OAuth token refresh error indicates the grant has been
+/// permanently revoked or invalidated. These errors mean the user must
+/// re-authorize -- retrying with the same refresh token will never succeed.
+///
+/// Checks for standard OAuth error codes returned in the JSON response body:
+/// - `invalid_grant` -- token expired, revoked, or invalid (Google, Microsoft, generic)
+/// - `unauthorized_client` -- client no longer authorized for this grant
+/// - `interaction_required` -- Microsoft: user consent withdrawn, MFA policy changed
+/// - `consent_required` -- user must re-consent
+fn is_revocation_error(response_body: &str) -> bool {
+    const REVOCATION_INDICATORS: &[&str] = &[
+        "invalid_grant",
+        "unauthorized_client",
+        "interaction_required",
+        "consent_required",
+        // Google-specific sub-error descriptions
+        "Token has been expired or revoked",
+        "Token has been revoked",
+    ];
+    let body_lower = response_body.to_lowercase();
+    REVOCATION_INDICATORS
+        .iter()
+        .any(|indicator| body_lower.contains(&indicator.to_lowercase()))
+}
+
+/// Generic OAuth token exchange: POST form-encoded params to a token URL,
+/// extract access_token/expires_in/refresh_token from the JSON response.
+/// Replaces the previously duplicated Google- and Microsoft-specific functions.
+async fn exchange_oauth_refresh_token(
+    provider: &str,
+    token_url: &str,
     client_id: &str,
     client_secret: &str,
     refresh_token: &str,
 ) -> Result<ResolvedToken, AppError> {
     let response = crate::SHARED_HTTP
-        .post("https://login.microsoftonline.com/common/oauth2/v2.0/token")
+        .post(token_url)
         .header("Content-Type", "application/x-www-form-urlencoded")
         .form(&[
             ("client_id", client_id),
@@ -501,26 +456,36 @@ async fn exchange_microsoft_refresh_token(
         ])
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("Microsoft token refresh request failed: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("{provider} token refresh request failed: {e}")))?;
 
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
+
+        // Detect revocation-class errors from the provider's error response.
+        // These indicate the refresh token is permanently invalid and the user
+        // must re-authorize. Common across Google, Microsoft, and other providers.
+        if is_revocation_error(&body) {
+            return Err(AppError::OAuthRevoked(format!(
+                "{provider} grant revoked ({status}): {body}"
+            )));
+        }
+
         return Err(AppError::Internal(format!(
-            "Microsoft token refresh failed ({status}): {body}"
+            "{provider} token refresh failed ({status}): {body}"
         )));
     }
 
     let value = response
         .json::<serde_json::Value>()
         .await
-        .map_err(|e| AppError::Internal(format!("Invalid Microsoft token response JSON: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("Invalid {provider} token response JSON: {e}")))?;
 
     let token = value
         .get("access_token")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or_else(|| AppError::Internal("Microsoft token refresh did not return access_token".into()))?;
+        .ok_or_else(|| AppError::Internal(format!("{provider} token refresh did not return access_token")))?;
 
     let expires_in = value.get("expires_in").and_then(|v| v.as_u64());
     let new_refresh_token = value
@@ -533,6 +498,41 @@ async fn exchange_microsoft_refresh_token(
         expires_in_secs: expires_in,
         refresh_token: new_refresh_token,
     })
+}
+
+/// Shared resolve_auth_token logic for OAuth strategies: return existing
+/// access_token if present, otherwise exchange refresh_token via the
+/// provider's token endpoint.
+async fn resolve_oauth_token(
+    provider: &str,
+    token_url: &str,
+    resolve_credentials: fn() -> Result<(String, String), AppError>,
+    fields: &HashMap<String, String>,
+) -> Result<Option<ResolvedToken>, AppError> {
+    if let Some(token) = find_nonempty(fields, &["access_token", "accessToken"]) {
+        return Ok(Some(ResolvedToken::plain(token)));
+    }
+
+    let refresh_token = find_nonempty(fields, &["refresh_token", "refreshToken"])
+        .ok_or_else(|| AppError::Validation(format!("{provider} credential is missing refresh_token")))?;
+
+    let (client_id, client_secret) = resolve_credentials()?;
+    let resolved =
+        exchange_oauth_refresh_token(provider, token_url, &client_id, &client_secret, &refresh_token).await?;
+    Ok(Some(resolved))
+}
+
+/// Shared rotation logic for OAuth strategies: refresh token + healthcheck verify.
+async fn rotate_via_refresh_and_healthcheck(
+    pool: &DbPool,
+    credential: &PersonaCredential,
+) -> Result<String, AppError> {
+    let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;
+    match super::healthcheck::run_healthcheck(pool, &credential.id).await {
+        Ok(hc) if hc.success => Ok(format!("{refresh_msg} -- verified: {}", hc.message)),
+        Ok(hc) => Ok(format!("{refresh_msg} -- healthcheck warning: {}", hc.message)),
+        Err(_) => Ok(format!("{refresh_msg} -- healthcheck skipped")),
+    }
 }
 
 // -- Buffer ---------------------------------------------------------

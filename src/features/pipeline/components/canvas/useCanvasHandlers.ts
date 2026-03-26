@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Connection, Edge, Node, NodeChange } from '@xyflow/react';
 import { usePipelineStore } from "@/stores/pipelineStore";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("canvas-handlers");
 import { useAgentStore } from "@/stores/agentStore";
 import { updateTeamMember } from "@/api/pipeline/teams";
 import { computeAlignments } from '@/features/pipeline/sub_canvas';
@@ -107,7 +110,7 @@ export function useCanvasHandlers({
     try {
       await Promise.all(nodes.filter((n) => n.type !== 'stickyNote').map((n) => updateTeamMember(n.id, undefined, n.position.x, n.position.y)));
       setSaveStatus('saved');
-    } catch (err) { console.error('Failed to save canvas:', err); setSaveStatus('unsaved'); }
+    } catch (err) { logger.error('Failed to save canvas', { error: String(err) }); setSaveStatus('unsaved'); }
   }, [selectedTeamId, nodes, setSaveStatus]);
 
   saveRef.current = handleSave;
@@ -143,7 +146,7 @@ export function useCanvasHandlers({
   const handleRoleChange = useCallback(async (memberId: string, newRole: string) => {
     dispatch({ type: 'UPDATE_SELECTED_MEMBER_ROLE', memberId, role: newRole });
     try { await updateTeamMember(memberId, newRole); }
-    catch (err) { console.error('Failed to update member role:', err); }
+    catch (err) { logger.error('Failed to update member role', { memberId, error: String(err) }); }
   }, [dispatch]);
 
   const handleRemoveMember = useCallback((memberId: string) => { removeTeamMember(memberId); setSelectedMember(null); }, [removeTeamMember, setSelectedMember]);

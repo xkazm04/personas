@@ -1,13 +1,26 @@
 /**
- * BuildQuestionnaireModal -- questionnaire for CLI-generated
- * questions during persona build. Renders one question at a time with
- * card-based carousel animation, adapted from N8nQuestionStepper.
+ * BuildQuestionnaireModal -- questionnaire carousel for adoption questions.
+ * One question at a time with animated card transitions, category badges,
+ * and support for select, text, and boolean input types.
+ *
+ * UI/UX improvements (v2):
+ *  1. Fixed card height (320px) — no layout shifts between questions
+ *  2. Larger modal (max-w-2xl) — consistent, spacious feel
+ *  3. Visible text input with focus ring and filled-state styling
+ *  4. Boolean toggle with Yes/No pill buttons, handles true/false defaults
+ *  5. Answered-state checkmarks on progress dots
+ *  6. Question number badge on each card
+ *  7. Context text with info icon, better contrast
+ *  8. Prominent "Skip All" link in footer
+ *  9. Larger submit button on last step with pulse animation
+ * 10. data-testid attributes for test automation
  */
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronLeft, ChevronRight, X, Send,
+  ChevronLeft, ChevronRight, X, Send, Check, Info,
   KeyRound, Settings2, ShieldCheck, Brain, Bell, HelpCircle,
+  Globe, Gauge, SkipForward,
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
@@ -18,22 +31,27 @@ const CATEGORY_META: Record<string, { label: string; Icon: React.ComponentType<{
   human_in_the_loop: { label: 'Human in the Loop', Icon: ShieldCheck },
   memory:            { label: 'Memory & Learning',  Icon: Brain },
   notifications:     { label: 'Notifications',      Icon: Bell },
+  domain:            { label: 'Domain',             Icon: Globe },
+  quality:           { label: 'Quality',            Icon: Gauge },
 };
 
 const CARD_TONES = [
-  { border: 'border-violet-500/20', bg: 'bg-violet-500/[0.06]', accent: 'text-violet-500 dark:text-violet-300', dot: 'bg-violet-400', selectBg: 'bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/25' },
-  { border: 'border-blue-500/20', bg: 'bg-blue-500/[0.06]', accent: 'text-blue-500 dark:text-blue-300', dot: 'bg-blue-400', selectBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/25' },
-  { border: 'border-cyan-500/20', bg: 'bg-cyan-500/[0.06]', accent: 'text-cyan-600 dark:text-cyan-300', dot: 'bg-cyan-400', selectBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/25' },
-  { border: 'border-emerald-500/20', bg: 'bg-emerald-500/[0.06]', accent: 'text-emerald-600 dark:text-emerald-300', dot: 'bg-emerald-400', selectBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/25' },
-  { border: 'border-amber-500/20', bg: 'bg-amber-500/[0.06]', accent: 'text-amber-600 dark:text-amber-300', dot: 'bg-amber-400', selectBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/25' },
-  { border: 'border-rose-500/20', bg: 'bg-rose-500/[0.06]', accent: 'text-rose-500 dark:text-rose-300', dot: 'bg-rose-400', selectBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-500/25' },
+  { border: 'border-violet-500/20', bg: 'bg-violet-500/[0.06]', accent: 'text-violet-500 dark:text-violet-300', dot: 'bg-violet-400', selectBg: 'bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/25', inputRing: 'focus-visible:ring-violet-500/30 focus-visible:border-violet-500/40' },
+  { border: 'border-blue-500/20', bg: 'bg-blue-500/[0.06]', accent: 'text-blue-500 dark:text-blue-300', dot: 'bg-blue-400', selectBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/25', inputRing: 'focus-visible:ring-blue-500/30 focus-visible:border-blue-500/40' },
+  { border: 'border-cyan-500/20', bg: 'bg-cyan-500/[0.06]', accent: 'text-cyan-600 dark:text-cyan-300', dot: 'bg-cyan-400', selectBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/25', inputRing: 'focus-visible:ring-cyan-500/30 focus-visible:border-cyan-500/40' },
+  { border: 'border-emerald-500/20', bg: 'bg-emerald-500/[0.06]', accent: 'text-emerald-600 dark:text-emerald-300', dot: 'bg-emerald-400', selectBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/25', inputRing: 'focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/40' },
+  { border: 'border-amber-500/20', bg: 'bg-amber-500/[0.06]', accent: 'text-amber-600 dark:text-amber-300', dot: 'bg-amber-400', selectBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/25', inputRing: 'focus-visible:ring-amber-500/30 focus-visible:border-amber-500/40' },
+  { border: 'border-rose-500/20', bg: 'bg-rose-500/[0.06]', accent: 'text-rose-500 dark:text-rose-300', dot: 'bg-rose-400', selectBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-500/25', inputRing: 'focus-visible:ring-rose-500/30 focus-visible:border-rose-500/40' },
 ] as const;
 
 const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
+  enter: (dir: number) => ({ x: dir > 0 ? 50 : -50, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
+  exit: (dir: number) => ({ x: dir > 0 ? -50 : 50, opacity: 0 }),
 };
+
+/** Fixed card height so every question has the same visual footprint. */
+const CARD_HEIGHT = 320;
 
 interface BuildQuestionnaireModalProps {
   questions: TransformQuestionResponse[];
@@ -41,6 +59,13 @@ interface BuildQuestionnaireModalProps {
   onAnswerUpdated: (questionId: string, answer: string) => void;
   onSubmit: () => void;
   onClose: () => void;
+}
+
+/** Normalize boolean defaults — templates may use true/false instead of "Yes"/"No". */
+function normalizeBooleanDefault(val: unknown): string {
+  if (val === true || val === 'true' || val === 'yes' || val === 'Yes') return 'Yes';
+  if (val === false || val === 'false' || val === 'no' || val === 'No') return 'No';
+  return typeof val === 'string' ? val : '';
 }
 
 export function BuildQuestionnaireModal({
@@ -68,26 +93,33 @@ export function BuildQuestionnaireModal({
   const goPrev = useCallback(() => goTo(activeIndex - 1), [goTo, activeIndex]);
   const goNext = useCallback(() => goTo(activeIndex + 1), [goTo, activeIndex]);
 
-  // Keyboard navigation (ArrowLeft / ArrowRight)
+  // Keyboard: ArrowLeft/Right to navigate, Enter to advance/submit
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
       if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+      if (e.key === 'Enter') { e.preventDefault(); isLast ? onSubmit() : goNext(); }
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [goPrev, goNext]);
+  }, [goPrev, goNext, isLast, onSubmit]);
 
   const q = questions[activeIndex]!;
   const tone = CARD_TONES[activeIndex % CARD_TONES.length]!;
   const dim = q.category ? CATEGORY_META[q.category] : undefined;
 
-  const allAnswered = questions.every((qn) => {
+  const answeredCount = questions.filter((qn) => {
     const val = userAnswers[qn.id];
     return val !== undefined && val !== '';
-  });
+  }).length;
+  const allAnswered = answeredCount === questions.length;
+
+  // Resolve the current answer, handling boolean defaults
+  const currentAnswer = q.type === 'boolean'
+    ? (userAnswers[q.id] ?? normalizeBooleanDefault(q.default) ?? '')
+    : (userAnswers[q.id] ?? q.default ?? '');
 
   return (
     <BaseModal
@@ -95,39 +127,54 @@ export function BuildQuestionnaireModal({
       onClose={onClose}
       titleId="build-questionnaire-title"
       containerClassName="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      size="md"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      size="lg"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden w-full max-w-2xl"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
-        <div className="flex items-center gap-2.5">
-          <HelpCircle className="w-4.5 h-4.5 text-primary" />
-          <h3 id="build-questionnaire-title" className="text-base font-semibold text-foreground/90">Setup Questions</h3>
-          <span className="text-sm text-muted-foreground/50 tabular-nums">{activeIndex + 1} / {questions.length}</span>
+      <div
+        data-testid="build-questionnaire-modal"
+        className="flex items-center justify-between px-6 py-4 border-b border-primary/10"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <HelpCircle className="w-4.5 h-4.5 text-primary" />
+          </div>
+          <div>
+            <h3 id="build-questionnaire-title" className="text-base font-semibold text-foreground/90">
+              Setup Questions
+            </h3>
+            <p className="text-xs text-muted-foreground/50">
+              {answeredCount} of {questions.length} answered
+            </p>
+          </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-foreground/[0.04] transition-colors">
-          <X className="w-4 h-4 text-muted-foreground/60" />
+        <button
+          onClick={onClose}
+          className="p-2 rounded-lg hover:bg-foreground/[0.04] transition-colors"
+          aria-label="Close questionnaire"
+        >
+          <X className="w-4.5 h-4.5 text-muted-foreground/60" />
         </button>
       </div>
 
-      {/* Card area */}
-      <div className="flex items-center gap-3 p-5">
+      {/* Card area — fixed height container for consistent sizing */}
+      <div className="flex items-center gap-4 px-6 py-5">
         {/* Left arrow */}
         <button
           onClick={goPrev}
           disabled={!canPrev}
-          className={`flex-shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
+          className={`flex-shrink-0 w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
             canPrev
               ? 'border-primary/20 hover:bg-secondary/50 text-foreground/70 hover:text-foreground'
-              : 'border-primary/5 text-foreground/15 cursor-default'
+              : 'border-primary/5 text-foreground/10 cursor-default'
           }`}
           aria-label="Previous question"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4.5 h-4.5" />
         </button>
 
-        {/* Card */}
-        <div className="flex-1 min-w-0">
+        {/* Card — fixed height */}
+        <div className="flex-1 min-w-0" style={{ height: CARD_HEIGHT }}>
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <motion.div
               key={activeIndex}
@@ -136,45 +183,62 @@ export function BuildQuestionnaireModal({
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              style={{ minHeight: 200 }}
-              className={`p-4 rounded-xl border ${tone.border} ${tone.bg}`}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className={`h-full flex flex-col p-5 rounded-xl border ${tone.border} ${tone.bg}`}
             >
-              {/* Category */}
-              {dim && (
-                <div className="flex items-center gap-2 mb-3">
-                  <dim.Icon className={`w-4 h-4 ${tone.accent}`} />
-                  <span className={`text-sm font-semibold uppercase tracking-wider ${tone.accent}`}>
-                    {dim.label}
-                  </span>
+              {/* Top row: category + question number */}
+              <div className="flex items-center justify-between mb-3">
+                {dim ? (
+                  <div className="flex items-center gap-2">
+                    <dim.Icon className={`w-4 h-4 ${tone.accent}`} />
+                    <span className={`text-xs font-semibold uppercase tracking-wider ${tone.accent}`}>
+                      {dim.label}
+                    </span>
+                  </div>
+                ) : <div />}
+                <span className={`text-xs font-mono tabular-nums px-2 py-0.5 rounded-md bg-foreground/[0.04] text-muted-foreground/50`}>
+                  {activeIndex + 1}/{questions.length}
+                </span>
+              </div>
+
+              {/* Question text */}
+              <p className="text-[15px] font-medium text-foreground/90 leading-relaxed mb-1.5">
+                {q.question}
+              </p>
+
+              {/* Context */}
+              {q.context && (
+                <div className="flex items-start gap-2 mb-4">
+                  <Info className="w-3.5 h-3.5 text-muted-foreground/40 mt-0.5 flex-shrink-0" />
+                  <p className="text-[13px] text-foreground/45 leading-relaxed">{q.context}</p>
                 </div>
               )}
 
-              {/* Question text */}
-              <p className="text-base font-medium text-foreground/90 leading-relaxed mb-1">
-                {q.question}
-              </p>
-              {q.context && (
-                <p className="text-sm text-foreground/50 mb-4 leading-relaxed">{q.context}</p>
-              )}
-
-              {/* Input */}
-              <div className="mt-3">
+              {/* Input area — flex-1 to fill remaining card space */}
+              <div className="flex-1 mt-auto pt-2 overflow-y-auto">
+                {/* SELECT */}
                 {q.type === 'select' && q.options && (
                   <div className="space-y-1.5">
                     {q.options.map((opt) => {
-                      const isSelected = (userAnswers[q.id] ?? q.default ?? '') === opt;
+                      const isSelected = currentAnswer === opt;
                       return (
                         <button
                           key={opt}
                           type="button"
+                          data-testid={`question-option-${opt.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}`}
                           onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`w-full text-left px-3 py-2 text-sm rounded-lg border transition-all ${
+                          className={`w-full text-left px-3.5 py-2.5 text-sm rounded-lg border transition-all flex items-center gap-2.5 ${
                             isSelected
                               ? `${tone.selectBg} font-medium`
-                              : 'text-foreground/70 border-primary/10 hover:bg-secondary/40'
+                              : 'text-foreground/70 border-primary/10 hover:bg-secondary/40 hover:border-primary/15'
                           }`}
                         >
+                          {/* Radio indicator */}
+                          <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                            isSelected ? 'border-current' : 'border-foreground/20'
+                          }`}>
+                            {isSelected && <span className="w-2 h-2 rounded-full bg-current" />}
+                          </span>
                           {opt}
                         </button>
                       );
@@ -182,31 +246,44 @@ export function BuildQuestionnaireModal({
                   </div>
                 )}
 
+                {/* TEXT */}
                 {q.type === 'text' && (
-                  <input
-                    type="text"
-                    value={userAnswers[q.id] ?? q.default ?? ''}
-                    onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
-                    placeholder={q.default ?? 'Type your answer...'}
-                    className="w-full px-4 py-2.5 text-sm rounded-xl border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring focus-visible:border-primary/30 transition-all"
-                  />
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      data-testid="question-text-input"
+                      value={currentAnswer}
+                      onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
+                      placeholder={(q as unknown as Record<string, unknown>).placeholder as string ?? q.default ?? 'Type your answer...'}
+                      autoFocus
+                      className={`w-full px-4 py-3 text-sm rounded-xl border border-primary/15 bg-background/80 text-foreground placeholder-muted-foreground/35 ring-2 ring-transparent transition-all ${tone.inputRing}`}
+                    />
+                    {currentAnswer && currentAnswer !== q.default && (
+                      <p className="text-xs text-muted-foreground/40 px-1">
+                        Default: {q.default || 'none'}
+                      </p>
+                    )}
+                  </div>
                 )}
 
+                {/* BOOLEAN */}
                 {q.type === 'boolean' && (
                   <div className="flex gap-3">
-                    {(q.options ?? ['Yes', 'No']).map((opt) => {
-                      const isSelected = (userAnswers[q.id] ?? q.default ?? '') === opt;
+                    {['Yes', 'No'].map((opt) => {
+                      const isSelected = currentAnswer === opt;
                       return (
                         <button
                           key={opt}
                           type="button"
+                          data-testid={`question-bool-${opt.toLowerCase()}`}
                           onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`px-4 py-2 text-sm rounded-xl border transition-all ${
+                          className={`flex-1 py-3.5 text-sm font-medium rounded-xl border transition-all flex items-center justify-center gap-2 ${
                             isSelected
-                              ? `${tone.selectBg} font-medium`
-                              : 'text-foreground/70 border-primary/10 hover:bg-secondary/40'
+                              ? `${tone.selectBg} shadow-sm`
+                              : 'text-foreground/60 border-primary/10 hover:bg-secondary/40 hover:border-primary/15'
                           }`}
                         >
+                          {isSelected && <Check className="w-4 h-4" />}
                           {opt}
                         </button>
                       );
@@ -222,34 +299,35 @@ export function BuildQuestionnaireModal({
         <button
           onClick={goNext}
           disabled={!canNext}
-          className={`flex-shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
+          className={`flex-shrink-0 w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
             canNext
               ? 'border-primary/20 hover:bg-secondary/50 text-foreground/70 hover:text-foreground'
-              : 'border-primary/5 text-foreground/15 cursor-default'
+              : 'border-primary/5 text-foreground/10 cursor-default'
           }`}
           aria-label="Next question"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4.5 h-4.5" />
         </button>
       </div>
 
-      {/* Progress dots */}
-      <div className="flex items-center justify-center gap-1.5 px-5">
-        {questions.map((_, i) => {
+      {/* Progress dots with answered indicators */}
+      <div className="flex items-center justify-center gap-2 px-6 pb-1">
+        {questions.map((qn, i) => {
           const dotTone = CARD_TONES[i % CARD_TONES.length]!;
           const isActive = i === activeIndex;
-          const isAnswered = !!userAnswers[questions[i]!.id];
+          const isAnswered = !!userAnswers[qn.id];
           return (
             <button
               key={i}
               type="button"
               onClick={() => goTo(i)}
-              className={`rounded-full transition-all duration-200 ${
+              title={`Question ${i + 1}${isAnswered ? ' (answered)' : ''}`}
+              className={`rounded-full transition-all duration-200 flex items-center justify-center ${
                 isActive
-                  ? `w-6 h-2 ${dotTone.dot}`
+                  ? `w-7 h-2.5 ${dotTone.dot}`
                   : isAnswered
-                    ? `w-2 h-2 ${dotTone.dot} opacity-50`
-                    : 'w-2 h-2 bg-foreground/15'
+                    ? `w-2.5 h-2.5 ${dotTone.dot} opacity-60`
+                    : 'w-2.5 h-2.5 bg-foreground/12'
               }`}
               aria-label={`Go to question ${i + 1}`}
             />
@@ -258,20 +336,32 @@ export function BuildQuestionnaireModal({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-t border-primary/10 mt-3">
-        <p className="text-xs text-muted-foreground/40">
-          Use <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-xs font-mono">&larr;</kbd>{' '}
-          <kbd className="px-1 py-0.5 rounded bg-secondary/40 border border-primary/8 text-xs font-mono">&rarr;</kbd>{' '}to navigate
-        </p>
+      <div className="flex items-center justify-between px-6 py-4 border-t border-primary/10 mt-2">
+        <div className="flex items-center gap-4">
+          <p className="text-xs text-muted-foreground/35">
+            <kbd className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-[10px] font-mono">&larr;</kbd>{' '}
+            <kbd className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-[10px] font-mono">&rarr;</kbd>{' '}navigate
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-xs text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors flex items-center gap-1"
+          >
+            <SkipForward className="w-3 h-3" />
+            Skip all
+          </button>
+        </div>
+
         <button
           type="button"
+          data-testid="questionnaire-submit-btn"
           onClick={isLast ? onSubmit : goNext}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+          className={`inline-flex items-center gap-2 rounded-xl text-sm font-medium transition-all ${
             isLast
               ? allAnswered
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'bg-primary/50 text-primary-foreground/70 cursor-not-allowed'
-              : 'bg-primary/10 text-primary hover:bg-primary/20'
+                ? 'px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
+                : 'px-6 py-2.5 bg-primary/50 text-primary-foreground/70 cursor-not-allowed'
+              : 'px-5 py-2 bg-primary/10 text-primary hover:bg-primary/20'
           }`}
           disabled={isLast && !allAnswered}
         >

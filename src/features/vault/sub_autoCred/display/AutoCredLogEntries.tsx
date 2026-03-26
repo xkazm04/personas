@@ -2,6 +2,9 @@ import { useState, useCallback } from 'react';
 import {
   AlertTriangle, MousePointerClick, ExternalLink, Copy, Check,
 } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('auto-cred-log-entries');
 import type { BrowserLogEntry } from '../helpers/types';
 import { splitByUrls, formatLogsForCopy } from '../helpers/autoCredHelpers';
 
@@ -117,7 +120,7 @@ export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
     navigator.clipboard.writeText(formatLogsForCopy(logs)).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    }).catch(console.error);
+    }).catch((err) => { logger.error('Failed to copy log to clipboard', { error: String(err) }); });
   }, [logs]);
 
   if (logs.length === 0) return <div />;

@@ -1,8 +1,10 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { ClipboardCheck, Plus } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePersonaMap";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
@@ -11,18 +13,30 @@ import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/rev
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { BulkActionBar } from './BulkActionBar';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 
 export default function ManualReviewList() {
-  const manualReviews = useOverviewStore((s) => s.manualReviews);
-  const cloudReviews = useOverviewStore((s) => s.cloudReviews);
+  const {
+    manualReviews, cloudReviews,
+    fetchManualReviews, fetchCloudReviews,
+    updateManualReview, respondToCloudReview,
+  } = useOverviewStore(useShallow((s) => ({
+    manualReviews: s.manualReviews,
+    cloudReviews: s.cloudReviews,
+    fetchManualReviews: s.fetchManualReviews,
+    fetchCloudReviews: s.fetchCloudReviews,
+    updateManualReview: s.updateManualReview,
+    respondToCloudReview: s.respondToCloudReview,
+  })));
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
   const personas = useAgentStore((s) => s.personas);
-  const fetchManualReviews = useOverviewStore((s) => s.fetchManualReviews);
-  const fetchCloudReviews = useOverviewStore((s) => s.fetchCloudReviews);
-  const updateManualReview = useOverviewStore((s) => s.updateManualReview);
-  const respondToCloudReview = useOverviewStore((s) => s.respondToCloudReview);
+  const personaMap = usePersonaMap();
+  const enrichedManualReviews = useEnrichedRecords(manualReviews, personaMap);
+  const enrichedCloudReviews = useEnrichedRecords(cloudReviews, personaMap);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
@@ -42,11 +56,11 @@ export default function ManualReviewList() {
   });
 
   const allReviews = useMemo(() => {
-    const local = manualReviews.map((r) => ({ ...r, source: 'local' as const }));
-    const merged = [...local, ...cloudReviews];
+    const local = enrichedManualReviews.map((r) => ({ ...r, source: 'local' as const }));
+    const merged = [...local, ...enrichedCloudReviews];
     merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return merged;
-  }, [manualReviews, cloudReviews]);
+  }, [enrichedManualReviews, enrichedCloudReviews]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { all: allReviews.length, pending: 0, approved: 0, rejected: 0 };
@@ -118,7 +132,7 @@ export default function ManualReviewList() {
 
   const handleSeedReview = useCallback(async () => {
     try { await seedMockManualReview(); await fetchManualReviews(); }
-    catch (err) { console.error('Failed to seed mock review:', err); }
+    catch (err) { logger.error('Failed to seed mock review', { error: err }); }
   }, [fetchManualReviews]);
 
   return (

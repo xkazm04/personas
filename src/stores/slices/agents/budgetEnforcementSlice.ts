@@ -3,6 +3,9 @@ import type { AgentStore } from "../../storeTypes";
 import type { PersonaMonthlySpend } from "@/lib/bindings/PersonaMonthlySpend";
 import { getAllMonthlySpend } from "@/api/overview/observability";
 import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("budget");
 
 // -- Budget enforcement lifecycle ---------------------------------------
 //
@@ -102,7 +105,7 @@ export const createBudgetEnforcementSlice: StateCreator<AgentStore, [], [], Budg
       const rows = await getAllMonthlySpend();
       set({ budgetSpendMap: buildMap(rows), budgetEnforcementLoading: false, budgetStale: false, budgetLastFetchedAt: Date.now() });
     } catch (err) {
-      console.warn('[budget] fetchBudgetSpend failed — budget enforcement active (fail-closed)', { error: String(err) });
+      logger.warn("fetchBudgetSpend failed — budget enforcement active (fail-closed)", { error: String(err) });
       set({ budgetEnforcementLoading: false, budgetStale: true });
     }
   }),

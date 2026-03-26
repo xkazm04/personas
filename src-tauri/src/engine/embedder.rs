@@ -152,9 +152,21 @@ impl EmbeddingManager {
 
                 if elapsed >= IDLE_TIMEOUT {
                     let mut guard = model.write().await;
+                    // Re-check last_used after acquiring the write lock to avoid
+                    // TOCTOU race: a new embed_batch may have updated last_used
+                    // between our elapsed check and acquiring this lock.
+                    let fresh_elapsed = {
+                        let ts = last_used.read().await;
+                        ts.elapsed()
+                    };
+                    if fresh_elapsed < IDLE_TIMEOUT {
+                        // Model was used recently — skip unload, keep checking
+                        drop(guard);
+                        continue;
+                    }
                     if guard.is_some() {
                         *guard = None;
-                        tracing::info!("Embedding model unloaded after {:?} idle", elapsed);
+                        tracing::info!("Embedding model unloaded after {:?} idle", fresh_elapsed);
                     }
                     break;
                 }

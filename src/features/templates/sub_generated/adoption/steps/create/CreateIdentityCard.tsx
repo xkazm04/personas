@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
+import { BORDER_DEFAULT, BORDER_SUBTLE } from '@/lib/utils/designTokens';
 
 interface ProtocolCapability {
   type: string;
@@ -38,7 +39,7 @@ export function CreateIdentityCard({
   capabilities,
 }: CreateIdentityCardProps) {
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3">
+    <div className={`rounded-xl border ${BORDER_DEFAULT} bg-secondary/20 p-3`}>
       <div className="flex items-center gap-3">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center text-lg border flex-shrink-0"
@@ -60,7 +61,7 @@ export function CreateIdentityCard({
       </div>
 
       {/* Inline entity badges + connector readiness */}
-      <div className="flex items-center gap-2 flex-wrap mt-2.5 pt-2.5 border-t border-primary/8">
+      <div className={`flex items-center gap-2 flex-wrap mt-2.5 pt-2.5 border-t ${BORDER_SUBTLE}`}>
         {toolCount > 0 && (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded-md bg-blue-500/8 text-blue-400/70 border border-blue-500/10">
             <Wrench className="w-2.5 h-2.5" /> {toolCount} Tools

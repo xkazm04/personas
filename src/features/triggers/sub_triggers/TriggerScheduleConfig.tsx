@@ -114,9 +114,9 @@ export function IntervalConfig({
 const CRON_PRESETS = [
   { label: 'Every minute', value: '* * * * *' },
   { label: 'Hourly', value: '0 * * * *' },
-  { label: 'Daily 9 AM UTC', value: '0 9 * * *' },
-  { label: 'Daily midnight UTC', value: '0 0 * * *' },
-  { label: 'Weekdays 9 AM UTC', value: '0 9 * * 1-5' },
+  { label: 'Daily 9 AM', value: '0 9 * * *' },
+  { label: 'Daily midnight', value: '0 0 * * *' },
+  { label: 'Weekdays 9 AM', value: '0 9 * * 1-5' },
   { label: 'Weekly Mon', value: '0 0 * * 1' },
   { label: 'Monthly 1st', value: '0 0 1 * *' },
   { label: 'Every 6h', value: '0 */6 * * *' },
@@ -210,7 +210,7 @@ export function CronConfig({
           <span>day</span>
           <span>month</span>
           <span>weekday</span>
-          <span className="ml-auto text-amber-400/60 text-xs font-sans font-medium">UTC</span>
+          <span className="ml-auto text-amber-400/60 text-xs font-sans font-medium">local time</span>
         </div>
       </div>
 

@@ -2,6 +2,9 @@ import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
 import { silentCatch } from "@/lib/silentCatch";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("tool");
 import type {
   PersonaToolDefinition,
   ToolUsageSummary,
@@ -120,7 +123,7 @@ export const createToolSlice: StateCreator<AgentStore, [], [], ToolSlice> = (set
         toolUsageByPersona: byPersona,
       });
     } catch (err) {
-      console.warn("[toolSlice] fetchToolUsage failed:", err);
+      logger.warn("fetchToolUsage failed", { error: String(err) });
       reportError(err, "Failed to load tool usage", set, { stateUpdates: { toolUsageSummary: [], toolUsageOverTime: [], toolUsageByPersona: [] } });
     }
   },

@@ -959,7 +959,8 @@ fn evaluate_cron_event(
         .unwrap_or_else(|| *now - chrono::Duration::seconds(60));
 
     // If the next fire time after last poll falls within (from, now], trigger
-    match cron::next_fire_time(&schedule, from) {
+    // Uses local time evaluation so user-configured cron hours match local clock.
+    match cron::next_fire_time_local(&schedule, from) {
         Some(next) => next <= *now,
         None => false,
     }

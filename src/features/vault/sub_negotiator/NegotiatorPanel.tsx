@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bot, X, Zap } from 'lucide-react';
-import { useCredentialNegotiator, type NegotiatorContext } from '@/hooks/design/credential/useCredentialNegotiator';
+import { useCredentialNegotiator, type NegotiatorContext, type AuthDetectionInfo } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
+import { detectAuthenticatedServices } from '@/api/auth/authDetect';
 import { NegotiatorPlanningPhase } from './NegotiatorPlanningPhase';
 import { NegotiatorGuidingPhase } from './NegotiatorGuidingPhase';
 
@@ -17,12 +18,50 @@ interface NegotiatorPanelProps {
 }
 
 export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledValues }: NegotiatorPanelProps) {
+  // Fetch auth detections on mount so the negotiator can skip steps for
+  // services the user is already authenticated to.
+  const [authDetections, setAuthDetections] = useState<AuthDetectionInfo[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    detectAuthenticatedServices()
+      .then((detections) => {
+        if (cancelled) return;
+        // Map backend snake_case to frontend camelCase and keep only authenticated entries
+        const mapped: AuthDetectionInfo[] = detections
+          .filter((d) => d.authenticated)
+          .map((d) => ({
+            serviceType: d.service_type,
+            method: d.method,
+            authenticated: d.authenticated,
+            identity: d.identity,
+            confidence: d.confidence,
+          }));
+        setAuthDetections(mapped);
+      })
+      .catch(() => {
+        // Non-critical — negotiator works without auth detection
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Filter auth detections to those matching the current connector's service name
+  const matchingAuth = useMemo(() => {
+    if (authDetections.length === 0) return [];
+    const label = designResult.connector.label.toLowerCase();
+    const name = (designResult.connector.name ?? '').toLowerCase();
+    return authDetections.filter((d) => {
+      const st = d.serviceType.toLowerCase();
+      return label.includes(st) || st.includes(label) || name.includes(st) || st.includes(name);
+    });
+  }, [authDetections, designResult.connector.label, designResult.connector.name]);
+
   // Derive step graph context from the connector's capabilities
   const negotiatorContext = useMemo<NegotiatorContext>(() => ({
     prefilledValues: prefilledValues ?? {},
     hasOAuth: !!designResult.connector.oauth_type,
     hasHealthcheck: !!designResult.connector.healthcheck_config,
-  }), [prefilledValues, designResult.connector.oauth_type, designResult.connector.healthcheck_config]);
+    authenticatedServices: matchingAuth,
+  }), [prefilledValues, designResult.connector.oauth_type, designResult.connector.healthcheck_config, matchingAuth]);
 
   const negotiator = useCredentialNegotiator(negotiatorContext);
 

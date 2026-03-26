@@ -1,6 +1,9 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { useAgentStore } from '@/stores/agentStore';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger("matrix-tab");
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
 import { answerBuildQuestion, testBuildDraft } from '@/api/agents/buildSession';
 import { RefreshCw } from 'lucide-react';
@@ -29,7 +32,7 @@ export function MatrixTab() {
     let cancelled = false;
     setIsLoading(true);
 
-    invoke<BuildSessionSummary | null>('get_active_build_session', { personaId: selectedPersona.id })
+    invokeWithTimeout<BuildSessionSummary | null>('get_active_build_session', { personaId: selectedPersona.id })
       .then((s) => {
         if (cancelled) return;
         setSession(s ?? null);
@@ -86,7 +89,7 @@ export function MatrixTab() {
       await answerBuildQuestion(session.id, '_refine', feedback);
       setHasUnsavedChanges(true);
     } catch (err) {
-      console.error('Matrix refine failed:', err);
+      logger.error('Matrix refine failed', { error: err });
     }
   }, [session?.id, selectedPersona?.id]);
 
@@ -97,9 +100,24 @@ export function MatrixTab() {
       await testBuildDraft(session.id, selectedPersona.id);
       setHasUnsavedChanges(true);
     } catch (err) {
-      console.error('Matrix test failed:', err);
+      logger.error('Matrix test failed', { error: err });
     }
   }, [session?.id, selectedPersona?.id]);
+
+  // Quick Execute handler — run the persona and show result inline
+  const [execState, setExecState] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
+  const [lastExecution, setLastExecution] = useState<unknown>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    };
+  }, []);
+
 
   // Track whether user has made changes that warrant saving a new version
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -108,20 +126,20 @@ export function MatrixTab() {
   const handleSaveVersion = useCallback(async () => {
     if (!selectedPersona?.id) return;
     try {
-      await invoke('lab_create_version_snapshot', { personaId: selectedPersona.id });
+      await invokeWithTimeout('lab_create_version_snapshot', { personaId: selectedPersona.id });
       // Refresh persona data
       useAgentStore.getState().fetchPersonas();
     } catch {
       // Fallback: try the standard version creation path
       try {
         const persona = selectedPersona;
-        await invoke('lab_tag_version', {
+        await invokeWithTimeout('lab_tag_version', {
           id: selectedPersona.id,
           tag: 'production',
         });
-        console.log('Version saved for', persona.name);
+        logger.info('Version saved', { personaName: persona.name });
       } catch (e2) {
-        console.error('Save version failed:', e2);
+        logger.error('Save version failed', { error: e2 });
       }
     }
   }, [selectedPersona?.id]);

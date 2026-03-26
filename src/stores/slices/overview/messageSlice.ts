@@ -1,11 +1,13 @@
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
-import { storeBus, AccessorKey } from "@/lib/storeBus";
-import type { Persona } from "@/lib/types/types";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("messages");
 import type { PersonaMessage } from "@/lib/types/types";
-import { enrichWithPersona } from "@/lib/types/types";
-import { deleteMessage, getMessageCount, getUnreadMessageCount, listMessages, markAllMessagesRead, markMessageRead } from "@/api/overview/messages";
+import { deleteMessage, getMessageCount, getUnreadMessageCount, listMessages, markAllMessagesRead, markMessageRead, getBulkDeliverySummaries, getThreadSummaries, getThreadCount, getMessagesByThread } from "@/api/overview/messages";
+import type { MessageDeliverySummary } from "@/api/overview/messages";
+import type { MessageThreadSummary } from "@/lib/bindings/MessageThreadSummary";
 import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
 
 
@@ -16,6 +18,15 @@ export interface MessageSlice {
   unreadMessageCount: number;
   /** IDs of messages with in-flight markAsRead calls (not yet confirmed by backend). */
   _pendingReadIds: Set<string>;
+  /** Delivery status summaries keyed by message ID. */
+  deliverySummaries: Map<string, MessageDeliverySummary>;
+
+  // Thread state
+  threadSummaries: MessageThreadSummary[];
+  threadCount: number;
+  expandedThreadId: string | null;
+  threadReplies: Map<string, PersonaMessage[]>;
+  viewMode: 'flat' | 'threaded';
 
   // Actions
   fetchMessages: (reset?: boolean) => Promise<void>;
@@ -23,6 +34,11 @@ export interface MessageSlice {
   markAllMessagesAsRead: (personaId?: string) => Promise<void>;
   deleteMessage: (id: string) => Promise<void>;
   fetchUnreadMessageCount: () => Promise<void>;
+  fetchDeliverySummaries: (messageIds: string[]) => Promise<void>;
+  setViewMode: (mode: 'flat' | 'threaded') => void;
+  fetchThreadSummaries: (reset?: boolean, personaId?: string) => Promise<void>;
+  expandThread: (threadId: string) => Promise<void>;
+  collapseThread: () => void;
 }
 
 export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlice> = (set, get) => ({
@@ -30,6 +46,12 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
   messagesTotal: 0,
   unreadMessageCount: 0,
   _pendingReadIds: new Set(),
+  deliverySummaries: new Map(),
+  threadSummaries: [],
+  threadCount: 0,
+  expandedThreadId: null,
+  threadReplies: new Map(),
+  viewMode: 'flat',
 
   fetchMessages: async (reset = true) => {
     try {
@@ -40,18 +62,18 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
         reset ? getMessageCount() : Promise.resolve(get().messagesTotal),
         getUnreadMessageCount(),
       ]);
-      // Enrich with persona info
-      const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS);
-      const enriched: PersonaMessage[] = enrichWithPersona(rawMessages, personas);
       if (reset) {
-        set({ messages: enriched, messagesTotal: totalCount, unreadMessageCount: unreadCount });
+        set({ messages: rawMessages, messagesTotal: totalCount, unreadMessageCount: unreadCount });
       } else {
         set((state) => ({
-          messages: [...state.messages, ...enriched],
+          messages: [...state.messages, ...rawMessages],
           messagesTotal: totalCount,
           unreadMessageCount: unreadCount,
         }));
       }
+      // Fetch delivery summaries for the loaded messages (non-blocking)
+      const ids = rawMessages.map((m) => m.id);
+      if (ids.length > 0) void get().fetchDeliverySummaries(ids);
     } catch (err) {
       reportError(err, "Failed to fetch messages", set);
     }
@@ -86,7 +108,7 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
         return { _pendingReadIds: nextPending };
       });
     } catch (err) {
-      console.warn("[messageSlice] markMessageAsRead failed, recovering state:", err);
+      logger.warn("markMessageAsRead failed, recovering state", { messageId: id, error: String(err) });
       // Rollback: remove from pending set and restore the message
       set((state) => {
         const nextPending = new Set(state._pendingReadIds);
@@ -142,7 +164,69 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
       const unread = await getUnreadMessageCount();
       set({ unreadMessageCount: unread });
     } catch (err) {
-      console.warn("[messageSlice] fetchUnreadMessageCount failed:", err);
+      logger.warn("fetchUnreadMessageCount failed", { error: String(err) });
     }
   }),
+
+  fetchDeliverySummaries: async (messageIds: string[]) => {
+    if (messageIds.length === 0) return;
+    try {
+      const summaries = await getBulkDeliverySummaries(messageIds);
+      set((state) => {
+        const next = new Map(state.deliverySummaries);
+        for (const s of summaries) next.set(s.messageId, s);
+        return { deliverySummaries: next };
+      });
+    } catch {
+      // Non-critical: delivery badges just won't show
+    }
+  },
+
+  setViewMode: (mode) => {
+    set({ viewMode: mode });
+    if (mode === 'threaded') {
+      void get().fetchThreadSummaries(true);
+    }
+  },
+
+  fetchThreadSummaries: async (reset = true, personaId?) => {
+    try {
+      const PAGE_SIZE = 50;
+      const offset = reset ? 0 : get().threadSummaries.length;
+      const [summaries, count] = await Promise.all([
+        getThreadSummaries(PAGE_SIZE, offset, personaId),
+        reset ? getThreadCount(personaId) : Promise.resolve(get().threadCount),
+      ]);
+      if (reset) {
+        set({ threadSummaries: summaries, threadCount: count });
+      } else {
+        set((state) => ({
+          threadSummaries: [...state.threadSummaries, ...summaries],
+          threadCount: count,
+        }));
+      }
+    } catch (err) {
+      reportError(err, "Failed to fetch thread summaries", set);
+    }
+  },
+
+  expandThread: async (threadId: string) => {
+    set({ expandedThreadId: threadId });
+    // Only fetch if not already cached
+    if (get().threadReplies.has(threadId)) return;
+    try {
+      const rawReplies = await getMessagesByThread(threadId);
+      set((state) => {
+        const next = new Map(state.threadReplies);
+        next.set(threadId, rawReplies);
+        return { threadReplies: next };
+      });
+    } catch (err) {
+      logger.warn("expandThread failed", { threadId, error: String(err) });
+    }
+  },
+
+  collapseThread: () => {
+    set({ expandedThreadId: null });
+  },
 });

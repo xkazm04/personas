@@ -8,6 +8,9 @@ import { CustomSectionsPanel } from './CustomSectionsPanel';
 import type { SubTab } from './PromptSectionSidebar';
 import { STANDARD_TABS, promptChanged } from '../libs/promptEditorHelpers';
 import { useStructuredPromptSync } from '../libs/useStructuredPromptSync';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("persona-prompt-editor");
 
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
@@ -60,7 +63,7 @@ export function PersonaPromptEditor() {
       markSaved(current);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 2000);
-    } catch (error) { console.error('Failed to save structured prompt:', error); }
+    } catch (error) { logger.error('Failed to save structured prompt', { error }); }
   }, [applyPersonaOp, personaIdRef, spRef, baselineRef, markSaved]);
 
   const { isSaving } = useTabSection({

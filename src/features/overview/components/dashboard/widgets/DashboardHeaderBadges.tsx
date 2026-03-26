@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { Activity, ClipboardCheck, ShieldCheck, Cpu, Mail } from 'lucide-react';
+import { Activity, ClipboardCheck, ShieldCheck, Cpu, Mail, Bell } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import type { OverviewTab } from '@/lib/types/types';
 
@@ -11,6 +11,7 @@ interface DashboardHeaderBadgesProps {
   globalExecutionsTotal: number;
   successRate: number;
   activeAgents: number;
+  activeAlertCount: number;
   setOverviewTab: (tab: OverviewTab) => void;
 }
 
@@ -20,9 +21,10 @@ export function DashboardHeaderBadges({
   globalExecutionsTotal,
   successRate,
   activeAgents,
+  activeAlertCount,
   setOverviewTab,
 }: DashboardHeaderBadgesProps) {
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
 
   if (isSimple) {
     return (
@@ -67,6 +69,18 @@ export function DashboardHeaderBadges({
         <AnimatedCounter value={pendingReviewCount} />
         <span className="text-amber-400/70 font-medium">Reviews</span>
       </motion.button>
+      {activeAlertCount > 0 && (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          onClick={() => setOverviewTab('observability')}
+          title={`${activeAlertCount} active alerts`}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl typo-heading border transition-colors hover:bg-red-500/15 bg-red-500/10 border-red-500/20 text-red-400"
+        >
+          <Bell className="w-3 h-3" />
+          <AnimatedCounter value={activeAlertCount} />
+          <span className="text-red-400/70 font-medium">Alerts</span>
+        </motion.button>
+      )}
       <div className="border-l border-primary/10 pl-2 ml-1 flex items-center gap-2">
         <motion.button
           whileHover={{ scale: 1.05 }}

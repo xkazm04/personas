@@ -30,9 +30,32 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" },
       ],
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@tauri-apps/api/core",
+              importNames: ["invoke"],
+              message: "Use invokeWithTimeout from '@/lib/tauriInvoke' instead of raw invoke. It adds timeout protection, IPC metrics, idempotency dedup, and typed CommandName safety.",
+            },
+          ],
+        },
+      ],
       "custom/enforce-base-modal": "warn",
       "custom/no-raw-text-classes": "warn",
       "custom/no-raw-spacing-classes": "warn",
+    },
+  },
+  // Allow raw invoke in the wrapper itself, test mocks, and test automation bridge
+  {
+    files: [
+      "src/lib/tauriInvoke.ts",
+      "src/test/tauriMock.ts",
+      "src/test/automation/bridge.ts",
+    ],
+    rules: {
+      "no-restricted-imports": "off",
     },
   }
 );

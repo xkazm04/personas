@@ -3,7 +3,8 @@ use tauri::{AppHandle, Emitter, State};
 
 use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, CreateTriggerInput,
-    PaginatedEvents, PersonaEvent, PersonaEventSubscription, UpdateEventSubscriptionInput,
+    EventFilterInput, PaginatedEvents, PersonaEvent, PersonaEventSubscription,
+    UpdateEventSubscriptionInput,
 };
 use crate::db::repos::communication::events as repo;
 use crate::db::repos::resources::triggers as trigger_repo;
@@ -32,6 +33,16 @@ pub fn list_events_in_range(
 ) -> Result<PaginatedEvents, AppError> {
     require_auth_sync(&state)?;
     let (events, has_more) = repo::get_in_range(&state.db, &since, &until, limit)?;
+    Ok(PaginatedEvents { events, has_more })
+}
+
+#[tauri::command]
+pub fn search_events(
+    state: State<'_, Arc<AppState>>,
+    filter: EventFilterInput,
+) -> Result<PaginatedEvents, AppError> {
+    require_auth_sync(&state)?;
+    let (events, has_more) = repo::search(&state.db, &filter)?;
     Ok(PaginatedEvents { events, has_more })
 }
 
@@ -87,7 +98,7 @@ pub fn create_subscription(
         "listen_event_type": input.event_type,
         "source_filter": input.source_filter,
     });
-    let _ = trigger_repo::create(
+    trigger_repo::create(
         &state.db,
         CreateTriggerInput {
             persona_id: input.persona_id.clone(),
@@ -96,7 +107,7 @@ pub fn create_subscription(
             enabled: input.enabled,
             use_case_id: input.use_case_id.clone(),
         },
-    );
+    )?;
 
     repo::create_subscription(&state.db, input)
 }
@@ -186,7 +197,6 @@ pub fn seed_mock_event(
     let source_type = MOCK_EVENT_SOURCES[t % MOCK_EVENT_SOURCES.len()].to_string();
     let status = MOCK_EVENT_STATUSES[t % MOCK_EVENT_STATUSES.len()].to_string();
 
-    let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let payload = serde_json::json!({
         "mock": true,
@@ -194,30 +204,24 @@ pub fn seed_mock_event(
         "detail": format!("Mock {} event from {}", event_type, source_type),
     }).to_string();
 
-    let conn = state.db.get()?;
-    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
-    conn.execute(
-        "INSERT INTO persona_events
-         (id, event_type, source_type, source_id, target_persona_id, payload, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        rusqlite::params![id, event_type, source_type, Option::<String>::None, target_persona_id, payload, status, now],
-    )?;
-    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
-
-    let event = PersonaEvent {
-        id,
-        event_type,
+    // Route through publish() to ensure validation and encryption are applied,
+    // keeping mock events structurally identical to production events.
+    let input = CreatePersonaEventInput {
+        event_type: event_type.clone(),
         source_type,
+        project_id: Some("mock".into()),
         source_id: None,
-        project_id: String::new(),
         target_persona_id,
         payload: Some(payload),
-        status,
-        error_message: None,
-        processed_at: None,
         use_case_id: None,
-        created_at: now,
     };
+    let mut event = repo::publish(&state.db, input)?;
+
+    // Update status to the mock's chosen status (publish() always sets 'pending').
+    if status != "pending" {
+        repo::update_status(&state.db, &event.id, &status, None)?;
+        event.status = status;
+    }
 
     if let Err(e) = app.emit(event_name::EVENT_BUS, event.clone()) {
         tracing::warn!(error = %e, "Failed to emit mock event-bus event");

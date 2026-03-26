@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Check } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { COMPILATION_STAGES } from '@/lib/compiler/personaCompiler';
+import { formatElapsed as _formatElapsed } from '@/lib/utils/formatters';
 
 // -- Stage inference from output lines ----------------------------
 
@@ -12,7 +13,7 @@ import { COMPILATION_STAGES } from '@/lib/compiler/personaCompiler';
  *   0 = prompt_assembly  -- initial lines, "starting", "initializing", "assembling"
  *   1 = llm_generation   -- once we see LLM output flowing (default while running)
  *   2 = result_parsing   -- "parsing", "extracting", "transform_persona", JSON markers
- *   3 = feasibility_check -- "feasibility", "validating", "checking"
+ *   3 = validation        -- "feasibility", "validating", "checking"
  *   4 = persist          -- "saving", "persisting", "writing"
  */
 function inferStageIndex(lines: string[]): number {
@@ -48,12 +49,7 @@ function useElapsedSeconds(isRunning: boolean): number {
   return elapsed;
 }
 
-function formatElapsed(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
+const formatElapsed = (seconds: number) => _formatElapsed(seconds, { unit: 's', format: 'clock' });
 
 // -- Main Component -----------------------------------------------
 

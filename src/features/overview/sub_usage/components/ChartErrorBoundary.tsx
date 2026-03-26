@@ -1,5 +1,8 @@
 import { Component, type ReactNode } from 'react';
 import { BarChart3, RefreshCw } from 'lucide-react';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("chart-error-boundary");
 
 interface ChartErrorBoundaryProps {
   children: ReactNode;
@@ -27,6 +30,7 @@ export class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, Chart
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('[ChartErrorBoundary] Chart render error:', error);
     console.error('Component stack:', errorInfo.componentStack);
+    logger.error('Chart render error', { error: error.message, componentStack: errorInfo.componentStack });
   }
 
   handleRetry = () => {

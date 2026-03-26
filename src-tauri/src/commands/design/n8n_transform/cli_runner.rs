@@ -229,14 +229,10 @@ pub async fn continue_n8n_transform(
     let claude_session_id = get_n8n_transform_claude_session(&transform_id)
         .ok_or_else(|| AppError::NotFound("No Claude session found for this transform".into()))?;
 
-    // Reject if this transform is already running (double-submit guard)
-    job_state::manager().ensure_not_running(&transform_id)?;
-
-    // Update job state
-    set_n8n_transform_status(&app, &transform_id, "running", None);
-
+    // Atomically guard against duplicate concurrent continue calls:
+    // check not-running + set status + set cancel token in one lock scope.
     let cancel_token = CancellationToken::new();
-    job_state::manager().set_cancel_token(&transform_id, cancel_token.clone())?;
+    job_state::manager().resume_running(&app, &transform_id, cancel_token.clone())?;
 
     let app_handle = app.clone();
     let transform_id_for_task = transform_id.clone();

@@ -182,11 +182,67 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What are the primary sources for contact enrichment data?",
+        "type": "select",
+        "options": [
+          "Gmail signatures only",
+          "Gmail + LinkedIn profiles",
+          "Gmail + web search",
+          "Gmail + LinkedIn + company websites"
+        ],
+        "default": "Gmail signatures only",
+        "context": "Determines which data sources the agent will use to find additional contact information.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "Which contact fields should be prioritized for enrichment?",
+        "type": "select",
+        "options": [
+          "Phone + job title only",
+          "Phone + title + company",
+          "All fields (phone, title, company, social links, website)",
+          "Custom field selection"
+        ],
+        "default": "All fields (phone, title, company, social links, website)",
+        "context": "Controls which data points the agent actively extracts and updates in your contact records.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "How often should the enrichment process run?",
+        "type": "select",
+        "options": [
+          "On demand only",
+          "Weekly",
+          "Bi-weekly",
+          "Monthly"
+        ],
+        "default": "Weekly",
+        "context": "Sets the schedule for automatic contact enrichment cycles.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should conflicting data between existing records and new extractions require manual review?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, mismatches between current and newly extracted data are flagged for your resolution.",
+        "dimension": "human-review"
+      }
+    ],
     "persona_meta": {
       "name": "T: Contact Enrichment Agent",
       "icon": "Sparkles",
       "color": "#8b5cf6"
     }
-  },
-  "is_published": false
+  }
 }

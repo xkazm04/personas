@@ -168,6 +168,12 @@ event_names! {
     P2P_MANIFEST_SYNC_PROGRESS => "p2p:manifest-sync-progress",
     NETWORK_SNAPSHOT_UPDATED   => "network:snapshot-updated",
 
+    // Notification delivery
+    NOTIFICATION_DELIVERY      => "notification-delivery",
+
+    // Credential reauth (OAuth grant revoked)
+    CREDENTIAL_REAUTH_REQUIRED => "credential-reauth-required",
+
     // Share link (deep link received from OS)
     SHARE_LINK_RECEIVED        => "share-link-received",
 }

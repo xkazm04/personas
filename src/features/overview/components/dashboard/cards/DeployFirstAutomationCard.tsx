@@ -14,7 +14,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { startAutomationDesign, deployAutomation } from '@/api/agents/automations';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import type { DeployAutomationResult } from '@/api/agents/automations';
@@ -71,7 +71,7 @@ type CardPhase = 'prompt' | 'designing' | 'deploying' | 'success' | 'error';
 export default function DeployFirstAutomationCard() {
   const credentials = useVaultStore((s) => s.credentials);
   const personas = useAgentStore((s) => s.personas);
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
 
   const [phase, setPhase] = useState<CardPhase>('prompt');
   const [deployResult, setDeployResult] = useState<DeployAutomationResult | null>(null);

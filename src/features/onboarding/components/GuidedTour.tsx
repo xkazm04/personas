@@ -3,7 +3,7 @@ import { ChevronRight, X, MapPin, Sparkles } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useAgentStore } from "@/stores/agentStore";
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { Button } from '@/features/shared/components/buttons';
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection } from '@/lib/types/types';
@@ -14,7 +14,7 @@ import { TourPanelBody } from './TourPanelBody';
 const SIMPLE_HIDDEN_STEPS = new Set(['credentials-catalog']);
 
 export default function GuidedTour() {
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
   const tourActive = useSystemStore((s) => s.tourActive);
   const currentIndex = useSystemStore((s) => s.tourCurrentStepIndex);
   const completedSteps = useSystemStore((s) => s.tourStepCompleted);

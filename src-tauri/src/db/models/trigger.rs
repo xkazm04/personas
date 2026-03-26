@@ -244,11 +244,19 @@ pub struct PersonaTrigger {
     pub trigger_type: String,
     pub config: Option<String>,
     pub enabled: bool,
+    /// Persisted lifecycle status: "active", "paused", "errored", or "disabled".
+    /// Added by migration; older rows are backfilled from `enabled`.
+    #[serde(default = "default_trigger_status")]
+    pub status: String,
     pub last_triggered_at: Option<String>,
     pub next_trigger_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
     pub use_case_id: Option<String>,
+}
+
+fn default_trigger_status() -> String {
+    "active".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -271,13 +279,14 @@ pub struct UpdateTriggerInput {
 }
 
 impl PersonaTrigger {
-    /// Return the typed lifecycle status derived from the `enabled` column.
+    /// Return the typed lifecycle status parsed from the `status` column.
     ///
-    /// Bridges the legacy boolean column to the [`TriggerStatus`] enum so that
-    /// downstream code can reason about trigger state transitions without
-    /// inspecting raw booleans.
-    pub fn status(&self) -> TriggerStatus {
-        TriggerStatus::from_enabled(self.enabled)
+    /// Falls back to the legacy `enabled` boolean bridge when the column
+    /// contains an unrecognised value (shouldn't happen after migration).
+    pub fn typed_status(&self) -> TriggerStatus {
+        self.status
+            .parse::<TriggerStatus>()
+            .unwrap_or_else(|_| TriggerStatus::from_enabled(self.enabled))
     }
 
     /// Decrypt the config JSON, transparently handling both encrypted and
@@ -442,6 +451,7 @@ mod tests {
             trigger_type: trigger_type.into(),
             config: config.map(String::from),
             enabled: true,
+            status: "active".into(),
             last_triggered_at: None,
             next_trigger_at: None,
             created_at: "2026-01-01T00:00:00Z".into(),

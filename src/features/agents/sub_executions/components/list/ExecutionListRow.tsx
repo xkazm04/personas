@@ -2,7 +2,8 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, ArrowLeftRight } from 'lucide-react';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { maskSensitiveJson, sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
+import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
+import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { formatTokens } from '../../libs/useExecutionList';
 import { CostSparkline } from './ExecutionListItem';
 
@@ -92,7 +93,7 @@ export function ExecutionListRow({
           <span className="typo-body text-muted-foreground/80 ml-auto">{formatRelativeTime(execution.started_at)}</span>
         </div>
         {execution.error_message && (
-          <p className="typo-body text-red-400/70 truncate pl-5.5">{showRaw ? execution.error_message : sanitizeErrorMessage(execution.error_message)}</p>
+          <p className="typo-body text-red-400/70 truncate pl-5.5">{showRaw ? execution.error_message : sanitizeErrorForDisplay(execution.error_message, 'execution-list')}</p>
         )}
       </div>
 
@@ -127,7 +128,7 @@ export function ExecutionListRow({
               {execution.error_message && (
                 <div>
                   <span className="text-red-400/70 typo-code uppercase">Error</span>
-                  <p className="mt-1 typo-body text-red-400/80">{showRaw ? execution.error_message : sanitizeErrorMessage(execution.error_message)}</p>
+                  <p className="mt-1 typo-body text-red-400/80">{showRaw ? execution.error_message : sanitizeErrorForDisplay(execution.error_message, 'execution-list')}</p>
                 </div>
               )}
               <div className="flex items-center gap-2 pt-1">

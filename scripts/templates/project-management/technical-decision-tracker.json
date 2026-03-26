@@ -193,11 +193,77 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What categories of technical decisions do you want to track?",
+        "type": "select",
+        "options": [
+          "Architecture only",
+          "Architecture + Technology choices",
+          "Architecture + Technology + Design patterns",
+          "All engineering decisions"
+        ],
+        "default": "All engineering decisions",
+        "context": "Defines the scope of decisions the agent will capture and document.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "Should decisions require stakeholder review before being finalized?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, documented decisions are sent to listed stakeholders for approval before marking as accepted.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "What documentation format should decisions follow?",
+        "type": "select",
+        "options": [
+          "ADR (Architecture Decision Record)",
+          "RFC (Request for Comments)",
+          "Lightweight (Title + Context + Decision)",
+          "Custom template"
+        ],
+        "default": "ADR (Architecture Decision Record)",
+        "context": "Sets the structure and detail level used when creating decision records in Notion.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Where should decision notifications be sent?",
+        "type": "select",
+        "options": [
+          "Slack channel",
+          "In-app only",
+          "Email digest",
+          "Slack + in-app"
+        ],
+        "default": "Slack + in-app",
+        "context": "Controls which channels receive notifications when new decisions are documented or need review.",
+        "dimension": "messages"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should the agent link decisions to related GitHub PRs and issues automatically?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, the agent searches for and attaches relevant code changes to each decision record.",
+        "dimension": "connectors"
+      }
+    ],
     "persona_meta": {
       "name": "T: Technical Decision Tracker",
       "icon": "FileText",
       "color": "#8b5cf6"
     }
-  },
-  "is_published": false
+  }
 }

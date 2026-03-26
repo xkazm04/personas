@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Store, Search, X, Rss, RssIcon } from 'lucide-react';
 import * as api from '@/api/events/sharedEvents';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("shared-events");
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
 import { CatalogCard } from './CatalogCard';
@@ -54,7 +57,7 @@ export function SharedEventsTab() {
       const sub = await api.subscribeFeed(entryId);
       setSubscriptions(prev => [sub, ...prev]);
     } catch (e) {
-      console.error('Subscribe failed:', e);
+      logger.error('Subscribe failed', { entryId, error: String(e) });
     }
   };
 
@@ -63,7 +66,7 @@ export function SharedEventsTab() {
       await api.unsubscribeFeed(subId);
       setSubscriptions(prev => prev.filter(s => s.id !== subId));
     } catch (e) {
-      console.error('Unsubscribe failed:', e);
+      logger.error('Unsubscribe failed', { subId, error: String(e) });
     }
   };
 

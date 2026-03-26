@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilterValues } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -15,12 +16,17 @@ import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
  * the user-toggled auto-refresh polling cycle.
  */
 export function useOverviewMetrics() {
-  const fetchObservabilityMetrics = useOverviewStore((s) => s.fetchObservabilityMetrics);
-  const observabilityMetrics = useOverviewStore((s) => s.observabilityMetrics);
-  const observabilityError = useOverviewStore((s) => s.observabilityError);
-  const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
+  const {
+    fetchObservabilityMetrics, observabilityMetrics, observabilityError,
+    fetchHealingIssues, executionDashboard,
+  } = useOverviewStore(useShallow((s) => ({
+    fetchObservabilityMetrics: s.fetchObservabilityMetrics,
+    observabilityMetrics: s.observabilityMetrics,
+    observabilityError: s.observabilityError,
+    fetchHealingIssues: s.fetchHealingIssues,
+    executionDashboard: s.executionDashboard,
+  })));
   const fetchToolUsage = useAgentStore((s) => s.fetchToolUsage);
-  const executionDashboard = useOverviewStore((s) => s.executionDashboard);
 
   const {
     selectedPersonaId,

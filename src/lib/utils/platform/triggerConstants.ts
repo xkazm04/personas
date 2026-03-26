@@ -1,4 +1,7 @@
 import { Clock, Webhook, Play, Zap, Link, RefreshCw, Radio, FolderSearch, ClipboardPaste, AppWindow, Combine } from 'lucide-react';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("trigger-constants");
 
 export interface TriggerTypeMeta {
   Icon: typeof Clock;
@@ -360,10 +363,10 @@ export function parseTriggerConfig(
 
   // Warn when the config's own type field disagrees with the trigger_type column
   if (typeof raw.type === 'string' && raw.type !== triggerType) {
-    console.warn(
-      `[trigger] config.type "${raw.type}" does not match trigger_type "${triggerType}". ` +
-      `Using trigger_type as discriminant. This may indicate a migration bug or manual DB edit.`,
-    );
+    logger.warn("Trigger config.type does not match trigger_type column; using trigger_type as discriminant", {
+      configType: raw.type,
+      triggerType,
+    });
   }
 
   switch (triggerType) {

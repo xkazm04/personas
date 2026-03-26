@@ -5,14 +5,14 @@ import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/l
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { isTerminalState } from '@/lib/execution/executionState';
-import { sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
+import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { ErrorExplanationCard } from './ErrorExplanationCard';
 import { DetailCollapsibleSections } from './DetailCollapsibleSections';
 import {
   type ErrorAction,
-  getErrorExplanation,
   hasNonEmptyJson,
 } from './executionDetailHelpers';
+import { classifyErrorFull } from '@/lib/errors/errorPipeline';
 
 interface ExecutionDetailContentProps {
   execution: PersonaExecution;
@@ -117,8 +117,8 @@ export function ExecutionDetailContent({ execution }: ExecutionDetailContentProp
       {/* Error Message */}
       {execution.error_message && (
         <ErrorExplanationCard
-          errorDisplay={showRaw ? execution.error_message : sanitizeErrorMessage(execution.error_message)}
-          explanation={getErrorExplanation(execution.error_message)}
+          errorDisplay={showRaw ? execution.error_message : sanitizeErrorForDisplay(execution.error_message, 'execution-detail')}
+          explanation={classifyErrorFull(execution.error_message).explanation}
           onAction={handleErrorAction}
         />
       )}

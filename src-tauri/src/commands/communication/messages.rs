@@ -1,11 +1,23 @@
 use std::sync::Arc;
+use serde::Serialize;
 use tauri::State;
+use ts_rs::TS;
 
-use crate::db::models::{CreateMessageInput, PersonaMessage, PersonaMessageDelivery};
+use crate::db::models::{CreateMessageInput, MessageThreadSummary, PersonaMessage, PersonaMessageDelivery};
 use crate::db::repos::communication::messages as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct MessageDeliverySummary {
+    pub message_id: String,
+    pub delivered: i64,
+    pub pending: i64,
+    pub failed: i64,
+}
 
 #[tauri::command]
 pub fn list_messages(
@@ -76,6 +88,47 @@ pub fn get_message_deliveries(
 ) -> Result<Vec<PersonaMessageDelivery>, AppError> {
     require_auth_sync(&state)?;
     repo::get_deliveries_by_message(&state.db, &message_id)
+}
+
+#[tauri::command]
+pub fn get_bulk_delivery_summaries(
+    state: State<'_, Arc<AppState>>,
+    message_ids: Vec<String>,
+) -> Result<Vec<MessageDeliverySummary>, AppError> {
+    require_auth_sync(&state)?;
+    let rows = repo::get_bulk_delivery_summaries(&state.db, &message_ids)?;
+    Ok(rows.into_iter().map(|(message_id, delivered, pending, failed)| {
+        MessageDeliverySummary { message_id, delivered, pending, failed }
+    }).collect())
+}
+
+#[tauri::command]
+pub fn get_messages_by_thread(
+    state: State<'_, Arc<AppState>>,
+    thread_id: String,
+) -> Result<Vec<PersonaMessage>, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_by_thread(&state.db, &thread_id)
+}
+
+#[tauri::command]
+pub fn get_thread_summaries(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<i64>,
+    offset: Option<i64>,
+    persona_id: Option<String>,
+) -> Result<Vec<MessageThreadSummary>, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_thread_summaries(&state.db, limit, offset, persona_id.as_deref())
+}
+
+#[tauri::command]
+pub fn get_thread_count(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_thread_count(&state.db, persona_id.as_deref())
 }
 
 // -- Dev seed: mock message -------------------------------------------------------

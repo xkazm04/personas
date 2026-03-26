@@ -8,8 +8,11 @@ use tauri::{Emitter, State};
 use crate::db::models::{
     KbDocument, KbSearchQuery, KnowledgeBase, VectorSearchResult,
 };
+use crate::db::repos::resources::audit_log;
+use crate::db::{DbPool, UserDbPool};
 use crate::engine::event_registry::event_name;
 use crate::engine::kb_ingest;
+use crate::engine::vector_store::SqliteVectorStore;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
@@ -44,42 +47,50 @@ pub async fn create_knowledge_base(
     let dims = embedder.dimensions() as i32;
     let model_name = embedder.model_name().to_string();
 
-    // Create KB record in user database
-    {
-        let conn = state.user_db.get()?;
-        conn.execute(
-            "INSERT INTO knowledge_bases (id, credential_id, name, description, embedding_model, embedding_dims, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-            params![id, credential_id, name, description, model_name, dims, now],
-        )?;
-    }
-
-    // Also create a credential entry in the main DB so it appears in the vault
-    {
-        let conn = state.db.get()?;
-        conn.execute(
-            "INSERT OR IGNORE INTO persona_credentials
-             (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-            params![
-                credential_id,
-                format!("KB: {name}"),
-                "personas_vector_db",
-                "{}",
-                "",
-                format!(r#"{{"is_builtin":false,"kb_id":"{id}","description":"Vector knowledge base for semantic search."}}"#),
-                now,
-            ],
-        )?;
-    }
-
-    // Create vector index table — if this fails, clean up the orphaned DB records
+    // Step 1: Create vector index first — easiest to roll back (just DROP TABLE)
     let vs = state
         .vector_store
         .as_ref()
         .ok_or_else(|| AppError::Internal("Vector store not initialized".into()))?;
-    if let Err(e) = vs.create_index(&id, dims as usize) {
-        tracing::error!(error = %e, kb_id = %id, "Vector index creation failed, cleaning up orphaned records");
+    vs.create_index(&id, dims as usize)?;
+
+    // Step 2: Write both DB records. If either fails, clean up the vector index.
+    let db_result: Result<(), AppError> = (|| {
+        // Create KB record in user database
+        {
+            let conn = state.user_db.get()?;
+            conn.execute(
+                "INSERT INTO knowledge_bases (id, credential_id, name, description, embedding_model, embedding_dims, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+                params![id, credential_id, name, description, model_name, dims, now],
+            )?;
+        }
+
+        // Create credential entry in main DB so it appears in the vault
+        {
+            let conn = state.db.get()?;
+            conn.execute(
+                "INSERT OR IGNORE INTO persona_credentials
+                 (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+                params![
+                    credential_id,
+                    format!("KB: {name}"),
+                    "personas_vector_db",
+                    "{}",
+                    "",
+                    format!(r#"{{"is_builtin":false,"kb_id":"{id}","description":"Vector knowledge base for semantic search."}}"#),
+                    now,
+                ],
+            )?;
+        }
+        Ok(())
+    })();
+
+    if let Err(e) = db_result {
+        tracing::error!(error = %e, kb_id = %id, "DB insert failed, cleaning up vector index");
+        let _ = vs.drop_index(&id);
+        // Best-effort cleanup of any partially written DB records
         if let Ok(conn) = state.user_db.get() {
             let _ = conn.execute("DELETE FROM knowledge_bases WHERE id = ?1", params![id]);
         }
@@ -89,7 +100,13 @@ pub async fn create_knowledge_base(
         return Err(e);
     }
 
-    kb_ingest::get_kb(&state.user_db, &id)
+    let kb = kb_ingest::get_kb(&state.user_db, &id)?;
+
+    if let Err(e) = audit_log::insert(&state.db, &credential_id, &name, "kb_create", None, None, Some(&format!("model={model_name}, dims={dims}"))) {
+        tracing::warn!(kb_id = %id, error = %e, "Failed to write audit log for KB create");
+    }
+
+    Ok(kb)
 }
 
 #[tauri::command]
@@ -174,6 +191,10 @@ pub async fn delete_knowledge_base(
         )?;
     }
 
+    if let Err(e) = audit_log::insert(&state.db, &kb.credential_id, &kb.name, "kb_delete", None, None, None) {
+        tracing::warn!(kb_id = %kb_id, error = %e, "Failed to write audit log for KB delete");
+    }
+
     Ok(())
 }
 
@@ -213,10 +234,18 @@ pub async fn kb_ingest_files(
         .ok_or_else(|| AppError::Internal("Vector store not initialized".into()))?
         .clone();
 
+    let file_count = canonical_paths.len();
     let job_id = uuid::Uuid::new_v4().to_string();
     let user_db = state.user_db.clone();
     let cancel = tokio_util::sync::CancellationToken::new();
     let job_id_clone = job_id.clone();
+    let audit_pool = state.db.clone();
+    let kb_cred_id = kb.credential_id.clone();
+    let kb_name = kb.name.clone();
+
+    if let Err(e) = audit_log::insert(&state.db, &kb_cred_id, &kb_name, "kb_ingest_files", None, None, Some(&format!("{file_count} file(s)"))) {
+        tracing::warn!(kb_id = %kb_id, error = %e, "Failed to write audit log for KB file ingestion");
+    }
 
     // Run ingestion in background
     tokio::spawn(async move {
@@ -232,12 +261,20 @@ pub async fn kb_ingest_files(
         )
         .await;
 
-        if let Err(e) = result {
-            tracing::error!(error = %e, "File ingestion failed");
-            let _ = app.emit(event_name::KB_INGEST_ERROR, serde_json::json!({
-                "jobId": job_id_clone,
-                "error": e.to_string()
-            }));
+        match &result {
+            Ok(_) => {
+                if let Err(e) = audit_log::insert(&audit_pool, &kb_cred_id, &kb_name, "kb_ingest_complete", None, None, Some(&format!("{file_count} file(s) ingested"))) {
+                    tracing::warn!(error = %e, "Failed to write audit log for KB ingest completion");
+                }
+            }
+            Err(e) => {
+                tracing::error!(error = %e, "File ingestion failed");
+                let _ = audit_log::insert(&audit_pool, &kb_cred_id, &kb_name, "kb_ingest_failed", None, None, Some(&e.to_string()));
+                let _ = app.emit(event_name::KB_INGEST_ERROR, serde_json::json!({
+                    "jobId": job_id_clone,
+                    "error": e.to_string()
+                }));
+            }
         }
     });
 
@@ -420,6 +457,15 @@ pub async fn kb_search(
 
     let top_k = query.top_k.unwrap_or(10).min(MAX_TOP_K);
 
+    // Audit log the search (log query length, not raw text)
+    if let Err(e) = audit_log::insert(
+        &state.db, &format!("kb:{}", query.kb_id), &query.kb_id,
+        "kb_search", None, None,
+        Some(&format!("query_len={}, top_k={top_k}", query.query.len())),
+    ) {
+        tracing::warn!(kb_id = %query.kb_id, error = %e, "Failed to write audit log for KB search");
+    }
+
     // Embed the query
     let query_vec = embedder.embed_query(&query.query).await?;
 
@@ -585,5 +631,135 @@ pub async fn kb_delete_document(
     )?;
 
     tx.commit()?;
+
+    if let Err(e) = audit_log::insert(
+        &state.db, &format!("kb:{kb_id}"), &kb_id,
+        "kb_doc_delete", None, None,
+        Some(&format!("doc={document_id}, chunks={}", chunk_ids.len())),
+    ) {
+        tracing::warn!(document_id = %document_id, error = %e, "Failed to write audit log for KB document delete");
+    }
+
     Ok(())
+}
+
+// ============================================================================
+// Startup Reconciliation
+// ============================================================================
+
+/// Detect and clean up orphaned KB records left by crashes during creation.
+///
+/// Checks for two inconsistency types:
+/// 1. KB exists in `user_db.knowledge_bases` but has no matching credential in
+///    `db.persona_credentials` — delete the orphaned user_db record and drop
+///    the vector index if it exists.
+/// 2. Credential exists in `db.persona_credentials` (service_type =
+///    `personas_vector_db`) but has no matching KB in `user_db.knowledge_bases`
+///    — delete the orphaned credential.
+pub fn reconcile_orphaned_kb_records(
+    db: &DbPool,
+    user_db: &UserDbPool,
+    vector_store: &SqliteVectorStore,
+) {
+    let mut cleaned = 0u32;
+
+    // Case 1: KB rows in user_db without a matching credential in main db
+    if let Ok(user_conn) = user_db.get() {
+        let kb_rows: Vec<(String, String)> = (|| -> Result<Vec<_>, rusqlite::Error> {
+            let mut stmt = user_conn.prepare(
+                "SELECT id, credential_id FROM knowledge_bases",
+            )?;
+            let rows = stmt
+                .query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(rows)
+        })()
+        .unwrap_or_default();
+
+        for (kb_id, cred_id) in &kb_rows {
+            let cred_exists = (|| -> Result<bool, rusqlite::Error> {
+                let conn = db.get().map_err(|e| {
+                    rusqlite::Error::InvalidParameterName(e.to_string())
+                })?;
+                let count: i64 = conn.query_row(
+                    "SELECT COUNT(*) FROM persona_credentials WHERE id = ?1",
+                    params![cred_id],
+                    |row| row.get(0),
+                )?;
+                Ok(count > 0)
+            })()
+            .unwrap_or(true); // If we can't check, assume it exists (don't delete)
+
+            if !cred_exists {
+                tracing::warn!(
+                    kb_id = %kb_id,
+                    credential_id = %cred_id,
+                    "Orphaned KB record found (no matching credential), cleaning up"
+                );
+                let _ = vector_store.drop_index(kb_id);
+                let _ = user_conn.execute("DELETE FROM kb_chunks WHERE kb_id = ?1", params![kb_id]);
+                let _ = user_conn.execute("DELETE FROM kb_documents WHERE kb_id = ?1", params![kb_id]);
+                let _ = user_conn.execute("DELETE FROM knowledge_bases WHERE id = ?1", params![kb_id]);
+                cleaned += 1;
+            }
+        }
+    }
+
+    // Case 2: Credential rows in main db without a matching KB in user_db
+    if let Ok(main_conn) = db.get() {
+        let cred_rows: Vec<(String, Option<String>)> = (|| -> Result<Vec<_>, rusqlite::Error> {
+            let mut stmt = main_conn.prepare(
+                "SELECT id, metadata FROM persona_credentials WHERE service_type = 'personas_vector_db'",
+            )?;
+            let rows = stmt
+                .query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(rows)
+        })()
+        .unwrap_or_default();
+
+        for (cred_id, metadata) in &cred_rows {
+            let kb_id = metadata
+                .as_deref()
+                .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
+                .and_then(|v| v.get("kb_id")?.as_str().map(String::from));
+
+            let Some(kb_id) = kb_id else { continue };
+
+            let kb_exists = (|| -> Result<bool, rusqlite::Error> {
+                let conn = user_db.get().map_err(|e| {
+                    rusqlite::Error::InvalidParameterName(e.to_string())
+                })?;
+                let count: i64 = conn.query_row(
+                    "SELECT COUNT(*) FROM knowledge_bases WHERE id = ?1",
+                    params![kb_id],
+                    |row| row.get(0),
+                )?;
+                Ok(count > 0)
+            })()
+            .unwrap_or(true); // If we can't check, assume it exists
+
+            if !kb_exists {
+                tracing::warn!(
+                    credential_id = %cred_id,
+                    kb_id = %kb_id,
+                    "Orphaned KB credential found (no matching knowledge_base), cleaning up"
+                );
+                let _ = main_conn.execute(
+                    "DELETE FROM persona_credentials WHERE id = ?1",
+                    params![cred_id],
+                );
+                let _ = vector_store.drop_index(&kb_id);
+                cleaned += 1;
+            }
+        }
+    }
+
+    if cleaned > 0 {
+        tracing::info!("KB reconciliation: cleaned up {cleaned} orphaned record(s)");
+    }
 }

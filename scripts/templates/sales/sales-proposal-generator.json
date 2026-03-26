@@ -38,6 +38,74 @@
     ],
     "full_prompt_markdown": "# Sales Proposal Generator\n\n## Identity\n\nYou are an expert sales proposal generator that creates personalized, professional proposals for new deals. You understand sales processes, client needs assessment, and proposal best practices.\n\n---\n\n## Instructions\n\nMonitor the database for new deals and generate personalized proposals: 1) Query database for unprocessed deals 2) Extract key deal information (company, contact, deal size, industry, notes) 3) Generate AI-personalized content based on client industry and specific needs 4) Create structured proposal in Notion with sections: Executive Summary, Client Needs Analysis, Proposed Solution, Timeline, Pricing, Next Steps 5) Send results via: {\"user_message\": {\"title\": \"Proposal Generated\", \"content\": \"Created proposal for [Company] - [Deal Size]\", \"content_type\": \"success\", \"priority\": \"normal\"}} 6) Store processed deals via: {\"agent_memory\": {\"title\": \"Processed Deal\", \"content\": \"deal_id: [ID], created_at: [timestamp]\", \"category\": \"processed\"}} 7) Flag for review via: {\"manual_review\": {\"title\": \"Proposal Ready\", \"description\": \"Generated proposal for [Company] needs review\", \"severity\": \"medium\"}} 8) Emit completion: {\"emit_event\": {\"type\": \"proposal_created\", \"data\": {\"deal_id\": \"[ID]\", \"notion_url\": \"[URL]\"}}}\n\n---\n\n## Tool Guidance\n\nUse database queries to identify new deals. Use web search to research client companies for better personalization. Create well-structured Notion pages with proper formatting and sections.\n\n---\n\n## Examples\n\nExample: New deal for TechCorp ($25k, SaaS industry) -> Research TechCorp's challenges -> Generate proposal highlighting automation benefits -> Create Notion page with executive summary, solution fit, timeline, pricing -> Flag for sales team review\n\n---\n\n## Error Handling\n\nIf deal data is incomplete, generate partial proposal and note missing information. If Notion API fails, retry with exponential backoff. If client research fails, proceed with available deal data.",
     "summary": "Automatically generates personalized sales proposals in Notion from new database deals using AI customization and templates",
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What format should generated proposals follow?",
+        "type": "select",
+        "options": [
+          "Executive summary + pricing table",
+          "Full narrative with case studies",
+          "One-page overview",
+          "Custom template"
+        ],
+        "default": "Executive summary + pricing table",
+        "context": "Determines the document structure the agent uses when creating proposals in Notion.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "What pricing model does your organization use?",
+        "type": "select",
+        "options": [
+          "Fixed price",
+          "Per-seat / per-user",
+          "Tiered pricing",
+          "Usage-based",
+          "Custom quote"
+        ],
+        "default": "Tiered pricing",
+        "context": "Guides how the agent structures the pricing section of each proposal.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "Should the agent research the prospect company online before generating?",
+        "type": "boolean",
+        "options": [],
+        "default": true,
+        "context": "Enables web search to personalize proposals with industry and company context.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should every generated proposal require human review before sharing?",
+        "type": "boolean",
+        "options": [],
+        "default": true,
+        "context": "When enabled, all proposals are flagged for sales team review before being sent to the client.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "What tone should proposals use?",
+        "type": "select",
+        "options": [
+          "Formal / corporate",
+          "Professional but friendly",
+          "Casual / startup",
+          "Technical / detailed"
+        ],
+        "default": "Professional but friendly",
+        "context": "Sets the writing style the AI applies when generating proposal content.",
+        "dimension": "messages"
+      }
+    ],
     "design_highlights": [
       {
         "category": "Intelligence",
@@ -276,6 +344,5 @@
       "icon": "FileText",
       "color": "#3b82f6"
     }
-  },
-  "is_published": false
+  }
 }

@@ -3,7 +3,7 @@ import { Chrome, Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft } fro
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore, THEMES } from '@/stores/themeStore';
 import type { ThemeId } from '@/stores/themeStore';
-import { useDevMode } from '@/hooks/utility/interaction/useDevMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useSystemStore } from '@/stores/systemStore';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -204,7 +204,7 @@ function ThemeFooterIcon() {
 // ---------------------------------------------------------------------------
 
 function NetworkFooterIcon() {
-  const isDevMode = useDevMode();
+  const { isBuilder: isDevMode } = useTier();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
   const { t: tNet } = useTranslation();

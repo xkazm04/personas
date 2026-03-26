@@ -1,6 +1,7 @@
 import { ShieldCheck, Lock } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { cardClass, descClass, fieldClass, labelClass } from './tuneStepConstants';
+import { BORDER_DEFAULT } from '@/lib/utils/designTokens';
 
 interface SandboxPolicy {
   requireApproval?: boolean;
@@ -42,7 +43,7 @@ export function HumanReviewCard({
             className={`mt-1 inline-flex w-11 h-6 rounded-full border transition-colors items-center cursor-pointer ${
               requireApproval || sandboxPolicy?.requireApproval
                 ? 'bg-violet-500/30 border-violet-500/40 justify-end'
-                : 'bg-secondary/40 border-primary/15 justify-start'
+                : `bg-secondary/40 ${BORDER_DEFAULT} justify-start`
             } ${sandboxPolicy?.requireApproval ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
             <input

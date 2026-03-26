@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
+import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { CostSparkline } from './CostSparkline';
 import { ExecutionExpandedDetail } from './ExecutionExpandedDetail';
 
@@ -158,7 +158,7 @@ export function ExecutionRow({
         </div>
         {execution.error_message && (
           <p className="typo-body text-red-400/70 truncate pl-5.5">
-            {showRaw ? execution.error_message : sanitizeErrorMessage(execution.error_message)}
+            {showRaw ? execution.error_message : sanitizeErrorForDisplay(execution.error_message, 'execution-row')}
           </p>
         )}
       </div>

@@ -100,7 +100,7 @@ export function DryRunPanel({ result, dispatch, onIssueResolved }: DryRunPanelPr
     <div className="space-y-3">
       {/* Status badge */}
       <div className="flex items-center gap-2">
-        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-medium ${statusTokens.bgColor} ${statusTokens.color} border ${statusTokens.borderColor}`}>
+        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-medium ${statusTokens.bg} ${statusTokens.text} border ${statusTokens.border}`}>
           <StatusIcon className="w-3.5 h-3.5" />
           {statusLabel}
         </div>

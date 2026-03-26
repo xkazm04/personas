@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Server, Bot, Plus } from 'lucide-react';
+import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Server, Bot, Plus, Search, Bookmark, BookmarkX, X } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
@@ -9,6 +9,9 @@ import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
 import { EventDetailContent } from './EventLogItem';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("event-log");
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All statuses' },
@@ -29,17 +32,32 @@ export default function EventLogList() {
     sortDirection, toggleSortDirection,
     selectedEvent, setSelectedEvent,
     selectedPersonaId, setSelectedPersonaId,
-    isLoading, isRefreshing,
+    isLoading, isRefreshing, isSearching,
     filteredEvents,
     handleRefresh, getPersona,
+    // Search
+    searchText, setSearchText, serverHasMore,
+    // Saved views
+    savedViews, activeViewId, saveCurrentView, applySavedView, removeSavedView, clearFilters,
   } = useEventLog();
 
   const [copiedPayload, setCopiedPayload] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [viewName, setViewName] = useState('');
 
   const handleSeedEvent = useCallback(async () => {
     try { await seedMockEvent(); await handleRefresh(); }
-    catch (err) { console.error('Failed to seed mock event:', err); }
+    catch (err) { logger.error('Failed to seed mock event', { error: err }); }
   }, [handleRefresh]);
+
+  const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim();
+
+  const handleSaveView = async () => {
+    if (!viewName.trim()) return;
+    await saveCurrentView(viewName.trim());
+    setViewName('');
+    setShowSaveDialog(false);
+  };
 
   const typeOptions = [
     { value: 'all', label: 'All types' },
@@ -144,7 +162,7 @@ export default function EventLogList() {
         icon={<Zap className="w-5 h-5 text-status-warning" />}
         iconColor="amber"
         title="Events"
-        subtitle={`${filteredEvents.length} of ${recentEvents.length} event${recentEvents.length !== 1 ? 's' : ''}`}
+        subtitle={`${filteredEvents.length}${serverHasMore ? '+' : ''} of ${recentEvents.length} event${recentEvents.length !== 1 ? 's' : ''}`}
         actions={
           <div className="flex items-center gap-2">
             {import.meta.env.DEV && (
@@ -163,6 +181,105 @@ export default function EventLogList() {
           </div>
         }
       />
+
+      {/* Search bar + saved views */}
+      <div className="px-4 pb-2 flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40" />
+            <input
+              type="text"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="Search events by type, source, or payload..."
+              className="w-full pl-8 pr-8 py-1.5 text-sm rounded-lg bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
+            />
+            {searchText && (
+              <button
+                onClick={() => setSearchText('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground/40 hover:text-foreground/70"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          {isSearching && <LoadingSpinner size="xs" />}
+          {hasActiveFilters && (
+            <>
+              <button
+                onClick={() => setShowSaveDialog(true)}
+                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
+                title="Save current filters as a view"
+              >
+                <Bookmark className="w-3 h-3" /> Save view
+              </button>
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
+                title="Clear all filters"
+              >
+                <X className="w-3 h-3" /> Clear
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Saved views chips */}
+        {savedViews.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs text-foreground/50">Views:</span>
+            {savedViews.map((view) => (
+              <button
+                key={view.id}
+                onClick={() => applySavedView(view)}
+                className={`group flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg border transition-colors ${
+                  activeViewId === view.id
+                    ? 'bg-primary/15 text-primary border-primary/30'
+                    : 'bg-secondary/30 text-foreground/70 border-primary/10 hover:bg-secondary/50'
+                }`}
+              >
+                <Bookmark className="w-2.5 h-2.5" />
+                {view.name}
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeSavedView(view.id); }}
+                  className="ml-0.5 opacity-0 group-hover:opacity-100 text-foreground/40 hover:text-status-error transition-opacity"
+                  title="Delete view"
+                >
+                  <BookmarkX className="w-2.5 h-2.5" />
+                </button>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Save view dialog */}
+        {showSaveDialog && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/40 border border-primary/10">
+            <input
+              type="text"
+              value={viewName}
+              onChange={(e) => setViewName(e.target.value)}
+              placeholder="View name (e.g. 'Failed webhooks this week')"
+              className="flex-1 px-2 py-1 text-sm rounded bg-background/50 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30"
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); if (e.key === 'Escape') setShowSaveDialog(false); }}
+              autoFocus
+            />
+            <button
+              onClick={handleSaveView}
+              disabled={!viewName.trim()}
+              className="px-3 py-1 text-xs rounded-lg bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 disabled:opacity-40 transition-colors"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => { setShowSaveDialog(false); setViewName(''); }}
+              className="px-2 py-1 text-xs rounded-lg text-foreground/60 hover:text-foreground transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
 
       <ContentBody flex>
         <DataGrid<PersonaEvent>

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
-import { sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
+import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { Button } from '@/features/shared/components/buttons';
@@ -9,8 +9,8 @@ import {
   type ErrorAction,
   SEVERITY_ICONS,
   SEVERITY_TO_TOKEN,
-  getErrorExplanation,
 } from './executionDetailTypes';
+import { classifyErrorFull } from '@/lib/errors/errorPipeline';
 
 interface ErrorExplanationCardProps {
   errorMessage: string;
@@ -40,8 +40,9 @@ export function ErrorExplanationCard({ errorMessage, showRaw, personaId }: Error
     }
   }, [personaId, setSidebarSection, setEditorTab, selectPersona]);
 
-  const errorDisplay = showRaw ? errorMessage : sanitizeErrorMessage(errorMessage);
-  const explanation = getErrorExplanation(errorMessage);
+  const errorDisplay = showRaw ? errorMessage : sanitizeErrorForDisplay(errorMessage, 'error-explanation');
+  const classified = classifyErrorFull(errorMessage);
+  const explanation = classified.explanation;
 
   return (
     <div className="space-y-2">

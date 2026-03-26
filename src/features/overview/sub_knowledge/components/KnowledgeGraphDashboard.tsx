@@ -15,6 +15,9 @@ import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollectio
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 
 import { AnnotateModal } from './AnnotateModal';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("knowledge-graph");
 
 export default function KnowledgeGraphDashboard() {
   const personas = useAgentStore((s) => s.personas);
@@ -93,7 +96,7 @@ export default function KnowledgeGraphDashboard() {
 
   const handleSeedKnowledge = useCallback(async () => {
     try { await seedMockKnowledge(); await fetchData(); }
-    catch (err) { console.error('Failed to seed mock knowledge:', err); }
+    catch (err) { logger.error('Failed to seed mock knowledge', { error: err }); }
   }, [fetchData]);
 
   return (

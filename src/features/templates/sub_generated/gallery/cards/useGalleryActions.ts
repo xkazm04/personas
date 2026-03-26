@@ -1,4 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('gallery-actions');
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useVaultStore } from "@/stores/vaultStore";
 import { deleteDesignReview, cleanupDuplicateReviews, backfillServiceFlow, backfillRelatedTools } from '@/api/overview/reviews';
@@ -156,27 +159,27 @@ export function useGalleryActions(
 
   const handleDeleteReview = async (id: string) => {
     try { await deleteDesignReview(id); refresh(); }
-    catch (err) { console.error('Failed to delete template:', err); }
+    catch (err) { logger.error('Failed to delete template', { err }); }
   };
 
   const handleCleanupDuplicates = async () => {
     setIsCleaningUp(true);
     try { await cleanupDuplicateReviews(); refresh(); }
-    catch (err) { console.error('Failed to cleanup duplicates:', err); }
+    catch (err) { logger.error('Failed to cleanup duplicates', { err }); }
     finally { setIsCleaningUp(false); }
   };
 
   const handleBackfillPipeline = async () => {
     setIsBackfillingPipeline(true);
     try { await backfillServiceFlow(); refresh(); }
-    catch (err) { console.error('Failed to backfill service flow:', err); }
+    catch (err) { logger.error('Failed to backfill service flow', { err }); }
     finally { setIsBackfillingPipeline(false); }
   };
 
   const handleBackfillTools = async () => {
     setIsBackfillingTools(true);
     try { await backfillRelatedTools(); refresh(); }
-    catch (err) { console.error('Failed to backfill related tools:', err); }
+    catch (err) { logger.error('Failed to backfill related tools', { err }); }
     finally { setIsBackfillingTools(false); }
   };
 

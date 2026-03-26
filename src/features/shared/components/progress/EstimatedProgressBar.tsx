@@ -6,11 +6,25 @@ interface EstimatedProgressBarProps {
   className?: string;
 }
 
+const MILESTONE_POSITIONS = [25, 50, 75] as const;
+
+/** Returns the bar color based on progress phase */
+function getBarColor(progress: number, isOvertime: boolean, done: boolean): string {
+  if (done) return 'hsl(var(--primary))';
+  if (isOvertime) return 'hsl(38 92% 50%)'; // amber
+  // Gradient from primary toward a slightly shifted hue as progress increases
+  if (progress < 50) return 'hsl(var(--primary))';
+  if (progress < 75) return 'hsl(var(--primary) / 0.9)';
+  return 'hsl(var(--primary) / 0.85)';
+}
+
 /**
- * Hardcoded visual progress bar that fills linearly over the estimated duration.
+ * Visual progress bar with milestone markers and phase-aware color transitions.
  *
  * - While running: linear 0->85% over `estimatedSeconds`, then asymptotic crawl toward 98%
- * - When process completes (isRunning -> false): jumps to 100%
+ * - Milestone tick marks at 25%, 50%, 75%
+ * - Amber tint when past estimated time (asymptotic crawl phase)
+ * - When process completes (isRunning -> false): jumps to 100% with primary color
  * - Shows elapsed time and estimated remaining below the bar
  */
 export function EstimatedProgressBar({
@@ -64,20 +78,45 @@ export function EstimatedProgressBar({
 
   const remaining = Math.max(0, Math.ceil(estimatedSeconds - elapsed));
   const elapsedInt = Math.floor(elapsed);
+  const isOvertime = isRunning && elapsed >= estimatedSeconds;
+  const isDone = !isRunning && progress >= 100;
+  const barColor = getBarColor(progress, isOvertime, isDone);
 
   return (
     <div role="status" aria-live="polite" aria-label={isRunning ? `Progress: ${Math.round(progress)}%` : 'Complete'} className={`space-y-1.5 ${className ?? ''}`}>
-      <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
+      <div className="relative h-2 rounded-full bg-primary/10 overflow-hidden">
+        {/* Filled bar with color transition */}
         <div
-          className="animate-fade-in h-full rounded-full bg-primary" style={{ width: `${progress}%` }}
+          className="animate-fade-in h-full rounded-full"
+          style={{
+            width: `${progress}%`,
+            backgroundColor: barColor,
+            transition: 'background-color 0.8s ease',
+          }}
         />
+        {/* Milestone tick marks */}
+        {MILESTONE_POSITIONS.map((pos) => (
+          <div
+            key={pos}
+            className="absolute top-0 h-full w-px"
+            style={{
+              left: `${pos}%`,
+              backgroundColor: progress >= pos
+                ? 'hsl(var(--background) / 0.35)'
+                : 'hsl(var(--foreground) / 0.1)',
+            }}
+          />
+        ))}
       </div>
       <div className="flex justify-between typo-body text-muted-foreground/60">
         <span>{elapsedInt}s elapsed</span>
-        {isRunning && elapsed < estimatedSeconds && (
+        {isRunning && !isOvertime && (
           <span>~{remaining}s remaining</span>
         )}
-        {!isRunning && progress >= 100 && (
+        {isOvertime && (
+          <span className="text-amber-500/80">Taking longer than expected</span>
+        )}
+        {isDone && (
           <span>Complete</span>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pause, Play, Trash2, X } from 'lucide-react';
+import { Pause, Play, Trash2, X, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { UnifiedDeployment } from './deploymentTypes';
 import type { BulkActionResult } from '@/stores/slices/system/cloudSlice';
@@ -23,6 +23,7 @@ export function BulkActionsToolbar({
   cloudBulkRemove,
 }: BulkActionsToolbarProps) {
   const [busyOp, setBusyOp] = useState<BulkOp | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const addToast = useToastStore((s) => s.addToast);
 
   const cloudRows = selectedRows.filter((r) => r._cloud);
@@ -59,6 +60,7 @@ export function BulkActionsToolbar({
           break;
       }
       onClearSelection();
+      setConfirmingDelete(false);
     } finally {
       setBusyOp(null);
     }
@@ -99,15 +101,43 @@ export function BulkActionsToolbar({
       )}
 
       {removableIds.length > 0 && (
-        <button
-          type="button"
-          onClick={() => handleBulk('delete')}
-          disabled={isBusy}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 disabled:opacity-40 transition-colors cursor-pointer"
-        >
-          {busyOp === 'delete' ? <LoadingSpinner size="sm" /> : <Trash2 className="w-3.5 h-3.5" />}
-          Delete ({removableIds.length})
-        </button>
+        confirmingDelete ? (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-amber-400/70 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+              Delete {removableIds.length}?
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmingDelete(false);
+                handleBulk('delete');
+              }}
+              disabled={isBusy}
+              className="px-2.5 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-xl text-xs font-medium transition-colors disabled:opacity-40 cursor-pointer"
+            >
+              {busyOp === 'delete' ? <LoadingSpinner size="sm" /> : 'Confirm'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              disabled={isBusy}
+              className="px-2.5 py-1.5 bg-secondary/50 text-foreground/80 rounded-xl text-xs transition-colors hover:bg-secondary/70 disabled:opacity-40 cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            disabled={isBusy}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 disabled:opacity-40 transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete ({removableIds.length})
+          </button>
+        )
       )}
 
       <div className="w-px h-5 bg-primary/15" />

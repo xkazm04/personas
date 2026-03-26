@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useCallback, useState } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -8,17 +9,23 @@ import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useAnnotationData } from './useAnnotationData';
 
 export function useObservabilityData() {
-  const fetchObservabilityMetrics = useOverviewStore((s) => s.fetchObservabilityMetrics);
-  const observabilityMetrics = useOverviewStore((s) => s.observabilityMetrics);
-  const observabilityError = useOverviewStore((s) => s.observabilityError);
+  const {
+    fetchObservabilityMetrics, observabilityMetrics, observabilityError,
+    healingIssues, healingRunning, fetchHealingIssues, triggerHealing,
+    resolveHealingIssue, setOverviewTab,
+  } = useOverviewStore(useShallow((s) => ({
+    fetchObservabilityMetrics: s.fetchObservabilityMetrics,
+    observabilityMetrics: s.observabilityMetrics,
+    observabilityError: s.observabilityError,
+    healingIssues: s.healingIssues,
+    healingRunning: s.healingRunning,
+    fetchHealingIssues: s.fetchHealingIssues,
+    triggerHealing: s.triggerHealing,
+    resolveHealingIssue: s.resolveHealingIssue,
+    setOverviewTab: s.setOverviewTab,
+  })));
   const personas = useAgentStore((s) => s.personas);
-  const healingIssues = useOverviewStore((s) => s.healingIssues);
-  const healingRunning = useOverviewStore((s) => s.healingRunning);
-  const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
-  const triggerHealing = useOverviewStore((s) => s.triggerHealing);
-  const resolveHealingIssue = useOverviewStore((s) => s.resolveHealingIssue);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
-  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   const {
     dayRange: days,
@@ -32,12 +39,16 @@ export function useObservabilityData() {
   } = useOverviewFilters();
 
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const healingTimeline = useOverviewStore((s) => s.healingTimeline);
-  const healingTimelineLoading = useOverviewStore((s) => s.healingTimelineLoading);
-  const fetchHealingTimeline = useOverviewStore((s) => s.fetchHealingTimeline);
-
-  const fetchAlertRules = useOverviewStore((s) => s.fetchAlertRules);
-  const fetchAlertHistory = useOverviewStore((s) => s.fetchAlertHistory);
+  const {
+    healingTimeline, healingTimelineLoading, fetchHealingTimeline,
+    fetchAlertRules, fetchAlertHistory,
+  } = useOverviewStore(useShallow((s) => ({
+    healingTimeline: s.healingTimeline,
+    healingTimelineLoading: s.healingTimelineLoading,
+    fetchHealingTimeline: s.fetchHealingTimeline,
+    fetchAlertRules: s.fetchAlertRules,
+    fetchAlertHistory: s.fetchAlertHistory,
+  })));
 
   const refreshAll = useCallback(() => {
     return Promise.all([
@@ -57,7 +68,9 @@ export function useObservabilityData() {
     if (observabilityMetrics) evaluateAlertRules();
   }, [observabilityMetrics, evaluateAlertRules]);
 
-  useEffect(() => { refreshAll(); }, [refreshAll]);
+  // No mount-time fetch — initial data (observabilityMetrics, healingIssues,
+  // alertRules, alertHistory) is loaded by useExecutionDashboardPipeline at
+  // the OverviewContent level so subtab switches reuse cached data.
 
   usePolling(refreshAll, {
     interval: POLLING_CONFIG.dashboardRefresh.interval,

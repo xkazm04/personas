@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
@@ -10,10 +11,12 @@ type TimeWindow = 1 | 7 | 30 | 90;
 
 export function useExecutionMetrics() {
   const { dayRange, setDayRange, customDateRange, setCustomDateRange, effectiveDays, compareEnabled, setCompareEnabled, previousPeriodDays } = useOverviewFilters();
-  const data = useOverviewStore((s) => s.executionDashboard);
-  const loading = useOverviewStore((s) => s.executionDashboardLoading);
-  const error = useOverviewStore((s) => s.executionDashboardError);
-  const fetchExecutionDashboard = useOverviewStore((s) => s.fetchExecutionDashboard);
+  const { data, loading, error, fetchExecutionDashboard } = useOverviewStore(useShallow((s) => ({
+    data: s.executionDashboard,
+    loading: s.executionDashboardLoading,
+    error: s.executionDashboardError,
+    fetchExecutionDashboard: s.fetchExecutionDashboard,
+  })));
 
   const days: TimeWindow = dayRange;
   const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;

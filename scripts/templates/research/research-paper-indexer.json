@@ -264,11 +264,83 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which academic databases should be searched for papers?",
+        "type": "select",
+        "options": [
+          "arXiv only",
+          "PubMed only",
+          "arXiv + PubMed",
+          "arXiv + PubMed + IEEE",
+          "All available databases"
+        ],
+        "default": "arXiv + PubMed + IEEE",
+        "context": "Determines which paper repositories the agent will query during discovery runs.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "What criteria should be used for indexing relevance?",
+        "type": "select",
+        "options": [
+          "Keyword match only",
+          "Keyword match + citation count",
+          "Keyword match + recency + journal impact",
+          "Semantic similarity to existing index"
+        ],
+        "default": "Keyword match + recency + journal impact",
+        "context": "Controls how papers are ranked and filtered before being added to the searchable index.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "How should indexed papers be tagged and categorized?",
+        "type": "select",
+        "options": [
+          "Auto-tag by keywords",
+          "Auto-tag by topic model",
+          "Manual tagging only",
+          "Auto-tag with manual review"
+        ],
+        "default": "Auto-tag by keywords",
+        "context": "Defines the tagging approach used to organize papers for later retrieval and cross-referencing.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should low-confidence AI summaries be flagged for human review?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, papers with unclear abstracts or uncertain summaries are queued for manual validation.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "How many papers should be processed per discovery run?",
+        "type": "select",
+        "options": [
+          "Up to 10",
+          "Up to 25",
+          "Up to 50",
+          "Up to 100"
+        ],
+        "default": "Up to 25",
+        "context": "Limits the batch size per run to balance thoroughness with processing time and API rate limits.",
+        "dimension": "triggers"
+      }
+    ],
     "persona_meta": {
       "name": "T: Research Paper Indexer",
       "icon": "BookOpen",
       "color": "#3b82f6"
     }
-  },
-  "is_published": false
+  }
 }

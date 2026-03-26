@@ -1,12 +1,12 @@
-//! Typestate lifecycle enums for triggers, automations, and rotation entries.
+//! Universal FSM framework for lifecycle enums.
 //!
-//! Each enum defines explicit transition methods that return
-//! `Result<NextState, InvalidTransition>`, making illegal state transitions
-//! unrepresentable at compile time where possible and enforced at runtime
-//! where DB roundtrips are involved.
+//! The [`declare_lifecycle!`] macro generates a complete state machine from a
+//! declarative transition table: enum definition, `can_transition_to`,
+//! `transition_to`, `as_str`, `Display`, and `FromStr` -- eliminating the
+//! boilerplate that was previously duplicated across every status enum.
 //!
-//! Modelled after [`ExecutionState`](super::types::ExecutionState) which
-//! already proves this pattern in the codebase.
+//! For enums that need extra methods (e.g. `is_enabled`, `is_runnable`),
+//! add a regular `impl` block after the macro invocation.
 
 use std::fmt;
 use std::str::FromStr;
@@ -40,69 +40,143 @@ impl fmt::Display for InvalidTransition {
 impl std::error::Error for InvalidTransition {}
 
 // =============================================================================
+// declare_lifecycle! macro
+// =============================================================================
+
+/// Declare a lifecycle enum with compile-time transition table.
+///
+/// Generates:
+/// - The enum with `Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS`
+/// - `can_transition_to(&self, target) -> bool`
+/// - `transition_to(self, target) -> Result<Self, InvalidTransition>`
+/// - `as_str(&self) -> &'static str`
+/// - `fmt::Display` (delegates to `as_str`)
+/// - `FromStr` (inverse of `as_str`)
+/// - `ALL_VARIANTS` constant array
+///
+/// # Example
+///
+/// ```ignore
+/// declare_lifecycle! {
+///     /// Doc comment for the enum.
+///     pub enum MyStatus, entity = "my_thing" {
+///         Active("active") => [Paused, Error],
+///         Paused("paused") => [Active],
+///         Error("error")   => [Active],
+///     }
+/// }
+/// ```
+#[macro_export]
+macro_rules! declare_lifecycle {
+    (
+        $(#[$meta:meta])*
+        pub enum $Name:ident, entity = $entity:literal {
+            $(
+                $(#[$var_meta:meta])*
+                $Variant:ident ( $str:literal ) => [ $( $Target:ident ),* $(,)? ]
+            ),+ $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+        #[serde(rename_all = "lowercase")]
+        #[ts(export)]
+        pub enum $Name {
+            $(
+                $(#[$var_meta])*
+                $Variant,
+            )+
+        }
+
+        #[allow(dead_code)]
+        impl $Name {
+            /// All variants of this lifecycle enum.
+            pub const ALL_VARIANTS: &'static [$Name] = &[
+                $( $Name::$Variant, )+
+            ];
+
+            /// Check whether transitioning from `self` to `target` is valid.
+            pub fn can_transition_to(&self, target: $Name) -> bool {
+                matches!(
+                    (self, target),
+                    $(
+                        $( ($Name::$Variant, $Name::$Target) )|*
+                    )|+
+                )
+            }
+
+            /// Attempt a state transition, returning the new state or an error.
+            pub fn transition_to(self, target: $Name) -> Result<$Name, $crate::engine::lifecycle::InvalidTransition> {
+                if self == target {
+                    return Ok(self);
+                }
+                if self.can_transition_to(target) {
+                    Ok(target)
+                } else {
+                    Err($crate::engine::lifecycle::InvalidTransition {
+                        entity: $entity,
+                        from: self.as_str().to_string(),
+                        to: target.as_str().to_string(),
+                    })
+                }
+            }
+
+            /// String representation (matches serde serialization).
+            pub fn as_str(&self) -> &'static str {
+                match self {
+                    $( $Name::$Variant => $str, )+
+                }
+            }
+        }
+
+        impl std::fmt::Display for $Name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str(self.as_str())
+            }
+        }
+
+        impl std::str::FromStr for $Name {
+            type Err = String;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                match s {
+                    $( $str => Ok($Name::$Variant), )+
+                    other => Err(format!("Unknown {} status: '{}'", $entity, other)),
+                }
+            }
+        }
+    };
+}
+
+// =============================================================================
 // TriggerStatus
 // =============================================================================
 
-/// Lifecycle states for a persona trigger.
-///
-/// Valid transitions:
-///   Active  -> Paused | Errored | Disabled
-///   Paused  -> Active | Disabled
-///   Errored -> Active | Paused | Disabled
-///   Disabled -> Active
-///
-/// The DB stores `enabled INTEGER` (0|1). For backwards compatibility,
-/// use [`TriggerStatus::from_enabled`] / [`TriggerStatus::is_enabled`]
-/// to bridge the gap until a full migration adds a status column.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
-#[serde(rename_all = "lowercase")]
-#[ts(export)]
-pub enum TriggerStatus {
-    Active,
-    Paused,
-    Errored,
-    Disabled,
+declare_lifecycle! {
+    /// Lifecycle states for a persona trigger.
+    ///
+    /// Valid transitions:
+    ///   Active   -> Paused | Errored | Disabled
+    ///   Paused   -> Active | Disabled
+    ///   Errored  -> Active | Paused | Disabled
+    ///   Disabled -> Active
+    ///
+    /// Persisted in the `status TEXT` column on `persona_triggers`.
+    /// The legacy `enabled INTEGER` column is kept in sync for backwards
+    /// compatibility with queries that filter on `enabled = 1`.
+    pub enum TriggerStatus, entity = "trigger" {
+        Active("active")     => [Paused, Errored, Disabled],
+        Paused("paused")     => [Active, Disabled],
+        Errored("errored")   => [Active, Paused, Disabled],
+        Disabled("disabled") => [Active],
+    }
 }
 
 #[allow(dead_code)]
 impl TriggerStatus {
-    /// Check whether transitioning from `self` to `target` is valid.
-    pub fn can_transition_to(&self, target: TriggerStatus) -> bool {
-        matches!(
-            (self, target),
-            // Active can pause, error, or disable
-            (TriggerStatus::Active, TriggerStatus::Paused)
-                | (TriggerStatus::Active, TriggerStatus::Errored)
-                | (TriggerStatus::Active, TriggerStatus::Disabled)
-                // Paused can resume or disable
-                | (TriggerStatus::Paused, TriggerStatus::Active)
-                | (TriggerStatus::Paused, TriggerStatus::Disabled)
-                // Errored can recover, pause, or disable
-                | (TriggerStatus::Errored, TriggerStatus::Active)
-                | (TriggerStatus::Errored, TriggerStatus::Paused)
-                | (TriggerStatus::Errored, TriggerStatus::Disabled)
-                // Disabled can only be re-activated
-                | (TriggerStatus::Disabled, TriggerStatus::Active)
-        )
-    }
-
-    /// Attempt a state transition, returning the new state or an error.
-    pub fn transition_to(self, target: TriggerStatus) -> Result<TriggerStatus, InvalidTransition> {
-        if self == target {
-            return Ok(self);
-        }
-        if self.can_transition_to(target) {
-            Ok(target)
-        } else {
-            Err(InvalidTransition {
-                entity: "trigger",
-                from: self.as_str().to_string(),
-                to: target.as_str().to_string(),
-            })
-        }
-    }
-
     /// Bridge from the legacy `enabled` boolean column.
+    /// Only used as a fallback when the `status TEXT` column is missing or
+    /// contains an unrecognised value.
     pub fn from_enabled(enabled: bool) -> Self {
         if enabled {
             TriggerStatus::Active
@@ -111,38 +185,11 @@ impl TriggerStatus {
         }
     }
 
-    /// Whether this status maps to `enabled = true` in the DB.
+    /// The value to write into the legacy `enabled INTEGER` column so that
+    /// existing `WHERE enabled = 1` queries keep working.
+    /// Only `Active` is considered enabled for scheduling purposes.
     pub fn is_enabled(&self) -> bool {
         matches!(self, TriggerStatus::Active)
-    }
-
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            TriggerStatus::Active => "active",
-            TriggerStatus::Paused => "paused",
-            TriggerStatus::Errored => "errored",
-            TriggerStatus::Disabled => "disabled",
-        }
-    }
-}
-
-impl fmt::Display for TriggerStatus {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl FromStr for TriggerStatus {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "active" => Ok(TriggerStatus::Active),
-            "paused" => Ok(TriggerStatus::Paused),
-            "errored" => Ok(TriggerStatus::Errored),
-            "disabled" => Ok(TriggerStatus::Disabled),
-            other => Err(format!("Unknown trigger status: '{other}'")),
-        }
     }
 }
 
@@ -150,102 +197,34 @@ impl FromStr for TriggerStatus {
 // AutomationDeployStatus
 // =============================================================================
 
-/// Lifecycle states for automation deployment.
-///
-/// Valid transitions:
-///   Draft  -> Active | Error
-///   Active -> Paused | Error
-///   Paused -> Active | Draft | Error
-///   Error  -> Draft | Active
-///
-/// Stored in `deployment_status TEXT` column.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
-#[serde(rename_all = "lowercase")]
-#[ts(export)]
-pub enum AutomationDeployStatus {
-    Draft,
-    Active,
-    Paused,
-    Error,
+declare_lifecycle! {
+    /// Lifecycle states for automation deployment.
+    ///
+    /// Valid transitions:
+    ///   Draft  -> Active | Error
+    ///   Active -> Paused | Error
+    ///   Paused -> Active | Draft | Error
+    ///   Error  -> Draft | Active
+    ///
+    /// Stored in `deployment_status TEXT` column.
+    pub enum AutomationDeployStatus, entity = "automation" {
+        Draft("draft")   => [Active, Error],
+        Active("active") => [Paused, Error],
+        Paused("paused") => [Active, Draft, Error],
+        Error("error")   => [Draft, Active],
+    }
 }
 
 #[allow(dead_code)]
 impl AutomationDeployStatus {
-    pub fn can_transition_to(&self, target: AutomationDeployStatus) -> bool {
-        matches!(
-            (self, target),
-            // Draft deploys to active, or errors during deploy
-            (AutomationDeployStatus::Draft, AutomationDeployStatus::Active)
-                | (AutomationDeployStatus::Draft, AutomationDeployStatus::Error)
-                // Active can be paused or error
-                | (AutomationDeployStatus::Active, AutomationDeployStatus::Paused)
-                | (AutomationDeployStatus::Active, AutomationDeployStatus::Error)
-                // Paused can resume, revert to draft, or error
-                | (AutomationDeployStatus::Paused, AutomationDeployStatus::Active)
-                | (AutomationDeployStatus::Paused, AutomationDeployStatus::Draft)
-                | (AutomationDeployStatus::Paused, AutomationDeployStatus::Error)
-                // Error can be fixed back to draft or re-deployed
-                | (AutomationDeployStatus::Error, AutomationDeployStatus::Draft)
-                | (AutomationDeployStatus::Error, AutomationDeployStatus::Active)
-        )
-    }
-
-    /// Attempt a state transition, returning the new state or an error.
-    pub fn transition_to(
-        self,
-        target: AutomationDeployStatus,
-    ) -> Result<AutomationDeployStatus, InvalidTransition> {
-        if self == target {
-            return Ok(self);
-        }
-        if self.can_transition_to(target) {
-            Ok(target)
-        } else {
-            Err(InvalidTransition {
-                entity: "automation",
-                from: self.as_str().to_string(),
-                to: target.as_str().to_string(),
-            })
-        }
-    }
-
     /// Whether this status allows execution (only Active automations can run).
     pub fn is_runnable(&self) -> bool {
         matches!(self, AutomationDeployStatus::Active)
     }
-
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            AutomationDeployStatus::Draft => "draft",
-            AutomationDeployStatus::Active => "active",
-            AutomationDeployStatus::Paused => "paused",
-            AutomationDeployStatus::Error => "error",
-        }
-    }
-}
-
-impl fmt::Display for AutomationDeployStatus {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl FromStr for AutomationDeployStatus {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "draft" => Ok(AutomationDeployStatus::Draft),
-            "active" => Ok(AutomationDeployStatus::Active),
-            "paused" => Ok(AutomationDeployStatus::Paused),
-            "error" => Ok(AutomationDeployStatus::Error),
-            other => Err(format!("Unknown automation deploy status: '{other}'")),
-        }
-    }
 }
 
 // =============================================================================
-// RotationEntryStatus
+// RotationEntryStatus (terminal -- no transitions)
 // =============================================================================
 
 /// Outcome status for a credential rotation attempt.
@@ -361,6 +340,11 @@ mod tests {
         }
     }
 
+    #[test]
+    fn trigger_all_variants_complete() {
+        assert_eq!(TriggerStatus::ALL_VARIANTS.len(), 4);
+    }
+
     // -- AutomationDeployStatus --
 
     #[test]
@@ -413,6 +397,11 @@ mod tests {
                 Ok(status)
             );
         }
+    }
+
+    #[test]
+    fn automation_all_variants_complete() {
+        assert_eq!(AutomationDeployStatus::ALL_VARIANTS.len(), 4);
     }
 
     // -- RotationEntryStatus --

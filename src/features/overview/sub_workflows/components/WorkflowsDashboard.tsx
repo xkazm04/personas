@@ -4,7 +4,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { useToastStore } from '@/stores/toastStore';
 import { getWorkflowsOverview, cancelWorkflowJob } from '@/api/pipeline/workflows';
 import type { WorkflowsOverview, WorkflowJob } from '@/api/pipeline/workflows';
-import { STATUS_FILTER_OPTIONS, JOB_TYPE_LABELS, type StatusFilter } from '../libs/workflowHelpers';
+import { STATUS_FILTER_OPTIONS, JOB_TYPE_LABELS, type StatusFilter } from '../workflowHelpers';
 import { SummaryCards, JobRow } from './WorkflowCard';
 
 export default function WorkflowsDashboard() {

@@ -27,12 +27,12 @@ export const ACTION_ICONS: Record<string, typeof Globe> = {
   authorize: ShieldCheck, capture: KeyRound, verify: Copy,
 };
 export const ACTION_COLORS: Record<string, string> = {
-  navigate: `${INFO_STATUS.color} ${INFO_STATUS.bgColor} ${INFO_STATUS.borderColor}`,
-  configure: `${WARNING_STATUS.color} ${WARNING_STATUS.bgColor} ${WARNING_STATUS.borderColor}`,
-  create_account: `${INFO_STATUS.color} ${INFO_STATUS.bgColor} ${INFO_STATUS.borderColor}`,
-  authorize: `${AI_STATUS.color} ${AI_STATUS.bgColor} ${AI_STATUS.borderColor}`,
-  capture: `${SUCCESS_STATUS.color} ${SUCCESS_STATUS.bgColor} ${SUCCESS_STATUS.borderColor}`,
-  verify: `${WARNING_STATUS.color} ${WARNING_STATUS.bgColor} ${WARNING_STATUS.borderColor}`,
+  navigate: `${INFO_STATUS.text} ${INFO_STATUS.bg} ${INFO_STATUS.border}`,
+  configure: `${WARNING_STATUS.text} ${WARNING_STATUS.bg} ${WARNING_STATUS.border}`,
+  create_account: `${INFO_STATUS.text} ${INFO_STATUS.bg} ${INFO_STATUS.border}`,
+  authorize: `${AI_STATUS.text} ${AI_STATUS.bg} ${AI_STATUS.border}`,
+  capture: `${SUCCESS_STATUS.text} ${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border}`,
+  verify: `${WARNING_STATUS.text} ${WARNING_STATUS.bg} ${WARNING_STATUS.border}`,
 };
 export interface NegotiatorStepCardProps {
   step: NegotiationStep;
@@ -56,9 +56,9 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
       <div
         className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-sm font-bold border ${
           isCompleted
-            ? `${SUCCESS_STATUS.bgColor} ${SUCCESS_STATUS.borderColor} ${SUCCESS_STATUS.color}`
+            ? `${SUCCESS_STATUS.bg} ${SUCCESS_STATUS.border} ${SUCCESS_STATUS.text}`
             : isActive
-              ? `${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color}`
+              ? `${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`
               : 'bg-secondary/40 border-primary/15 text-muted-foreground/90'
         }`}
       >
@@ -158,13 +158,13 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 onChange={(e) => setHelpQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
                 placeholder="Ask a question about this step..."
-                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ringColor!} transition-all`}
+                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
                 data-testid={`negotiator-step-${stepIndex}-help-input`}
               />
               <button
                 onClick={handleAskHelp}
                 disabled={!helpQuestion.trim() || isLoadingHelp}
-                className={`px-3 py-1.5 rounded-xl text-sm transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bgColor} ${AI_STATUS.borderColor} ${AI_STATUS.color}`}
+                className={`px-3 py-1.5 rounded-xl text-sm transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
                 data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
               >
                 {isLoadingHelp ? <LoadingSpinner size="xs" /> : 'Ask'}
@@ -172,7 +172,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
             </div>
             {stepHelp && stepHelp.stepIndex === stepIndex && (
               <div
-                className={`px-3 py-2 rounded-xl text-sm text-foreground/80 ${AI_STATUS.bgColor} border ${AI_STATUS.borderColor}`}
+                className={`px-3 py-2 rounded-xl text-sm text-foreground/80 ${AI_STATUS.bg} border ${AI_STATUS.border}`}
                 data-testid={`negotiator-step-${stepIndex}-help-answer`}
               >
                 {stepHelp.answer}

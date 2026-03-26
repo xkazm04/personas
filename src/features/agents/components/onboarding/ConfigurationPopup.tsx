@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Key } from 'lucide-react';
 import { getAppSetting, setAppSetting } from "@/api/system/settings";
 import { useToastStore } from '@/stores/toastStore';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("configuration-popup");
 
 export interface ConfigField {
   key: string;
@@ -52,6 +55,7 @@ export function ConfigurationPopup({
   );
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     Promise.all(fields.map((f) => getAppSetting(f.key)))
@@ -63,7 +67,8 @@ export function ConfigurationPopup({
         setValues((prev) => ({ ...prev, ...updated }));
       })
       .catch((err) => {
-        console.error('Failed to load config settings:', err);
+        logger.error('Failed to load config settings', { error: err });
+        setLoadError(true);
       })
       .finally(() => setLoaded(true));
   }, []);
@@ -88,8 +93,26 @@ export function ConfigurationPopup({
   const styles = ACCENT_STYLES[accent];
   const hasAnyValue = fields.some((f) => values[f.key]?.trim());
 
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === e.currentTarget) onClose();
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={handleBackdropClick}
+    >
       <div
         className="animate-fade-slide-in bg-background border border-primary/20 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
       >
@@ -102,6 +125,11 @@ export function ConfigurationPopup({
         </div>
 
         <div className="px-4 py-4 space-y-3">
+          {loadError && (
+            <p className="text-xs text-amber-400/90 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+              Could not load saved values — you may need to re-enter them.
+            </p>
+          )}
           {fields.map((field) => (
             <div key={field.key}>
               <label className="block text-sm font-medium text-foreground/80 mb-1.5">

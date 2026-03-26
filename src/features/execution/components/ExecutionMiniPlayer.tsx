@@ -11,16 +11,17 @@ import {
 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { Button } from '@/features/shared/components/buttons';
 import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PipelineDots, StatusIndicator } from './PipelineDots';
+import { traceProgress } from '@/lib/execution/pipeline';
 
 export default function ExecutionMiniPlayer() {
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
   const miniPlayerPinned = useAgentStore((s) => s.miniPlayerPinned);
   const miniPlayerExpanded = useAgentStore((s) => s.miniPlayerExpanded);
   const miniPlayerPosition = useAgentStore((s) => s.miniPlayerPosition);
@@ -115,6 +116,11 @@ export default function ExecutionMiniPlayer() {
   );
   const lastLine = executionOutput[executionOutput.length - 1] ?? '';
 
+  const stageProgress = useMemo(
+    () => traceProgress(pipelineTrace),
+    [pipelineTrace],
+  );
+
   const hasContent = isExecuting || executionOutput.length > 0 || activeExecutionId;
   if (!miniPlayerPinned || !hasContent) return null;
 
@@ -182,21 +188,33 @@ export default function ExecutionMiniPlayer() {
           </Tooltip>
         </div>
 
-        {/* Simple mode: friendly progress bar */}
+        {/* Simple mode: friendly progress bar with stage label */}
         {isSimple && (
           <div className="px-3 py-3">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-sm text-foreground/80">
                 {isExecuting
-                  ? error ? 'Something went wrong' : 'Running...'
+                  ? error ? 'Something went wrong' : stageProgress.label
                   : error ? 'Failed' : 'Complete'}
               </span>
+              {isExecuting && !error && (
+                <span className="text-xs text-muted-foreground/60 font-mono tabular-nums">
+                  {Math.round(stageProgress.fraction * 100)}%
+                </span>
+              )}
             </div>
             <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
               <div
-                className={`animate-fade-in h-full rounded-full ${
+                className={`h-full rounded-full transition-all duration-700 ease-out ${
                   error && !isExecuting ? 'bg-red-400' : isExecuting ? 'bg-blue-400' : 'bg-emerald-400'
                 }`}
+                style={{
+                  width: error && !isExecuting
+                    ? '100%'
+                    : isExecuting
+                      ? `${stageProgress.fraction * 100}%`
+                      : '100%',
+                }}
               />
             </div>
           </div>

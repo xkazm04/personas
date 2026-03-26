@@ -1,13 +1,62 @@
 //! Intent Compiler -- compiles plain-language intent into a complete persona configuration.
 //!
-//! Extends the design analysis pipeline with:
-//! - Use cases with typed input_schema and sample data
-//! - Model recommendation with budget optimization
-//! - Test scenarios for pre-deployment validation
-//! - Intent-level traceability for version tracking
+//! Implements `CompilationPipeline` with an extended output schema that adds
+//! use cases, model recommendation, and test scenarios on top of the standard
+//! design output.
 
 use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
-use crate::engine::design::DESIGN_OUTPUT_SCHEMA;
+use crate::engine::compilation_pipeline::{CompilationPipeline, PipelineOutcome};
+use crate::engine::design::{self, DESIGN_OUTPUT_SCHEMA};
+
+// ============================================================================
+// IntentCompiler input
+// ============================================================================
+
+/// Input for intent compilation — a persona with its available tools/connectors
+/// and a plain-language intent string.
+pub struct IntentInput<'a> {
+    pub persona: &'a Persona,
+    pub tools: &'a [PersonaToolDefinition],
+    pub connectors: &'a [ConnectorDefinition],
+    pub intent: &'a str,
+}
+
+// ============================================================================
+// IntentCompiler (pipeline implementation)
+// ============================================================================
+
+/// The intent compiler — extends the standard persona design pipeline with
+/// use cases, model recommendations, and test scenarios.
+pub struct IntentCompiler;
+
+impl CompilationPipeline for IntentCompiler {
+    type Input = IntentInput<'static>;
+    type Output = serde_json::Value;
+
+    fn assemble_prompt(&self, input: &Self::Input) -> String {
+        build_intent_prompt(input.persona, input.tools, input.connectors, input.intent)
+    }
+
+    fn parse_output(&self, raw: &str) -> PipelineOutcome<Self::Output> {
+        // Intent compilation reuses the same extraction as persona design
+        // but expects additional fields in the output.
+        if let Some(question) = design::extract_design_question(raw) {
+            return PipelineOutcome::Question(question);
+        }
+        if let Some(result) = design::extract_design_result(raw) {
+            return PipelineOutcome::Result(result);
+        }
+        PipelineOutcome::Failed
+    }
+
+    fn pipeline_name(&self) -> &'static str {
+        "intent"
+    }
+}
+
+// ============================================================================
+// Backward-compatible free function
+// ============================================================================
 
 /// Build the intent compilation prompt.
 ///

@@ -1,8 +1,12 @@
 import { useReducer, useCallback, useMemo, useEffect } from 'react';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { createFSM } from '@/lib/fsm';
+import { createLogger } from '@/lib/log';
 import { getAuthMethods } from '@/lib/types/types';
 import { isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
 import { useCredentialNav, type CredentialNavKey } from './CredentialNavContext';
+
+const logger = createLogger('credential-view-fsm');
 
 // -- View names (the finite states) ----------------------------------
 
@@ -67,16 +71,16 @@ export type CredentialViewAction =
 
 // -- Transition Table ------------------------------------------------
 //
-// Explicit map of (sourceView, actionType) -> allowed.
-// If a transition isn't listed, it's invalid and the reducer ignores it.
-// This makes the navigation graph inspectable and prevents impossible states.
+// Uses the universal FSM framework from @/lib/fsm. The action-level
+// transition table is built on top of the view-level FSM. Each view
+// declares which action types it accepts; global navigation actions
+// are valid from every view.
+//
+// The `credentialViewFSM` validates view->view transitions, while
+// the action table gates which actions are allowed per view.
 
 type ActionType = CredentialViewAction['type'];
 
-/**
- * For each view, the set of action types that are valid transitions.
- * Actions not listed for a given view are silently ignored (no-op).
- */
 // Sidebar navigation actions are valid from any view
 const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES', 'GO_GRAPH'];
 
@@ -99,7 +103,29 @@ const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
   'graph':              [],
 };
 
-function buildTransitionTable(): Record<ViewName, ReadonlySet<ActionType>> {
+/** View-level FSM: validates that a view->view navigation is structurally valid. */
+export const credentialViewFSM = createFSM<ViewName>({
+  entity: 'credential-view',
+  transitions: {
+    'list':               ['catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'catalog-browse':     ['list', 'catalog-form', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'catalog-form':       ['list', 'catalog-browse', 'catalog-auto-setup', 'add-new', 'add-desktop', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'catalog-auto-setup': ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'add-new':            ['list', 'catalog-browse', 'add-api-tool', 'add-mcp', 'add-custom', 'add-database', 'add-desktop', 'add-wizard', 'workspace-connect', 'foraging', 'databases', 'graph'],
+    'add-api-tool':       ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'add-mcp':            ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'add-custom':         ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'add-database':       ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'add-desktop':        ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'add-wizard':         ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'workspace-connect':  ['list', 'catalog-browse', 'add-new', 'add-wizard', 'databases', 'graph'],
+    'foraging':           ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
+    'databases':          ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'graph'],
+    'graph':              ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases'],
+  },
+});
+
+function buildActionTable(): Record<ViewName, ReadonlySet<ActionType>> {
   const table = {} as Record<ViewName, ReadonlySet<ActionType>>;
   for (const view of Object.keys(VIEW_TRANSITIONS) as ViewName[]) {
     table[view] = new Set([...GLOBAL_ACTIONS, ...VIEW_TRANSITIONS[view]]);
@@ -107,11 +133,11 @@ function buildTransitionTable(): Record<ViewName, ReadonlySet<ActionType>> {
   return table;
 }
 
-const TRANSITION_TABLE = buildTransitionTable();
+const ACTION_TABLE = buildActionTable();
 
-/** Check whether a transition is valid for the current view. */
+/** Check whether an action is valid for the current view. */
 function isValidTransition(view: ViewName, action: ActionType): boolean {
-  return TRANSITION_TABLE[view].has(action);
+  return ACTION_TABLE[view].has(action);
 }
 
 // -- Nav key for sidebar highlighting --
@@ -238,9 +264,7 @@ const ACTION_HANDLERS: Record<ActionType, ActionHandler<never>> = {
 
 function reducer(state: CredentialViewState, action: CredentialViewAction): CredentialViewState {
   if (!isValidTransition(state.view, action.type)) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(`[CredentialFSM] Invalid transition: ${state.view} + ${action.type}`);
-    }
+    logger.warn('Invalid transition', { view: state.view, action: action.type });
     return state;
   }
   const handler = ACTION_HANDLERS[action.type];
@@ -248,6 +272,65 @@ function reducer(state: CredentialViewState, action: CredentialViewAction): Cred
 }
 
 const INITIAL_STATE: CredentialViewState = { view: 'list' };
+
+// -- Breadcrumb derivation -------------------------------------------
+
+export interface BreadcrumbSegment {
+  label: string;
+  action: CredentialViewAction | null; // null = current (non-clickable)
+}
+
+/** Derive an ordered breadcrumb trail from the current FSM state. */
+export function getBreadcrumbs(state: CredentialViewState): BreadcrumbSegment[] {
+  const root: BreadcrumbSegment = { label: 'Credentials', action: { type: 'GO_LIST' } };
+
+  switch (state.view) {
+    case 'list':
+      return [{ ...root, action: null }];
+
+    case 'catalog-browse':
+      return [root, { label: 'From Template', action: null }];
+    case 'catalog-form':
+      return [
+        root,
+        { label: 'From Template', action: { type: 'CANCEL_FORM' } },
+        { label: state.connector.label, action: null },
+      ];
+    case 'catalog-auto-setup':
+      return [
+        root,
+        { label: 'From Template', action: { type: 'CANCEL_FORM' } },
+        { label: state.connector.label, action: null },
+      ];
+
+    case 'add-new':
+      return [root, { label: 'Add New', action: null }];
+    case 'add-api-tool':
+      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'API Tool', action: null }];
+    case 'add-mcp':
+      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'MCP Server', action: null }];
+    case 'add-custom':
+      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Custom', action: null }];
+    case 'add-database':
+      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Database', action: null }];
+    case 'add-desktop':
+      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Desktop App', action: null }];
+    case 'add-wizard':
+      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Setup Wizard', action: null }];
+    case 'workspace-connect':
+      return [root, { label: 'Workspace Connect', action: null }];
+    case 'foraging':
+      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Foraging', action: null }];
+
+    case 'databases':
+      return [{ label: 'Databases', action: null }];
+    case 'graph':
+      return [{ label: 'Graph', action: null }];
+
+    default:
+      return [{ ...root, action: null }];
+  }
+}
 
 // -- Hook ------------------------------------------------------------
 
@@ -312,6 +395,8 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
     return { connector, credentialName, isGoogle, fields };
   }, [state]);
 
+  const breadcrumbs = useMemo(() => getBreadcrumbs(state), [state]);
+
   return {
     state,
     dispatch,
@@ -319,5 +404,6 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
     navigateFromSidebar,
     filteredConnectors,
     catalogFormData,
+    breadcrumbs,
   };
 }

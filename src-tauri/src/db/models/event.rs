@@ -42,6 +42,24 @@ pub struct CreatePersonaEventInput {
 }
 
 // ============================================================================
+// Event Filtering / Search
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct EventFilterInput {
+    pub event_type: Option<String>,
+    pub source_type: Option<String>,
+    pub status: Option<String>,
+    pub target_persona_id: Option<String>,
+    pub since: Option<String>,
+    pub until: Option<String>,
+    pub search: Option<String>,
+    pub limit: Option<i64>,
+}
+
+// ============================================================================
 // Event Subscriptions
 // ============================================================================
 

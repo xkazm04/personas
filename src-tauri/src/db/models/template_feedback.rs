@@ -34,6 +34,9 @@ pub struct TemplatePerformance {
     pub top_positive_labels: Vec<String>,
     pub top_negative_labels: Vec<String>,
     pub derived_quality_score: f64,
+    /// False when one or more metric sub-queries failed and defaults were substituted.
+    /// The frontend should show an error/empty state instead of the derived score.
+    pub data_available: bool,
 }
 
 /// Input for creating template feedback.

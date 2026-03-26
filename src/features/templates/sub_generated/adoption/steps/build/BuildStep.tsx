@@ -3,6 +3,7 @@ import { Sparkles, AlertCircle, RefreshCw, Trash2, HelpCircle, Send, ChevronLeft
 import { motion, AnimatePresence } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
+import { BORDER_SUBTLE, BORDER_DEFAULT, BORDER_EMPHASIS } from '@/lib/utils/designTokens';
 
 /** Parse transform lines to derive a user-friendly phase description. */
 function derivePhaseLabel(lines: string[]): string {
@@ -78,11 +79,12 @@ function BuildQuestionnaire({
         <button
           onClick={() => goTo(activeIndex - 1)}
           disabled={!canPrev}
+          aria-label="Previous question"
           className={`flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition-all ${
-            canPrev ? 'border-primary/20 hover:bg-secondary/50 text-foreground/70' : 'border-primary/5 text-foreground/15 cursor-default'
+            canPrev ? `${BORDER_EMPHASIS} hover:bg-secondary/50 text-foreground/70` : `${BORDER_SUBTLE} text-foreground/15 cursor-default`
           }`}
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
+          <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
         </button>
 
         <div className="flex-1 min-w-0">
@@ -108,7 +110,7 @@ function BuildQuestionnaire({
                       return (
                         <button key={opt} type="button" onClick={() => onAnswerUpdated(q.id, opt)}
                           className={`w-full text-left px-3 py-1.5 text-sm rounded-lg border transition-all ${
-                            isSelected ? `${tone.selectBg} font-medium` : 'text-foreground/70 border-primary/10 hover:bg-secondary/40'
+                            isSelected ? `${tone.selectBg} font-medium` : `text-foreground/70 ${BORDER_SUBTLE} hover:bg-secondary/40`
                           }`}>
                           {opt}
                         </button>
@@ -122,7 +124,7 @@ function BuildQuestionnaire({
                     value={userAnswers[q.id] ?? q.default ?? ''}
                     onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                     placeholder={q.default ?? 'Type your answer...'}
-                    className="w-full px-3 py-2 text-sm rounded-xl border border-primary/15 bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring transition-all"
+                    className={`w-full px-3 py-2 text-sm rounded-xl border ${BORDER_DEFAULT} bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring transition-all`}
                   />
                 )}
                 {q.type === 'boolean' && (
@@ -132,7 +134,7 @@ function BuildQuestionnaire({
                       return (
                         <button key={opt} type="button" onClick={() => onAnswerUpdated(q.id, opt)}
                           className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
-                            isSelected ? `${tone.selectBg} font-medium` : 'text-foreground/70 border-primary/10 hover:bg-secondary/40'
+                            isSelected ? `${tone.selectBg} font-medium` : `text-foreground/70 ${BORDER_SUBTLE} hover:bg-secondary/40`
                           }`}>
                           {opt}
                         </button>
@@ -148,11 +150,12 @@ function BuildQuestionnaire({
         <button
           onClick={() => goTo(activeIndex + 1)}
           disabled={!canNext}
+          aria-label="Next question"
           className={`flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition-all ${
-            canNext ? 'border-primary/20 hover:bg-secondary/50 text-foreground/70' : 'border-primary/5 text-foreground/15 cursor-default'
+            canNext ? `${BORDER_EMPHASIS} hover:bg-secondary/50 text-foreground/70` : `${BORDER_SUBTLE} text-foreground/15 cursor-default`
           }`}
         >
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
         </button>
       </div>
 
@@ -230,9 +233,11 @@ function DimensionAdjustmentPanel({
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-label="Refine persona options"
         className="flex items-center gap-2 text-sm font-medium text-muted-foreground/70 hover:text-foreground/80 transition-colors"
       >
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? '' : '-rotate-90'}`} />
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? '' : '-rotate-90'}`} aria-hidden="true" />
         Refine persona (optional)
       </button>
 
@@ -253,7 +258,7 @@ function DimensionAdjustmentPanel({
                   value={dimensionNotes[dim.key] ?? ''}
                   onChange={e => handleDimensionNote(dim.key, e.target.value)}
                   placeholder={dim.hint}
-                  className="w-full px-2 py-1.5 text-xs rounded-lg border border-primary/10 bg-background/40 text-foreground/75 placeholder-muted-foreground/30"
+                  className={`w-full px-2 py-1.5 text-xs rounded-lg border ${BORDER_SUBTLE} bg-background/40 text-foreground/75 placeholder-muted-foreground/30`}
                 />
               </div>
             ))}
@@ -264,7 +269,7 @@ function DimensionAdjustmentPanel({
             value={adjustmentRequest}
             onChange={e => onSetAdjustment(e.target.value)}
             placeholder="Or describe adjustments in your own words..."
-            className="w-full h-16 p-2.5 rounded-xl border border-primary/10 bg-background/40 text-xs text-foreground/75 resize-y placeholder-muted-foreground/30"
+            className={`w-full h-16 p-2.5 rounded-xl border ${BORDER_SUBTLE} bg-background/40 text-xs text-foreground/75 resize-y placeholder-muted-foreground/30`}
           />
         </div>
       )}
@@ -313,9 +318,9 @@ export function BuildStep() {
 
       {/* Progress */}
       {state.transforming && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
-          <RefreshCw className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" />
-          <span className="text-sm text-violet-300/80">{phaseLabel}</span>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-500/5 border border-violet-500/10" aria-busy="true">
+          <RefreshCw className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" aria-hidden="true" />
+          <span className="text-sm text-violet-300/80" aria-live="polite">{phaseLabel}</span>
           {connectorCount > 0 && (
             <span className="text-sm text-muted-foreground/60 ml-auto">{connectorCount} connectors</span>
           )}
@@ -343,13 +348,14 @@ export function BuildStep() {
 
       {/* Inline error display */}
       {state.error && (
-        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
-          <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20" aria-live="assertive" role="alert">
+          <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div className="flex-1">
             <p className="text-sm text-red-400/80">{state.error}</p>
             <button
               type="button"
               onClick={() => void startTransform()}
+              aria-label="Retry building persona"
               className="mt-1.5 text-sm text-red-300 hover:text-red-200 transition-colors underline underline-offset-2"
             >
               Retry
@@ -381,9 +387,10 @@ export function BuildStep() {
         <button
           type="button"
           onClick={discardDraft}
+          aria-label="Discard draft and start over"
           className="flex items-center gap-1.5 text-sm text-muted-foreground/40 hover:text-red-400/70 transition-colors"
         >
-          <Trash2 className="w-3 h-3" />
+          <Trash2 className="w-3 h-3" aria-hidden="true" />
           Discard draft and start over
         </button>
       )}

@@ -1,5 +1,5 @@
 import { STATUS_PALETTE, STATUS_PALETTE_EXTENDED, SEVERITY_ACCENTS } from '@/lib/design/statusTokens';
-import type { SeverityAccent } from '@/lib/design/statusTokens';
+import type { StatusToken, SeverityAccent } from '@/lib/design/statusTokens';
 
 /**
  * 4px-grid spacing scale.
@@ -45,12 +45,8 @@ export const LIST_ITEM_GAP = {
 /** Vertical spacing between form fields. */
 export const FORM_FIELD_GAP = 'space-y-4' as const;
 
-export interface StatusColorToken {
-  color: string;
-  bgColor: string;
-  borderColor: string;
-  ringColor?: string;
-}
+/** @deprecated Use StatusToken from '@/lib/design/statusTokens' directly. */
+export type StatusColorToken = StatusToken;
 
 export interface ButtonVariantToken {
   bg: string;
@@ -60,7 +56,7 @@ export interface ButtonVariantToken {
 }
 
 export const INPUT_FIELD =
-  'w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:ring-offset-1 ring-offset-background transition-all';
+  'w-full px-3 py-2 bg-background/50 border border-primary/12 rounded-xl text-sm text-foreground placeholder-muted-foreground/30 focus-ring focus-visible:ring-offset-1 ring-offset-background transition-all';
 
 /** INPUT_FIELD with a red error border — use when `aria-invalid` is true. */
 export const INPUT_FIELD_ERROR =
@@ -92,22 +88,17 @@ export const BUTTON_VARIANTS: Record<'tryIt' | 'adopt' | 'delete', ButtonVariant
   },
 };
 
-/** Map a StatusToken → legacy StatusColorToken shape */
-function toStatusColor(t: { text: string; bg: string; border: string; ring: string }): StatusColorToken {
-  return { color: t.text, bgColor: t.bg, borderColor: t.border, ringColor: t.ring };
-}
-
 /** Review status colors -- derived from the unified STATUS_PALETTE. */
-export const STATUS_COLORS: Record<string, StatusColorToken> = {
-  info:     toStatusColor(STATUS_PALETTE_EXTENDED.info),
-  ai:       toStatusColor(STATUS_PALETTE_EXTENDED.ai),
-  rotation: toStatusColor(STATUS_PALETTE_EXTENDED.rotation),
-  success:  toStatusColor(STATUS_PALETTE.success),
-  warning:  toStatusColor(STATUS_PALETTE.warning),
-  error:    toStatusColor(STATUS_PALETTE.error),
-  pending:  toStatusColor(STATUS_PALETTE.warning),
-  approved: toStatusColor(STATUS_PALETTE.success),
-  rejected: toStatusColor(STATUS_PALETTE.error),
+export const STATUS_COLORS: Record<string, StatusToken> = {
+  info:     STATUS_PALETTE_EXTENDED.info,
+  ai:       STATUS_PALETTE_EXTENDED.ai,
+  rotation: STATUS_PALETTE_EXTENDED.rotation,
+  success:  STATUS_PALETTE.success,
+  warning:  STATUS_PALETTE.warning,
+  error:    STATUS_PALETTE.error,
+  pending:  STATUS_PALETTE.warning,
+  approved: STATUS_PALETTE.success,
+  rejected: STATUS_PALETTE.error,
 };
 
 /** Standardised severity accent styles -- left border + subtle background.
@@ -117,16 +108,32 @@ export type SeverityStyleToken = SeverityAccent;
 export const SEVERITY_STYLES: Record<'error' | 'warning' | 'info' | 'success', SeverityStyleToken> = SEVERITY_ACCENTS;
 
 /** Feasibility assessment colors -- derived from STATUS_PALETTE */
-export const FEASIBILITY_COLORS: Record<string, StatusColorToken> = {
-  ready:   toStatusColor(STATUS_PALETTE.success),
-  partial: toStatusColor(STATUS_PALETTE.warning),
-  blocked: toStatusColor(STATUS_PALETTE.error),
+export const FEASIBILITY_COLORS: Record<string, StatusToken> = {
+  ready:   STATUS_PALETTE.success,
+  partial: STATUS_PALETTE.warning,
+  blocked: STATUS_PALETTE.error,
 };
+
+// -- Semantic border opacity tiers --------------------------------------
+// Three named tiers for consistent visual hierarchy across all surfaces.
+// SUBTLE  → internal dividers, disabled borders, separator lines
+// DEFAULT → card outlines, panel borders, input borders at rest
+// EMPHASIS → focused, hovered, or active-state borders
+
+export const BORDER_SUBTLE = 'border-primary/5' as const;
+export const BORDER_DEFAULT = 'border-primary/12' as const;
+export const BORDER_EMPHASIS = 'border-primary/20' as const;
+
+/** Divide-line counterpart of BORDER_SUBTLE for use with Tailwind divide-* */
+export const DIVIDE_SUBTLE = 'divide-primary/5' as const;
+
+/** Hover border class — pair with BORDER_DEFAULT on the base state */
+export const BORDER_HOVER = 'hover:border-primary/20' as const;
 
 // -- Tools UI tokens ----------------------------------------------------
 
 /** Standardised border opacity for tool/connector UI surfaces */
-export const TOOLS_BORDER = 'border-primary/15' as const;
+export const TOOLS_BORDER = BORDER_DEFAULT;
 
 /** Standardised section spacing — use mt-2 between sibling sections */
 export const TOOLS_SECTION_GAP = 'mt-2' as const;
@@ -159,7 +166,7 @@ export const SIMPLE_MODE = {
     problem: { label: 'Problem',   color: STATUS_PALETTE.error.text,   bg: STATUS_PALETTE.error.bg,   dot: STATUS_PALETTE.error.icon },
   } satisfies Record<SimpleStatus, SimpleStatusToken>,
   /** Card style for simple mode -- larger, rounder, more breathing room */
-  CARD: 'rounded-xl border border-primary/10 bg-background/60 p-5 shadow-sm',
+  CARD: `rounded-xl border ${BORDER_DEFAULT} bg-background/60 p-5 shadow-sm`,
   /** Minimum touch target for simple mode interactive elements */
   MIN_TARGET: 'min-h-[44px] min-w-[44px]',
 } as const;

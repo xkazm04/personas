@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { HeartPulse, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/hooks/health/useBulkHealthcheck';
 
@@ -28,7 +28,7 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
     return { healthy, failing, untested };
   }, [credentials]);
 
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
   if (credentials.length === 0 || isSimple) return null;
 
   return (

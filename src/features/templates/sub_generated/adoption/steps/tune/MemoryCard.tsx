@@ -1,6 +1,7 @@
 import { Brain } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { cardClass, descClass, fieldClass, inputClass, labelClass } from './tuneStepConstants';
+import { BORDER_DEFAULT } from '@/lib/utils/designTokens';
 
 export function MemoryCard({
   memoryEnabled,
@@ -30,7 +31,7 @@ export function MemoryCard({
             className={`mt-1 inline-flex w-11 h-6 rounded-full border transition-colors items-center cursor-pointer ${
               memoryEnabled
                 ? 'bg-emerald-500/30 border-emerald-500/40 justify-end'
-                : 'bg-secondary/40 border-primary/15 justify-start'
+                : `bg-secondary/40 ${BORDER_DEFAULT} justify-start`
             }`}
           >
             <input

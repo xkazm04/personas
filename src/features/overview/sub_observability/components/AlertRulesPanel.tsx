@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } from 'lucide-react';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import type { AlertRule } from '@/lib/bindings/AlertRule';
 import {
@@ -162,8 +163,8 @@ function RuleRow({
   const scopeName = rule.persona_id ? personas.find(p => p.id === rule.persona_id)?.name ?? 'Unknown' : 'Global';
 
   return (
-    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${rule.enabled ? 'border-primary/15 bg-secondary/20' : 'border-primary/8 bg-secondary/10 opacity-60'}`}>
-      <button onClick={onToggle} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors" title={rule.enabled ? 'Disable' : 'Enable'}>
+    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${rule.enabled ? 'border-primary/10 bg-secondary/20' : 'border-primary/10 bg-secondary/10 opacity-60'}`}>
+      <button onClick={onToggle} aria-pressed={rule.enabled} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors" title={rule.enabled ? 'Disable' : 'Enable'}>
         {rule.enabled
           ? <ToggleRight className="w-5 h-5 text-emerald-400" />
           : <ToggleLeft className="w-5 h-5" />
@@ -225,13 +226,18 @@ function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
 // -- Panel -------------------------------------------------------------
 
 export function AlertRulesPanel() {
-  const alertRules = useOverviewStore((s) => s.alertRules);
-  const addAlertRule = useOverviewStore((s) => s.addAlertRule);
-  const updateAlertRule = useOverviewStore((s) => s.updateAlertRule);
-  const deleteAlertRule = useOverviewStore((s) => s.deleteAlertRule);
-  const toggleAlertRule = useOverviewStore((s) => s.toggleAlertRule);
-  const alertEvalHealth = useOverviewStore((s) => s.alertEvalHealth);
-  const fetchAlertRules = useOverviewStore((s) => s.fetchAlertRules);
+  const {
+    alertRules, addAlertRule, updateAlertRule, deleteAlertRule,
+    toggleAlertRule, alertEvalHealth, fetchAlertRules,
+  } = useOverviewStore(useShallow((s) => ({
+    alertRules: s.alertRules,
+    addAlertRule: s.addAlertRule,
+    updateAlertRule: s.updateAlertRule,
+    deleteAlertRule: s.deleteAlertRule,
+    toggleAlertRule: s.toggleAlertRule,
+    alertEvalHealth: s.alertEvalHealth,
+    fetchAlertRules: s.fetchAlertRules,
+  })));
   const personas = useAgentStore((s) => s.personas);
 
   const [showForm, setShowForm] = useState(false);
@@ -242,11 +248,13 @@ export function AlertRulesPanel() {
   const personaList = personas.map(p => ({ id: p.id, name: p.name }));
 
   const handleAdd = (data: RuleFormData) => {
+    const threshold = parseFloat(data.threshold);
+    if (!Number.isFinite(threshold)) return;
     void addAlertRule({
       name: data.name.trim(),
       metric: data.metric,
       operator: data.operator,
-      threshold: parseFloat(data.threshold),
+      threshold,
       severity: data.severity,
       persona_id: data.personaId,
       enabled: true,
@@ -255,11 +263,13 @@ export function AlertRulesPanel() {
   };
 
   const handleEdit = (id: string, data: RuleFormData) => {
+    const threshold = parseFloat(data.threshold);
+    if (!Number.isFinite(threshold)) return;
     void updateAlertRule(id, {
       name: data.name.trim(),
       metric: data.metric,
       operator: data.operator,
-      threshold: parseFloat(data.threshold),
+      threshold,
       severity: data.severity,
       persona_id: data.personaId,
     });

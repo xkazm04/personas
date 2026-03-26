@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FileText, Trash2, Upload, FolderOpen, Type, RefreshCw, AlertCircle } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('vector-kb-documents');
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import type { KnowledgeBase, KbDocument } from '@/api/vault/database/vectorKb';
 import { kbListDocuments, kbDeleteDocument } from '@/api/vault/database/vectorKb';
@@ -48,7 +51,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
       onRefresh();
     } catch (err) {
-      console.error('Delete failed:', err);
+      logger.error('Delete failed', { error: String(err) });
     } finally {
       setDeletingId(null);
     }

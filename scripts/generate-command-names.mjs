@@ -13,6 +13,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 const LIB_RS = resolve(ROOT, "src-tauri/src/lib.rs");
 const OUTPUT = resolve(ROOT, "src/lib/commandNames.generated.ts");
+const OVERRIDES = resolve(ROOT, "src/lib/commandNames.overrides.ts");
 
 const libRs = readFileSync(LIB_RS, "utf-8");
 
@@ -60,3 +61,37 @@ ${unique.map((c) => `  | "${c}"`).join("\n")};
 
 writeFileSync(OUTPUT, output, "utf-8");
 console.log(`Generated ${OUTPUT} with ${unique.length} command names.`);
+
+// --- Auto-prune stale overrides ---
+const registeredSet = new Set(unique);
+const overridesSrc = readFileSync(OVERRIDES, "utf-8");
+
+// Extract every quoted command name from the overrides union
+const overrideNames = [...overridesSrc.matchAll(/"([\w]+)"/g)].map((m) => m[1]);
+const stale = overrideNames.filter((n) => registeredSet.has(n));
+const remaining = overrideNames.filter((n) => !registeredSet.has(n));
+
+if (stale.length > 0) {
+  // Rebuild the file cleanly from the remaining commands
+  const header = `/**
+ * Commands referenced in the frontend that are NOT yet registered in the Rust
+ * invoke_handler. These are either planned commands or dead code.
+ *
+ * When a command is implemented and added to lib.rs invoke_handler, re-run
+ * \`node scripts/generate-command-names.mjs\` and remove it from this list.
+ */
+`;
+
+  let overridesOutput;
+  if (remaining.length === 0) {
+    // No overrides left — export a never type so the union in tauriInvoke.ts still compiles
+    overridesOutput = `${header}export type UnregisteredCommand = never;\n`;
+  } else {
+    overridesOutput = `${header}export type UnregisteredCommand =\n${remaining.map((c) => `  | "${c}"`).join("\n")};\n`;
+  }
+
+  writeFileSync(OVERRIDES, overridesOutput, "utf-8");
+  console.log(`Pruned ${stale.length} stale overrides (${remaining.length} remaining).`);
+} else {
+  console.log("No stale overrides found.");
+}

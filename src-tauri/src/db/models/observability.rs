@@ -302,3 +302,50 @@ pub struct PersonaPromptVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub color: Option<String>,
 }
+
+// ============================================================================
+// Observability: Anomaly Drill-Down
+// ============================================================================
+
+/// A correlated event found near an anomaly timestamp.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CorrelatedEvent {
+    pub timestamp: String,
+    pub event_type: String,
+    pub label: String,
+    pub detail: Option<String>,
+    pub persona_id: Option<String>,
+    /// Seconds between this event and the anomaly date (negative = before).
+    pub offset_seconds: f64,
+    /// 0.0–1.0 relevance score (closer in time + matching persona = higher).
+    pub relevance: f64,
+}
+
+/// A suggested root cause derived from correlated events.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct RootCauseSuggestion {
+    pub rank: i32,
+    pub title: String,
+    pub description: String,
+    pub confidence: f64,
+    pub event_type: String,
+    pub related_event_timestamp: Option<String>,
+}
+
+/// Combined drill-down response for a single anomaly.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AnomalyDrilldownData {
+    pub anomaly_date: String,
+    pub anomaly_metric: String,
+    pub anomaly_value: f64,
+    pub anomaly_baseline: f64,
+    pub anomaly_deviation_pct: f64,
+    pub correlated_events: Vec<CorrelatedEvent>,
+    pub root_cause_suggestions: Vec<RootCauseSuggestion>,
+}

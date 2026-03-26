@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Shield, ShieldAlert, ShieldCheck, ChevronDown, Lock, KeyRound, HardDrive } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { VaultStatus } from "@/api/vault/credentials";
 import { migratePlaintextCredentials, vaultStatus as refreshVaultStatus } from "@/api/vault/credentials";
 
@@ -12,7 +12,7 @@ interface VaultStatusBadgeProps {
 }
 
 export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProps) {
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
   const [open, setOpen] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
   const [migrationResult, setMigrationResult] = useState<{ migrated: number; failed: number } | null>(null);

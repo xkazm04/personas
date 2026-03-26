@@ -2,14 +2,9 @@ import { useEffect, useState } from 'react';
 import { Timer, AlertTriangle, TrendingDown, RefreshCw, ArrowDown } from 'lucide-react';
 import { getOAuthTokenLifetimeSummary, getOAuthTokenMetrics } from '@/api/vault/rotation';
 import type { OAuthTokenLifetimeSummary, OAuthTokenMetric } from '@/api/vault/rotation';
+import { formatDuration as _formatDuration } from '@/lib/utils/formatters';
 
-function formatDuration(secs: number): string {
-  if (secs < 60) return `${secs}s`;
-  if (secs < 3600) return `${Math.round(secs / 60)}m`;
-  const h = Math.floor(secs / 3600);
-  const m = Math.round((secs % 3600) / 60);
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
-}
+const formatDuration = (secs: number) => _formatDuration(secs, { unit: 's' });
 
 export function OAuthTokenMetricsPanel({ credentialId }: { credentialId: string }) {
   const [summary, setSummary] = useState<OAuthTokenLifetimeSummary | null>(null);

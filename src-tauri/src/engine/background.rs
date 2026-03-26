@@ -399,6 +399,7 @@ pub fn start_loops(
         }),
         Box::new(OAuthRefreshSubscription {
             pool: pool.clone(),
+            app: app.clone(),
         }),
         Box::new(subscription::ZombieExecutionSubscription {
             pool: pool.clone(),
@@ -482,8 +483,9 @@ pub fn start_loops(
     // expire in ~1 hour, so any app-offline period >1h leaves tokens dead.
     tokio::spawn({
         let pool = pool.clone();
+        let app = app.clone();
         async move {
-            let (refreshed, failed) = super::oauth_refresh::startup_oauth_sweep(&pool).await;
+            let (refreshed, failed) = super::oauth_refresh::startup_oauth_sweep(&pool, Some(&app)).await;
             if refreshed > 0 || failed > 0 {
                 tracing::info!(refreshed, failed, "Startup OAuth sweep complete");
             }
@@ -564,8 +566,9 @@ pub(crate) async fn event_bus_tick(
     pool: &DbPool,
     engine: &ExecutionEngine,
 ) {
-    // 1. Get pending events
-    let events = match event_repo::get_pending(pool, Some(50), None) {
+    // 1. Atomically claim pending events (SET status='processing' WHERE status='pending')
+    //    This prevents duplicate processing when ticks overlap.
+    let events = match event_repo::claim_pending(pool, 50) {
         Ok(e) => e,
         Err(e) => {
             tracing::error!("Event bus poll error: {}", e);
@@ -615,7 +618,7 @@ pub(crate) async fn event_bus_tick(
     //    and collect (event_index, matches) pairs.
     let mut event_matches: Vec<(usize, Vec<bus::EventMatch>)> = Vec::new();
     for (idx, event) in events.iter().enumerate() {
-        let _ = event_repo::update_status(pool, &event.id, "processing", None);
+        // Status already set to 'processing' by claim_pending — no separate update needed.
 
         // Match against legacy subscriptions
         let mut matches = bus::match_event(event, &all_subs);

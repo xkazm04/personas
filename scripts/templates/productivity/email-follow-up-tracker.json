@@ -269,11 +269,62 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "How long should the agent wait before flagging an unanswered email?",
+        "type": "select",
+        "options": [
+          "24 hours",
+          "48 hours",
+          "72 hours",
+          "1 week"
+        ],
+        "default": "48 hours",
+        "context": "Sets the follow-up window after which an email is considered overdue.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Should the agent prioritize follow-ups by recipient importance?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, emails to VIPs and key contacts are flagged sooner than others.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "Where should follow-up reminders be sent?",
+        "type": "select",
+        "options": [
+          "Slack message",
+          "In-app notification",
+          "Email digest",
+          "Both Slack and in-app"
+        ],
+        "default": "Slack message",
+        "context": "Determines the notification channel for overdue email reminders.",
+        "dimension": "messages"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should the agent remember resolved threads to avoid duplicate reminders?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "Uses agent memory to track which threads have been replied to and stops reminding.",
+        "dimension": "memory"
+      }
+    ],
     "persona_meta": {
       "name": "T: Email Follow-Up Tracker",
       "icon": "Mail",
       "color": "#0ea5e9"
     }
-  },
-  "is_published": false
+  }
 }

@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { CheckCircle2, XCircle, RefreshCw, Save, Database, Plug, AlertTriangle } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('auto-cred-review');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { ExtractedValues, ExtractionCompleteness } from '../helpers/types';
@@ -57,7 +60,7 @@ export function AutoCredReview({
       );
       setProcedureSaved(true);
     } catch (err) {
-      console.error('Failed to save procedure:', err);
+      logger.error('Failed to save procedure', { error: String(err) });
     } finally {
       setSavingProcedure(false);
     }

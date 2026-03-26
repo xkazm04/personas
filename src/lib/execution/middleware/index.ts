@@ -2,10 +2,12 @@
  * Pipeline Middleware Registry
  *
  * Central registration point for all execution pipeline middleware.
- * Call registerAllMiddleware() once at app startup (replaces the
- * individual registerKnowledgeMiddleware() call).
+ * Call registerAllMiddleware() at app startup. Safe to call multiple
+ * times -- each middleware uses a deduplication key so HMR re-calls
+ * replace rather than accumulate entries.
  *
- * Registration order within each stage determines execution order.
+ * Execution order within a stage is determined by the `priority` option
+ * passed to addMiddleware (lower runs first, insertion-order tiebreak).
  */
 
 import { registerKnowledgeMiddleware } from '@/lib/execution/knowledgeMiddleware';
@@ -15,12 +17,7 @@ import { registerNotificationMiddleware } from './notificationMiddleware';
 import { registerAnalyticsMiddleware } from './analyticsMiddleware';
 import { registerAuditMiddleware } from './auditMiddleware';
 
-let registered = false;
-
 export function registerAllMiddleware(): void {
-  if (registered) return;
-  registered = true;
-
   // -- validate stage --
   registerKnowledgeMiddleware();
 
@@ -30,7 +27,7 @@ export function registerAllMiddleware(): void {
   // -- finalize_status stage --
   registerAnalyticsMiddleware();
 
-  // -- frontend_complete stage (order: notification -> budget -> drift) --
+  // -- frontend_complete stage (priority: notification=10, budget=20, drift=30) --
   registerNotificationMiddleware();
   registerBudgetMiddleware();
   registerDriftMiddleware();

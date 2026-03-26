@@ -3,6 +3,7 @@ import { Loader2, RefreshCw, BarChart3, Bot } from 'lucide-react';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
@@ -25,11 +26,16 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 };
 
 export default function GlobalExecutionList() {
-  const globalExecutions = useOverviewStore((s) => s.globalExecutions);
-  const globalExecutionsTotal = useOverviewStore((s) => s.globalExecutionsTotal);
-  const globalExecutionsOffset = useOverviewStore((s) => s.globalExecutionsOffset);
-  const globalExecutionsWarning = useOverviewStore((s) => s.globalExecutionsWarning);
-  const fetchGlobalExecutions = useOverviewStore((s) => s.fetchGlobalExecutions);
+  const {
+    globalExecutions, globalExecutionsTotal, globalExecutionsOffset,
+    globalExecutionsWarning, fetchGlobalExecutions,
+  } = useOverviewStore(useShallow((s) => ({
+    globalExecutions: s.globalExecutions,
+    globalExecutionsTotal: s.globalExecutionsTotal,
+    globalExecutionsOffset: s.globalExecutionsOffset,
+    globalExecutionsWarning: s.globalExecutionsWarning,
+    fetchGlobalExecutions: s.fetchGlobalExecutions,
+  })));
   const personas = useAgentStore((s) => s.personas);
 
   const [filter, setFilter] = useState<FilterStatus>('all');

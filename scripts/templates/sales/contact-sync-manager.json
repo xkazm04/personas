@@ -272,11 +272,77 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "What sync direction should the agent use?",
+        "type": "select",
+        "options": [
+          "Gmail to database only",
+          "Database to Gmail only",
+          "Bidirectional sync"
+        ],
+        "default": "Gmail to database only",
+        "context": "Determines whether contact data flows one way or is kept in sync across both systems.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "How should conflicts between existing and new contact data be resolved?",
+        "type": "select",
+        "options": [
+          "Always prefer newest data",
+          "Always prefer existing data",
+          "Flag for manual resolution",
+          "Merge non-empty fields"
+        ],
+        "default": "Flag for manual resolution",
+        "context": "Controls the strategy when extracted contact info differs from what is already stored.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_config_3",
+        "category": "configuration",
+        "question": "How frequently should contact sync run?",
+        "type": "select",
+        "options": [
+          "Every 15 minutes",
+          "Hourly",
+          "Every 6 hours",
+          "Daily",
+          "On demand only"
+        ],
+        "default": "Every 15 minutes",
+        "context": "Sets how often the agent checks Gmail for new emails and updates contact records.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should uncertain signature extractions be flagged for review instead of auto-saving?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, low-confidence contact data parsing results are queued for your approval.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Should the agent track contact data change history?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, previous values are preserved in memory so you can see how contact info changed over time.",
+        "dimension": "memory"
+      }
+    ],
     "persona_meta": {
       "name": "T: Contact Sync Manager",
       "icon": "Sparkles",
       "color": "#8b5cf6"
     }
-  },
-  "is_published": false
+  }
 }

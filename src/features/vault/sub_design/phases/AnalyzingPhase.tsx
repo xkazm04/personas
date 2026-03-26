@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { Check, Circle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useStepProgress } from '@/hooks/useStepProgress';
+import { formatElapsed as _formatElapsed } from '@/lib/utils/formatters';
 
 interface AnalyzingPhaseProps {
   outputLines: string[];
@@ -27,12 +28,7 @@ function deriveStageIndex(lines: string[]): number {
   return 0;
 }
 
-function formatElapsed(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}m ${s}s`;
-}
+const formatElapsed = (seconds: number) => _formatElapsed(seconds, { unit: 's' });
 
 export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
   const [elapsed, setElapsed] = useState(0);

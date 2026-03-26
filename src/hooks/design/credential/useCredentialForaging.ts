@@ -1,4 +1,7 @@
 import { useState, useCallback, useRef } from "react";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("credential-foraging");
 import {
   scanCredentialSources,
   importForagedCredential,
@@ -97,7 +100,7 @@ export function useCredentialForaging() {
           const result = await importForagedCredential(cred.id, name, cred.service_type);
           newImported.set(cred.id, { id: result.id, name: result.name });
         } catch (err) {
-          console.error(`Failed to import ${cred.label}:`, err);
+          logger.error('Failed to import credential', { label: cred.label, error: String(err) });
           hadError = true;
         }
         setImportingIds((prev) => {

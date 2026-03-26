@@ -10,12 +10,7 @@ export function statusIcon(status: string) {
   }
 }
 
-export function formatDuration(ms: number | null): string {
-  if (ms == null) return '-';
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`;
-}
+export { formatDuration } from '@/lib/utils/formatters';
 
 export function formatCost(usd: number | null): string {
   if (usd == null || usd === 0) return '$0.00';

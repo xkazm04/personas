@@ -61,12 +61,10 @@ export const healthcheckCredential = (credentialId: string) =>
 
 export const healthcheckCredentialPreview = (
   serviceType: string,
-  fieldValues: Record<string, string>,
-  sessionEncryptedData?: string,
+  sessionEncryptedData: string,
 ) =>
   invoke<HealthcheckResult>("healthcheck_credential_preview", {
     serviceType,
-    fieldValues,
     sessionEncryptedData,
   });
 
@@ -86,14 +84,12 @@ export const listCredentialFields = (credentialId: string) =>
 export const updateCredentialField = (
   credentialId: string,
   fieldKey: string,
-  fieldValue: string,
   isSensitive: boolean,
-  sessionEncryptedValue?: string,
+  sessionEncryptedValue: string,
 ) =>
   invoke<boolean>("update_credential_field", {
     credentialId,
     fieldKey,
-    fieldValue,
     isSensitive,
     sessionEncryptedValue,
   });

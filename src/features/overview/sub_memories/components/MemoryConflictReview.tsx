@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Shield, ChevronDown, Check } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { detectConflicts, type MemoryConflict, type ConflictResolution } from '../libs/memoryConflicts';
@@ -12,11 +13,15 @@ interface MemoryConflictReviewProps {
 }
 
 export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictReviewProps) {
-  const memories = useOverviewStore((s) => s.memories);
+  const {
+    memories, deleteMemory, createMemory, fetchMemories,
+  } = useOverviewStore(useShallow((s) => ({
+    memories: s.memories,
+    deleteMemory: s.deleteMemory,
+    createMemory: s.createMemory,
+    fetchMemories: s.fetchMemories,
+  })));
   const personas = useAgentStore((s) => s.personas);
-  const deleteMemory = useOverviewStore((s) => s.deleteMemory);
-  const createMemory = useOverviewStore((s) => s.createMemory);
-  const fetchMemories = useOverviewStore((s) => s.fetchMemories);
 
   const [expanded, setExpanded] = useState(false);
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());

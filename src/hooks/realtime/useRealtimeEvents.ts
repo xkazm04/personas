@@ -5,12 +5,8 @@ import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import { useEventPhaseProgressor } from '@/hooks/realtime/useEventPhaseProgressor';
 
-// -- Color Map (derived from canonical EVENT_TYPE_COLORS) ----------
-import { EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
-
-export const EVENT_TYPE_HEX_COLORS: Record<string, string> = Object.fromEntries(
-  Object.entries(EVENT_TYPE_COLORS).map(([k, v]) => [k, v.hex]),
-);
+// -- Color Map (from centralized event tokens) ----------
+export { EVENT_TYPE_HEX_COLORS } from '@/lib/design/eventTokens';
 
 // -- Types ----------------------------------------------------------
 export type AnimationPhase = 'entering' | 'on-bus' | 'delivering' | 'done';

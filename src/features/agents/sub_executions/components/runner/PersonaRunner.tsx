@@ -2,7 +2,8 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, ShieldAlert, Monitor } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Monitor } from 'lucide-react';
+import { BudgetRecoveryCard } from './BudgetRecoveryCard';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
 import { KeyValueEditor } from '@/features/shared/components/forms/KeyValueEditor';
@@ -70,52 +71,15 @@ export function PersonaRunner() {
               </div>
             )}
         </div>
-        {/* Budget enforcement banner */}
-        {budgetStatus === 'exceeded' && (
-          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-red-500/20 bg-red-500/5">
-            <ShieldAlert className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="typo-heading text-red-400/90">Monthly budget exceeded</p>
-              {budgetEntry && (
-                <p className="typo-body text-red-400/60">${budgetEntry.spend.toFixed(2)} / ${budgetEntry.maxBudget?.toFixed(2)} ({Math.round(budgetEntry.ratio * 100)}%)</p>
-              )}
-            </div>
-            {isBudgetBlocked && (
-              <button
-                data-testid="runner-budget-override"
-                onClick={() => overrideBudgetPause(personaId)}
-                className="flex-shrink-0 px-2.5 py-1 typo-body rounded-lg border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-              >
-                Override
-              </button>
-            )}
-          </div>
-        )}
-        {budgetStatus === 'warning' && (
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-amber-500/15 bg-amber-500/5">
-            <ShieldAlert className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
-            <p className="typo-body text-amber-400/80">
-              Approaching budget limit
-              {budgetEntry && <span className="text-amber-400/60"> -- ${budgetEntry.spend.toFixed(2)} / ${budgetEntry.maxBudget?.toFixed(2)} ({Math.round(budgetEntry.ratio * 100)}%)</span>}
-            </p>
-          </div>
-        )}
-        {budgetStatus === 'stale' && (
-          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5">
-            <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="typo-heading text-amber-400/90">Budget data unavailable</p>
-              <p className="typo-body text-amber-400/60">Execution blocked as a safety precaution</p>
-            </div>
-            {isBudgetBlocked && (
-              <button
-                onClick={() => overrideStaleBudget(personaId)}
-                className="flex-shrink-0 px-2.5 py-1 typo-body rounded-lg border border-amber-500/20 text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
-              >
-                Run Anyway
-              </button>
-            )}
-          </div>
+        {/* Budget enforcement banner with recovery guidance */}
+        {budgetStatus !== 'ok' && (
+          <BudgetRecoveryCard
+            budgetStatus={budgetStatus}
+            budgetEntry={budgetEntry}
+            isBudgetBlocked={isBudgetBlocked}
+            onOverrideBudget={() => overrideBudgetPause(personaId)}
+            onOverrideStale={() => overrideStaleBudget(personaId)}
+          />
         )}
         {IS_MOBILE ? (
           <button

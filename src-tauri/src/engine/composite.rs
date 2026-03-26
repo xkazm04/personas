@@ -12,9 +12,7 @@
 //!    to prevent re-firing until conditions reset.
 //! 4. Log partial-match diagnostics for near-miss evaluations.
 
-use std::collections::HashMap;
-use std::sync::OnceLock;
-use std::sync::Mutex;
+use std::sync::LazyLock;
 
 use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
@@ -24,6 +22,7 @@ use crate::db::models::{CreatePersonaEventInput, TriggerConfig};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
+use crate::keyed_pool::KeyedResourcePool;
 
 // ---------------------------------------------------------------------------
 // Partial-match observability types
@@ -62,40 +61,26 @@ pub struct PartialMatchResult {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory state
+// In-memory state — backed by KeyedResourcePool
 // ---------------------------------------------------------------------------
 
-/// In-memory state for composite trigger evaluation.
-/// Tracks which triggers have already fired to prevent double-firing,
-/// and caches the latest partial-match results for observability queries.
-struct CompositeState {
-    /// trigger_id -> last time it fired (used to suppress re-firing within the window)
-    last_fired: HashMap<String, DateTime<Utc>>,
-    /// trigger_id -> latest partial match result (overwritten each tick)
-    latest_matches: HashMap<String, PartialMatchResult>,
-}
+/// trigger_id → last time it fired (used to suppress re-firing within the window).
+/// No automatic pruning — entries are retained by time predicate in `composite_tick`.
+static LAST_FIRED: LazyLock<KeyedResourcePool<String, DateTime<Utc>>> =
+    LazyLock::new(|| KeyedResourcePool::new(0, 0));
 
-static STATE: OnceLock<Mutex<CompositeState>> = OnceLock::new();
-
-fn get_state() -> &'static Mutex<CompositeState> {
-    STATE.get_or_init(|| {
-        Mutex::new(CompositeState {
-            last_fired: HashMap::new(),
-            latest_matches: HashMap::new(),
-        })
-    })
-}
+/// trigger_id → latest partial match result (overwritten each tick).
+static LATEST_MATCHES: LazyLock<KeyedResourcePool<String, PartialMatchResult>> =
+    LazyLock::new(|| KeyedResourcePool::new(0, 0));
 
 /// Returns the most recent partial-match snapshots for all evaluated composite triggers.
 pub fn get_partial_matches() -> Vec<PartialMatchResult> {
-    let state = get_state().lock().unwrap_or_else(|e| e.into_inner());
-    state.latest_matches.values().cloned().collect()
+    LATEST_MATCHES.values()
 }
 
 /// Returns the partial-match snapshot for a single trigger, if available.
 pub fn get_partial_match_for(trigger_id: &str) -> Option<PartialMatchResult> {
-    let state = get_state().lock().unwrap_or_else(|e| e.into_inner());
-    state.latest_matches.get(trigger_id).cloned()
+    LATEST_MATCHES.get(trigger_id)
 }
 
 // ---------------------------------------------------------------------------
@@ -162,14 +147,11 @@ pub fn composite_tick(pool: &DbPool) {
             let op = operator.as_deref().unwrap_or("all");
 
             // Check if we already fired within the window (suppress re-firing)
-            let suppressed = {
-                let state = get_state().lock().unwrap_or_else(|e| e.into_inner());
-                if let Some(last) = state.last_fired.get(&trigger.id) {
-                    now.signed_duration_since(*last).num_seconds() < window_secs as i64
-                } else {
-                    false
-                }
-            };
+            let suppressed = LAST_FIRED
+                .get(&trigger.id)
+                .map_or(false, |last| {
+                    now.signed_duration_since(last).num_seconds() < window_secs as i64
+                });
 
             let window_start = now - Duration::seconds(window_secs as i64);
 
@@ -211,10 +193,7 @@ pub fn composite_tick(pool: &DbPool) {
             };
 
             // Cache the partial match result
-            {
-                let mut state = get_state().lock().unwrap_or_else(|e| e.into_inner());
-                state.latest_matches.insert(trigger.id.clone(), result);
-            }
+            LATEST_MATCHES.insert(trigger.id.clone(), result);
 
             // Log partial-match diagnostics for near-misses
             if !fired && conditions_met > 0 {
@@ -233,10 +212,7 @@ pub fn composite_tick(pool: &DbPool) {
 
             if fired {
                 // Record firing
-                {
-                    let mut state = get_state().lock().unwrap_or_else(|e| e.into_inner());
-                    state.last_fired.insert(trigger.id.clone(), now);
-                }
+                LAST_FIRED.insert(trigger.id.clone(), now);
 
                 // Build payload showing which conditions matched
                 let matched_summary: Vec<_> = conditions
@@ -275,20 +251,17 @@ pub fn composite_tick(pool: &DbPool) {
     }
 
     // Cleanup: remove entries for triggers that no longer exist or are old
-    {
-        let mut state = get_state().lock().unwrap_or_else(|e| e.into_inner());
-        let cutoff = now - Duration::seconds(3600);
-        state.last_fired.retain(|_, v| *v > cutoff);
-        // Also clean up stale match results (keep for 2x the max window)
-        let match_cutoff = now - Duration::seconds(max_window as i64 * 2);
-        state.latest_matches.retain(|_, v| {
-            if let Ok(ts) = DateTime::parse_from_rfc3339(&v.evaluated_at) {
-                ts.with_timezone(&Utc) > match_cutoff
-            } else {
-                false
-            }
-        });
-    }
+    let cutoff = now - Duration::seconds(3600);
+    LAST_FIRED.retain(|_, v| *v > cutoff);
+    // Also clean up stale match results (keep for 2x the max window)
+    let match_cutoff = now - Duration::seconds(max_window as i64 * 2);
+    LATEST_MATCHES.retain(|_, v| {
+        if let Ok(ts) = DateTime::parse_from_rfc3339(&v.evaluated_at) {
+            ts.with_timezone(&Utc) > match_cutoff
+        } else {
+            false
+        }
+    });
 }
 
 // ---------------------------------------------------------------------------

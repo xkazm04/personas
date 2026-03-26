@@ -2,13 +2,11 @@ import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
-import type { Persona } from "@/lib/types/types";
 import type {
   OverviewTab,
   GlobalExecution,
   ManualReviewItem,
 } from "@/lib/types/types";
-import { enrichWithPersona } from "@/lib/types/types";
 import type { ManualReviewStatus } from "@/lib/bindings/ManualReviewStatus";
 import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
@@ -53,8 +51,12 @@ export interface OverviewSlice {
   executionDashboardLoading: boolean;
   executionDashboardError: string | null;
 
+  // State -- pipeline-level error (set when dashboard refresh fails)
+  pipelineError: string | null;
+
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
+  setPipelineError: (error: string | null) => void;
   fetchGlobalExecutions: (reset?: boolean, status?: string, personaId?: string) => Promise<void>;
   fetchManualReviews: (status?: string) => Promise<void>;
   updateManualReview: (id: string, updates: { status?: ManualReviewStatus; reviewer_notes?: string }) => Promise<void>;
@@ -115,8 +117,10 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   executionDashboard: null,
   executionDashboardLoading: false,
   executionDashboardError: null,
+  pipelineError: null,
 
   setOverviewTab: (tab) => set({ overviewTab: tab }),
+  setPipelineError: (error) => set({ pipelineError: error }),
 
   fetchGlobalExecutions: async (reset = false, status?: string, personaId?: string) => {
     const seq = ++fetchGlobalSeq;
@@ -162,9 +166,11 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
 
   fetchManualReviews: async (status?: string) => {
     try {
-      const raw = await listManualReviews(undefined, status);
-      const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS);
-      const shaped = raw.map((r) => ({
+      const [raw, pendingCount] = await Promise.all([
+        listManualReviews(undefined, status),
+        getPendingReviewCount(),
+      ]);
+      const shaped: ManualReviewItem[] = raw.map((r) => ({
         id: r.id,
         persona_id: r.persona_id,
         execution_id: r.execution_id,
@@ -179,9 +185,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
         created_at: r.created_at,
         resolved_at: r.resolved_at,
       }));
-      const items: ManualReviewItem[] = enrichWithPersona(shaped, personas);
-      const pendingCount = await getPendingReviewCount();
-      set({ manualReviews: items, manualReviewsTotal: items.length, pendingReviewCount: pendingCount });
+      set({ manualReviews: shaped, manualReviewsTotal: shaped.length, pendingReviewCount: pendingCount });
     } catch (err) {
       reportError(err, "Failed to fetch manual reviews", set);
     }
@@ -216,10 +220,9 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     set({ isLoadingCloudReviews: true });
     try {
       const raw = await cloudListPendingReviews();
-      const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS);
       // Transform CloudReviewRequest -> ManualReviewItem shape
       // Sanitize at the trust boundary: cloud payloads are external input.
-      const shaped = raw.map((r) => {
+      const shaped: ManualReviewItem[] = raw.map((r) => {
         const sanitized = sanitizeCloudReview(r.payload, r.response_message);
         return {
           id: r.review_id,
@@ -238,8 +241,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
           source: 'cloud' as const,
         };
       });
-      const items: ManualReviewItem[] = enrichWithPersona(shaped, personas);
-      set({ cloudReviews: items, isLoadingCloudReviews: false });
+      set({ cloudReviews: shaped, isLoadingCloudReviews: false });
     } catch (err) {
       log.warn('overviewSlice', 'fetchCloudReviews failed, falling back to empty', { operation: 'cloudListPendingReviews', error: String(err) });
       set({ cloudReviews: [], isLoadingCloudReviews: false });

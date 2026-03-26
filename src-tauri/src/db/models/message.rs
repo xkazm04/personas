@@ -19,6 +19,7 @@ pub struct PersonaMessage {
     pub metadata: Option<String>,
     pub created_at: String,
     pub read_at: Option<String>,
+    pub thread_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -31,6 +32,18 @@ pub struct CreateMessageInput {
     pub content_type: Option<String>,
     pub priority: Option<String>,
     pub metadata: Option<String>,
+    pub thread_id: Option<String>,
+}
+
+/// Summary of a message thread: the parent message plus reply count and latest reply timestamp.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct MessageThreadSummary {
+    pub thread_id: String,
+    pub parent: PersonaMessage,
+    pub reply_count: i64,
+    pub latest_reply_at: Option<String>,
 }
 
 // ============================================================================

@@ -9,6 +9,9 @@ import { useToastStore } from '@/stores/toastStore';
 import type { ExposedResource } from '@/api/network/exposure';
 import type { EnclavePolicy } from '@/api/network/enclave';
 import type { Persona } from '@/lib/bindings/Persona';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("bundle-export");
 
 type ExportMode = 'bundle' | 'enclave';
 
@@ -96,7 +99,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleExportDialog] Failed to export bundle', { selectedCount: selected.size, error: msg });
+      logger.warn('Failed to export bundle', { selectedCount: selected.size, error: msg });
       addToast(`Failed to export bundle: ${msg}`, 'error');
     } finally {
       setExporting(false);
@@ -115,7 +118,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       addToast(`Bundle copied: ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (${formatBytes(result.byte_size)})`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleExportDialog] Failed to copy bundle to clipboard', { selectedCount: selected.size, error: msg });
+      logger.warn('Failed to copy bundle to clipboard', { selectedCount: selected.size, error: msg });
       addToast(`Failed to copy bundle: ${msg}`, 'error');
     } finally {
       setCopying(false);
@@ -134,7 +137,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       addToast(`Share link copied! ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (expires in 24h, single use)`, 'success');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleExportDialog] Failed to create share link', { selectedCount: selected.size, error: msg });
+      logger.warn('Failed to create share link', { selectedCount: selected.size, error: msg });
       addToast(`Failed to create share link: ${msg}`, 'error');
     } finally {
       setCreatingLink(false);
@@ -166,7 +169,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn('[BundleExportDialog] Failed to seal enclave', { personaId: selectedPersonaId, error: msg });
+      logger.warn('Failed to seal enclave', { personaId: selectedPersonaId, error: msg });
       addToast(`Failed to seal enclave: ${msg}`, 'error');
     } finally {
       setExporting(false);

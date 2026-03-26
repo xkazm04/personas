@@ -1,6 +1,6 @@
 import { Activity, Zap, AlertCircle, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
-import { DASHBOARD_GRID_SPAN_MAJOR } from '@/features/overview/utils/dashboardGrid';
+import { DASHBOARD_GRID_SPAN_MAJOR, CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
 
 interface Execution {
   id: string;
@@ -30,14 +30,14 @@ export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityLis
         </button>
       </div>
 
-      <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden divide-y divide-primary/5">
+      <div className={`${CARD_CONTAINER} overflow-hidden divide-y divide-primary/5`}>
         {recentExecs.length > 0 ? (
           <AnimatedList
             className="divide-y divide-primary/5"
             keys={recentExecs.map((e) => e.id)}
           >
             {recentExecs.map((exec) => (
-              <div key={exec.id} className="px-3 py-1.5 flex items-center gap-2.5 hover:bg-white/[0.03] transition-colors group cursor-pointer" onClick={onViewAll}>
+              <div key={exec.id} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewAll(); } }} className="px-3 py-1.5 flex items-center gap-2.5 hover:bg-white/[0.03] transition-colors group cursor-pointer focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none" onClick={onViewAll}>
                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
                   exec.status === 'completed' ? 'text-emerald-400' :
                   exec.status === 'failed' ? 'text-rose-400' :

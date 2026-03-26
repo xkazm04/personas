@@ -1,8 +1,10 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { MessageSquare, CheckCheck, RefreshCw, Send, Plus } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { MessageSquare, CheckCheck, RefreshCw, Send, Plus, List, GitBranch, ChevronRight, ChevronDown, MessageCircle } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
+import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePersonaMap";
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
@@ -13,20 +15,57 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import { seedMockMessage } from '@/api/overview/messages';
-import { priorityConfig, FILTER_LABELS, GRID_TEMPLATE_COLUMNS, type FilterType } from '../libs/messageHelpers';
+import { priorityConfig, FILTER_LABELS, GRID_TEMPLATE_COLUMNS, type FilterType, deliveryStatusConfig } from '../libs/messageHelpers';
 import { MessageDetailModal } from './MessageDetailModal';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("message-list");
 
 export default function MessageList() {
-  const messages = useOverviewStore((s) => s.messages);
-  const messagesTotal = useOverviewStore((s) => s.messagesTotal);
-  const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
-  const fetchMessages = useOverviewStore((s) => s.fetchMessages);
-  const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
-  const markMessageAsRead = useOverviewStore((s) => s.markMessageAsRead);
-  const markAllMessagesAsRead = useOverviewStore((s) => s.markAllMessagesAsRead);
-  const deleteMessage = useOverviewStore((s) => s.deleteMessage);
+  const {
+    messages, messagesTotal, unreadMessageCount,
+    fetchMessages, fetchUnreadMessageCount,
+    markMessageAsRead, markAllMessagesAsRead, deleteMessage,
+    deliverySummaries,
+    viewMode, setViewMode,
+    threadSummaries, threadCount, expandedThreadId, threadReplies,
+    fetchThreadSummaries, expandThread, collapseThread,
+  } = useOverviewStore(useShallow((s) => ({
+    messages: s.messages,
+    messagesTotal: s.messagesTotal,
+    unreadMessageCount: s.unreadMessageCount,
+    fetchMessages: s.fetchMessages,
+    fetchUnreadMessageCount: s.fetchUnreadMessageCount,
+    markMessageAsRead: s.markMessageAsRead,
+    markAllMessagesAsRead: s.markAllMessagesAsRead,
+    deleteMessage: s.deleteMessage,
+    deliverySummaries: s.deliverySummaries,
+    viewMode: s.viewMode,
+    setViewMode: s.setViewMode,
+    threadSummaries: s.threadSummaries,
+    threadCount: s.threadCount,
+    expandedThreadId: s.expandedThreadId,
+    threadReplies: s.threadReplies,
+    fetchThreadSummaries: s.fetchThreadSummaries,
+    expandThread: s.expandThread,
+    collapseThread: s.collapseThread,
+  })));
   const personas = useAgentStore((s) => s.personas);
+  const personaMap = usePersonaMap();
+  const enrichedMessages = useEnrichedRecords(messages, personaMap);
+
+  // Enrich thread replies at render time (avoids baking stale persona info)
+  const enrichedThreadReplies = useMemo(() => {
+    const result = new Map<string, PersonaMessage[]>();
+    for (const [threadId, replies] of threadReplies) {
+      result.set(threadId, replies.map((r) => {
+        const p = personaMap.get(r.persona_id);
+        return { ...r, persona_name: p?.name, persona_icon: p?.icon ?? undefined, persona_color: p?.color ?? undefined };
+      }));
+    }
+    return result;
+  }, [threadReplies, personaMap]);
 
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
@@ -40,41 +79,53 @@ export default function MessageList() {
     let active = true;
     const loadInitial = async () => {
       setIsLoading(true);
-      try { await fetchMessages(true); }
+      try {
+        if (viewMode === 'threaded') {
+          await fetchThreadSummaries(true, selectedPersonaId || undefined);
+        } else {
+          await fetchMessages(true);
+        }
+      }
       finally { if (active) setIsLoading(false); }
     };
     loadInitial();
     return () => { active = false; };
-  }, [fetchMessages]);
+  }, [fetchMessages, fetchThreadSummaries, viewMode, selectedPersonaId]);
 
   const handleMessageCreated = useCallback((raw: RawPersonaMessage) => {
-    const allPersonas = useAgentStore.getState().personas;
-    const personaMap = new Map(allPersonas.map((p) => [p.id, p]));
-    const p = personaMap.get(raw.persona_id);
-    const enriched: PersonaMessage = { ...raw, persona_name: p?.name, persona_icon: p?.icon ?? undefined, persona_color: p?.color ?? undefined };
     useOverviewStore.setState((state) => {
-      const exists = state.messages.some((m) => m.id === enriched.id);
+      const exists = state.messages.some((m) => m.id === raw.id);
       if (exists) return state;
-      return { messages: [enriched, ...state.messages], messagesTotal: state.messagesTotal + 1 };
+      return { messages: [raw, ...state.messages], messagesTotal: state.messagesTotal + 1 };
     });
     fetchUnreadMessageCountRef.current();
+    // Refresh threads if in threaded mode
+    if (useOverviewStore.getState().viewMode === 'threaded') {
+      void useOverviewStore.getState().fetchThreadSummaries(true);
+    }
   }, []);
 
   useMessageCreatedListener(handleMessageCreated);
 
   const filteredMessages = useMemo(() => {
-    let result = messages;
+    let result = enrichedMessages;
     if (selectedPersonaId) result = result.filter((m) => m.persona_id === selectedPersonaId);
     switch (filter) {
       case 'unread': return result.filter((m) => !m.is_read);
       case 'high': return result.filter((m) => m.priority === 'high');
       default: return result;
     }
-  }, [messages, filter, selectedPersonaId]);
+  }, [enrichedMessages, filter, selectedPersonaId]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    try { await fetchMessages(true); }
+    try {
+      if (viewMode === 'threaded') {
+        await fetchThreadSummaries(true, selectedPersonaId || undefined);
+      } else {
+        await fetchMessages(true);
+      }
+    }
     finally { setIsRefreshing(false); }
   };
 
@@ -85,7 +136,7 @@ export default function MessageList() {
 
   const handleSeedMessage = useCallback(async () => {
     try { await seedMockMessage(); await fetchMessages(true); }
-    catch (err) { console.error('Failed to seed mock message:', err); }
+    catch (err) { logger.error('Failed to seed mock message', { error: err }); }
   }, [fetchMessages]);
 
   const remaining = messagesTotal - messages.length;
@@ -97,13 +148,26 @@ export default function MessageList() {
 
   const defaultPriority = { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
 
+  const handleToggleThread = useCallback((threadId: string) => {
+    if (expandedThreadId === threadId) {
+      collapseThread();
+    } else {
+      void expandThread(threadId);
+    }
+  }, [expandedThreadId, expandThread, collapseThread]);
+
+  const threadedRemaining = threadCount - threadSummaries.length;
+
   return (
     <ContentBox>
       <ContentHeader
         icon={<MessageSquare className="w-5 h-5 text-indigo-400" />}
         iconColor="indigo"
         title="Messages"
-        subtitle={`${messagesTotal} message${messagesTotal !== 1 ? 's' : ''} recorded`}
+        subtitle={viewMode === 'threaded'
+          ? `${threadCount} thread${threadCount !== 1 ? 's' : ''}`
+          : `${messagesTotal} message${messagesTotal !== 1 ? 's' : ''} recorded`
+        }
         actions={
           <>
             {import.meta.env.DEV && (
@@ -111,6 +175,22 @@ export default function MessageList() {
                 <Plus className="w-3.5 h-3.5" /> Mock Message
               </button>
             )}
+            <div className="flex items-center rounded-lg border border-primary/15 overflow-hidden">
+              <button
+                onClick={() => setViewMode('flat')}
+                className={`p-1.5 transition-colors ${viewMode === 'flat' ? 'bg-primary/10 text-primary' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
+                title="Flat view"
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode('threaded')}
+                className={`p-1.5 transition-colors ${viewMode === 'threaded' ? 'bg-primary/10 text-primary' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
+                title="Threaded view"
+              >
+                <GitBranch className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <button onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title="Refresh">
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -121,63 +201,200 @@ export default function MessageList() {
         }
       />
 
-      <FilterBar<FilterType>
-        options={(['all', 'unread', 'high'] as FilterType[]).map((id) => ({ id, label: FILTER_LABELS[id], badge: badgeCounts[id] }))}
-        value={filter} onChange={setFilter} layoutIdPrefix="message-filter"
-        summary={`Showing ${filteredMessages.length} of ${messagesTotal}`}
-        trailing={<PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />}
-      />
+      {viewMode === 'flat' && (
+        <FilterBar<FilterType>
+          options={(['all', 'unread', 'high'] as FilterType[]).map((id) => ({ id, label: FILTER_LABELS[id], badge: badgeCounts[id] }))}
+          value={filter} onChange={setFilter} layoutIdPrefix="message-filter"
+          summary={`Showing ${filteredMessages.length} of ${messagesTotal}`}
+          trailing={<PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />}
+        />
+      )}
+      {viewMode === 'threaded' && (
+        <div className="flex items-center justify-between px-4 py-2 border-b border-primary/10">
+          <span className="text-sm text-muted-foreground/80">
+            {threadSummaries.length} of {threadCount} threads
+          </span>
+          <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
+        </div>
+      )}
 
       <ContentBody flex>
         {isLoading ? (
           <ContentLoader variant="panel" hint="messages" />
-        ) : filteredMessages.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center"><MessageSquare className="w-5 h-5 text-muted-foreground/80" /></div>
-              {filter !== 'all' || selectedPersonaId ? (
-                <><p className="text-sm text-muted-foreground/90">No {filter === 'unread' ? 'unread' : filter === 'high' ? 'high-priority' : ''} messages{selectedPersonaId ? ' for the selected persona' : ''}</p><p className="text-sm text-muted-foreground/80 mt-1">Try switching to "All" to see all messages</p></>
-              ) : (
-                <><p className="text-sm text-muted-foreground/90">No messages yet</p><p className="text-sm text-muted-foreground/80 mt-1.5 max-w-sm mx-auto leading-relaxed">Messages are created when agents run and communicate with each other.</p>
-                  <button onClick={() => useSystemStore.getState().setSidebarSection('personas')} className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"><Send className="w-3.5 h-3.5" />Go to Agents</button></>
+        ) : viewMode === 'threaded' ? (
+          /* ==================== THREADED VIEW ==================== */
+          threadSummaries.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center"><GitBranch className="w-5 h-5 text-muted-foreground/80" /></div>
+                <p className="text-sm text-muted-foreground/90">No message threads yet</p>
+                <p className="text-sm text-muted-foreground/80 mt-1.5 max-w-sm mx-auto leading-relaxed">Threads are created automatically when agents produce messages during executions.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto">
+              {threadSummaries.map((thread) => {
+                const isExpanded = expandedThreadId === thread.threadId;
+                const replies = enrichedThreadReplies.get(thread.threadId);
+                const rawParent = thread.parent;
+                const pp = personaMap.get(rawParent.persona_id);
+                const parent = { ...rawParent, persona_name: pp?.name, persona_icon: pp?.icon ?? undefined, persona_color: pp?.color ?? undefined } as PersonaMessage;
+                const parentPriority = priorityConfig[parent.priority] ?? defaultPriority;
+
+                return (
+                  <div key={thread.threadId} className="border-b border-primary/[0.06]">
+                    {/* Thread header row */}
+                    <div
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.03] cursor-pointer transition-colors"
+                      onClick={() => handleToggleThread(thread.threadId)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleThread(thread.threadId); } }}
+                    >
+                      <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-muted-foreground/60">
+                        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </div>
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: ((parent as PersonaMessage).persona_color || '#6366f1') + '15' }}>
+                        {(parent as PersonaMessage).persona_icon || '?'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-sm truncate block ${parent.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>
+                          {parent.title || parent.content.slice(0, 80)}
+                        </span>
+                      </div>
+                      <span className={`inline-flex px-2 py-0.5 rounded-lg typo-heading text-xs border ${parentPriority.bgColor} ${parentPriority.color} ${parentPriority.borderColor}`}>
+                        {parentPriority.label}
+                      </span>
+                      {thread.replyCount > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          <MessageCircle className="w-3 h-3" />
+                          {thread.replyCount}
+                        </span>
+                      )}
+                      <span className="text-sm text-muted-foreground/60 flex-shrink-0 w-24 text-right">
+                        {formatRelativeTime(thread.latestReplyAt ?? parent.created_at)}
+                      </span>
+                    </div>
+
+                    {/* Expanded replies */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="bg-secondary/10 border-t border-primary/[0.06]">
+                            {replies ? replies.map((msg) => {
+                              const mp = priorityConfig[msg.priority] ?? defaultPriority;
+                              return (
+                                <div
+                                  key={msg.id}
+                                  className="flex items-center gap-3 px-4 py-2 pl-12 hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.04] last:border-b-0"
+                                  onClick={() => handleRowClick(msg)}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick(msg); } }}
+                                >
+                                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs border border-primary/10 flex-shrink-0" style={{ backgroundColor: (msg.persona_color || '#6366f1') + '10' }}>
+                                    {msg.persona_icon || '?'}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <span className={`text-sm truncate block ${msg.is_read ? 'text-foreground/70' : 'text-foreground/85 font-medium'}`}>
+                                      {msg.title || msg.content.slice(0, 80)}
+                                    </span>
+                                  </div>
+                                  <span className={`inline-flex px-1.5 py-0.5 rounded text-xs border ${mp.bgColor} ${mp.color} ${mp.borderColor}`}>
+                                    {mp.label}
+                                  </span>
+                                  {!msg.is_read && <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
+                                  <span className="text-xs text-muted-foreground/60 flex-shrink-0 w-20 text-right">
+                                    {formatRelativeTime(msg.created_at)}
+                                  </span>
+                                </div>
+                              );
+                            }) : (
+                              <div className="px-4 py-3 pl-12 text-sm text-muted-foreground/60">Loading replies...</div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+              {threadedRemaining > 0 && (
+                <div className="p-4">
+                  <button onClick={() => fetchThreadSummaries(false, selectedPersonaId || undefined)} className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-xl border border-primary/15 transition-all">
+                    Load More ({threadedRemaining} remaining)
+                  </button>
+                </div>
               )}
             </div>
-          </div>
+          )
         ) : (
-          <div ref={parentRef} className="flex-1 overflow-y-auto">
-            <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={5} className="w-full">
-              <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}>
-                <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</div>
-                <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Title</div>
-                <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Priority</div>
-                <div role="columnheader" className="text-center text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</div>
-                <div role="columnheader" className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Created</div>
-              </div>
-              <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                {virtualizer.getVirtualItems().map((virtualRow) => {
-                  const message = filteredMessages[virtualRow.index]!;
-                  const priority = priorityConfig[message.priority] ?? defaultPriority;
-                  return (
-                    <div key={message.id} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
-                      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
-                      style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
-                      className="grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-                    >
-                      <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
-                        <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}>{message.persona_icon || '?'}</div>
-                        <span className="text-sm text-muted-foreground/80 truncate">{message.persona_name || 'Unknown'}</span>
-                      </div>
-                      <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || message.content.slice(0, 80)}</span></div>
-                      <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-lg typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
-                      <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <div className="w-2.5 h-2.5 rounded-full bg-blue-500" title="Unread" aria-label="Unread message" /> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title="Read" aria-hidden="true" />}</div>
-                      <div role="gridcell" className="px-4 text-right"><span className="text-sm text-muted-foreground/80">{formatRelativeTime(message.created_at)}</span></div>
-                    </div>
-                  );
-                })}
+          /* ==================== FLAT VIEW (original) ==================== */
+          filteredMessages.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center"><MessageSquare className="w-5 h-5 text-muted-foreground/80" /></div>
+                {filter !== 'all' || selectedPersonaId ? (
+                  <><p className="text-sm text-muted-foreground/90">No {filter === 'unread' ? 'unread' : filter === 'high' ? 'high-priority' : ''} messages{selectedPersonaId ? ' for the selected persona' : ''}</p><p className="text-sm text-muted-foreground/80 mt-1">Try switching to "All" to see all messages</p></>
+                ) : (
+                  <><p className="text-sm text-muted-foreground/90">No messages yet</p><p className="text-sm text-muted-foreground/80 mt-1.5 max-w-sm mx-auto leading-relaxed">Messages are created when agents run and communicate with each other.</p>
+                    <button onClick={() => useSystemStore.getState().setSidebarSection('personas')} className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"><Send className="w-3.5 h-3.5" />Go to Agents</button></>
+                )}
               </div>
             </div>
-            {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-xl border border-primary/15 transition-all">Load More ({remaining} remaining)</button></div>)}
-          </div>
+          ) : (
+            <div ref={parentRef} className="flex-1 overflow-y-auto">
+              <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={6} className="w-full">
+                <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}>
+                  <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</div>
+                  <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Title</div>
+                  <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Priority</div>
+                  <div role="columnheader" className="text-center text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Delivery</div>
+                  <div role="columnheader" className="text-center text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</div>
+                  <div role="columnheader" className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Created</div>
+                </div>
+                <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+                  {virtualizer.getVirtualItems().map((virtualRow) => {
+                    const message = filteredMessages[virtualRow.index]!;
+                    const priority = priorityConfig[message.priority] ?? defaultPriority;
+                    return (
+                      <div key={message.id} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
+                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
+                        className="grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                      >
+                        <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
+                          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}>{message.persona_icon || '?'}</div>
+                          <span className="text-sm text-muted-foreground/80 truncate">{message.persona_name || 'Unknown'}</span>
+                        </div>
+                        <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || message.content.slice(0, 80)}</span></div>
+                        <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-lg typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
+                        <div role="gridcell" className="px-4 flex justify-center">
+                          {(() => {
+                            const ds = deliverySummaries.get(message.id);
+                            if (!ds) return <span className="text-xs text-muted-foreground/40">—</span>;
+                            if (ds.failed > 0) { const c = deliveryStatusConfig['failed']!; return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${c.bgColor} ${c.color} border ${c.borderColor}`}>{ds.failed} failed</span>; }
+                            if (ds.pending > 0) { const c = deliveryStatusConfig['pending']!; return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${c.bgColor} ${c.color} border ${c.borderColor}`}>{ds.pending} pending</span>; }
+                            if (ds.delivered > 0) { const c = deliveryStatusConfig['delivered']!; return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${c.bgColor} ${c.color} border ${c.borderColor}`}>{ds.delivered} sent</span>; }
+                            return <span className="text-xs text-muted-foreground/40">—</span>;
+                          })()}
+                        </div>
+                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <div className="w-2.5 h-2.5 rounded-full bg-blue-500" title="Unread" aria-label="Unread message" /> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title="Read" aria-hidden="true" />}</div>
+                        <div role="gridcell" className="px-4 text-right"><span className="text-sm text-muted-foreground/80">{formatRelativeTime(message.created_at)}</span></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 text-sm text-muted-foreground/80 hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-xl border border-primary/15 transition-all">Load More ({remaining} remaining)</button></div>)}
+            </div>
+          )
         )}
       </ContentBody>
 

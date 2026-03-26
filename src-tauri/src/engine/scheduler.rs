@@ -11,7 +11,7 @@ pub(crate) fn compute_next_from_config(cfg: &TriggerConfig, now: DateTime<Utc>) 
     match cfg {
         TriggerConfig::Schedule { cron: Some(cron_expr), .. } => {
             let schedule = cron::parse_cron(cron_expr).ok()?;
-            let next = cron::next_fire_time(&schedule, now)?;
+            let next = cron::next_fire_time_local(&schedule, now)?;
             Some(next.to_rfc3339())
         }
         TriggerConfig::Schedule { interval_seconds: Some(secs), .. } => {
@@ -49,6 +49,7 @@ mod tests {
             trigger_type: trigger_type.into(),
             config: config.map(String::from),
             enabled: true,
+            status: "active".into(),
             last_triggered_at: None,
             next_trigger_at: None,
             created_at: "2026-01-01T00:00:00Z".into(),

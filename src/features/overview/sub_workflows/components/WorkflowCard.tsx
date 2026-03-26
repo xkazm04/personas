@@ -1,17 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { CheckCircle2, XCircle, ChevronDown, ChevronUp, Square, Clock } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ChevronDown, ChevronUp, Square } from 'lucide-react';
 import { getWorkflowJobOutput } from '@/api/pipeline/workflows';
 import type { WorkflowJob } from '@/api/pipeline/workflows';
-import { JOB_TYPE_LABELS, formatElapsed, statusBadgeClass } from '../libs/workflowHelpers';
-
-function StatusIcon({ status }: { status: string }) {
-  if (status === 'running') return <LoadingSpinner size="sm" className="text-blue-400" />;
-  if (status === 'completed') return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
-  if (status === 'failed') return <XCircle className="w-3.5 h-3.5 text-red-400" />;
-  if (status === 'awaiting_answers') return <Clock className="w-3.5 h-3.5 text-amber-400" />;
-  return <Clock className="w-3.5 h-3.5 text-muted-foreground" />;
-}
+import { JOB_TYPE_LABELS, formatElapsed, statusBadgeClass, StatusIcon } from '../workflowHelpers';
 
 function SummaryCards({ data }: { data: { total_count: number; running_count: number; completed_count: number; failed_count: number } }) {
   const cards = [

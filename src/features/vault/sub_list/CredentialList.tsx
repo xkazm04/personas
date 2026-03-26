@@ -8,7 +8,7 @@ import { CredentialPlaygroundModal } from '@/features/vault/sub_playground/Crede
 import { SchemaManagerModal } from '@/features/vault/sub_databases/SchemaManagerModal';
 import { VectorKbModal } from '@/features/vault/sub_vector/VectorKbModal';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { type CredentialListProps, capitalize } from './credentialListTypes';
 import { useCredentialListFilters } from './useCredentialListFilters';
@@ -56,7 +56,7 @@ export function CredentialList({
   onGoToAddNew,
   onWorkspaceConnect,
 }: CredentialListProps) {
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
   const pendingDeleteIds = useVaultStore((s) => s.pendingDeleteCredentialIds);
   const {
     setSelectedId,

@@ -2,8 +2,7 @@ import { motion } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { SIDEBAR_ICONS, SidebarIconStyles } from '@/features/shared/components/layout/sidebar/SidebarIcons';
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
-import { useDevMode } from '@/hooks/utility/interaction/useDevMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { SIMPLE_SECTIONS, DEV_MODE_SECTIONS } from '@/lib/utils/platform/platform';
 
 export interface NavCard {
@@ -84,8 +83,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 }
 
 export default function NavigationGrid({ cards, translations, onCardClick }: NavigationGridProps) {
-  const isSimple = useSimpleMode();
-  const isDevMode = useDevMode();
+  const { isStarter: isSimple, isBuilder: isDevMode } = useTier();
   const visibleCards = useMemo(
     () => {
       let filtered = cards;

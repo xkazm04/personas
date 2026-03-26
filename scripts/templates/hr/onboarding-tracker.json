@@ -277,11 +277,83 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "What onboarding stages does your organization use?",
+        "type": "select",
+        "options": [
+          "Pre-boarding / Day 1 / Week 1 / 30-60-90 days",
+          "IT Setup / Paperwork / Training / Orientation",
+          "Custom stages"
+        ],
+        "default": "Pre-boarding / Day 1 / Week 1 / 30-60-90 days",
+        "context": "Defines the checklist structure and milestone timeline for new hires.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "Which department is the primary user of this onboarding tracker?",
+        "type": "select",
+        "options": [
+          "Engineering",
+          "Sales",
+          "Marketing",
+          "Operations",
+          "All departments"
+        ],
+        "default": "All departments",
+        "context": "Customizes the default checklist tasks based on department-specific needs.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "What is the standard onboarding timeline for new hires?",
+        "type": "select",
+        "options": [
+          "1 week",
+          "2 weeks",
+          "30 days",
+          "60 days",
+          "90 days"
+        ],
+        "default": "90 days",
+        "context": "Sets the default deadline range for onboarding task completion.",
+        "dimension": "triggers"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should the generated checklist be reviewed by HR before sharing with the new hire?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, checklists are sent for HR approval before being assigned.",
+        "dimension": "human-review"
+      },
+      {
+        "id": "aq_config_3",
+        "category": "configuration",
+        "question": "How should overdue task reminders be sent?",
+        "type": "select",
+        "options": [
+          "In-app notification",
+          "Email to manager",
+          "Slack channel",
+          "Both in-app and email"
+        ],
+        "default": "In-app notification",
+        "context": "Determines the notification channel for deadline reminders.",
+        "dimension": "messages"
+      }
+    ],
     "persona_meta": {
       "name": "T: Onboarding Tracker",
       "icon": "UserCheck",
       "color": "#10b981"
     }
-  },
-  "is_published": false
+  }
 }

@@ -1,5 +1,8 @@
 import { listen } from '@tauri-apps/api/event';
 import type { PlaywrightAdapter, AdapterResult } from './useAutoCredSession';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('tauri-playwright-adapter');
 import type { AutoCredConnectorContext, BrowserLogEntry, ExtractedValues, DiscoveredField, DiscoveredConnector } from './types';
 import { startAutoCredBrowser, getPlaywrightProcedure, cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import { openExternalUrl } from '@/api/system/system';
@@ -77,7 +80,7 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
       const autoOpen = event.payload.auto_open !== false;
       if (autoOpen) {
         openExternalUrl(event.payload.url).catch((err) => {
-          console.error('Failed to open URL:', err);
+          logger.error('Failed to open URL', { url: event.payload.url, error: String(err) });
           onLog({
             ts: Date.now(),
             message: `Failed to open URL: ${event.payload.url}`,
@@ -89,7 +92,7 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
 
     // Handle abort -- kill the subprocess and clean up listeners
     const abortHandler = () => {
-      cancelAutoCredBrowser().catch(console.error);
+      cancelAutoCredBrowser().catch((err) => { logger.error('Failed to cancel auto cred browser', { error: String(err) }); });
       unlisten();
       unlistenUrl();
     };

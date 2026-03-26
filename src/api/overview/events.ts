@@ -1,5 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { EventFilterInput } from "@/lib/bindings/EventFilterInput";
 import type { PaginatedEvents } from "@/lib/bindings/PaginatedEvents";
 import type { PersonaEvent } from "@/lib/bindings/PersonaEvent";
 import type { PersonaEventSubscription } from "@/lib/bindings/PersonaEventSubscription";
@@ -18,6 +19,9 @@ export const listEvents = (limit?: number, projectId?: string) =>
 
 export const listEventsInRange = (since: string, until: string, limit?: number) =>
   invoke<PaginatedEvents>("list_events_in_range", { since, until, limit });
+
+export const searchEvents = (filter: EventFilterInput) =>
+  invoke<PaginatedEvents>("search_events", { filter });
 
 export const listSubscriptions = (personaId: string) =>
   invoke<PersonaEventSubscription[]>("list_subscriptions", { personaId });

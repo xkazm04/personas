@@ -16,7 +16,7 @@ export { CatalogCredentialModal } from './modals/CatalogCredentialModal';
 export { ExpandedRowContent } from './matrix/ExpandedRowContent';
 export { BackgroundBanners } from './explore/BackgroundBanners';
 export { TrendingCarousel } from './explore/TrendingCarousel';
-export { EmptyState } from './explore/EmptyState';
+export { EmptyState, SearchEmptyState, AiEmptyState } from './explore/EmptyState';
 export { RecommendedModal } from './modals/RecommendedModal';
 export { ConnectorFilterDropdown } from './search/filters/ConnectorFilterDropdown';
 export { SortDropdown } from './search/filters/SortDropdown';

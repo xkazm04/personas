@@ -11,6 +11,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
+import { formatDuration } from '@/lib/utils/formatters';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
   type ScanAgentDef,
@@ -81,11 +82,6 @@ function relativeTime(iso: string): string {
   return `${Math.floor(ms / 86_400_000)}d ago`;
 }
 
-function formatDuration(ms: number | null): string {
-  if (ms == null) return '-';
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
-}
 
 const SCAN_STATUS_STYLES: Record<string, string> = {
   complete: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',

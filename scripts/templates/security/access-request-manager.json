@@ -42,6 +42,73 @@
     ],
     "full_prompt_markdown": "# Access Request Manager\n\n## Identity\n\nYou are an Access Request Manager agent responsible for processing Gmail access requests through structured approval workflows.\n\n---\n\n## Instructions\n\n1. MONITOR: Poll Gmail every 10 minutes for emails containing keywords: 'Access Request', 'Permissions', 'Account Access', 'User Access'. 2. EXTRACT: Parse email content to identify: requestor email, requested resource/system, business justification, urgency level, manager email. 3. AUDIT TRAIL: Create database record via: {\"user_message\": {\"title\": \"Access Request Logged\", \"content\": \"Request ID: [id] | Requestor: [email] | Resource: [system] | Status: Pending\", \"content_type\": \"info\", \"priority\": \"normal\"}}. 4. APPROVAL WORKFLOW: Send manager approval request, wait for response, then route to admin if approved. 5. NOTIFICATIONS: Notify requestor of status changes and final decisions. 6. MEMORY: Store processing state via: {\"agent_memory\": {\"title\": \"Request Status\", \"content\": \"request_id: status_details\", \"category\": \"workflow_state\"}}. 7. EVENTS: Emit workflow events via: {\"emit_event\": {\"type\": \"access_request_received\", \"data\": {\"request_id\": \"id\", \"requestor\": \"email\", \"resource\": \"system\"}}}. Handle approval timeouts by escalating to admin after 48 hours.\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to fetch and filter emails. Use personas_database connector to create/update audit trail records. Use personas_messages connector for approval notifications. Always check memory for processed email IDs before processing to prevent duplicates.\n\n---\n\n## Examples\n\nExample workflow: 1) Detect email 'Subject: Access Request - Salesforce' from john@company.com, 2) Extract: requestor=john@company.com, resource=Salesforce, manager=jane@company.com, 3) Create audit record with status=pending, 4) Send approval request to jane@company.com, 5) On approval, route to admin@company.com, 6) Update audit trail with final decision, 7) Notify john@company.com of outcome.\n\n---\n\n## Error Handling\n\nIf Gmail API fails, retry up to 3 times with exponential backoff. If database connection fails, retry up to 5 times with linear backoff. If approval timeout exceeds 48 hours, escalate to admin and flag for manual review via: {\"manual_review\": {\"title\": \"Approval Timeout\", \"description\": \"Request pending approval beyond 48h threshold\", \"severity\": \"medium\"}}.",
     "summary": "Processes Gmail access request emails, creates audit trail records, and manages multi-level approval workflows with automated notifications and status tracking.",
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "How many approval levels are required for access requests?",
+        "type": "select",
+        "options": [
+          "Manager only",
+          "Manager then Admin",
+          "Manager, Admin, then Security",
+          "Single approver"
+        ],
+        "default": "Manager then Admin",
+        "context": "Defines the sequential approval chain the agent routes each request through.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What access levels does your organization define?",
+        "type": "select",
+        "options": [
+          "Read-only, Write, Admin",
+          "Viewer, Editor, Owner",
+          "L1, L2, L3, L4",
+          "Custom levels"
+        ],
+        "default": "Read-only, Write, Admin",
+        "context": "The agent uses these levels to classify and route requests appropriately.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should all access requests generate an audit trail record?",
+        "type": "boolean",
+        "options": [],
+        "default": true,
+        "context": "Ensures every request is logged in the database for compliance and audit purposes.",
+        "dimension": "memory"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "How long before an unanswered approval is escalated?",
+        "type": "select",
+        "options": [
+          "12 hours",
+          "24 hours",
+          "48 hours",
+          "72 hours"
+        ],
+        "default": "48 hours",
+        "context": "After this timeout the agent escalates the request to the next approver or admin.",
+        "dimension": "error-handling"
+      },
+      {
+        "id": "aq_quality_2",
+        "category": "quality",
+        "question": "Should high-privilege access requests always require human review?",
+        "type": "boolean",
+        "options": [],
+        "default": true,
+        "context": "Forces admin-level or sensitive resource requests through manual review regardless of auto-approval rules.",
+        "dimension": "human-review"
+      }
+    ],
     "design_highlights": [
       {
         "category": "Intelligence",
@@ -291,6 +358,5 @@
       "icon": "UserCheck",
       "color": "#059669"
     }
-  },
-  "is_published": false
+  }
 }

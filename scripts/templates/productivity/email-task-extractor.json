@@ -255,11 +255,68 @@
         ]
       }
     ],
+    "adoption_questions": [
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "Which task management tool do you use for tracking extracted tasks?",
+        "type": "select",
+        "options": [
+          "Notion",
+          "Jira",
+          "Asana",
+          "Linear",
+          "Todoist",
+          "Other"
+        ],
+        "default": "Notion",
+        "context": "Determines the destination where extracted tasks will be created.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "How should email urgency map to task priority levels?",
+        "type": "select",
+        "options": [
+          "3-level (High/Medium/Low)",
+          "4-level (Critical/High/Medium/Low)",
+          "5-level (P0-P4)"
+        ],
+        "default": "3-level (High/Medium/Low)",
+        "context": "Controls how urgency indicators in emails translate to priority fields on created tasks.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "What label scheme should be applied to processed emails?",
+        "type": "select",
+        "options": [
+          "Auto-label by category",
+          "Single 'Processed' label",
+          "No labeling",
+          "Custom labels"
+        ],
+        "default": "Auto-label by category",
+        "context": "Defines how Gmail labels are applied after task extraction to keep your inbox organized.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_quality_1",
+        "category": "quality",
+        "question": "Should ambiguous action items be flagged for human review before creating tasks?",
+        "type": "boolean",
+        "options": [],
+        "default": "true",
+        "context": "When enabled, unclear or low-confidence extractions are queued for your approval instead of auto-created.",
+        "dimension": "human-review"
+      }
+    ],
     "persona_meta": {
       "name": "T: Email Task Extractor",
       "icon": "Sparkles",
       "color": "#8b5cf6"
     }
-  },
-  "is_published": false
+  }
 }

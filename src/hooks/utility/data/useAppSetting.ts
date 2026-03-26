@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { deleteAppSetting, getAppSetting, setAppSetting } from '@/api/system/settings';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('app-setting');
 
 interface UseAppSettingResult {
   value: string;
@@ -30,7 +33,7 @@ export function useAppSetting(
       .then((val) => {
         if (val) {
           if (validate && !validate(val)) {
-            console.warn(`App setting "${key}" failed validation, using default`);
+            logger.warn('App setting failed validation, using default', { key });
             setValueRaw(defaultValue);
           } else {
             setValueRaw(val);
@@ -38,7 +41,7 @@ export function useAppSetting(
         }
       })
       .catch((err) => {
-        console.error(`Failed to load app setting "${key}":`, err);
+        logger.error('Failed to load app setting', { key, err: err instanceof Error ? err.message : String(err) });
       })
       .finally(() => setLoaded(true));
   }, [key]);

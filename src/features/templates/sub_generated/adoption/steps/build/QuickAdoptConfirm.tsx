@@ -4,7 +4,7 @@ import { PersonaMatrix } from '../../../gallery/matrix/PersonaMatrix';
 import type { MatrixEditState, MatrixEditCallbacks } from '../../../gallery/matrix/EditableMatrixCells';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useSystemStore } from "@/stores/systemStore";
-import { useSimpleMode } from '@/hooks/utility/interaction/useSimpleMode';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
 
 const BUILTIN = new Set(['personas_messages', 'personas_database', 'personas_vector_db']);
@@ -36,7 +36,7 @@ export function QuickAdoptConfirm() {
     continueTransform,
   } = useAdoptionWizard();
 
-  const isSimple = useSimpleMode();
+  const { isStarter: isSimple } = useTier();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const matchSummary = useMemo(() => {

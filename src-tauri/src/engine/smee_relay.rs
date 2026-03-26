@@ -14,6 +14,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
 
+use super::safe_json;
 use super::event_registry::event_name;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
@@ -195,10 +196,10 @@ async fn relay_sse_stream(
             }
 
             // Parse as JSON and publish to event bus
-            let payload_json: serde_json::Value = match serde_json::from_str(&data) {
+            let payload_json: serde_json::Value = match safe_json::from_str(&data) {
                 Ok(v) => v,
                 Err(_) => {
-                    // Not JSON — wrap raw text as payload
+                    // Not JSON or exceeded safety limits — wrap raw text as payload
                     serde_json::json!({ "raw": data })
                 }
             };
@@ -341,7 +342,7 @@ async fn relay_sse_stream_for_relay(
             let data = data_lines.join("");
             if data.is_empty() || data == "{}" { continue; }
 
-            let payload_json: serde_json::Value = match serde_json::from_str(&data) {
+            let payload_json: serde_json::Value = match safe_json::from_str(&data) {
                 Ok(v) => v,
                 Err(_) => serde_json::json!({ "raw": data }),
             };

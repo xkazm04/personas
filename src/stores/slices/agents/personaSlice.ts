@@ -1,6 +1,9 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { errMsg, reportError } from "../../storeTypes";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("persona");
 import type {
   Persona,
   PersonaWithDetails,
@@ -98,7 +101,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     } catch (err) {
       const failures = get().summaryConsecutiveFailures + 1;
       const category = classifyUnknownError(err);
-      console.warn(`[personaSlice] fetchPersonaSummaries failed (${categoryLabel(category)}, attempt ${failures})`, err);
+      logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), attempt: failures, error: String(err) });
       set({
         summaryConsecutiveFailures: failures,
         degradationError: failures >= DEGRADATION_THRESHOLD
@@ -128,7 +131,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       if (seq !== fetchDetailSeq) return; // superseded by a newer request
       const failures = get().detailConsecutiveFailures + 1;
       const category = classifyUnknownError(err);
-      console.warn(`[personaSlice] fetchDetail(${id}) failed (${categoryLabel(category)}, attempt ${failures})`, err);
+      logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), attempt: failures, error: String(err) });
       // Clear stale selection so the editor doesn't render with missing data
       set({
         error: errMsg(err, "Failed to fetch persona"),

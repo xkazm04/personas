@@ -1,9 +1,11 @@
 //! Workflow Compiler — translates a natural-language workflow description into a
 //! deployable pipeline topology.
 //!
-//! The compiler is the missing higher-order glue between the topology builder
-//! (which selects and arranges personas) and the persistence layer (teams,
-//! members, connections).  Given prose like:
+//! Implements `CompilationPipeline` for workflow compilation.  The compiler is
+//! the higher-order glue between the topology builder (which selects and
+//! arranges personas) and the persistence layer (teams, members, connections).
+//!
+//! Given prose like:
 //!
 //!   "When a PR is opened, have a security reviewer check for vulnerabilities,
 //!    a code quality reviewer check style, and a technical writer draft
@@ -26,6 +28,7 @@ use ts_rs::TS;
 
 use crate::db::models::{PersonaTeam, PersonaTeamConnection, PersonaTeamMember};
 use crate::db::DbPool;
+use crate::engine::compilation_pipeline::{CompilationPipeline, PipelineOutcome};
 use crate::engine::topology::TopologyBlueprint;
 use crate::error::AppError;
 
@@ -54,6 +57,73 @@ pub struct CompiledWorkflow {
 }
 
 // ============================================================================
+// WorkflowCompiler (pipeline implementation)
+// ============================================================================
+
+/// The workflow compiler — implements the generic pipeline for
+/// topology prompt assembly and blueprint parsing.
+///
+/// Persistence is handled separately via `persist_blueprint` because it
+/// requires a `DbPool` and transactional semantics.
+pub struct WorkflowCompiler;
+
+impl CompilationPipeline for WorkflowCompiler {
+    type Input = String;
+    type Output = TopologyBlueprint;
+
+    fn assemble_prompt(&self, input: &String) -> String {
+        // The actual prompt assembly happens in llm_topology::build_llm_topology_prompt
+        // which requires persona/template context.  This provides the basic structure.
+        format!(
+            "# Workflow Compilation\n\n\
+             Compile the following workflow description into a team topology blueprint.\n\n\
+             ## Description\n{input}\n"
+        )
+    }
+
+    fn parse_output(&self, raw: &str) -> PipelineOutcome<TopologyBlueprint> {
+        // Attempt to parse as JSON TopologyBlueprint
+        if let Ok(blueprint) = serde_json::from_str::<TopologyBlueprint>(raw) {
+            return PipelineOutcome::Result(blueprint);
+        }
+        // Try extracting JSON from markdown code fences
+        if let Some(start) = raw.find("```json") {
+            let after = &raw[start + 7..];
+            if let Some(end) = after.find("```") {
+                let json_str = after[..end].trim();
+                if let Ok(blueprint) = serde_json::from_str::<TopologyBlueprint>(json_str) {
+                    return PipelineOutcome::Result(blueprint);
+                }
+            }
+        }
+        PipelineOutcome::Failed
+    }
+
+    fn validate(&self, output: &mut TopologyBlueprint) -> Result<(), String> {
+        let member_count = output.members.len();
+        for (i, bc) in output.connections.iter().enumerate() {
+            if bc.source_index >= member_count || bc.target_index >= member_count {
+                return Err(format!(
+                    "Connection[{}] has out-of-bounds indices: source={}, target={}, members={}",
+                    i, bc.source_index, bc.target_index, member_count,
+                ));
+            }
+            if bc.source_index == bc.target_index {
+                return Err(format!(
+                    "Connection[{}] is a self-loop (index {})",
+                    i, bc.source_index,
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    fn pipeline_name(&self) -> &'static str {
+        "workflow"
+    }
+}
+
+// ============================================================================
 // Blueprint → Team persistence
 // ============================================================================
 
@@ -77,29 +147,9 @@ pub fn persist_blueprint(
         "persist_blueprint: starting compilation"
     );
 
-    // 1. Validate ALL connection indices BEFORE any DB writes.
-    for (i, bc) in blueprint.connections.iter().enumerate() {
-        if bc.source_index >= member_count || bc.target_index >= member_count {
-            tracing::warn!(
-                connection_index = i,
-                source_index = bc.source_index,
-                target_index = bc.target_index,
-                member_count,
-                "persist_blueprint: connection has out-of-bounds indices"
-            );
-            return Err(AppError::Validation(format!(
-                "Blueprint connection[{}] has out-of-bounds indices: \
-                 source_index={}, target_index={}, member_count={}",
-                i, bc.source_index, bc.target_index, member_count,
-            )));
-        }
-        if bc.source_index == bc.target_index {
-            return Err(AppError::Validation(format!(
-                "Blueprint connection[{}] is a self-loop (index {})",
-                i, bc.source_index,
-            )));
-        }
-    }
+    // Use the pipeline's validate stage for connection validation.
+    let mut blueprint_clone = blueprint.clone();
+    WorkflowCompiler.validate(&mut blueprint_clone).map_err(AppError::Validation)?;
 
     // --- Single connection + transaction for the entire persistence ---
     let mut conn = pool.get()?;
@@ -303,5 +353,36 @@ mod tests {
         let name = derive_team_name(cjk);
         // Should not panic, and result must be valid UTF-8
         assert!(!name.is_empty());
+    }
+
+    #[test]
+    fn test_workflow_compiler_pipeline_name() {
+        assert_eq!(WorkflowCompiler.pipeline_name(), "workflow");
+    }
+
+    #[test]
+    fn test_workflow_compiler_validate_self_loop() {
+        use crate::engine::topology::{BlueprintConnection, BlueprintMember};
+
+        let mut bp = TopologyBlueprint {
+            description: "test".into(),
+            members: vec![
+                BlueprintMember {
+                    persona_id: "p1".into(),
+                    persona_name: "Test".into(),
+                    role: "worker".into(),
+                    position_x: 0.0,
+                    position_y: 0.0,
+                },
+            ],
+            connections: vec![BlueprintConnection {
+                source_index: 0,
+                target_index: 0,
+                connection_type: "chain".into(),
+            }],
+        };
+        let result = WorkflowCompiler.validate(&mut bp);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("self-loop"));
     }
 }

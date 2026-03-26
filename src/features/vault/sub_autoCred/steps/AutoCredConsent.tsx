@@ -1,5 +1,8 @@
 import { useCallback } from 'react';
 import { Globe, Shield, ArrowRight, ExternalLink, MessageSquare, LogIn } from 'lucide-react';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('auto-cred-consent');
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { AutoCredMode } from '../helpers/types';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
@@ -20,7 +23,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
 
   const handleDocsClick = useCallback(() => {
     if (ctx.docsUrl) {
-      openExternalUrl(ctx.docsUrl).catch(console.error);
+      openExternalUrl(ctx.docsUrl).catch((err) => { logger.error('Failed to open docs URL', { error: String(err) }); });
     }
   }, [ctx.docsUrl]);
 

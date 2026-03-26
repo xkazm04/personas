@@ -11,11 +11,11 @@ const WARNING_STATUS = STATUS_COLORS.warning!;
 const ERROR_STATUS = STATUS_COLORS.error!;
 
 export const OP_LABELS: Record<string, { label: string; color: string; dot: string }> = {
-  decrypt: { label: 'Decrypted', color: INFO_STATUS.color, dot: 'bg-blue-400' },
-  create: { label: 'Created', color: SUCCESS_STATUS.color, dot: 'bg-emerald-400' },
+  decrypt: { label: 'Decrypted', color: INFO_STATUS.text, dot: 'bg-blue-400' },
+  create: { label: 'Created', color: SUCCESS_STATUS.text, dot: 'bg-emerald-400' },
   update: { label: 'Updated', color: 'text-purple-400', dot: 'bg-purple-400' },
-  delete: { label: 'Deleted', color: ERROR_STATUS.color, dot: 'bg-red-400' },
-  healthcheck: { label: 'Healthcheck', color: WARNING_STATUS.color, dot: 'bg-amber-400' },
+  delete: { label: 'Deleted', color: ERROR_STATUS.text, dot: 'bg-red-400' },
+  healthcheck: { label: 'Healthcheck', color: WARNING_STATUS.text, dot: 'bg-amber-400' },
 };
 
 const AUDIT_FILTERS = ['all', 'decrypt', 'create', 'update', 'delete', 'healthcheck'] as const;

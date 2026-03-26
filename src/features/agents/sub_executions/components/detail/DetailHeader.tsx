@@ -1,8 +1,9 @@
 import { ArrowRight } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import type { ErrorAction } from '../../libs/useExecutionDetail';
-import { SEVERITY_ICONS, SEVERITY_TO_TOKEN, getErrorExplanation } from '../../libs/useExecutionDetail';
-import { sanitizeErrorMessage } from '@/lib/utils/sanitizers/maskSensitive';
+import { SEVERITY_ICONS, SEVERITY_TO_TOKEN } from '../../libs/useExecutionDetail';
+import { classifyErrorFull } from '@/lib/errors/errorPipeline';
+import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { AlertCircle } from 'lucide-react';
 
 interface ErrorDisplayProps {
@@ -12,8 +13,9 @@ interface ErrorDisplayProps {
 }
 
 export function ErrorDisplay({ errorMessage, showRaw, onErrorAction }: ErrorDisplayProps) {
-  const errorDisplay = showRaw ? errorMessage : sanitizeErrorMessage(errorMessage);
-  const explanation = getErrorExplanation(errorMessage);
+  const errorDisplay = showRaw ? errorMessage : sanitizeErrorForDisplay(errorMessage, 'detail-header');
+  const classified = classifyErrorFull(errorMessage);
+  const explanation = classified.explanation;
 
   return (
     <div className="space-y-2">

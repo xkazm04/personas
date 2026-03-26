@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Globe, Sparkles, ArrowRight, CheckCircle2, Link2, MessageSquareText } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('auto-cred');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { TRANSITION_SLOW } from '@/features/templates/animationPresets';
 import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/design/credential/useCredentialDesign';
 import type { AutoCredMode } from '../helpers/types';
 import { useAutoCredSession } from '../helpers/useAutoCredSession';
@@ -210,7 +215,7 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
       setPhase('input');
       onComplete();
     } catch (err) {
-      console.error('Universal save failed:', err);
+      logger.error('Universal save failed', { error: String(err) });
       setUniversalSaving(false);
     }
   }, [
@@ -313,66 +318,78 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
     );
   }
 
+  const phaseTransition = {
+    initial: { opacity: 0, x: 24 },
+    animate: { opacity: 1, x: 0, transition: TRANSITION_SLOW },
+    exit: { opacity: 0, x: -24, transition: { ...TRANSITION_SLOW, duration: 0.25 } },
+  };
+
   // Running phase -- reuse existing AutoCred components
   return (
     <div className="space-y-4">
-      {session.phase === 'consent' && (
-          <div key="starting" className="animate-fade-in flex items-center justify-center py-8">
+      <AnimatePresence mode="wait">
+        {session.phase === 'consent' && (
+          <motion.div key="starting" {...phaseTransition} className="flex items-center justify-center py-8">
             <LoadingSpinner size="xl" className="text-indigo-400" />
-          </div>
+          </motion.div>
         )}
 
         {session.phase === 'browser' && (
-          <AutoCredBrowser
-            key="browser"
-            logs={session.logs}
-            onCancel={session.cancelBrowser}
-            mode={mode}
-          />
+          <motion.div key="browser" {...phaseTransition}>
+            <AutoCredBrowser
+              logs={session.logs}
+              onCancel={session.cancelBrowser}
+              mode={mode}
+            />
+          </motion.div>
         )}
 
         {session.phase === 'browser-error' && session.error && (
-          <AutoCredBrowserError
-            key="browser-error"
-            logs={session.logs}
-            error={session.error}
-            onRetry={session.startBrowser}
-            onCancel={handleCancel}
-          />
+          <motion.div key="browser-error" {...phaseTransition}>
+            <AutoCredBrowserError
+              logs={session.logs}
+              error={session.error}
+              onRetry={session.startBrowser}
+              onCancel={handleCancel}
+            />
+          </motion.div>
         )}
 
         {session.phase === 'review' && session.designResult && (
-          <UniversalAutoCredReview
-            key="review"
-            designResult={session.designResult}
-            credentialName={session.credentialName}
-            onCredentialNameChange={session.setCredentialName}
-            extractedValues={session.extractedValues}
-            onValueChange={session.updateValue}
-            onSave={handleUniversalSave}
-            onRetry={session.startBrowser}
-            onCancel={handleCancel}
-            isSaving={universalSaving}
-            isPartial={session.isPartial}
-            discoveredFields={session.discoveredFields}
-            discoveredConnector={session.discoveredConnector}
-          />
+          <motion.div key="review" {...phaseTransition}>
+            <UniversalAutoCredReview
+              designResult={session.designResult}
+              credentialName={session.credentialName}
+              onCredentialNameChange={session.setCredentialName}
+              extractedValues={session.extractedValues}
+              onValueChange={session.updateValue}
+              onSave={handleUniversalSave}
+              onRetry={session.startBrowser}
+              onCancel={handleCancel}
+              isSaving={universalSaving}
+              isPartial={session.isPartial}
+              discoveredFields={session.discoveredFields}
+              discoveredConnector={session.discoveredConnector}
+            />
+          </motion.div>
         )}
 
         {session.phase === 'saving' && (
-          <div
+          <motion.div
             key="saving"
-            className="animate-fade-slide-in flex flex-col items-center justify-center py-12 gap-3"
+            {...phaseTransition}
+            className="flex flex-col items-center justify-center py-12 gap-3"
           >
             <LoadingSpinner size="2xl" className="text-indigo-400" />
             <p className="text-sm text-muted-foreground/90">Saving credential & connector...</p>
-          </div>
+          </motion.div>
         )}
 
         {session.phase === 'done' && (
-          <div
+          <motion.div
             key="done"
-            className="animate-fade-slide-in flex flex-col items-center justify-center py-10 gap-4"
+            {...phaseTransition}
+            className="flex flex-col items-center justify-center py-10 gap-4"
           >
             <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
               <CheckCircle2 className="w-7 h-7 text-emerald-400" />
@@ -389,18 +406,20 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
             >
               Done
             </button>
-          </div>
+          </motion.div>
         )}
 
         {session.phase === 'error' && session.error && (
-          <AutoCredErrorDisplay
-            key="error"
-            error={session.error}
-            logs={session.logs}
-            onRetry={session.startBrowser}
-            onCancel={handleCancel}
-          />
+          <motion.div key="error" {...phaseTransition}>
+            <AutoCredErrorDisplay
+              error={session.error}
+              logs={session.logs}
+              onRetry={session.startBrowser}
+              onCancel={handleCancel}
+            />
+          </motion.div>
         )}
+      </AnimatePresence>
     </div>
   );
 }

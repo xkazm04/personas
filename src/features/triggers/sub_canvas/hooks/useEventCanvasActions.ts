@@ -1,6 +1,9 @@
 import { useCallback } from 'react';
 import type { Connection, Node, Edge } from '@xyflow/react';
 import { createTrigger, deleteTrigger } from '@/api/pipeline/triggers';
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("event-canvas");
 import {
   NODE_TYPE_EVENT_SOURCE,
   NODE_TYPE_PERSONA_CONSUMER,
@@ -81,7 +84,7 @@ export function useEventCanvasActions({
       setEdges(prev => [...prev, newEdge]);
       onTriggerChanged();
     } catch (err) {
-      console.error('[EventCanvas] Failed to create trigger:', err);
+      logger.error('Failed to create trigger', { error: String(err) });
     }
   }, [nodes, setEdges, onTriggerChanged]);
 
@@ -104,7 +107,7 @@ export function useEventCanvasActions({
       setEdges(prev => prev.filter(e => e.id !== edgeId));
       onTriggerChanged();
     } catch (err) {
-      console.error('[EventCanvas] Failed to delete trigger:', err);
+      logger.error('Failed to delete trigger', { edgeId, error: String(err) });
     }
   }, [edges, nodes, setEdges, onTriggerChanged]);
 

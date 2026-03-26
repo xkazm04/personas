@@ -77,7 +77,7 @@ fn encrypt_config(config: &str) -> String {
 
 row_mapper!(row_to_trigger -> PersonaTrigger {
     id, persona_id, trigger_type, config,
-    enabled [bool],
+    enabled [bool], status,
     last_triggered_at, next_trigger_at,
     created_at, updated_at, use_case_id,
 });
@@ -144,7 +144,9 @@ pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger
 
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
-    let enabled = input.enabled.unwrap_or(true) as i32;
+    let enabled = input.enabled.unwrap_or(true);
+    let status = if enabled { "active" } else { "disabled" };
+    let enabled_i = enabled as i32;
 
     // Encrypt sensitive config fields before writing to DB
     let encrypted_config = input.config.as_deref().map(encrypt_config);
@@ -153,9 +155,9 @@ pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO persona_triggers
-             (id, persona_id, trigger_type, config, enabled, use_case_id, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-            params![id, input.persona_id, input.trigger_type, encrypted_config, enabled, input.use_case_id, now],
+             (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+            params![id, input.persona_id, input.trigger_type, encrypted_config, enabled_i, status, input.use_case_id, now],
         )?;
     }
 
@@ -210,6 +212,11 @@ pub fn update(
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
 
+    // When `enabled` changes, derive the corresponding status string.
+    let derived_status: Option<String> = input.enabled.map(|e| {
+        if e { "active".into() } else { "disabled".into() }
+    });
+
     // Build dynamic SET clause
     let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
     let mut param_idx = 2u32;
@@ -217,6 +224,7 @@ pub fn update(
     push_field!(input.trigger_type, "trigger_type", sets, param_idx);
     push_field!(encrypted_config, "config", sets, param_idx);
     push_field!(input.enabled, "enabled", sets, param_idx);
+    push_field!(derived_status, "status", sets, param_idx);
     push_field!(input.next_trigger_at, "next_trigger_at", sets, param_idx);
 
     let sql = format!(
@@ -235,6 +243,9 @@ pub fn update(
     }
     if let Some(v) = input.enabled {
         param_values.push(Box::new(v as i32));
+    }
+    if let Some(ref v) = derived_status {
+        param_values.push(Box::new(v.clone()));
     }
     if let Some(ref v) = input.next_trigger_at {
         param_values.push(Box::new(v.clone()));
@@ -272,7 +283,7 @@ pub fn get_chain_triggers_for_source(
     let mut stmt = conn.prepare(
         "SELECT * FROM persona_triggers
          WHERE trigger_type = 'chain'
-           AND enabled = 1
+           AND status = 'active'
            AND json_extract(config, '$.source_persona_id') = ?1
          ORDER BY created_at DESC",
     )?;
@@ -290,7 +301,7 @@ pub fn get_event_listeners_for_event_type(
     let mut stmt = conn.prepare(
         "SELECT * FROM persona_triggers
          WHERE trigger_type = 'event_listener'
-           AND enabled = 1
+           AND status = 'active'
            AND json_extract(config, '$.listen_event_type') = ?1
          ORDER BY created_at DESC",
     )?;
@@ -315,7 +326,7 @@ pub fn get_event_listeners_for_event_types(
     let sql = format!(
         "SELECT * FROM persona_triggers
          WHERE trigger_type = 'event_listener'
-           AND enabled = 1
+           AND status = 'active'
            AND json_extract(config, '$.listen_event_type') IN ({})
          ORDER BY created_at DESC",
         placeholders.join(", ")
@@ -336,7 +347,7 @@ pub fn get_enabled_by_type(pool: &DbPool, trigger_type: &str) -> Result<Vec<Pers
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT * FROM persona_triggers
-         WHERE trigger_type = ?1 AND enabled = 1
+         WHERE trigger_type = ?1 AND status = 'active'
          ORDER BY created_at DESC",
     )?;
     let rows = stmt.query_map(params![trigger_type], row_to_trigger)?;
@@ -347,7 +358,7 @@ pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT * FROM persona_triggers
-         WHERE enabled = 1 AND next_trigger_at IS NOT NULL AND next_trigger_at <= ?1
+         WHERE status = 'active' AND next_trigger_at IS NOT NULL AND next_trigger_at <= ?1
          ORDER BY next_trigger_at ASC",
     )?;
     let rows = stmt.query_map(params![now], row_to_trigger)?;
@@ -546,12 +557,32 @@ pub fn mark_triggered_with_hash(
 
 /// Set the `enabled` flag on a trigger. Used as a safety valve to disable
 /// triggers that fail to mark as triggered, preventing cascade re-fire loops.
+/// Also updates the `status` column to stay in sync.
 pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<(), AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let status = if enabled { "active" } else { "disabled" };
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_triggers SET enabled = ?1, status = ?2, updated_at = ?3 WHERE id = ?4",
+        params![enabled as i32, status, now, id],
+    )?;
+    Ok(())
+}
+
+/// Set the full lifecycle status on a trigger, keeping `enabled` in sync.
+///
+/// Unlike `set_enabled` (which only knows Active/Disabled), this preserves
+/// all four states: Active, Paused, Errored, Disabled.
+pub fn set_status(
+    pool: &DbPool,
+    id: &str,
+    status: crate::engine::lifecycle::TriggerStatus,
+) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get()?;
     conn.execute(
-        "UPDATE persona_triggers SET enabled = ?1, updated_at = ?2 WHERE id = ?3",
-        params![enabled as i32, now, id],
+        "UPDATE persona_triggers SET status = ?1, enabled = ?2, updated_at = ?3 WHERE id = ?4",
+        params![status.as_str(), status.is_enabled() as i32, now, id],
     )?;
     Ok(())
 }

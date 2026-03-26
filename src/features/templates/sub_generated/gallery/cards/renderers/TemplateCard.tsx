@@ -8,6 +8,7 @@ import { TemplateCardFooter } from './TemplateCardFooter';
 import { TemplateCardPreview } from './TemplateCardPreview';
 import { PREVIEW_DELAY_MS } from './templateCardTypes';
 import type { TemplateCardProps } from './templateCardTypes';
+import { BORDER_DEFAULT, BORDER_EMPHASIS } from '@/lib/utils/designTokens';
 
 export const TemplateCard = memo(function TemplateCard({
   review,
@@ -60,7 +61,7 @@ export const TemplateCard = memo(function TemplateCard({
     >
       <motion.div
         layoutId={`template-card-${review.id}`}
-        className={`group rounded-xl border border-primary/10 bg-secondary/30 hover:bg-secondary/50 hover:border-primary/15 transition-colors ${MOTION.smooth.css}`}
+        className={`group rounded-xl border ${BORDER_DEFAULT} bg-secondary/30 hover:bg-secondary/50 hover:${BORDER_EMPHASIS} transition-colors ${MOTION.smooth.css}`}
       >
         <TemplateCardHeader
           name={review.test_case_name}
