@@ -161,7 +161,7 @@ export function Tooltip({
 
   if (!content) return <>{children}</>;
 
-  const offset = MOTION_OFFSET[resolvedPlacement];
+  const _offset = MOTION_OFFSET[resolvedPlacement];
 
   return (
     <>

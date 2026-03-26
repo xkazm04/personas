@@ -161,7 +161,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
               </div>
             );
           }
-          const { group, gi, delay } = item;
+          const { group, gi, delay: _delay } = item;
           return (
             <div className="animate-fade-slide-in"
               key={`entry-${gi}`}

@@ -50,7 +50,7 @@ export function computeAutoLayout(nodes: Node[], edges: Edge[]): Node[] {
   const sourceStartY = PADDING;
   for (let i = 0; i < sources.length; i++) {
     result.push({
-      ...sources[i],
+      ...sources[i]!,
       position: {
         x: snapToGrid(sourceX),
         y: snapToGrid(sourceStartY + i * (NODE_H + Y_GAP)),
@@ -63,7 +63,7 @@ export function computeAutoLayout(nodes: Node[], edges: Edge[]): Node[] {
   const consumerStartY = PADDING;
   for (let i = 0; i < connectedConsumers.length; i++) {
     result.push({
-      ...connectedConsumers[i],
+      ...connectedConsumers[i]!,
       position: {
         x: snapToGrid(consumerX),
         y: snapToGrid(consumerStartY + i * (NODE_H + Y_GAP)),
@@ -75,7 +75,7 @@ export function computeAutoLayout(nodes: Node[], edges: Edge[]): Node[] {
   const orphanStartY = consumerStartY + Math.max(connectedConsumers.length, sources.length) * (NODE_H + Y_GAP) + Y_GAP;
   for (let i = 0; i < orphanConsumers.length; i++) {
     result.push({
-      ...orphanConsumers[i],
+      ...orphanConsumers[i]!,
       position: {
         x: snapToGrid(consumerX),
         y: snapToGrid(orphanStartY + i * (NODE_H + Y_GAP)),

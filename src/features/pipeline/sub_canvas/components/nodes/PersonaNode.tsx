@@ -52,7 +52,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
   const effectiveStatus = dryRunStatus ?? pipelineStatus;
   const borderStyles = getPipelineStyles(effectiveStatus, selected);
 
-  const handleGlowAnimation = showHandleGlow
+  const _handleGlowAnimation = showHandleGlow
     ? {
         boxShadow: [
           '0 0 0 0 rgba(99,102,241,0)',
@@ -62,7 +62,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
       }
     : undefined;
 
-  const handleGlowTransition = showHandleGlow
+  const _handleGlowTransition = showHandleGlow
     ? { duration: 2, repeat: Infinity, ease: 'easeInOut' as const }
     : undefined;
 

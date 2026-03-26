@@ -93,7 +93,7 @@ function TaskModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [goalId, setGoalId] = useState('');
-  const { shouldAnimate } = useMotion();
+  const { shouldAnimate: _shouldAnimate } = useMotion();
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -182,7 +182,7 @@ function TaskModal({
 
 function TaskCard({
   task,
-  index,
+  index: _index,
   outputLines,
 }: {
   task: RunnerTask;
@@ -190,7 +190,7 @@ function TaskCard({
   outputLines: string[];
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { staggerDelay } = useMotion();
+  const { staggerDelay: _staggerDelay } = useMotion();
   const phaseCfg = PHASE_CONFIG[task.phase];
   const hasOutput = outputLines.length > 0 || task.output;
 

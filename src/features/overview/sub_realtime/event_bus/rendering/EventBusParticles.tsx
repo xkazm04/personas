@@ -1,7 +1,7 @@
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import type { ReturnFlow } from '../../libs/visualizationHelpers';
-import { CX, CY, RETURN_FLOW_MS } from '../../libs/visualizationHelpers';
+import { CX, CY } from '../../libs/visualizationHelpers';
 
 // -- Inbound particles (tool -> center -> persona) ----------------
 
@@ -17,11 +17,11 @@ export function InboundParticles({ activeEvents, uid, getSourcePos, getTargetPos
   return (
     <>
       {activeEvents.map((evt) => {
-        const src = getSourcePos(evt);
+        const _src = getSourcePos(evt);
         const tgt = getTargetPos(evt);
         const color = EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8';
         const pColor = evt.status === 'failed' ? '#ef4444' : color;
-        const isDone = evt._phase === 'done';
+        const _isDone = evt._phase === 'done';
 
         let tx: number, ty: number;
         switch (evt._phase) {

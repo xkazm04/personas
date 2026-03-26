@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MOTION_TIMING } from '@/features/templates/animationPresets';
 
 interface EstimatedProgressBarProps {
   isRunning: boolean;

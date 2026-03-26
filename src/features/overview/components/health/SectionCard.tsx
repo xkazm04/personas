@@ -9,7 +9,7 @@ import { InstallButton } from './InstallButton';
 
 export function SectionCard({
   section,
-  stubIdx,
+  stubIdx: _stubIdx,
   SectionIcon,
   sectionStyle,
   ipcError,
@@ -38,7 +38,7 @@ export function SectionCard({
   onShowLiteLLM: () => void;
   onMcpRegistered?: () => void;
 }) {
-  const [mcpBusy, setMcpBusy] = useState(false);
+  const [_mcpBusy, _setMcpBusy] = useState(false);
 
   const isAccount = section.id === 'account';
   const authItem = isAccount ? section.items.find((i) => i.id === 'google_auth') : null;

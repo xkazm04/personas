@@ -10,7 +10,7 @@ interface WizardStepperProps {
   currentIndex: number;
 }
 
-const RAIL_SPRING = { damping: 18, stiffness: 300, type: 'spring' as const };
+const _RAIL_SPRING = { damping: 18, stiffness: 300, type: 'spring' as const };
 
 export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
   return (

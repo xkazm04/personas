@@ -195,7 +195,7 @@ export default function SwimLaneVisualization({ events, personas, onSelectEvent 
             const srcY = getSrcY(evt);
             const agtY = getAgtY(evt);
             const color = evt.status === 'failed' ? '#ef4444' : (EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8');
-            const isDone = evt._phase === 'done';
+            const _isDone = evt._phase === 'done';
 
             let targetX: number, targetY: number;
             switch (evt._phase) {

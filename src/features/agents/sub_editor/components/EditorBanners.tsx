@@ -34,7 +34,7 @@ const COLOR_SCHEMES: Record<BannerColorScheme, { container: string; message: str
   },
 };
 
-function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], onDismiss, duration = 0.25 }: BannerPrimitiveProps) {
+function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], onDismiss, duration: _duration = 0.25 }: BannerPrimitiveProps) {
   const palette = COLOR_SCHEMES[colorScheme];
 
   return (

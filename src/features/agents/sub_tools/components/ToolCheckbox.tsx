@@ -3,7 +3,7 @@ export function ToolCheckbox({
   toolName,
   checked,
   disabled,
-  justToggled,
+  justToggled: _justToggled,
   size,
   onToggle,
 }: {

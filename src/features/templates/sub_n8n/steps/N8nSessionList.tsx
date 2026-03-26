@@ -213,7 +213,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
           </div>
         )}
 
-        {activeSessions.map((session, i) => {
+        {activeSessions.map((session, _i) => {
           const interrupted = isInterruptedSession(session);
           const statusKey = interrupted ? 'interrupted' : session.status;
           const style = STATUS_STYLES[statusKey] ?? STATUS_STYLES.draft!;

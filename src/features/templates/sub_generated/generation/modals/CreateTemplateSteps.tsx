@@ -4,10 +4,10 @@ import { DraftEditStep } from '@/features/shared/components/editors/draft-editor
 import type { useCreateTemplateReducer } from '../useCreateTemplateReducer';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 
-const stepTransition = { duration: 0.2 };
-const stepInitial = { opacity: 0, x: -20 };
-const stepAnimate = { opacity: 1, x: 0 };
-const stepExit = { opacity: 0, x: 20 };
+const _stepTransition = { duration: 0.2 };
+const _stepInitial = { opacity: 0, x: -20 };
+const _stepAnimate = { opacity: 1, x: 0 };
+const _stepExit = { opacity: 0, x: 20 };
 
 // -- Step 1: Describe --
 

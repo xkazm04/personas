@@ -7,7 +7,7 @@ import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput } fro
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { statusIcon, formatDuration, formatCost, timeAgo } from './CloudHistoryHelpers';
+import { statusIcon as _statusIcon, formatDuration, formatCost, timeAgo as _timeAgo } from './CloudHistoryHelpers';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
 

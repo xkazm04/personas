@@ -15,7 +15,7 @@ interface TeamCardProps {
 
 export function TeamCard({
   team,
-  index,
+  index: _index,
   teams,
   teamCounts,
   confirmDeleteId,

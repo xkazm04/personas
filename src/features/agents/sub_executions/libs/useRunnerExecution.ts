@@ -10,7 +10,6 @@ interface UseRunnerExecutionArgs {
   inputData: string;
   setJsonError: (v: string | null) => void;
   setOutputLines: (fn: (prev: string[]) => string[]) => void;
-  fetchTypicalDuration: (id: string) => void;
   disconnect: () => void;
   elapsedMs: number;
   executionSummary: { status: string; duration_ms?: number | null; cost_usd?: number | null; last_tool?: string | null } | null;
@@ -26,7 +25,6 @@ export function useRunnerExecution({
   inputData,
   setJsonError,
   setOutputLines,
-  fetchTypicalDuration,
   disconnect,
   elapsedMs,
   executionSummary,
@@ -52,8 +50,6 @@ export function useRunnerExecution({
     }
     setJsonError(null);
     setOutputLines(() => []);
-    fetchTypicalDuration(personaId);
-
     if (cloudConfig?.is_connected) {
       try {
         const executionId = await cloudExecute(personaId, JSON.stringify(parsedInput));

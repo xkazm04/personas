@@ -22,7 +22,7 @@ import { EventEdge, type EventEdgeData } from './edges/EventEdge';
 import { EdgeTooltip } from './edges/EdgeTooltip';
 import { SystemEventsToolbar } from './palettes/EventSourcePalette';
 import { PersonaPalette } from './palettes/PersonaPalette';
-import { useEventCanvasState, type StickyNote as StickyNoteType } from './hooks/useEventCanvasState';
+import { useEventCanvasState } from './hooks/useEventCanvasState';
 import { useEventDryRun } from './hooks/useEventDryRun';
 import { EventDryRunBar } from './debugger/EventDryRunBar';
 import { EventCanvasAssistant } from './assistant/EventCanvasAssistant';

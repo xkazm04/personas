@@ -12,7 +12,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Layers, Zap, FileEdit, CheckCircle2, XCircle, Store,
 };
 
-function EventSourceNodeInner({ data, selected, id }: NodeProps) {
+function EventSourceNodeInner({ data, selected, id: _id }: NodeProps) {
   const d = data as EventSourceNodeData;
   const Icon = ICON_MAP[d.iconName] ?? Zap;
   const count = d.liveEventCount ?? 0;

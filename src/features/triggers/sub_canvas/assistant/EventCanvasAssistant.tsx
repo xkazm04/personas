@@ -22,7 +22,7 @@ const EXAMPLES = [
   'Set up CI/CD event routing',
 ];
 
-export function EventCanvasAssistant({ open, onClose, onApply }: Props) {
+export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<string | null>(null);

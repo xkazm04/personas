@@ -45,7 +45,7 @@ export function CreateEditDetails({
   onApplyAdjustment,
   earlyTabs,
   additionalTabs,
-  motionConfig,
+  motionConfig: _motionConfig,
 }: CreateEditDetailsProps) {
   return (
     <div>

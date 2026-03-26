@@ -1,5 +1,5 @@
 import {
-  Clock, Globe, Webhook, Link, Radio, Eye, Clipboard, AppWindow,
+  Clock, Globe, Webhook, Link, Radio, Clipboard, AppWindow,
   Layers, Zap, FileEdit, CheckCircle2, XCircle, Store,
   type LucideIcon,
 } from 'lucide-react';

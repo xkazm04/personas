@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { Bot, X, Zap } from 'lucide-react';
 import { useCredentialNegotiator, type NegotiatorContext } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
-import { MOTION_TIMING } from '@/features/templates/animationPresets';
 import { NegotiatorPlanningPhase } from './NegotiatorPlanningPhase';
 import { NegotiatorGuidingPhase } from './NegotiatorGuidingPhase';
 

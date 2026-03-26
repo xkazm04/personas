@@ -1,8 +1,8 @@
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
-import { CX, CY, RETURN_FLOW_MS } from '../../libs/visualizationHelpers';
+import { CX, CY } from '../../libs/visualizationHelpers';
 import type { ReturnFlow } from '../../libs/visualizationHelpers';
-import { TRAIL_DURATION, COMET_TAIL_STEPS } from './EventBusTypes';
+import { TRAIL_DURATION as _TRAIL_DURATION, COMET_TAIL_STEPS } from './EventBusTypes';
 
 interface InboundProps {
   activeEvents: RealtimeEvent[];
@@ -16,10 +16,10 @@ export function InboundCometTrails({ activeEvents, uid, getSrc, getTgt, onSelect
   return (
     <>
       {activeEvents.map(evt => {
-        const src = getSrc(evt);
+        const _src = getSrc(evt);
         const tgt = getTgt(evt);
         const color = evt.status === 'failed' ? '#ef4444' : (EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8');
-        const isDone = evt._phase === 'done';
+        const _isDone = evt._phase === 'done';
         let tx: number, ty: number;
         switch (evt._phase) {
           case 'entering': case 'on-bus': tx = CX; ty = CY; break;
@@ -28,7 +28,7 @@ export function InboundCometTrails({ activeEvents, uid, getSrc, getTgt, onSelect
         return (
           <g key={evt._animationId} onClick={() => onSelectEvent(evt)} style={{ cursor: 'pointer' }}>
             {Array.from({ length: COMET_TAIL_STEPS }, (_, i) => {
-              const delay = i * 0.06;
+              const _delay = i * 0.06;
               const scale = 1 - (i / COMET_TAIL_STEPS);
               return (
                 <circle className="animate-fade-slide-in"

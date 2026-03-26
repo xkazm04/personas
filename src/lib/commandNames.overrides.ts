@@ -106,4 +106,32 @@ export type UnregisteredCommand =
   | "list_fired_alerts"
   | "create_fired_alert"
   | "dismiss_fired_alert"
-  | "clear_fired_alerts";
+  | "clear_fired_alerts"
+  // Cross-project / codebases
+  | "dev_tools_get_cross_project_map"
+  | "dev_tools_upsert_cross_project_relation"
+  | "dev_tools_list_cross_project_relations"
+  | "dev_tools_create_idea_batch"
+  | "dev_tools_search_across_projects"
+  | "dev_tools_get_project_summary"
+  | "dev_tools_get_dependency_graph"
+  // Implementation pipeline
+  | "dev_tools_create_branch"
+  | "dev_tools_apply_diff"
+  | "dev_tools_run_tests"
+  | "dev_tools_get_git_status"
+  | "dev_tools_commit_changes"
+  // Portfolio intelligence
+  | "dev_tools_get_portfolio_health"
+  | "dev_tools_get_tech_radar"
+  | "dev_tools_get_risk_matrix"
+  // Shared events
+  | "shared_events_browse_catalog"
+  | "shared_events_refresh_catalog"
+  | "shared_events_subscribe"
+  | "shared_events_unsubscribe"
+  | "shared_events_list_subscriptions"
+  // Claude Desktop MCP
+  | "register_claude_desktop_mcp"
+  | "unregister_claude_desktop_mcp"
+  | "check_claude_desktop_mcp";

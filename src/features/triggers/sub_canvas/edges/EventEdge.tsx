@@ -34,7 +34,7 @@ function EventEdgeInner({
 
   // Determine styling based on condition type and dry-run state
   const condType = d?.conditionType ?? 'always';
-  const typeStyle = EVENT_EDGE_TYPES[condType] ?? EVENT_EDGE_TYPES.always;
+  const typeStyle = EVENT_EDGE_TYPES[condType] ?? EVENT_EDGE_TYPES['always']!;
 
   let strokeColor = typeStyle.stroke;
   let strokeWidth = typeStyle.strokeWidth;

@@ -10,7 +10,7 @@ const STATUS_COLORS: Record<string, string> = {
   failed: 'bg-red-400',
 };
 
-function PersonaConsumerNodeInner({ data, selected, id }: NodeProps) {
+function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
   const d = data as PersonaConsumerNodeData;
   const statusDot = d.executionStatus ? STATUS_COLORS[d.executionStatus] ?? STATUS_COLORS.idle : STATUS_COLORS.idle;
   const isConnectTarget = (d as Record<string, unknown>)._connectTarget === true;

@@ -30,7 +30,7 @@ export function ScoreBadge({ score }: { score: HealthScore }) {
 export function ScoreRing({ score }: { score: HealthScore }) {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score.value / 100) * circumference;
+  const _offset = circumference - (score.value / 100) * circumference;
 
   const strokeColor = {
     healthy: '#10B981',

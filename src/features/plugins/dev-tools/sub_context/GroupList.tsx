@@ -24,7 +24,7 @@ export default function GroupList({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupColor, setNewGroupColor] = useState('amber');
-  const { staggerDelay } = useMotion();
+  const { staggerDelay: _staggerDelay } = useMotion();
 
   const toggleGroup = (id: string) => {
     setExpandedGroups((prev) => {
@@ -72,7 +72,7 @@ export default function GroupList({
         </div>
       ) : (
         <div className="space-y-2">
-          {groups.map((group, gi) => {
+          {groups.map((group, _gi) => {
             const isExpanded = expandedGroups.has(group.id);
             const dot = colorDot(group.color);
             return (

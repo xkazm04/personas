@@ -75,7 +75,7 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-const barSpring = { type: 'spring' as const, stiffness: 200, damping: 20 };
+const _barSpring = { type: 'spring' as const, stiffness: 200, damping: 20 };
 
 export function DailyTrendChart({ points }: { points: { date: string; success_rate: number; total: number }[] }) {
   if (points.length === 0) return null;
@@ -85,7 +85,7 @@ export function DailyTrendChart({ points }: { points: { date: string; success_ra
   return (
     <div className="flex items-end gap-px h-24 overflow-x-auto overflow-y-hidden">
       {points.map((p, i) => {
-        const h = Math.max(2, (p.total / maxTotal) * 80);
+        const _h = Math.max(2, (p.total / maxTotal) * 80);
         const color = `${HEALTH_STATUS_TOKEN[rateToHealth(p.success_rate)].icon}/60`;
         return (
           <div key={i} className="flex flex-col items-center justify-end flex-shrink-0" style={{ width: barWidth }} title={`${p.date}: ${formatPercent(p.success_rate)} (${p.total} runs)`}>

@@ -86,7 +86,7 @@ export function GenerationEvolutionChart({
 
       {/* Bar chart */}
       <div className="flex items-end gap-1.5 h-28" role="img" aria-label="Fitness progression across generations">
-        {stats.map((gen, idx) => {
+        {stats.map((gen, _idx) => {
           const bestHeight = maxFitness > 0 ? (gen.bestFitness / maxFitness) * 100 : 0;
           const avgHeight = maxFitness > 0 ? (gen.avgFitness / maxFitness) * 100 : 0;
           const worstHeight = maxFitness > 0 ? (gen.worstFitness / maxFitness) * 100 : 0;

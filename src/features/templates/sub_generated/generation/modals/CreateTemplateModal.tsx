@@ -13,7 +13,6 @@ import {
   CREATE_TEMPLATE_STEP_META,
 } from '../useCreateTemplateReducer';
 import { WizardStepper } from '@/features/shared/components/progress/WizardStepper';
-import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 import { BaseModal } from '../../shared/BaseModal';
 import type { CreateTemplateModalProps } from './createTemplateTypes';
 import { useCreateTemplateActions } from '../useCreateTemplateActions';

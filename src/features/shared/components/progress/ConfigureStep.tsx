@@ -68,7 +68,7 @@ export function ConfigureStep({
       </div>
 
       <div className="space-y-3">
-        {questions.map((q, i) => (
+        {questions.map((q, _i) => (
           <div
             key={q.id}
             className="animate-fade-slide-in p-4 rounded-xl border border-primary/10 bg-secondary/10"

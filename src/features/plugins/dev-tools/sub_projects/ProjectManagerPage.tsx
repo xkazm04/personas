@@ -145,7 +145,7 @@ function ProjectModal({
   const [projectType, setProjectType] = useState<ProjectType>('other');
   const [nameEdited, setNameEdited] = useState(false);
   const [createdProject, setCreatedProject] = useState<{ id: string; name: string; path: string } | null>(null);
-  const { shouldAnimate } = useMotion();
+  const { shouldAnimate: _shouldAnimate } = useMotion();
 
   const handleSelectFolder = async () => {
     try {
@@ -391,7 +391,7 @@ function GoalBoard({
   rawGoalSignals: import("@/lib/bindings/DevGoalSignal").DevGoalSignal[];
 }) {
   const [newTitle, setNewTitle] = useState('');
-  const { staggerDelay } = useMotion();
+  const { staggerDelay: _staggerDelay } = useMotion();
 
   const handleCreate = () => {
     if (!newTitle.trim()) return;
@@ -418,7 +418,7 @@ function GoalBoard({
           </div>
         ) : (
           <div className="space-y-1.5">
-            {goals.map((goal, i) => {
+            {goals.map((goal, _i) => {
               const Icon = GOAL_ICONS[goal.status] ?? Circle;
               return (
                 <div

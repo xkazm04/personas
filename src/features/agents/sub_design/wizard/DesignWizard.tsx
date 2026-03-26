@@ -18,7 +18,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<WizardAnswers>({});
   const [additionalContext, setAdditionalContext] = useState('');
-  const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
+  const [_direction, setDirection] = useState(1); // 1 = forward, -1 = back
 
   const currentStep = WIZARD_STEPS[stepIndex]!;
   const isLastStep = stepIndex === WIZARD_STEPS.length - 1;

@@ -7,7 +7,6 @@ import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlic
 import { RateLimitControls } from './RateLimitControls';
 import { ActiveHoursSection } from './ActiveHoursSection';
 import { TriggerExecutionHistory } from './TriggerExecutionHistory';
-import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
 import { ConfigSection } from './TriggerConfigSection';
 import { DryRunResultView } from './DryRunResultView';
 import { WebhookRequestInspector } from './WebhookRequestInspector';

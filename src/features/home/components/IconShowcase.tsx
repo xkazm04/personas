@@ -36,7 +36,7 @@ export default function IconShowcase() {
 
       {/* Icon grid */}
       <div className="grid grid-cols-9 gap-2">
-        {ICONS.map((icon, i) => (
+        {ICONS.map((icon, _i) => (
             <div
               key={`${icon.id}-${mode}`}
               className="animate-fade-slide-in flex flex-col items-center gap-1.5"

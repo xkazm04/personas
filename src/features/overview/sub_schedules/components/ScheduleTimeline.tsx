@@ -340,11 +340,11 @@ function CliFallbackSection({ entries }: { entries: import('../libs/scheduleHelp
     const results: Record<string, string> = {};
     for (const entry of entries.slice(0, 10)) {
       try {
-        const resp = await fetch(`http://127.0.0.1:9420/api/settings/cli-fallback/${entry.personaId}`);
+        const resp = await fetch(`http://127.0.0.1:9420/api/settings/cli-fallback/${entry.agent.persona_id}`);
         if (resp.ok) {
           const data = await resp.json();
           if (data?.data?.command) {
-            results[entry.personaId] = data.data.cron_instruction;
+            results[entry.agent.persona_id] = data.data.cron_instruction;
           }
         }
       } catch { break; } // Management API not running
@@ -379,10 +379,10 @@ function CliFallbackSection({ entries }: { entries: import('../libs/scheduleHelp
             <p className="text-xs text-muted-foreground/40 py-2">Management API not available. Start the Personas app first.</p>
           ) : (
             Object.entries(commands).map(([pid, cmd]) => {
-              const entry = entries.find(e => e.personaId === pid);
+              const entry = entries.find(e => e.agent.persona_id === pid);
               return (
                 <div key={pid} className="rounded-lg bg-black/20 p-2.5">
-                  <p className="text-[11px] font-medium text-foreground/70 mb-1">{entry?.personaName || pid}</p>
+                  <p className="text-[11px] font-medium text-foreground/70 mb-1">{entry?.agent.persona_name || pid}</p>
                   <pre className="text-[10px] text-muted-foreground/60 font-mono whitespace-pre-wrap break-all select-all">{cmd}</pre>
                 </div>
               );

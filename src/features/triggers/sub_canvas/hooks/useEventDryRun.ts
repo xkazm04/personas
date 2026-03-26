@@ -71,7 +71,7 @@ export function useEventDryRun({ nodes, edges, onStateChange }: UseEventDryRunOp
       return;
     }
 
-    const nextStep = steps[nextIdx];
+    const nextStep = steps[nextIdx]!;
     const completed = new Set(prev.completedEdges);
     const completedN = new Set(prev.completedNodes);
     if (prev.activeEdge) completed.add(prev.activeEdge);

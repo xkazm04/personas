@@ -33,7 +33,6 @@ export function PersonaRunner() {
     inputData: state.inputData,
     setJsonError: state.setJsonError,
     setOutputLines: state.setOutputLines as (fn: (prev: string[]) => string[]) => void,
-    fetchTypicalDuration: state.fetchTypicalDuration,
     disconnect: state.disconnect,
     elapsedMs: state.elapsedMs,
     executionSummary: state.executionSummary,

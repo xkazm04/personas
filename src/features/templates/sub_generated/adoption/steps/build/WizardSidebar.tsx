@@ -34,7 +34,7 @@ export function WizardSidebar({
   onStepClick,
   disabled,
 }: WizardSidebarProps) {
-  const { shouldAnimate, spring } = useMotion();
+  const { shouldAnimate, spring: _spring } = useMotion();
 
   return (
     <div className="w-[180px] border-r border-primary/10 bg-secondary/5 py-3 flex-shrink-0" role="navigation" aria-label="Wizard steps">

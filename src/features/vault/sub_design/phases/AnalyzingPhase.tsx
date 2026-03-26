@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { Check, Circle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useStepProgress } from '@/hooks/useStepProgress';
-import { MOTION_TIMING } from '@/features/templates/animationPresets';
 
 interface AnalyzingPhaseProps {
   outputLines: string[];

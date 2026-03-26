@@ -93,7 +93,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
           Next steps
         </p>
         <div className="space-y-1.5">
-          {nextSteps.map((step, i) => {
+          {nextSteps.map((step, _i) => {
             const Icon = step.icon;
             return (
               <button

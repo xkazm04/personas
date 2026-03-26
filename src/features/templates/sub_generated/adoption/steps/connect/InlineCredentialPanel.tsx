@@ -38,7 +38,7 @@ export function InlineCredentialPanel({
   onSaveSuccess,
   onClose,
 }: InlineCredentialPanelProps) {
-  const { motion: MOTION } = useTemplateMotion();
+  const { motion: _MOTION } = useTemplateMotion();
   const meta = getConnectorMeta(connectorName);
   const connectorDef = useMemo(
     () => findConnectorDefinition(connectorName, connectorDefinitions),
