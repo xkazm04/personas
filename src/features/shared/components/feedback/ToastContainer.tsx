@@ -37,8 +37,6 @@ const SEVERITY_STYLES: Record<string, { border: string; icon: string; badge: str
   },
 };
 
-const _EASE_CURVE = [0.22, 1, 0.36, 1] as [number, number, number, number];
-
 // ---------------------------------------------------------------------------
 // Standard toast item
 // ---------------------------------------------------------------------------

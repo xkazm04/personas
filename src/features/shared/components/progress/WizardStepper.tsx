@@ -11,8 +11,6 @@ interface WizardStepperProps {
   currentIndex: number;
 }
 
-const _RAIL_SPRING = { damping: 18, stiffness: 300, type: 'spring' as const };
-
 export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
   return (
     <div className="flex flex-col items-center gap-1" data-testid="wizard-stepper">

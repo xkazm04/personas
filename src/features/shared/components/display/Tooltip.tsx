@@ -23,14 +23,6 @@ const FLIP_MAP: Record<Placement, Placement> = {
   right: 'left',
 };
 
-/** Animation origin shift per resolved placement (tooltip slides away from trigger) */
-const MOTION_OFFSET: Record<Placement, { x: number; y: number }> = {
-  top: { x: 0, y: 4 },
-  bottom: { x: 0, y: -4 },
-  left: { x: 4, y: 0 },
-  right: { x: -4, y: 0 },
-};
-
 function getPosition(
   triggerRect: DOMRect,
   tooltipRect: DOMRect,
@@ -106,7 +98,7 @@ export function Tooltip({
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-  const [resolvedPlacement, setResolvedPlacement] = useState<Placement>(placement);
+  const [, setResolvedPlacement] = useState<Placement>(placement);
   const triggerRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -160,8 +152,6 @@ export function Tooltip({
   }, []);
 
   if (!content) return <>{children}</>;
-
-  const _offset = MOTION_OFFSET[resolvedPlacement];
 
   return (
     <>

@@ -67,8 +67,8 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
   const [testFiring, setTestFiring] = useState(false);
   const [, forceRender] = useState(0);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { connectPending, startConnect, cancelConnect } = useClickToConnect();
 
   // Save layout debounced
@@ -231,7 +231,7 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
     const t = cs.edgeTooltip; if (!t) return;
     const d = t.edge.data as EventEdgeData | undefined; if (!d?.triggerId) return;
     const cfg = { listen_event_type: d.eventType, source_filter: d.sourceFilter, condition_type: newType };
-    try { await updateTrigger(d.triggerId, nodes.find(n => n.id === t.edge.target)?.id ?? t.edge.target, { config: JSON.stringify(cfg) }); setEdges(prev => prev.map(e => e.id === t.edge.id ? { ...e, data: { ...e.data, conditionType: newType } } : e)); } catch {}
+    try { await updateTrigger(d.triggerId, nodes.find(n => n.id === t.edge.target)?.id ?? t.edge.target, { trigger_type: null, config: JSON.stringify(cfg), enabled: null, next_trigger_at: null }); setEdges(prev => prev.map(e => e.id === t.edge.id ? { ...e, data: { ...e.data, conditionType: newType } } : e)); } catch {}
     dispatch({ type: 'SET_EDGE_TOOLTIP', tooltip: null });
   }, [cs.edgeTooltip, nodes, setEdges, dispatch]);
 

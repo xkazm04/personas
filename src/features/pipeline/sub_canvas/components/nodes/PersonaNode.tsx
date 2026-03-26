@@ -43,28 +43,12 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
   const hasBreakpoint = d.hasBreakpoint as boolean | undefined;
   const hasOptimizerSuggestion = d.hasOptimizerSuggestion as boolean | undefined;
   const isGhost = d.isGhost as boolean | undefined;
-  const edgeCount = (d.edgeCount as number) ?? 0;
-  const showHandleGlow = edgeCount < 2 && !isGhost;
   const defaultRole = { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25' };
   const roleDef = ROLE_COLORS[role] ?? defaultRole;
 
   // Dry-run status takes priority when active
   const effectiveStatus = dryRunStatus ?? pipelineStatus;
   const borderStyles = getPipelineStyles(effectiveStatus, selected);
-
-  const _handleGlowAnimation = showHandleGlow
-    ? {
-        boxShadow: [
-          '0 0 0 0 rgba(99,102,241,0)',
-          '0 0 0 4px rgba(99,102,241,0.15)',
-          '0 0 0 0 rgba(99,102,241,0)',
-        ],
-      }
-    : undefined;
-
-  const _handleGlowTransition = showHandleGlow
-    ? { duration: 2, repeat: Infinity, ease: 'easeInOut' as const }
-    : undefined;
 
   return (
     <div

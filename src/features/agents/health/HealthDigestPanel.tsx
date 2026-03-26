@@ -21,8 +21,6 @@ import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 function CompactScoreRing({ score }: { score: HealthScore }) {
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
-  const _offset = circumference - (score.value / 100) * circumference;
-
   const strokeColor = {
     healthy: '#10B981',
     degraded: '#F59E0B',

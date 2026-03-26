@@ -13,15 +13,13 @@ interface InboundParticlesProps {
   onSelectEvent: (evt: RealtimeEvent | null) => void;
 }
 
-export function InboundParticles({ activeEvents, uid, getSourcePos, getTargetPos, onSelectEvent }: InboundParticlesProps) {
+export function InboundParticles({ activeEvents, uid, getSourcePos: _getSourcePos, getTargetPos, onSelectEvent }: InboundParticlesProps) {
   return (
     <>
       {activeEvents.map((evt) => {
-        const _src = getSourcePos(evt);
         const tgt = getTargetPos(evt);
         const color = EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8';
         const pColor = evt.status === 'failed' ? '#ef4444' : color;
-        const _isDone = evt._phase === 'done';
 
         let tx: number, ty: number;
         switch (evt._phase) {
