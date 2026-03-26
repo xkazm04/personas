@@ -17,12 +17,19 @@
     { "toolName": "create_idea", "label": "Create Idea" },
     { "toolName": "update_idea_status", "label": "Triage Idea" },
     { "toolName": "list_tasks", "label": "List Tasks" },
-    { "toolName": "create_task", "label": "Create Task" }
+    { "toolName": "create_task", "label": "Create Task" },
+    { "toolName": "create_branch", "label": "Create Branch" },
+    { "toolName": "apply_diff", "label": "Apply Diff" },
+    { "toolName": "run_tests", "label": "Run Tests" },
+    { "toolName": "get_git_status", "label": "Get Git Status" },
+    { "toolName": "commit_changes", "label": "Commit Changes" }
   ],
   "events": [
     { "id": "idea_created", "name": "Idea Created", "description": "Fired when a new idea is added to the backlog" },
     { "id": "task_completed", "name": "Task Completed", "description": "Fired when a dev task finishes execution" },
-    { "id": "scan_completed", "name": "Scan Completed", "description": "Fired when a codebase scan finishes with new ideas" }
+    { "id": "scan_completed", "name": "Scan Completed", "description": "Fired when a codebase scan finishes with new ideas" },
+    { "id": "branch_created", "name": "Branch Created", "description": "Fired when an agent creates a new branch" },
+    { "id": "tests_completed", "name": "Tests Completed", "description": "Fired when test execution finishes" }
   ],
   "metadata": {
     "template_enabled": true,

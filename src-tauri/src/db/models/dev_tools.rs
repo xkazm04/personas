@@ -247,6 +247,99 @@ pub struct DevPipeline {
 }
 
 // ============================================================================
+// Cross-Project Relationships (Codebases connector)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct CrossProjectRelation {
+    pub id: String,
+    pub source_project_id: String,
+    pub target_project_id: String,
+    pub relation_type: String, // "shared_dependency" | "api_consumer" | "shared_types" | "monorepo_sibling"
+    pub details: Option<String>, // JSON: extra data about the relation
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// Summary returned by the portfolio health tool.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PortfolioHealthSummary {
+    pub total_projects: i32,
+    pub active_projects: i32,
+    pub total_ideas: i32,
+    pub pending_ideas: i32,
+    pub total_tasks: i32,
+    pub running_tasks: i32,
+    pub avg_health_score: Option<f64>,
+    pub projects: Vec<ProjectHealthEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ProjectHealthEntry {
+    pub project_id: String,
+    pub project_name: String,
+    pub status: String,
+    pub tech_stack: Option<String>,
+    pub context_count: i32,
+    pub idea_count: i32,
+    pub task_count: i32,
+    pub latest_health_score: Option<i32>,
+    pub open_risk_count: i32,
+}
+
+/// Entry in the tech radar aggregation.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TechRadarEntry {
+    pub technology: String,
+    pub category: String, // "language" | "framework" | "database" | "tool" | "library"
+    pub project_count: i32,
+    pub project_names: Vec<String>,
+    pub status: String, // "adopt" | "trial" | "assess" | "hold"
+}
+
+/// Entry in the risk matrix aggregation.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct RiskMatrixEntry {
+    pub project_id: String,
+    pub project_name: String,
+    pub risk_category: String, // "dependency_drift" | "stale_project" | "no_tests" | "security" | "single_maintainer" | "tech_debt"
+    pub severity: String, // "low" | "medium" | "high" | "critical"
+    pub description: String,
+    pub affected_contexts: Vec<String>,
+}
+
+/// Result from running tests on a project.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct TestRunResult {
+    pub project_id: String,
+    pub success: bool,
+    pub total_tests: i32,
+    pub passed: i32,
+    pub failed: i32,
+    pub skipped: i32,
+    pub duration_ms: i64,
+    pub output: String,
+    pub error: Option<String>,
+}
+
+/// Result from a git operation.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct GitOperationResult {
+    pub success: bool,
+    pub message: String,
+    pub branch_name: Option<String>,
+    pub commit_hash: Option<String>,
+    pub files_changed: Option<i32>,
+}
+
+// ============================================================================
 // Context Health Snapshots
 // ============================================================================
 

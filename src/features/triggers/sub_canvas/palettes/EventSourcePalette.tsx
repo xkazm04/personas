@@ -1,20 +1,17 @@
-import { useEffect, useRef, useState, type DragEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import {
   EVENT_SOURCE_CATEGORIES,
   type EventSourceTemplate,
 } from '../libs/eventCanvasConstants';
-import { setDragPayload, clearDragPayload, CANVAS_DND_MIME } from '../hooks/useEventCanvasDragDrop';
+import { setPendingItem } from '../hooks/useEventCanvasDragDrop';
 
 interface Props {
   onCanvasEventTypes: Set<string>;
+  onStartPointerDrag: (type: 'event' | 'persona', value: string, label: string) => void;
 }
 
-/**
- * Inline button + dropdown panel for system event sources.
- * Sits in the top-left toolbar row alongside sidebar toggle and refresh.
- */
-export function SystemEventsToolbar({ onCanvasEventTypes }: Props) {
+export function SystemEventsToolbar({ onCanvasEventTypes, onStartPointerDrag }: Props) {
   const [expanded, setExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState(0);
@@ -31,10 +28,9 @@ export function SystemEventsToolbar({ onCanvasEventTypes }: Props) {
 
   return (
     <div className="relative">
-      {/* Toggle button — same style as sibling toolbar buttons */}
       <button
         onClick={() => setExpanded(prev => !prev)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card/80 backdrop-blur border border-primary/10 hover:bg-secondary/60 transition-colors"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors"
       >
         <Zap className="w-3.5 h-3.5 text-amber-400" />
         <span className="text-[11px] font-medium text-muted-foreground">Events</span>
@@ -44,27 +40,25 @@ export function SystemEventsToolbar({ onCanvasEventTypes }: Props) {
         }
       </button>
 
-      {/* Dropdown panel — full-width, animated slide */}
+      {/* Dropdown — absolute to this toolbar button, not fixed to viewport */}
       <div
-        className="fixed mt-1.5 overflow-hidden transition-all duration-200 ease-out z-50"
+        className="absolute top-full left-0 mt-1.5 overflow-hidden transition-all duration-200 ease-out z-[60]"
         style={{
           maxHeight: expanded ? (contentHeight || 200) + 16 : 0,
           opacity: expanded ? 1 : 0,
           pointerEvents: expanded ? 'auto' : 'none',
-          left: '80px',
-          right: '24px',
-          top: 'auto',
         }}
       >
         <div
           ref={contentRef}
-          className="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-card/95 backdrop-blur-md border border-primary/10 shadow-lg"
+          className="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-card border border-primary/10 shadow-lg w-max max-w-[600px]"
         >
           {allTemplates.map(t => (
-            <DraggableSourceChip
+            <SourceChip
               key={t.id}
               template={t}
               isOnCanvas={onCanvasEventTypes.has(t.eventType)}
+              onStartPointerDrag={onStartPointerDrag}
             />
           ))}
           <CustomEventChip />
@@ -74,25 +68,23 @@ export function SystemEventsToolbar({ onCanvasEventTypes }: Props) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Draggable chip
-// ---------------------------------------------------------------------------
-
-function DraggableSourceChip({ template: t, isOnCanvas }: { template: EventSourceTemplate & { categoryColor: string }; isOnCanvas: boolean }) {
-  const onDragStart = (e: DragEvent) => {
-    setDragPayload('event', t.eventType);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData(CANVAS_DND_MIME, t.eventType);
-    e.dataTransfer.setData('text/plain', t.eventType);
-  };
-
+function SourceChip({ template: t, isOnCanvas, onStartPointerDrag }: {
+  template: EventSourceTemplate & { categoryColor: string };
+  isOnCanvas: boolean;
+  onStartPointerDrag: (type: 'event' | 'persona', value: string, label: string) => void;
+}) {
   return (
     <div
-      draggable
-      onDragStart={onDragStart}
-      onDragEnd={clearDragPayload}
+      onPointerDown={(e) => {
+        if (e.button === 0) {
+          e.preventDefault();
+          onStartPointerDrag('event', t.eventType, t.label);
+        }
+      }}
+      onClick={() => setPendingItem('event', t.eventType)}
       className={`
-        flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg cursor-grab active:cursor-grabbing
+        flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
+        cursor-grab active:cursor-grabbing
         bg-secondary/40 hover:bg-secondary/70 border border-primary/5 hover:border-primary/15
         transition-colors select-none
         ${isOnCanvas ? 'opacity-40' : ''}
@@ -105,28 +97,11 @@ function DraggableSourceChip({ template: t, isOnCanvas }: { template: EventSourc
   );
 }
 
-// ---------------------------------------------------------------------------
-// Custom event type chip
-// ---------------------------------------------------------------------------
-
 function CustomEventChip() {
   const [value, setValue] = useState('');
 
-  const onDragStart = (e: DragEvent) => {
-    if (!value.trim()) { e.preventDefault(); return; }
-    setDragPayload('event', value.trim());
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData(CANVAS_DND_MIME, value.trim());
-    e.dataTransfer.setData('text/plain', value.trim());
-  };
-
   return (
-    <div
-      draggable={!!value.trim()}
-      onDragStart={onDragStart}
-      onDragEnd={clearDragPayload}
-      className="flex items-center gap-1 rounded-lg border border-dashed border-primary/10 hover:border-primary/20 transition-colors"
-    >
+    <div className="flex items-center gap-1 rounded-lg border border-dashed border-primary/10 hover:border-primary/20 transition-colors">
       <input
         type="text"
         value={value}
@@ -135,7 +110,12 @@ function CustomEventChip() {
         className="w-24 px-2 py-1.5 text-[10px] rounded-lg bg-transparent text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:w-32 transition-all"
       />
       {value.trim() && (
-        <span className="text-[9px] text-muted-foreground/40 pr-1.5 cursor-grab whitespace-nowrap">drag</span>
+        <button
+          onClick={() => { setPendingItem('event', value.trim()); setValue(''); }}
+          className="text-[9px] text-primary/60 hover:text-primary pr-2 cursor-pointer"
+        >
+          add
+        </button>
       )}
     </div>
   );

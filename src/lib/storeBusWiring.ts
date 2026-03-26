@@ -52,7 +52,7 @@ export function initStoreBus(): void {
 
   // Persona selected — systemStore updates navigation chrome
   storeBus.on('persona:selected', ({ personaId }) => {
-    useSystemStore.getState().setEditorTab('use-cases');
+    useSystemStore.getState().setEditorTab('activity');
     if (personaId) useSystemStore.setState({ sidebarSection: 'personas' });
     useSystemStore.setState({ isCreatingPersona: false, resumeDraftId: null });
   });

@@ -977,6 +977,33 @@ const linkedin: EP[] = [
   ep('GET', '/v2/organizationalEntityAcls?q=roleAssignee', 'List managed pages', [], ['Organizations']),
 ];
 
+// -- Google Ads -------------------------------------------------------
+
+const google_ads: EP[] = [
+  ep('GET', '/v18/customers:listAccessibleCustomers', 'List accessible customer accounts', [], ['Customers']),
+  ep('POST', '/v18/customers/{customerId}/googleAds:searchStream', 'Search stream (GAQL query)', [
+    pathP('customerId', 'Google Ads customer ID (no dashes)'),
+  ], ['Query'], jsonBody(), 'Body: { "query": "SELECT campaign.id, campaign.name, campaign.status FROM campaign ORDER BY campaign.id" }'),
+  ep('POST', '/v18/customers/{customerId}/googleAds:search', 'Search (paginated GAQL query)', [
+    pathP('customerId', 'Google Ads customer ID (no dashes)'),
+  ], ['Query'], jsonBody(), 'Body: { "query": "SELECT campaign.id, campaign.name FROM campaign", "pageSize": 100 }'),
+  ep('POST', '/v18/customers/{customerId}/campaigns:mutate', 'Create or update campaigns', [
+    pathP('customerId'),
+  ], ['Campaigns'], jsonBody(), 'Body: { "operations": [{ "create": { "name": "My Campaign", "advertisingChannelType": "SEARCH", "status": "PAUSED" } }] }'),
+  ep('POST', '/v18/customers/{customerId}/adGroups:mutate', 'Create or update ad groups', [
+    pathP('customerId'),
+  ], ['Ad Groups'], jsonBody(), 'Body: { "operations": [{ "create": { "name": "My Ad Group", "campaign": "customers/{customerId}/campaigns/{campaignId}", "status": "ENABLED" } }] }'),
+  ep('POST', '/v18/customers/{customerId}/adGroupAds:mutate', 'Create or update ads', [
+    pathP('customerId'),
+  ], ['Ads'], jsonBody(), 'Body: { "operations": [{ "create": { "adGroup": "customers/{customerId}/adGroups/{adGroupId}", "ad": { "responsiveSearchAd": { "headlines": [{"text": "Headline"}], "descriptions": [{"text": "Description"}] } } } }] }'),
+  ep('POST', '/v18/customers/{customerId}/adGroupCriteria:mutate', 'Add or update keywords', [
+    pathP('customerId'),
+  ], ['Keywords'], jsonBody(), 'Body: { "operations": [{ "create": { "adGroup": "customers/{customerId}/adGroups/{adGroupId}", "keyword": { "text": "buy shoes", "matchType": "PHRASE" } } }] }'),
+  ep('POST', '/v18/customers/{customerId}/campaignBudgets:mutate', 'Create or update budgets', [
+    pathP('customerId'),
+  ], ['Budgets'], jsonBody(), 'Body: { "operations": [{ "create": { "name": "My Budget", "amountMicros": "10000000", "deliveryMethod": "STANDARD" } }] }'),
+];
+
 // -- Export ------------------------------------------------------------
 
 // -- Canva ------------------------------------------------------------
@@ -1156,6 +1183,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   kubernetes,
   leonardo_ai,
   linkedin,
+  google_ads,
   google_sheets,
   gmail,
   microsoft_outlook,

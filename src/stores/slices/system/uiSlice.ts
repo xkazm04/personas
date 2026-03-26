@@ -90,6 +90,11 @@ export interface UiSlice {
   setContextScanComplete: (complete: boolean) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
+  // Feedback-driven persona improvement
+  feedbackImprovementPersonaId: string | null;
+  feedbackImprovementComplete: boolean;
+  setFeedbackImprovementPersonaId: (id: string | null) => void;
+  setFeedbackImprovementComplete: (complete: boolean) => void;
 }
 
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
@@ -151,4 +156,8 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
+  feedbackImprovementPersonaId: null,
+  feedbackImprovementComplete: false,
+  setFeedbackImprovementPersonaId: (id) => set({ feedbackImprovementPersonaId: id }),
+  setFeedbackImprovementComplete: (complete) => set({ feedbackImprovementComplete: complete }),
 });

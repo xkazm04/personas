@@ -1,0 +1,65 @@
+{
+  "id": "builtin-codebases",
+  "name": "codebases",
+  "label": "Codebases",
+  "color": "#8B5CF6",
+  "icon_url": "/icons/connectors/codebases.svg",
+  "category": "integration",
+  "fields": [],
+  "healthcheck_config": null,
+  "services": [
+    { "toolName": "list_projects", "label": "List Projects" },
+    { "toolName": "get_project_summary", "label": "Get Project Summary" },
+
+    { "toolName": "read_file", "label": "Read File" },
+    { "toolName": "list_files", "label": "List Files" },
+    { "toolName": "search_code", "label": "Search Code" },
+    { "toolName": "get_contexts", "label": "Get Context Map" },
+    { "toolName": "get_context_detail", "label": "Get Context Detail" },
+
+    { "toolName": "get_cross_project_map", "label": "Get Cross-Project Map" },
+    { "toolName": "analyze_cross_impact", "label": "Analyze Cross-Project Impact" },
+    { "toolName": "search_across_projects", "label": "Search Across Projects" },
+    { "toolName": "get_dependency_graph", "label": "Get Dependency Graph" },
+
+    { "toolName": "list_ideas", "label": "List Ideas" },
+    { "toolName": "create_idea", "label": "Create Idea" },
+    { "toolName": "create_idea_batch", "label": "Create Ideas (Multi-Project)" },
+    { "toolName": "update_idea_status", "label": "Triage Idea" },
+    { "toolName": "list_tasks", "label": "List Tasks" },
+    { "toolName": "create_task", "label": "Create Task" },
+
+    { "toolName": "create_branch", "label": "Create Branch" },
+    { "toolName": "apply_diff", "label": "Apply Diff" },
+    { "toolName": "run_tests", "label": "Run Tests" },
+    { "toolName": "get_git_status", "label": "Get Git Status" },
+    { "toolName": "commit_changes", "label": "Commit Changes" },
+
+    { "toolName": "get_portfolio_health", "label": "Get Portfolio Health" },
+    { "toolName": "get_tech_radar", "label": "Get Tech Radar" },
+    { "toolName": "get_risk_matrix", "label": "Get Risk Matrix" }
+  ],
+  "events": [
+    { "id": "idea_created", "name": "Idea Created", "description": "Fired when a new idea is added to any project backlog" },
+    { "id": "task_completed", "name": "Task Completed", "description": "Fired when a dev task finishes in any project" },
+    { "id": "scan_completed", "name": "Scan Completed", "description": "Fired when a codebase scan finishes with new ideas" },
+    { "id": "cross_impact_detected", "name": "Cross-Impact Detected", "description": "Fired when a change in one project may affect others" },
+    { "id": "dependency_drift", "name": "Dependency Drift", "description": "Fired when shared dependencies diverge across projects" },
+    { "id": "branch_created", "name": "Branch Created", "description": "Fired when an agent creates a new branch in a project" },
+    { "id": "tests_completed", "name": "Tests Completed", "description": "Fired when test execution finishes for a project" },
+    { "id": "portfolio_health_changed", "name": "Portfolio Health Changed", "description": "Fired when aggregate portfolio health score changes significantly" }
+  ],
+  "metadata": {
+    "template_enabled": true,
+    "is_builtin": true,
+    "always_active": true,
+    "connection_mode": "desktop_bridge",
+    "min_tier": "builder",
+    "summary": "Aggregate view across all Dev Tools projects. Provides cross-project impact analysis, unified code search, dependency graph comparison, an agent-driven implementation pipeline (branching, diffing, testing, committing), and portfolio-level intelligence (health scores, tech radar, risk matrix). Designed as a composable puzzle piece for agentic workflows.",
+    "auth_type": "builtin",
+    "auth_type_label": "All Projects",
+    "auth_methods": [
+      { "id": "all_projects", "label": "All Dev Tools Projects", "type": "credential", "is_default": true }
+    ]
+  }
+}

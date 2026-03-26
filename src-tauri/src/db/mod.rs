@@ -381,15 +381,15 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
               created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 1, ?12, ?12)",
             params![c.id, c.name, c.label, c.icon_url, c.color, c.category, c.fields,
-                    c.healthcheck_config, "[]", "[]", c.metadata, now],
+                    c.healthcheck_config, c.services, c.events, c.metadata, now],
         )?;
 
-        // Update existing rows to refresh fields/metadata/category on app upgrade
+        // Update existing rows to refresh fields/metadata/category/services/events on app upgrade
         conn.execute(
             "UPDATE connector_definitions
-             SET label = ?1, icon_url = ?2, fields = ?3, healthcheck_config = ?4, metadata = ?5, category = ?6, updated_at = ?7
-             WHERE name = ?8 AND is_builtin = 1",
-            params![c.label, c.icon_url, c.fields, c.healthcheck_config, c.metadata, c.category, now, c.name],
+             SET label = ?1, icon_url = ?2, fields = ?3, healthcheck_config = ?4, metadata = ?5, category = ?6, services = ?7, events = ?8, updated_at = ?9
+             WHERE name = ?10 AND is_builtin = 1",
+            params![c.label, c.icon_url, c.fields, c.healthcheck_config, c.metadata, c.category, c.services, c.events, now, c.name],
         )?;
     }
 

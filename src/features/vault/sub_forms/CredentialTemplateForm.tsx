@@ -129,10 +129,13 @@ export function CredentialTemplateForm({
         onMethodChange={handleAuthMethodChange}
       />
 
-      {selectedConnector.name === 'codebase' ? (
+      {selectedConnector.name === 'codebase' || selectedConnector.name === 'codebases' ? (
         <CodebaseProjectPicker
           onSave={(data) => onCreateCredential(data)}
           onCancel={onCancel}
+          credentialName={credentialName}
+          onCredentialNameChange={onCredentialNameChange}
+          multiSelect={selectedConnector.name === 'codebases'}
         />
       ) : activeMethod?.type === 'mcp' ? (
         <McpPrefilledForm

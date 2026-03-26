@@ -53,15 +53,23 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
           <FileText className="w-4 h-4" />
           Execution Log
         </button>
-        {showLog && logContent && (
-          <button
-            onClick={handleCopyLog}
+        <button
+            onClick={async () => {
+              if (!logContent) {
+                try {
+                  const content = await getExecutionLog(executionId, personaId ?? '');
+                  setLogContent(content ?? '');
+                  if (content) { navigator.clipboard.writeText(content).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {}); }
+                } catch { /* ignore */ }
+              } else {
+                handleCopyLog();
+              }
+            }}
             className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
             title="Copy log to clipboard"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
-        )}
       </div>
       {showLog && (
           <div>

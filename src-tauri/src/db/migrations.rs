@@ -3025,6 +3025,22 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_health_snap_date ON context_health_snapshots(scanned_at);"
     )?;
 
+    // -- Cross-Project Relations (Codebases connector) -----------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS cross_project_relations (
+            id                  TEXT PRIMARY KEY,
+            source_project_id   TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            target_project_id   TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            relation_type       TEXT NOT NULL DEFAULT 'shared_dependency',
+            details             TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(source_project_id, target_project_id, relation_type)
+        );
+        CREATE INDEX IF NOT EXISTS idx_cross_rel_source ON cross_project_relations(source_project_id);
+        CREATE INDEX IF NOT EXISTS idx_cross_rel_target ON cross_project_relations(target_project_id);"
+    )?;
+
     // -- OCR Documents table (OCR plugin) ------------------------------------
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS ocr_documents (

@@ -69,7 +69,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   google_drive:       { label: 'Google Drive',       color: '#0F9D58', iconUrl: 'https://cdn.simpleicons.org/googledrive/0F9D58',     Icon: HardDrive },
   google_workspace:   { label: 'Google Workspace',   color: '#4285F4', iconUrl: 'https://cdn.simpleicons.org/google/4285F4',          Icon: Mail },
   google_sheets:      { label: 'Google Sheets',      color: '#34A853', iconUrl: '/icons/connectors/google-sheets.svg',                Icon: Table },
-  google_ads:         { label: 'Google Ads',         color: '#4285F4', iconUrl: 'https://cdn.simpleicons.org/googleads/4285F4',       Icon: Megaphone },
+  google_ads:         { label: 'Google Ads',         color: '#4285F4', iconUrl: '/icons/connectors/google-ads.svg',                    Icon: Megaphone },
   google_analytics:   { label: 'Google Analytics',   color: '#E37400', iconUrl: 'https://cdn.simpleicons.org/googleanalytics/E37400', Icon: BarChart },
 
   // -- Microsoft ------------------------------------------------

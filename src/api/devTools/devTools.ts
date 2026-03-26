@@ -436,3 +436,188 @@ export const startBatchExecution = (taskIds: string[], maxParallel?: number) =>
 
 export const cancelTaskExecution = (taskId: string) =>
   safeInvoke<boolean>(false, "dev_tools_cancel_task_execution", { taskId });
+
+// ============================================================================
+// Cross-Project (Codebases connector)
+// ============================================================================
+
+export const getCrossProjectMap = () =>
+  safeInvoke<{ projects: unknown[]; relations: unknown[]; generated_at: string }>(
+    { projects: [], relations: [], generated_at: '' },
+    "dev_tools_get_cross_project_map",
+  );
+
+export const upsertCrossProjectRelation = (
+  sourceProjectId: string,
+  targetProjectId: string,
+  relationType: string,
+  details?: string,
+) =>
+  invoke("dev_tools_upsert_cross_project_relation", {
+    sourceProjectId,
+    targetProjectId,
+    relationType,
+    details,
+  });
+
+export const listCrossProjectRelations = () =>
+  safeInvoke<unknown[]>([], "dev_tools_list_cross_project_relations");
+
+export const createIdeaBatch = (ideas: {
+  project_id?: string;
+  context_id?: string;
+  scan_type?: string;
+  category?: string;
+  title: string;
+  description?: string;
+  effort?: number;
+  impact?: number;
+  risk?: number;
+}[]) =>
+  safeInvoke<DevIdea[]>([], "dev_tools_create_idea_batch", { ideas });
+
+export const searchAcrossProjects = (query: string, filePattern?: string, maxResultsPerProject?: number) =>
+  safeInvoke<{
+    query: string;
+    projects_searched: number;
+    projects_with_matches: number;
+    results: unknown[];
+  }>(
+    { query, projects_searched: 0, projects_with_matches: 0, results: [] },
+    "dev_tools_search_across_projects",
+    { query, filePattern, maxResultsPerProject },
+  );
+
+export const getProjectSummary = (projectId: string) =>
+  safeInvoke<unknown>({}, "dev_tools_get_project_summary", { projectId });
+
+export const getDependencyGraph = () =>
+  safeInvoke<{ total_unique_deps: number; shared_deps: number; dependencies: unknown[] }>(
+    { total_unique_deps: 0, shared_deps: 0, dependencies: [] },
+    "dev_tools_get_dependency_graph",
+  );
+
+// ============================================================================
+// Implementation Pipeline (Direction 3)
+// ============================================================================
+
+export interface GitOperationResult {
+  success: boolean;
+  message: string;
+  branch_name?: string;
+  commit_hash?: string;
+  files_changed?: number;
+}
+
+export interface TestRunResult {
+  project_id: string;
+  success: boolean;
+  total_tests: number;
+  passed: number;
+  failed: number;
+  skipped: number;
+  duration_ms: number;
+  output: string;
+  error?: string;
+}
+
+export const createBranch = (projectId: string, branchName: string, baseBranch?: string) =>
+  safeInvoke<GitOperationResult>(
+    { success: false, message: 'Command not available' },
+    "dev_tools_create_branch",
+    { projectId, branchName, baseBranch },
+  );
+
+export const applyDiff = (projectId: string, diffContent: string) =>
+  safeInvoke<GitOperationResult>(
+    { success: false, message: 'Command not available' },
+    "dev_tools_apply_diff",
+    { projectId, diffContent },
+  );
+
+export const runTests = (projectId: string, testCommand?: string) =>
+  safeInvoke<TestRunResult>(
+    { project_id: projectId, success: false, total_tests: 0, passed: 0, failed: 0, skipped: 0, duration_ms: 0, output: '', error: 'Command not available' },
+    "dev_tools_run_tests",
+    { projectId, testCommand },
+    undefined,
+    300_000, // 5 min timeout for tests
+  );
+
+export const getGitStatus = (projectId: string) =>
+  safeInvoke<{
+    project_id: string;
+    project_name: string;
+    branch: string;
+    is_clean: boolean;
+    changed_files_count: number;
+    changed_files: string[];
+    recent_commits: string[];
+  }>(
+    { project_id: projectId, project_name: '', branch: '', is_clean: true, changed_files_count: 0, changed_files: [], recent_commits: [] },
+    "dev_tools_get_git_status",
+    { projectId },
+  );
+
+export const commitChanges = (projectId: string, message: string, stageAll?: boolean) =>
+  safeInvoke<GitOperationResult>(
+    { success: false, message: 'Command not available' },
+    "dev_tools_commit_changes",
+    { projectId, message, stageAll },
+  );
+
+// ============================================================================
+// Portfolio Intelligence (Direction 5)
+// ============================================================================
+
+export interface ProjectHealthEntry {
+  project_id: string;
+  project_name: string;
+  status: string;
+  tech_stack?: string;
+  context_count: number;
+  idea_count: number;
+  task_count: number;
+  latest_health_score?: number;
+  open_risk_count: number;
+}
+
+export interface PortfolioHealthSummary {
+  total_projects: number;
+  active_projects: number;
+  total_ideas: number;
+  pending_ideas: number;
+  total_tasks: number;
+  running_tasks: number;
+  avg_health_score?: number;
+  projects: ProjectHealthEntry[];
+}
+
+export interface TechRadarEntry {
+  technology: string;
+  category: string;
+  project_count: number;
+  project_names: string[];
+  status: string;
+}
+
+export interface RiskMatrixEntry {
+  project_id: string;
+  project_name: string;
+  risk_category: string;
+  severity: string;
+  description: string;
+  affected_contexts: string[];
+}
+
+export const getPortfolioHealth = () =>
+  safeInvoke<PortfolioHealthSummary>(
+    { total_projects: 0, active_projects: 0, total_ideas: 0, pending_ideas: 0, total_tasks: 0, running_tasks: 0, projects: [] },
+    "dev_tools_get_portfolio_health",
+  );
+
+export const getTechRadar = () =>
+  safeInvoke<TechRadarEntry[]>([], "dev_tools_get_tech_radar");
+
+export const getRiskMatrix = () =>
+  safeInvoke<RiskMatrixEntry[]>([], "dev_tools_get_risk_matrix");

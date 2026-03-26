@@ -12,6 +12,7 @@ use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::repos::communication::events as event_repo;
+use crate::db::repos::resources::connectors as connector_repo;
 use crate::engine::build_session as build_session_engine;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -399,15 +400,42 @@ pub async fn promote_build_draft_inner(
                     tool_json.get("implementation_guide").and_then(|v| v.as_str()).map(|s| s.to_string()),
                 )
             } else {
-                // String-only tool — create minimal definition
+                // String-only tool — create minimal definition, infer credential type from name
+                let inferred_cred = {
+                    let lower = normalized.to_lowercase();
+                    let connectors = connector_repo::get_all(&state.db).unwrap_or_default();
+                    connectors.iter().find_map(|c| {
+                        let cn = c.name.to_lowercase();
+                        if lower.contains(&cn) || cn.contains(&lower) {
+                            Some(c.name.clone())
+                        } else {
+                            None
+                        }
+                    })
+                };
                 (
                     "api".to_string(),
                     format!("Auto-created from build: {}", name),
                     Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()),
                     Some(r#"{"type":"object","properties":{},"additionalProperties":true}"#.to_string()),
-                    None, None,
+                    inferred_cred, None,
                 )
             };
+
+            // Infer requires_credential_type from tool name if not set by the LLM.
+            // Match against known connector names so credential resolution works at runtime.
+            let effective_req_cred = req_cred.or_else(|| {
+                let lower = normalized.to_lowercase();
+                let connectors = connector_repo::get_all(&state.db).unwrap_or_default();
+                connectors.iter().find_map(|c| {
+                    let cn = c.name.to_lowercase();
+                    if lower.contains(&cn) || cn.contains(&lower) {
+                        Some(c.name.clone())
+                    } else {
+                        None
+                    }
+                })
+            });
 
             let input = CreateToolDefinitionInput {
                 name: normalized.clone(),
@@ -416,7 +444,7 @@ pub async fn promote_build_draft_inner(
                 script_path: String::new(),
                 input_schema,
                 output_schema,
-                requires_credential_type: req_cred,
+                requires_credential_type: effective_req_cred,
                 implementation_guide: impl_guide,
                 is_builtin: Some(false),
             };

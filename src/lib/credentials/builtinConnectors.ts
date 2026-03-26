@@ -61,6 +61,7 @@ import microsoftCalendar from '../../../scripts/connectors/builtin/microsoft-cal
 import microsoftTeams from '../../../scripts/connectors/builtin/microsoft-teams.json';
 import onedrive from '../../../scripts/connectors/builtin/onedrive.json';
 import sharepoint from '../../../scripts/connectors/builtin/sharepoint.json';
+import googleAds from '../../../scripts/connectors/builtin/google-ads.json';
 import googleCalendar from '../../../scripts/connectors/builtin/google-calendar.json';
 import canva from '../../../scripts/connectors/builtin/canva.json';
 import penpot from '../../../scripts/connectors/builtin/penpot.json';
@@ -142,6 +143,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   microsoftTeams,
   onedrive,
   sharepoint,
+  googleAds,
   googleCalendar,
   canva,
   penpot,

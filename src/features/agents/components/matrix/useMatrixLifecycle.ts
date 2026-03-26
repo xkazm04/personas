@@ -109,19 +109,13 @@ export function useMatrixLifecycle({
     const state = useAgentStore.getState();
     if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return;
 
-    // Try multiple sources for personaId: store > closure > selectedPersona
-    const effectivePersonaId = state.buildPersonaId || personaId || state.selectedPersona?.id;
+    const effectivePersonaId = state.buildPersonaId || personaId;
     const sessionId = state.buildSessionId;
 
     if (!sessionId || !effectivePersonaId) {
       console.warn("[handleStartTest] Cannot start test: missing sessionId or personaId",
         { sessionId, storePersonaId: state.buildPersonaId, closurePersonaId: personaId, buildPhase: state.buildPhase });
       return;
-    }
-
-    // Backfill store if it was lost (HMR, remount)
-    if (!state.buildPersonaId && effectivePersonaId) {
-      useAgentStore.setState({ buildPersonaId: effectivePersonaId });
     }
 
     // Optimistic: transition to testing immediately

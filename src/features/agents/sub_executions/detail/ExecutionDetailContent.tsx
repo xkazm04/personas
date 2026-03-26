@@ -1,15 +1,15 @@
 import { useState, useMemo } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
-import { ChevronDown, ChevronRight, Clock, Calendar, Shield, RotateCw, RefreshCw, Brain, Zap, ClipboardCheck, Copy, Check, Code } from 'lucide-react';
+import { Clock, Calendar, Shield, RotateCw, RefreshCw, Brain, Zap, Copy, Check, Code, MessageSquare, ChevronRight, AlertTriangle, BookOpen, Target } from 'lucide-react';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useSystemStore } from "@/stores/systemStore";
 import { isTerminalState } from '@/lib/execution/executionState';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
-import { Button } from '@/features/shared/components/buttons';
 import { HighlightedJsonBlock } from './inspector/HighlightedJsonBlock';
 import { ErrorExplanationCard } from './ErrorExplanationCard';
 import { ExecutionMemories } from './views/ExecutionMemories';
 import { ExecutionLogViewer } from './views/ExecutionLogViewer';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 
 interface ExecutionDetailContentProps {
   execution: PersonaExecution;
@@ -17,248 +17,418 @@ interface ExecutionDetailContentProps {
   hasOutputData: boolean;
 }
 
-export function ExecutionDetailContent({ execution, hasInputData, hasOutputData }: ExecutionDetailContentProps) {
-  const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
+// ---------------------------------------------------------------------------
+// Output section types
+// ---------------------------------------------------------------------------
 
-  const [showRaw, setShowRaw] = useState(false);
-  const [showInputData, setShowInputData] = useState(false);
-  const [showOutputData, setShowOutputData] = useState(false);
-  const [outputView, setOutputView] = useState<'structured' | 'json'>('structured');
-  const [outputCopied, setOutputCopied] = useState(false);
+type OutputSection = 'overview' | 'messages' | 'flow' | 'memories' | 'events' | 'reviews' | 'knowledge' | 'outcome' | 'json';
 
-  const parsedOutput = useMemo(() => {
-    if (!execution.output_data) return null;
-    try {
-      const data = JSON.parse(execution.output_data);
-      const memories = Array.isArray(data.memories) ? data.memories : [];
-      const events = Array.isArray(data.events) ? data.events : [];
-      const reviews = Array.isArray(data.reviews) ? data.reviews : Array.isArray(data.manual_reviews) ? data.manual_reviews : [];
-      const hasStructured = memories.length > 0 || events.length > 0 || reviews.length > 0;
-      return { data, memories, events, reviews, hasStructured };
-    } catch { return null; }
-  }, [execution.output_data]);
+interface ParsedOutput {
+  data: Record<string, unknown>;
+  memories: Record<string, unknown>[];
+  events: Record<string, unknown>[];
+  reviews: Record<string, unknown>[];
+  userMessage: { title?: string; content?: string; content_type?: string; priority?: string } | null;
+  executionFlow: { flows?: Array<Record<string, unknown>> } | null;
+  knowledgeAnnotation: Record<string, unknown> | null;
+}
 
-  const handleCopyOutput = () => {
-    if (!execution.output_data) return;
-    navigator.clipboard.writeText(execution.output_data).then(() => {
-      setOutputCopied(true);
-      setTimeout(() => setOutputCopied(false), 2000);
-    }).catch(() => { /* ignore */ });
+function parseOutputData(raw: string | null): ParsedOutput | null {
+  if (!raw) return null;
+
+  const result: ParsedOutput = {
+    data: {},
+    memories: [],
+    events: [],
+    reviews: [],
+    userMessage: null,
+    executionFlow: null,
+    knowledgeAnnotation: null,
   };
 
+  // Try single JSON object first
+  try {
+    const data = JSON.parse(raw);
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      // Check if it's a wrapper with nested protocol fields
+      if (data.user_message || data.execution_flow || data.memories || data.events) {
+        result.data = data;
+        result.memories = Array.isArray(data.memories) ? data.memories : [];
+        result.events = Array.isArray(data.events) ? data.events : [];
+        result.reviews = Array.isArray(data.reviews) ? data.reviews : Array.isArray(data.manual_reviews) ? data.manual_reviews : [];
+        result.userMessage = data.user_message ?? null;
+        result.executionFlow = data.execution_flow ?? null;
+        result.knowledgeAnnotation = data.knowledge_annotation ?? null;
+        return result;
+      }
+    }
+  } catch { /* not a single JSON — try NDJSON */ }
+
+  // Parse NDJSON: one protocol message per line
+  let foundAny = false;
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || !trimmed.startsWith('{')) continue;
+    try {
+      const obj = JSON.parse(trimmed) as Record<string, unknown>;
+      if (obj.user_message && typeof obj.user_message === 'object') {
+        result.userMessage = obj.user_message as ParsedOutput['userMessage'];
+        foundAny = true;
+      }
+      if (obj.execution_flow && typeof obj.execution_flow === 'object') {
+        result.executionFlow = obj.execution_flow as ParsedOutput['executionFlow'];
+        foundAny = true;
+      }
+      if (obj.agent_memory && typeof obj.agent_memory === 'object') {
+        result.memories.push(obj.agent_memory as Record<string, unknown>);
+        foundAny = true;
+      }
+      if (obj.emit_event && typeof obj.emit_event === 'object') {
+        result.events.push(obj.emit_event as Record<string, unknown>);
+        foundAny = true;
+      }
+      if (obj.manual_review && typeof obj.manual_review === 'object') {
+        result.reviews.push(obj.manual_review as Record<string, unknown>);
+        foundAny = true;
+      }
+      if (obj.knowledge_annotation && typeof obj.knowledge_annotation === 'object') {
+        result.knowledgeAnnotation = obj.knowledge_annotation as Record<string, unknown>;
+        foundAny = true;
+      }
+      if (obj.outcome_assessment && typeof obj.outcome_assessment === 'object') {
+        (result.data as Record<string, unknown>).outcome_assessment = obj.outcome_assessment;
+        foundAny = true;
+      }
+    } catch { /* skip unparseable lines */ }
+  }
+
+  return foundAny ? result : null;
+}
+
+// ---------------------------------------------------------------------------
+// Structured output renderers
+// ---------------------------------------------------------------------------
+
+function UserMessageCard({ msg }: { msg: NonNullable<ParsedOutput['userMessage']> }) {
   return (
-    <div className="space-y-4 divide-y divide-primary/10 [&>*]:pt-4 [&>*:first-child]:pt-0">
-      {/* Status Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-xl border border-primary/10 overflow-hidden bg-primary/5">
-        <div className="space-y-1.5 p-3 bg-background">
-          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider">Status</div>
-          <div className="flex items-center gap-2">
-            <span className={`inline-block px-2 py-0.5 rounded-lg typo-heading ${badgeClass(getStatusEntry(execution.status))}`}>
-              {getStatusEntry(execution.status).label}
-            </span>
-            {execution.retry_count > 0 && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count} of original execution`}>
-                <RefreshCw className="w-2.5 h-2.5" />
-                Retry #{execution.retry_count}
-              </span>
-            )}
-          </div>
+    <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
+      {msg.title && (
+        <div className="px-4 py-3 border-b border-primary/8 flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-primary/60" />
+          <span className="text-sm font-semibold text-foreground/90">{msg.title}</span>
+          {msg.priority && msg.priority !== 'normal' && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
+              msg.priority === 'high' || msg.priority === 'urgent'
+                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+            }`}>{msg.priority}</span>
+          )}
         </div>
+      )}
+      <div className="px-4 py-3">
+        {msg.content && <MarkdownRenderer content={msg.content} className="text-sm" />}
+      </div>
+    </div>
+  );
+}
 
-        <div className="space-y-1.5 p-3 bg-background">
-          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            Duration
+function FlowSteps({ flow }: { flow: NonNullable<ParsedOutput['executionFlow']> }) {
+  const steps = flow.flows ?? [];
+  if (steps.length === 0) return null;
+  return (
+    <div className="space-y-1">
+      {steps.map((step, i) => {
+        const s = step as Record<string, unknown>;
+        const status = String(s.status ?? '');
+        const statusColor = status === 'completed' ? 'text-emerald-400' : status === 'failed' ? 'text-red-400' : 'text-muted-foreground/50';
+        return (
+          <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-secondary/10">
+            <span className="text-xs font-mono text-muted-foreground/40 w-5 text-right">{String(s.step ?? i + 1)}</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
+            <span className="text-sm text-foreground/80 flex-1">{String(s.action ?? '').replace(/_/g, ' ')}</span>
+            <span className={`text-xs font-medium ${statusColor}`}>{status}</span>
           </div>
-          <div className="typo-code text-foreground">
-            {formatDuration(execution.duration_ms)}
-          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function OutcomeSection({ data }: { data: Record<string, unknown> }) {
+  const oa = data.outcome_assessment as Record<string, unknown> | undefined;
+  if (!oa) return null;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2.5">
+        <Target className="w-4 h-4 text-primary/60" />
+        <span className="text-sm font-semibold text-foreground/85">Outcome Assessment</span>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
+          oa.accomplished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+        }`}>{oa.accomplished ? 'Accomplished' : 'Not Accomplished'}</span>
+      </div>
+      {typeof oa.summary === 'string' && (
+        <p className="text-sm text-foreground/70 leading-relaxed">{oa.summary}</p>
+      )}
+      {Array.isArray(oa.blockers) && oa.blockers.length > 0 && (
+        <div className="space-y-1">
+          <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Blockers</span>
+          {(oa.blockers as string[]).map((b, i) => (
+            <div key={i} className="flex items-start gap-2 text-sm text-red-400/80">
+              <span className="mt-0.5">&#8226;</span>
+              <span>{b}</span>
+            </div>
+          ))}
         </div>
+      )}
+    </div>
+  );
+}
 
-        <div className="space-y-1.5 p-3 bg-background">
-          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            Started
-          </div>
-          <div className="typo-body text-foreground">
-            {formatTimestamp(execution.started_at)}
-          </div>
+// ---------------------------------------------------------------------------
+// Copy button helper
+// ---------------------------------------------------------------------------
+
+function CopyButton({ text, label }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+  return (
+    <button onClick={handleCopy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-secondary/40 transition-colors" title="Copy">
+      {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+      {label && <span>{copied ? 'Copied' : label}</span>}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+export function ExecutionDetailContent({ execution, hasInputData, hasOutputData }: ExecutionDetailContentProps) {
+  const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
+  const [showRaw, setShowRaw] = useState(false);
+  const [activeSection, setActiveSection] = useState<OutputSection>('overview');
+
+  const parsed = useMemo(() => parseOutputData(execution.output_data), [execution.output_data]);
+
+  // Build available sections from parsed output
+  const sections = useMemo(() => {
+    const s: Array<{ id: OutputSection; label: string; icon: React.ElementType; count?: number; color: string }> = [];
+    if (parsed?.userMessage) s.push({ id: 'messages', label: 'Message', icon: MessageSquare, color: 'text-blue-400' });
+    if (parsed?.executionFlow) s.push({ id: 'flow', label: 'Flow', icon: ChevronRight, color: 'text-primary/60' });
+    if (parsed && parsed.reviews.length > 0) s.push({ id: 'reviews', label: 'Reviews', icon: AlertTriangle, count: parsed.reviews.length, color: 'text-amber-400' });
+    if (parsed && parsed.memories.length > 0) s.push({ id: 'memories', label: 'Memories', icon: Brain, count: parsed.memories.length, color: 'text-violet-400' });
+    if (parsed && parsed.events.length > 0) s.push({ id: 'events', label: 'Events', icon: Zap, count: parsed.events.length, color: 'text-amber-400' });
+    if (parsed?.knowledgeAnnotation) s.push({ id: 'knowledge', label: 'Insights', icon: BookOpen, color: 'text-emerald-400' });
+    if ((parsed?.data as Record<string, unknown>)?.outcome_assessment) s.push({ id: 'outcome', label: 'Outcome', icon: Target, color: 'text-primary/60' });
+    if (hasOutputData) s.push({ id: 'json', label: 'Raw JSON', icon: Code, color: 'text-muted-foreground/50' });
+    return s;
+  }, [parsed, hasOutputData]);
+
+  // Auto-select first meaningful section
+  const effectiveSection = sections.find((s) => s.id === activeSection) ? activeSection : (sections[0]?.id ?? 'json');
+
+  return (
+    <div className="space-y-5">
+      {/* ── Status Bar ──────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-semibold ${badgeClass(getStatusEntry(execution.status))}`}>
+          {getStatusEntry(execution.status).label}
+        </span>
+        {execution.retry_count > 0 && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <RefreshCw className="w-2.5 h-2.5" /> Retry #{execution.retry_count}
+          </span>
+        )}
+        <div className="flex items-center gap-1 text-xs text-muted-foreground/50">
+          <Clock className="w-3 h-3" /> {formatDuration(execution.duration_ms)}
         </div>
-
-        <div className="space-y-1.5 p-3 bg-background">
-          <div className="typo-code text-muted-foreground/80 uppercase tracking-wider flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            Completed
-          </div>
-          <div className="typo-body text-foreground">
-            {formatTimestamp(execution.completed_at)}
-          </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground/50">
+          <Calendar className="w-3 h-3" /> {formatTimestamp(execution.started_at)}
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setShowRaw(!showRaw)}
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors ${
+              showRaw ? 'bg-amber-500/10 text-amber-400' : 'text-muted-foreground/50 hover:text-muted-foreground/70'
+            }`}
+          >
+            <Shield className="w-3 h-3" /> {showRaw ? 'Raw' : 'Masked'}
+          </button>
+          {isTerminalState(execution.status) && (
+            <button
+              onClick={() => setRerunInputData(execution.input_data || '{}')}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+            >
+              <RotateCw className="w-3 h-3" /> Re-run
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Masked / Raw toggle */}
-      {(execution.error_message || hasInputData || hasOutputData) && (
-        <div className="flex justify-end">
-          <Button
-            onClick={() => setShowRaw(!showRaw)}
-            variant="ghost"
-            size="sm"
-            icon={<Shield className="w-3 h-3" />}
-            className={showRaw
-              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-              : 'bg-secondary/30 text-muted-foreground/60 border-primary/10 hover:text-muted-foreground/80'
-            }
-            title={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}
-          >
-            {showRaw ? 'Raw' : 'Masked'}
-          </Button>
-        </div>
-      )}
-
-      {/* Error Message */}
+      {/* ── Error ───────────────────────────────────────────────────── */}
       {execution.error_message && (
-        <ErrorExplanationCard
-          errorMessage={execution.error_message}
-          showRaw={showRaw}
-          personaId={execution.persona_id}
-        />
+        <ErrorExplanationCard errorMessage={execution.error_message} showRaw={showRaw} personaId={execution.persona_id} />
       )}
 
-      {/* Re-run Button */}
-      {isTerminalState(execution.status) && (
-        <Button
-          onClick={() => setRerunInputData(execution.input_data || '{}')}
-          variant="primary"
-          size="sm"
-          icon={<RotateCw className="w-3.5 h-3.5" />}
-        >
-          {execution.status === 'cancelled' ? 'Re-run execution' : 'Re-run with same input'}
-        </Button>
-      )}
+      {/* ── Content: Split layout (sidebar tabs + content) ──────── */}
+      {(hasOutputData || hasInputData) && (
+        <div className="flex gap-0 rounded-xl border border-primary/10 overflow-hidden min-h-[300px]">
+          {/* Left: Section tabs */}
+          {sections.length > 1 && (
+            <div className="w-[160px] flex-shrink-0 border-r border-primary/10 bg-secondary/5 py-1">
+              {sections.map((sec) => {
+                const Icon = sec.icon;
+                const isActive = effectiveSection === sec.id;
+                return (
+                  <button
+                    key={sec.id}
+                    onClick={() => setActiveSection(sec.id)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                      isActive
+                        ? 'bg-primary/8 border-r-2 border-primary text-foreground/90'
+                        : 'text-muted-foreground/60 hover:bg-secondary/30'
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? sec.color : ''}`} />
+                    <span className="text-xs font-medium truncate">{sec.label}</span>
+                    {sec.count != null && (
+                      <span className="ml-auto text-[10px] text-muted-foreground/40">{sec.count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-      {/* Input Data */}
-      {hasInputData && (
-        <div>
-          <Button
-            onClick={() => setShowInputData(!showInputData)}
-            variant="ghost"
-            size="sm"
-            icon={showInputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            className="mb-2 text-foreground/90 hover:text-foreground"
-          >
-            Input Data
-          </Button>
-          {showInputData && (
-              <div className="animate-fade-slide-in">
-                <HighlightedJsonBlock raw={showRaw ? execution.input_data : maskSensitiveJson(execution.input_data) as string | null} />
+          {/* Right: Content */}
+          <div className="flex-1 min-w-0 p-4 overflow-y-auto max-h-[50vh]">
+            {effectiveSection === 'messages' && parsed?.userMessage && (
+              <UserMessageCard msg={parsed.userMessage} />
+            )}
+
+            {effectiveSection === 'flow' && parsed?.executionFlow && (
+              <FlowSteps flow={parsed.executionFlow} />
+            )}
+
+            {effectiveSection === 'reviews' && parsed && parsed.reviews.length > 0 && (
+              <div className="space-y-2.5">
+                {parsed.reviews.map((r, i) => (
+                  <div key={i} className="rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3.5 space-y-2">
+                    <div className="flex items-center gap-2.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                      {typeof r.title === 'string' && <span className="text-sm font-semibold text-foreground/85">{r.title}</span>}
+                      {typeof r.severity === 'string' && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold uppercase ${
+                          r.severity === 'high' || r.severity === 'critical'
+                            ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        }`}>{String(r.severity)}</span>
+                      )}
+                    </div>
+                    {typeof r.description === 'string' && <p className="text-sm text-foreground/70 leading-relaxed">{r.description}</p>}
+                    {typeof r.context_data === 'string' && (
+                      <div className="px-3 py-2 rounded-lg bg-black/10 font-mono text-[11px] text-muted-foreground/60">{r.context_data}</div>
+                    )}
+                    {Array.isArray(r.suggested_actions) && r.suggested_actions.length > 0 && (
+                      <div className="space-y-1 pt-1">
+                        <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Suggested Actions</span>
+                        {(r.suggested_actions as string[]).map((a, j) => (
+                          <div key={j} className="flex items-start gap-2 text-sm text-foreground/70">
+                            <span className="text-primary/40 mt-0.5">&#8226;</span>
+                            <span>{a}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
-        </div>
-      )}
 
-      {/* Output Data */}
-      {hasOutputData && (
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Button
-              onClick={() => setShowOutputData(!showOutputData)}
-              variant="ghost"
-              size="sm"
-              icon={showOutputData ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-              className="text-foreground/90 hover:text-foreground"
-            >
-              Output Data
-            </Button>
-            {showOutputData && (
-              <div className="flex items-center gap-1">
-                {parsedOutput?.hasStructured && (
-                  <div className="flex rounded-lg border border-primary/15 overflow-hidden">
-                    <button
-                      onClick={() => setOutputView('structured')}
-                      className={`px-2 py-0.5 text-[11px] transition-colors ${outputView === 'structured' ? 'bg-primary/10 text-foreground/80' : 'text-muted-foreground/50 hover:text-foreground/60'}`}
-                    >
-                      Structured
-                    </button>
-                    <button
-                      onClick={() => setOutputView('json')}
-                      className={`px-2 py-0.5 text-[11px] transition-colors flex items-center gap-1 ${outputView === 'json' ? 'bg-primary/10 text-foreground/80' : 'text-muted-foreground/50 hover:text-foreground/60'}`}
-                    >
-                      <Code className="w-3 h-3" /> JSON
-                    </button>
+            {effectiveSection === 'memories' && parsed && parsed.memories.length > 0 && (
+              <div className="space-y-2">
+                {parsed.memories.map((m, i) => (
+                  <div key={i} className="rounded-lg border border-violet-500/15 bg-violet-500/5 px-4 py-3">
+                    <div className="flex items-start gap-2">
+                      <Brain className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        {typeof m.title === 'string' && <div className="text-sm font-medium text-foreground/85 mb-1">{m.title}</div>}
+                        <div className="text-sm text-foreground/70">{String(m.content ?? m.text ?? m.key ?? JSON.stringify(m))}</div>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          {typeof m.category === 'string' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400/80">{m.category}</span>}
+                          {typeof m.importance === 'number' && <span className="text-[10px] text-muted-foreground/40">importance: {m.importance}/10</span>}
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+            )}
+
+            {effectiveSection === 'events' && parsed && parsed.events.length > 0 && (
+              <div className="space-y-2">
+                {parsed.events.map((e, i) => (
+                  <div key={i} className="rounded-lg border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                      <span className="text-sm font-medium text-amber-400/80">{String(e.type ?? e.event_type ?? 'event')}</span>
+                      {typeof (e.data as Record<string, unknown>)?.status === 'string' && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                          (e.data as Record<string, unknown>).status === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                        }`}>{String((e.data as Record<string, unknown>).status)}</span>
+                      )}
+                    </div>
+                    {typeof e.data === 'object' && e.data && (
+                      <div className="mt-2 px-3 py-2 rounded-lg bg-black/10 font-mono text-[11px] text-muted-foreground/50 whitespace-pre-wrap">
+                        {JSON.stringify(e.data, null, 2)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {effectiveSection === 'knowledge' && parsed?.knowledgeAnnotation && (
+              <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 px-4 py-3.5 space-y-2">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm font-semibold text-foreground/85">Knowledge Insight</span>
+                  {typeof parsed.knowledgeAnnotation.confidence === 'number' && (
+                    <span className="text-[10px] text-muted-foreground/40 ml-auto">{Math.round(parsed.knowledgeAnnotation.confidence * 100)}% confidence</span>
+                  )}
+                </div>
+                {typeof parsed.knowledgeAnnotation.scope === 'string' && (
+                  <span className="inline-block text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400/80 font-mono">{parsed.knowledgeAnnotation.scope}</span>
                 )}
-                <button onClick={handleCopyOutput} className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-muted-foreground transition-colors" title="Copy output">
-                  {outputCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
+                {typeof parsed.knowledgeAnnotation.note === 'string' && (
+                  <p className="text-sm text-foreground/70 leading-relaxed">{parsed.knowledgeAnnotation.note}</p>
+                )}
+              </div>
+            )}
+
+            {effectiveSection === 'outcome' && parsed && <OutcomeSection data={parsed.data as Record<string, unknown>} />}
+
+            {effectiveSection === 'json' && (
+              <div>
+                <div className="flex items-center justify-end mb-2">
+                  {execution.output_data && <CopyButton text={execution.output_data} label="Copy" />}
+                </div>
+                <HighlightedJsonBlock raw={showRaw ? execution.output_data : maskSensitiveJson(execution.output_data) as string | null} />
               </div>
             )}
           </div>
-          {showOutputData && (
-              <div>
-                {parsedOutput?.hasStructured && outputView === 'structured' ? (
-                  <div className="animate-fade-slide-in space-y-3">
-                    {parsedOutput.memories.length > 0 && (
-                      <div className="rounded-xl border border-violet-500/15 bg-violet-500/5 p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Brain className="w-4 h-4 text-violet-400" />
-                          <span className="text-sm font-medium text-violet-300">Memories ({parsedOutput.memories.length})</span>
-                        </div>
-                        <div className="space-y-1.5">
-                          {parsedOutput.memories.map((m: Record<string, unknown>, i: number) => (
-                            <div key={i} className="px-3 py-2 rounded-lg bg-background/50 border border-primary/[0.06] text-sm text-foreground/80">
-                              {String(m.content ?? m.text ?? m.key ?? JSON.stringify(m))}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {parsedOutput.events.length > 0 && (
-                      <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Zap className="w-4 h-4 text-amber-400" />
-                          <span className="text-sm font-medium text-amber-300">Events ({parsedOutput.events.length})</span>
-                        </div>
-                        <div className="space-y-1.5">
-                          {parsedOutput.events.map((e: Record<string, unknown>, i: number) => (
-                            <div key={i} className="px-3 py-2 rounded-lg bg-background/50 border border-primary/[0.06] text-sm text-foreground/80">
-                              <span className="text-amber-400/80 mr-2">{String(e.event_type ?? e.type ?? '')}</span>
-                              {String(e.description ?? e.payload ?? '')}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {parsedOutput.reviews.length > 0 && (
-                      <div className="rounded-xl border border-cyan-500/15 bg-cyan-500/5 p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <ClipboardCheck className="w-4 h-4 text-cyan-400" />
-                          <span className="text-sm font-medium text-cyan-300">Reviews ({parsedOutput.reviews.length})</span>
-                        </div>
-                        <div className="space-y-1.5">
-                          {parsedOutput.reviews.map((r: Record<string, unknown>, i: number) => (
-                            <div key={i} className="px-3 py-2 rounded-lg bg-background/50 border border-primary/[0.06] text-sm text-foreground/80">
-                              <span className={`inline-block px-1.5 py-0.5 rounded text-xs mr-2 ${r.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400' : r.status === 'rejected' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'}`}>
-                                {String(r.status ?? 'pending')}
-                              </span>
-                              {String(r.reason ?? r.description ?? r.action ?? '')}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <HighlightedJsonBlock raw={showRaw ? execution.output_data : maskSensitiveJson(execution.output_data) as string | null} />
-                )}
-              </div>
-            )}
         </div>
       )}
 
-      {/* Memories Created */}
+      {/* ── Memories Created ────────────────────────────────────────── */}
       <ExecutionMemories executionId={execution.id} executionStatus={execution.status} />
 
-      {/* Log File */}
+      {/* ── Execution Log ───────────────────────────────────────────── */}
       {execution.log_file_path && (
         <ExecutionLogViewer executionId={execution.id} personaId={execution.persona_id} />
       )}

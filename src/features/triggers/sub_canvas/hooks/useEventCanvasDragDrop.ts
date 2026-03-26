@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import type { ReactFlowInstance, Node } from '@xyflow/react';
+import { useCallback, useRef, useState } from 'react';
+import type { Node } from '@xyflow/react';
 import {
   NODE_TYPE_EVENT_SOURCE,
   NODE_TYPE_PERSONA_CONSUMER,
@@ -10,115 +10,200 @@ import {
 import type { EventSourceNodeData, PersonaConsumerNodeData } from '../libs/eventCanvasReconcile';
 
 // ---------------------------------------------------------------------------
-// Module-level drag payload.
-// Browser DnD restricts dataTransfer.getData() during dragover — only the
-// `types` array and `effectAllowed` are readable. We use a module ref
-// to carry the full payload from dragStart to drop.
+// Shared state
 // ---------------------------------------------------------------------------
 
-const dragPayload: { type: 'event' | 'persona' | null; value: string } = {
+const pendingItem: { type: 'event' | 'persona' | null; value: string; label: string } = {
   type: null,
   value: '',
+  label: '',
 };
 
-export function setDragPayload(type: 'event' | 'persona', value: string) {
-  dragPayload.type = type;
-  dragPayload.value = value;
+export function setPendingItem(type: 'event' | 'persona', value: string, label?: string) {
+  pendingItem.type = type;
+  pendingItem.value = value;
+  pendingItem.label = label ?? value;
 }
 
-export function clearDragPayload() {
-  dragPayload.type = null;
-  dragPayload.value = '';
+export function clearPendingItem() {
+  pendingItem.type = null;
+  pendingItem.value = '';
+  pendingItem.label = '';
 }
 
-// Custom MIME type set in dataTransfer.types — readable during dragover
-export const CANVAS_DND_MIME = 'application/x-event-canvas';
+export function hasPendingItem() {
+  return pendingItem.type !== null;
+}
+
+export function getPendingLabel() {
+  return pendingItem.label || pendingItem.value || '';
+}
+
+/** True when variant B pointer drag is actively tracking */
+let pointerDragActive = false;
+export function isPointerDragging() { return pointerDragActive; }
 
 // ---------------------------------------------------------------------------
-// Hook — returns onDragOver + onDrop to pass as props to <ReactFlow>
-// ReactFlow v12 spreads ...rest onto its wrapper div, so these become
-// native DOM event handlers on the actual element.
+// Node creation helper
 // ---------------------------------------------------------------------------
 
 interface Opts {
-  reactFlowInstance: ReactFlowInstance | null;
+  /** From useReactFlow() — always available inside ReactFlowProvider */
+  reactFlowInstance: { screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number } };
   setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
   personas: Array<{ id: string; name: string; icon: string | null; color: string | null; enabled: boolean }>;
 }
 
-export function useEventCanvasDragDrop({ reactFlowInstance, setNodes, personas }: Opts) {
-  const onDragOver = useCallback((e: React.DragEvent) => {
-    // Only allow drop if it's our custom canvas DnD (not ReactFlow internal node drag)
-    if (!e.dataTransfer.types.includes(CANVAS_DND_MIME)) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  }, []);
+function buildNode(
+  position: { x: number; y: number },
+  personas: Opts['personas'],
+): Node | null {
+  if (!pendingItem.type) return null;
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes(CANVAS_DND_MIME)) return;
-    e.preventDefault();
+  const snapped = {
+    x: Math.round(position.x / GRID_SIZE) * GRID_SIZE,
+    y: Math.round(position.y / GRID_SIZE) * GRID_SIZE,
+  };
 
-    if (!reactFlowInstance || !dragPayload.type) {
-      clearDragPayload();
-      return;
+  if (pendingItem.type === 'event') {
+    const id = pendingItem.value;
+    const template = findTemplateByEventType(id);
+    return {
+      id: `src-${id}`,
+      type: NODE_TYPE_EVENT_SOURCE,
+      position: snapped,
+      data: {
+        eventType: id,
+        label: template?.label ?? id,
+        iconName: template?.icon?.displayName ?? 'Zap',
+        color: template?.color ?? DEFAULT_SOURCE_COLOR,
+        sourceFilter: template?.sourceFilter,
+        liveEventCount: 0,
+        lastEventAt: null,
+      } satisfies EventSourceNodeData,
+    };
+  }
+
+  if (pendingItem.type === 'persona') {
+    const persona = personas.find(p => p.id === pendingItem.value);
+    if (!persona) return null;
+    return {
+      id: persona.id,
+      type: NODE_TYPE_PERSONA_CONSUMER,
+      position: snapped,
+      data: {
+        personaId: persona.id,
+        name: persona.name,
+        icon: persona.icon ?? '',
+        color: persona.color ?? 'text-blue-400',
+        enabled: persona.enabled,
+        lastExecutionAt: null,
+        executionStatus: null,
+        connectedEventCount: 0,
+      } satisfies PersonaConsumerNodeData,
+    };
+  }
+
+  return null;
+}
+
+function addIfNew(setNodes: React.Dispatch<React.SetStateAction<Node[]>>, node: Node) {
+  setNodes(prev => prev.some(n => n.id === node.id) ? prev : [...prev, node]);
+}
+
+// ==========================================================================
+// VARIANT B: Pointer-tracking manual DnD
+// On sidebar mousedown: record item + track mouse globally.
+// Render a floating ghost node following the cursor.
+// On mouseup over canvas: place node at that position.
+// Fully custom — no browser DnD API at all.
+// ==========================================================================
+
+export function useDndVariantB({ reactFlowInstance, setNodes, personas }: Opts) {
+  const [ghost, setGhost] = useState<{ x: number; y: number; label: string } | null>(null);
+  const activeRef = useRef(false);
+  // Use refs so the pointer event callbacks always read latest values
+  const rfRef = useRef(reactFlowInstance);
+  rfRef.current = reactFlowInstance;
+  const personasRef = useRef(personas);
+  personasRef.current = personas;
+  const setNodesRef = useRef(setNodes);
+  setNodesRef.current = setNodes;
+
+  const startDrag = useCallback((type: 'event' | 'persona', value: string, label: string) => {
+    setPendingItem(type, value, label);
+    activeRef.current = true;
+    pointerDragActive = true;
+
+    function onMove(e: PointerEvent) {
+      setGhost({ x: e.clientX, y: e.clientY, label });
     }
 
-    const position = reactFlowInstance.screenToFlowPosition({
-      x: e.clientX,
-      y: e.clientY,
-    });
-    position.x = Math.round(position.x / GRID_SIZE) * GRID_SIZE;
-    position.y = Math.round(position.y / GRID_SIZE) * GRID_SIZE;
+    function onUp(e: PointerEvent) {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      setGhost(null);
+      activeRef.current = false;
+      pointerDragActive = false;
 
-    if (dragPayload.type === 'event') {
-      const eventSourceId = dragPayload.value;
-      const template = findTemplateByEventType(eventSourceId);
-      const nodeId = `src-${eventSourceId}`;
+      const rf = rfRef.current;
+      if (!rf) { clearPendingItem(); return; }
 
-      const newNode: Node = {
-        id: nodeId,
-        type: NODE_TYPE_EVENT_SOURCE,
-        position,
-        data: {
-          eventType: eventSourceId,
-          label: template?.label ?? eventSourceId,
-          iconName: template?.icon?.displayName ?? 'Zap',
-          color: template?.color ?? DEFAULT_SOURCE_COLOR,
-          sourceFilter: template?.sourceFilter,
-          liveEventCount: 0,
-          lastEventAt: null,
-        } satisfies EventSourceNodeData,
-      };
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const isOverCanvas = el?.closest('.react-flow') !== null;
 
-      setNodes(prev => prev.some(n => n.id === nodeId) ? prev : [...prev, newNode]);
-    }
-
-    if (dragPayload.type === 'persona') {
-      const personaId = dragPayload.value;
-      const persona = personas.find(p => p.id === personaId);
-      if (persona) {
-        const newNode: Node = {
-          id: personaId,
-          type: NODE_TYPE_PERSONA_CONSUMER,
-          position,
-          data: {
-            personaId,
-            name: persona.name,
-            icon: persona.icon ?? '',
-            color: persona.color ?? 'text-blue-400',
-            enabled: persona.enabled,
-            lastExecutionAt: null,
-            executionStatus: null,
-            connectedEventCount: 0,
-          } satisfies PersonaConsumerNodeData,
-        };
-
-        setNodes(prev => prev.some(n => n.id === personaId) ? prev : [...prev, newNode]);
+      if (isOverCanvas) {
+        const pos = rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+        const node = buildNode(pos, personasRef.current);
+        if (node) addIfNew(setNodesRef.current, node);
       }
+      clearPendingItem();
     }
 
-    clearDragPayload();
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, []); // stable — reads from refs
+
+  return { startDrag, ghost };
+}
+
+// ==========================================================================
+// VARIANT C: Click-to-place (proven working)
+// ==========================================================================
+
+export function useDndVariantC({ reactFlowInstance, setNodes, personas }: Opts) {
+  const onPaneClickPlace = useCallback((e: React.MouseEvent) => {
+    if (!pendingItem.type || !reactFlowInstance) return;
+
+    const pos = reactFlowInstance.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+    const node = buildNode(pos, personas);
+    if (node) addIfNew(setNodes, node);
+    clearPendingItem();
   }, [reactFlowInstance, setNodes, personas]);
 
-  return { onDragOver, onDrop };
+  return { onPaneClickPlace };
+}
+
+// ==========================================================================
+// CLICK-TO-CONNECT: Alternative to handle-dragging for edge creation
+// Click a source node handle, then click a target node handle.
+// ==========================================================================
+
+export interface ConnectPending {
+  sourceNodeId: string;
+  sourceType: string;
+}
+
+export function useClickToConnect() {
+  const [pending, setPending] = useState<ConnectPending | null>(null);
+
+  const startConnect = useCallback((sourceNodeId: string, sourceType: string) => {
+    setPending({ sourceNodeId, sourceType });
+  }, []);
+
+  const cancelConnect = useCallback(() => {
+    setPending(null);
+  }, []);
+
+  return { connectPending: pending, startConnect, cancelConnect, setConnectPending: setPending };
 }

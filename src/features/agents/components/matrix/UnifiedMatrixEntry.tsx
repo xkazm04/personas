@@ -17,6 +17,7 @@ import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -88,6 +89,39 @@ export function UnifiedMatrixEntry(_props: UnifiedMatrixEntryProps) {
   }, []);
   const [agentName, setAgentName] = useState("");
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const [fadeOut, setFadeOut] = useState(false);
+
+  // -- Post-promotion: navigate to the promoted agent with fade transition --
+
+  const handleViewPromotedAgent = useCallback(() => {
+    const personaId = draftPersonaId;
+    if (!personaId) return;
+
+    setFadeOut(true);
+    setTimeout(() => {
+      // Reset build state and intent
+      useAgentStore.getState().resetBuildSession();
+      setIntentText('');
+      setAgentName('');
+      setDraftPersonaId(null);
+
+      // Navigate to the promoted agent
+      useAgentStore.getState().selectPersona(personaId);
+      useAgentStore.getState().fetchPersonas();
+      useSystemStore.getState().setIsCreatingPersona(false);
+      useSystemStore.getState().setEditorTab('matrix');
+    }, 400); // matches fade duration
+  }, [draftPersonaId, setIntentText, setDraftPersonaId]);
+
+  // Auto-redirect after promotion
+  const buildPhaseForRedirect = useAgentStore((s) => s.buildPhase);
+  useEffect(() => {
+    if (buildPhaseForRedirect === 'promoted' && draftPersonaId && !fadeOut) {
+      // Short delay so user sees the "Agent Promoted" success indicator
+      const timer = setTimeout(() => handleViewPromotedAgent(), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [buildPhaseForRedirect, draftPersonaId, fadeOut, handleViewPromotedAgent]);
 
   // -- Build orchestration ------------------------------------------------
 
@@ -215,7 +249,10 @@ export function UnifiedMatrixEntry(_props: UnifiedMatrixEntryProps) {
   // -- Render -------------------------------------------------------------
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 md:px-6 xl:px-8 pt-4">
+    <div
+      className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 md:px-6 xl:px-8 pt-4 transition-opacity duration-400 ease-out"
+      style={{ opacity: fadeOut ? 0 : 1 }}
+    >
       <div className="flex-1 min-h-0 w-full">
         <PersonaMatrix
           designResult={null}
@@ -249,6 +286,7 @@ export function UnifiedMatrixEntry(_props: UnifiedMatrixEntryProps) {
           onApplyEdits={handleApplyEdits}
           onDiscardEdits={handleDiscardEdits}
           onSubmitAllAnswers={build.handleSubmitAnswers}
+          onViewAgent={handleViewPromotedAgent}
         />
       </div>
 

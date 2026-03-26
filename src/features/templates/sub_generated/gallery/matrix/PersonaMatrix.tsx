@@ -211,7 +211,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   const isPreBuild = isCreationMode && !hasBuildStates && !designResult && (!buildPhase || buildPhase === 'initializing');
 
   // Quick-config overlay state (pre-build only)
-  const [quickConfig, setQuickConfig] = useState<QuickConfigState>({ frequency: null, days: ['mon'], monthDay: 1, time: '09:00', selectedConnectors: [] });
+  const [quickConfig, setQuickConfig] = useState<QuickConfigState>({ frequency: null, days: ['mon'], monthDay: 1, time: '09:00', selectedConnectors: [], connectorTables: {} });
   const quickConfigRef = useRef(quickConfig);
   quickConfigRef.current = quickConfig;
   const handleQuickConfigChange = useCallback((state: QuickConfigState) => {

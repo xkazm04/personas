@@ -10,6 +10,8 @@ pub(crate) struct BuiltinConnector {
     pub category: &'static str,
     pub fields: &'static str,
     pub healthcheck_config: Option<&'static str>,
+    pub services: &'static str,
+    pub events: &'static str,
     pub metadata: Option<&'static str>,
 }
 
@@ -23,6 +25,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"api_key","label":"Personal Access Token","type":"password","required":true,"placeholder":"pat...","helpText":"Generate at airtable.com/create/tokens"},{"key":"base_id","label":"Base ID","type":"text","required":false,"placeholder":"appXXXXXXXXXXXXXX","helpText":"Optional: restrict to a specific base"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.airtable.com/v0/meta/whoami","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via whoami endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Airtable spreadsheet-database for project tracking and data management.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://airtable.com/create/tokens","setup_guide":"1. Go to airtable.com/create/tokens\n2. Click 'Create new token'\n3. Name your token and select the scopes and bases you need\n4. Click 'Create token' and copy the pat... value","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -34,6 +38,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"finance"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"YOUR_API_KEY","helpText":"Claim your free API key at alphavantage.co/support/#api-key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://www.alphavantage.co/query?function=MARKET_STATUS&apikey={{api_key}}","method":"GET","headers":{},"description":"Validates API key via Alpha Vantage Market Status endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Alpha Vantage for real-time and historical stock, forex, crypto, and economic data.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://www.alphavantage.co/documentation/","setup_guide":"1. Go to alphavantage.co/support/#api-key\n2. Enter your email and a description\n3. Click 'Get Free API Key'\n4. Copy the API key and paste it here","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -45,6 +51,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"project-mgmt"#,
             fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"1/12345:abcdef...","helpText":"From Asana -> My Settings -> Apps -> Manage Developer Apps -> Personal Access Tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://app.asana.com/api/1.0/users/me","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}"},"description":"Validates personal access token via Asana users/me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Asana project management for tasks, projects, and team collaboration.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developers.asana.com/docs/personal-access-token","setup_guide":"1. Open Asana and click your profile photo (top right)\n2. Go to My Settings -> Apps -> Manage Developer Apps\n3. Under Personal Access Tokens, click 'Create new token'\n4. Give it a description and click 'Create token'\n5. Copy the token (format: 1/12345:abcdef...) and paste it here","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@roychri/mcp-server-asana","transport":"stdio","suggested_env":{"ASANA_ACCESS_TOKEN":""}}]}"#),
         },
         BuiltinConnector {
@@ -56,6 +64,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"crm"#,
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Go to Attio -> Settings -> Developers -> API Access -> Generate a new token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.attio.com/v2/self","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Attio /v2/self endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Attio next-gen CRM for managing people, companies, deals, and custom objects via the Attio API v2.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developers.attio.com/reference","setup_guide":"1. Log in to Attio.\n2. Go to Settings -> Developers -> API Access.\n3. Click 'Generate a new token'.\n4. Select the required scopes (read/write for records, lists, objects).\n5. Copy the token and paste it here.","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -67,6 +77,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"storage"#,
             fields: r#"[{"key":"access_key_id","label":"Access Key ID","type":"text","required":true,"placeholder":"AKIA...","helpText":"From AWS IAM -> Users -> Security credentials -> Access keys"},{"key":"secret_access_key","label":"Secret Access Key","type":"password","required":true,"placeholder":"","helpText":"From the same IAM access key creation page"},{"key":"region","label":"Region","type":"text","required":true,"placeholder":"us-east-1","helpText":"AWS region for your S3 bucket"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://s3.{{region}}.amazonaws.com/","method":"GET","headers":{"Authorization":"AWS4-HMAC-SHA256 {{access_key_id}}"},"description":"Validates S3 credentials via bucket listing"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"AWS S3 object storage for uploading, downloading, and managing files and buckets.","auth_type":"api_key","auth_type_label":"Access Key","docs_url":"https://docs.aws.amazon.com/AmazonS3/latest/API/Welcome.html","setup_guide":"1. Log in to the AWS Console.\n2. Go to IAM -> Users -> select your user.\n3. Under Security credentials, click 'Create access key'.\n4. Choose 'Application running outside AWS'.\n5. Copy the Access Key ID and Secret Access Key.\n6. Paste both values and your preferred region here.","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"Access Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -78,6 +90,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"devops"#,
             fields: r#"[{"key":"organization","label":"Organization","type":"text","required":true,"placeholder":"my-org","helpText":"Your Azure DevOps organization name (from dev.azure.com/{organization})"},{"key":"pat","label":"Personal Access Token","type":"password","required":true,"placeholder":"","helpText":"Generate at dev.azure.com/{org}/_usersSettings/tokens with required scopes"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://dev.azure.com/{{organization}}/_apis/projects?api-version=7.1","method":"GET","headers":{"Authorization":"Basic {{base64(:pat)}}"},"description":"Validates PAT via Azure DevOps projects endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Azure DevOps for repositories, work items, pipelines, and CI/CD.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://learn.microsoft.com/en-us/rest/api/azure/devops/","setup_guide":"1. Go to dev.azure.com and sign in\n2. Click User Settings (gear icon) -> Personal Access Tokens\n3. Click 'New Token', set scopes (e.g. Code, Work Items, Build)\n4. Copy the generated token\n5. Enter your organization name and paste the token","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@azure-devops/mcp","transport":"stdio","suggested_env":{"AZURE_DEVOPS_ORG":"","AZURE_DEVOPS_PAT":""}}]}"#),
         },
         BuiltinConnector {
@@ -89,6 +103,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"storage"#,
             fields: r#"[{"key":"application_key_id","label":"Application Key ID","type":"text","required":true,"placeholder":"","helpText":"From Backblaze -> App Keys -> Add a New Application Key"},{"key":"application_key","label":"Application Key","type":"password","required":true,"placeholder":"","helpText":"Shown once when creating the key -- copy immediately"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.backblazeb2.com/b2api/v3/b2_authorize_account","method":"GET","headers":{"Authorization":"Basic {{base64(application_key_id:application_key)}}"},"description":"Validates credentials via B2 authorize_account endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Backblaze B2 affordable S3-compatible cloud object storage for backups, archives, and media.","auth_type":"basic","auth_type_label":"Application Key","docs_url":"https://www.backblaze.com/docs/cloud-storage","setup_guide":"1. Log in to Backblaze.\n2. Go to App Keys.\n3. Click 'Add a New Application Key'.\n4. Name it and select bucket permissions.\n5. Copy the Application Key ID and Application Key (shown only once).\n6. Paste both values here.","pricing_tier":"freemium","auth_methods":[{"id":"basic","label":"Application Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -100,6 +116,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"monitoring"#,
             fields: r#"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Better Stack Dashboard -> Settings -> API tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://uptime.betterstack.com/api/v2/monitors","method":"GET","headers":{"Authorization":"Bearer {{api_token}}"},"description":"Validates API token via monitors endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Better Stack uptime monitoring, incident management, and status pages.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://betterstack.com/docs/uptime/api/getting-started-with-uptime-api/","setup_guide":"1. Go to uptime.betterstack.com and sign in to your account\n2. Navigate to Settings -> API tokens\n3. Click 'Create API token' and give it a descriptive name\n4. Copy the generated token value","pricing_tier":"paid"}"#),
         },
         BuiltinConnector {
@@ -111,6 +129,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"social"#,
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Buffer -> Settings -> Apps -> Access Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.bufferapp.com/1/user.json?access_token={{access_token}}","method":"GET","headers":{},"description":"Validates access token via Buffer user endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Buffer social media management for scheduling and publishing.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://buffer.com/developers/api","setup_guide":"1. Go to buffer.com and sign in to your account\n2. Navigate to account.buffer.com/access-tokens\n3. Click 'Create Access Token'\n4. Copy the generated access token value","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -122,6 +142,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"scheduling"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"cal_live_...","helpText":"Generate at cal.com/settings/developer/api-keys"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.cal.com/v2/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}","cal-api-version":"2024-08-13"},"description":"Validates API key via Cal.com /v2/me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Cal.com open-source scheduling platform for availability and bookings.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://cal.com/docs/api-reference/v2/introduction","setup_guide":"1. Go to cal.com and sign in to your account\n2. Navigate to Settings -> Developer -> API Keys\n3. Click 'Create new API key'\n4. Copy the generated key (starts with cal_live_)","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@calcom/cal-mcp","transport":"stdio","suggested_env":{"CAL_API_KEY":""}}]}"#),
         },
         BuiltinConnector {
@@ -133,6 +155,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"scheduling"#,
             fields: r#"[{"key":"api_key","label":"Personal Access Token","type":"password","required":true,"placeholder":"eyJ...","helpText":"Generate at calendly.com/integrations/api_webhooks"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.calendly.com/users/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates token via Calendly users/me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Calendly scheduling for meetings and appointment automation.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developer.calendly.com/api-docs/","setup_guide":"1. Go to calendly.com and sign in to your account\n2. Navigate to Integrations -> API & Webhooks\n3. Click 'Generate New Token' under Personal Access Tokens\n4. Copy the generated token value","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -144,6 +168,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"design"#,
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"CNV...","helpText":"Generate at canva.com/developers -> Your Apps -> Generate Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.canva.com/rest/v1/users/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Canva /users/me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Canva design platform for creating, managing, and exporting designs via the Canva Connect API.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://www.canva.dev/docs/connect/","setup_guide":"1. Go to canva.com/developers and sign in.\n2. Create a new integration or select an existing one.\n3. Generate an access token with the required scopes.\n4. Copy the token and paste it here.","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -155,6 +181,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"devops"#,
             fields: r#"[{"key":"personal_token","label":"Personal API Token","type":"password","required":true,"placeholder":"CCIPAT_...","helpText":"From CircleCI -> User Settings -> Personal API Tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://circleci.com/api/v2/me","method":"GET","headers":{"Circle-Token":"{{personal_token}}"},"description":"Validates token via CircleCI me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"CircleCI continuous integration and delivery platform.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://circleci.com/docs/managing-api-tokens/","setup_guide":"1. Go to CircleCI -> User Settings -> Personal API Tokens\n2. Click 'Create New Token'\n3. Name your token and click 'Add API Token'\n4. Copy the CCIPAT_... value and paste it here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -166,6 +194,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"project-mgmt"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"pk_...","helpText":"From ClickUp Settings -> Apps -> API Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.clickup.com/api/v2/user","method":"GET","headers":{"Authorization":"{{api_key}}"},"description":"Validates API key via user endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"ClickUp project management with tasks, docs, goals, and time tracking.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://clickup.com/api/developer-portal/authentication","setup_guide":"1. Go to app.clickup.com and sign in\n2. Click your avatar -> Settings -> Apps\n3. Under 'API Token', click 'Generate' or copy existing token\n4. Paste the pk_... token value here","pricing_tier":"free","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@taazkareem/clickup-mcp-server","transport":"stdio","suggested_env":{"CLICKUP_API_KEY":""}}]}"#),
         },
         BuiltinConnector {
@@ -177,6 +207,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"storage"#,
             fields: r#"[{"key":"account_id","label":"Account ID","type":"text","required":true,"placeholder":"","helpText":"From Cloudflare dashboard -> Overview -> Account ID (right sidebar)"},{"key":"access_key_id","label":"R2 Access Key ID","type":"text","required":true,"placeholder":"","helpText":"From Cloudflare -> R2 -> Manage R2 API Tokens"},{"key":"secret_access_key","label":"R2 Secret Access Key","type":"password","required":true,"placeholder":"","helpText":"From the same R2 API Token creation page"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.cloudflare.com/client/v4/accounts/{{account_id}}/r2/buckets","method":"GET","headers":{"Authorization":"Bearer {{secret_access_key}}"},"description":"Validates R2 credentials via bucket listing"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Cloudflare R2 S3-compatible object storage with zero egress fees for storing and serving files.","auth_type":"api_key","auth_type_label":"API Token","docs_url":"https://developers.cloudflare.com/r2/api/","setup_guide":"1. Log in to the Cloudflare dashboard.\n2. Go to R2 -> Manage R2 API Tokens.\n3. Create a new API token with Object Read & Write permissions.\n4. Copy the Access Key ID, Secret Access Key, and your Account ID.\n5. Paste all values here.","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Token","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -188,6 +220,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"cloud"#,
             fields: r#"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From Cloudflare Dashboard -> My Profile -> API Tokens -> Create Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.cloudflare.com/client/v4/user/tokens/verify","method":"GET","headers":{"Authorization":"Bearer {{api_token}}"},"description":"Validates API token via Cloudflare token verify endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Cloudflare CDN, DNS, Workers, and security services.","auth_type":"api_token","auth_type_label":"API Token","docs_url":"https://dash.cloudflare.com/profile/api-tokens","setup_guide":"1. Go to dash.cloudflare.com/profile/api-tokens\n2. Click 'Create Token'\n3. Choose a template or create a custom token with needed permissions\n4. Click 'Continue to summary' then 'Create Token'\n5. Copy the token value and paste it here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -199,7 +233,22 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"integration"#,
             fields: r#"[]"#,
             healthcheck_config: None,
+            services: r#"[{"toolName":"read_file","label":"Read File"},{"toolName":"list_files","label":"List Files"},{"toolName":"search_code","label":"Search Code"},{"toolName":"get_contexts","label":"Get Context Map"},{"toolName":"get_context_detail","label":"Get Context Detail"},{"toolName":"list_ideas","label":"List Ideas"},{"toolName":"create_idea","label":"Create Idea"},{"toolName":"update_idea_status","label":"Triage Idea"},{"toolName":"list_tasks","label":"List Tasks"},{"toolName":"create_task","label":"Create Task"},{"toolName":"create_branch","label":"Create Branch"},{"toolName":"apply_diff","label":"Apply Diff"},{"toolName":"run_tests","label":"Run Tests"},{"toolName":"get_git_status","label":"Get Git Status"},{"toolName":"commit_changes","label":"Commit Changes"}]"#,
+            events: r#"[{"id":"idea_created","name":"Idea Created","description":"Fired when a new idea is added to the backlog"},{"id":"task_completed","name":"Task Completed","description":"Fired when a dev task finishes execution"},{"id":"scan_completed","name":"Scan Completed","description":"Fired when a codebase scan finishes with new ideas"},{"id":"branch_created","name":"Branch Created","description":"Fired when an agent creates a new branch"},{"id":"tests_completed","name":"Tests Completed","description":"Fired when test execution finishes"}]"#,
             metadata: Some(r#"{"template_enabled":true,"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge","min_tier":"builder","summary":"Access local codebases registered in Dev Tools. Provides file access, context maps for quick orientation, and idea/task management for backlog tracking. Enables agents to read, search, analyze project files, create and triage ideas, and execute implementation tasks.","auth_type":"builtin","auth_type_label":"Project","auth_methods":[{"id":"project","label":"Dev Tools Project","type":"credential","is_default":true}]}"#),
+        },
+        BuiltinConnector {
+            id: r#"builtin-codebases"#,
+            name: r#"codebases"#,
+            label: r#"Codebases"#,
+            color: r#"#8B5CF6"#,
+            icon_url: r#"/icons/connectors/codebases.svg"#,
+            category: r#"integration"#,
+            fields: r#"[]"#,
+            healthcheck_config: None,
+            services: r#"[{"toolName":"list_projects","label":"List Projects"},{"toolName":"get_project_summary","label":"Get Project Summary"},{"toolName":"read_file","label":"Read File"},{"toolName":"list_files","label":"List Files"},{"toolName":"search_code","label":"Search Code"},{"toolName":"get_contexts","label":"Get Context Map"},{"toolName":"get_context_detail","label":"Get Context Detail"},{"toolName":"get_cross_project_map","label":"Get Cross-Project Map"},{"toolName":"analyze_cross_impact","label":"Analyze Cross-Project Impact"},{"toolName":"search_across_projects","label":"Search Across Projects"},{"toolName":"get_dependency_graph","label":"Get Dependency Graph"},{"toolName":"list_ideas","label":"List Ideas"},{"toolName":"create_idea","label":"Create Idea"},{"toolName":"create_idea_batch","label":"Create Ideas (Multi-Project)"},{"toolName":"update_idea_status","label":"Triage Idea"},{"toolName":"list_tasks","label":"List Tasks"},{"toolName":"create_task","label":"Create Task"},{"toolName":"create_branch","label":"Create Branch"},{"toolName":"apply_diff","label":"Apply Diff"},{"toolName":"run_tests","label":"Run Tests"},{"toolName":"get_git_status","label":"Get Git Status"},{"toolName":"commit_changes","label":"Commit Changes"},{"toolName":"get_portfolio_health","label":"Get Portfolio Health"},{"toolName":"get_tech_radar","label":"Get Tech Radar"},{"toolName":"get_risk_matrix","label":"Get Risk Matrix"}]"#,
+            events: r#"[{"id":"idea_created","name":"Idea Created","description":"Fired when a new idea is added to any project backlog"},{"id":"task_completed","name":"Task Completed","description":"Fired when a dev task finishes in any project"},{"id":"scan_completed","name":"Scan Completed","description":"Fired when a codebase scan finishes with new ideas"},{"id":"cross_impact_detected","name":"Cross-Impact Detected","description":"Fired when a change in one project may affect others"},{"id":"dependency_drift","name":"Dependency Drift","description":"Fired when shared dependencies diverge across projects"},{"id":"branch_created","name":"Branch Created","description":"Fired when an agent creates a new branch in a project"},{"id":"tests_completed","name":"Tests Completed","description":"Fired when test execution finishes for a project"},{"id":"portfolio_health_changed","name":"Portfolio Health Changed","description":"Fired when aggregate portfolio health score changes significantly"}]"#,
+            metadata: Some(r#"{"template_enabled":true,"is_builtin":true,"always_active":true,"connection_mode":"desktop_bridge","min_tier":"builder","summary":"Aggregate view across all Dev Tools projects. Provides cross-project impact analysis, unified code search, dependency graph comparison, an agent-driven implementation pipeline (branching, diffing, testing, committing), and portfolio-level intelligence (health scores, tech radar, risk matrix). Designed as a composable puzzle piece for agentic workflows.","auth_type":"builtin","auth_type_label":"All Projects","auth_methods":[{"id":"all_projects","label":"All Dev Tools Projects","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
             id: r#"builtin-confluence"#,
@@ -210,6 +259,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"productivity"#,
             fields: r#"[{"key":"domain","label":"Atlassian Domain","type":"text","required":true,"placeholder":"your-company.atlassian.net","helpText":"Your Confluence Cloud domain (without https://)"},{"key":"email","label":"Account Email","type":"text","required":true,"placeholder":"you@company.com","helpText":"The email address for your Atlassian account"},{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From id.atlassian.com/manage-profile/security/api-tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://{{domain}}/wiki/rest/api/space?limit=1","method":"GET","headers":{"Authorization":"Basic {{base64(email:api_token)}}","Accept":"application/json"},"description":"Validates credentials via Confluence spaces endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Confluence wiki and knowledge base for team documentation and collaboration.","auth_type":"basic_api_token","auth_type_label":"API Token","docs_url":"https://id.atlassian.com/manage-profile/security/api-tokens","setup_guide":"1. Go to id.atlassian.com/manage-profile/security/api-tokens\n2. Click 'Create API token' and give it a label\n3. Copy the generated token\n4. Enter your Atlassian email, the API token, and your domain (e.g. your-company.atlassian.net)","pricing_tier":"paid"}"#),
         },
         BuiltinConnector {
@@ -221,6 +272,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"deployment_url","label":"Deployment URL","type":"url","required":true,"placeholder":"https://your-app-123.convex.cloud","helpText":"From Convex Dashboard -> Settings -> URL"},{"key":"deploy_key","label":"Deploy Key","type":"password","required":true,"placeholder":"prod:...","helpText":"From Convex Dashboard -> Settings -> Deploy Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{deployment_url}}/version","method":"GET","headers":{},"description":"Validates Convex deployment URL is reachable"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Convex real-time backend-as-a-service with document database, serverless functions, and scheduling.","auth_type":"deploy_key","auth_type_label":"Deploy Key","docs_url":"https://docs.convex.dev/http-api/","setup_guide":"1. Open your Convex Dashboard at dashboard.convex.dev\n2. Select your project and go to Settings\n3. Copy the Deployment URL (e.g. https://your-app-123.convex.cloud)\n4. Generate or copy the Deploy Key (starts with prod:...)\n5. Paste both values here\n\nNote: Table listing requires the Professional plan. On the free Starter plan, use the Console to call your query functions directly.","pricing_tier":"free","db_type":"document","db_engine":"convex","db_features":["function_execution","schema_introspection_pro","document_browsing_pro"],"query_language":"convex","query_help":"Call Convex functions via JSON body:\n\n* Query: {\"path\": \"messages:list\", \"args\": {}}\n* Mutation: {\"path\": \"messages:send\", \"args\": {\"body\": \"Hello\"}}\n* Action: {\"path\": \"actions:doSomething\", \"args\": {}}\n\nProfessional plan also supports browsing tables by name.","auth_methods":[{"id":"deploy_key","label":"Deploy Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -232,6 +285,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"support"#,
             fields: r#"[{"key":"token_id","label":"Token ID","type":"text","required":true,"placeholder":"","helpText":"From Crisp -> Settings -> API Tokens -> Token Identifier"},{"key":"token_key","label":"Token Key","type":"password","required":true,"placeholder":"","helpText":"From Crisp -> Settings -> API Tokens -> Token Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.crisp.chat/v1/website","method":"GET","headers":{"Authorization":"Basic {{base64(token_id:token_key)}}","X-Crisp-Tier":"plugin"},"description":"Validates API token via Crisp website list endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Crisp customer messaging platform for live chat, helpdesk, and knowledge base via the Crisp REST API.","auth_type":"basic","auth_type_label":"Token Pair","docs_url":"https://docs.crisp.chat/references/rest-api/v1/","setup_guide":"1. Log in to Crisp.\n2. Go to Settings -> API Tokens (or visit app.crisp.chat/settings/token/).\n3. Create a new token pair.\n4. Copy the Token Identifier and Token Key.\n5. Paste both values here.","pricing_tier":"freemium","auth_methods":[{"id":"basic","label":"Token Pair","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -243,6 +298,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"desktop"#,
             fields: r#"[{"key":"binary_path","label":"Browser Path","type":"text","required":false,"placeholder":"chrome","helpText":"Auto-detected. Path to Chrome or Edge binary."},{"key":"cdp_port","label":"DevTools Port","type":"text","required":false,"placeholder":"9222","helpText":"Chrome DevTools Protocol port (default: 9222)"}]"#,
             healthcheck_config: None,
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Browser automation via Chrome DevTools Protocol -- navigate pages, extract data, and automate web tasks.","auth_type":"local","auth_type_label":"Local App","is_desktop":true,"required_capabilities":["process_spawn","network_local"],"auth_methods":[{"id":"local","label":"Local App","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -254,6 +311,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"devops"#,
             fields: r#"[{"key":"binary_path","label":"Binary Path","type":"text","required":false,"placeholder":"docker","helpText":"Path to Docker binary. Auto-detected if left blank."}]"#,
             healthcheck_config: None,
+            services: r#"[{"toolName":"docker_list_containers","label":"List Containers"},{"toolName":"docker_list_images","label":"List Images"},{"toolName":"docker_start","label":"Start Container"},{"toolName":"docker_stop","label":"Stop Container"},{"toolName":"docker_logs","label":"Container Logs"},{"toolName":"docker_exec","label":"Exec in Container"},{"toolName":"docker_compose_up","label":"Compose Up"},{"toolName":"docker_compose_down","label":"Compose Down"}]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Docker container management -- list, start, stop, inspect containers and run compose stacks via desktop bridge.","auth_type":"desktop_bridge","auth_type_label":"Desktop Bridge","connection_mode":"desktop_bridge","bridge_name":"docker","docs_url":"https://docs.docker.com/reference/cli/docker/","setup_guide":"1. Ensure Docker Desktop or Docker Engine is installed\n2. The 'docker' command should be available in your PATH\n3. Click Detect to scan for Docker\n4. Approve the requested capabilities","pricing_tier":"free","capabilities":["process_spawn","network_local"]}"#),
         },
         BuiltinConnector {
@@ -265,6 +324,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"productivity"#,
             fields: r#"[{"key":"vault_path","label":"Vault Path","type":"text","required":false,"placeholder":"~/Documents/MyVault","helpText":"Path to your Obsidian vault. Auto-detected if left blank."},{"key":"api_port","label":"Local REST API Port","type":"text","required":false,"placeholder":"27124","helpText":"Port for the Obsidian Local REST API plugin (optional)"},{"key":"api_key","label":"API Key","type":"password","required":false,"placeholder":"","helpText":"API key for the Local REST API plugin (optional)"}]"#,
             healthcheck_config: None,
+            services: r#"[{"toolName":"obsidian_list_notes","label":"List Notes"},{"toolName":"obsidian_read_note","label":"Read Note"},{"toolName":"obsidian_write_note","label":"Write Note"},{"toolName":"obsidian_search","label":"Search Notes"},{"toolName":"obsidian_vault_structure","label":"Vault Structure"},{"toolName":"obsidian_append","label":"Append to Note"}]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Obsidian note-taking integration -- read, write, search, and navigate your knowledge vault via desktop bridge.","auth_type":"desktop_bridge","auth_type_label":"Desktop Bridge","connection_mode":"desktop_bridge","bridge_name":"obsidian","docs_url":"https://obsidian.md/","setup_guide":"1. Ensure Obsidian is installed on your system\n2. Optionally install the Local REST API plugin for richer access\n3. Click Detect to scan for Obsidian vaults\n4. Approve the requested capabilities","pricing_tier":"free","capabilities":["file_read","file_write","network_local"]}"#),
         },
         BuiltinConnector {
@@ -276,6 +337,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"devops"#,
             fields: r#"[{"key":"shell","label":"Shell","type":"text","required":false,"placeholder":"bash","helpText":"Preferred shell (bash, zsh, powershell). Auto-detected if left blank."}]"#,
             healthcheck_config: None,
+            services: r#"[{"toolName":"terminal_execute","label":"Execute Command"},{"toolName":"terminal_read_file","label":"Read File"},{"toolName":"terminal_write_file","label":"Write File"},{"toolName":"terminal_list_dir","label":"List Directory"},{"toolName":"terminal_path_exists","label":"Check Path"}]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"System terminal access -- execute commands, read/write files, and navigate the filesystem via desktop bridge.","auth_type":"desktop_bridge","auth_type_label":"Desktop Bridge","connection_mode":"desktop_bridge","bridge_name":"terminal","docs_url":"","setup_guide":"1. A shell (bash, zsh, or PowerShell) must be available on your system\n2. Click Detect to scan for available shells\n3. Approve the requested capabilities -- terminal has elevated permissions","pricing_tier":"free","capabilities":["process_spawn","file_read","file_write","env_read"]}"#),
         },
         BuiltinConnector {
@@ -287,6 +350,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"devops"#,
             fields: r#"[{"key":"binary_path","label":"Binary Path","type":"text","required":false,"placeholder":"code","helpText":"Path to VS Code binary. Auto-detected if left blank."}]"#,
             healthcheck_config: None,
+            services: r#"[{"toolName":"vscode_open_file","label":"Open File"},{"toolName":"vscode_open_folder","label":"Open Folder"},{"toolName":"vscode_diff","label":"Diff Files"},{"toolName":"vscode_extensions","label":"List Extensions"},{"toolName":"vscode_install_ext","label":"Install Extension"},{"toolName":"vscode_run_task","label":"Run Task"}]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"VS Code editor integration -- open files, manage extensions, run tasks, and diff via desktop bridge.","auth_type":"desktop_bridge","auth_type_label":"Desktop Bridge","connection_mode":"desktop_bridge","bridge_name":"vscode","docs_url":"https://code.visualstudio.com/docs/editor/command-line","setup_guide":"1. Ensure VS Code is installed on your system\n2. The 'code' command should be available in your PATH\n3. Click Detect to scan for VS Code\n4. Approve the requested capabilities","pricing_tier":"free","capabilities":["file_read","file_write","process_spawn"]}"#),
         },
         BuiltinConnector {
@@ -298,6 +363,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"messaging"#,
             fields: r#"[{"key":"bot_token","label":"Bot Token","type":"password","required":true,"placeholder":"","helpText":"From Discord Developer Portal -> Bot -> Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://discord.com/api/v10/users/@me","method":"GET","headers":{"Authorization":"Bot {{bot_token}}"},"description":"Validates bot token via Discord users/@me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Discord bot integration for server messaging, moderation, and notifications.","auth_type":"bot_token","auth_type_label":"Bot Token","docs_url":"https://discord.com/developers/applications","setup_guide":"1. Go to discord.com/developers/applications\n2. Click 'New Application' or select an existing one\n3. Go to the 'Bot' section in the sidebar\n4. Click 'Reset Token' (or 'Add Bot' first if needed)\n5. Copy the bot token and paste it here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -309,6 +376,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"storage"#,
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"sl.u...","helpText":"From Dropbox App Console -> Generate Access Token (or use OAuth flow)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.dropboxapi.com/2/users/get_current_account","method":"POST","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Dropbox current account endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Dropbox cloud storage for file sync, sharing, and collaboration.","auth_type":"pat","auth_type_label":"Access Token","docs_url":"https://www.dropbox.com/developers/apps","setup_guide":"1. Go to dropbox.com/developers/apps\n2. Click 'Create app' or select an existing app\n3. Under the 'Settings' tab, find 'Generated access token'\n4. Click 'Generate' and copy the sl.u... token\n5. Paste the access token here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -320,6 +389,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"database_path","label":"Database Path","type":"text","required":true,"placeholder":"/path/to/data.duckdb","helpText":"File path to the DuckDB database (or :memory: for in-memory)"},{"key":"motherduck_token","label":"MotherDuck Token","type":"password","required":false,"placeholder":"eyJ...","helpText":"Optional: MotherDuck service token for cloud-hosted DuckDB"}]"#,
             healthcheck_config: None,
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"DuckDB embedded analytical database for OLAP workloads, Parquet, CSV, and JSON.","auth_type":"file_path","auth_type_label":"Database Path","docs_url":"https://duckdb.org/docs/connect/overview","setup_guide":"1. Provide the file path to your .duckdb database file\n2. Use :memory: for an in-memory database\n3. For MotherDuck cloud: provide your service token from app.motherduck.com\n4. DuckDB can also query Parquet/CSV files directly via SQL","pricing_tier":"free","auth_variants":[{"id":"local","label":"Local File","fields":["database_path"],"auth_type_label":"Database Path"},{"id":"motherduck","label":"MotherDuck Cloud","fields":["database_path","motherduck_token"],"auth_type_label":"MotherDuck Token"}]}"#),
         },
         BuiltinConnector {
@@ -331,6 +402,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"design"#,
             fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"figd_...","helpText":"From Figma -> Settings -> Personal Access Tokens -> Generate"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.figma.com/v1/me","method":"GET","headers":{"X-Figma-Token":"{{personal_access_token}}"},"description":"Validates personal access token via Figma me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Figma collaborative design tool for UI/UX, prototyping, and design systems.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://www.figma.com/developers/api","setup_guide":"1. Open Figma and go to Settings (click your avatar)\n2. Scroll to 'Personal Access Tokens'\n3. Click 'Generate new token' and name it\n4. Copy the figd_... token and paste it here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -342,6 +415,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"forms"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to Formbricks -> Settings -> API Keys -> Add API Key"},{"key":"base_url","label":"Instance URL","type":"url","required":false,"placeholder":"https://app.formbricks.com","helpText":"Your Formbricks instance URL (defaults to formbricks.com cloud)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://app.formbricks.com}}/api/v1/me","method":"GET","headers":{"x-api-key":"{{api_key}}"},"description":"Validates API key via Formbricks /me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Formbricks open-source survey and feedback platform for in-app surveys, links, and website pop-ups.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://formbricks.com/docs/api/overview","setup_guide":"1. Log in to Formbricks (app.formbricks.com or self-hosted).\n2. Go to Settings -> API Keys.\n3. Click 'Add API Key' and copy the key.\n4. Paste the key here. If self-hosted, also enter your instance URL.","pricing_tier":"free","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -353,6 +428,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"ai"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"AIza...","helpText":"From Google AI Studio (aistudio.google.com) -> Get API Key"},{"key":"model","label":"Model","type":"select","required":false,"options":["gemini-3-flash-preview","gemini-2.5-flash","gemini-2.5-pro"],"helpText":"Gemini 3 Flash Preview is the latest. 2.5 Flash has generous free tier (1,500 req/day). Pro is most accurate."}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://generativelanguage.googleapis.com/v1beta/models?key={{api_key}}","method":"GET","description":"Lists available Gemini models to validate the API key"}"#),
+            services: r#"[{"toolName":"gemini_vision_ocr","label":"OCR / Text Extraction"},{"toolName":"gemini_vision_analyze","label":"Image Analysis"}]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Google Gemini Vision API for OCR, document understanding, and image analysis. Supports images and PDFs natively with up to 3,600 pages per request.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://ai.google.dev/gemini-api/docs","setup_guide":"1. Go to aistudio.google.com\n2. Click 'Get API Key' in the top-right\n3. Create a new API key (or use existing)\n4. Copy the key and paste it here\n\nFree tier: 1,500 requests/day for Flash, 50 requests/day for Pro.","pricing_tier":"freemium"}"#),
         },
         BuiltinConnector {
@@ -364,6 +441,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"automation"#,
             fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"ghp_...","helpText":"Generate at github.com/settings/tokens -- needs 'repo' and 'workflow' scopes"},{"key":"default_repo","label":"Default Repository","type":"text","required":false,"placeholder":"owner/repo","helpText":"Optional: default repository for workflow dispatches"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.github.com/user","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}","Accept":"application/vnd.github+json","User-Agent":"personas-desktop"},"description":"Validates PAT via GitHub user endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"GitHub Actions CI/CD -- dispatch workflows, check run status, and manage automations from your agent.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://github.com/settings/tokens","is_platform":true,"platform_type":"github_actions","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -375,6 +454,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"devops"#,
             fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"ghp_...","helpText":"Generate at github.com/settings/tokens with required scopes"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.github.com/user","method":"GET","headers":{"Authorization":"Bearer {{personal_access_token}}","Accept":"application/vnd.github+json","User-Agent":"personas-desktop"},"description":"Validates PAT via GitHub user endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"GitHub for repositories, issues, pull requests, and CI/CD.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://github.com/settings/tokens","setup_guide":"1. Go to github.com/settings/tokens?type=beta for fine-grained tokens\n2. Click 'Generate new token', set expiration and repository access\n3. Select required permissions: Contents (read), Issues (read/write), Pull requests (read/write)\n4. Click 'Generate token' and copy the github_pat_... value","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -386,6 +467,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"devops"#,
             fields: r#"[{"key":"personal_access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"glpat-...","helpText":"Generate at GitLab > Settings > Access Tokens with api scope"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://gitlab.com/api/v4/user","method":"GET","headers":{"PRIVATE-TOKEN":"{{personal_access_token}}"},"description":"Validates PAT via GitLab user endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"GitLab for repositories, CI/CD pipelines, issues, and merge requests.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://docs.gitlab.com/ee/api/rest/","setup_guide":"1. Go to GitLab > User Settings > Access Tokens\n2. Click 'Add new token', set a name and expiration\n3. Select the 'api' scope for full API access\n4. Click 'Create personal access token' and copy the glpat-... value","pricing_tier":"free","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -397,7 +480,22 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"email"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Gmail email automation for reading, sending, and managing messages via the Gmail API v1.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"google","oauth_scopes":["https://www.googleapis.com/auth/gmail.modify","https://www.googleapis.com/auth/gmail.send","https://www.googleapis.com/auth/gmail.readonly"],"docs_url":"https://developers.google.com/workspace/gmail/api/reference/rest","setup_guide":"1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable the Gmail API.\n3. Configure OAuth consent screen and add authorized test users.\n4. In Personas, click Authorize with Google.\n5. Complete consent in your browser.\n6. Return to Personas; token metadata is saved automatically.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@googleworkspace/cli","transport":"stdio","suggested_env":{"GOOGLE_CLIENT_ID":"","GOOGLE_CLIENT_SECRET":"","GOOGLE_REFRESH_TOKEN":""}}]}"#),
+        },
+        BuiltinConnector {
+            id: r#"builtin-google-ads"#,
+            name: r#"google_ads"#,
+            label: r#"Google Ads"#,
+            color: r#"#4285F4"#,
+            icon_url: r#"/icons/connectors/google-ads.svg"#,
+            category: r#"analytics"#,
+            fields: r#"[{"key":"developer_token","label":"Developer Token","type":"password","required":true,"placeholder":"aBcDeFgHiJkLmNoPqRs","helpText":"Find at ads.google.com → Tools & Settings → API Center"}]"#,
+            healthcheck_config: Some(r#"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
+            metadata: Some(r#"{"template_enabled":true,"summary":"Google Ads campaign management for creating, monitoring, and optimizing advertising campaigns via the Google Ads REST API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"google","oauth_scopes":["https://www.googleapis.com/auth/adwords"],"docs_url":"https://developers.google.com/google-ads/api/rest/overview","setup_guide":"1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable the Google Ads API.\n3. Apply for a developer token at ads.google.com → Tools & Settings → API Center.\n4. Configure OAuth consent screen and add authorized test users.\n5. In Personas, paste your developer token, then click Authorize with Google.\n6. Complete consent in your browser.\n7. Return to Personas; token metadata is saved automatically.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@googleads/google-ads-mcp","transport":"stdio","suggested_env":{"GOOGLE_ADS_DEVELOPER_TOKEN":"","GOOGLE_CLIENT_ID":"","GOOGLE_CLIENT_SECRET":"","GOOGLE_REFRESH_TOKEN":""}}]}"#),
         },
         BuiltinConnector {
             id: r#"builtin-google-calendar"#,
@@ -408,6 +506,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"scheduling"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Google Calendar scheduling for creating, reading, and managing calendar events via the Calendar API v3.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"google","oauth_scopes":["https://www.googleapis.com/auth/calendar","https://www.googleapis.com/auth/calendar.events","https://www.googleapis.com/auth/calendar.readonly"],"docs_url":"https://developers.google.com/calendar/api/v3/reference","setup_guide":"1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable the Google Calendar API.\n3. Configure OAuth consent screen and add authorized test users.\n4. In Personas, click Authorize with Google.\n5. Complete consent in your browser.\n6. Return to Personas; token metadata is saved automatically.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@googleworkspace/cli","transport":"stdio","suggested_env":{"GOOGLE_CLIENT_ID":"","GOOGLE_CLIENT_SECRET":"","GOOGLE_REFRESH_TOKEN":""}}]}"#),
         },
         BuiltinConnector {
@@ -419,6 +519,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Google Sheets spreadsheet-as-database for reading, writing, and managing structured data via the Sheets API v4.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"google","oauth_scopes":["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/spreadsheets.readonly","https://www.googleapis.com/auth/drive.file"],"docs_url":"https://developers.google.com/workspace/sheets/api/reference/rest","setup_guide":"1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable the Google Sheets API.\n3. Configure OAuth consent screen and add authorized test users.\n4. In Personas, click Authorize with Google.\n5. Complete consent in your browser.\n6. Return to Personas; token metadata is saved automatically.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@googleworkspace/cli","transport":"stdio","suggested_env":{"GOOGLE_CLIENT_ID":"","GOOGLE_CLIENT_SECRET":"","GOOGLE_REFRESH_TOKEN":""}}]}"#),
         },
         BuiltinConnector {
@@ -430,6 +532,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"productivity"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://www.googleapis.com/oauth2/v1/userinfo?alt=json","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Google OAuth identity access"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"recommended":true,"summary":"Google Workspace consent-first template for Gmail, Drive, and Calendar automation.","setup_instructions":"1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable Gmail API, Google Drive API, and Google Calendar API.\n3. Configure OAuth consent screen and add authorized test users.\n4. In Personas, click Authorize with Google.\n5. Complete consent in your browser.\n6. Return to Personas; token metadata is saved automatically.","oauth_type":"google","auth_type":"oauth","auth_type_label":"OAuth","docs_url":"https://console.cloud.google.com/apis/credentials","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@anthropic/mcp-google-workspace","transport":"stdio","suggested_env":{"GOOGLE_CLIENT_ID":"","GOOGLE_CLIENT_SECRET":"","GOOGLE_REFRESH_TOKEN":""}}]}"#),
         },
         BuiltinConnector {
@@ -441,6 +545,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"crm"#,
             fields: r#"[{"key":"access_token","label":"Private App Access Token","type":"password","required":true,"placeholder":"pat-...","helpText":"From HubSpot -> Settings -> Integrations -> Private Apps -> Create"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.hubapi.com/crm/v3/objects/contacts?limit=1","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via HubSpot contacts endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"HubSpot CRM for contacts, deals, marketing automation, and sales pipelines.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developers.hubspot.com/docs/api/private-apps","setup_guide":"1. Go to HubSpot -> Settings -> Integrations -> Private Apps\n2. Click 'Create a private app'\n3. Name it and select the scopes you need\n4. Click 'Create app' then copy the pat-... access token","pricing_tier":"paid"}"#),
         },
         BuiltinConnector {
@@ -452,6 +558,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"project-mgmt"#,
             fields: r#"[{"key":"domain","label":"Atlassian Domain","type":"text","required":true,"placeholder":"your-company.atlassian.net","helpText":"Your Jira Cloud domain (without https://)"},{"key":"email","label":"Account Email","type":"text","required":true,"placeholder":"you@company.com","helpText":"The email address for your Atlassian account"},{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"From id.atlassian.com/manage-profile/security/api-tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://{{domain}}/rest/api/3/myself","method":"GET","headers":{"Authorization":"Basic {{base64(email:api_token)}}","Accept":"application/json"},"description":"Validates credentials via Jira myself endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Jira issue tracking and project management for agile software teams.","auth_type":"basic_api_token","auth_type_label":"API Token","docs_url":"https://id.atlassian.com/manage-profile/security/api-tokens","setup_guide":"1. Go to id.atlassian.com/manage-profile/security/api-tokens\n2. Click 'Create API token' and give it a label\n3. Copy the generated token\n4. Enter your Atlassian email, the API token, and your Jira domain (e.g. your-company.atlassian.net)","pricing_tier":"paid"}"#),
         },
         BuiltinConnector {
@@ -463,6 +571,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"notifications"#,
             fields: r#"[{"key":"api_key","label":"Secret API Key","type":"password","required":true,"placeholder":"sk_...","helpText":"From Knock dashboard -> Developers -> API Keys -> Secret key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.knock.app/v1/users?page_size=1","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Knock users list endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Knock notification infrastructure for orchestrating cross-channel notifications with preferences and workflows.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.knock.app/reference","setup_guide":"1. Sign up at dashboard.knock.app.\n2. Go to Developers -> API Keys.\n3. Copy the secret API key (starts with sk_).\n4. Paste it here.","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -474,6 +584,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"cloud"#,
             fields: r#"[{"key":"api_server","label":"API Server URL","type":"url","required":true,"placeholder":"https://my-cluster.example.com:6443","helpText":"Kubernetes API server URL (find with: kubectl cluster-info)"},{"key":"token","label":"Bearer Token","type":"password","required":true,"placeholder":"eyJhbGciOi...","helpText":"Service account token (find with: kubectl create token <sa-name>)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{api_server}}/api","method":"GET","headers":{"Authorization":"Bearer {{token}}"},"description":"Validates token via Kubernetes API versions endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Kubernetes container orchestration for managing clusters, pods, and deployments.","auth_type":"pat","auth_type_label":"Bearer Token","docs_url":"https://kubernetes.io/docs/reference/kubernetes-api/","setup_guide":"1. Run: kubectl cluster-info (to get the API server URL)\n2. Create a service account: kubectl create serviceaccount personas-sa\n3. Bind a role: kubectl create clusterrolebinding personas-binding --clusterrole=view --serviceaccount=default:personas-sa\n4. Generate a token: kubectl create token personas-sa\n5. Paste the API server URL and token","pricing_tier":"free","auth_methods":[{"id":"pat","label":"Bearer Token","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"mcp-server-kubernetes","transport":"stdio","suggested_env":{}}]}"#),
         },
         BuiltinConnector {
@@ -485,6 +597,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"ecommerce"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Go to app.lemonsqueezy.com -> Settings -> API -> Create API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.lemonsqueezy.com/v1/users/me","method":"GET","headers":{"Accept":"application/vnd.api+json","Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Lemon Squeezy /users/me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Lemon Squeezy digital commerce platform for selling digital products, subscriptions, and SaaS via the Lemon Squeezy API v1.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.lemonsqueezy.com/api","setup_guide":"1. Log in to app.lemonsqueezy.com.\n2. Go to Settings -> API.\n3. Click 'Create API Key'.\n4. Copy the key and paste it here.","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -496,6 +610,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"ai"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Generate at app.leonardo.ai/api-access"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://cloud.leonardo.ai/api/rest/v1/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Leonardo AI /me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Leonardo AI generative image and video platform for creative content.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.leonardo.ai/docs/getting-started","setup_guide":"1. Go to app.leonardo.ai and sign in\n2. Click API Access in the left sidebar\n3. Click 'Create New Key' and name it\n4. Copy the generated API key","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -507,6 +623,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"project-mgmt"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"lin_api_...","helpText":"From Linear -> Settings -> API -> Personal API keys"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.linear.app/graphql","method":"POST","headers":{"Authorization":"{{api_key}}","Content-Type":"application/json"},"body":"{\"query\":\"{ viewer { id } }\"}","description":"Validates API key via Linear GraphQL viewer query"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Linear issue tracking for software teams with cycles, projects, and triage.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://linear.app/settings/api","setup_guide":"1. Go to linear.app/settings/api and sign in\n2. Under 'Personal API keys', click 'Create key'\n3. Give it a descriptive label\n4. Copy the lin_api_... key value","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -518,6 +636,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"social"#,
             fields: r#"[{"key":"client_id","label":"Client ID","type":"text","required":true,"placeholder":"86abc123def456","helpText":"From LinkedIn Developer Portal -> My Apps -> Auth tab"},{"key":"client_secret","label":"Client Secret","type":"password","required":true,"placeholder":"","helpText":"From LinkedIn Developer Portal -> My Apps -> Auth tab"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.linkedin.com/v2/userinfo","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates OAuth token via LinkedIn userinfo endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"LinkedIn professional network for profile, connections, and social posts.","auth_type":"oauth","auth_type_label":"OAuth","oauth_provider_id":"linkedin","oauth_scopes":["openid","profile","email","w_member_social"],"docs_url":"https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow","setup_guide":"1. Go to linkedin.com/developers and create a new app\n2. Under Products, request access to 'Sign In with LinkedIn using OpenID Connect' and 'Share on LinkedIn'\n3. Go to Auth tab and copy Client ID and Client Secret\n4. Add http://127.0.0.1 as an Authorized Redirect URL (the port is assigned dynamically)\n5. Paste Client ID and Client Secret here, then click Authorize with LinkedIn","pricing_tier":"free","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -529,6 +649,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"messaging"#,
             fields: r#"[]"#,
             healthcheck_config: None,
+            services: r#"[{"toolName":"send_notification","label":"Send Notification"},{"toolName":"send_message","label":"Send Message"}]"#,
+            events: r#"[{"eventType":"message_received","label":"Message Received"}]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Built-in in-app messaging channel. Agents can send notifications and messages to the Personas inbox without external services.","auth_type":"none","auth_type_label":"Built-in (Local)","connection_mode":"local","capabilities":["messaging","notifications"],"docs_url":"","setup_guide":"Local messaging works out of the box. No configuration needed — agents publish messages to the in-app inbox."}"#),
         },
         BuiltinConnector {
@@ -540,6 +662,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"scheduling"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Microsoft Outlook Calendar scheduling for creating, reading, and managing calendar events via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_scopes":["User.Read","Calendars.Read","Calendars.ReadWrite","offline_access"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/calendar","setup_guide":"1. Go to the Azure Portal -> Microsoft Entra ID -> App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Calendars.Read, Calendars.ReadWrite.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@softeria/ms-365-mcp-server","transport":"stdio","suggested_env":{"MICROSOFT_CLIENT_ID":"","MICROSOFT_CLIENT_SECRET":"","MICROSOFT_TENANT_ID":""}}]}"#),
         },
         BuiltinConnector {
@@ -551,6 +675,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Microsoft Excel spreadsheet automation for reading, writing, and managing workbook data via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_scopes":["User.Read","Files.Read","Files.ReadWrite","offline_access"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/excel","setup_guide":"1. Go to the Azure Portal -> Microsoft Entra ID -> App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Files.Read, Files.ReadWrite.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@softeria/ms-365-mcp-server","transport":"stdio","suggested_env":{"MICROSOFT_CLIENT_ID":"","MICROSOFT_CLIENT_SECRET":"","MICROSOFT_TENANT_ID":""}}]}"#),
         },
         BuiltinConnector {
@@ -562,6 +688,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"email"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Microsoft Outlook email, calendar, and contacts automation via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_scopes":["User.Read","Mail.Read","Mail.Send","Calendars.Read","Contacts.Read","offline_access"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/mail-api-overview","setup_guide":"1. Go to the Azure Portal -> Microsoft Entra ID -> App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Mail.Read, Mail.Send, Calendars.Read, Contacts.Read.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@softeria/ms-365-mcp-server","transport":"stdio","suggested_env":{"MICROSOFT_CLIENT_ID":"","MICROSOFT_CLIENT_SECRET":"","MICROSOFT_TENANT_ID":""}}]}"#),
         },
         BuiltinConnector {
@@ -573,6 +701,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"messaging"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Microsoft Teams messaging for sending messages, managing channels, and team collaboration via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_scopes":["User.Read","Chat.ReadWrite","ChannelMessage.Send","Team.ReadBasic.All","Channel.ReadBasic.All","offline_access"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/teams-api-overview","setup_guide":"1. Go to the Azure Portal -> Microsoft Entra ID -> App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Chat.ReadWrite, ChannelMessage.Send, Team.ReadBasic.All, Channel.ReadBasic.All.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@softeria/ms-365-mcp-server","transport":"stdio","suggested_env":{"MICROSOFT_CLIENT_ID":"","MICROSOFT_CLIENT_SECRET":"","MICROSOFT_TENANT_ID":""}}]}"#),
         },
         BuiltinConnector {
@@ -584,6 +714,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"analytics"#,
             fields: r#"[{"key":"service_account_username","label":"Service Account Username","type":"text","required":true,"placeholder":"","helpText":"From Mixpanel -> Organization Settings -> Service Accounts"},{"key":"service_account_secret","label":"Service Account Secret","type":"password","required":true,"placeholder":"","helpText":"The secret paired with the service account username"},{"key":"project_id","label":"Project ID","type":"text","required":true,"placeholder":"","helpText":"From Mixpanel -> Project Settings -> Project ID"},{"key":"project_token","label":"Project Token","type":"password","required":false,"placeholder":"","helpText":"From Mixpanel -> Project Settings -> Access Keys -> Project Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://mixpanel.com/api/app/me","method":"GET","headers":{"Authorization":"Basic {{base64(service_account_username:service_account_secret)}}"},"description":"Validates service account via Mixpanel app/me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Mixpanel product analytics with GDPR-compliant data access.","auth_type":"project_secret","auth_type_label":"Service Account","docs_url":"https://developer.mixpanel.com/reference/project-secret","setup_guide":"1. Go to Mixpanel -> Organization Settings -> Service Accounts\n2. Click 'Add Service Account' and note the username and secret\n3. Go to Project Settings to find your Project ID\n4. Enter the service account username, secret, and project ID here","pricing_tier":"paid","auth_variants":[{"id":"service_account","label":"Service Account","fields":["service_account_username","service_account_secret","project_id"],"auth_type_label":"Service Account"},{"id":"project_token","label":"Project Token","fields":["project_id","project_token"],"auth_type_label":"Project Token"}]}"#),
         },
         BuiltinConnector {
@@ -595,6 +727,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"project-mgmt"#,
             fields: r#"[{"key":"api_key_v2","label":"API v2 Token","type":"password","required":true,"placeholder":"eyJ...","helpText":"From monday.com -> Avatar -> Developers -> My Access Tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.monday.com/v2","method":"POST","headers":{"Authorization":"{{api_key_v2}}","Content-Type":"application/json"},"body":"{\"query\":\"{ me { id } }\"}","description":"Validates API token via Monday GraphQL endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Monday.com work management platform for projects, workflows, and CRM.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://developer.monday.com/api-reference/docs/authentication","setup_guide":"1. Go to monday.com and sign in to your account\n2. Click your avatar -> Administration -> API\n3. Copy your personal API token (or generate a new one)\n4. Paste the token value here","pricing_tier":"paid"}"#),
         },
         BuiltinConnector {
@@ -606,6 +740,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"connection_string","label":"Connection String","type":"password","required":true,"placeholder":"mongodb+srv://user:password@cluster.xxxxx.mongodb.net/dbname","helpText":"MongoDB connection URI from Atlas or your self-hosted instance"},{"key":"database_name","label":"Database Name","type":"text","required":false,"placeholder":"mydb","helpText":"Default database to connect to (can also be in connection string)"}]"#,
             healthcheck_config: None,
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"MongoDB document database with flexible schemas, aggregation pipelines, and Atlas cloud.","auth_type":"connection_string","auth_type_label":"Connection String","docs_url":"https://www.mongodb.com/docs/manual/reference/connection-string/","setup_guide":"1. For Atlas: go to cloud.mongodb.com -> Database -> Connect -> Drivers\n2. Copy the connection string (mongodb+srv://...)\n3. Replace <password> with your database user password\n4. Optionally specify the default database name\n5. For self-hosted: use mongodb://user:pass@host:27017/dbname","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -617,6 +753,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"automation"#,
             fields: r#"[{"key":"base_url","label":"Instance URL","type":"url","required":true,"placeholder":"https://your-instance.n8n.cloud","helpText":"Your n8n instance URL (cloud or self-hosted)"},{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"n8n_api_...","helpText":"Generate at Settings -> API -> Create API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url}}/api/v1/workflows?limit=1","method":"GET","headers":{"X-N8N-API-KEY":"{{api_key}}"},"description":"Validates API key by listing workflows"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"n8n workflow automation platform -- connect to push, activate, and trigger workflows directly from your agent.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.n8n.io/api/","is_platform":true,"platform_type":"n8n","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -628,6 +766,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From Neon Console -> Account Settings -> API Keys -> Generate"},{"key":"connection_string","label":"Connection String","type":"password","required":false,"placeholder":"postgresql://user:pass@ep-xxx.region.aws.neon.tech/dbname","helpText":"Optional: PostgreSQL connection string for direct database access"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://console.neon.tech/api/v2/projects","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Neon projects endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Neon serverless Postgres with branching, autoscaling, and bottomless storage.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://neon.tech/docs/manage/api-keys","setup_guide":"1. Go to console.neon.tech and sign in\n2. Navigate to Account settings -> API Keys\n3. Click 'Create new API Key' and name it\n4. Copy the generated API key value","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -639,6 +779,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"cloud"#,
             fields: r#"[{"key":"access_token","label":"Personal Access Token","type":"password","required":true,"placeholder":"","helpText":"From Netlify -> User Settings -> Applications -> Personal Access Tokens"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.netlify.com/api/v1/user","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Netlify user endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Netlify web deployment platform with serverless functions and form handling.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://app.netlify.com/user/applications#personal-access-tokens","setup_guide":"1. Go to app.netlify.com/user/applications#personal-access-tokens\n2. Click 'New access token'\n3. Enter a description and click 'Generate token'\n4. Copy the token and paste it here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -650,6 +792,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"api_key","label":"Integration Token","type":"password","required":true,"placeholder":"ntn_...","helpText":"Create an internal integration at notion.so/my-integrations"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.notion.com/v1/users/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}","Notion-Version":"2022-06-28"},"description":"Validates integration token via users/me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Notion workspace for knowledge bases, wikis, and project management.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://www.notion.so/my-integrations","setup_guide":"1. Go to notion.so/my-integrations\n2. Click 'New integration' and name it\n3. Select the workspace and set capabilities\n4. Click 'Submit' then copy the ntn_... internal integration token\n5. Share relevant Notion pages with the integration","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -661,6 +805,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"notifications"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From Novu dashboard -> Settings -> API Keys"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.novu.co/v1/environments/me","method":"GET","headers":{"Authorization":"ApiKey {{api_key}}"},"description":"Validates API key via Novu environment endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Novu open-source notification infrastructure for in-app, email, SMS, push, and chat notifications via the Novu API.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.novu.co/api-reference/overview","setup_guide":"1. Sign up at web.novu.co.\n2. Go to Settings -> API Keys.\n3. Copy the API key for your environment.\n4. Paste it here.","pricing_tier":"freemium","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@novu/mcp","transport":"stdio","suggested_env":{"NOVU_API_KEY":""}}]}"#),
         },
         BuiltinConnector {
@@ -672,6 +818,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"notifications"#,
             fields: r#"[{"key":"base_url","label":"Server URL","type":"url","required":false,"placeholder":"https://ntfy.sh","helpText":"Your ntfy server URL (defaults to ntfy.sh public server)"},{"key":"access_token","label":"Access Token","type":"password","required":false,"placeholder":"tk_...","helpText":"Optional -- only needed for access-controlled topics"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://ntfy.sh}}/v1/health","method":"GET","headers":{},"description":"Validates ntfy server availability via health endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"ntfy open-source push notification service for sending notifications to phones and desktops via simple HTTP.","auth_type":"pat","auth_type_label":"Access Token","docs_url":"https://docs.ntfy.sh/","setup_guide":"1. Go to ntfy.sh (or your self-hosted instance).\n2. Optionally create an account for access-controlled topics.\n3. Generate an access token under Account -> Access Tokens.\n4. Paste the token and server URL here.","pricing_tier":"free","auth_methods":[{"id":"pat","label":"Access Token","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -683,6 +831,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"productivity"#,
             fields: r#"[{"key":"base_url","label":"Server URL","type":"url","required":false,"placeholder":"https://127.0.0.1:27124","helpText":"URL of your Obsidian Local REST API server (defaults to https://127.0.0.1:27124)"},{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"Find in Obsidian Settings > Local REST API > API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://127.0.0.1:27124}}/","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Obsidian Local REST API root endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Obsidian vault access via the Local REST API plugin for reading, writing, and searching notes.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://coddingtonbear.github.io/obsidian-local-rest-api/","setup_guide":"1. Install the Local REST API plugin from Obsidian Community Plugins\n2. Enable the plugin in Obsidian Settings\n3. Copy the API Key from Settings > Local REST API\n4. Paste the API Key here\n5. Optionally set a custom server URL (default: https://127.0.0.1:27124)","pricing_tier":"free","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"obsidian-mcp-server","transport":"stdio","suggested_env":{"OBSIDIAN_API_KEY":"","OBSIDIAN_API_URL":"https://127.0.0.1:27124"}}]}"#),
         },
         BuiltinConnector {
@@ -694,6 +844,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"productivity"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me/drive","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me/drive endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"OneDrive file storage and document management for uploading, downloading, and organizing files via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_scopes":["User.Read","Files.Read","Files.ReadWrite","offline_access"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/onedrive","setup_guide":"1. Go to the Azure Portal -> Microsoft Entra ID -> App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Files.Read, Files.ReadWrite.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@softeria/ms-365-mcp-server","transport":"stdio","suggested_env":{"MICROSOFT_CLIENT_ID":"","MICROSOFT_CLIENT_SECRET":"","MICROSOFT_TENANT_ID":""}}]}"#),
         },
         BuiltinConnector {
@@ -705,6 +857,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"design"#,
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Generate at your Penpot instance -> Profile -> Access Tokens"},{"key":"base_url","label":"Instance URL","type":"url","required":false,"placeholder":"https://design.penpot.app","helpText":"Your Penpot instance URL (defaults to penpot.app cloud)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url|https://design.penpot.app}}/api/rpc/command/get-profile","method":"GET","headers":{"Authorization":"Token {{access_token}}"},"description":"Validates access token via Penpot get-profile endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Penpot open-source design platform for prototyping, components, and design tokens.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://penpot.app/developers","setup_guide":"1. Log in to your Penpot instance (design.penpot.app or self-hosted).\n2. Go to Profile -> Access Tokens.\n3. Create a new token and copy it.\n4. Paste the token here. If self-hosted, also enter your instance URL.","pricing_tier":"free","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -716,6 +870,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[]"#,
             healthcheck_config: None,
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"is_builtin":true,"always_active":true,"summary":"Local SQLite database managed by Personas. Available on first launch -- agents can create tables, store data, and run SQL queries without any external service.","auth_type":"builtin","auth_type_label":"Built-in","auth_methods":[{"id":"builtin","label":"Built-in","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -727,6 +883,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"crm"#,
             fields: r#"[{"key":"api_token","label":"API Token","type":"password","required":true,"placeholder":"","helpText":"Go to Pipedrive -> Settings -> Personal preferences -> API -> Your personal API token"},{"key":"domain","label":"Company Domain","type":"text","required":true,"placeholder":"yourcompany","helpText":"Your Pipedrive subdomain (e.g., 'yourcompany' from yourcompany.pipedrive.com)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://{{domain}}.pipedrive.com/api/v1/users/me?api_token={{api_token}}","method":"GET","headers":{},"description":"Validates API token via Pipedrive /users/me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Pipedrive CRM for managing deals, contacts, activities, and sales pipelines via the Pipedrive REST API.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://developers.pipedrive.com/docs/api/v1","setup_guide":"1. Log in to Pipedrive.\n2. Go to Settings -> Personal preferences -> API.\n3. Copy your personal API token.\n4. Note your company domain (from the URL: yourcompany.pipedrive.com).\n5. Paste both values here.","pricing_tier":"paid","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -738,6 +896,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"service_token_id","label":"Service Token ID","type":"text","required":true,"placeholder":"","helpText":"From PlanetScale -> Organization -> Settings -> Service Tokens"},{"key":"service_token","label":"Service Token","type":"password","required":true,"placeholder":"","helpText":"The service token secret paired with the token ID"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.planetscale.com/v1/organizations","method":"GET","headers":{"Authorization":"{{service_token_id}}:{{service_token}}"},"description":"Validates service token via PlanetScale organizations endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"PlanetScale serverless MySQL platform with branching and non-blocking schema changes.","auth_type":"service_token","auth_type_label":"Service Token","docs_url":"https://planetscale.com/docs/concepts/service-tokens","setup_guide":"1. Go to PlanetScale -> Organization -> Settings -> Service Tokens\n2. Click 'New service token'\n3. Grant database access permissions for the token\n4. Copy both the Service Token ID and the Service Token secret\n5. Paste both values here","pricing_tier":"paid"}"#),
         },
         BuiltinConnector {
@@ -749,6 +909,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"connection_string","label":"Connection String","type":"password","required":true,"placeholder":"postgresql://user:password@host:5432/dbname","helpText":"Full PostgreSQL connection URI including credentials"},{"key":"host","label":"Host","type":"text","required":false,"placeholder":"localhost","helpText":"Alternative: provide host/port/db separately instead of connection string"},{"key":"port","label":"Port","type":"text","required":false,"placeholder":"5432","helpText":"PostgreSQL port (default 5432)"},{"key":"database","label":"Database","type":"text","required":false,"placeholder":"mydb","helpText":"Database name"},{"key":"username","label":"Username","type":"text","required":false,"placeholder":"postgres","helpText":"Database user"},{"key":"password","label":"Password","type":"password","required":false,"placeholder":"","helpText":"Database password"},{"key":"ssl_mode","label":"SSL Mode","type":"text","required":false,"placeholder":"prefer","helpText":"SSL mode: disable, allow, prefer, require, verify-ca, verify-full"}]"#,
             healthcheck_config: None,
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"PostgreSQL open-source relational database with advanced SQL, JSONB, and extensibility.","auth_type":"connection_string","auth_type_label":"Connection String","docs_url":"https://www.postgresql.org/docs/current/libpq-connect.html","setup_guide":"1. Obtain your PostgreSQL connection details from your hosting provider or local setup\n2. Either provide the full connection string (postgresql://user:pass@host:5432/db)\n3. Or fill in host, port, database, username, and password separately\n4. Set SSL mode if connecting to a remote server","pricing_tier":"free","auth_variants":[{"id":"connection_string","label":"Connection String","fields":["connection_string"],"auth_type_label":"Connection String"},{"id":"individual","label":"Individual Fields","fields":["host","port","database","username","password","ssl_mode"],"auth_type_label":"Host/Port"}]}"#),
         },
         BuiltinConnector {
@@ -760,6 +922,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"analytics"#,
             fields: r#"[{"key":"personal_api_key","label":"Personal API Key","type":"password","required":true,"placeholder":"phx_...","helpText":"From PostHog -> Settings -> Personal API Keys"},{"key":"project_api_key","label":"Project API Key","type":"password","required":false,"placeholder":"phc_...","helpText":"Optional: project token for event ingestion"},{"key":"host","label":"Host","type":"url","required":false,"placeholder":"https://us.posthog.com","helpText":"Defaults to us.posthog.com. Use eu.posthog.com for EU cloud."}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{host|https://us.posthog.com}}/api/projects/","method":"GET","headers":{"Authorization":"Bearer {{personal_api_key}}"},"description":"Validates personal API key via projects endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"PostHog product analytics, feature flags, session replay, and A/B testing.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://posthog.com/docs/api","setup_guide":"1. Log in to PostHog and go to Settings -> Personal API Keys\n2. Click 'Create personal API key' and name it\n3. Copy the phx_... key\n4. Optionally note your Project ID from Project Settings\n5. Paste the API key (and project ID if needed) here","pricing_tier":"free","auth_variants":[{"id":"personal","label":"Personal API Key","fields":["personal_api_key","host"],"auth_type_label":"API Key"},{"id":"project","label":"Project Key","fields":["project_api_key","host"],"auth_type_label":"Project Key"}]}"#),
         },
         BuiltinConnector {
@@ -771,6 +935,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"connection_url","label":"Connection URL","type":"password","required":true,"placeholder":"redis://default:password@host:6379","helpText":"Redis connection URL (redis:// or rediss:// for TLS)"},{"key":"host","label":"Host","type":"text","required":false,"placeholder":"localhost","helpText":"Alternative: provide host/port/password separately"},{"key":"port","label":"Port","type":"text","required":false,"placeholder":"6379","helpText":"Redis port (default 6379)"},{"key":"password","label":"Password","type":"password","required":false,"placeholder":"","helpText":"Redis AUTH password"}]"#,
             healthcheck_config: None,
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Redis in-memory data store for caching, queues, sessions, and real-time pub/sub.","auth_type":"connection_string","auth_type_label":"Connection URL","docs_url":"https://redis.io/docs/latest/develop/connect/","setup_guide":"1. For Redis Cloud: go to app.redislabs.com -> Database -> Connect\n2. Copy the connection URL (redis://default:pass@host:port)\n3. Or provide host, port, and password separately\n4. Use rediss:// prefix for TLS connections","pricing_tier":"free","auth_variants":[{"id":"connection_url","label":"Connection URL","fields":["connection_url"],"auth_type_label":"Connection URL"},{"id":"individual","label":"Individual Fields","fields":["host","port","password"],"auth_type_label":"Host/Port"}]}"#),
         },
         BuiltinConnector {
@@ -782,6 +948,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"email"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"re_...","helpText":"From Resend Dashboard -> API Keys -> Create API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.resend.com/domains","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Resend domains endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Resend modern email API for developers with React Email support.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://resend.com/docs/api-reference/introduction","setup_guide":"1. Go to resend.com/api-keys and sign in\n2. Click 'Create API Key'\n3. Give it a name and select the appropriate domain/permissions\n4. Copy the re_... API key value","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -793,6 +961,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"email"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"SG....","helpText":"From SendGrid -> Settings -> API Keys -> Create API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.sendgrid.com/v3/scopes","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via SendGrid scopes endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"SendGrid transactional and marketing email delivery at scale.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://docs.sendgrid.com/ui/account-and-settings/api-keys","setup_guide":"1. Go to SendGrid -> Settings -> API Keys\n2. Click 'Create API Key'\n3. Name it and choose 'Full Access' or 'Restricted Access' with needed permissions\n4. Click 'Create & View' and copy the SG... key\n5. Paste it here (the key is only shown once)","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -804,6 +974,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"monitoring"#,
             fields: r#"[{"key":"auth_token","label":"Auth Token","type":"password","required":true,"placeholder":"sntrys_...","helpText":"Generate at sentry.io/settings/auth-tokens/"},{"key":"organization_slug","label":"Organization Slug","type":"text","required":true,"placeholder":"my-org","helpText":"Your Sentry organization slug from the URL"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://sentry.io/api/0/organizations/{{organization_slug}}/","method":"GET","headers":{"Authorization":"Bearer {{auth_token}}"},"description":"Validates auth token via organization endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Sentry application monitoring for errors, performance, and session replay.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://docs.sentry.io/api/guides/create-auth-token/","setup_guide":"1. Go to sentry.io/settings/auth-tokens/\n2. Click 'Create New Token'\n3. Select the required scopes and click 'Create Token'\n4. Copy the sntrys_... token and your organization slug from the URL\n5. Paste both values here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -815,6 +987,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"productivity"#,
             fields: r#"[]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://graph.microsoft.com/v1.0/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates Microsoft OAuth token via Graph /me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"SharePoint document management and team sites for storing, organizing, and collaborating on content via the Microsoft Graph API.","auth_type":"oauth","auth_type_label":"OAuth","oauth_type":"microsoft","oauth_scopes":["User.Read","Sites.Read.All","Sites.ReadWrite.All","Files.Read","Files.ReadWrite","offline_access"],"docs_url":"https://learn.microsoft.com/en-us/graph/api/resources/sharepoint","setup_guide":"1. Go to the Azure Portal -> Microsoft Entra ID -> App registrations.\n2. Click 'New registration', name your app, and set redirect URI to http://localhost.\n3. Under 'Certificates & secrets', create a new client secret and copy it.\n4. Under 'API permissions', add Microsoft Graph delegated permissions: User.Read, Sites.Read.All, Sites.ReadWrite.All, Files.Read, Files.ReadWrite.\n5. Copy the Application (client) ID from the Overview page.\n6. In Personas, click Authorize with Microsoft.\n7. Complete consent in your browser and return to Personas.","pricing_tier":"freemium","auth_methods":[{"id":"oauth","label":"OAuth","type":"oauth","is_default":true},{"id":"mcp","label":"MCP","type":"mcp","package":"@softeria/ms-365-mcp-server","transport":"stdio","suggested_env":{"MICROSOFT_CLIENT_ID":"","MICROSOFT_CLIENT_SECRET":"","MICROSOFT_TENANT_ID":""}}]}"#),
         },
         BuiltinConnector {
@@ -826,6 +1000,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"messaging"#,
             fields: r#"[{"key":"bot_token","label":"Bot User OAuth Token","type":"password","required":true,"placeholder":"xoxb-...","helpText":"From Slack App -> OAuth & Permissions -> Bot User OAuth Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://slack.com/api/auth.test","method":"GET","headers":{"Authorization":"Bearer {{bot_token}}"},"description":"Validates bot token via Slack auth.test endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Slack workspace messaging for channels, DMs, and workflow notifications.","auth_type":"bot_token","auth_type_label":"Bot Token","docs_url":"https://api.slack.com/authentication/token-types","setup_guide":"1. Go to api.slack.com/apps and create a new app (or select existing)\n2. Go to 'OAuth & Permissions' in the sidebar\n3. Add the bot token scopes your integration needs\n4. Click 'Install to Workspace' and authorize\n5. Copy the xoxb-... Bot User OAuth Token and paste it here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -837,6 +1013,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"project_url","label":"Project URL","type":"url","required":true,"placeholder":"https://xxxx.supabase.co","helpText":"From Supabase Dashboard -> Settings -> API"},{"key":"anon_key","label":"Anon / Public Key","type":"password","required":true,"placeholder":"eyJ...","helpText":"The anon key for client-side access"},{"key":"service_role_key","label":"Service Role Key","type":"password","required":false,"placeholder":"eyJ...","helpText":"For server-side admin access (bypasses RLS)"},{"key":"pooler_url","label":"Pooler Connection String","type":"password","required":false,"placeholder":"postgresql://postgres.xxxx:...","helpText":"Supavisor pooler URL for direct database access"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{anon_key}}","Authorization":"Bearer {{anon_key}}"},"description":"Validates Supabase connection via REST endpoint with anon key"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Supabase open-source Firebase alternative with Postgres, auth, and realtime.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://supabase.com/dashboard/project/_/settings/api","setup_guide":"1. Go to your Supabase project dashboard -> Settings -> API\n2. Copy the Project URL\n3. Copy the anon/public key (and optionally the service_role key for admin access)\n4. Paste the project URL and key(s) here","pricing_tier":"free","auth_variants":[{"id":"anon","label":"Anon Key","fields":["project_url","anon_key"],"auth_type_label":"API Key","healthcheck_config":{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{anon_key}}","Authorization":"Bearer {{anon_key}}"}}},{"id":"service_role","label":"Service Role","fields":["project_url","service_role_key"],"auth_type_label":"Service Role","healthcheck_config":{"endpoint":"{{project_url}}/rest/v1/","method":"GET","headers":{"apikey":"{{service_role_key}}","Authorization":"Bearer {{service_role_key}}"}}},{"id":"pooler","label":"Pooler URL","fields":["pooler_url"],"auth_type_label":"Connection String","healthcheck_skip":true}]}"#),
         },
         BuiltinConnector {
@@ -848,6 +1026,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"forms"#,
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"Go to tally.so -> Settings -> Integrations -> API -> Generate access token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.tally.so/me","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Tally /me endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Tally free-first form builder for creating forms, surveys, and collecting responses via the Tally API.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://tally.so/help/developer-resources","setup_guide":"1. Log in to tally.so.\n2. Go to Settings -> Integrations -> API.\n3. Generate a new access token.\n4. Copy the token and paste it here.","pricing_tier":"freemium","auth_methods":[{"id":"pat","label":"PAT","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -859,6 +1039,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"messaging"#,
             fields: r#"[{"key":"bot_token","label":"Bot Token","type":"password","required":true,"placeholder":"123456:ABC-DEF...","helpText":"From @BotFather on Telegram -> /newbot or /token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.telegram.org/bot{{bot_token}}/getMe","method":"GET","headers":{},"description":"Validates bot token via Telegram getMe endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Telegram bot for messaging, notifications, and group automation.","auth_type":"bot_token","auth_type_label":"Bot Token","docs_url":"https://core.telegram.org/bots/api","setup_guide":"1. Open Telegram and search for @BotFather\n2. Send /newbot and follow the prompts to name your bot\n3. BotFather will give you a token like 123456:ABC-DEF...\n4. Copy the bot token and paste it here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -870,6 +1052,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"analytics"#,
             fields: r#"[{"key":"write_key","label":"Write Key","type":"password","required":true,"placeholder":"","helpText":"From Segment -> Sources -> your source -> Settings -> API Keys"},{"key":"access_token","label":"Access Token","type":"password","required":false,"placeholder":"","helpText":"Optional: for Config API access (workspace-level)"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.segment.io/v1/batch","method":"POST","headers":{"Authorization":"Basic {{base64(write_key:)}}","Content-Type":"application/json"},"description":"Validates write key via Segment batch endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"Twilio Segment customer data platform for event tracking and routing.","auth_type":"write_key","auth_type_label":"Write Key","docs_url":"https://segment.com/docs/connections/sources/catalog/","setup_guide":"1. Go to app.segment.com and sign in\n2. Navigate to Connections -> Sources -> select your source\n3. Go to Settings -> API Keys -> Write Key\n4. Copy the Write Key value","pricing_tier":"paid","auth_variants":[{"id":"write","label":"Write Key","fields":["write_key"],"auth_type_label":"Write Key"},{"id":"config","label":"Write + Config API","fields":["write_key","access_token"],"auth_type_label":"Config API"}]}"#),
         },
         BuiltinConnector {
@@ -881,6 +1065,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"email"#,
             fields: r#"[{"key":"account_sid","label":"Account SID","type":"text","required":true,"placeholder":"AC...","helpText":"From Twilio Console -> Account -> Account SID"},{"key":"auth_token","label":"Auth Token","type":"password","required":true,"placeholder":"","helpText":"From Twilio Console -> Account -> Auth Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.twilio.com/2010-04-01/Accounts/{{account_sid}}.json","method":"GET","headers":{"Authorization":"Basic {{base64(account_sid:auth_token)}}"},"description":"Validates credentials via Twilio account endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Twilio SMS, voice, WhatsApp, and communication APIs.","auth_type":"basic","auth_type_label":"Account SID","docs_url":"https://www.twilio.com/docs/usage/api","setup_guide":"1. Log in to the Twilio Console at console.twilio.com\n2. Your Account SID (AC...) and Auth Token are on the dashboard\n3. Click the eye icon to reveal the Auth Token\n4. Copy both values and paste them here","pricing_tier":"paid"}"#),
         },
         BuiltinConnector {
@@ -892,6 +1078,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[{"key":"redis_url","label":"REST URL","type":"url","required":true,"placeholder":"https://xxx.upstash.io","helpText":"From Upstash Console -> Database -> Details -> REST API -> URL"},{"key":"redis_token","label":"REST Token","type":"password","required":true,"placeholder":"","helpText":"From Upstash Console -> Database -> Details -> REST API -> Token"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{redis_url}}/ping","method":"GET","headers":{"Authorization":"Bearer {{redis_token}}"},"description":"Validates REST token via Upstash Redis PING command"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Upstash serverless Redis and Kafka for low-latency data at the edge.","auth_type":"api_token","auth_type_label":"REST Token","docs_url":"https://upstash.com/docs/redis/features/restapi","setup_guide":"1. Log in to console.upstash.com\n2. Select your Redis database (or create one)\n3. Go to Details -> REST API section\n4. Copy the REST URL and REST Token\n5. Paste both values here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -903,6 +1091,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"database"#,
             fields: r#"[]"#,
             healthcheck_config: None,
+            services: r#"[{"toolName":"kb_semantic_search","label":"Semantic Search"},{"toolName":"kb_list_documents","label":"List Documents"},{"toolName":"kb_ingest_text","label":"Ingest Text"}]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Local vector knowledge base powered by sqlite-vec. Store documents, create embeddings locally, and run semantic search — entirely offline, no API keys needed.","auth_type":"none","auth_type_label":"Built-in (Local)","connection_mode":"local","capabilities":["file_read","vector_search","embedding"],"docs_url":"","setup_guide":"Knowledge bases are stored locally. Drop files or paste text to build your knowledge base. Embedding is done on-device using a lightweight AI model (~23MB download on first use)."}"#),
         },
         BuiltinConnector {
@@ -914,6 +1104,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"cloud"#,
             fields: r#"[{"key":"access_token","label":"Access Token","type":"password","required":true,"placeholder":"","helpText":"From Vercel -> Settings -> Tokens -> Create"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.vercel.com/v2/user","method":"GET","headers":{"Authorization":"Bearer {{access_token}}"},"description":"Validates access token via Vercel user endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Vercel frontend deployment platform with serverless functions and edge network.","auth_type":"pat","auth_type_label":"PAT","docs_url":"https://vercel.com/account/tokens","setup_guide":"1. Go to vercel.com/account/tokens\n2. Click 'Create' to generate a new token\n3. Name it and select the scope (full account or specific team)\n4. Click 'Create Token' and copy the value\n5. Paste the token here","pricing_tier":"free"}"#),
         },
         BuiltinConnector {
@@ -925,6 +1117,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"ecommerce"#,
             fields: r#"[{"key":"base_url","label":"Store URL","type":"url","required":true,"placeholder":"https://yourstore.com","helpText":"Your WooCommerce store URL (must have HTTPS enabled)"},{"key":"consumer_key","label":"Consumer Key","type":"text","required":true,"placeholder":"ck_...","helpText":"From WooCommerce -> Settings -> Advanced -> REST API -> Add Key"},{"key":"consumer_secret","label":"Consumer Secret","type":"password","required":true,"placeholder":"cs_...","helpText":"From the same REST API key page"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"{{base_url}}/wp-json/wc/v3/system_status?consumer_key={{consumer_key}}&consumer_secret={{consumer_secret}}","method":"GET","headers":{},"description":"Validates API keys via WooCommerce system status endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":false,"summary":"WooCommerce open-source e-commerce platform for managing orders, products, and customers via the WooCommerce REST API v3.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://woocommerce.github.io/woocommerce-rest-api-docs/","setup_guide":"1. In your WordPress admin, go to WooCommerce -> Settings -> Advanced -> REST API.\n2. Click 'Add Key'.\n3. Enter a description, select a user, and set permissions to Read/Write.\n4. Click 'Generate API key'.\n5. Copy the Consumer Key and Consumer Secret.\n6. Paste both values and your store URL here.","pricing_tier":"free","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         },
         BuiltinConnector {
@@ -936,6 +1130,8 @@ pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
             category: r#"automation"#,
             fields: r#"[{"key":"api_key","label":"API Key","type":"password","required":true,"placeholder":"","helpText":"From zapier.com/app/developer -> API Key"}]"#,
             healthcheck_config: Some(r#"{"endpoint":"https://api.zapier.com/v1/profiles/me","method":"GET","headers":{"Authorization":"Bearer {{api_key}}"},"description":"Validates API key via Zapier profiles endpoint"}"#),
+            services: r#"[]"#,
+            events: r#"[]"#,
             metadata: Some(r#"{"template_enabled":true,"summary":"Zapier automation platform -- trigger Zaps via webhooks and manage workflows from your agent.","auth_type":"api_key","auth_type_label":"API Key","docs_url":"https://platform.zapier.com/reference/introduction","is_platform":true,"platform_type":"zapier","auth_methods":[{"id":"api_key","label":"API Key","type":"credential","is_default":true}]}"#),
         }
 ];

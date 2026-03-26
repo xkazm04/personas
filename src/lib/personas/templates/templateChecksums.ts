@@ -132,6 +132,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'support/support-intelligence-use-case.json': '0016497df9b9e94a',
 =======
   'devops/devops-guardian.json': '00191a118384bf31',
+  'devops/sentry-production-monitor.json': '001ee39aba1ded16',
   'finance/budget-spending-monitor.json': '0010da3539bfc201',
   'finance/financial-stocks-signaller.json': '0005eeb9976fbd12',
   'finance/freelancer-invoice-autopilot.json': '00001d171ba0a8dc',

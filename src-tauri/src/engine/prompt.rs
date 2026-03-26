@@ -1058,7 +1058,7 @@ You MUST:
 1. **Execute your task immediately** — do not ask questions, wait for input, or say "I'm ready to help." Act proactively based on your instructions and available tools.
 2. **Produce concrete output** — fetch data, analyze it, generate reports, take actions. If no external data is available, work with what you have and explain what you found.
 3. **Send a user_message** — your main output/report MUST be sent as a `user_message` protocol JSON. This is how users receive your work. Without it, they see nothing.
-4. **Store memories** — record 1-3 key learnings via `agent_memory` protocol. These help you improve over time.
+4. **Store memories** — record 1-3 key **business** learnings via `agent_memory` protocol (skip if execution failed due to operational issues like auth/credential errors).
 5. **Emit events** — signal completion via `emit_event` protocol so other systems can react.
 6. **End with protocol messages** — after your main work, output the required JSON protocol lines (one per line, not inside code blocks).
 
@@ -1086,7 +1086,7 @@ You MUST use the following protocols during EVERY execution. This is mandatory �
    {"user_message": {"title": "Weekly Tech News - Jan 15-21, 2026", "content": "Top Stories\n1. Story one\n2. Story two", "content_type": "success", "priority": "normal"}}
    ```
 
-2. **agent_memory** — Store 1-3 key learnings, findings, or facts discovered during this execution:
+2. **agent_memory** — Store 1-3 key **business** learnings, findings, or facts discovered during this execution. Only create memories for **successful production insights** that help improve future behavior. Do NOT create memories for operational failures (auth errors, missing credentials, API outages, connectivity issues):
    ```json
    {"agent_memory": {"title": "Key Finding", "content": "What you learned or discovered", "category": "learning", "importance": 7, "tags": ["relevant", "tags"]}}
    ```

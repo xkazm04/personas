@@ -1,21 +1,19 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useAgentStore } from '@/stores/agentStore';
 import { PersonaMatrix } from '@/features/templates/sub_generated/gallery/matrix/PersonaMatrix';
 import { answerBuildQuestion, testBuildDraft } from '@/api/agents/buildSession';
-import { executePersona, listExecutions } from '@/api/agents/executions';
-import { RefreshCw, Play, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import type { CellBuildStatus } from '@/lib/types/buildTypes';
-import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 
 interface BuildSessionSummary {
   id: string;
-  persona_id: string;
+  personaId: string;
   phase: string;
-  resolved_cells: Record<string, { items?: string[]; [k: string]: unknown }>;
-  agent_ir: unknown;
+  resolvedCells: Record<string, { items?: string[]; [k: string]: unknown }>;
+  agentIr: unknown;
   intent: string;
-  created_at: string;
+  createdAt: string;
 }
 
 const DIMENSION_ORDER = ['use-cases', 'connectors', 'triggers', 'messages', 'human-review', 'memory', 'error-handling', 'events'];
@@ -58,7 +56,7 @@ export function MatrixTab() {
   // Build cell states from session resolved_cells (all "resolved")
   const cellBuildStates = useMemo(() => {
     const states: Record<string, CellBuildStatus> = {};
-    const cells = session?.resolved_cells;
+    const cells = session?.resolvedCells;
     if (cells && typeof cells === 'object') {
       for (const key of DIMENSION_ORDER) {
         if (cells[key]) states[key] = 'resolved';
@@ -79,7 +77,7 @@ export function MatrixTab() {
       }
     }
     return states;
-  }, [session?.resolved_cells, designResult]);
+  }, [session?.resolvedCells, designResult]);
 
   // Refine handler — send feedback to adjust the persona
   const handleRefine = useCallback(async (feedback: string) => {
@@ -102,71 +100,6 @@ export function MatrixTab() {
       console.error('Matrix test failed:', err);
     }
   }, [session?.id, selectedPersona?.id]);
-
-  // Quick Execute handler — run the persona and show result inline
-  const [execState, setExecState] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
-  const [lastExecution, setLastExecution] = useState<PersonaExecution | null>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
-    };
-  }, []);
-
-  // Load latest execution on mount
-  useEffect(() => {
-    if (!selectedPersona?.id) return;
-    listExecutions(selectedPersona.id, 1)
-      .then((execs) => {
-        if (execs.length > 0) setLastExecution(execs[0]!);
-      })
-      .catch(() => {});
-  }, [selectedPersona?.id]);
-
-  const handleQuickExecute = useCallback(async () => {
-    if (!selectedPersona?.id || execState === 'running') return;
-
-    // Clear any leaked interval from a previous run
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
-
-    setExecState('running');
-    setLastExecution(null);
-    try {
-      await executePersona(selectedPersona.id);
-      // Poll for completion
-      const pid = selectedPersona.id;
-      pollIntervalRef.current = setInterval(async () => {
-        try {
-          const execs = await listExecutions(pid, 1);
-          const latest = execs[0];
-          if (latest && (latest.status === 'completed' || latest.status === 'partial')) {
-            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-            pollIntervalRef.current = null;
-            setLastExecution(latest);
-            setExecState('completed');
-          } else if (latest && latest.status === 'failed') {
-            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-            pollIntervalRef.current = null;
-            setLastExecution(latest);
-            setExecState('failed');
-          }
-        } catch { /* polling error, continue */ }
-      }, 5000);
-      // Safety timeout: stop polling after 10 min
-      pollTimeoutRef.current = setTimeout(() => {
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }, 600000);
-    } catch (err) {
-      console.error('Quick execute failed:', err);
-      setExecState('failed');
-    }
-  }, [selectedPersona?.id, execState]);
 
   // Track whether user has made changes that warrant saving a new version
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -227,44 +160,6 @@ export function MatrixTab() {
         onSaveVersion={hasUnsavedChanges ? handleSaveVersion : undefined}
         hideHeader
       />
-
-      {/* Quick Execute — run persona directly from Matrix view */}
-      <div className="mt-4 flex items-center gap-3 px-4 py-3 border-t border-primary/10">
-        <button
-          data-testid="matrix-quick-execute-btn"
-          onClick={handleQuickExecute}
-          disabled={execState === 'running'}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
-        >
-          {execState === 'running' ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Play className="w-3.5 h-3.5" />
-          )}
-          {execState === 'running' ? 'Executing...' : 'Quick Execute'}
-        </button>
-
-        {lastExecution && execState !== 'running' && (
-          <div
-            data-testid="matrix-execution-result"
-            className={`flex items-center gap-2 text-sm ${
-              lastExecution.status === 'completed' || lastExecution.status === 'partial'
-                ? 'text-emerald-400'
-                : 'text-red-400'
-            }`}
-          >
-            {lastExecution.status === 'completed' || lastExecution.status === 'partial' ? (
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            ) : (
-              <XCircle className="w-3.5 h-3.5" />
-            )}
-            <span>
-              {lastExecution.status === 'completed' ? 'Completed' : lastExecution.status === 'partial' ? 'Partial' : 'Failed'}
-              {lastExecution.duration_ms ? ` (${Math.round(lastExecution.duration_ms / 1000)}s)` : ''}
-            </span>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

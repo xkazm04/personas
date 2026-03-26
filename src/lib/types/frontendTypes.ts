@@ -274,6 +274,12 @@ export interface DesignContextData {
     strengths: Array<{ scenario: string; metric: string; score: number }>;
     lastTestedAt: string;
   };
+  /** User feedback from message outputs — drives improvement cycles. */
+  userFeedback?: {
+    message: string;
+    feedback: string;
+    at: string;
+  };
 }
 
 // -- Flow Diagram Types ------------------------------------------------

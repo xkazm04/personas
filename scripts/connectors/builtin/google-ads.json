@@ -1,0 +1,45 @@
+{
+  "id": "builtin-google-ads",
+  "name": "google_ads",
+  "label": "Google Ads",
+  "color": "#4285F4",
+  "icon_url": "/icons/connectors/google-ads.svg",
+  "category": "analytics",
+  "fields": [
+    {
+      "key": "developer_token",
+      "label": "Developer Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "aBcDeFgHiJkLmNoPqRs",
+      "helpText": "Find at ads.google.com → Tools & Settings → API Center"
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}"
+    },
+    "description": "Validates Google OAuth identity access"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Google Ads campaign management for creating, monitoring, and optimizing advertising campaigns via the Google Ads REST API.",
+    "auth_type": "oauth",
+    "auth_type_label": "OAuth",
+    "oauth_type": "google",
+    "oauth_scopes": [
+      "https://www.googleapis.com/auth/adwords"
+    ],
+    "docs_url": "https://developers.google.com/google-ads/api/rest/overview",
+    "setup_guide": "1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable the Google Ads API.\n3. Apply for a developer token at ads.google.com → Tools & Settings → API Center.\n4. Configure OAuth consent screen and add authorized test users.\n5. In Personas, paste your developer token, then click Authorize with Google.\n6. Complete consent in your browser.\n7. Return to Personas; token metadata is saved automatically.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {"id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true},
+      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@googleads/google-ads-mcp", "transport": "stdio", "suggested_env": {"GOOGLE_ADS_DEVELOPER_TOKEN": "", "GOOGLE_CLIENT_ID": "", "GOOGLE_CLIENT_SECRET": "", "GOOGLE_REFRESH_TOKEN": ""}}
+    ]
+  }
+}

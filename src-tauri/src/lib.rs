@@ -1455,6 +1455,24 @@ pub fn run() {
             // Dev Tools -- Health Snapshots
             commands::infrastructure::dev_tools::dev_tools_list_health_snapshots,
             commands::infrastructure::dev_tools::dev_tools_save_health_snapshot,
+            // Dev Tools -- Cross-Project (Codebases connector)
+            commands::infrastructure::dev_tools::dev_tools_list_cross_project_relations,
+            commands::infrastructure::dev_tools::dev_tools_upsert_cross_project_relation,
+            commands::infrastructure::dev_tools::dev_tools_get_cross_project_map,
+            commands::infrastructure::dev_tools::dev_tools_create_idea_batch,
+            commands::infrastructure::dev_tools::dev_tools_search_across_projects,
+            commands::infrastructure::dev_tools::dev_tools_get_project_summary,
+            commands::infrastructure::dev_tools::dev_tools_get_dependency_graph,
+            // Dev Tools -- Implementation Pipeline (Direction 3)
+            commands::infrastructure::dev_tools::dev_tools_create_branch,
+            commands::infrastructure::dev_tools::dev_tools_apply_diff,
+            commands::infrastructure::dev_tools::dev_tools_run_tests,
+            commands::infrastructure::dev_tools::dev_tools_get_git_status,
+            commands::infrastructure::dev_tools::dev_tools_commit_changes,
+            // Dev Tools -- Portfolio Intelligence (Direction 5)
+            commands::infrastructure::dev_tools::dev_tools_get_portfolio_health,
+            commands::infrastructure::dev_tools::dev_tools_get_tech_radar,
+            commands::infrastructure::dev_tools::dev_tools_get_risk_matrix,
             // Notifications
             notifications::send_app_notification,
             notifications::test_notification_channel,

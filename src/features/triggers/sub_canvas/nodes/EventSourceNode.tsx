@@ -12,20 +12,22 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Layers, Zap, FileEdit, CheckCircle2, XCircle, Store,
 };
 
-function EventSourceNodeInner({ data, selected }: NodeProps) {
+function EventSourceNodeInner({ data, selected, id }: NodeProps) {
   const d = data as EventSourceNodeData;
   const Icon = ICON_MAP[d.iconName] ?? Zap;
   const count = d.liveEventCount ?? 0;
+  const isConnectSource = (d as Record<string, unknown>)._connectSource === true;
 
   return (
     <div
       className={`
         relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl
-        bg-card backdrop-blur
-        border-2
-        ${selected
-          ? 'border-cyan-400 ring-2 ring-cyan-400/25 shadow-[0_0_16px_rgba(34,211,238,0.2)]'
-          : 'border-cyan-400/70 hover:border-cyan-300'
+        bg-card backdrop-blur border-2
+        ${isConnectSource
+          ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-[0_0_16px_rgba(251,191,36,0.25)]'
+          : selected
+            ? 'border-cyan-400 ring-2 ring-cyan-400/25 shadow-[0_0_16px_rgba(34,211,238,0.2)]'
+            : 'border-cyan-400/70 hover:border-cyan-300'
         }
         shadow-md min-w-[160px] transition-all
       `}

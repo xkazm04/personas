@@ -48,6 +48,7 @@ export default function SidebarLevel1({
   );
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
+  const feedbackImprovementComplete = useSystemStore((s) => s.feedbackImprovementComplete);
   const { pendingReviewCount } = useBadgeCounts();
   const isLabRunning = useAgentStore((s) => s.isLabRunning);
   const isExecuting = useAgentStore((s) => s.isExecuting);
@@ -79,6 +80,10 @@ export default function SidebarLevel1({
                 // Clear context scan complete indicator when navigating to plugins
                 if (section.id === 'plugins' && contextScanComplete) {
                   setContextScanComplete(false);
+                }
+                // Clear feedback improvement complete indicator when navigating to agents
+                if (section.id === 'personas' && feedbackImprovementComplete) {
+                  useSystemStore.getState().setFeedbackImprovementComplete(false);
                 }
                 if (IS_MOBILE) {
                   onMobileDrawerToggle(section.id);
@@ -143,6 +148,9 @@ export default function SidebarLevel1({
                   <span className="absolute inset-0 rounded-full bg-cyan-500/40 animate-ping" />
                   <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-500 border border-cyan-600/50" />
                 </span>
+              )}
+              {section.id === 'personas' && feedbackImprovementComplete && !isLabRunning && !isExecuting && (
+                <span className="absolute top-0.5 right-0.5 z-20 w-3 h-3 rounded-full bg-emerald-500 border border-emerald-600/50 shadow-sm shadow-emerald-500/30" />
               )}
               {/* Plugins: pulsing amber while scanning, green when complete (click to dismiss) */}
               {section.id === 'plugins' && contextScanActive && (

@@ -559,10 +559,10 @@ export const createMatrixBuildSlice: StateCreator<
   },
 
   hydrateBuildSession: (session) => {
-    // Build cell states AND cell data from resolved_cells
+    // Build cell states AND cell data from resolvedCells
     const cellStates: Record<string, CellBuildStatus> = {};
     const cellData: Record<string, { items?: string[]; summary?: string; raw?: Record<string, unknown> }> = {};
-    const resolvedCells = session.resolved_cells ?? {};
+    const resolvedCells = session.resolvedCells ?? {};
     for (const key of Object.keys(resolvedCells)) {
       cellStates[key] = "resolved";
       // Extract items/summary/raw from the resolved cell value
@@ -578,19 +578,19 @@ export const createMatrixBuildSlice: StateCreator<
     }
 
     // Also check for highlighted cells from pending question
-    if (session.pending_question && typeof session.pending_question === 'object') {
-      const pq = session.pending_question as unknown as Record<string, unknown>;
+    if (session.pendingQuestion && typeof session.pendingQuestion === 'object') {
+      const pq = session.pendingQuestion as unknown as Record<string, unknown>;
       const cellKey = (pq.cellKey ?? pq.cell_key) as string | undefined;
       if (cellKey) {
         cellStates[cellKey] = "highlighted";
       }
     }
 
-    // Handle backward compat: backend sends single pending_question (not array).
+    // Handle backward compat: backend sends single pendingQuestion (not array).
     // Wrap into array if present, empty array if null. Guard against malformed data.
     const pendingQuestions: BuildQuestion[] = [];
-    if (session.pending_question && typeof session.pending_question === 'object') {
-      const pq = session.pending_question as unknown as Record<string, unknown>;
+    if (session.pendingQuestion && typeof session.pendingQuestion === 'object') {
+      const pq = session.pendingQuestion as unknown as Record<string, unknown>;
       if (pq.cell_key || pq.cellKey) {
         pendingQuestions.push({
           cellKey: (pq.cellKey ?? pq.cell_key) as string,
@@ -600,24 +600,24 @@ export const createMatrixBuildSlice: StateCreator<
       }
     }
 
-    // Extract connector links from agent_ir if present
+    // Extract connector links from agentIr if present
     let connectorLinks: Record<string, string> = {};
-    if (session.agent_ir && typeof session.agent_ir === 'object') {
-      const ir = session.agent_ir as Record<string, unknown>;
+    if (session.agentIr && typeof session.agentIr === 'object') {
+      const ir = session.agentIr as Record<string, unknown>;
       if (ir.credential_links && typeof ir.credential_links === 'object') {
         connectorLinks = ir.credential_links as Record<string, string>;
       }
     }
 
     set({
-      buildPersonaId: session.persona_id,
+      buildPersonaId: session.personaId,
       buildSessionId: session.id,
       buildPhase: session.phase,
       buildCellStates: cellStates,
       buildCellData: cellData,
       buildPendingQuestions: pendingQuestions,
-      buildDraft: session.agent_ir,
-      buildError: session.error_message,
+      buildDraft: session.agentIr,
+      buildError: session.errorMessage,
       buildConnectorLinks: connectorLinks,
     });
   },

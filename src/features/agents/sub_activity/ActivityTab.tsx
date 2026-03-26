@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Activity, Play, Zap, Brain, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Activity, Play, Zap, Brain, AlertTriangle, RefreshCw, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import { listExecutions } from '@/api/agents/executions';
+import { executePersona, listExecutions } from '@/api/agents/executions';
 import { listMemories } from '@/api/overview/memories';
 import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
 import { listEvents } from '@/api/overview/events';
@@ -28,11 +28,11 @@ interface ActivityItem {
   raw: PersonaExecution | PersonaEvent | PersonaMemory | PersonaManualReview;
 }
 
-const TYPE_ICONS: Record<string, { icon: React.ElementType; color: string }> = {
-  execution: { icon: Play, color: 'text-blue-400' },
-  event: { icon: Zap, color: 'text-amber-400' },
-  memory: { icon: Brain, color: 'text-violet-400' },
-  review: { icon: AlertTriangle, color: 'text-rose-400' },
+const TYPE_ICONS: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
+  execution: { icon: Play, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+  event: { icon: Zap, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+  memory: { icon: Brain, color: 'text-violet-400', bg: 'bg-violet-500/10' },
+  review: { icon: AlertTriangle, color: 'text-rose-400', bg: 'bg-rose-500/10' },
 };
 
 const FILTER_TABS: { id: ActivityType; label: string }[] = [
@@ -64,6 +64,22 @@ export function ActivityTab() {
   const [reviewProcessing, setReviewProcessing] = useState(false);
 
   const personaId = selectedPersona?.id;
+
+  // Quick Execute — fire and notify, then refresh list
+  const [execState, setExecState] = useState<'idle' | 'running' | 'sent'>('idle');
+  const handleQuickExecute = useCallback(async () => {
+    if (!personaId || execState === 'running') return;
+    setExecState('running');
+    try {
+      await executePersona(personaId);
+      setExecState('sent');
+      // Auto-reset status and refresh after brief confirmation
+      setTimeout(() => { setExecState('idle'); loadData(); }, 2000);
+    } catch (err) {
+      console.error('Quick execute failed:', err);
+      setExecState('idle');
+    }
+  }, [personaId, execState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadData = useCallback(async () => {
     if (!personaId) return;
@@ -172,13 +188,34 @@ export function ActivityTab() {
           <h3 className="typo-heading text-foreground/90">Activity</h3>
           <span className="text-xs text-muted-foreground/60">{items.length} items</span>
         </div>
-        <button
-          onClick={loadData}
-          className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
-          title="Refresh"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleQuickExecute}
+            disabled={execState !== 'idle'}
+            data-testid="activity-quick-execute-btn"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              execState === 'sent'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : 'bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50'
+            }`}
+          >
+            {execState === 'running' ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : execState === 'sent' ? (
+              <CheckCircle2 className="w-3 h-3" />
+            ) : (
+              <Play className="w-3 h-3" />
+            )}
+            {execState === 'running' ? 'Running...' : execState === 'sent' ? 'Executed' : 'Execute'}
+          </button>
+          <button
+            onClick={loadData}
+            className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Filter tabs */}
@@ -219,10 +256,13 @@ export function ActivityTab() {
                   idx > 0 ? 'border-t border-primary/[0.06]' : ''
                 }`}
               >
-                {/* Type column */}
-                <span className={`text-[10px] font-semibold uppercase tracking-wider w-16 flex-shrink-0 ${info.color}`}>
-                  {item.type}
-                </span>
+                {/* Type icon */}
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${info.bg}`}
+                  title={item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                >
+                  <info.icon className={`w-3.5 h-3.5 ${info.color}`} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-foreground/85 truncate">{item.title}</span>

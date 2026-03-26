@@ -10,19 +10,21 @@ const STATUS_COLORS: Record<string, string> = {
   failed: 'bg-red-400',
 };
 
-function PersonaConsumerNodeInner({ data, selected }: NodeProps) {
+function PersonaConsumerNodeInner({ data, selected, id }: NodeProps) {
   const d = data as PersonaConsumerNodeData;
   const statusDot = d.executionStatus ? STATUS_COLORS[d.executionStatus] ?? STATUS_COLORS.idle : STATUS_COLORS.idle;
+  const isConnectTarget = (d as Record<string, unknown>)._connectTarget === true;
 
   return (
     <div
       className={`
         relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl
-        bg-card backdrop-blur
-        border-2
-        ${selected
-          ? 'border-emerald-400 ring-2 ring-emerald-400/25 shadow-[0_0_16px_rgba(52,211,153,0.2)]'
-          : 'border-emerald-400/70 hover:border-emerald-300'
+        bg-card backdrop-blur border-2
+        ${isConnectTarget
+          ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-[0_0_16px_rgba(251,191,36,0.25)]'
+          : selected
+            ? 'border-emerald-400 ring-2 ring-emerald-400/25 shadow-[0_0_16px_rgba(52,211,153,0.2)]'
+            : 'border-emerald-400/70 hover:border-emerald-300'
         }
         ${!d.enabled ? 'opacity-50' : ''}
         shadow-md min-w-[160px] transition-all

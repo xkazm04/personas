@@ -1776,6 +1776,22 @@ pub(crate) async fn inject_credential(
         ));
     }
 
+    // Add well-known aliases for Google connectors so the CLI finds credentials
+    // regardless of whether it looks for GMAIL_ACCESS_TOKEN or GOOGLE_ACCESS_TOKEN.
+    let is_google_family = connector_name.starts_with("google")
+        || connector_name == "gmail"
+        || connector_name == "google_calendar"
+        || connector_name == "google_drive"
+        || connector_name == "google_sheets";
+    if is_google_family && prefix != "GOOGLE" {
+        if let Some(access_token) = fields.get("access_token").filter(|v| !v.is_empty()) {
+            env_vars.push(("GOOGLE_ACCESS_TOKEN".to_string(), access_token.clone()));
+        }
+        if let Some(refresh_token) = fields.get("refresh_token").filter(|v| !v.is_empty()) {
+            env_vars.push(("GOOGLE_REFRESH_TOKEN".to_string(), refresh_token.clone()));
+        }
+    }
+
     let _ = cred_repo::mark_used(pool, &cred.id);
     let _ = audit_log::insert(
         pool,

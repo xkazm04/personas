@@ -89,6 +89,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   microsoft_teams:                 'personal',
   onedrive:                        'personal',
   sharepoint:                      'personal',
+  google_ads:                      'personal',
   google_calendar:                 'personal',
   canva:                           'personal',
   penpot:                          'personal',

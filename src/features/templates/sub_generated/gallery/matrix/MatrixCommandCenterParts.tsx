@@ -620,10 +620,11 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
   const selectedResult = selectedTool ? results.find((r) => r.tool_name === selectedTool) : null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
         ref={modalRef}
-        className="w-full max-w-4xl max-h-[85vh] flex flex-col rounded-2xl border border-primary/15 bg-background shadow-2xl shadow-black/30 overflow-hidden"
+        className="flex flex-col rounded-2xl border border-primary/15 bg-background shadow-2xl shadow-black/30 overflow-hidden"
+        style={{ width: '70vw', height: '80vh', maxWidth: '1200px', maxHeight: '900px' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/[0.03]">
@@ -839,25 +840,39 @@ function ReportOverview({ sections, summary, results }: { sections: ReturnType<t
   );
 }
 
-/** Render a single markdown line with basic formatting (bold, emoji). */
+/** Render a single markdown line with formatting (bold, headings, inline code, emoji). */
 function MarkdownLine({ text }: { text: string }) {
   const trimmed = text.trim();
   if (!trimmed) return null;
+
+  // Markdown headings
+  if (/^####\s+/.test(trimmed)) {
+    return <h5 className="text-xs font-semibold text-primary/70 uppercase tracking-wider mt-3 mb-1">{trimmed.replace(/^####\s+/, '')}</h5>;
+  }
+  if (/^###\s+/.test(trimmed)) {
+    return <h4 className="text-sm font-semibold text-primary/80 mt-3 mb-1">{trimmed.replace(/^###\s+/, '')}</h4>;
+  }
+  if (/^##\s+/.test(trimmed)) {
+    return <h3 className="text-base font-bold text-foreground/90 mt-4 mb-1.5">{trimmed.replace(/^##\s+/, '')}</h3>;
+  }
 
   // Parse bullet point prefix
   const isBullet = /^[-*]\s/.test(trimmed);
   const content = isBullet ? trimmed.slice(2) : trimmed;
 
-  // Simple markdown bold rendering
-  const parts = content.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
+  // Parse bold and inline code
+  const parts = content.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={i} className="text-foreground/90 font-semibold">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <code key={i} className="px-1 py-0.5 rounded bg-primary/8 text-primary/80 font-mono text-[11px]">{part.slice(1, -1)}</code>;
     }
     return <span key={i}>{part}</span>;
   });
 
   return (
-    <div className={`flex gap-2 text-sm text-foreground/60 leading-relaxed ${isBullet ? '' : ''}`}>
+    <div className={`flex gap-2 text-sm text-foreground/60 leading-relaxed`}>
       {isBullet && <span className="text-primary/40 mt-0.5 flex-shrink-0">&#8226;</span>}
       <span>{parts}</span>
     </div>
@@ -938,13 +953,48 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
       {result.output_preview && isPassed && (
         <div>
           <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-1">Response Preview</h4>
-          <div className="rounded-lg bg-black/20 border border-primary/10 px-3 py-2 font-mono text-[11px] text-muted-foreground/50 leading-relaxed max-h-32 overflow-y-auto">
-            {result.output_preview.slice(0, 300)}
+          <div className="rounded-lg bg-black/20 border border-primary/10 px-3 py-2.5 font-mono text-[11px] leading-relaxed max-h-48 overflow-y-auto">
+            <FormattedPreview text={result.output_preview} />
           </div>
         </div>
       )}
     </div>
   );
+}
+
+/** Format response preview — try to pretty-print JSON, fall back to plain text. */
+function FormattedPreview({ text }: { text: string }) {
+  const truncated = text.slice(0, 2000);
+
+  // Try to parse as JSON for pretty-printing
+  try {
+    const parsed = JSON.parse(truncated);
+    const formatted = JSON.stringify(parsed, null, 2);
+    return (
+      <pre className="whitespace-pre-wrap">
+        {formatted.split('\n').map((line, i) => {
+          // Color JSON keys vs values
+          const keyMatch = line.match(/^(\s*)"([^"]+)":/);
+          if (keyMatch) {
+            const indent = keyMatch[1];
+            const key = keyMatch[2];
+            const rest = line.slice(keyMatch[0].length);
+            return (
+              <div key={i}>
+                <span className="text-muted-foreground/30">{indent}</span>
+                <span className="text-primary/70">&quot;{key}&quot;</span>
+                <span className="text-muted-foreground/40">:</span>
+                <span className="text-emerald-400/60">{rest}</span>
+              </div>
+            );
+          }
+          return <div key={i} className="text-muted-foreground/50">{line}</div>;
+        })}
+      </pre>
+    );
+  } catch {
+    return <span className="text-muted-foreground/50 whitespace-pre-wrap">{truncated}</span>;
+  }
 }
 
 /** Convert raw API errors into user-friendly language. */

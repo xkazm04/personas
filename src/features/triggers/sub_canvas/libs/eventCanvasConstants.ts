@@ -98,9 +98,9 @@ export const DEFAULT_SOURCE_COLOR = 'text-violet-400';
 // Canvas grid
 // ---------------------------------------------------------------------------
 
-export const GRID_SIZE = 24;
+export { GRID_SIZE } from '@/lib/canvas/gridUtils';
 export const LAYOUT_STORAGE_KEY = 'event_canvas_layout';
-export const LAYOUT_VERSION = 1;
+export const LAYOUT_VERSION = 2; // bumped for sticky notes support
 
 // ---------------------------------------------------------------------------
 // Node type keys (must match ReactFlow nodeTypes registration)
@@ -108,4 +108,23 @@ export const LAYOUT_VERSION = 1;
 
 export const NODE_TYPE_EVENT_SOURCE = 'eventSource' as const;
 export const NODE_TYPE_PERSONA_CONSUMER = 'personaConsumer' as const;
+export const NODE_TYPE_STICKY_NOTE = 'stickyNote' as const;
 export const EDGE_TYPE_EVENT = 'eventEdge' as const;
+
+// ---------------------------------------------------------------------------
+// Edge condition types
+// ---------------------------------------------------------------------------
+
+export interface EdgeConditionStyle {
+  stroke: string;
+  strokeWidth: number;
+  strokeDasharray?: string;
+  label: string;
+  description: string;
+}
+
+export const EVENT_EDGE_TYPES: Record<string, EdgeConditionStyle> = {
+  always:      { stroke: '#22d3ee', strokeWidth: 2, label: 'Always',      description: 'Always fire on this event' },
+  conditional: { stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '6 3', label: 'Conditional', description: 'Fire only if payload matches filter' },
+  sampled:     { stroke: '#a78bfa', strokeWidth: 2, strokeDasharray: '2 4', label: 'Sampled',     description: 'Fire on % of events' },
+};

@@ -82,14 +82,14 @@ export interface BuildQuestion {
 /** Full persisted build session loaded from SQLite. */
 export interface PersistedBuildSession {
   id: string;
-  persona_id: string;
+  personaId: string;
   phase: BuildPhase;
-  resolved_cells: Record<string, unknown>;
-  pending_question: BuildQuestion | null;
-  agent_ir: unknown | null;
+  resolvedCells: Record<string, unknown>;
+  pendingQuestion: BuildQuestion | null;
+  agentIr: unknown | null;
   intent: string;
-  error_message: string | null;
-  created_at: string;
+  errorMessage: string | null;
+  createdAt: string;
 }
 
 /** User's answer to a build question. */
@@ -101,10 +101,10 @@ export interface UserAnswer {
 /** Lightweight session summary for list views. */
 export interface BuildSessionSummary {
   id: string;
-  persona_id: string;
+  personaId: string;
   phase: BuildPhase;
   intent: string;
-  created_at: string;
+  createdAt: string;
 }
 
 /** Result of testing a single tool against its real API. */

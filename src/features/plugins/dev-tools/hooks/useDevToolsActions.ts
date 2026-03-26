@@ -1,5 +1,6 @@
 import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
+export type { PortfolioHealthSummary, TechRadarEntry, RiskMatrixEntry, TestRunResult, GitOperationResult } from '@/api/devTools/devTools';
 
 /**
  * Typed accessors for DevToolsSlice actions.
@@ -67,5 +68,33 @@ export function useDevToolsActions() {
       const queued = store.tasks.filter((t) => t.status === 'queued' || t.status === 'pending');
       await Promise.all(queued.map((t) => store.cancelTask(t.id)));
     },
+
+    // -- Cross-Project (Codebases) ------------------------------------------
+
+    getCrossProjectMap: () => devApi.getCrossProjectMap(),
+    searchAcrossProjects: (query: string, filePattern?: string) =>
+      devApi.searchAcrossProjects(query, filePattern),
+    createIdeaBatch: (ideas: Parameters<typeof devApi.createIdeaBatch>[0]) =>
+      devApi.createIdeaBatch(ideas),
+    getDependencyGraph: () => devApi.getDependencyGraph(),
+    getProjectSummary: (projectId: string) => devApi.getProjectSummary(projectId),
+
+    // -- Implementation Pipeline (Direction 3) ------------------------------
+
+    createBranch: (projectId: string, branchName: string, baseBranch?: string) =>
+      devApi.createBranch(projectId, branchName, baseBranch),
+    applyDiff: (projectId: string, diffContent: string) =>
+      devApi.applyDiff(projectId, diffContent),
+    runTests: (projectId: string, testCommand?: string) =>
+      devApi.runTests(projectId, testCommand),
+    getGitStatus: (projectId: string) => devApi.getGitStatus(projectId),
+    commitChanges: (projectId: string, message: string, stageAll?: boolean) =>
+      devApi.commitChanges(projectId, message, stageAll),
+
+    // -- Portfolio Intelligence (Direction 5) --------------------------------
+
+    getPortfolioHealth: () => devApi.getPortfolioHealth(),
+    getTechRadar: () => devApi.getTechRadar(),
+    getRiskMatrix: () => devApi.getRiskMatrix(),
   } as const;
 }

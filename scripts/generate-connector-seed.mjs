@@ -39,6 +39,8 @@ for (const file of files) {
   const fields = JSON.stringify(c.fields ?? []);
   const healthcheck = c.healthcheck_config ? JSON.stringify(c.healthcheck_config) : null;
   const metadata = c.metadata ? JSON.stringify(c.metadata) : null;
+  const services = JSON.stringify(c.services ?? []);
+  const events = JSON.stringify(c.events ?? []);
 
   entries.push(
     `        BuiltinConnector {
@@ -50,6 +52,8 @@ for (const file of files) {
             category: ${rustRawStr(c.category ?? 'general')},
             fields: ${rustRawStr(fields)},
             healthcheck_config: ${healthcheck ? `Some(${rustRawStr(healthcheck)})` : 'None'},
+            services: ${rustRawStr(services)},
+            events: ${rustRawStr(events)},
             metadata: ${metadata ? `Some(${rustRawStr(metadata)})` : 'None'},
         }`,
   );
@@ -67,6 +71,8 @@ pub(crate) struct BuiltinConnector {
     pub category: &'static str,
     pub fields: &'static str,
     pub healthcheck_config: Option<&'static str>,
+    pub services: &'static str,
+    pub events: &'static str,
     pub metadata: Option<&'static str>,
 }
 

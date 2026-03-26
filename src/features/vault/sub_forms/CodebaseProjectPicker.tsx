@@ -15,12 +15,17 @@ interface DevProject {
 interface CodebaseProjectPickerProps {
   onSave: (data: Record<string, string>) => void;
   onCancel: () => void;
+  credentialName?: string;
+  onCredentialNameChange?: (name: string) => void;
+  /** When true, allow selecting multiple projects (used by Codebases connector). */
+  multiSelect?: boolean;
 }
 
-export function CodebaseProjectPicker({ onSave, onCancel }: CodebaseProjectPickerProps) {
+export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCredentialNameChange, multiSelect }: CodebaseProjectPickerProps) {
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -35,15 +40,42 @@ export function CodebaseProjectPicker({ onSave, onCancel }: CodebaseProjectPicke
     })();
   }, []);
 
+  const handleSelect = (id: string) => {
+    if (multiSelect) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id); else next.add(id);
+        return next;
+      });
+    } else {
+      setSelectedId(id);
+      const project = projects.find((p) => p.id === id);
+      if (project && onCredentialNameChange && !credentialName?.startsWith('Custom')) {
+        onCredentialNameChange(`Codebase — ${project.name}`);
+      }
+    }
+  };
+
   const handleSave = () => {
-    const project = projects.find((p) => p.id === selectedId);
-    if (!project) return;
-    onSave({
-      project_id: project.id,
-      project_name: project.name,
-      root_path: project.root_path,
-      tech_stack: project.tech_stack ?? '',
-    });
+    if (multiSelect) {
+      const selected = projects.filter((p) => selectedIds.has(p.id));
+      if (selected.length === 0) return;
+      onSave({
+        project_ids: JSON.stringify(selected.map((p) => p.id)),
+        project_names: JSON.stringify(selected.map((p) => p.name)),
+        root_paths: JSON.stringify(selected.map((p) => p.root_path)),
+        mode: 'multi',
+      });
+    } else {
+      const project = projects.find((p) => p.id === selectedId);
+      if (!project) return;
+      onSave({
+        project_id: project.id,
+        project_name: project.name,
+        root_path: project.root_path,
+        tech_stack: project.tech_stack ?? '',
+      });
+    }
   };
 
   const goToDevTools = () => {
@@ -89,10 +121,31 @@ export function CodebaseProjectPicker({ onSave, onCancel }: CodebaseProjectPicke
     );
   }
 
+  const isSelected = (id: string) => multiSelect ? selectedIds.has(id) : selectedId === id;
+  const hasSelection = multiSelect ? selectedIds.size > 0 : !!selectedId;
+
   return (
     <div className="space-y-4">
+      {/* Credential name input */}
+      {onCredentialNameChange && (
+        <div>
+          <label className="block text-sm font-medium text-foreground/80 mb-1.5">
+            Credential Name
+          </label>
+          <input
+            type="text"
+            value={credentialName ?? ''}
+            onChange={(e) => onCredentialNameChange(e.target.value)}
+            placeholder={multiSelect ? 'My Codebases' : 'My Codebase'}
+            className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
+          />
+        </div>
+      )}
+
       <p className="text-xs text-muted-foreground/60">
-        Select a project to connect as a codebase source for your agents.
+        {multiSelect
+          ? 'Select projects to include in cross-project analysis.'
+          : 'Select a project to connect as a codebase source for your agents.'}
       </p>
 
       <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -100,14 +153,14 @@ export function CodebaseProjectPicker({ onSave, onCancel }: CodebaseProjectPicke
           <button
             key={project.id}
             type="button"
-            onClick={() => setSelectedId(project.id)}
+            onClick={() => handleSelect(project.id)}
             className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-colors ${
-              selectedId === project.id
+              isSelected(project.id)
                 ? 'border-indigo-500/30 bg-indigo-500/8'
                 : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/30'
             }`}
           >
-            <FolderOpen className={`w-5 h-5 mt-0.5 shrink-0 ${selectedId === project.id ? 'text-indigo-400' : 'text-muted-foreground/40'}`} />
+            <FolderOpen className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected(project.id) ? 'text-indigo-400' : 'text-muted-foreground/40'}`} />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground/90 truncate">{project.name}</p>
               <p className="text-[11px] text-muted-foreground/50 truncate">{project.root_path}</p>
@@ -121,6 +174,13 @@ export function CodebaseProjectPicker({ onSave, onCancel }: CodebaseProjectPicke
                 </div>
               )}
             </div>
+            {multiSelect && (
+              <div className={`w-4 h-4 mt-1 rounded border flex-shrink-0 flex items-center justify-center ${
+                isSelected(project.id) ? 'bg-indigo-500 border-indigo-500' : 'border-primary/20'
+              }`}>
+                {isSelected(project.id) && <span className="text-white text-[10px] font-bold">✓</span>}
+              </div>
+            )}
           </button>
         ))}
       </div>
@@ -129,10 +189,10 @@ export function CodebaseProjectPicker({ onSave, onCancel }: CodebaseProjectPicke
         <button
           type="button"
           onClick={handleSave}
-          disabled={!selectedId}
+          disabled={!hasSelection}
           className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          Connect Project
+          {multiSelect ? `Connect ${selectedIds.size} Project${selectedIds.size !== 1 ? 's' : ''}` : 'Connect Project'}
         </button>
         <button
           type="button"

@@ -20,12 +20,21 @@ export interface SavedNodePosition {
   id: string;
   x: number;
   y: number;
-  type: 'source' | 'consumer';
+  type: 'source' | 'consumer' | 'sticky';
+}
+
+export interface SavedStickyNote {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  category: string;
 }
 
 export interface SavedLayout {
   version: number;
   nodes: SavedNodePosition[];
+  stickyNotes?: SavedStickyNote[];
 }
 
 // ---------------------------------------------------------------------------
@@ -219,31 +228,38 @@ export function reconcileCanvasWithTriggers(
 // Layout persistence (localStorage)
 // ---------------------------------------------------------------------------
 
-export function loadLayout(): SavedLayout | null {
+function parseLayout(raw: string | null | undefined): SavedLayout | null {
+  if (!raw) return null;
   try {
-    const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (!raw) return null;
     const parsed = JSON.parse(raw) as SavedLayout;
-    if (parsed.version !== LAYOUT_VERSION) return null;
+    // Accept both v1 and v2
+    if (parsed.version !== LAYOUT_VERSION && parsed.version !== 1) return null;
     return parsed;
   } catch {
     return null;
   }
 }
 
-export function saveLayout(nodes: Node[]): void {
+export function loadLayout(): SavedLayout | null {
+  return parseLayout(localStorage.getItem(LAYOUT_STORAGE_KEY));
+}
+
+export function saveLayout(nodes: Node[], stickyNotes?: SavedStickyNote[]): void {
   const layout: SavedLayout = {
     version: LAYOUT_VERSION,
     nodes: nodes.map(n => ({
       id: n.id,
       x: n.position.x,
       y: n.position.y,
-      type: n.type === NODE_TYPE_EVENT_SOURCE ? 'source' as const : 'consumer' as const,
+      type: n.type === NODE_TYPE_EVENT_SOURCE ? 'source' as const
+           : n.type === 'stickyNote' ? 'sticky' as const
+           : 'consumer' as const,
     })),
+    stickyNotes,
   };
   try {
     localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
   } catch {
-    // localStorage full — non-critical
+    // non-critical
   }
 }

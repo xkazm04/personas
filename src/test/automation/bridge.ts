@@ -519,8 +519,8 @@ const bridge: TestBridge = {
     if (!personaId) {
       // Query backend for the persona_id linked to this build session
       try {
-        const session = await invoke('get_active_build_session', { personaId: '' }) as { persona_id?: string } | null;
-        personaId = session?.persona_id ?? null;
+        const session = await invoke('get_active_build_session', { personaId: '' }) as { personaId?: string } | null;
+        personaId = session?.personaId ?? null;
       } catch {
         // noop — try next fallback
       }
