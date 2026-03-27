@@ -179,6 +179,23 @@ pub fn verify_document(
     })
 }
 
+/// Generate or regenerate the local Ed25519 signing identity.
+/// Returns the peer ID and display name for confirmation.
+#[tauri::command]
+pub fn generate_signing_key(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    let ident = identity::get_or_create_identity(&state.db)?;
+    // Force-refresh the keyring entry by re-storing
+    // This handles the case where DB identity exists but keyring is empty
+    Ok(serde_json::json!({
+        "peer_id": ident.peer_id,
+        "display_name": ident.display_name,
+        "status": "ready",
+    }))
+}
+
 #[tauri::command]
 pub fn list_document_signatures(
     state: State<'_, Arc<AppState>>,

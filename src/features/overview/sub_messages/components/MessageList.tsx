@@ -352,12 +352,30 @@ export default function MessageList() {
             <div ref={parentRef} className="flex-1 overflow-y-auto">
               <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={6} className="w-full">
                 <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}>
-                  <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</div>
-                  <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Title</div>
-                  <div role="columnheader" className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Priority</div>
-                  <div role="columnheader" className="text-center text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Delivery</div>
-                  <div role="columnheader" className="text-center text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</div>
-                  <div role="columnheader" className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Created</div>
+                  <div role="columnheader" className="text-left px-4 py-1.5">
+                    <select
+                      value={selectedPersonaId}
+                      onChange={(e) => setSelectedPersonaId(e.target.value)}
+                      className="text-[10px] font-semibold uppercase tracking-wider bg-transparent text-foreground/50 outline-none cursor-pointer w-full"
+                    >
+                      <option value="">Persona</option>
+                      {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div role="columnheader" className="text-left text-[10px] text-foreground/50 uppercase tracking-wider font-semibold px-4 py-2.5">Title</div>
+                  <div role="columnheader" className="text-left px-4 py-1.5">
+                    <select
+                      value={filter === 'high' ? 'high' : ''}
+                      onChange={(e) => setFilter(e.target.value === 'high' ? 'high' : 'all')}
+                      className="text-[10px] font-semibold uppercase tracking-wider bg-transparent text-foreground/50 outline-none cursor-pointer w-full"
+                    >
+                      <option value="">Priority</option>
+                      <option value="high">High</option>
+                    </select>
+                  </div>
+                  <div role="columnheader" className="text-center text-[10px] text-foreground/50 uppercase tracking-wider font-semibold px-4 py-2.5">Delivery</div>
+                  <div role="columnheader" className="text-center text-[10px] text-foreground/50 uppercase tracking-wider font-semibold px-4 py-2.5">Status</div>
+                  <div role="columnheader" className="text-right text-[10px] text-foreground/50 uppercase tracking-wider font-semibold px-4 py-2.5">Created</div>
                 </div>
                 <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                   {virtualizer.getVirtualItems().map((virtualRow) => {

@@ -5,7 +5,7 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { ImportanceDots } from './MemoryCard';
+import { ImportanceDots, TierBadge } from './MemoryCard';
 
 function parseTags(tagsJson: string | null): string[] {
   if (!tagsJson) return [];
@@ -77,6 +77,10 @@ export default function MemoryDetailModal({
           {/* Meta row */}
           <div className="flex items-center gap-4 flex-wrap">
             <div>
+              <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Tier</div>
+              <TierBadge tier={memory.tier} />
+            </div>
+            <div>
               <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Category</div>
               <span className={`inline-flex px-2 py-0.5 text-xs font-mono uppercase rounded-lg border ${cat.bg} ${cat.text} ${cat.border}`}>{cat.label}</span>
             </div>
@@ -84,6 +88,12 @@ export default function MemoryDetailModal({
               <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Importance</div>
               <ImportanceDots value={memory.importance} />
             </div>
+            {memory.access_count > 0 && (
+              <div>
+                <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Accessed</div>
+                <span className="text-xs text-muted-foreground/80 tabular-nums">{memory.access_count}x</span>
+              </div>
+            )}
           </div>
 
           {/* Tags */}

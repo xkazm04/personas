@@ -1,6 +1,8 @@
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
@@ -190,14 +192,33 @@ pub async fn ocr_with_claude(
 
     let user_prompt = prompt.clone().unwrap_or_else(|| OCR_SYSTEM_PROMPT.to_string());
 
-    // Build the prompt that instructs Claude Code to read the image and extract text
+    // Read the file and encode as base64 so Claude can process it directly
+    let file_bytes = std::fs::read(&path)
+        .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?;
+    let file_b64 = B64.encode(&file_bytes);
+
+    // Detect MIME type from extension
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+    let mime = match ext.as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "bmp" => "image/bmp",
+        "tiff" | "tif" => "image/tiff",
+        "pdf" => "application/pdf",
+        _ => "application/octet-stream",
+    };
+
+    // Build prompt with embedded file content for Claude to process
     let full_prompt = format!(
-        "Read the file at the following path and extract all text from it.\n\
-         Path: {}\n\n\
+        "I have a file named '{}' (type: {}) encoded in base64 below. \
+         Extract all text from this image/document.\n\n\
          Instructions: {}\n\n\
+         Base64 content:\ndata:{};base64,{}\n\n\
          IMPORTANT: Output ONLY the extracted text. No commentary, no markdown code fences, \
          no explanation. Just the raw extracted text.",
-        file_path, user_prompt
+        file_name, mime, user_prompt, mime, file_b64
     );
 
     // Find Claude Code binary
@@ -209,12 +230,41 @@ pub async fn ocr_with_claude(
 
     let start = Instant::now();
 
-    // Spawn claude with -p flag for non-interactive single-prompt mode
-    let output = tokio::process::Command::new(&binary)
-        .args(&["-p", &full_prompt, "--output-format", "text"])
-        .output()
-        .await
-        .map_err(|e| AppError::Internal(format!("Failed to spawn Claude Code: {e}")))?;
+    // Spawn Claude CLI with prompt piped via stdin to avoid OS argument length limits
+    // (base64-encoded images can be very large).
+    // On Windows, Claude CLI is a .cmd wrapper — must use cmd /c.
+    let output = {
+        use tokio::io::AsyncWriteExt;
+
+        #[cfg(target_os = "windows")]
+        let mut child = tokio::process::Command::new("cmd")
+            .args(&["/c", binary.to_str().unwrap_or("claude"), "-p", "-", "--output-format", "text"])
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .creation_flags(0x08000000)
+            .spawn()
+            .map_err(|e| AppError::Internal(format!("Failed to spawn Claude Code: {e}")))?;
+
+        #[cfg(not(target_os = "windows"))]
+        let mut child = tokio::process::Command::new(&binary)
+            .args(&["-p", "-", "--output-format", "text"])
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| AppError::Internal(format!("Failed to spawn Claude Code: {e}")))?;
+
+        // Write prompt to stdin then close it
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(full_prompt.as_bytes()).await
+                .map_err(|e| AppError::Internal(format!("Failed to write to Claude stdin: {e}")))?;
+            drop(stdin); // Close stdin so Claude starts processing
+        }
+
+        child.wait_with_output().await
+            .map_err(|e| AppError::Internal(format!("Failed to read Claude output: {e}")))?
+    };
 
     let duration_ms = start.elapsed().as_millis() as i64;
 

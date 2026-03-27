@@ -1,8 +1,4 @@
-import { useState, useEffect } from 'react';
-import { Rocket, RefreshCw, WifiOff } from 'lucide-react';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://pvfwxilvzjzzjhdcpucu.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2Znd4aWx2emp6empoZGNwdWN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1NTg5ODQsImV4cCI6MjA2NDEzNDk4NH0.2gk82sDq9vDaTqM3Tprxohzw_ZDSwyRcHdBO6_AFwk8';
+import { Rocket } from 'lucide-react';
 
 interface RoadmapItem {
   id: string;
@@ -46,47 +42,15 @@ const priorityConfig: Record<RoadmapItem['priority'], { label: string; className
   later: { label: 'Later', className: 'bg-secondary/50 border-primary/10 text-muted-foreground/70' },
 };
 
-async function fetchRoadmap(): Promise<RoadmapItem[]> {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/roadmap_items?select=id,name,description,status,priority,sort_order&order=sort_order.asc`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    },
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-function EmptyState({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 py-12">
-      <img
-        src="/illustrations/roadmap-empty-state-nobg.png"
-        alt="Roadmap"
-        className="w-40 h-40 object-contain opacity-60"
-      />
-      <div className="text-center space-y-2 max-w-sm">
-        <div className="flex items-center justify-center gap-2 text-muted-foreground/60">
-          <WifiOff className="w-4 h-4" />
-          <h3 className="typo-heading text-foreground/70">Roadmap unavailable</h3>
-        </div>
-        <p className="typo-body text-muted-foreground/50">
-          Could not load the product roadmap. Check your connection and try again.
-        </p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-      >
-        <RefreshCw className="w-3.5 h-3.5" />
-        Retry
-      </button>
-    </div>
-  );
-}
+/** Hardcoded roadmap items — fetched from Supabase 2026-03-26 and pinned to avoid runtime dependency. */
+const ROADMAP_ITEMS: RoadmapItem[] = [
+  { id: '1', name: 'Dev Mode', description: 'Development mode tooling, debugging, and hot-reload capabilities for rapid agent iteration.', status: 'in_progress', priority: 'now', sort_order: 1 },
+  { id: '2', name: 'Cloud Integration', description: 'Connect desktop app to cloud orchestrator for 24/7 agent execution with WebSocket streaming.', status: 'in_progress', priority: 'now', sort_order: 2 },
+  { id: '3', name: 'Web App', description: 'Marketing site, auth portal, subscription management, and cloud dashboard.', status: 'in_progress', priority: 'now', sort_order: 3 },
+  { id: '4', name: 'Internationalization', description: 'Multi-language support with locale management, RTL layouts, and community translations.', status: 'in_progress', priority: 'now', sort_order: 4 },
+  { id: '5', name: 'Distribution & Polish', description: 'Production-ready installers, auto-updates, code signing, and final QA across all platforms.', status: 'next', priority: 'next', sort_order: 5 },
+  { id: '6', name: 'Team (Group Projects)', description: 'Shared workspaces, collaborative agent development, role-based access, and team dashboards.', status: 'next', priority: 'next', sort_order: 6 },
+];
 
 function RoadmapCard({ item, index, total }: { item: RoadmapItem; index: number; total: number }) {
   const status = statusConfig[item.status];
@@ -151,21 +115,7 @@ function RoadmapCard({ item, index, total }: { item: RoadmapItem; index: number;
 }
 
 export default function HomeRoadmap() {
-  const [items, setItems] = useState<RoadmapItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const load = () => {
-    setLoading(true);
-    setError(false);
-    fetchRoadmap()
-      .then(setItems)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(load, []);
-
+  const items = ROADMAP_ITEMS;
   const inProgressCount = items.filter((i) => i.status === 'in_progress').length;
   const nextCount = items.filter((i) => i.status === 'next').length;
 
@@ -193,20 +143,9 @@ export default function HomeRoadmap() {
             </p>
           </div>
 
-          {/* Loading */}
-          {loading && (
-            <div className="flex items-center justify-center py-16">
-              <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-            </div>
-          )}
-
-          {/* Error / empty state */}
-          {!loading && error && <EmptyState onRetry={load} />}
-
-          {/* Content */}
-          {!loading && !error && items.length > 0 && (
+          {/* Summary pills */}
+          {items.length > 0 && (
             <>
-              {/* Summary pills */}
               <div
                 className="animate-fade-slide-in flex flex-wrap gap-3"
               >

@@ -173,7 +173,29 @@ pub async fn execute_persona(
         .as_deref()
         .and_then(|s| serde_json::from_str(s).ok());
 
-    // 7. Start execution (may run immediately or be queued with backpressure)
+    // 7. Check session pool for warm session reuse (if no explicit continuation)
+    let continuation = if continuation.is_some() {
+        continuation
+    } else {
+        // Compute config hash from current persona state
+        let config_hash = {
+            use std::hash::{Hash, Hasher};
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            persona.system_prompt.as_str().hash(&mut hasher);
+            persona.model_profile.as_deref().unwrap_or("").hash(&mut hasher);
+            tools.len().hash(&mut hasher);
+            hasher.finish()
+        };
+        match state.session_pool.take(&persona_id, config_hash).await {
+            Some(session_id) => {
+                tracing::info!(persona_id = %persona_id, "Warm session reuse from pool");
+                Some(crate::engine::types::Continuation::SessionResume(session_id))
+            }
+            None => None,
+        }
+    };
+
+    // 8. Start execution (may run immediately or be queued with backpressure)
     state
         .engine
         .start_execution(
@@ -394,4 +416,63 @@ pub fn get_circuit_breaker_status(
 ) -> Result<CircuitBreakerStatus, AppError> {
     require_auth_sync(&state)?;
     Ok(state.engine.circuit_breaker.get_status())
+}
+
+/// Preview an execution without running it: assembles the prompt, estimates
+/// token count and cost, and returns the preview for user inspection.
+#[tauri::command]
+pub fn preview_execution(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    input_data: Option<String>,
+    use_case_id: Option<String>,
+) -> Result<crate::engine::cost::ExecutionPreview, AppError> {
+    require_auth_sync(&state)?;
+    use crate::db::repos::core::memories as mem_repo;
+    use crate::engine::prompt;
+
+    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+    let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
+
+    // Parse input data
+    let input_json: Option<serde_json::Value> = input_data
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok());
+
+    // Assemble prompt (same as real execution)
+    let prompt_text = prompt::assemble_prompt(
+        &persona,
+        &tools,
+        input_json.as_ref(),
+        None, // no credential hints in preview
+        None, // no workspace instructions in preview
+        #[cfg(feature = "desktop")]
+        None, // no ambient context in preview
+    );
+
+    // Count memories that would be injected
+    let memory_count = mem_repo::get_for_injection(&state.db, &persona_id, 10, 40)
+        .map(|t| (t.core.len() + t.active.len()) as u32)
+        .unwrap_or(0);
+
+    // Resolve model
+    let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
+    let model = model_profile
+        .and_then(|mp| mp.model)
+        .unwrap_or_else(|| "claude-sonnet-4-20250514".to_string());
+
+    // Monthly spend
+    let monthly_spend = crate::db::repos::execution::executions::get_monthly_spend(
+        &state.db, &persona_id,
+    ).unwrap_or(0.0);
+    let budget_limit = persona.max_budget_usd.unwrap_or(0.0);
+
+    Ok(crate::engine::cost::build_preview(
+        &prompt_text,
+        &model,
+        memory_count,
+        tools.len() as u32,
+        monthly_spend,
+        budget_limit,
+    ))
 }

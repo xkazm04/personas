@@ -40,6 +40,8 @@ export default function ExecutionMiniPlayer() {
 
   const elapsed = useElapsedTimer(isExecuting);
 
+  const backgroundExecutions = useAgentStore((s) => s.backgroundExecutions);
+
   const personaName = useMemo(() => {
     if (!executionPersonaId) return 'Agent';
     const p = personas.find((p) => p.id === executionPersonaId);
@@ -121,7 +123,7 @@ export default function ExecutionMiniPlayer() {
     [pipelineTrace],
   );
 
-  const hasContent = isExecuting || executionOutput.length > 0 || activeExecutionId;
+  const hasContent = isExecuting || executionOutput.length > 0 || activeExecutionId || backgroundExecutions.length > 0;
   if (!miniPlayerPinned || !hasContent) return null;
 
   return (
@@ -187,6 +189,25 @@ export default function ExecutionMiniPlayer() {
             </Button>
           </Tooltip>
         </div>
+
+        {/* Background executions bar */}
+        {backgroundExecutions.length > 0 && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-primary/5 bg-secondary/10">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 mr-1">Background</span>
+            {backgroundExecutions.map((bg) => (
+              <Tooltip key={bg.executionId} content={`${bg.personaName} — ${bg.status}`}>
+                <div className="relative w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: `${bg.personaColor}20`, border: `1px solid ${bg.personaColor}40` }}>
+                  <Bot className="w-2.5 h-2.5" style={{ color: bg.personaColor }} />
+                  <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background ${
+                    bg.status === 'running' ? 'bg-blue-400 animate-pulse' :
+                    bg.status === 'completed' ? 'bg-emerald-400' :
+                    bg.status === 'failed' ? 'bg-red-400' : 'bg-amber-400'
+                  }`} />
+                </div>
+              </Tooltip>
+            ))}
+          </div>
+        )}
 
         {/* Simple mode: friendly progress bar with stage label */}
         {isSimple && (

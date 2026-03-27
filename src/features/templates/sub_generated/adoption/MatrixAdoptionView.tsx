@@ -258,7 +258,7 @@ export function MatrixAdoptionView({ review }: MatrixAdoptionViewProps) {
           userAnswers={adoptionAnswers}
           onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}
           onSubmit={() => setQuestionsComplete(true)}
-          onClose={() => setQuestionsComplete(true)}
+          onClose={onClose}
         />
       )}
     </div>

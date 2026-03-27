@@ -19,7 +19,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft, ChevronRight, X, Send, Check, Info,
-  KeyRound, Settings2, ShieldCheck, Brain, Bell, HelpCircle,
+  KeyRound, Settings2, ShieldCheck, Brain, Bell,
   Globe, Gauge, SkipForward,
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -36,12 +36,12 @@ const CATEGORY_META: Record<string, { label: string; Icon: React.ComponentType<{
 };
 
 const CARD_TONES = [
-  { border: 'border-violet-500/20', bg: 'bg-violet-500/[0.06]', accent: 'text-violet-500 dark:text-violet-300', dot: 'bg-violet-400', selectBg: 'bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/25', inputRing: 'focus-visible:ring-violet-500/30 focus-visible:border-violet-500/40' },
-  { border: 'border-blue-500/20', bg: 'bg-blue-500/[0.06]', accent: 'text-blue-500 dark:text-blue-300', dot: 'bg-blue-400', selectBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/25', inputRing: 'focus-visible:ring-blue-500/30 focus-visible:border-blue-500/40' },
-  { border: 'border-cyan-500/20', bg: 'bg-cyan-500/[0.06]', accent: 'text-cyan-600 dark:text-cyan-300', dot: 'bg-cyan-400', selectBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/25', inputRing: 'focus-visible:ring-cyan-500/30 focus-visible:border-cyan-500/40' },
-  { border: 'border-emerald-500/20', bg: 'bg-emerald-500/[0.06]', accent: 'text-emerald-600 dark:text-emerald-300', dot: 'bg-emerald-400', selectBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/25', inputRing: 'focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/40' },
-  { border: 'border-amber-500/20', bg: 'bg-amber-500/[0.06]', accent: 'text-amber-600 dark:text-amber-300', dot: 'bg-amber-400', selectBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/25', inputRing: 'focus-visible:ring-amber-500/30 focus-visible:border-amber-500/40' },
-  { border: 'border-rose-500/20', bg: 'bg-rose-500/[0.06]', accent: 'text-rose-500 dark:text-rose-300', dot: 'bg-rose-400', selectBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-500/25', inputRing: 'focus-visible:ring-rose-500/30 focus-visible:border-rose-500/40' },
+  { border: 'border-violet-500/20', bg: 'bg-violet-500/[0.06]', accent: 'text-violet-500 dark:text-violet-300', dot: 'bg-violet-400', selectBg: 'bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-blue-500/20', bg: 'bg-blue-500/[0.06]', accent: 'text-blue-500 dark:text-blue-300', dot: 'bg-blue-400', selectBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-cyan-500/20', bg: 'bg-cyan-500/[0.06]', accent: 'text-cyan-600 dark:text-cyan-300', dot: 'bg-cyan-400', selectBg: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-emerald-500/20', bg: 'bg-emerald-500/[0.06]', accent: 'text-emerald-600 dark:text-emerald-300', dot: 'bg-emerald-400', selectBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-amber-500/20', bg: 'bg-amber-500/[0.06]', accent: 'text-amber-600 dark:text-amber-300', dot: 'bg-amber-400', selectBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
+  { border: 'border-rose-500/20', bg: 'bg-rose-500/[0.06]', accent: 'text-rose-500 dark:text-rose-300', dot: 'bg-rose-400', selectBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-500/25', inputRing: 'focus:outline-none focus-visible:ring-0 focus-visible:border-primary/15' },
 ] as const;
 
 const slideVariants = {
@@ -97,7 +97,14 @@ export function BuildQuestionnaireModal({
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      // Allow Enter in text inputs when field is not empty
+      if (e.key === 'Enter' && isInput) {
+        const val = (e.target as HTMLInputElement)?.value?.trim();
+        if (val) { e.preventDefault(); isLast ? onSubmit() : goNext(); }
+        return;
+      }
+      if (isInput) return;
       if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
       if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
       if (e.key === 'Enter') { e.preventDefault(); isLast ? onSubmit() : goNext(); }
@@ -130,23 +137,18 @@ export function BuildQuestionnaireModal({
       size="lg"
       panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden w-full max-w-2xl"
     >
-      {/* Header */}
+      {/* Header — step name + progress */}
       <div
         data-testid="build-questionnaire-modal"
         className="flex items-center justify-between px-6 py-4 border-b border-primary/10"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <HelpCircle className="w-4.5 h-4.5 text-primary" />
-          </div>
-          <div>
-            <h3 id="build-questionnaire-title" className="text-base font-semibold text-foreground/90">
-              Setup Questions
-            </h3>
-            <p className="text-xs text-muted-foreground/50">
-              {answeredCount} of {questions.length} answered
-            </p>
-          </div>
+        <div>
+          <h3 id="build-questionnaire-title" className="text-sm font-semibold text-foreground/90">
+            {dim ? dim.label : 'Setup'} — Question {activeIndex + 1} of {questions.length}
+          </h3>
+          <p className="text-xs text-muted-foreground/50 mt-0.5">
+            {answeredCount} of {questions.length} answered
+          </p>
         </div>
         <button
           onClick={onClose}

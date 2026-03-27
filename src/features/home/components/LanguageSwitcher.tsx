@@ -3,17 +3,22 @@ import { Languages, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/features/shared/components/buttons';
 
-const LANGUAGES = ([
-  { code: 'ar' as const, label: 'العربية', flag: '🇸🇦' },
-  { code: 'zh' as const, label: '中文', flag: '🇨🇳' },
-  { code: 'en' as const, label: 'English', flag: '🇺🇸' },
-  { code: 'hi' as const, label: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'id' as const, label: 'Bahasa Indonesia', flag: '🇮🇩' },
-  { code: 'ru' as const, label: 'Русский', flag: '🇷🇺' },
-] satisfies { code: Language; label: string; flag: string }[]).sort((a, b) => {
-  const order: Language[] = ['ar', 'zh', 'en', 'hi', 'id', 'ru'];
-  return order.indexOf(a.code) - order.indexOf(b.code);
-});
+const LANGUAGES: { code: Language; label: string; flag: string }[] = [
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
+  { code: 'bn', label: 'বাংলা', flag: '🇧🇩' },
+  { code: 'cs', label: 'Čeština', flag: '🇨🇿' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
+  { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
+];
 
 /** Map language code to illustration file (dark variant). */
 function langIllustration(code: string) {
@@ -25,7 +30,7 @@ export function LanguageCardGrid() {
   const { language, setLanguage } = useI18nStore();
   return (
     <div>
-      <div className="animate-fade-slide-in grid grid-cols-3 sm:grid-cols-6 gap-2">
+      <div className="animate-fade-slide-in grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-2">
         {LANGUAGES.map((lang) => {
           const isActive = language === lang.code;
           return (
@@ -86,7 +91,7 @@ export default function LanguageSwitcher() {
               className="animate-fade-slide-in absolute top-full mt-2 right-0 rounded-xl bg-card border border-border shadow-xl z-50 overflow-hidden p-2"
             >
               {/* Card grid with illustration backgrounds */}
-              <div className="grid grid-cols-3 gap-2" style={{ width: '340px' }}>
+              <div className="grid grid-cols-4 gap-2" style={{ width: '420px' }}>
                 {LANGUAGES.map((lang) => {
                   const isActive = language === lang.code;
                   return (

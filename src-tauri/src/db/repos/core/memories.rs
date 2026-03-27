@@ -101,6 +101,7 @@ fn build_memory_filters(
 row_mapper!(row_to_memory -> PersonaMemory {
     id, persona_id, title, content, category,
     source_execution_id, importance, tags,
+    tier, access_count, last_accessed_at,
     created_at, updated_at,
 });
 
@@ -111,6 +112,9 @@ fn validated_sort_column(col: Option<&str>) -> &str {
         Some("title") => "title",
         Some("category") => "category",
         Some("updated_at") => "updated_at",
+        Some("tier") => "tier",
+        Some("access_count") => "access_count",
+        Some("last_accessed_at") => "last_accessed_at",
         // Default to created_at
         _ => "created_at",
     }
@@ -258,8 +262,8 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
     let conn = pool.get()?;
     conn.execute(
         "INSERT INTO persona_memories
-         (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+         (id, persona_id, title, content, category, source_execution_id, importance, tags, tier, access_count, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'active', 0, ?9, ?9)",
         params![
             id,
             input.persona_id,
@@ -482,6 +486,155 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
 }
 
 crud_delete!("persona_memories");
+
+// ---------------------------------------------------------------------------
+// Tiered memory injection & lifecycle
+// ---------------------------------------------------------------------------
+
+/// Result of tiered memory selection for prompt injection.
+#[derive(Debug, serde::Serialize)]
+pub struct TieredMemories {
+    /// Core beliefs — always injected, stable identity/preferences.
+    pub core: Vec<PersonaMemory>,
+    /// Active knowledge — scored by importance + recency + access frequency.
+    pub active: Vec<PersonaMemory>,
+}
+
+/// Fetch memories for prompt injection using the tiered selection strategy.
+///
+/// 1. All `core` memories for this persona (capped at `core_limit`).
+/// 2. Top `active_limit` active memories scored by:
+///    - importance (40%)
+///    - access frequency boost (30%)
+///    - recency boost (30%)
+pub fn get_for_injection(
+    pool: &DbPool,
+    persona_id: &str,
+    core_limit: i64,
+    active_limit: i64,
+) -> Result<TieredMemories, AppError> {
+    let conn = pool.get()?;
+
+    // Core memories: always injected, ordered by importance
+    let mut core_stmt = conn.prepare(
+        "SELECT * FROM persona_memories
+         WHERE persona_id = ?1 AND tier = 'core'
+         ORDER BY importance DESC, created_at DESC
+         LIMIT ?2",
+    )?;
+    let core_rows = core_stmt.query_map(params![persona_id, core_limit], row_to_memory)?;
+    let core: Vec<PersonaMemory> = collect_rows(core_rows, "memories::get_for_injection/core");
+
+    // Active memories: scored selection
+    // Score = importance * 0.4
+    //       + min(access_count, 10) * 0.3   (caps at 10 to avoid runaway)
+    //       + recency_boost * 0.3
+    //         (7 days = 3.0, 30 days = 2.0, 90 days = 1.0, older = 0.0)
+    let mut active_stmt = conn.prepare(
+        "SELECT * FROM persona_memories
+         WHERE persona_id = ?1 AND tier = 'active'
+         ORDER BY
+           (importance * 0.4) +
+           (MIN(access_count, 10) * 0.3) +
+           (CASE
+              WHEN julianday('now') - julianday(COALESCE(last_accessed_at, created_at)) < 7  THEN 3.0
+              WHEN julianday('now') - julianday(COALESCE(last_accessed_at, created_at)) < 30 THEN 2.0
+              WHEN julianday('now') - julianday(COALESCE(last_accessed_at, created_at)) < 90 THEN 1.0
+              ELSE 0.0
+            END * 0.3)
+           DESC,
+           created_at DESC
+         LIMIT ?2",
+    )?;
+    let active_rows = active_stmt.query_map(params![persona_id, active_limit], row_to_memory)?;
+    let active: Vec<PersonaMemory> = collect_rows(active_rows, "memories::get_for_injection/active");
+
+    Ok(TieredMemories { core, active })
+}
+
+/// Increment access_count and update last_accessed_at for a batch of memory IDs.
+/// Called after memories are injected into a prompt.
+pub fn increment_access_batch(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
+    if ids.is_empty() {
+        return Ok(());
+    }
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let placeholders: Vec<String> = (2..=ids.len() + 1).map(|i| format!("?{i}")).collect();
+    let sql = format!(
+        "UPDATE persona_memories
+         SET access_count = access_count + 1, last_accessed_at = ?1
+         WHERE id IN ({})",
+        placeholders.join(", ")
+    );
+    let mut params: Vec<&dyn rusqlite::types::ToSql> = vec![&now as &dyn rusqlite::types::ToSql];
+    params.extend(ids.iter().map(|id| id as &dyn rusqlite::types::ToSql));
+    conn.execute(&sql, params.as_slice())?;
+    Ok(())
+}
+
+/// Update the tier of a single memory.
+pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError> {
+    // Validate tier value
+    if !matches!(tier, "core" | "active" | "archive") {
+        return Err(AppError::Validation(
+            "Tier must be one of: core, active, archive".into(),
+        ));
+    }
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let rows = conn.execute(
+        "UPDATE persona_memories SET tier = ?1, updated_at = ?2 WHERE id = ?3",
+        params![tier, now, id],
+    )?;
+    Ok(rows > 0)
+}
+
+/// Run automatic lifecycle transitions for a persona's memories.
+///
+/// - **Auto-promote to core**: access_count ≥ 10 AND importance ≥ 7 AND tier = 'active'
+/// - **Auto-archive**: tier = 'active' AND access_count = 0 AND age > 60 days
+///
+/// Returns (promoted_count, archived_count).
+pub fn run_lifecycle(pool: &DbPool, persona_id: &str) -> Result<(i64, i64), AppError> {
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+
+    // Auto-promote: frequently accessed, high-importance active memories → core
+    let promoted = conn.execute(
+        "UPDATE persona_memories
+         SET tier = 'core', updated_at = ?1
+         WHERE persona_id = ?2
+           AND tier = 'active'
+           AND access_count >= 10
+           AND importance >= 7",
+        params![now, persona_id],
+    )?;
+
+    // Auto-archive: old, never-accessed active memories → archive
+    let archived = conn.execute(
+        "UPDATE persona_memories
+         SET tier = 'archive', updated_at = ?1
+         WHERE persona_id = ?2
+           AND tier = 'active'
+           AND access_count = 0
+           AND julianday('now') - julianday(created_at) > 60",
+        params![now, persona_id],
+    )?;
+
+    if promoted > 0 || archived > 0 {
+        tracing::info!(
+            persona_id,
+            promoted,
+            archived,
+            "Memory lifecycle: promoted {} to core, archived {} stale",
+            promoted,
+            archived
+        );
+    }
+
+    Ok((promoted as i64, archived as i64))
+}
 
 #[cfg(test)]
 mod tests {

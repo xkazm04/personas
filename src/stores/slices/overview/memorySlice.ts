@@ -2,10 +2,10 @@ import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
 import type { PersonaMemory } from "@/lib/types/types";
-import type { MemoryStats, MemoryReviewResult } from "@/api/overview/memories";
+import type { MemoryStats, MemoryReviewResult, MemoryTier } from "@/api/overview/memories";
 import type { MemoryAction } from "@/features/overview/sub_memories/libs/memoryActions";
 import { extractActionsFromReview, loadActions, saveActions } from "@/features/overview/sub_memories/libs/memoryActions";
-import { createMemory, deleteMemory, listMemoriesWithStats, reviewMemoriesWithCli } from "@/api/overview/memories";
+import { createMemory, deleteMemory, listMemoriesWithStats, reviewMemoriesWithCli, updateMemoryTier } from "@/api/overview/memories";
 
 
 export interface MemorySlice {
@@ -20,6 +20,7 @@ export interface MemorySlice {
   createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<boolean>;
   deleteMemory: (id: string) => Promise<void>;
   reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
+  setMemoryTier: (id: string, tier: MemoryTier) => Promise<void>;
   dismissMemoryAction: (actionId: string) => void;
   loadMemoryActions: () => void;
 }
@@ -104,6 +105,19 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
     } catch (err) {
       reportError(err, "Failed to review memories", set);
       throw err;
+    }
+  },
+
+  setMemoryTier: async (id, tier) => {
+    try {
+      await updateMemoryTier(id, tier);
+      set((state) => ({
+        memories: state.memories.map((m) =>
+          m.id === id ? { ...m, tier } : m,
+        ),
+      }));
+    } catch (err) {
+      reportError(err, "Failed to update memory tier", set);
     }
   },
 

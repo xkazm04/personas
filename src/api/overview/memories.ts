@@ -106,3 +106,18 @@ export const reviewMemoriesWithCli = (personaId?: string, threshold?: number) =>
 
 export const seedMockMemory = () =>
   invoke<PersonaMemory>("seed_mock_memory", {});
+
+// -- Tier management --------------------------------------------------------
+
+export type MemoryTier = 'core' | 'active' | 'archive';
+
+export const updateMemoryTier = (id: string, tier: MemoryTier) =>
+  invoke<boolean>("update_memory_tier", { id, tier });
+
+export interface MemoryLifecycleResult {
+  promoted: number;
+  archived: number;
+}
+
+export const runMemoryLifecycle = (personaId: string) =>
+  invoke<MemoryLifecycleResult>("run_memory_lifecycle", { personaId });

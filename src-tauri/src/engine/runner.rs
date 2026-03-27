@@ -327,21 +327,60 @@ pub async fn run_execution(
         )
     };
 
-    // Inject top-N agent memories from prior runs so the agent can recall
+    // Inject tiered agent memories from prior runs so the agent can recall
     // what the user found valuable, recurring patterns, and learned context.
+    // Core memories (stable beliefs/preferences) are always injected.
+    // Active memories are scored by importance + recency + access frequency.
     let prompt_text = if !is_session_resume {
-        match mem_repo::get_by_persona(&pool, &persona.id, Some(20)) {
-            Ok(memories) if !memories.is_empty() => {
-                let mut mem_section = String::from("\n\n## Agent Memory -- Prior Learnings\n\n");
-                mem_section.push_str("The following memories were saved from your previous executions. Use them to inform your analysis, prioritize what the user found valuable, and avoid repeating approaches they marked as invaluable.\n\n");
-                for m in &memories {
-                    mem_section.push_str(&format!(
-                        "- **{}** [{}] (importance: {}): {}\n",
-                        m.title, m.category, m.importance, m.content
-                    ));
+        match mem_repo::get_for_injection(&pool, &persona.id, 10, 40) {
+            Ok(tiered) if !tiered.core.is_empty() || !tiered.active.is_empty() => {
+                let mut mem_section = String::new();
+
+                // Core beliefs — always present, define agent identity
+                if !tiered.core.is_empty() {
+                    mem_section.push_str("\n\n## Agent Memory — Core Beliefs\n\n");
+                    mem_section.push_str("These are your established principles and preferences learned over many interactions. Treat them as strong defaults.\n\n");
+                    for m in &tiered.core {
+                        mem_section.push_str(&format!(
+                            "- **{}** [{}]: {}\n",
+                            m.title, m.category, m.content
+                        ));
+                    }
                 }
+
+                // Active knowledge — recent learnings, contextual facts
+                if !tiered.active.is_empty() {
+                    mem_section.push_str("\n\n## Agent Memory — Recent Learnings\n\n");
+                    mem_section.push_str("Context from recent work. Use to inform your analysis and avoid repeating past mistakes.\n\n");
+                    for m in &tiered.active {
+                        mem_section.push_str(&format!(
+                            "- **{}** [{}] (importance: {}): {}\n",
+                            m.title, m.category, m.importance, m.content
+                        ));
+                    }
+                }
+
                 mem_section.push('\n');
-                logger.log(&format!("[MEMORY] Injected {} memories from prior runs", memories.len()));
+                let total = tiered.core.len() + tiered.active.len();
+                logger.log(&format!(
+                    "[MEMORY] Injected {} memories ({} core, {} active)",
+                    total, tiered.core.len(), tiered.active.len()
+                ));
+
+                // Track access: increment counters for all injected memories
+                let all_ids: Vec<String> = tiered.core.iter()
+                    .chain(tiered.active.iter())
+                    .map(|m| m.id.clone())
+                    .collect();
+                if let Err(e) = mem_repo::increment_access_batch(&pool, &all_ids) {
+                    logger.log(&format!("[MEMORY] Failed to update access counts: {e}"));
+                }
+
+                // Run lifecycle transitions (promote/archive) after access update
+                if let Err(e) = mem_repo::run_lifecycle(&pool, &persona.id) {
+                    logger.log(&format!("[MEMORY] Lifecycle transition failed: {e}"));
+                }
+
                 format!("{prompt_text}{mem_section}")
             }
             Ok(_) => prompt_text, // no memories yet
@@ -879,6 +918,56 @@ pub async fn run_execution(
                                 ref input_preview,
                             } = line_type
                             {
+                                // Protocol tool interception: if the LLM called one of our
+                                // virtual protocol tools, parse the input and dispatch as a
+                                // structured protocol message (more reliable than JSON lines).
+                                static PROTOCOL_TOOLS: &[&str] = &["emit_memory", "emit_message", "emit_event", "request_review"];
+                                if PROTOCOL_TOOLS.contains(&tool_name.as_str()) {
+                                    if let Ok(input_val) = serde_json::from_str::<serde_json::Value>(input_preview) {
+                                        let protocol_msg = match tool_name.as_str() {
+                                            "emit_memory" => Some(ProtocolMessage::AgentMemory {
+                                                title: input_val.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled").to_string(),
+                                                content: input_val.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                                category: input_val.get("category").and_then(|v| v.as_str()).map(String::from),
+                                                importance: input_val.get("importance").and_then(|v| v.as_i64()).map(|v| v as i32),
+                                                tags: input_val.get("tags").and_then(|v| serde_json::from_value(v.clone()).ok()),
+                                            }),
+                                            "emit_message" => Some(ProtocolMessage::UserMessage {
+                                                title: input_val.get("title").and_then(|v| v.as_str()).map(String::from),
+                                                content: input_val.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                                content_type: input_val.get("content_type").and_then(|v| v.as_str()).map(String::from),
+                                                priority: input_val.get("priority").and_then(|v| v.as_str()).map(String::from),
+                                            }),
+                                            "emit_event" => Some(ProtocolMessage::EmitEvent {
+                                                event_type: input_val.get("event_type").and_then(|v| v.as_str()).unwrap_or("custom").to_string(),
+                                                data: input_val.get("data").cloned(),
+                                            }),
+                                            "request_review" => Some(ProtocolMessage::ManualReview {
+                                                title: input_val.get("title").and_then(|v| v.as_str()).unwrap_or("Review Required").to_string(),
+                                                description: input_val.get("description").and_then(|v| v.as_str()).map(String::from),
+                                                severity: input_val.get("severity").and_then(|v| v.as_str()).map(String::from),
+                                                context_data: input_val.get("context_data").and_then(|v| v.as_str()).map(String::from),
+                                                suggested_actions: input_val.get("suggested_actions").and_then(|v| serde_json::from_value(v.clone()).ok()),
+                                            }),
+                                            _ => None,
+                                        };
+                                        if let Some(msg) = protocol_msg {
+                                            let notif_ref = notif_channels_for_stream.as_deref();
+                                            let mut dispatch_ctx = super::dispatch::DispatchContext {
+                                                app: &app,
+                                                pool: &pool_for_stream,
+                                                execution_id: &exec_id_for_stream,
+                                                persona_id: &persona_id_for_stream,
+                                                project_id: &project_id_for_stream,
+                                                persona_name: &persona_name_for_stream,
+                                                notification_channels: notif_ref,
+                                                logger: &mut logger,
+                                            };
+                                            super::dispatch::dispatch(&mut dispatch_ctx, &msg);
+                                        }
+                                    }
+                                }
+
                                 tool_use_lines.push(line_type.clone());
                                 step_counter += 1;
 

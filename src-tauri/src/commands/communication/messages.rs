@@ -179,6 +179,7 @@ pub fn seed_mock_message(
         content_type: None,
         priority: Some(MOCK_MESSAGE_PRIORITIES[t % MOCK_MESSAGE_PRIORITIES.len()].to_string()),
         metadata: None,
+        thread_id: None,
     };
 
     // Disable FK checks for dev seed (persona may not exist)

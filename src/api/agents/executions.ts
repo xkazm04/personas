@@ -93,3 +93,24 @@ export const getDreamReplay = (executionId: string, callerPersonaId: string) =>
 
 export const getCircuitBreakerStatus = () =>
   invoke<CircuitBreakerStatus>("get_circuit_breaker_status");
+
+// ============================================================================
+// Execution Preview
+// ============================================================================
+
+export interface ExecutionPreview {
+  prompt_preview: string;
+  estimated_input_tokens: number;
+  estimated_output_tokens: number;
+  estimated_input_cost: number;
+  estimated_output_cost: number;
+  estimated_total_cost: number;
+  model: string;
+  memory_count: number;
+  tool_count: number;
+  monthly_spend: number;
+  budget_limit: number;
+}
+
+export const previewExecution = (personaId: string, inputData?: string, useCaseId?: string) =>
+  invoke<ExecutionPreview>("preview_execution", { personaId, inputData, useCaseId });

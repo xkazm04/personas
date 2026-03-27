@@ -13,7 +13,9 @@ import type { HealthGrade, DataSourceStatusMap, DataSourceName } from '@/stores/
 
 const StatusPageView = lazy(() => import('./StatusPageView').then(m => ({ default: m.StatusPageView })));
 
-type HealthView = 'heartbeats' | 'status-page';
+type HealthView = 'heartbeats' | 'status-page' | 'reliability';
+
+const SLADashboard = lazy(() => import('@/features/overview/sub_sla/SLADashboard'));
 type FilterGrade = 'all' | HealthGrade;
 
 export default function PersonaHealthDashboard() {
@@ -112,6 +114,17 @@ export default function PersonaHealthDashboard() {
               >
                 <Rows3 className="w-3 h-3" /> Status Page
               </button>
+              <button
+                onClick={() => setHealthView('reliability')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors ${
+                  healthView === 'reliability'
+                    ? 'bg-primary/10 text-foreground/90'
+                    : 'text-muted-foreground/60 hover:bg-secondary/40'
+                }`}
+                title="SLA reliability view"
+              >
+                <Shield className="w-3 h-3" /> Reliability
+              </button>
             </div>
 
             {lastRefreshLabel && (
@@ -133,6 +146,10 @@ export default function PersonaHealthDashboard() {
         {healthView === 'status-page' ? (
           <Suspense fallback={<div className="flex items-center justify-center py-16 text-muted-foreground/50 text-sm">Loading status page...</div>}>
             <StatusPageView />
+          </Suspense>
+        ) : healthView === 'reliability' ? (
+          <Suspense fallback={<div className="flex items-center justify-center py-16 text-muted-foreground/50 text-sm">Loading reliability data...</div>}>
+            <SLADashboard />
           </Suspense>
         ) : (
         <div className="space-y-6">

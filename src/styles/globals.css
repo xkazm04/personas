@@ -91,11 +91,11 @@
 :root {
   --background: #0a0e14;
   --foreground: #e2e8f0;
-  --muted: #64748b;
-  --muted-dark: #475569;
-  --muted-foreground: #94a3b8;
-  --card-bg: rgba(255, 255, 255, 0.03);
-  --card-border: rgba(255, 255, 255, 0.06);
+  --muted: #8c9aae;
+  --muted-dark: #6e7e92;
+  --muted-foreground: #bcc8d8;
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --card-border: rgba(255, 255, 255, 0.10);
   --primary: #06b6d4;
   --secondary: #1e293b;
   --accent: #22d3ee;

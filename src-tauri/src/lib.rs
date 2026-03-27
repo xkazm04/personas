@@ -293,6 +293,8 @@ pub struct AppState {
     pub vector_store: Option<Arc<engine::vector_store::SqliteVectorStore>>,
     /// Build session manager for multi-turn agent builder sessions.
     pub build_session_manager: Arc<engine::build_session::BuildSessionManager>,
+    /// Session reuse pool — caches Claude session IDs for warm persona re-execution.
+    pub session_pool: Arc<engine::session_pool::SessionPool>,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -593,6 +595,7 @@ pub fn run() {
                 embedding_manager: Some(embedding_manager),
                 vector_store: Some(vector_store),
                 build_session_manager: Arc::new(engine::build_session::BuildSessionManager::new()),
+                session_pool: Arc::new(engine::session_pool::SessionPool::new()),
             });
             app.manage(state_arc.clone());
 
@@ -775,6 +778,8 @@ pub fn run() {
             commands::core::memories::update_memory_importance,
             commands::core::memories::batch_delete_memories,
             commands::core::memories::review_memories_with_cli,
+            commands::core::memories::update_memory_tier,
+            commands::core::memories::run_memory_lifecycle,
             // Core -- Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
@@ -814,6 +819,7 @@ pub fn run() {
             commands::execution::executions::get_chain_trace,
             commands::execution::executions::get_dream_replay,
             commands::execution::executions::get_circuit_breaker_status,
+            commands::execution::executions::preview_execution,
             // Execution -- Scheduler
             commands::execution::scheduler::get_scheduler_status,
             commands::execution::scheduler::start_scheduler,
@@ -1339,6 +1345,7 @@ pub fn run() {
             // Signing -- Document Signatures
             commands::signing::sign_document,
             commands::signing::verify_document,
+            commands::signing::generate_signing_key,
             commands::signing::list_document_signatures,
             commands::signing::get_document_signature,
             commands::signing::delete_document_signature,

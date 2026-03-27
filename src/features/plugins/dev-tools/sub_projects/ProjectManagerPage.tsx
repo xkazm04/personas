@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   FolderKanban, Plus, Target, ChevronRight, GripVertical,
   Trash2, CheckCircle2, Circle, Clock, AlertCircle, X, Folder,
-  FolderOpen, Search, Pencil,
+  FolderOpen, Search, Pencil, MoreHorizontal,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -496,6 +496,55 @@ function GoalBoard({
 // Main Page
 // ---------------------------------------------------------------------------
 
+function ProjectRowMenu({ projectId, projectName }: { projectId: string; projectName: string }) {
+  const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const deleteProject = useSystemStore((s) => s.deleteProject);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirming) {
+      setConfirming(true);
+      setTimeout(() => setConfirming(false), 3000);
+      return;
+    }
+    await deleteProject(projectId);
+    setOpen(false);
+    setConfirming(false);
+  };
+
+  return (
+    <div className="self-center relative">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); setConfirming(false); }}
+        className="p-1 rounded-lg text-muted-foreground/30 hover:text-muted-foreground/60 hover:bg-secondary/40 transition-colors"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setConfirming(false); }} />
+          <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden py-1">
+            <button
+              type="button"
+              onClick={handleDelete}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${
+                confirming ? 'bg-red-500/10 text-red-400' : 'text-red-400/70 hover:bg-red-500/5'
+              }`}
+            >
+              <Trash2 className="w-3 h-3" />
+              {confirming ? `Delete "${projectName.slice(0, 12)}"?` : 'Delete Project'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
 export default function ProjectManagerPage() {
   // Store bindings
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
@@ -661,20 +710,21 @@ export default function ProjectManagerPage() {
             ) : (
               <div className="border border-primary/10 rounded-xl overflow-hidden">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
                   <span>Name</span>
                   <span>Path</span>
                   <span>Tech Stack</span>
                   <span>Goals</span>
                   <span>Status</span>
                   <span>Created</span>
+                  <span></span>
                 </div>
                 {/* Table rows */}
                 {projects.map((project) => (
                   <div
                     key={project.id}
                     onClick={() => handleSetActive(project.id)}
-                    className={`grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr] gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0 cursor-pointer transition-colors ${
+                    className={`grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0 cursor-pointer transition-colors ${
                       activeProjectId === project.id
                         ? 'bg-primary/10'
                         : 'hover:bg-primary/5'
@@ -689,6 +739,7 @@ export default function ProjectManagerPage() {
                     <span className="text-xs text-muted-foreground/60 self-center">{project.goalCount}</span>
                     <span className="self-center"><StatusBadge status={project.status} /></span>
                     <span className="text-xs text-muted-foreground/60 self-center">{project.createdAt}</span>
+                    <ProjectRowMenu projectId={project.id} projectName={project.name} />
                   </div>
                 ))}
               </div>

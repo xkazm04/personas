@@ -217,6 +217,21 @@ pub fn assemble_prompt(
         }
     }
 
+    // Protocol tools — structured output via tool_use calls
+    // These are virtual tools recognized by the execution engine. When the LLM
+    // emits a tool_use with one of these names, the engine routes it as a
+    // structured protocol message (more reliable than JSON lines in text).
+    prompt.push_str("## Protocol Tools (Preferred Output Method)\n\n");
+    prompt.push_str("Use these tool calls to communicate structured output. The execution engine intercepts them automatically. Prefer these over raw JSON lines — they are more reliable and validated.\n\n");
+    prompt.push_str("### emit_memory\nStore a learning or preference for future executions.\n");
+    prompt.push_str("**Input**: `{\"title\": \"string\", \"content\": \"string\", \"category\": \"learning|preference|fact|instruction|context\", \"importance\": 1-10, \"tags\": [\"string\"]}`\n\n");
+    prompt.push_str("### emit_message\nSend your main output/report to the user. This is how users receive your work.\n");
+    prompt.push_str("**Input**: `{\"title\": \"string\", \"content\": \"string\", \"content_type\": \"success|info|warning|error\", \"priority\": \"normal|high|low\"}`\n\n");
+    prompt.push_str("### emit_event\nSignal completion or broadcast a custom event for other agents/systems.\n");
+    prompt.push_str("**Input**: `{\"event_type\": \"string\", \"data\": {}}`\n\n");
+    prompt.push_str("### request_review\nRequest human review for a business decision.\n");
+    prompt.push_str("**Input**: `{\"title\": \"string\", \"description\": \"string\", \"severity\": \"low|medium|high|critical\", \"context_data\": \"string\", \"suggested_actions\": [\"string\"]}`\n\n");
+
     // Platform and execution environment guidance
     prompt.push_str("## Execution Environment\n");
     #[cfg(windows)]

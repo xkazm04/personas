@@ -47,6 +47,16 @@ export interface ExecutionRunProgress {
   error?: string;
 }
 
+/** A background execution tracked minimally (no terminal output buffering). */
+export interface BackgroundExecution {
+  executionId: string;
+  personaId: string;
+  personaName: string;
+  personaColor: string;
+  status: 'running' | 'queued' | 'completed' | 'failed' | 'cancelled';
+  startedAt: string;
+}
+
 export interface ExecutionSlice {
   // State
   executions: PersonaExecution[];
@@ -73,6 +83,8 @@ export interface ExecutionSlice {
   designDriftEvents: DesignDriftEvent[];
   /** Last completed/cancelled execution ID -- survives state reset so Resume can fetch its session. */
   lastExecutionId: string | null;
+  /** Background executions running concurrently (no terminal output — tracked for status only). */
+  backgroundExecutions: BackgroundExecution[];
 
   // Actions
   executePersona: (personaId: string, inputData?: object, useCaseId?: string, continuation?: Continuation) => Promise<string | null>;
@@ -84,6 +96,10 @@ export interface ExecutionSlice {
   setQueueStatus: (position: number | null, depth: number | null) => void;
   setExecutionProgress: (progress: ExecutionRunProgress | null) => void;
   dismissDriftEvent: (eventId: string) => void;
+  /** Update a background execution's status (called from event listeners). */
+  updateBackgroundExecution: (executionId: string, status: BackgroundExecution['status']) => void;
+  /** Remove a background execution from tracking. */
+  removeBackgroundExecution: (executionId: string) => void;
 }
 
 export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSlice> = (set, get) => {
@@ -160,15 +176,10 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   queueDepth: null,
   designDriftEvents: loadDriftEvents(),
   lastExecutionId: null,
+  backgroundExecutions: [],
 
   executePersona: async (personaId, inputData, useCaseId, continuation) => {
-    // Guard: reject concurrent executions. The store tracks a single active
-    // execution -- a second call would overwrite activeExecutionId and
-    // executionPersonaId, corrupting terminal output with interleaved lines.
-    if (get().isExecuting) {
-      set({ error: "Another execution is already running. Wait for it to complete or cancel it first." });
-      return null;
-    }
+    const isAlreadyExecuting = get().isExecuting;
 
     // Budget enforcement: block execution when monthly spend exceeds budget
     // unless user has explicitly overridden for this session.
@@ -177,11 +188,17 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       return null;
     }
 
-    // Lock execution state immediately before any async work to close the
-    // race-window where a second call could pass the isExecuting guard.
-    executionSink.reset();
-    executionLifecycle.markStarted(set);
-    set({ executionOutput: [], executionOutputBytes: 0, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null });
+    // If another execution is already focused (has terminal output), this one
+    // runs in the background — tracked for status but no terminal buffering.
+    const runInBackground = isAlreadyExecuting;
+
+    if (!runInBackground) {
+      // Lock execution state immediately before any async work to close the
+      // race-window where a second call could pass the isExecuting guard.
+      executionSink.reset();
+      executionLifecycle.markStarted(set);
+      set({ executionOutput: [], executionOutputBytes: 0, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null });
+    }
 
     // Pipeline: initiate stage
     let trace = createPipelineTrace('pending');
@@ -191,7 +208,9 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     const initiatePayload: InitiatePayload = { personaId, inputData, useCaseId };
     await runMiddleware('initiate', initiatePayload, trace);
 
-    set({ pipelineTrace: trace, executionProgress: { phase: 'initiating', pipelineStage: 'initiate' } });
+    if (!runInBackground) {
+      set({ pipelineTrace: trace, executionProgress: { phase: 'initiating', pipelineStage: 'initiate' } });
+    }
     try {
       // Pipeline: validate stage -- middleware can enrich inputData (e.g. knowledge injection)
       trace = traceStage(trace, 'validate');
@@ -230,21 +249,41 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
 
       trace = { ...trace, executionId: execution.id };
 
-      set({ activeExecutionId: execution.id, pipelineTrace: trace, executionProgress: { executionId: execution.id, phase: 'running', pipelineStage: 'spawn_engine' } });
-      // Persist to localStorage for recovery after refresh
-      try {
-        localStorage.setItem('personas:active-execution', JSON.stringify({
-          activeExecutionId: execution.id,
-          executionPersonaId: personaId,
-          isExecuting: true,
-        }));
-      } catch { /* ignore */ }
+      if (runInBackground) {
+        // Track as background execution — no terminal output, just status
+        const personas = (get() as unknown as { personas: Array<{ id: string; name: string; color: string }> }).personas ?? [];
+        const persona = personas.find((p) => p.id === personaId);
+        const bgExec: BackgroundExecution = {
+          executionId: execution.id,
+          personaId,
+          personaName: persona?.name ?? 'Agent',
+          personaColor: persona?.color ?? '#6B7280',
+          status: 'running',
+          startedAt: new Date().toISOString(),
+        };
+        set((state) => ({ backgroundExecutions: [...state.backgroundExecutions, bgExec] }));
+        logger.info("Execution started in background", { executionId: execution.id, personaId });
+      } else {
+        set({ activeExecutionId: execution.id, pipelineTrace: trace, executionProgress: { executionId: execution.id, phase: 'running', pipelineStage: 'spawn_engine' } });
+        // Persist to localStorage for recovery after refresh
+        try {
+          localStorage.setItem('personas:active-execution', JSON.stringify({
+            activeExecutionId: execution.id,
+            executionPersonaId: personaId,
+            isExecuting: true,
+          }));
+        } catch { /* ignore */ }
+      }
       return execution.id;
     } catch (err) {
       trace = traceStage(trace, 'validate', undefined, String(err));
       trace = completeTrace(trace);
-      executionLifecycle.markFailed(set);
-      reportError(err, "Failed to execute persona", set, { stateUpdates: { executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace } });
+      if (!runInBackground) {
+        executionLifecycle.markFailed(set);
+        reportError(err, "Failed to execute persona", set, { stateUpdates: { executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace } });
+      } else {
+        reportError(err, "Failed to execute persona in background", set);
+      }
       return null;
     }
   },
@@ -383,6 +422,20 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     );
     saveDriftEvents(updated);
     set({ designDriftEvents: updated });
+  },
+
+  updateBackgroundExecution: (executionId, status) => {
+    set((state) => ({
+      backgroundExecutions: state.backgroundExecutions.map((bg) =>
+        bg.executionId === executionId ? { ...bg, status } : bg,
+      ),
+    }));
+  },
+
+  removeBackgroundExecution: (executionId) => {
+    set((state) => ({
+      backgroundExecutions: state.backgroundExecutions.filter((bg) => bg.executionId !== executionId),
+    }));
   },
 });
 };

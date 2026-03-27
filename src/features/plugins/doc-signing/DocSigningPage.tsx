@@ -6,6 +6,7 @@ import {
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { useToastStore } from '@/stores/toastStore';
 import {
+  generateSigningKey,
   signDocument,
   verifyDocument,
   listDocumentSignatures,
@@ -74,7 +75,15 @@ function SignPanel() {
   const [metadata, setMetadata] = useState('');
   const [signing, setSigning] = useState(false);
   const [result, setResult] = useState<{ sidecarJson: string; fileName: string } | null>(null);
+  const [keyStatus, setKeyStatus] = useState<{ peer_id: string; display_name: string } | null>(null);
   const addToast = useToastStore((s) => s.addToast);
+
+  // Auto-generate key on mount if needed
+  useEffect(() => {
+    generateSigningKey()
+      .then((res) => setKeyStatus({ peer_id: res.peer_id, display_name: res.display_name }))
+      .catch(() => { /* will generate on first sign */ });
+  }, []);
 
   const pickFile = useCallback(async () => {
     const selected = await open({ multiple: false, directory: false });
@@ -124,6 +133,15 @@ function SignPanel() {
           Create an Ed25519 digital signature using your local identity key. The signature is stored locally and a portable .sig.json sidecar is generated.
         </p>
       </div>
+
+      {/* Signing identity */}
+      {keyStatus && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/5 border border-emerald-500/15 text-xs">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-foreground/60">Signing as <span className="font-medium text-foreground/80">{keyStatus.display_name}</span></span>
+          <span className="text-foreground/30 font-mono ml-auto">{keyStatus.peer_id.slice(0, 12)}...</span>
+        </div>
+      )}
 
       {/* File picker */}
       <button

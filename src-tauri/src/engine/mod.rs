@@ -89,6 +89,8 @@ pub mod cli_process;
 pub mod management_api;
 pub mod path_safety;
 pub mod platforms;
+pub mod cost;
+pub mod session_pool;
 pub mod template_checksums;
 #[cfg(feature = "desktop")]
 pub mod desktop_bridges;
@@ -103,7 +105,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tokio::sync::Mutex;
 use tokio::sync::oneshot;
 
@@ -1426,6 +1428,27 @@ async fn handle_execution_result(
     )
     .await;
 
+    // Session pool: cache successful session for warm reuse on next execution.
+    if result.success {
+        if let Some(ref session_id) = result.claude_session_id {
+            if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
+                // Compute config hash from the execution config snapshot
+                let config_hash = {
+                    use std::hash::{Hash, Hasher};
+                    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                    result.execution_config.as_deref().unwrap_or("").hash(&mut hasher);
+                    hasher.finish()
+                };
+                let pool_ref = state.session_pool.clone();
+                let pid = persona_id.to_string();
+                let sid = session_id.clone();
+                tokio::spawn(async move {
+                    pool_ref.offer(&pid, sid, config_hash).await;
+                });
+            }
+        }
+    }
+
     // Trust score refresh -- update graduated autonomy score from execution history
     if let Err(e) = persona_repo::refresh_trust_score(pool, persona_id) {
         tracing::warn!(persona_id, error = %e, "Failed to refresh trust score");
@@ -1589,6 +1612,7 @@ fn check_budget_enforcement(pool: &DbPool, persona_id: &str, exec_id: &str) {
                         content_type: Some("budget_alert".into()),
                         priority: Some("critical".into()),
                         metadata: None,
+                        thread_id: None,
                     },
                 );
                 tracing::warn!(

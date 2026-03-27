@@ -120,6 +120,37 @@ pub fn batch_delete_memories(
     repo::batch_delete(&state.db, &ids)
 }
 
+// -- Tier Management --------------------------------------------------------
+
+#[tauri::command]
+pub fn update_memory_tier(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    tier: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::update_tier(&state.db, &id, &tier)
+}
+
+/// Run automatic memory lifecycle transitions for a persona.
+/// Returns { promoted, archived } counts.
+#[tauri::command]
+pub fn run_memory_lifecycle(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<MemoryLifecycleResult, AppError> {
+    require_auth_sync(&state)?;
+    let (promoted, archived) = repo::run_lifecycle(&state.db, &persona_id)?;
+    Ok(MemoryLifecycleResult { promoted, archived })
+}
+
+#[derive(Debug, serde::Serialize, TS)]
+#[ts(export)]
+pub struct MemoryLifecycleResult {
+    pub promoted: i64,
+    pub archived: i64,
+}
+
 // -- LLM CLI Memory Review --------------------------------------------------
 
 #[derive(Debug, serde::Serialize, TS)]

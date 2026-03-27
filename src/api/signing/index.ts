@@ -29,6 +29,9 @@ export interface VerifyDocumentResult {
   error: string | null;
 }
 
+export const generateSigningKey = () =>
+  invoke<{ peer_id: string; display_name: string; status: string }>("generate_signing_key");
+
 export const signDocument = (filePath: string, metadata?: string) =>
   invoke<SignDocumentResult>("sign_document", { filePath, metadata });
 

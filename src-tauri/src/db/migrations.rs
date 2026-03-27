@@ -7,6 +7,12 @@ use crate::error::AppError;
 pub fn run(conn: &Connection) -> Result<(), AppError> {
     tracing::debug!("Running database migrations");
 
+    // Pre-schema migrations: add columns that the SCHEMA's CREATE INDEX statements depend on.
+    // These must run before SCHEMA so that indexes on new columns don't fail for existing DBs.
+    let _ = conn.execute_batch(
+        "ALTER TABLE persona_messages ADD COLUMN thread_id TEXT;"
+    ); // ignore "duplicate column" error on re-run
+
     conn.execute_batch(SCHEMA)?;
 
     // -- Smee Relay management table ------------------------------------------
@@ -168,13 +174,7 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         );"
     )?;
 
-    // -- Message threading: add thread_id column ---------------------------------
-    let _ = conn.execute_batch(
-        "ALTER TABLE persona_messages ADD COLUMN thread_id TEXT;"
-    ); // ignore "duplicate column" error on re-run
-    let _ = conn.execute_batch(
-        "CREATE INDEX IF NOT EXISTS idx_pmsg_thread ON persona_messages(thread_id);"
-    );
+    // thread_id migration moved to pre-schema block (top of run())
 
     tracing::info!("Database migrations complete");
     Ok(())
@@ -3132,6 +3132,36 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             "CREATE INDEX IF NOT EXISTS idx_ptr_status ON persona_triggers(status);"
         )?;
         tracing::info!("Added status column to persona_triggers and backfilled from enabled");
+    }
+
+    // -- Tiered memory lifecycle columns --------------------------------------
+    // Adds tier (core/active/archive), access tracking, and last_accessed_at
+    // to support smart memory injection with decay and promotion logic.
+    let has_memory_tier: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_memories') WHERE name = 'tier'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_memory_tier {
+        conn.execute_batch(
+            "ALTER TABLE persona_memories ADD COLUMN tier TEXT NOT NULL DEFAULT 'active';"
+        )?;
+        conn.execute_batch(
+            "ALTER TABLE persona_memories ADD COLUMN access_count INTEGER NOT NULL DEFAULT 0;"
+        )?;
+        conn.execute_batch(
+            "ALTER TABLE persona_memories ADD COLUMN last_accessed_at TEXT;"
+        )?;
+        // Composite index for the tiered injection query
+        conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_pm_tier_injection
+             ON persona_memories(persona_id, tier, importance DESC);"
+        )?;
+        // Backfill: promote high-importance memories (≥8) that already exist to core
+        conn.execute_batch(
+            "UPDATE persona_memories SET tier = 'core' WHERE importance >= 8;"
+        )?;
+        tracing::info!("Added tier, access_count, last_accessed_at columns to persona_memories");
     }
 
     Ok(())

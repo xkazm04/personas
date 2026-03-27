@@ -1,8 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, Bot } from 'lucide-react';
+import { Trash2, Bot, Star, Archive, ArrowUp, ArrowDown } from 'lucide-react';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
+
+// -- Tier badge ---------------------------------------------------------------
+interface TierStyle { label: string; icon: typeof Star; bg: string; text: string; border: string }
+const TIER_STYLE_ACTIVE: TierStyle = { label: 'Active',  icon: ArrowUp, bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' };
+const TIER_STYLES: Record<string, TierStyle> = {
+  core:    { label: 'Core',    icon: Star,    bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
+  active:  TIER_STYLE_ACTIVE,
+  archive: { label: 'Archive', icon: Archive, bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/20' },
+};
+
+export function TierBadge({ tier }: { tier: string }) {
+  const style = TIER_STYLES[tier] ?? TIER_STYLE_ACTIVE;
+  const Icon = style.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-md border ${style.bg} ${style.text} ${style.border}`}>
+      <Icon className="w-2.5 h-2.5" />
+      {style.label}
+    </span>
+  );
+}
 
 // -- Importance dots (1-10 scale) ---------------------------------------------
 export function ImportanceDots({ value }: { value: number }) {
@@ -29,9 +49,9 @@ export function ImportanceDots({ value }: { value: number }) {
 
 // -- Memory Row ---------------------------------------------------------------
 export function MemoryRow({
-  memory, personaName, personaColor, onDelete, onSelect,
+  memory, personaName, personaColor, onDelete, onSelect, onTierChange,
 }: {
-  memory: PersonaMemory; personaName: string; personaColor: string; onDelete: () => void; onSelect: () => void;
+  memory: PersonaMemory; personaName: string; personaColor: string; onDelete: () => void; onSelect: () => void; onTierChange?: (tier: 'core' | 'active' | 'archive') => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,15 +89,37 @@ export function MemoryRow({
     </div>
   );
 
+  const tierActions = onTierChange && (
+    <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+      {memory.tier !== 'core' && (
+        <button onClick={() => onTierChange('core')} title="Promote to Core" className="p-0.5 rounded hover:bg-amber-500/10 text-muted-foreground/60 hover:text-amber-400 transition-colors">
+          <ArrowUp className="w-3 h-3" />
+        </button>
+      )}
+      {memory.tier !== 'archive' && (
+        <button onClick={() => onTierChange('archive')} title="Archive" className="p-0.5 rounded hover:bg-zinc-500/10 text-muted-foreground/60 hover:text-zinc-400 transition-colors">
+          <ArrowDown className="w-3 h-3" />
+        </button>
+      )}
+      {memory.tier !== 'active' && (
+        <button onClick={() => onTierChange('active')} title="Move to Active" className="p-0.5 rounded hover:bg-emerald-500/10 text-muted-foreground/60 hover:text-emerald-400 transition-colors">
+          <ArrowUp className="w-3 h-3 rotate-0" />
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div data-testid={`memory-row-${memory.id}`} className="animate-fade-slide-in border-b border-primary/10 hover:bg-secondary/20 transition-colors">
       {/* Desktop row */}
       <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={onSelect}>
         <div className="w-[140px] flex items-center gap-2 flex-shrink-0">{agentAvatar}<span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
         <div className="flex-1 min-w-0"><span className="text-sm text-foreground/80 truncate block">{stripHtml(memory.title)}</span></div>
+        <TierBadge tier={memory.tier} />
         {categoryBadge}
         <div className="w-[60px] flex-shrink-0"><ImportanceDots value={memory.importance} /></div>
         <span className="text-sm text-muted-foreground/80 w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at)}</span>
+        {tierActions}
         <div className="w-[32px] flex-shrink-0">{deleteButton}</div>
       </div>
 
@@ -85,10 +127,11 @@ export function MemoryRow({
       <div className="flex md:hidden flex-col gap-2 px-4 py-3 cursor-pointer" onClick={onSelect}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">{agentAvatar}<span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
-          <div className="flex items-center gap-2 flex-shrink-0">{deleteButton}</div>
+          <div className="flex items-center gap-2 flex-shrink-0">{tierActions}{deleteButton}</div>
         </div>
         <span className="text-sm text-foreground/80 line-clamp-2">{stripHtml(memory.title)}</span>
         <div className="flex items-center gap-2 flex-wrap">
+          <TierBadge tier={memory.tier} />
           {categoryBadge}
           <ImportanceDots value={memory.importance} />
           <span className="text-sm text-muted-foreground/80 ml-auto">{formatRelativeTime(memory.created_at)}</span>

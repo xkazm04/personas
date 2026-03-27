@@ -128,8 +128,19 @@ fn load_private_key() -> Result<SigningKey, AppError> {
 
 /// Sign arbitrary bytes with the local identity's private key.
 /// Returns base64-encoded Ed25519 signature.
+/// If the keyring entry is missing (OS credential store cleared), regenerates the key.
 pub fn sign_message(message: &[u8]) -> Result<String, AppError> {
-    let signing_key = load_private_key()?;
+    let signing_key = match load_private_key() {
+        Ok(key) => key,
+        Err(_) => {
+            // Keyring entry lost — regenerate and re-store
+            tracing::warn!("Keyring entry missing, regenerating Ed25519 signing key");
+            let mut csprng = rand::rngs::OsRng;
+            let new_key = SigningKey::generate(&mut csprng);
+            store_private_key(&new_key)?;
+            new_key
+        }
+    };
     let signature = signing_key.sign(message);
     Ok(B64.encode(signature.to_bytes()))
 }

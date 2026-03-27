@@ -105,8 +105,6 @@ export function MatrixTab() {
   }, [session?.id, selectedPersona?.id]);
 
   // Quick Execute handler — run the persona and show result inline
-  const [execState, setExecState] = useState<'idle' | 'running' | 'completed' | 'failed'>('idle');
-  const [lastExecution, setLastExecution] = useState<unknown>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

@@ -62,7 +62,6 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'messages', icon: MessageSquare, label: 'Messages' },
   { id: 'events', icon: Zap, label: 'Events', minTier: TIERS.TEAM },
   { id: 'knowledge', icon: Brain, label: 'Knowledge', minTier: TIERS.TEAM },
-  { id: 'sla', icon: Shield, label: 'Reliability', minTier: TIERS.TEAM },
   { id: 'schedules', icon: CalendarClock, label: 'Schedules', minTier: TIERS.TEAM },
   { id: 'health', icon: Heart, label: 'Health' },
 ];

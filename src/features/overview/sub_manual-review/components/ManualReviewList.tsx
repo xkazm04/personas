@@ -18,6 +18,7 @@ import { createLogger } from "@/lib/log";
 const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
+import { TriagePlayer, type TriageReview } from './TriagePlayer';
 
 export default function ManualReviewList() {
   const {
@@ -38,7 +39,7 @@ export default function ManualReviewList() {
   const enrichedManualReviews = useEnrichedRecords(manualReviews, personaMap);
   const enrichedCloudReviews = useEnrichedRecords(cloudReviews, personaMap);
 
-  const [filter, setFilter] = useState<FilterStatus>('all');
+  const [filter, setFilter] = useState<FilterStatus>('pending');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [selectedPersonaId, setSelectedPersonaId] = useState('');
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
@@ -99,19 +100,36 @@ export default function ManualReviewList() {
     );
   }, [selectablePendingIds]);
 
-  const handleAction = useCallback(async (status: ManualReviewStatus, notes?: string) => {
-    if (!activeReview || isProcessing) return;
+  const handleAction = useCallback(async (idOrStatus: string | ManualReviewStatus, statusOrNotes?: ManualReviewStatus | string, maybeNotes?: string) => {
+    // Overload: (id, status, notes?) or (status, notes?)
+    let reviewToAct: typeof activeReview;
+    let status: ManualReviewStatus;
+    let notes: string | undefined;
+
+    if (['approved', 'rejected', 'pending'].includes(idOrStatus)) {
+      // Legacy: (status, notes?)
+      reviewToAct = activeReview;
+      status = idOrStatus as ManualReviewStatus;
+      notes = statusOrNotes as string | undefined;
+    } else {
+      // New: (id, status, notes?)
+      reviewToAct = allReviews.find((r) => r.id === idOrStatus) ?? null;
+      status = statusOrNotes as ManualReviewStatus;
+      notes = maybeNotes;
+    }
+
+    if (!reviewToAct || isProcessing) return;
     setIsProcessing(true);
     try {
-      if (activeReview.source === 'cloud') {
-        await respondToCloudReview(activeReview.id, activeReview.execution_id, status === 'approved' ? 'approve' : 'reject', notes ?? '');
+      if (reviewToAct.source === 'cloud') {
+        await respondToCloudReview(reviewToAct.id, reviewToAct.execution_id, status === 'approved' ? 'approve' : 'reject', notes ?? '');
       } else {
-        await updateManualReview(activeReview.id, { status, reviewer_notes: notes });
+        await updateManualReview(reviewToAct.id, { status, reviewer_notes: notes });
       }
-      const nextPending = filteredReviews.find((r) => r.id !== activeReview.id && r.status === 'pending');
+      const nextPending = filteredReviews.find((r) => r.id !== reviewToAct!.id && r.status === 'pending');
       if (nextPending) setActiveReviewId(nextPending.id);
     } finally { setIsProcessing(false); }
-  }, [activeReview, isProcessing, updateManualReview, respondToCloudReview, filteredReviews]);
+  }, [activeReview, allReviews, isProcessing, updateManualReview, respondToCloudReview, filteredReviews]);
 
   const handleBulkAction = useCallback(async (status: ManualReviewStatus) => {
     setIsBulkProcessing(true);
@@ -179,6 +197,15 @@ export default function ManualReviewList() {
               <p className="typo-heading text-foreground/70">No review items yet</p>
               <p className="text-sm text-muted-foreground/60 mt-1">Items requiring approval will appear here</p>
             </div>
+          </div>
+        ) : filter === 'pending' ? (
+          <div className="flex-1 overflow-y-auto p-4">
+            <TriagePlayer
+              reviews={filteredReviews as TriageReview[]}
+              onApprove={(id, notes) => handleAction(id, 'approved' as ManualReviewStatus, notes)}
+              onReject={(id, notes) => handleAction(id, 'rejected' as ManualReviewStatus, notes)}
+              isProcessing={isProcessing}
+            />
           </div>
         ) : (
           <ReviewInboxPanel

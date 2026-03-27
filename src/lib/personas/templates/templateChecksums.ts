@@ -6,6 +6,8 @@
 export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'content/content-performance-reporter.json': '000a2eb4107c5dc4',
   'content/newsletter-curator.json': '0007f5729c380e36',
+  'development/dev-clone.json': '000dd30f5f901eb7',
+  'development/qa-guardian.json': '001dc5e973996cec',
   'devops/devops-guardian.json': '00191a118384bf31',
   'devops/incident-logger.json': '001bcbf2bae91f67',
   'devops/sentry-production-monitor.json': '001ee39aba1ded16',

@@ -209,6 +209,48 @@ export function usePersonaExecution() {
     }
   }, [activeExecutionId, start]);
 
+  // Background execution status listener: catches status events for executions
+  // that are running in the background (not the focused terminal execution).
+  const bgUnlistenRef = useRef<UnlistenFn | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const setup = async () => {
+      if (bgUnlistenRef.current) { bgUnlistenRef.current(); bgUnlistenRef.current = null; }
+
+      const unlisten = await listen<Record<string, unknown>>(EventName.EXECUTION_STATUS, (event) => {
+        if (cancelled) return;
+        const payload = event.payload;
+        const execId = payload.execution_id as string | undefined;
+        if (!execId) return;
+
+        const store = useAgentStore.getState();
+        // Skip if this is the focused execution (handled by the correlated stream)
+        if (store.activeExecutionId === execId) return;
+
+        // Check if this is a tracked background execution
+        const bg = store.backgroundExecutions.find((b) => b.executionId === execId);
+        if (!bg) return;
+
+        const status = payload.status as string;
+        if (isTerminalState(status)) {
+          const mapped = status === 'completed' ? 'completed' : status === 'cancelled' ? 'cancelled' : 'failed';
+          store.updateBackgroundExecution(execId, mapped);
+          // Auto-remove after 10 seconds so the badge fades
+          setTimeout(() => { useAgentStore.getState().removeBackgroundExecution(execId); }, 10_000);
+          // Refresh execution list for the persona
+          const personaId = store.selectedPersona?.id;
+          if (personaId) store.fetchExecutions(personaId);
+        } else if (status === 'running') {
+          store.updateBackgroundExecution(execId, 'running');
+        }
+      });
+
+      if (!cancelled) { bgUnlistenRef.current = unlisten; } else { unlisten(); }
+    };
+    void setup();
+    return () => { cancelled = true; if (bgUnlistenRef.current) { bgUnlistenRef.current(); bgUnlistenRef.current = null; } };
+  }, []);
+
   // Clean up listeners on unmount
   useEffect(() => {
     return () => {

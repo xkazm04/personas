@@ -28,11 +28,25 @@ const cache = new Map<Language, Translations>();
 import { en } from './en';
 cache.set('en', en);
 
+/** Shallow-merge a partial translation bundle with the English fallback (one level deep). */
+function mergeWithFallback(partial: Translations): Translations {
+  const merged = { ...en } as Record<string, unknown>;
+  for (const key of Object.keys(partial) as (keyof Translations)[]) {
+    const val = partial[key];
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      merged[key] = { ...(en as Record<string, unknown>)[key] as object, ...val as object };
+    } else if (val !== undefined) {
+      merged[key] = val;
+    }
+  }
+  return merged as Translations;
+}
+
 /** Eagerly load a language bundle into cache (fire-and-forget). */
 function preload(lang: Language) {
   if (cache.has(lang)) return;
   loaders[lang]().then(bundle => {
-    cache.set(lang, bundle);
+    cache.set(lang, lang === 'en' ? bundle : mergeWithFallback(bundle));
     // Notify React via a micro state bump so hooks re-render.
     listeners.forEach(fn => fn());
   });

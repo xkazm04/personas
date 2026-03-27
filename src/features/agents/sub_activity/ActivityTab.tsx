@@ -54,6 +54,7 @@ export function ActivityTab() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [filter, setFilter] = useState<ActivityType>('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
   // Detail modal state
@@ -146,8 +147,18 @@ export function ActivityTab() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return items;
-    return items.filter((i) => i.type === filter);
+    let result = filter === 'all' ? items : items.filter((i) => i.type === filter);
+    if (statusFilter !== 'all') {
+      result = result.filter((i) => i.status.toLowerCase() === statusFilter);
+    }
+    return result;
+  }, [items, filter, statusFilter]);
+
+  // Available statuses for the current filter
+  const availableStatuses = useMemo(() => {
+    const base = filter === 'all' ? items : items.filter((i) => i.type === filter);
+    const statuses = new Set(base.map((i) => i.status.toLowerCase()));
+    return Array.from(statuses).sort();
   }, [items, filter]);
 
   const counts = useMemo(() => {
@@ -218,24 +229,38 @@ export function ActivityTab() {
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 border-b border-primary/10 pb-0">
-        {FILTER_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setFilter(tab.id)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors ${
-              filter === tab.id
-                ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                : 'text-muted-foreground/70 hover:text-foreground'
-            }`}
+      {/* Filter tabs + status filter */}
+      <div className="flex items-center gap-3 border-b border-primary/10 pb-0">
+        <div className="flex gap-1">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setFilter(tab.id); setStatusFilter('all'); }}
+              className={`px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors ${
+                filter === tab.id
+                  ? 'bg-primary/10 text-primary border-b-2 border-primary'
+                  : 'text-muted-foreground/70 hover:text-foreground'
+              }`}
+            >
+              {tab.label}
+              {counts[tab.id] > 0 && (
+                <span className="ml-1.5 text-muted-foreground/50">({counts[tab.id]})</span>
+              )}
+            </button>
+          ))}
+        </div>
+        {availableStatuses.length > 1 && (
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="ml-auto px-2 py-1 rounded-lg border border-primary/15 bg-secondary/20 text-xs text-foreground/70 outline-none"
           >
-            {tab.label}
-            {counts[tab.id] > 0 && (
-              <span className="ml-1.5 text-muted-foreground/50">({counts[tab.id]})</span>
-            )}
-          </button>
-        ))}
+            <option value="all">All statuses</option>
+            {availableStatuses.map((s) => (
+              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Activity list */}
@@ -244,7 +269,15 @@ export function ActivityTab() {
       ) : filtered.length === 0 ? (
         <div className="py-8 text-center text-muted-foreground/50 text-sm">No activity yet</div>
       ) : (
-        <div className="border border-primary/10 rounded-xl overflow-hidden max-w-[800px]">
+        <div className="border border-primary/10 rounded-xl overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-[36px_1fr_100px_120px] gap-3 px-4 py-2 bg-primary/5 border-b border-primary/10 text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
+            <span></span>
+            <span>Activity</span>
+            <span>Status</span>
+            <span>Time</span>
+          </div>
+          {/* Table rows */}
           {filtered.map((item, idx) => {
             const info = TYPE_ICONS[item.type] ?? TYPE_ICONS.execution!;
             const statusEntry = item.type === 'execution' ? getStatusEntry(item.status) : null;
@@ -252,42 +285,42 @@ export function ActivityTab() {
               <div
                 key={`${item.type}-${item.id}`}
                 onClick={() => handleRowClick(item)}
-                className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-white/[0.04] ${
+                className={`grid grid-cols-[36px_1fr_100px_120px] gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-white/[0.04] items-center ${
                   idx > 0 ? 'border-t border-primary/[0.06]' : ''
                 }`}
               >
                 {/* Type icon */}
                 <div
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${info.bg}`}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center ${info.bg}`}
                   title={item.type.charAt(0).toUpperCase() + item.type.slice(1)}
                 >
                   <info.icon className={`w-3.5 h-3.5 ${info.color}`} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground/85 truncate">{item.title}</span>
-                    {/* Status badges */}
-                    {statusEntry ? (
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>
-                    ) : item.type === 'memory' ? (
-                      <span className="text-xs text-amber-400/70 flex-shrink-0" title={`Importance: ${item.status}`}>
-                        {renderImportanceStars(item.status)}
-                      </span>
-                    ) : item.type === 'review' ? (
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                        item.status === 'approved' ? 'bg-emerald-500/15 text-emerald-400' :
-                        item.status === 'rejected' ? 'bg-red-500/15 text-red-400' :
-                        'bg-amber-500/15 text-amber-400'
-                      }`}>
-                        {item.status}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground/50">{item.status}</span>
-                    )}
-                  </div>
+                {/* Activity */}
+                <div className="min-w-0">
+                  <span className="text-sm font-medium text-foreground/85 truncate block">{item.title}</span>
                   <p className="text-xs text-muted-foreground/60 truncate">{item.subtitle}</p>
                 </div>
-                <span className="text-xs text-muted-foreground/50 flex-shrink-0 whitespace-nowrap">
+                {/* Status */}
+                <div>
+                  {statusEntry ? (
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>
+                  ) : item.type === 'memory' ? (
+                    <span className="text-xs text-amber-400/70" title={`Importance: ${item.status}`}>
+                      {renderImportanceStars(item.status)}
+                    </span>
+                  ) : item.type === 'review' ? (
+                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                      item.status === 'approved' ? 'bg-emerald-500/15 text-emerald-400' :
+                      item.status === 'rejected' ? 'bg-red-500/15 text-red-400' :
+                      'bg-amber-500/15 text-amber-400'
+                    }`}>{item.status}</span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground/50">{item.status}</span>
+                  )}
+                </div>
+                {/* Time */}
+                <span className="text-xs text-muted-foreground/50 whitespace-nowrap">
                   {formatRelativeTime(item.timestamp)}
                 </span>
               </div>

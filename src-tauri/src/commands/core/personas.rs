@@ -48,6 +48,10 @@ pub fn update_persona(
     input: UpdatePersonaInput,
 ) -> Result<Persona, AppError> {
     require_auth_sync(&state)?;
+    // Invalidate cached session — persona config changed
+    let pool = state.session_pool.clone();
+    let pid = id.clone();
+    tokio::spawn(async move { pool.invalidate(&pid).await; });
     repo::update(&state.db, &id, input)
 }
 

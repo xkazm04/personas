@@ -1,5 +1,5 @@
 import type { Persona } from '@/lib/bindings/Persona';
-import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { PersonaSelector } from '@/features/shared/components/forms/PersonaSelector';
 
 // ---------------------------------------------------------------------------
 // CompareToggle
@@ -42,17 +42,11 @@ interface PersonaSelectProps {
 
 export function PersonaSelect({ value, onChange, personas }: PersonaSelectProps) {
   return (
-    <ThemedSelect
+    <PersonaSelector
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="py-1.5"
-    >
-      <option value="">All Personas</option>
-      {personas.map((p) => (
-        <option key={p.id} value={p.id}>
-          {p.icon ? `${p.icon} ` : ''}{p.name}
-        </option>
-      ))}
-    </ThemedSelect>
+      onChange={onChange}
+      personas={personas}
+      showAll
+    />
   );
 }

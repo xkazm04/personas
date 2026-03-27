@@ -63,6 +63,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     content_type: content_type.clone(),
                     priority: priority.clone(),
                     metadata: None,
+                    thread_id: None,
                 },
             ) {
                 Ok(m) => {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Users, Sparkles, Plus, List, Star, Bot, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Star, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
@@ -306,10 +307,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                     onClick={() => selectPersona(p.id)}
                     className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group"
                   >
-                    <Bot
-                      className="w-4 h-4 flex-shrink-0"
-                      style={{ color: p.color ?? 'var(--primary)' }}
-                    />
+                    <PersonaIcon icon={p.icon} color={p.color} />
                     <span className="text-foreground/70 truncate text-[13px] min-w-0">{p.name}</span>
                     <span
                       role="button"
@@ -348,10 +346,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                     onClick={() => selectPersona(p.id)}
                     className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group"
                   >
-                    <Bot
-                      className="w-4 h-4 flex-shrink-0"
-                      style={{ color: p.color ?? 'var(--primary)' }}
-                    />
+                    <PersonaIcon icon={p.icon} color={p.color} />
                     <span className="text-foreground/70 truncate text-[13px] min-w-0">{p.name}</span>
                     <span
                       role="button"
@@ -430,7 +425,6 @@ function PluginsSidebarNav() {
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
-  const isDev = import.meta.env.DEV;
 
   const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
 
@@ -482,9 +476,8 @@ function PluginsSidebarNav() {
           OCR
         </button>
 
-        {/* Dev Tools (dev-only, gold border) */}
-        {isDev && (
-          <div className="mt-3 pt-3 border-t border-amber-500/20 space-y-1">
+        {/* Dev Tools */}
+        <div className="mt-3 pt-3 border-t border-primary/10 space-y-1">
             <button
               onClick={() => setPluginTab('dev-tools')}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
@@ -527,7 +520,6 @@ function PluginsSidebarNav() {
               </>
             )}
           </div>
-        )}
       </div>
     </div>
   );

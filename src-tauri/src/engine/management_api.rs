@@ -9,11 +9,12 @@ use tauri::Manager;
 
 use axum::{
     extract::{Path, Query, State as AxumState},
-    http::StatusCode,
+    http::{header, Method, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
+use tower_http::cors::{Any, CorsLayer};
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
@@ -70,6 +71,12 @@ pub fn management_router(state: ManagementState) -> Router {
         .route("/api/settings/health-watch/{persona_id}", get(get_health_watch).post(set_health_watch))
         .route("/api/settings/cli-fallback/{persona_id}", get(get_cli_fallback))
         .with_state(Arc::new(state))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+                .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]),
+        )
 }
 
 // =============================================================================
