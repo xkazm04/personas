@@ -116,6 +116,15 @@ macro_rules! row_mapper {
     (@get $row:ident, $field:ident, opt) => {
         $row.get(stringify!($field)).ok().flatten()
     };
+    // Column may not exist yet (migration pending); fall back to a String default.
+    (@get $row:ident, $field:ident, opt_str) => {
+        $row.get::<_, String>(stringify!($field))
+            .unwrap_or_else(|_| "working".to_string())
+    };
+    // Column may not exist yet; fall back to 0i32.
+    (@get $row:ident, $field:ident, opt_i32) => {
+        $row.get::<_, i32>(stringify!($field)).unwrap_or(0)
+    };
 }
 
 /// Generate a standard `get_by_id` function.

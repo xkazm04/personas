@@ -127,3 +127,10 @@ export const reviewMemoriesWithCli = (personaId?: string, threshold?: number) =>
     threshold: threshold,
   });
 
+// -- Memory Tiers -------------------------------------------------------------
+
+export type MemoryTier = "working" | "reference" | "archived";
+
+export const updateMemoryTier = (id: string, tier: MemoryTier) =>
+  invoke<boolean>("update_memory_tier", { id, tier });
+

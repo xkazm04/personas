@@ -32,6 +32,23 @@ export type RustArgs<T extends Record<string, unknown>> = {
 /** Default timeout for Tauri IPC calls (90 seconds). */
 const DEFAULT_TIMEOUT_MS = 90_000;
 
+/** Wait for the IPC session token to become available (max ~1s). */
+let _tokenReady: Promise<void> | null = null;
+function waitForIpcToken(): Promise<void> {
+  if ((globalThis as Record<string, unknown>).__IPC_TOKEN) return Promise.resolve();
+  if (_tokenReady) return _tokenReady;
+  _tokenReady = new Promise<void>((resolve) => {
+    let tries = 0;
+    const iv = setInterval(() => {
+      if ((globalThis as Record<string, unknown>).__IPC_TOKEN || ++tries > 50) {
+        clearInterval(iv);
+        resolve();
+      }
+    }, 20);
+  });
+  return _tokenReady;
+}
+
 export class InvokeTimeoutError extends Error {
   /** The command that timed out. */
   readonly command: string;
@@ -155,10 +172,19 @@ function _invokeCore<T>(
   // The Rust backend sets window.__IPC_TOKEN via a js_init_script.
   const token = (globalThis as Record<string, unknown>).__IPC_TOKEN as string | undefined;
   if (token) {
-    const opts = options ?? {};
+    const opts: InvokeOptions = options ?? { headers: {} };
     const h = new Headers(opts.headers);
     h.set("x-ipc-token", token);
     options = { ...opts, headers: h };
+  }
+
+  // If token is not yet available, wait for it before invoking.
+  // The init script sets __IPC_TOKEN synchronously but may not have run
+  // if the app bundle loads before the plugin init script executes.
+  if (!token) {
+    return waitForIpcToken().then(() =>
+      _invokeCore<T>(cmd, args, options, timeoutMs),
+    );
   }
 
   const invocation = invoke<T>(cmd, args ? coerceArgs(args) : undefined, options);

@@ -101,6 +101,9 @@ fn build_memory_filters(
 row_mapper!(row_to_memory -> PersonaMemory {
     id, persona_id, title, content, category,
     source_execution_id, importance, tags,
+    tier [opt_str],
+    access_count [opt_i32],
+    last_accessed_at [opt],
     created_at, updated_at,
 });
 
@@ -486,6 +489,137 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
 }
 
 crud_delete!("persona_memories");
+
+// -- Tier management ----------------------------------------------------------
+
+/// Update the tier of a single memory.
+pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError> {
+    // Validate tier value
+    match tier {
+        "core" | "active" | "working" | "archive" => {}
+        _ => {
+            return Err(AppError::Validation(format!(
+                "Invalid tier '{tier}'. Valid tiers: core, active, working, archive"
+            )));
+        }
+    }
+    timed_query!("persona_memories", "persona_memories::update_tier", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let rows = conn.execute(
+            "UPDATE persona_memories SET tier = ?1, updated_at = ?2 WHERE id = ?3",
+            params![tier, now, id],
+        )?;
+        Ok(rows > 0)
+    })
+}
+
+/// Result of `get_for_injection` — memories split by tier for prompt injection.
+#[derive(Debug)]
+pub struct TieredMemories {
+    /// Core memories: always injected (stable beliefs / preferences).
+    pub core: Vec<PersonaMemory>,
+    /// Active memories: scored and selected for injection.
+    pub active: Vec<PersonaMemory>,
+}
+
+/// Fetch memories suitable for injection into a prompt, split by tier.
+///
+/// * `core_limit` — max number of core-tier memories to return.
+/// * `active_limit` — max number of active-tier memories to return (scored by
+///   importance DESC, access_count DESC, created_at DESC).
+pub fn get_for_injection(
+    pool: &DbPool,
+    persona_id: &str,
+    core_limit: i64,
+    active_limit: i64,
+) -> Result<TieredMemories, AppError> {
+    timed_query!("persona_memories", "persona_memories::get_for_injection", {
+        let conn = pool.get()?;
+
+        // Core memories — always injected
+        let mut core_stmt = conn.prepare(
+            "SELECT * FROM persona_memories
+             WHERE persona_id = ?1 AND tier = 'core'
+             ORDER BY importance DESC, created_at DESC
+             LIMIT ?2",
+        )?;
+        let core_rows = core_stmt.query_map(params![persona_id, core_limit], row_to_memory)?;
+        let core: Vec<PersonaMemory> = collect_rows(core_rows, "memories::get_for_injection/core");
+
+        // Active memories — scored selection
+        let mut active_stmt = conn.prepare(
+            "SELECT * FROM persona_memories
+             WHERE persona_id = ?1 AND tier IN ('active', 'working')
+             ORDER BY importance DESC, access_count DESC, created_at DESC
+             LIMIT ?2",
+        )?;
+        let active_rows = active_stmt.query_map(params![persona_id, active_limit], row_to_memory)?;
+        let active: Vec<PersonaMemory> = collect_rows(active_rows, "memories::get_for_injection/active");
+
+        Ok(TieredMemories { core, active })
+    })
+}
+
+/// Increment access_count and update last_accessed_at for a batch of memory IDs.
+pub fn increment_access_batch(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
+    if ids.is_empty() {
+        return Ok(());
+    }
+    timed_query!("persona_memories", "persona_memories::increment_access_batch", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("?{}", i + 2)).collect();
+        let sql = format!(
+            "UPDATE persona_memories SET access_count = access_count + 1, last_accessed_at = ?1, updated_at = ?2 WHERE id IN ({})",
+            placeholders.join(", ")
+        );
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::with_capacity(ids.len() + 2);
+        param_values.push(Box::new(now.clone()));
+        param_values.push(Box::new(now));
+        for id in ids {
+            param_values.push(Box::new(id.clone()));
+        }
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
+        Ok(())
+    })
+}
+
+/// Run automatic memory lifecycle transitions for a persona.
+///
+/// - **Promote**: working-tier memories with access_count >= 5 are promoted to "active".
+/// - **Archive**: working-tier memories older than 30 days with access_count == 0
+///   are moved to "archive".
+///
+/// Returns `(promoted, archived)` counts.
+pub fn run_lifecycle(pool: &DbPool, persona_id: &str) -> Result<(i64, i64), AppError> {
+    timed_query!("persona_memories", "persona_memories::run_lifecycle", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now();
+        let updated_at = now.to_rfc3339();
+
+        // Promote: working memories accessed frequently -> active
+        let promoted = conn.execute(
+            "UPDATE persona_memories
+             SET tier = 'active', updated_at = ?1
+             WHERE persona_id = ?2 AND tier = 'working' AND access_count >= 5",
+            params![updated_at, persona_id],
+        )? as i64;
+
+        // Archive: working memories older than 30 days with no accesses -> archive
+        let cutoff = (now - chrono::Duration::days(30)).to_rfc3339();
+        let archived = conn.execute(
+            "UPDATE persona_memories
+             SET tier = 'archive', updated_at = ?1
+             WHERE persona_id = ?2 AND tier = 'working' AND access_count = 0 AND created_at < ?3",
+            params![updated_at, persona_id, cutoff],
+        )? as i64;
+
+        Ok((promoted, archived))
+    })
+}
 
 #[cfg(test)]
 mod tests {

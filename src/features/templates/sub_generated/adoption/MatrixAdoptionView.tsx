@@ -103,7 +103,7 @@ function extractDimensionData(ir: unknown): CellDataMap {
   return data;
 }
 
-export function MatrixAdoptionView({ review }: MatrixAdoptionViewProps) {
+export function MatrixAdoptionView({ review, onClose }: MatrixAdoptionViewProps) {
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const createPersona = useAgentStore((s) => s.createPersona);

@@ -16,7 +16,7 @@ const StatusPageView = lazy(() => import('./StatusPageView').then(m => ({ defaul
 
 type HealthView = 'heartbeats' | 'status-page' | 'reliability';
 
-const SLADashboard = lazy(() => import('@/features/overview/sub_sla/SLADashboard'));
+const SLADashboard = lazy(() => import('@/features/overview/sub_sla'));
 type FilterGrade = 'all' | HealthGrade;
 
 export default function PersonaHealthDashboard() {
