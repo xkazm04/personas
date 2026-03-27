@@ -38,7 +38,7 @@ export function AdminToolsDropdown({
         <Wrench className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm">
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-elevation-4 backdrop-blur-sm">
           {onCleanupDuplicates && (
             <button
               onClick={() => { onCleanupDuplicates(); setOpen(false); }}

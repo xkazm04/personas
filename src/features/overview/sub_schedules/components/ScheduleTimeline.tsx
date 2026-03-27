@@ -267,7 +267,7 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const idx = VIEW_OPTIONS.findIndex((o) => o.value === value);
-    let next = idx;
+    let next: number;
     if (e.key === 'ArrowRight') next = (idx + 1) % VIEW_OPTIONS.length;
     else if (e.key === 'ArrowLeft') next = (idx - 1 + VIEW_OPTIONS.length) % VIEW_OPTIONS.length;
     else if (e.key === 'Home') next = 0;

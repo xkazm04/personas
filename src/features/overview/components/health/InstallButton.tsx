@@ -1,6 +1,7 @@
 import { CheckCircle2, XCircle, RefreshCw, Download, ExternalLink } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
+import type { HealthCheckStatus } from '@/lib/bindings/HealthCheckStatus';
 import { Button } from '@/features/shared/components/buttons';
 
 const CLAUDE_DOWNLOAD_URL = 'https://docs.anthropic.com/en/docs/claude-code/overview';
@@ -12,7 +13,7 @@ export function InstallButton({
   onInstall,
 }: {
   checkId: 'node' | 'claude_cli';
-  status: string;
+  status: HealthCheckStatus;
   installState: InstallState;
   onInstall: () => void;
 }) {

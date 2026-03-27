@@ -20,8 +20,18 @@ struct ToolCallStep {
     status: String,
 }
 
+/// Bundles the common parameters threaded through all knowledge extraction functions.
+pub struct ExecutionContext<'a> {
+    pub pool: &'a DbPool,
+    pub execution_id: &'a str,
+    pub persona_id: &'a str,
+    pub use_case_id: Option<&'a str>,
+    pub success: bool,
+    pub cost_usd: f64,
+    pub duration_ms: f64,
+}
+
 /// Extract knowledge from a completed execution and persist it.
-#[allow(clippy::too_many_arguments)]
 pub fn extract_and_persist(
     pool: &DbPool,
     execution_id: &str,
@@ -34,79 +44,45 @@ pub fn extract_and_persist(
     tool_steps_json: Option<&str>,
     error_message: Option<&str>,
 ) {
-    // 1. Extract tool sequence pattern
-    if let Some(steps_json) = tool_steps_json {
-        extract_tool_sequence(
-            pool,
-            execution_id,
-            persona_id,
-            use_case_id,
-            success,
-            cost_usd,
-            duration_ms as f64,
-            steps_json,
-        );
-    }
-
-    // 2. Extract failure pattern
-    if !success {
-        if let Some(err) = error_message {
-            extract_failure_pattern(
-                pool,
-                execution_id,
-                persona_id,
-                use_case_id,
-                cost_usd,
-                duration_ms as f64,
-                err,
-            );
-        }
-    }
-
-    // 3. Extract model performance
-    if let Some(model) = model_used {
-        extract_model_performance(
-            pool,
-            execution_id,
-            persona_id,
-            use_case_id,
-            success,
-            cost_usd,
-            duration_ms as f64,
-            model,
-        );
-    }
-
-    // 4. Extract cost-quality tradeoff
-    extract_cost_quality(
+    let ctx = ExecutionContext {
         pool,
         execution_id,
         persona_id,
         use_case_id,
         success,
         cost_usd,
-        duration_ms as f64,
-    );
+        duration_ms: duration_ms as f64,
+    };
+
+    // 1. Extract tool sequence pattern
+    if let Some(steps_json) = tool_steps_json {
+        extract_tool_sequence(&ctx, steps_json);
+    }
+
+    // 2. Extract failure pattern
+    if !success {
+        if let Some(err) = error_message {
+            extract_failure_pattern(&ctx, err);
+        }
+    }
+
+    // 3. Extract model performance
+    if let Some(model) = model_used {
+        extract_model_performance(&ctx, model);
+    }
+
+    // 4. Extract cost-quality tradeoff
+    extract_cost_quality(&ctx);
 }
 
 /// Extract the tool sequence used in an execution.
 /// Pattern key: sorted tool names joined by " -> ".
-#[allow(clippy::too_many_arguments)]
-fn extract_tool_sequence(
-    pool: &DbPool,
-    execution_id: &str,
-    persona_id: &str,
-    use_case_id: Option<&str>,
-    success: bool,
-    cost_usd: f64,
-    duration_ms: f64,
-    steps_json: &str,
-) {
+fn extract_tool_sequence(ctx: &ExecutionContext<'_>, steps_json: &str) {
     let steps: Vec<ToolCallStep> = match serde_json::from_str(steps_json) {
         Ok(s) => s,
         Err(e) => {
             warn!(
-                execution_id = execution_id,
+                execution_id = ctx.execution_id,
                 error = %e,
                 "Failed to parse tool sequence steps JSON during knowledge extraction"
             );
@@ -128,16 +104,16 @@ fn extract_tool_sequence(
     .to_string();
 
     if let Err(e) = knowledge_repo::upsert(
-        pool,
-        persona_id,
-        use_case_id,
+        ctx.pool,
+        ctx.persona_id,
+        ctx.use_case_id,
         "tool_sequence",
         &pattern_key,
         &pattern_data,
-        success,
-        cost_usd,
-        duration_ms,
-        execution_id,
+        ctx.success,
+        ctx.cost_usd,
+        ctx.duration_ms,
+        ctx.execution_id,
     ) {
         tracing::warn!("Failed to persist tool_sequence knowledge: {}", e);
     }
@@ -145,15 +121,7 @@ fn extract_tool_sequence(
 
 /// Extract a failure pattern from the error message.
 /// Groups errors by their normalized prefix (first 100 chars, stripped of IDs).
-fn extract_failure_pattern(
-    pool: &DbPool,
-    execution_id: &str,
-    persona_id: &str,
-    use_case_id: Option<&str>,
-    cost_usd: f64,
-    duration_ms: f64,
-    error_message: &str,
-) {
+fn extract_failure_pattern(ctx: &ExecutionContext<'_>, error_message: &str) {
     // Normalize error: take first 100 chars, strip UUIDs and numbers
     let normalized = error_message
         .chars()
@@ -167,86 +135,68 @@ fn extract_failure_pattern(
     .to_string();
 
     if let Err(e) = knowledge_repo::upsert(
-        pool,
-        persona_id,
-        use_case_id,
+        ctx.pool,
+        ctx.persona_id,
+        ctx.use_case_id,
         "failure_pattern",
         &pattern_key,
         &pattern_data,
         false,
-        cost_usd,
-        duration_ms,
-        execution_id,
+        ctx.cost_usd,
+        ctx.duration_ms,
+        ctx.execution_id,
     ) {
         tracing::warn!("Failed to persist failure_pattern knowledge: {}", e);
     }
 }
 
 /// Extract model performance data.
-#[allow(clippy::too_many_arguments)]
-fn extract_model_performance(
-    pool: &DbPool,
-    execution_id: &str,
-    persona_id: &str,
-    use_case_id: Option<&str>,
-    success: bool,
-    cost_usd: f64,
-    duration_ms: f64,
-    model: &str,
-) {
+fn extract_model_performance(ctx: &ExecutionContext<'_>, model: &str) {
     let pattern_data = serde_json::json!({
         "model": model,
     })
     .to_string();
 
     if let Err(e) = knowledge_repo::upsert(
-        pool,
-        persona_id,
-        use_case_id,
+        ctx.pool,
+        ctx.persona_id,
+        ctx.use_case_id,
         "model_performance",
         model,
         &pattern_data,
-        success,
-        cost_usd,
-        duration_ms,
-        execution_id,
+        ctx.success,
+        ctx.cost_usd,
+        ctx.duration_ms,
+        ctx.execution_id,
     ) {
         tracing::warn!("Failed to persist model_performance knowledge: {}", e);
     }
 }
 
 /// Extract cost-quality tradeoff data (overall persona performance).
-fn extract_cost_quality(
-    pool: &DbPool,
-    execution_id: &str,
-    persona_id: &str,
-    use_case_id: Option<&str>,
-    success: bool,
-    cost_usd: f64,
-    duration_ms: f64,
-) {
-    let key = if let Some(uc) = use_case_id {
+fn extract_cost_quality(ctx: &ExecutionContext<'_>) {
+    let key = if let Some(uc) = ctx.use_case_id {
         format!("use_case:{uc}")
     } else {
         "overall".to_string()
     };
 
     let pattern_data = serde_json::json!({
-        "scope": if use_case_id.is_some() { "use_case" } else { "persona" },
+        "scope": if ctx.use_case_id.is_some() { "use_case" } else { "persona" },
     })
     .to_string();
 
     if let Err(e) = knowledge_repo::upsert(
-        pool,
-        persona_id,
-        use_case_id,
+        ctx.pool,
+        ctx.persona_id,
+        ctx.use_case_id,
         "cost_quality",
         &key,
         &pattern_data,
-        success,
-        cost_usd,
-        duration_ms,
-        execution_id,
+        ctx.success,
+        ctx.cost_usd,
+        ctx.duration_ms,
+        ctx.execution_id,
     ) {
         tracing::warn!("Failed to persist cost_quality knowledge: {}", e);
     }

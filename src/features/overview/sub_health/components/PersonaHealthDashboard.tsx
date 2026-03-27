@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useMemo, useState, lazy, Suspense } from 'react';
-import { Activity, RefreshCw, Heart, AlertTriangle, Shield, Zap, WifiOff, LayoutGrid, Rows3 } from 'lucide-react';
+import { Activity, RefreshCw, Heart, AlertTriangle, Shield, Zap, LayoutGrid, Rows3 } from 'lucide-react';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -42,7 +43,7 @@ export default function PersonaHealthDashboard() {
     if (healthSignals.length === 0 && !healthLoading) {
       void refreshHealthDashboard();
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRefresh = useCallback(() => {
     void refreshHealthDashboard();
@@ -155,18 +156,12 @@ export default function PersonaHealthDashboard() {
         <div className="space-y-6">
           {/* Error Banner */}
           {healthError && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="typo-heading text-red-300">Health computation failed</p>
-                  <p className="text-sm text-red-400/70 mt-0.5">{healthError}</p>
-                </div>
-                <button onClick={handleRefresh} className="flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
-                  <RefreshCw className="w-3 h-3" /> Retry
-                </button>
-              </div>
-            </div>
+            <InlineErrorBanner
+              severity="error"
+              title="Health computation failed"
+              message={healthError}
+              onRetry={handleRefresh}
+            />
           )}
 
           {/* Staleness Banner */}
@@ -258,7 +253,7 @@ const GRADE_ICONS: Record<FilterGrade, typeof Shield> = {
 };
 
 const DATA_SOURCE_LABELS: Record<DataSourceName, string> = {
-  monthlySpend: 'Monthly spend',
+  monthlySpend: 'Monthly spend (local tz)',
   healingIssues: 'Healing issues',
   byomPolicy: 'BYOM policy',
   providerStats: 'Provider stats',
@@ -271,26 +266,17 @@ function StalenessBanner({ status, onRetry }: { status: DataSourceStatusMap; onR
 
   if (failedSources.length === 0) return null;
 
+  const detail = failedSources.length === 1
+    ? `${failedSources[0]} could not be loaded — scores may be inaccurate.`
+    : `${failedSources.join(', ')} could not be loaded — scores may be inaccurate.`;
+
   return (
-    <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-      <div className="flex items-start gap-3">
-        <WifiOff className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="typo-heading text-amber-300">Incomplete health data</p>
-          <p className="text-sm text-amber-400/70 mt-0.5">
-            {failedSources.length === 1
-              ? `${failedSources[0]} could not be loaded — scores may be inaccurate.`
-              : `${failedSources.join(', ')} could not be loaded — scores may be inaccurate.`}
-          </p>
-        </div>
-        <button
-          onClick={onRetry}
-          className="flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-colors"
-        >
-          <RefreshCw className="w-3 h-3" /> Retry
-        </button>
-      </div>
-    </div>
+    <InlineErrorBanner
+      severity="warning"
+      title="Incomplete health data"
+      message={detail}
+      onRetry={onRetry}
+    />
   );
 }
 

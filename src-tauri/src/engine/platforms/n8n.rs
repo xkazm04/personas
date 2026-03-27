@@ -54,6 +54,22 @@ struct N8nListResponse {
 }
 
 impl N8nClient {
+    /// Check that an HTTP response indicates success, returning the response on
+    /// success or a descriptive `AppError::Execution` on failure.
+    async fn check_response(
+        resp: reqwest::Response,
+        context: &str,
+    ) -> Result<reqwest::Response, AppError> {
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(AppError::Execution(format!(
+                "{context} returned HTTP {status}: {body}"
+            )));
+        }
+        Ok(resp)
+    }
+
     /// Create from decrypted credential fields (`base_url` and `api_key`).
     pub fn from_fields(fields: &HashMap<String, String>) -> Result<Self, AppError> {
         let base_url = fields
@@ -86,13 +102,7 @@ impl N8nClient {
             .await
             .map_err(|e| AppError::Execution(format!("n8n API request failed: {e}")))?;
 
-        if !resp.status().is_success() {
-            let status = resp.status().as_u16();
-            let body = resp.text().await.unwrap_or_default();
-            return Err(AppError::Execution(format!(
-                "n8n API returned HTTP {status}: {body}"
-            )));
-        }
+        let resp = Self::check_response(resp, "n8n API").await?;
 
         let list: N8nListResponse = resp
             .json()
@@ -114,13 +124,7 @@ impl N8nClient {
             .await
             .map_err(|e| AppError::Execution(format!("n8n API request failed: {e}")))?;
 
-        if !resp.status().is_success() {
-            let status = resp.status().as_u16();
-            let body = resp.text().await.unwrap_or_default();
-            return Err(AppError::Execution(format!(
-                "n8n API returned HTTP {status}: {body}"
-            )));
-        }
+        let resp = Self::check_response(resp, "n8n API").await?;
 
         resp.json::<Value>()
             .await
@@ -149,13 +153,7 @@ impl N8nClient {
             .await
             .map_err(|e| AppError::Execution(format!("n8n create workflow failed: {e}")))?;
 
-        if !resp.status().is_success() {
-            let status = resp.status().as_u16();
-            let body = resp.text().await.unwrap_or_default();
-            return Err(AppError::Execution(format!(
-                "n8n create workflow returned HTTP {status}: {body}"
-            )));
-        }
+        let resp = Self::check_response(resp, "n8n create workflow").await?;
 
         resp.json::<Value>()
             .await
@@ -187,13 +185,7 @@ impl N8nClient {
             .await
             .map_err(|e| AppError::Execution(format!("n8n webhook trigger failed: {e}")))?;
 
-        if !resp.status().is_success() {
-            let status = resp.status().as_u16();
-            let body_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Execution(format!(
-                "n8n webhook returned HTTP {status}: {body_text}"
-            )));
-        }
+        let resp = Self::check_response(resp, "n8n webhook").await?;
 
         resp.json::<Value>()
             .await
@@ -212,13 +204,7 @@ impl N8nClient {
             .await
             .map_err(|e| AppError::Execution(format!("n8n activate/deactivate failed: {e}")))?;
 
-        if !resp.status().is_success() {
-            let status = resp.status().as_u16();
-            let body = resp.text().await.unwrap_or_default();
-            return Err(AppError::Execution(format!(
-                "n8n API returned HTTP {status}: {body}"
-            )));
-        }
+        let resp = Self::check_response(resp, "n8n API").await?;
 
         let wf: Value = resp
             .json()

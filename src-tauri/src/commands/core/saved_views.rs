@@ -14,8 +14,7 @@ pub async fn create_saved_view(
     input: CreateSavedViewInput,
 ) -> Result<SavedView, AppError> {
     require_auth(&state).await?;
-    let conn = state.db.get()?;
-    let view = repos::core::saved_views::create(&conn, input)?;
+    let view = repos::core::saved_views::create(&state.db, input)?;
     Ok(view)
 }
 
@@ -24,8 +23,7 @@ pub async fn list_saved_views(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<SavedView>, AppError> {
     require_auth(&state).await?;
-    let conn = state.db.get()?;
-    let views = repos::core::saved_views::list_all(&conn)?;
+    let views = repos::core::saved_views::list_all(&state.db)?;
     Ok(views)
 }
 
@@ -35,8 +33,7 @@ pub async fn list_saved_views_by_type(
     view_type: String,
 ) -> Result<Vec<SavedView>, AppError> {
     require_auth(&state).await?;
-    let conn = state.db.get()?;
-    let views = repos::core::saved_views::list_by_type(&conn, &view_type)?;
+    let views = repos::core::saved_views::list_by_type(&state.db, &view_type)?;
     Ok(views)
 }
 
@@ -46,7 +43,6 @@ pub async fn delete_saved_view(
     id: String,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
-    let conn = state.db.get()?;
-    repos::core::saved_views::delete(&conn, &id)?;
+    repos::core::saved_views::delete(&state.db, &id)?;
     Ok(())
 }

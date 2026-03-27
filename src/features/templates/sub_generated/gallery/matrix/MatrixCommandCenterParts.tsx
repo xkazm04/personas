@@ -73,7 +73,7 @@ export function PromptModal({ section, onClose }: { section: PromptSection; onCl
   const Icon = section.icon;
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div ref={ref} className="w-full max-w-2xl max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div ref={ref} className="w-full max-w-2xl max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
           <div className="flex items-center gap-2.5"><Icon className={`w-4.5 h-4.5 ${section.color}`} /><h3 className="text-base font-semibold text-foreground/90">{section.label}</h3></div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-foreground/[0.04] transition-colors"><X className="w-4 h-4 text-muted-foreground/60" /></button>
@@ -202,7 +202,7 @@ export function ActiveBuildProgress({
           type="button"
           onClick={onSubmitAnswers}
           data-testid="continue-build-btn"
-          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
         >
           <Play className="w-4 h-4" />
           <span className="text-sm font-semibold">Continue Build</span>
@@ -386,7 +386,7 @@ export function CreationPostGeneration({
           onClick={handleTest}
           disabled={isTesting}
           data-testid="agent-test-btn"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30"
         >
           {isTesting ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
           {isTesting ? 'Starting Test...' : 'Test Agent'}
@@ -398,7 +398,7 @@ export function CreationPostGeneration({
           type="button"
           onClick={onSaveVersion}
           data-testid="save-version-btn"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30"
         >
           <Save className="w-3.5 h-3.5" />
           Save Version
@@ -577,7 +577,7 @@ export function TestResultsPanel({
             type="button"
             onClick={onApprove}
             data-testid="agent-approve-btn"
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             Approve
@@ -623,7 +623,7 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
         ref={modalRef}
-        className="flex flex-col rounded-2xl border border-primary/15 bg-background shadow-2xl shadow-black/30 overflow-hidden"
+        className="flex flex-col rounded-2xl border border-primary/15 bg-background shadow-elevation-4 shadow-black/30 overflow-hidden"
         style={{ width: '70vw', height: '80vh', maxWidth: '1200px', maxHeight: '900px' }}
       >
         {/* Header */}

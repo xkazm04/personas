@@ -4,6 +4,7 @@ import { Check, X, Send, Bot, User, Cloud, ExternalLink } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { SEVERITY_LABELS, parseSuggestedActions } from '../libs/reviewHelpers';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -81,7 +82,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
       <div className="flex-shrink-0 px-4 py-3 border-b border-primary/10 bg-secondary/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base border border-primary/15 flex-shrink-0" style={{ backgroundColor: (review.persona_color || '#6366f1') + '15' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(review.persona_color || '#6366f1', 0.08) }}>
               {review.persona_icon || '?'}
             </div>
             <div className="min-w-0">

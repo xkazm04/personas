@@ -176,6 +176,14 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
 
     // thread_id migration moved to pre-schema block (top of run())
 
+    // -- Dead Letter Queue: add retry_count to persona_events ----------------
+    let _ = conn.execute_batch(
+        "ALTER TABLE persona_events ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0;"
+    ); // ignore "duplicate column" error on re-run
+
+    // -- Composite trigger suppression persistence ----------------------------
+    ensure_composite_fires_table(conn)?;
+
     tracing::info!("Database migrations complete");
     Ok(())
 }
@@ -1505,7 +1513,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     id              TEXT PRIMARY KEY,
     persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     session_id      TEXT NOT NULL,
-    role            TEXT NOT NULL CHECK(role IN ('user','assistant')),
+    role            TEXT NOT NULL CHECK(role IN ('user','assistant','system','tool')),
     content         TEXT NOT NULL,
     execution_id    TEXT,
     metadata        TEXT,
@@ -3164,6 +3172,63 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added tier, access_count, last_accessed_at columns to persona_memories");
     }
 
+    // Add warnings column to automation_runs for surfacing auth fallbacks & method defaults.
+    let _ = conn.execute_batch(
+        "ALTER TABLE automation_runs ADD COLUMN warnings TEXT;"
+    );
+
+    // Migrate legacy string-matched interrupted sessions to first-class 'interrupted' status.
+    let migrated = conn.execute(
+        "UPDATE n8n_transform_sessions
+         SET status = 'interrupted', error = NULL
+         WHERE status = 'failed' AND error LIKE '%App closed during transform%'",
+        [],
+    ).unwrap_or(0);
+    if migrated > 0 {
+        tracing::info!("Migrated {migrated} interrupted n8n sessions from failed+string to interrupted status");
+    }
+
+    // Cloud webhook relay watermark table
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS cloud_webhook_watermarks (
+            trigger_id      TEXT PRIMARY KEY,
+            last_seen_ts    TEXT NOT NULL,
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );"
+    )?;
+
+    // -- Widen chat_messages role CHECK to include 'system' and 'tool' ----------
+    let needs_role_migration: bool = conn
+        .execute(
+            "INSERT INTO chat_messages (id, persona_id, session_id, role, content, created_at)
+             VALUES ('__role_check__', '__probe__', '__probe__', 'system', '', datetime('now'))",
+            [],
+        )
+        .is_err();
+    let _ = conn.execute("DELETE FROM chat_messages WHERE id = '__role_check__'", []);
+
+    if needs_role_migration {
+        conn.execute_batch(
+            "CREATE TABLE chat_messages_new (
+                id              TEXT PRIMARY KEY,
+                persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                session_id      TEXT NOT NULL,
+                role            TEXT NOT NULL CHECK(role IN ('user','assistant','system','tool')),
+                content         TEXT NOT NULL,
+                execution_id    TEXT,
+                metadata        TEXT,
+                created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            INSERT INTO chat_messages_new SELECT * FROM chat_messages;
+            DROP TABLE chat_messages;
+            ALTER TABLE chat_messages_new RENAME TO chat_messages;
+            CREATE INDEX IF NOT EXISTS idx_chat_persona   ON chat_messages(persona_id);
+            CREATE INDEX IF NOT EXISTS idx_chat_session   ON chat_messages(session_id);
+            CREATE INDEX IF NOT EXISTS idx_chat_created   ON chat_messages(created_at);"
+        )?;
+        tracing::info!("Widened chat_messages role CHECK to include system and tool");
+    }
+
     Ok(())
 }
 
@@ -3279,6 +3344,17 @@ fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<(), AppError>
         );
     }
 
+    Ok(())
+}
+
+/// Ensure the composite_trigger_fires table exists for persisting suppression state.
+pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS composite_trigger_fires (
+            trigger_id  TEXT PRIMARY KEY,
+            fired_at    TEXT NOT NULL
+        );"
+    )?;
     Ok(())
 }
 

@@ -49,71 +49,83 @@ pub fn get_policies_by_credential(
     pool: &DbPool,
     credential_id: &str,
 ) -> Result<Vec<CredentialRotationPolicy>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM credential_rotation_policies WHERE credential_id = ?1 ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map(params![credential_id], row_to_policy)?;
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)
+    timed_query!("credential_rotation", "credential_rotation::get_policies_by_credential", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM credential_rotation_policies WHERE credential_id = ?1 ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![credential_id], row_to_policy)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+
+    })
 }
 
 pub fn get_policy_by_id(
     pool: &DbPool,
     id: &str,
 ) -> Result<CredentialRotationPolicy, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM credential_rotation_policies WHERE id = ?1",
-        params![id],
-        row_to_policy,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("RotationPolicy {id}"))
-        }
-        other => AppError::Database(other),
+    timed_query!("credential_rotation", "credential_rotation::get_policy_by_id", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT * FROM credential_rotation_policies WHERE id = ?1",
+            params![id],
+            row_to_policy,
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("RotationPolicy {id}"))
+            }
+            other => AppError::Database(other),
+        })
+
     })
 }
 
 pub fn get_due_policies(pool: &DbPool, now: &str) -> Result<Vec<CredentialRotationPolicy>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM credential_rotation_policies
-         WHERE enabled = 1
-           AND next_rotation_at IS NOT NULL
-           AND next_rotation_at <= ?1
-         ORDER BY next_rotation_at ASC",
-    )?;
-    let rows = stmt.query_map(params![now], row_to_policy)?;
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)
+    timed_query!("credential_rotation", "credential_rotation::get_due_policies", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM credential_rotation_policies
+             WHERE enabled = 1
+               AND next_rotation_at IS NOT NULL
+               AND next_rotation_at <= ?1
+             ORDER BY next_rotation_at ASC",
+        )?;
+        let rows = stmt.query_map(params![now], row_to_policy)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+
+    })
 }
 
 pub fn create_policy(
     pool: &DbPool,
     input: CreateRotationPolicyInput,
 ) -> Result<CredentialRotationPolicy, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let interval = input.rotation_interval_days.unwrap_or(90);
-    let policy_type = input.policy_type.as_deref().unwrap_or("scheduled");
-    let enabled = input.enabled.unwrap_or(true) as i32;
+    timed_query!("credential_rotation", "credential_rotation::create_policy", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let interval = input.rotation_interval_days.unwrap_or(90);
+        let policy_type = input.policy_type.as_deref().unwrap_or("scheduled");
+        let enabled = input.enabled.unwrap_or(true) as i32;
 
-    // Compute next_rotation_at
-    let next = chrono::Utc::now()
-        + chrono::Duration::days(interval as i64);
-    let next_str = next.to_rfc3339();
+        // Compute next_rotation_at
+        let next = chrono::Utc::now()
+            + chrono::Duration::days(interval as i64);
+        let next_str = next.to_rfc3339();
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO credential_rotation_policies
-         (id, credential_id, enabled, rotation_interval_days, policy_type, next_rotation_at, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-        params![id, input.credential_id, enabled, interval, policy_type, next_str, now],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO credential_rotation_policies
+             (id, credential_id, enabled, rotation_interval_days, policy_type, next_rotation_at, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+            params![id, input.credential_id, enabled, interval, policy_type, next_str, now],
+        )?;
 
-    get_policy_by_id(pool, &id)
+        get_policy_by_id(pool, &id)
+
+    })
 }
 
 pub fn update_policy(
@@ -121,116 +133,134 @@ pub fn update_policy(
     id: &str,
     input: UpdateRotationPolicyInput,
 ) -> Result<CredentialRotationPolicy, AppError> {
-    let existing = get_policy_by_id(pool, id)?;
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+    timed_query!("credential_rotation", "credential_rotation::update_policy", {
+        let existing = get_policy_by_id(pool, id)?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    let enabled = input.enabled.unwrap_or(existing.enabled) as i32;
-    let interval = input
-        .rotation_interval_days
-        .unwrap_or(existing.rotation_interval_days);
+        let enabled = input.enabled.unwrap_or(existing.enabled) as i32;
+        let interval = input
+            .rotation_interval_days
+            .unwrap_or(existing.rotation_interval_days);
 
-    // Recompute next_rotation_at from last_rotated_at or now
-    let base = existing
-        .last_rotated_at
-        .as_deref()
-        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
-        .map(|dt| dt.with_timezone(&chrono::Utc))
-        .unwrap_or_else(chrono::Utc::now);
-    let next = base + chrono::Duration::days(interval as i64);
-    let next_str = next.to_rfc3339();
+        // Recompute next_rotation_at from last_rotated_at or now
+        let base = existing
+            .last_rotated_at
+            .as_deref()
+            .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+            .map(|dt| dt.with_timezone(&chrono::Utc))
+            .unwrap_or_else(chrono::Utc::now);
+        let next = base + chrono::Duration::days(interval as i64);
+        let next_str = next.to_rfc3339();
 
-    conn.execute(
-        "UPDATE credential_rotation_policies
-         SET enabled = ?1, rotation_interval_days = ?2, next_rotation_at = ?3, updated_at = ?4
-         WHERE id = ?5",
-        params![enabled, interval, next_str, now, id],
-    )?;
+        conn.execute(
+            "UPDATE credential_rotation_policies
+             SET enabled = ?1, rotation_interval_days = ?2, next_rotation_at = ?3, updated_at = ?4
+             WHERE id = ?5",
+            params![enabled, interval, next_str, now, id],
+        )?;
 
-    get_policy_by_id(pool, id)
+        get_policy_by_id(pool, id)
+
+    })
 }
 
 pub fn delete_policy(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "DELETE FROM credential_rotation_policies WHERE id = ?1",
-        params![id],
-    )?;
-    Ok(rows > 0)
+    timed_query!("credential_rotation", "credential_rotation::delete_policy", {
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "DELETE FROM credential_rotation_policies WHERE id = ?1",
+            params![id],
+        )?;
+        Ok(rows > 0)
+
+    })
 }
 
 pub fn mark_rotated(pool: &DbPool, policy_id: &str) -> Result<(), AppError> {
-    let policy = get_policy_by_id(pool, policy_id)?;
-    let now = chrono::Utc::now();
-    let now_str = now.to_rfc3339();
-    let next = now + chrono::Duration::days(policy.rotation_interval_days as i64);
-    let next_str = next.to_rfc3339();
+    timed_query!("credential_rotation", "credential_rotation::mark_rotated", {
+        let policy = get_policy_by_id(pool, policy_id)?;
+        let now = chrono::Utc::now();
+        let now_str = now.to_rfc3339();
+        let next = now + chrono::Duration::days(policy.rotation_interval_days as i64);
+        let next_str = next.to_rfc3339();
 
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE credential_rotation_policies
-         SET last_rotated_at = ?1, next_rotation_at = ?2, updated_at = ?1
-         WHERE id = ?3",
-        params![now_str, next_str, policy_id],
-    )?;
-    Ok(())
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE credential_rotation_policies
+             SET last_rotated_at = ?1, next_rotation_at = ?2, updated_at = ?1
+             WHERE id = ?3",
+            params![now_str, next_str, policy_id],
+        )?;
+        Ok(())
+
+    })
 }
 
 /// Count consecutive recent rotation failures for a credential (from most recent backwards).
 pub fn get_consecutive_rotation_failures(pool: &DbPool, credential_id: &str) -> Result<u32, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT status FROM credential_rotation_history
-         WHERE credential_id = ?1 AND rotation_type != 'anomaly'
-         ORDER BY created_at DESC
-         LIMIT 20",
-    )?;
-    let statuses: Vec<String> = stmt
-        .query_map(params![credential_id], |row| row.get::<_, String>(0))?
-        .filter_map(|r| r.ok())
-        .collect();
+    timed_query!("credential_rotation", "credential_rotation::get_consecutive_rotation_failures", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT status FROM credential_rotation_history
+             WHERE credential_id = ?1 AND rotation_type != 'anomaly'
+             ORDER BY created_at DESC
+             LIMIT 20",
+        )?;
+        let statuses: Vec<String> = stmt
+            .query_map(params![credential_id], |row| row.get::<_, String>(0))?
+            .filter_map(|r| r.ok())
+            .collect();
 
-    let count = statuses
-        .iter()
-        .take_while(|s| s.as_str() == "failed")
-        .count();
-    Ok(count as u32)
+        let count = statuses
+            .iter()
+            .take_while(|s| s.as_str() == "failed")
+            .count();
+        Ok(count as u32)
+
+    })
 }
 
 /// Schedule a short retry for a failed rotation using exponential backoff.
 /// Backoff: 1h, 4h, 12h (capped) based on consecutive failures.
 pub fn schedule_failed_retry(pool: &DbPool, policy_id: &str, consecutive_failures: u32) -> Result<(), AppError> {
-    let retry_hours: i64 = match consecutive_failures {
-        0 | 1 => 1,
-        2 => 4,
-        _ => 12,
-    };
-    let now = chrono::Utc::now();
-    let next = now + chrono::Duration::hours(retry_hours);
-    let next_str = next.to_rfc3339();
-    let now_str = now.to_rfc3339();
+    timed_query!("credential_rotation", "credential_rotation::schedule_failed_retry", {
+        let retry_hours: i64 = match consecutive_failures {
+            0 | 1 => 1,
+            2 => 4,
+            _ => 12,
+        };
+        let now = chrono::Utc::now();
+        let next = now + chrono::Duration::hours(retry_hours);
+        let next_str = next.to_rfc3339();
+        let now_str = now.to_rfc3339();
 
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE credential_rotation_policies
-         SET next_rotation_at = ?1, updated_at = ?2
-         WHERE id = ?3",
-        params![next_str, now_str, policy_id],
-    )?;
-    Ok(())
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE credential_rotation_policies
+             SET next_rotation_at = ?1, updated_at = ?2
+             WHERE id = ?3",
+            params![next_str, now_str, policy_id],
+        )?;
+        Ok(())
+
+    })
 }
 
 /// Disable a rotation policy (e.g., after too many consecutive failures).
 pub fn disable_policy(pool: &DbPool, policy_id: &str) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE credential_rotation_policies
-         SET enabled = 0, updated_at = ?1
-         WHERE id = ?2",
-        params![now, policy_id],
-    )?;
-    Ok(())
+    timed_query!("credential_rotation", "credential_rotation::disable_policy", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE credential_rotation_policies
+             SET enabled = 0, updated_at = ?1
+             WHERE id = ?2",
+            params![now, policy_id],
+        )?;
+        Ok(())
+
+    })
 }
 
 // ============================================================================
@@ -242,17 +272,20 @@ pub fn get_history(
     credential_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<CredentialRotationEntry>, AppError> {
-    let lim = limit.unwrap_or(50);
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM credential_rotation_history
-         WHERE credential_id = ?1
-         ORDER BY created_at DESC
-         LIMIT ?2",
-    )?;
-    let rows = stmt.query_map(params![credential_id, lim], row_to_history)?;
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)
+    timed_query!("credential_rotation", "credential_rotation::get_history", {
+        let lim = limit.unwrap_or(50);
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM credential_rotation_history
+             WHERE credential_id = ?1
+             ORDER BY created_at DESC
+             LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![credential_id, lim], row_to_history)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+
+    })
 }
 
 pub fn record_rotation(
@@ -262,21 +295,24 @@ pub fn record_rotation(
     status: RotationEntryStatus,
     detail: Option<&str>,
 ) -> Result<CredentialRotationEntry, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
+    timed_query!("credential_rotation", "credential_rotation::record_rotation", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO credential_rotation_history
-         (id, credential_id, rotation_type, status, detail, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![id, credential_id, rotation_type, status.as_str(), detail, now],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO credential_rotation_history
+             (id, credential_id, rotation_type, status, detail, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![id, credential_id, rotation_type, status.as_str(), detail, now],
+        )?;
 
-    conn.query_row(
-        "SELECT * FROM credential_rotation_history WHERE id = ?1",
-        params![id],
-        row_to_history,
-    )
-    .map_err(AppError::Database)
+        conn.query_row(
+            "SELECT * FROM credential_rotation_history WHERE id = ?1",
+            params![id],
+            row_to_history,
+        )
+        .map_err(AppError::Database)
+
+    })
 }

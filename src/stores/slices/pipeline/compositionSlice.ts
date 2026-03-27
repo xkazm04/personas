@@ -349,13 +349,19 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
             const inputData = mergedInput ? { prompt: mergedInput } : undefined;
             const execId = await agentState.executePersona(node.personaId, inputData);
 
-            // Wait for execution to finish (poll every 500ms, max 5 min)
+            // Wait for execution to finish (poll every 500ms, max 5 min).
+            // Check both activeExecutionId and lastExecutionId because
+            // finishExecution clears activeExecutionId synchronously after
+            // setting isExecuting=false — the poll may only see the final state.
             const maxWait = 300_000;
             const pollInterval = 500;
             let elapsed = 0;
             while (elapsed < maxWait) {
               const current = useAgentStore.getState();
-              if (!current.isExecuting && current.activeExecutionId === execId) break;
+              if (
+                !current.isExecuting &&
+                (current.activeExecutionId === execId || current.lastExecutionId === execId)
+              ) break;
               await new Promise((r) => setTimeout(r, pollInterval));
               elapsed += pollInterval;
               if (get().workflowExecution?.status === "cancelled") break;
@@ -369,9 +375,14 @@ export const createCompositionSlice: StateCreator<PipelineStore, [], [], Composi
               logger.warn("Workflow node timed out", { nodeId, nodeLabel: node.label, maxWaitMs: maxWait });
             }
 
-            // Capture output
+            // Capture output from the per-execution snapshot (populated by
+            // finishExecution) so that the shared executionOutput array — which
+            // gets cleared on the next executePersona call — cannot race us.
             const finalState = useAgentStore.getState();
-            const outputText = finalState.executionOutput.join("\n");
+            const snapshotLines = execId
+              ? finalState.consumeCompletedOutput(execId)
+              : undefined;
+            const outputText = (snapshotLines ?? finalState.executionOutput).join("\n");
 
             // Fetch the backend execution record to extract cost / token metrics
             let nodeCostUsd: number | undefined;

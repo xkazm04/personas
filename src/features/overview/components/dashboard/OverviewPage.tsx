@@ -3,6 +3,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { OverviewFilterProvider } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDashboardPipeline';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
+import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { lazyRetry } from '@/lib/lazyRetry';
 
 // Lazy-load each subtab -- only the active one ships to the render tree.
@@ -28,7 +29,7 @@ function OverviewContent() {
       className="animate-fade-slide-in flex-1 min-h-0 flex flex-col w-full overflow-hidden"
     >
       <ErrorBoundary name={`Overview/${overviewTab}`}>
-      <Suspense fallback={null}>
+      <Suspense fallback={<SuspenseFallback />}>
         {overviewTab === 'home' ? <DashboardWithSubtabs /> :
         overviewTab === 'executions' ? <ExecutionsWithSubtabs /> :
         overviewTab === 'manual-review' ? <ManualReviewList /> :

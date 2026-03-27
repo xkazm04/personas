@@ -47,7 +47,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
     return map;
   }, [sortedFilteredIssues]);
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
+    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 shadow-inner flex items-center justify-center">
@@ -55,7 +55,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
           </div>
           <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Health Issues</h3>
           {healingIssues.length > 0 && (
-            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
+            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
               {healingIssues.length}
             </span>
           )}
@@ -63,7 +63,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
         <button
           onClick={handleRunAnalysis}
           disabled={healingRunning}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation-1"
         >
           {healingRunning ? (
             <><div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />Analyzing...</>
@@ -115,7 +115,7 @@ export const HealthIssuesPanel = memo(function HealthIssuesPanel({
               onClick={() => setIssueFilter(chip.key)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-sm font-medium transition-all ${
                 issueFilter === chip.key
-                  ? 'bg-background text-foreground shadow-sm border border-primary/20'
+                  ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
                   : 'text-muted-foreground/80 hover:text-muted-foreground'
               }`}
             >

@@ -19,6 +19,28 @@ export interface RunStatusPayload {
   scenarios?: unknown[];
 }
 
+/**
+ * Shared snake_case → camelCase mapper for RunStatusPayload fields.
+ * Used by both test-run and lab-run event handlers to ensure consistent field coverage.
+ */
+export function mapRunStatusPayload(p: RunStatusPayload) {
+  return {
+    runId: p.run_id,
+    phase: p.phase,
+    scenariosCount: p.scenarios_count,
+    current: p.current,
+    total: p.total,
+    modelId: p.model_id,
+    scenarioName: p.scenario_name,
+    status: p.status,
+    scores: p.scores,
+    summary: p.summary,
+    error: p.error,
+    elapsedMs: p.elapsed_ms,
+    scenarios: p.scenarios,
+  };
+}
+
 export interface RunEventBinding<T extends RunStatusPayload = RunStatusPayload> {
   eventName: string;
   /** Return false to skip this event (e.g. stale run filtering). */

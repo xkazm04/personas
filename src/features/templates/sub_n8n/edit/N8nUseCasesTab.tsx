@@ -1,29 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Sparkles, ShieldCheck, Bell, Brain, Radio, Play, Info, ListChecks } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
-import { parseDesignContext, type UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
-import { extractProtocolCapabilities, type ProtocolType } from './protocolParser';
+import type { DesignUseCase as UseCaseItem } from '@/lib/types/frontendTypes';
+import { useN8nDesignData } from '../hooks/useN8nDesignData';
+import { CAPABILITY_SPLIT_STYLES, CATEGORY_STYLES, MODE_BADGE } from '../colorTokens';
+import type { ProtocolType } from './protocolParser';
 
-const CAPABILITY_STYLES: Record<ProtocolType, { Icon: React.ComponentType<{ className?: string }>; bg: string; text: string }> = {
-  manual_review: { Icon: ShieldCheck, bg: 'bg-rose-500/10 border-rose-500/15', text: 'text-rose-400/70' },
-  user_message:  { Icon: Bell,        bg: 'bg-amber-500/10 border-amber-500/15', text: 'text-amber-400/70' },
-  agent_memory:  { Icon: Brain,       bg: 'bg-cyan-500/10 border-cyan-500/15', text: 'text-cyan-400/70' },
-  emit_event:    { Icon: Radio,       bg: 'bg-violet-500/10 border-violet-500/15', text: 'text-violet-400/70' },
-};
-
-const MODE_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  e2e:            { label: 'E2E',  bg: 'bg-emerald-500/10 border-emerald-500/20', text: 'text-emerald-400/80' },
-  mock:           { label: 'MOCK', bg: 'bg-amber-500/10 border-amber-500/20',   text: 'text-amber-400/80' },
-  non_executable: { label: 'INFO', bg: 'bg-secondary/50 border-primary/15',     text: 'text-muted-foreground/70' },
-};
-
-const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
-  notification:   { bg: 'bg-rose-500/10 border-rose-500/15',   text: 'text-rose-400/70' },
-  'data-sync':    { bg: 'bg-cyan-500/10 border-cyan-500/15',   text: 'text-cyan-400/70' },
-  monitoring:     { bg: 'bg-amber-500/10 border-amber-500/15', text: 'text-amber-400/70' },
-  automation:     { bg: 'bg-violet-500/10 border-violet-500/15', text: 'text-violet-400/70' },
-  communication:  { bg: 'bg-blue-500/10 border-blue-500/15',   text: 'text-blue-400/70' },
-  reporting:      { bg: 'bg-emerald-500/10 border-emerald-500/15', text: 'text-emerald-400/70' },
+const CAPABILITY_ICONS: Record<ProtocolType, React.ComponentType<{ className?: string }>> = {
+  manual_review: ShieldCheck,
+  user_message:  Bell,
+  agent_memory:  Brain,
+  emit_event:    Radio,
 };
 
 interface N8nUseCasesTabProps {
@@ -47,15 +34,11 @@ export function N8nUseCasesTab({
   onTestUseCase,
   testingUseCaseId,
 }: N8nUseCasesTabProps) {
-  const capabilities = useMemo(
-    () => extractProtocolCapabilities(
-      draft.system_prompt,
-      draft.structured_prompt as Record<string, unknown> | null,
-    ),
-    [draft.system_prompt, draft.structured_prompt],
+  const { contextData, capabilities } = useN8nDesignData(
+    draft.design_context,
+    draft.system_prompt,
+    draft.structured_prompt as Record<string, unknown> | null,
   );
-
-  const contextData = useMemo(() => parseDesignContext(draft.design_context), [draft.design_context]);
   const useCases: UseCaseItem[] = contextData.useCases ?? [];
 
   // Mock mode viewer
@@ -189,14 +172,15 @@ export function N8nUseCasesTab({
             </p>
             <div className="flex flex-wrap gap-1.5">
               {capabilities.map((cap) => {
-                const style = CAPABILITY_STYLES[cap.type];
+                const style = CAPABILITY_SPLIT_STYLES[cap.type];
+                const CapIcon = CAPABILITY_ICONS[cap.type];
                 return (
                   <span
                     key={cap.type}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border ${style.bg} ${style.text}`}
                     title={cap.context}
                   >
-                    <style.Icon className="w-3 h-3" />
+                    <CapIcon className="w-3 h-3" />
                     {cap.label}
                   </span>
                 );

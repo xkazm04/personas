@@ -48,6 +48,8 @@ struct DesignResult {
     input_schema: Option<String>,
     #[serde(default)]
     output_schema: Option<String>,
+    /// Seconds — AI prompt and frontend use seconds; converted to ms via
+    /// [`timeout_secs_to_ms`] before DB insert.
     #[serde(default = "default_timeout")]
     timeout_secs: i64,
     #[serde(default = "default_fallback")]
@@ -58,6 +60,12 @@ struct DesignResult {
 
 fn default_timeout() -> i64 { 30 }
 fn default_fallback() -> String { "connector".into() }
+
+/// Convert seconds (from AI design output / frontend) to milliseconds (DB storage).
+/// Clamps to a sane range: minimum 1 second, maximum 1 hour.
+fn timeout_secs_to_ms(secs: i64) -> i64 {
+    secs.clamp(1, 3600) * 1000
+}
 
 // -- Main dispatcher --------------------------------------------
 
@@ -381,7 +389,7 @@ async fn deploy_custom(
         credential_mapping: None,
         input_schema: design.input_schema.clone(),
         output_schema: design.output_schema.clone(),
-        timeout_ms: Some(design.timeout_secs * 1000),
+        timeout_ms: Some(timeout_secs_to_ms(design.timeout_secs)),
         retry_count: None,
         fallback_mode: Some(design.fallback_mode.clone()),
     };
@@ -431,7 +439,7 @@ fn create_and_activate(
         credential_mapping: credential_mapping.map(|s| s.into()),
         input_schema: input_schema.map(|s| s.into()),
         output_schema: output_schema.map(|s| s.into()),
-        timeout_ms: Some(timeout_secs * 1000),
+        timeout_ms: Some(timeout_secs_to_ms(timeout_secs)),
         retry_count: None,
         fallback_mode: Some(fallback_mode.into()),
     };

@@ -8,7 +8,7 @@ use ts_rs::TS;
 
 use std::collections::HashMap;
 
-use crate::db::models::{CreatePersonaEventInput, PersonaEvent, UpdateExecutionStatus};
+use crate::db::models::{CreatePersonaEventInput, PersonaEvent, PersonaEventStatus, UpdateExecutionStatus};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::{personas as persona_repo, settings};
 use crate::db::repos::resources::audit_log;
@@ -29,7 +29,7 @@ use crate::engine::subscription::{
     ContextRuleSubscription,
 };
 use crate::engine::ExecutionEngine;
-use super::event_registry::event_name;
+use super::event_registry::{emit_event_bus, event_name};
 
 /// Per-subscription health snapshot including tick latency, counts, and error tracking.
 #[derive(Debug, Clone, Serialize, TS)]
@@ -410,7 +410,7 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
             state: Arc::new(tokio::sync::Mutex::new(
-                super::cloud_webhook_relay::CloudWebhookRelayState::new(),
+                super::cloud_webhook_relay::CloudWebhookRelayState::load_from_db(&pool),
             )),
         }),
     ];
@@ -645,10 +645,10 @@ pub(crate) async fn event_bus_tick(
                 event_type = %event.event_type,
                 "Event bus: no subscriber matches -- marking as delivered (no consumers)"
             );
-            let _ = event_repo::update_status(pool, &event.id, "delivered", None);
+            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
             scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
             scheduler.events_delivered.fetch_add(1, Ordering::Relaxed);
-            emit_event_to_frontend(app, event, "delivered");
+            emit_event_to_frontend(app, event, PersonaEventStatus::Delivered);
         } else {
             event_matches.push((idx, matches));
         }
@@ -801,10 +801,35 @@ pub(crate) async fn event_bus_tick(
             scheduler.events_delivered.fetch_add(1, Ordering::Relaxed);
         }
 
-        let final_status = if any_failed { "partial" } else { "delivered" };
-        let _ = event_repo::update_status(pool, &event.id, final_status, None);
+        if any_failed {
+            // Use DLQ pattern: increment retry count, move to dead_letter after max retries
+            let max_retries = event_repo::DEFAULT_MAX_RETRIES;
+            match event_repo::increment_retry_or_dead_letter(
+                pool, &event.id,
+                Some("One or more subscription executions failed".into()),
+                max_retries,
+            ) {
+                Ok(moved_to_dlq) => {
+                    let status = if moved_to_dlq { PersonaEventStatus::DeadLetter } else { PersonaEventStatus::Failed };
+                    if moved_to_dlq {
+                        tracing::warn!(
+                            event_id = %event.id,
+                            event_type = %event.event_type,
+                            "Event moved to dead letter queue after {} retries",
+                            max_retries,
+                        );
+                    }
+                    emit_event_to_frontend(app, event, status);
+                }
+                Err(e) => {
+                    tracing::error!(event_id = %event.id, "Failed to update DLQ status: {}", e);
+                }
+            }
+        } else {
+            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
+            emit_event_to_frontend(app, event, PersonaEventStatus::Delivered);
+        }
         scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
-        emit_event_to_frontend(app, event, final_status);
     }
 }
 
@@ -938,6 +963,22 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         Err(e) => tracing::error!("Event cleanup error: {}", e),
     }
 
+    // DLQ auto-retry: re-queue failed events that haven't exhausted retries
+    let max_retries = event_repo::DEFAULT_MAX_RETRIES;
+    match event_repo::get_retry_eligible(pool, max_retries, 20) {
+        Ok(events) if !events.is_empty() => {
+            let count = events.len();
+            for evt in &events {
+                if let Err(e) = event_repo::update_status(pool, &evt.id, PersonaEventStatus::Pending, None) {
+                    tracing::warn!(event_id = %evt.id, "DLQ auto-retry: failed to re-queue: {}", e);
+                }
+            }
+            tracing::info!("DLQ auto-retry: re-queued {} failed events for retry", count);
+        }
+        Ok(_) => {}
+        Err(e) => tracing::error!("DLQ auto-retry query error: {}", e),
+    }
+
     // Credential audit log: 90-day retention
     match audit_log::cleanup_old_entries(pool, 90) {
         Ok(n) if n > 0 => tracing::info!("Cleaned up {} old credential audit log entries (retention=90d)", n),
@@ -959,14 +1000,12 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
 }
 
 /// Emit event update to frontend for realtime visualization.
-fn emit_event_to_frontend(app: &AppHandle, event: &PersonaEvent, status: &str) {
+fn emit_event_to_frontend(app: &AppHandle, event: &PersonaEvent, status: PersonaEventStatus) {
     let mut payload = event.clone();
-    payload.status = status.to_string();
+    payload.status = status;
     payload.processed_at = Some(chrono::Utc::now().to_rfc3339());
 
-    if let Err(e) = app.emit(event_name::EVENT_BUS, payload) {
-        tracing::warn!(event_id = %event.id, error = %e, "Failed to emit event-bus event to frontend");
-    }
+    emit_event_bus(app, &payload);
 }
 
 // ---------------------------------------------------------------------------

@@ -6,7 +6,10 @@ import App from "./App";
 import { initSentry } from "./lib/sentry";
 import { initAnalytics } from "./lib/analytics";
 import { persistCrash } from "./lib/utils/crashPersistence";
+import { createLogger } from "./lib/log";
 import "./styles/globals.css";
+
+const globalErrorLogger = createLogger("global-error");
 
 // -- Render React immediately (sync) -------------------------------------
 // On Android WebView, async bootstrap can hang if Tauri IPC promises never
@@ -105,19 +108,48 @@ if (root) {
     console.warn("[main] Analytics init failed:", e);
   }
 
+  /** Collect active persona + route so crash logs carry runtime context. */
+  function getErrorContext(): Record<string, unknown> {
+    const ctx: Record<string, unknown> = { route: window.location.hash || window.location.pathname };
+    try {
+      // Lazy import — agentStore may not be initialised yet during early startup
+      const stored = localStorage.getItem("persona-ui-agents");
+      if (stored) {
+        const parsed = JSON.parse(stored) as { state?: { selectedPersonaId?: string | null } };
+        if (parsed?.state?.selectedPersonaId) {
+          ctx.personaId = parsed.state.selectedPersonaId;
+        }
+      }
+    } catch { /* intentional: store may not exist yet */ }
+    return ctx;
+  }
+
   window.onerror = (_message, _source, _lineno, _colno, error) => {
-    try { Sentry.captureException(error ?? new Error(String(_message))); } catch { /* intentional no-op */ }
-    persistCrash("window.onerror", error ?? _message);
+    const ctx = getErrorContext();
+    const err = error ?? new Error(String(_message));
+    globalErrorLogger.error("Uncaught synchronous error", {
+      message: err instanceof Error ? err.message : String(err),
+      source: _source ?? undefined,
+      line: _lineno ?? undefined,
+      col: _colno ?? undefined,
+      ...ctx,
+    });
+    try { Sentry.captureException(err); } catch { /* intentional no-op */ }
+    persistCrash("window.onerror", err);
   };
 
   window.addEventListener("unhandledrejection", (event) => {
+    const ctx = getErrorContext();
+    const reason = event.reason;
+    globalErrorLogger.error("Unhandled promise rejection", {
+      message: reason instanceof Error ? reason.message : String(reason),
+      ...ctx,
+    });
     try {
       Sentry.captureException(
-        event.reason instanceof Error
-          ? event.reason
-          : new Error(String(event.reason))
+        reason instanceof Error ? reason : new Error(String(reason)),
       );
     } catch { /* intentional no-op */ }
-    persistCrash("unhandledrejection", event.reason);
+    persistCrash("unhandledrejection", reason);
   });
 })();

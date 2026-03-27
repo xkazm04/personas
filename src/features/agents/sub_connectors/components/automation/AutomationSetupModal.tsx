@@ -28,7 +28,7 @@ export function AutomationSetupModal({
       onClose={handleClose}
       titleId="automation-setup-title"
       size="lg"
-      panelClassName="bg-background border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+      panelClassName="bg-background border border-border/60 rounded-2xl shadow-elevation-4 overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">

@@ -12,7 +12,7 @@ export default function TeamMemoryBadge({ count, isOpen, isPulsing, onClick }: T
     <>
       {!isOpen && (
         <button
-          className="animate-fade-slide-in absolute bottom-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-secondary/90 backdrop-blur-lg border border-primary/15 shadow-lg hover:border-violet-500/30 transition-colors"
+          className="animate-fade-slide-in absolute bottom-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-secondary/90 backdrop-blur-lg border border-primary/15 shadow-elevation-3 hover:border-violet-500/30 transition-colors"
           onClick={onClick}
         >
           <div className="relative">

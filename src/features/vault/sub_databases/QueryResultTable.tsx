@@ -26,7 +26,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
   const flashCopied = useCallback((key: string) => {
     setCopiedCell(key);
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setCopiedCell(null), 1200);
+    timerRef.current = setTimeout(() => setCopiedCell(null), 2000);
   }, []);
 
   const copyToClipboard = useCallback((text: string, key: string) => {

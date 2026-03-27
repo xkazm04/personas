@@ -118,7 +118,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     performSave: performModelSave,
   });
 
-  const { isSaving: isSavingSettings } = useTabSection({
+  const { isSaving: isSavingSettings, lastError: settingsError } = useTabSection({
     tab: 'settings',
     isDirty: settingsDirty,
     save: handleSaveSettings,
@@ -128,7 +128,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     enabled: !!selectedPersona && !pendingPersonaId,
   });
 
-  const { isSaving: isSavingModel } = useTabSection({
+  const { isSaving: isSavingModel, lastError: modelError } = useTabSection({
     tab: 'model',
     isDirty: modelDirty,
     save: saveModelSettings,
@@ -139,10 +139,12 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
   });
 
   const isSaving = isSavingSettings || isSavingModel;
+  const saveError = settingsError || modelError;
 
   return useMemo(() => ({
     settingsDirty,
     modelDirty,
     isSaving,
-  }), [settingsDirty, modelDirty, isSaving]);
+    saveError,
+  }), [settingsDirty, modelDirty, isSaving, saveError]);
 }

@@ -10,8 +10,26 @@ export const CHART_COLORS_PURPLE = [
   '#818cf8', '#7c3aed', '#5b21b6', '#4f46e5',
 ];
 
-export const GRID_STROKE = 'rgba(255,255,255,0.06)';
-export const AXIS_TICK_FILL = 'rgba(255,255,255,0.4)';
+function getCSSVar(name: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+export const GRID_STROKE_FALLBACK = 'rgba(255,255,255,0.06)';
+export const AXIS_TICK_FILL_FALLBACK = 'rgba(255,255,255,0.4)';
+
+/** @deprecated Use {@link getGridStroke} for theme-responsive value */
+export const GRID_STROKE = GRID_STROKE_FALLBACK;
+/** @deprecated Use {@link getAxisTickFill} for theme-responsive value */
+export const AXIS_TICK_FILL = AXIS_TICK_FILL_FALLBACK;
+
+export function getGridStroke(): string {
+  return getCSSVar('--chart-grid-stroke', GRID_STROKE_FALLBACK);
+}
+
+export function getAxisTickFill(): string {
+  return getCSSVar('--chart-axis-fill', AXIS_TICK_FILL_FALLBACK);
+}
 
 export const CHART_HEIGHT = { sm: 160, md: 200, lg: 240 } as const;
 

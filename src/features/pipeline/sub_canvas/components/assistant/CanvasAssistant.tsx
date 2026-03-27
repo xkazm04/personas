@@ -65,7 +65,7 @@ export default function CanvasAssistant({
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="animate-fade-slide-in absolute top-14 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 text-sm font-medium transition-all shadow-lg backdrop-blur-sm"
+          className="animate-fade-slide-in absolute top-14 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 text-sm font-medium transition-all shadow-elevation-3 backdrop-blur-sm"
         >
           <Sparkles className="w-3.5 h-3.5" />
           Assistant
@@ -75,7 +75,7 @@ export default function CanvasAssistant({
       {/* Panel */}
       {isOpen && (
           <div
-            className="animate-fade-slide-in absolute top-14 left-3 z-30 w-80 rounded-xl bg-background/95 backdrop-blur-md border border-primary/20 shadow-2xl overflow-hidden"
+            className="animate-fade-slide-in absolute top-14 left-3 z-30 w-80 rounded-xl bg-background/95 backdrop-blur-md border border-primary/20 shadow-elevation-4 overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">

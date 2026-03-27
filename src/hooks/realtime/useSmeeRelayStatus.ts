@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { useState } from 'react';
 import { EventName } from '@/lib/eventRegistry';
+import { createSingletonListener } from './createSingletonListener';
 
 export interface SmeeRelayStatus {
   channel_url: string | null;
@@ -8,6 +8,7 @@ export interface SmeeRelayStatus {
   events_relayed: number;
   last_event_at: string | null;
   error: string | null;
+  legacy_active: boolean;
 }
 
 const DEFAULT_STATUS: SmeeRelayStatus = {
@@ -16,7 +17,12 @@ const DEFAULT_STATUS: SmeeRelayStatus = {
   events_relayed: 0,
   last_event_at: null,
   error: null,
+  legacy_active: false,
 };
+
+const useSmeeRelayListener = createSingletonListener<SmeeRelayStatus>(
+  EventName.SMEE_RELAY_STATUS,
+);
 
 /**
  * Listens to the `smee-relay-status` Tauri event for real-time
@@ -24,29 +30,6 @@ const DEFAULT_STATUS: SmeeRelayStatus = {
  */
 export function useSmeeRelayStatus(): SmeeRelayStatus {
   const [status, setStatus] = useState<SmeeRelayStatus>(DEFAULT_STATUS);
-  const unlistenRef = useRef<UnlistenFn | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    listen<SmeeRelayStatus>(EventName.SMEE_RELAY_STATUS, (event) => {
-      if (!cancelled) {
-        setStatus(event.payload);
-      }
-    }).then((unlisten) => {
-      if (cancelled) {
-        unlisten();
-      } else {
-        unlistenRef.current = unlisten;
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      unlistenRef.current?.();
-      unlistenRef.current = null;
-    };
-  }, []);
-
+  useSmeeRelayListener(setStatus);
   return status;
 }

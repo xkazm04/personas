@@ -45,6 +45,7 @@ mod evolution;
 mod signing;
 mod ocr;
 mod shared_event;
+mod tool_audit;
 
 pub use persona::*;
 pub use tool::*;
@@ -92,3 +93,4 @@ pub use evolution::*;
 pub use signing::*;
 pub use ocr::*;
 pub use shared_event::*;
+pub use tool_audit::*;

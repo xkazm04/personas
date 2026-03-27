@@ -50,7 +50,6 @@ export function useCloudHealthMonitor() {
       // Error reaching backend — start reconnect loop
       startReconnectLoop();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startReconnectLoop = useCallback(() => {
@@ -64,7 +63,6 @@ export function useCloudHealthMonitor() {
       cloudReconnectState: { isReconnecting: true, attempt, nextRetryAt: Date.now() + delay },
     });
     timerRef.current = setTimeout(() => attemptReconnect(0), delay);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const attemptReconnect = useCallback(async (attempt: number) => {
@@ -113,7 +111,6 @@ export function useCloudHealthMonitor() {
     };
     useSystemStore.setState({ cloudReconnectState: nextState });
     timerRef.current = setTimeout(() => attemptReconnect(nextAttempt), delay);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -133,7 +130,6 @@ export function useCloudHealthMonitor() {
       unmountedRef.current = true;
       clearTimer();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, reconnectState.isReconnecting]);
 
   // When user explicitly disconnects, reset our tracking

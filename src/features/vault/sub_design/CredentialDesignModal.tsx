@@ -28,7 +28,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       titleId="credential-design-title"
       embedded={embedded}
       size="lg"
-      panelClassName={embedded ? 'max-h-[80vh] overflow-y-auto bg-background border border-primary/15 rounded-2xl' : 'max-h-[min(90vh,960px)] overflow-y-auto bg-background border border-primary/15 rounded-2xl shadow-2xl'}
+      panelClassName={embedded ? 'max-h-[80vh] overflow-y-auto bg-background border border-primary/15 rounded-2xl' : 'max-h-[min(90vh,960px)] overflow-y-auto bg-background border border-primary/15 rounded-2xl shadow-elevation-4'}
     >
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur-sm border-b border-primary/10">

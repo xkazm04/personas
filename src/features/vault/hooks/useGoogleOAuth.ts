@@ -14,6 +14,8 @@ export interface GoogleOAuthTokenData {
 export interface GoogleOAuthState {
   isAuthorizing: boolean;
   completedAt: string | null;
+  /** Status message from the OAuth polling flow */
+  message: { success: boolean; message: string } | null;
   /** Read current OAuth values (stored in a ref to avoid DevTools exposure). */
   getValues: () => Record<string, string>;
   /** Monotonic counter incremented when values change. */
@@ -58,6 +60,7 @@ export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuth
   return {
     isAuthorizing: protocol.isActive,
     completedAt: protocol.completedAt,
+    message: protocol.message,
     getValues: protocol.getValues,
     valuesVersion: protocol.valuesVersion,
     startConsent,

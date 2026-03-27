@@ -45,7 +45,7 @@ export function serializeQuickConfig(state: QuickConfigState): string {
   const parts: string[] = [];
 
   if (state.frequency) {
-    let schedule = '';
+    let schedule: string;
     if (state.frequency === 'daily') {
       schedule = `Daily at ${state.time || '09:00'}`;
     } else if (state.frequency === 'weekly') {
@@ -129,7 +129,7 @@ function SchedulePanel({
                 onClick={() => setFrequency(f)}
                 className={`px-3.5 h-8 rounded-md text-xs font-medium transition-all duration-200 ${
                   frequency === f
-                    ? 'bg-primary/15 text-primary shadow-sm'
+                    ? 'bg-primary/15 text-primary shadow-elevation-1'
                     : 'text-muted-foreground/50 hover:text-muted-foreground/70'
                 }`}
               >
@@ -410,13 +410,13 @@ function ServicesPanel({
                 onClick={() => onToggle(c.name)}
                 className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-xl transition-all duration-200 ${
                   isSelected
-                    ? 'bg-primary/10 border border-primary/25 shadow-sm shadow-primary/10'
+                    ? 'bg-primary/10 border border-primary/25 shadow-elevation-1 shadow-primary/10'
                     : 'bg-secondary/10 border border-transparent hover:border-primary/15 hover:bg-secondary/20'
                 }`}
                 style={{ width: 100, height: 75 }}
               >
                 {isSelected && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center shadow-sm animate-fade-slide-in">
+                  <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center shadow-elevation-1 animate-fade-slide-in">
                     <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                   </div>
                 )}

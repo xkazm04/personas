@@ -16,6 +16,8 @@ import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import { seedMockMessage } from '@/api/overview/messages';
 import { priorityConfig, FILTER_LABELS, GRID_TEMPLATE_COLUMNS, type FilterType, deliveryStatusConfig } from '../libs/messageHelpers';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { ROW_SEPARATOR, ROW_SEPARATOR_T } from '@/lib/design/listTokens';
 import { MessageDetailModal } from './MessageDetailModal';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { createLogger } from "@/lib/log";
@@ -242,7 +244,7 @@ export default function MessageList() {
                 const parentPriority = priorityConfig[parent.priority] ?? defaultPriority;
 
                 return (
-                  <div key={thread.threadId} className="border-b border-primary/[0.06]">
+                  <div key={thread.threadId} className={`border-b ${ROW_SEPARATOR}`}>
                     {/* Thread header row */}
                     <div
                       className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.03] cursor-pointer transition-colors"
@@ -254,7 +256,7 @@ export default function MessageList() {
                       <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-muted-foreground/60">
                         {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       </div>
-                      <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: ((parent as PersonaMessage).persona_color || '#6366f1') + '15' }}>
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha((parent as PersonaMessage).persona_color || '#6366f1', 0.08) }}>
                         {(parent as PersonaMessage).persona_icon || '?'}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -286,19 +288,19 @@ export default function MessageList() {
                           transition={{ duration: 0.2 }}
                           className="overflow-hidden"
                         >
-                          <div className="bg-secondary/10 border-t border-primary/[0.06]">
+                          <div className={`bg-secondary/10 ${ROW_SEPARATOR_T}`}>
                             {replies ? replies.map((msg) => {
                               const mp = priorityConfig[msg.priority] ?? defaultPriority;
                               return (
                                 <div
                                   key={msg.id}
-                                  className="flex items-center gap-3 px-4 py-2 pl-12 hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.04] last:border-b-0"
+                                  className={`flex items-center gap-3 px-4 py-2 pl-12 hover:bg-white/[0.03] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} last:border-b-0`}
                                   onClick={() => handleRowClick(msg)}
                                   role="button"
                                   tabIndex={0}
                                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick(msg); } }}
                                 >
-                                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs border border-primary/10 flex-shrink-0" style={{ backgroundColor: (msg.persona_color || '#6366f1') + '10' }}>
+                                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs border border-primary/10 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(msg.persona_color || '#6366f1', 0.06) }}>
                                     {msg.persona_icon || '?'}
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -309,7 +311,12 @@ export default function MessageList() {
                                   <span className={`inline-flex px-1.5 py-0.5 rounded text-xs border ${mp.bgColor} ${mp.color} ${mp.borderColor}`}>
                                     {mp.label}
                                   </span>
-                                  {!msg.is_read && <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
+                                  {!msg.is_read && (
+                                    <span className="inline-flex items-center gap-1 flex-shrink-0">
+                                      <span className="w-2 h-2 rounded-full bg-blue-500" aria-hidden="true" />
+                                      <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span>
+                                    </span>
+                                  )}
                                   <span className="text-xs text-muted-foreground/60 flex-shrink-0 w-20 text-right">
                                     {formatRelativeTime(msg.created_at)}
                                   </span>
@@ -385,10 +392,10 @@ export default function MessageList() {
                       <div key={message.id} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
                         onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
-                        className="grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b border-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                        className={`grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40`}
                       >
                         <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
-                          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: (message.persona_color || '#6366f1') + '15' }}>{message.persona_icon || '?'}</div>
+                          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(message.persona_color || '#6366f1', 0.08) }}>{message.persona_icon || '?'}</div>
                           <span className="text-sm text-muted-foreground/80 truncate">{message.persona_name || 'Unknown'}</span>
                         </div>
                         <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || message.content.slice(0, 80)}</span></div>
@@ -403,7 +410,7 @@ export default function MessageList() {
                             return <span className="text-xs text-muted-foreground/40">—</span>;
                           })()}
                         </div>
-                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <div className="w-2.5 h-2.5 rounded-full bg-blue-500" title="Unread" aria-label="Unread message" /> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title="Read" aria-hidden="true" />}</div>
+                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title="Unread" aria-label="Unread message"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title="Read" aria-hidden="true" />}</div>
                         <div role="gridcell" className="px-4 text-right"><span className="text-sm text-muted-foreground/80">{formatRelativeTime(message.created_at)}</span></div>
                       </div>
                     );

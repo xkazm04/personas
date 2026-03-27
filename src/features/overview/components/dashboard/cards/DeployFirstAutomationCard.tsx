@@ -213,7 +213,7 @@ export default function DeployFirstAutomationCard() {
   // -- Simple mode: single CTA -------------------------------------------
   if (isSimple) {
     return (
-      <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm p-5">
+      <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 p-5">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
             <Rocket className="w-5 h-5 text-violet-400" />
@@ -239,7 +239,7 @@ export default function DeployFirstAutomationCard() {
 
   // -- Prompt state (default) ---------------------------------------------
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden relative">
+    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden relative">
       <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/5 blur-3xl rounded-full pointer-events-none" />
 
       <div className="p-5 space-y-4 relative z-10">

@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bot, X, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bot, Loader2, X, Zap } from 'lucide-react';
 import { useCredentialNegotiator, type NegotiatorContext, type AuthDetectionInfo } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import { detectAuthenticatedServices } from '@/api/auth/authDetect';
 import { NegotiatorPlanningPhase } from './NegotiatorPlanningPhase';
 import { NegotiatorGuidingPhase } from './NegotiatorGuidingPhase';
+
+const phaseVariants = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+};
+
+const phaseTransition = { duration: 0.2 };
 
 interface NegotiatorPanelProps {
   /** The credential design result with connector info and field definitions */
@@ -21,6 +30,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
   // Fetch auth detections on mount so the negotiator can skip steps for
   // services the user is already authenticated to.
   const [authDetections, setAuthDetections] = useState<AuthDetectionInfo[]>([]);
+  const [authDetectLoading, setAuthDetectLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
     detectAuthenticatedServices()
@@ -40,6 +50,9 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
       })
       .catch(() => {
         // Non-critical — negotiator works without auth detection
+      })
+      .finally(() => {
+        if (!cancelled) setAuthDetectLoading(false);
       });
     return () => { cancelled = true; };
   }, []);
@@ -99,7 +112,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
             <div>
               <h3 className="text-sm font-bold tracking-tight text-foreground">AI Credential Negotiator</h3>
               <p className="text-sm text-muted-foreground">
-                {negotiator.phase === 'idle' && 'Automated API key provisioning'}
+                {negotiator.phase === 'idle' && (authDetectLoading ? 'Checking existing authentications...' : 'Automated API key provisioning')}
                 {negotiator.phase === 'planning' && 'Generating provisioning plan...'}
                 {negotiator.phase === 'guiding' && `Provisioning ${designResult.connector.label}`}
                 {negotiator.phase === 'done' && 'Credentials captured'}
@@ -117,11 +130,17 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
 
         {/* Body */}
         <div className="p-4">
-          {/* Idle -- show the start button */}
+          <AnimatePresence mode="wait">
+            {/* Idle -- show the start button */}
             {negotiator.phase === 'idle' && (
-              <div
+              <motion.div
                 key="neg-idle"
-                className="animate-fade-slide-in space-y-3"
+                variants={phaseVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={phaseTransition}
+                className="space-y-3"
               >
                 <p className="text-sm text-foreground/90">
                   Let the AI guide you step-by-step through obtaining {designResult.connector.label} API credentials.
@@ -130,51 +149,81 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleStart}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-500/15 border border-violet-500/25 text-violet-300 text-sm font-medium hover:bg-violet-500/25 transition-colors"
+                    disabled={authDetectLoading}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-500/15 border border-violet-500/25 text-violet-300 text-sm font-medium hover:bg-violet-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Zap className="w-4 h-4" />
-                    Start auto-provisioning
+                    {authDetectLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Zap className="w-4 h-4" />
+                    )}
+                    {authDetectLoading ? 'Detecting existing auth...' : 'Start auto-provisioning'}
                   </button>
-                  <span className="text-sm text-muted-foreground/80">
-                    Takes ~{Math.ceil(60 / 60)}-2 minutes
-                  </span>
+                  {!authDetectLoading && (
+                    <span className="text-sm text-muted-foreground/80">
+                      Takes ~{Math.ceil(60 / 60)}-2 minutes
+                    </span>
+                  )}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Planning */}
             {negotiator.phase === 'planning' && (
-              <NegotiatorPlanningPhase
-                progressLines={negotiator.progressLines}
-                onCancel={negotiator.cancel}
-              />
+              <motion.div
+                key="neg-planning"
+                variants={phaseVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={phaseTransition}
+              >
+                <NegotiatorPlanningPhase
+                  progressLines={negotiator.progressLines}
+                  onCancel={negotiator.cancel}
+                />
+              </motion.div>
             )}
 
             {/* Guiding */}
             {negotiator.phase === 'guiding' && negotiator.plan && (
-              <NegotiatorGuidingPhase
-                plan={negotiator.plan}
-                activeStepIndex={negotiator.activeStepIndex}
-                completedSteps={negotiator.completedSteps}
-                capturedValues={negotiator.capturedValues}
-                stepHelp={negotiator.stepHelp}
-                isLoadingHelp={negotiator.isLoadingHelp}
-                visibleSteps={negotiator.visibleSteps}
-                skippedSteps={negotiator.skippedSteps}
-                onCompleteStep={negotiator.completeStep}
-                onSelectStep={negotiator.goToStep}
-                onCaptureValue={negotiator.captureValue}
-                onRequestHelp={negotiator.requestStepHelp}
-                onCancel={handleClose}
-                onFinish={handleFinish}
-              />
+              <motion.div
+                key="neg-guiding"
+                variants={phaseVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={phaseTransition}
+              >
+                <NegotiatorGuidingPhase
+                  plan={negotiator.plan}
+                  activeStepIndex={negotiator.activeStepIndex}
+                  completedSteps={negotiator.completedSteps}
+                  capturedValues={negotiator.capturedValues}
+                  stepHelp={negotiator.stepHelp}
+                  isLoadingHelp={negotiator.isLoadingHelp}
+                  visibleSteps={negotiator.visibleSteps}
+                  skippedSteps={negotiator.skippedSteps}
+                  onCompleteStep={negotiator.completeStep}
+                  onSelectStep={negotiator.goToStep}
+                  onCaptureValue={negotiator.captureValue}
+                  onRequestHelp={negotiator.requestStepHelp}
+                  onCancel={handleClose}
+                  onFinish={handleFinish}
+                />
+              </motion.div>
             )}
 
             {/* Done */}
             {negotiator.phase === 'done' && (
-              <div
+              <motion.div
                 key="neg-done"
-                className="animate-fade-slide-in flex flex-col items-center py-6 gap-3"
+                variants={phaseVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={phaseTransition}
+                className="flex flex-col items-center py-6 gap-3"
               >
                 <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
                   <Zap className="w-5 h-5 text-emerald-400" />
@@ -189,14 +238,19 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
                 >
                   Apply to credential form
                 </button>
-              </div>
+              </motion.div>
             )}
 
             {/* Error */}
             {negotiator.phase === 'error' && (
-              <div
+              <motion.div
                 key="neg-error"
-                className="animate-fade-slide-in space-y-3"
+                variants={phaseVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={phaseTransition}
+                className="space-y-3"
               >
                 <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                   <p className="text-sm text-red-300">{negotiator.error}</p>
@@ -204,7 +258,8 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
                 <div className="flex gap-2">
                   <button
                     onClick={handleStart}
-                    className="px-4 py-2 rounded-xl bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 text-sm transition-colors"
+                    disabled={authDetectLoading}
+                    className="px-4 py-2 rounded-xl bg-secondary/60 hover:bg-secondary border border-primary/15 text-foreground/90 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Try again
                   </button>
@@ -215,8 +270,9 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
                     Close
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

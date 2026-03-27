@@ -2,13 +2,76 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 // ============================================================================
+// Virtual Tool ID
+// ============================================================================
+
+/// Type-safe wrapper for automation-backed virtual tool IDs.
+///
+/// Virtual tools use the format `auto_{automation_id}` to link a
+/// [`PersonaToolDefinition`] back to its source [`PersonaAutomation`].
+/// This newtype enforces the format at construction time so the contract
+/// between `automation_runner`, `tool_runner`, and `tool_kind()` is
+/// compiler-checked rather than relying on scattered string-prefix matching.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VirtualToolId(String);
+
+impl VirtualToolId {
+    /// The prefix that all virtual-tool IDs carry.
+    pub const PREFIX: &'static str = "auto_";
+
+    /// The category value assigned to automation-backed tools.
+    pub const CATEGORY: &'static str = "automation";
+
+    /// Build a new virtual tool ID from the underlying automation ID.
+    pub fn new(automation_id: &str) -> Self {
+        Self(format!("{}{}", Self::PREFIX, automation_id))
+    }
+
+    /// Try to parse a raw ID string as a virtual tool ID.
+    /// Returns `None` if the string doesn't carry the `auto_` prefix.
+    pub fn parse(id: &str) -> Option<Self> {
+        if id.starts_with(Self::PREFIX) {
+            Some(Self(id.to_owned()))
+        } else {
+            None
+        }
+    }
+
+    /// Returns `true` if the raw string matches the virtual tool ID format.
+    pub fn is_virtual(id: &str) -> bool {
+        id.starts_with(Self::PREFIX)
+    }
+
+    /// Extract the automation ID (the part after `auto_`).
+    pub fn automation_id(&self) -> &str {
+        &self.0[Self::PREFIX.len()..]
+    }
+
+    /// Return the full ID string (`auto_{automation_id}`).
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// Consume self and return the inner String.
+    pub fn into_string(self) -> String {
+        self.0
+    }
+}
+
+impl std::fmt::Display for VirtualToolId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+// ============================================================================
 // Tool Definitions
 // ============================================================================
 
 /// Determines the execution strategy for a tool.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ToolKind {
-    /// Automation-backed tool (category == "automation", id starts with "auto_").
+    /// Automation-backed tool (category matches [`VirtualToolId::CATEGORY`]).
     Automation,
     /// Script-based tool executed via `npx tsx`.
     Script,
@@ -39,7 +102,7 @@ impl PersonaToolDefinition {
     /// Returns `Ok(ToolKind)` when exactly one strategy applies, or `Err` with
     /// a human-readable message when zero or multiple strategies match.
     pub fn tool_kind(&self) -> Result<ToolKind, String> {
-        if self.category == "automation" {
+        if self.category == VirtualToolId::CATEGORY {
             return Ok(ToolKind::Automation);
         }
         let has_script = !self.script_path.is_empty();
@@ -52,8 +115,8 @@ impl PersonaToolDefinition {
             (true, false) => Ok(ToolKind::Script),
             (false, true) => Ok(ToolKind::Api),
             (false, false) => Err(format!(
-                "Tool '{}' has no execution strategy: no script_path, no implementation_guide, and category is not 'automation'",
-                self.name
+                "Tool '{}' has no execution strategy: no script_path, no implementation_guide, and category is not '{}'",
+                self.name, VirtualToolId::CATEGORY
             )),
         }
     }

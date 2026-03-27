@@ -59,11 +59,12 @@ export function EvalVersionCards({ versionAggs, winnerId, celebrateWinnerId }: E
           const c = colors[idx % colors.length]!;
           return (
             <div key={agg.versionId} data-testid={`eval-version-card-${agg.versionNumber}`}
-              className={`rounded-xl border overflow-hidden transition-all ${
+              className={`rounded-xl border overflow-hidden transition-all animate-fade-slide-in ${
                 isWinner
-                  ? `${c.border} shadow-lg shadow-primary/5 ${celebrateWinnerId === agg.versionId ? 'ring-1 ring-primary/20' : ''}`
+                  ? `${c.border} shadow-elevation-3 shadow-primary/5 ${celebrateWinnerId === agg.versionId ? 'ring-1 ring-primary/20' : ''}`
                   : 'border-primary/10'
-              }`}>
+              }`}
+              style={{ animationDelay: `${idx * 60}ms`, animationDuration: '300ms' }}>
               {/* Card header */}
               <div className={`px-4 py-2.5 bg-gradient-to-r ${isWinner ? c.gradient : 'from-secondary/40 to-secondary/20'}`}>
                 <div className="flex items-center justify-between">

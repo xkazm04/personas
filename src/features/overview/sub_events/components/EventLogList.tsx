@@ -5,6 +5,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
@@ -104,7 +105,7 @@ export default function EventLogList() {
             <div className="flex items-center gap-2 min-w-0">
               <div
                 className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-                style={{ backgroundColor: (targetPersona.color || '#6366f1') + '15' }}
+                style={{ backgroundColor: colorWithAlpha(targetPersona.color || '#6366f1', 0.08) }}
               >
                 {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-foreground/50" />}
               </div>
@@ -131,7 +132,7 @@ export default function EventLogList() {
       onFilterChange: setStatusFilter,
       render: (event) => {
         const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-        const statusIcon = event.status === 'completed' || event.status === 'processed'
+        const statusIcon = event.status === 'completed' || event.status === 'delivered'
           ? <CheckCircle2 className="w-3 h-3" />
           : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
           : event.status === 'processing' ? <LoadingSpinner size="xs" />
@@ -289,7 +290,7 @@ export default function EventLogList() {
           onRowClick={setSelectedEvent}
           getRowAccent={(event) => {
             if (event.status === 'processing') return 'hover:border-l-status-processing';
-            if (event.status === 'completed' || event.status === 'processed') return 'hover:border-l-status-success';
+            if (event.status === 'completed' || event.status === 'delivered') return 'hover:border-l-status-success';
             if (event.status === 'failed') return 'hover:border-l-status-error';
             return 'hover:border-l-status-pending';
           }}

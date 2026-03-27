@@ -1,4 +1,5 @@
-import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, AlertTriangle, Bell, Activity } from 'lucide-react';
+import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, Bell, Activity } from 'lucide-react';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useState, useMemo, useCallback } from 'react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
@@ -14,17 +15,14 @@ import { useObservabilityData } from '../libs/useObservabilityData';
 import { useHealingPanelState } from '../libs/useHealingPanelState';
 import { useAnomalyDrilldown } from '../libs/useAnomalyDrilldown';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { selectActiveAlertCount } from '@/stores/selectors/activeAlertCount';
 import AnomalyDrilldownPanel from './AnomalyDrilldownPanel';
 import SystemTraceViewer from './SystemTraceViewer';
 
 export default function ObservabilityDashboard() {
   const d = useObservabilityData();
   const [showAlerts, setShowAlerts] = useState(false);
-  const activeAlertCount = useOverviewStore((s) => {
-    let count = 0;
-    for (const a of s.alertHistory) { if (!a.dismissed) count++; }
-    return count;
-  });
+  const activeAlertCount = useOverviewStore(selectActiveAlertCount);
 
   const drilldown = useAnomalyDrilldown();
 
@@ -92,7 +90,7 @@ export default function ObservabilityDashboard() {
               }`}
               title={d.autoRefresh ? 'Auto-refresh ON (30s)' : 'Auto-refresh OFF'}
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${d.autoRefresh ? 'animate-spin' : ''}`} style={d.autoRefresh ? { animationDuration: '3s' } : {}} />
+              <RefreshCw className={`w-3.5 h-3.5 ${d.autoRefresh ? 'animate-spin motion-reduce:animate-none' : ''}`} style={d.autoRefresh ? { animationDuration: '3s' } : {}} />
             </button>
           </>
         }
@@ -109,31 +107,25 @@ export default function ObservabilityDashboard() {
 
       {/* Metrics Fetch Error Banner */}
       {d.observabilityError && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="typo-heading text-red-300">Metrics unavailable -- data shown may be stale</p>
-              <p className="text-sm text-red-400/70 mt-0.5">{d.observabilityError}</p>
-            </div>
-            <button onClick={d.refreshAll} className="flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
-              <RefreshCw className="w-3 h-3" /> Retry
-            </button>
-          </div>
-        </div>
+        <InlineErrorBanner
+          severity="error"
+          title="Metrics unavailable -- data shown may be stale"
+          message={d.observabilityError}
+          onRetry={d.refreshAll}
+        />
       )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 2xl:grid-cols-4 gap-4">
-        <SummaryCard icon={DollarSign} label="Total Cost" numericValue={d.summary?.total_cost_usd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={d.trends.cost} sparklineData={sparklineCost} />
-        <SummaryCard icon={Zap} label="Executions" numericValue={d.summary?.total_executions || 0} format={(n) => String(Math.round(n))} color="blue" trend={d.trends.executions} sparklineData={sparklineExec} />
+        <SummaryCard icon={DollarSign} label="Total Cost" numericValue={d.summary?.totalCostUsd || 0} format={(n) => `$${n.toFixed(2)}`} color="emerald" trend={d.trends.cost} sparklineData={sparklineCost} />
+        <SummaryCard icon={Zap} label="Executions" numericValue={d.summary?.totalExecutions || 0} format={(n) => String(Math.round(n))} color="blue" trend={d.trends.executions} sparklineData={sparklineExec} />
         <SummaryCard icon={CheckCircle} label="Success Rate" numericValue={parseFloat(d.successRate)} format={(n) => `${n.toFixed(1)}%`} color="green" trend={d.trends.successRate} sparklineData={sparklineSuccess} />
-        <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={d.summary?.active_personas || 0} format={(n) => String(Math.round(n))} color="purple" trend={d.trends.personas} sparklineData={sparklinePersonas} />
+        <SummaryCard icon={TrendingUp} label="Active Personas" numericValue={d.summary?.activePersonas || 0} format={(n) => String(Math.round(n))} color="purple" trend={d.trends.personas} sparklineData={sparklinePersonas} />
       </div>
 
       {/* Alert Rules & History */}
       {showAlerts && (
-          <div className="animate-fade-slide-in"
+          <div className="animate-fade-slide-in motion-reduce:opacity-100"
             key="alerts-panel"
             style={{ overflow: "hidden" }}
           >
@@ -152,6 +144,7 @@ export default function ObservabilityDashboard() {
       <MetricsCharts
         chartData={d.chartData}
         pieData={d.pieData}
+        anomalies={d.chartAnomalies}
         annotations={d.chartAnnotations}
         onFailureBarClick={handleFailureBarClick}
         onAnomalyClick={handleAnomalyClick}

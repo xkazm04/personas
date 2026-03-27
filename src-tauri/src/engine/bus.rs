@@ -12,39 +12,118 @@ pub struct EventMatch {
     pub use_case_id: Option<String>,
 }
 
-/// Match a single event against a list of subscriptions.
+// ---------------------------------------------------------------------------
+// MatchableSubscription trait — unifies PersonaEventSubscription & PersonaTrigger
+// ---------------------------------------------------------------------------
+
+/// Trait abstracting the fields needed for event matching.
 ///
-/// Rules:
-/// 1. subscription.event_type must equal event.event_type
-/// 2. If subscription.source_filter is set, event.source_id must match (exact or wildcard)
-/// 3. If event.target_persona_id is set, only that persona's subscriptions match
-/// 4. subscription.enabled must be true
-pub fn match_event(
+/// Implemented by both `PersonaEventSubscription` (legacy) and
+/// `PersonaTrigger` (unified event_listener model) so that a single
+/// generic `match_event` function handles both.
+pub trait MatchableSubscription {
+    /// Unique identifier for this subscription/trigger.
+    fn subscription_id(&self) -> &str;
+    /// The persona that owns this subscription.
+    fn persona_id(&self) -> &str;
+    /// Optional source wildcard filter (e.g. `"watcher-*"`).
+    fn source_filter(&self) -> Option<&str>;
+    /// Optional use-case identifier.
+    fn use_case_id(&self) -> Option<&str>;
+    /// Whether this subscription should be considered for matching.
+    /// Returns `false` to skip (e.g. disabled, wrong trigger type).
+    fn is_eligible(&self, event: &PersonaEvent) -> bool;
+}
+
+impl MatchableSubscription for PersonaEventSubscription {
+    fn subscription_id(&self) -> &str {
+        &self.id
+    }
+    fn persona_id(&self) -> &str {
+        &self.persona_id
+    }
+    fn source_filter(&self) -> Option<&str> {
+        self.source_filter.as_deref()
+    }
+    fn use_case_id(&self) -> Option<&str> {
+        self.use_case_id.as_deref()
+    }
+    fn is_eligible(&self, event: &PersonaEvent) -> bool {
+        self.enabled && self.event_type == event.event_type
+    }
+}
+
+/// Wrapper that pairs a `PersonaTrigger` with its parsed `TriggerConfig`.
+///
+/// `PersonaTrigger::parse_config()` is not free — call it once per trigger
+/// and wrap with this struct before passing into `match_event`.
+pub struct ParsedTrigger<'a> {
+    pub trigger: &'a PersonaTrigger,
+    pub config: TriggerConfig,
+}
+
+impl<'a> ParsedTrigger<'a> {
+    pub fn new(trigger: &'a PersonaTrigger) -> Self {
+        Self {
+            config: trigger.parse_config(),
+            trigger,
+        }
+    }
+}
+
+impl MatchableSubscription for ParsedTrigger<'_> {
+    fn subscription_id(&self) -> &str {
+        &self.trigger.id
+    }
+    fn persona_id(&self) -> &str {
+        &self.trigger.persona_id
+    }
+    fn source_filter(&self) -> Option<&str> {
+        match &self.config {
+            TriggerConfig::EventListener { source_filter, .. } => source_filter.as_deref(),
+            _ => None,
+        }
+    }
+    fn use_case_id(&self) -> Option<&str> {
+        self.trigger.use_case_id.as_deref()
+    }
+    fn is_eligible(&self, _event: &PersonaEvent) -> bool {
+        // Event-type filtering is done at the SQL layer for triggers;
+        // we only need to confirm this is actually an EventListener config.
+        matches!(&self.config, TriggerConfig::EventListener { .. })
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Unified match_event
+// ---------------------------------------------------------------------------
+
+/// Match a single event against a list of matchable subscriptions.
+///
+/// Rules (applied uniformly for both legacy subscriptions and triggers):
+/// 1. `is_eligible()` must return true (covers enabled check + event_type match)
+/// 2. If `event.target_persona_id` is set, only that persona's subscriptions match
+/// 3. If `source_filter()` is set, `event.source_id` must match (exact or wildcard)
+pub fn match_event<T: MatchableSubscription>(
     event: &PersonaEvent,
-    subscriptions: &[PersonaEventSubscription],
+    subscriptions: &[T],
 ) -> Vec<EventMatch> {
     subscriptions
         .iter()
         .filter(|sub| {
-            // Must be enabled
-            if !sub.enabled {
-                return false;
-            }
-
-            // Must match event type
-            if sub.event_type != event.event_type {
+            if !sub.is_eligible(event) {
                 return false;
             }
 
             // If event targets a specific persona, only that persona matches
             if let Some(ref target) = event.target_persona_id {
-                if target != &sub.persona_id {
+                if target != sub.persona_id() {
                     return false;
                 }
             }
 
             // If subscription has a source filter, it must match
-            if let Some(ref filter) = sub.source_filter {
+            if let Some(filter) = sub.source_filter() {
                 if !source_filter_matches(filter, event.source_id.as_deref()) {
                     return false;
                 }
@@ -55,13 +134,25 @@ pub fn match_event(
         .map(|sub| EventMatch {
             event_id: event.id.clone(),
             event_type: event.event_type.clone(),
-            subscription_id: sub.id.clone(),
-            persona_id: sub.persona_id.clone(),
+            subscription_id: sub.subscription_id().to_string(),
+            persona_id: sub.persona_id().to_string(),
             payload: event.payload.clone(),
             source_id: event.source_id.clone(),
-            use_case_id: sub.use_case_id.clone(),
+            use_case_id: sub.use_case_id().map(String::from),
         })
         .collect()
+}
+
+/// Convenience wrapper: match event against `PersonaTrigger` slices directly.
+///
+/// Parses each trigger's config once, wraps in `ParsedTrigger`, then delegates
+/// to the generic `match_event`. Keeps call-sites unchanged.
+pub fn match_event_listeners(
+    event: &PersonaEvent,
+    listeners: &[PersonaTrigger],
+) -> Vec<EventMatch> {
+    let parsed: Vec<ParsedTrigger<'_>> = listeners.iter().map(ParsedTrigger::new).collect();
+    match_event(event, &parsed)
 }
 
 /// Simple matching: exact match or prefix wildcard (trailing `*`).
@@ -78,54 +169,10 @@ fn source_filter_matches(filter: &str, source_id: Option<&str>) -> bool {
     }
 }
 
-/// Match a single event against event_listener triggers.
-///
-/// Mirrors `match_event` but works with `PersonaTrigger` rows of type `event_listener`.
-/// The `listen_event_type` filtering is already done at the SQL layer, so here we only
-/// check source_filter and target_persona_id.
-pub fn match_event_listeners(
-    event: &PersonaEvent,
-    listeners: &[PersonaTrigger],
-) -> Vec<EventMatch> {
-    listeners
-        .iter()
-        .filter_map(|trigger| {
-            let cfg = trigger.parse_config();
-            let source_filter = match &cfg {
-                TriggerConfig::EventListener { source_filter, .. } => source_filter.as_deref(),
-                _ => return None,
-            };
-
-            // If event targets a specific persona, only that persona matches
-            if let Some(ref target) = event.target_persona_id {
-                if target != &trigger.persona_id {
-                    return None;
-                }
-            }
-
-            // If trigger has a source filter, it must match
-            if let Some(filter) = source_filter {
-                if !source_filter_matches(filter, event.source_id.as_deref()) {
-                    return None;
-                }
-            }
-
-            Some(EventMatch {
-                event_id: event.id.clone(),
-                event_type: event.event_type.clone(),
-                subscription_id: trigger.id.clone(),
-                persona_id: trigger.persona_id.clone(),
-                payload: event.payload.clone(),
-                source_id: event.source_id.clone(),
-                use_case_id: trigger.use_case_id.clone(),
-            })
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::models::PersonaEventStatus;
 
     fn make_event(event_type: &str) -> PersonaEvent {
         PersonaEvent {
@@ -136,11 +183,12 @@ mod tests {
             source_id: None,
             target_persona_id: None,
             payload: Some(r#"{"key":"value"}"#.into()),
-            status: "pending".into(),
+            status: PersonaEventStatus::Pending,
             error_message: None,
             processed_at: None,
             created_at: "2026-01-15T10:00:00Z".into(),
             use_case_id: None,
+            retry_count: 0,
         }
     }
 

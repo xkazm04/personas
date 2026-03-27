@@ -103,7 +103,7 @@ pub fn resolve_credentials_for_gitlab(
                 }
 
                 // Audit log the provisioning
-                let _ = cred_repo::mark_used(pool, &cred.id);
+                let _ = cred_repo::record_usage(pool, &cred.id);
                 let _ = audit_log::insert(
                     pool,
                     &cred.id,

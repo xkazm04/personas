@@ -1,5 +1,5 @@
-import { Bot, Check, Minus, X } from 'lucide-react';
-import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { Check, Minus, X } from 'lucide-react';
+import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvatar';
 import { StatusShape, mapToShapeStatus } from '@/features/shared/components/display/StatusShape';
 import type { Persona } from '@/lib/types/types';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
@@ -41,17 +41,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
     <div className="relative group/health">
       <span className="sr-only">{srLabel}</span>
       <div className={`rounded-lg ${ringClass}`}>
-        {persona.icon ? (
-          sanitizeIconUrl(persona.icon) ? (
-            <img src={sanitizeIconUrl(persona.icon)!} alt="" className="w-8 h-8" referrerPolicy="no-referrer" crossOrigin="anonymous" />
-          ) : isIconUrl(persona.icon) ? null : (
-            <span className="text-2xl leading-8 w-8 h-8 flex items-center justify-center">{persona.icon}</span>
-          )
-        ) : (
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: (persona.color || '#8b5cf6') + '20' }}>
-            <Bot className="w-4 h-4" style={{ color: persona.color || '#8b5cf6' }} />
-          </div>
-        )}
+        <PersonaAvatar icon={persona.icon} name={persona.name} color={persona.color} size="md" fallbackStyle="bot" />
       </div>
       {healthStatus !== 'dormant' && (
         <div
@@ -62,7 +52,7 @@ export function PersonaHealthIndicator({ persona, health }: PersonaHealthIndicat
         </div>
       )}
       {statuses && statuses.length > 0 && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/20 shadow-lg z-20 whitespace-nowrap">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/health:flex group-focus-within/health:flex items-center gap-1 px-2 py-1.5 rounded-lg bg-popover border border-primary/20 shadow-elevation-3 z-20 whitespace-nowrap">
           {statuses.map((s, si) => (
             <StatusShape
               key={si}

@@ -2,6 +2,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect } from 'react';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { getSlaDashboard } from '@/api/overview/sla';
 import type { SlaDashboardData } from '@/api/overview/sla';
@@ -49,11 +50,11 @@ export default function SLADashboard() {
         {loading && !data ? (
           null
         ) : !data ? (
-          <div className="text-center py-20 text-muted-foreground/70">No execution data available.</div>
+          <InlineErrorBanner severity="info" message="No execution data available." />
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <SlaCard label="Success Rate" value={formatPercent(data.global.success_rate)} sub={`${data.global.successful}/${data.global.total_executions} executions`} color={slaColor(data.global.success_rate)} icon={<Shield className="w-4 h-4" />} />
+              <SlaCard label="Success Rate" value={formatPercent(data.global.success_rate)} sub={`${data.global.successful}/${data.global.successful + data.global.failed} decided`} color={slaColor(data.global.success_rate)} icon={<Shield className="w-4 h-4" />} />
               <SlaCard label="Avg Latency" value={formatDuration(data.global.avg_duration_ms)} sub={`${data.global.active_persona_count} active agents`} color="blue" icon={<Clock className="w-4 h-4" />} />
               <SlaCard label="Open Issues" value={String(data.healing_summary.open_issues)} sub={`${data.healing_summary.circuit_breaker_count} circuit breakers`} color={data.healing_summary.open_issues > 0 ? 'amber' : 'emerald'} icon={<AlertTriangle className="w-4 h-4" />} />
               <SlaCard label="Auto-Healed" value={String(data.healing_summary.auto_fixed_count)} sub={`${data.healing_summary.knowledge_patterns} known patterns`} color="violet" icon={<Wrench className="w-4 h-4" />} />

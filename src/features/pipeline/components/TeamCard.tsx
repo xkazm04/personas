@@ -1,10 +1,10 @@
 import { Users, Trash2, ChevronRight, GitBranch, GitFork } from 'lucide-react';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 
 interface TeamCardProps {
   team: PersonaTeam;
-  index: number;
-  teams: PersonaTeam[];
+  parentTeamName: string | null;
   teamCounts: Record<string, { members: number; connections: number }>;
   confirmDeleteId: string | null;
   onSelect: (id: string) => void;
@@ -15,8 +15,7 @@ interface TeamCardProps {
 
 export function TeamCard({
   team,
-  index: _index,
-  teams,
+  parentTeamName,
   teamCounts,
   confirmDeleteId,
   onSelect,
@@ -41,14 +40,14 @@ export function TeamCard({
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center border"
             style={{
-              backgroundColor: (team.color || '#6366f1') + '15',
-              borderColor: (team.color || '#6366f1') + '30',
+              backgroundColor: colorWithAlpha(team.color || '#6366f1', 0.08),
+              borderColor: colorWithAlpha(team.color || '#6366f1', 0.19),
             }}
           >
             {team.icon ? (
               <span className="text-lg">{team.icon}</span>
             ) : (
-              <Users className="w-5 h-5" style={{ color: (team.color || '#6366f1') + 'cc' }} />
+              <Users className="w-5 h-5" style={{ color: colorWithAlpha(team.color || '#6366f1', 0.8) }} />
             )}
           </div>
           <div>
@@ -102,15 +101,12 @@ export function TeamCard({
         </div>
       </div>
 
-      {team.parent_team_id && (() => {
-        const parent = teams.find((t: PersonaTeam) => t.id === team.parent_team_id);
-        return (
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-violet-400/80">
-            <GitFork className="w-3 h-3" />
-            <span>forked from <span className="font-medium">{parent?.name ?? 'deleted team'}</span></span>
-          </div>
-        );
-      })()}
+      {team.parent_team_id && (
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-violet-400/80">
+          <GitFork className="w-3 h-3" />
+          <span>forked from <span className="font-medium">{parentTeamName ?? 'deleted team'}</span></span>
+        </div>
+      )}
 
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-center gap-2">

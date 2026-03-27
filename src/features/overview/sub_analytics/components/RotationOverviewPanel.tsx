@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useVaultStore } from "@/stores/vaultStore";
 import type { RotationOverviewItem } from '@/stores/slices/vault/rotationSlice';
+import { useRotationOverviewList } from "@/stores/selectors/rotationOverview";
 
 function rotationBadge(item: RotationOverviewItem) {
   const { status } = item;
@@ -68,7 +69,7 @@ function summaryStats(items: RotationOverviewItem[]) {
 }
 
 export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
-  const rotationOverviewList = useVaultStore((s) => s.rotationOverviewList);
+  const rotationOverviewList = useRotationOverviewList();
   const fetchAllRotationStatuses = useVaultStore((s) => s.fetchAllRotationStatuses);
   const credentials = useVaultStore((s) => s.credentials);
 
@@ -85,7 +86,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
   }
 
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
+    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
         <div className="flex items-center gap-3">
@@ -94,7 +95,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
           </div>
           <h3 className="text-sm font-bold text-foreground/90 uppercase tracking-widest">Credential Rotation</h3>
           {stats.total > 0 && (
-            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-sm">
+            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-elevation-1">
               {stats.total}
             </span>
           )}

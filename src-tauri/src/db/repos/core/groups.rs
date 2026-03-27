@@ -40,65 +40,71 @@ pub fn create(pool: &DbPool, input: CreatePersonaGroupInput) -> Result<PersonaGr
         return Err(AppError::Validation("Name cannot be empty".into()));
     }
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let color = input.color.unwrap_or_else(|| "#6B7280".into());
+    timed_query!("persona_groups", "persona_groups::create", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let color = input.color.unwrap_or_else(|| "#6B7280".into());
 
-    let conn = pool.get()?;
+        let conn = pool.get()?;
 
-    // Auto-compute sort_order from MAX(sort_order) + 1 if not provided
-    let sort_order = match input.sort_order {
-        Some(order) => order,
-        None => {
-            let max: i32 = conn
-                .query_row(
-                    "SELECT COALESCE(MAX(sort_order), -1) FROM persona_groups",
-                    [],
-                    |row| row.get(0),
-                )
-                .unwrap_or(-1);
-            max + 1
-        }
-    };
+        // Auto-compute sort_order from MAX(sort_order) + 1 if not provided
+        let sort_order = match input.sort_order {
+            Some(order) => order,
+            None => {
+                let max: i32 = conn
+                    .query_row(
+                        "SELECT COALESCE(MAX(sort_order), -1) FROM persona_groups",
+                        [],
+                        |row| row.get(0),
+                    )
+                    .unwrap_or(-1);
+                max + 1
+            }
+        };
 
-    conn.execute(
-        "INSERT INTO persona_groups (id, name, color, sort_order, collapsed, description, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?6)",
-        params![id, input.name, color, sort_order, input.description, now],
-    )?;
+        conn.execute(
+            "INSERT INTO persona_groups (id, name, color, sort_order, collapsed, description, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?6)",
+            params![id, input.name, color, sort_order, input.description, now],
+        )?;
 
-    get_by_id(pool, &id)
+        get_by_id(pool, &id)
+    })
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let mut conn = pool.get()?;
-    let tx = conn.transaction()?;
+    timed_query!("persona_groups", "persona_groups::delete", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
 
-    tx.execute("UPDATE personas SET group_id = NULL WHERE group_id = ?1", params![id])?;
-    let rows = tx.execute("DELETE FROM persona_groups WHERE id = ?1", params![id])?;
+        tx.execute("UPDATE personas SET group_id = NULL WHERE group_id = ?1", params![id])?;
+        let rows = tx.execute("DELETE FROM persona_groups WHERE id = ?1", params![id])?;
 
-    tx.commit()?;
-    Ok(rows > 0)
+        tx.commit()?;
+        Ok(rows > 0)
+    })
 }
 
 pub fn reorder(pool: &DbPool, ordered_ids: &[String]) -> Result<(), AppError> {
-    let mut conn = pool.get()?;
-    let tx = conn.transaction()?;
-    let mut stmt =
-        tx.prepare("UPDATE persona_groups SET sort_order = ?1, updated_at = ?2 WHERE id = ?3")?;
-    let now = chrono::Utc::now().to_rfc3339();
+    timed_query!("persona_groups", "persona_groups::reorder", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
+        let mut stmt =
+            tx.prepare("UPDATE persona_groups SET sort_order = ?1, updated_at = ?2 WHERE id = ?3")?;
+        let now = chrono::Utc::now().to_rfc3339();
 
-    for (idx, id) in ordered_ids.iter().enumerate() {
-        let affected = stmt.execute(params![idx as i32, now, id])?;
-        if affected == 0 {
-            return Err(AppError::NotFound(format!("PersonaGroup {id}")));
+        for (idx, id) in ordered_ids.iter().enumerate() {
+            let affected = stmt.execute(params![idx as i32, now, id])?;
+            if affected == 0 {
+                return Err(AppError::NotFound(format!("PersonaGroup {id}")));
+            }
         }
-    }
 
-    drop(stmt);
-    tx.commit()?;
+        drop(stmt);
+        tx.commit()?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 #[cfg(test)]

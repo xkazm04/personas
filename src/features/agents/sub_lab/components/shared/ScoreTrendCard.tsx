@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { TrendingUp } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { compositeScore } from '@/lib/eval/evalFramework';
@@ -41,13 +41,24 @@ function avgComposite(results: Array<{ toolAccuracyScore: number | null; outputQ
   return Math.round(sum / scored.length);
 }
 
-function barColor(score: number): string {
-  if (score >= 80) return 'bg-emerald-400';
-  if (score >= 50) return 'bg-amber-400';
-  return 'bg-red-400';
-}
+const SVG_W = 120;
+const SVG_H = 48;
+const PAD_X = 4;
+const PAD_Y = 4;
+const MAX_POINTS = 8;
+const GRADIENT_ID = 'scoreTrendGrad';
 
-const MAX_BARS = 8;
+function toSvgCoords(points: RunDataPoint[]): Array<{ x: number; y: number; dp: RunDataPoint }> {
+  if (points.length === 0) return [];
+  const minScore = Math.min(...points.map((p) => p.score));
+  const maxScore = Math.max(...points.map((p) => p.score));
+  const range = maxScore - minScore || 1;
+  return points.map((dp, i) => ({
+    x: PAD_X + (i / Math.max(points.length - 1, 1)) * (SVG_W - PAD_X * 2),
+    y: PAD_Y + (1 - (dp.score - minScore) / range) * (SVG_H - PAD_Y * 2),
+    dp,
+  }));
+}
 
 export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
   const arenaRuns = useAgentStore((s) => s.arenaRuns);
@@ -59,10 +70,11 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
   const evalResultsMap = useAgentStore((s) => s.evalResultsMap);
   const matrixResultsMap = useAgentStore((s) => s.matrixResultsMap);
 
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
   const dataPoints = useMemo(() => {
     const points: RunDataPoint[] = [];
 
-    // Arena runs
     for (const run of arenaRuns) {
       if (run.personaId !== personaId || run.status !== 'completed') continue;
       const results = arenaResultsMap[run.id] as LabArenaResult[] | undefined;
@@ -71,7 +83,6 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
       if (score != null) points.push({ label: `${MODE_ABBR.arena} ${shortDate(run.createdAt)}`, score, date: run.createdAt });
     }
 
-    // A/B runs
     for (const run of abRuns) {
       if (run.personaId !== personaId || run.status !== 'completed') continue;
       const results = abResultsMap[run.id] as LabAbResult[] | undefined;
@@ -80,7 +91,6 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
       if (score != null) points.push({ label: `${MODE_ABBR.ab} ${shortDate(run.createdAt)}`, score, date: run.createdAt });
     }
 
-    // Eval runs
     for (const run of evalRuns) {
       if (run.personaId !== personaId || run.status !== 'completed') continue;
       const results = evalResultsMap[run.id] as LabEvalResult[] | undefined;
@@ -89,7 +99,6 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
       if (score != null) points.push({ label: `${MODE_ABBR.eval} ${shortDate(run.createdAt)}`, score, date: run.createdAt });
     }
 
-    // Matrix runs
     for (const run of matrixRuns) {
       if (run.personaId !== personaId || run.status !== 'completed') continue;
       const results = matrixResultsMap[run.id] as LabMatrixResult[] | undefined;
@@ -98,15 +107,16 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
       if (score != null) points.push({ label: `${MODE_ABBR.matrix} ${shortDate(run.createdAt)}`, score, date: run.createdAt });
     }
 
-    // Sort by date ascending, take last N
     points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return points.slice(-MAX_BARS);
+    return points.slice(-MAX_POINTS);
   }, [personaId, arenaRuns, abRuns, evalRuns, matrixRuns, arenaResultsMap, abResultsMap, evalResultsMap, matrixResultsMap]);
 
   const bestScore = useMemo(() => {
     if (dataPoints.length === 0) return null;
     return Math.max(...dataPoints.map((d) => d.score));
   }, [dataPoints]);
+
+  const svgPoints = useMemo(() => toSvgCoords(dataPoints), [dataPoints]);
 
   if (dataPoints.length === 0) {
     return (
@@ -120,6 +130,13 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
     );
   }
 
+  const polylineStr = svgPoints.map((p) => `${p.x},${p.y}`).join(' ');
+  const first = svgPoints[0]!;
+  const last = svgPoints[svgPoints.length - 1]!;
+  const fillPath = svgPoints.length > 1
+    ? `M${first.x},${SVG_H} ${svgPoints.map((p) => `L${p.x},${p.y}`).join(' ')} L${last.x},${SVG_H} Z`
+    : '';
+
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3 space-y-2">
       <div className="flex items-center gap-2">
@@ -130,25 +147,71 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
         )}
       </div>
 
-      {/* Bar chart */}
-      <div className="flex items-end gap-1 h-16">
-        {dataPoints.map((dp, i) => {
-          const height = Math.max(dp.score, 4); // min 4% height for visibility
-          const isBest = dp.score === bestScore;
-          return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-0.5 min-w-0">
-              <span className="text-[9px] text-muted-foreground/60 tabular-nums">{dp.score}</span>
-              <div className="w-full flex items-end" style={{ height: '40px' }}>
-                <div
-                  className={`w-full rounded-sm transition-all ${barColor(dp.score)} ${isBest ? 'ring-1 ring-emerald-400/40' : ''}`}
-                  style={{ height: `${height * 0.4}px`, minHeight: '2px' }}
-                  title={`${dp.label}: ${dp.score}`}
-                />
-              </div>
-              <span className="text-[8px] text-muted-foreground/40 truncate w-full text-center leading-tight">{dp.label}</span>
+      {/* Sparkline with endpoint labels */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] tabular-nums text-muted-foreground/70 w-5 text-right shrink-0">
+          {first.dp.score}
+        </span>
+
+        <div className="relative flex-1" onMouseLeave={() => setHoveredIdx(null)}>
+          <svg
+            viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+            className="w-full"
+            style={{ height: 48 }}
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <linearGradient id={GRADIENT_ID} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.10" />
+                <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {fillPath && (
+              <path d={fillPath} fill={`url(#${GRADIENT_ID})`} />
+            )}
+
+            <polyline
+              points={polylineStr}
+              fill="none"
+              stroke="var(--color-primary)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+
+            {svgPoints.map((pt, i) => (
+              <circle
+                key={i}
+                cx={pt.x}
+                cy={pt.y}
+                r={hoveredIdx === i ? 3.5 : 2}
+                fill={hoveredIdx === i ? 'var(--color-primary)' : 'var(--color-background)'}
+                stroke="var(--color-primary)"
+                strokeWidth="1.5"
+                vectorEffect="non-scaling-stroke"
+                className="cursor-pointer transition-[r] duration-150"
+                onMouseEnter={() => setHoveredIdx(i)}
+              />
+            ))}
+          </svg>
+
+          {hoveredIdx != null && svgPoints[hoveredIdx] && (
+            <div
+              className="absolute bottom-full mb-1 -translate-x-1/2 pointer-events-none z-10 whitespace-nowrap rounded bg-popover border border-border px-1.5 py-0.5 text-[10px] text-popover-foreground shadow-sm"
+              style={{
+                left: `${(svgPoints[hoveredIdx].x / SVG_W) * 100}%`,
+              }}
+            >
+              {svgPoints[hoveredIdx].dp.label}: <span className="font-medium">{svgPoints[hoveredIdx].dp.score}</span>
             </div>
-          );
-        })}
+          )}
+        </div>
+
+        <span className="text-[10px] tabular-nums text-muted-foreground/70 w-5 shrink-0">
+          {last.dp.score}
+        </span>
       </div>
     </div>
   );

@@ -37,6 +37,7 @@ export const ACTION_COLORS: Record<string, string> = {
 export interface NegotiatorStepCardProps {
   step: NegotiationStep;
   stepIndex: number;
+  totalSteps: number;
   isActive: boolean;
   isCompleted: boolean;
   capturedValues: Record<string, string>;
@@ -47,12 +48,12 @@ export interface NegotiatorStepCardProps {
   stepHelp: { answer: string; stepIndex: number } | null;
   isLoadingHelp: boolean;
 }
-export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, colorClasses, Icon }: {
+export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, colorClasses, Icon, id }: {
   step: NegotiationStep; stepIndex: number; isActive: boolean; isCompleted: boolean;
-  onSelect: () => void; colorClasses: string | undefined; Icon: typeof Globe;
+  onSelect: () => void; colorClasses: string | undefined; Icon: typeof Globe; id?: string;
 }) {
   return (
-    <button onClick={onSelect} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+    <button id={id} onClick={onSelect} className="w-full flex items-center gap-3 px-4 py-3 text-left">
       <div
         className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-sm font-bold border ${
           isCompleted

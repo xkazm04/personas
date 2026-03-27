@@ -162,13 +162,9 @@ impl From<String> for SecureString {
     }
 }
 
-impl serde::Serialize for SecureString {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        // Serialize the actual value so OAuth sessions can return tokens to the frontend.
-        // The struct-level Zeroize/ZeroizeOnDrop handles memory cleanup.
-        serializer.serialize_str(&self.inner)
-    }
-}
+// NOTE: SecureString deliberately does NOT implement Serialize.
+// Any code that needs to send a secret over IPC must call `.expose_secret()`
+// explicitly, preventing accidental serialization of secrets in structs.
 
 // ---------------------------------------------------------------------------
 // EncryptedToken -- AES-256-GCM encrypted token for at-rest protection
@@ -769,8 +765,9 @@ pub fn try_upgrade_to_keychain() -> Result<bool, CryptoError> {
 /// Encrypt key material using the platform's user-scoped data protection.
 /// On Windows this uses DPAPI (CryptProtectData) which ties the ciphertext
 /// to the current user's login credentials.
-/// On non-Windows platforms, returns the key as-is (keychain is the primary
-/// protection there).
+/// On Linux/macOS, encrypts with AES-256-GCM using a key derived from
+/// machine-specific entropy (machine-id + UID), providing defense-in-depth
+/// when the keychain fallback file is used.
 #[cfg(windows)]
 fn platform_protect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
     dpapi_protect(data)
@@ -778,7 +775,7 @@ fn platform_protect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
 
 #[cfg(not(windows))]
 fn platform_protect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
-    Ok(data.to_vec())
+    unix_local_protect(data)
 }
 
 /// Decrypt key material previously protected by `platform_protect`.
@@ -789,7 +786,93 @@ fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
 
 #[cfg(not(windows))]
 fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
-    Ok(data.to_vec())
+    // Support legacy plaintext fallback files written before this hardening
+    if data.len() == 32 {
+        // Could be a raw 32-byte key from before encryption was added
+        tracing::warn!("Detected unencrypted fallback key data, returning as-is for migration");
+        return Ok(data.to_vec());
+    }
+    unix_local_unprotect(data)
+}
+
+// ---------------------------------------------------------------------------
+// Unix local key protection (AES-256-GCM with machine-derived key)
+// ---------------------------------------------------------------------------
+
+/// Derive a 32-byte encryption key from machine-specific entropy.
+/// Uses HKDF-SHA256 over /etc/machine-id (or fallback hostname) + UID.
+/// This is NOT a substitute for a proper keychain, but prevents trivial
+/// file-copy attacks where the key file is exfiltrated to another machine.
+#[cfg(not(windows))]
+fn derive_unix_local_key() -> Result<[u8; 32], CryptoError> {
+    use sha2::Sha256;
+    use hmac::Hmac;
+    use hkdf::Hkdf;
+
+    // Gather machine-specific entropy
+    let machine_id = fs::read_to_string("/etc/machine-id")
+        .or_else(|_| fs::read_to_string("/var/lib/dbus/machine-id"))
+        .unwrap_or_else(|_| {
+            // Fallback: hostname is less unique but still binds to the machine
+            whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into())
+        });
+
+    let uid = unsafe { libc::getuid() };
+    let ikm = format!("personas-desktop:{}:{}", machine_id.trim(), uid);
+
+    let hk = Hkdf::<Sha256>::new(
+        Some(b"personas-fallback-key-protection"),
+        ikm.as_bytes(),
+    );
+    let mut okm = [0u8; 32];
+    hk.expand(b"local-key-encryption", &mut okm)
+        .map_err(|e| CryptoError::KeyManagement(format!("HKDF expand failed: {e}")))?;
+
+    Ok(okm)
+}
+
+/// Encrypt data with AES-256-GCM using the machine-derived key.
+/// Output format: 12-byte nonce || ciphertext (with GCM tag appended).
+#[cfg(not(windows))]
+fn unix_local_protect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    let mut key_bytes = derive_unix_local_key()?;
+    let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
+    let cipher = Aes256Gcm::new(key);
+    key_bytes.zeroize();
+
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(nonce, data)
+        .map_err(|e| CryptoError::Encrypt(format!("Local key protection failed: {e}")))?;
+
+    let mut output = Vec::with_capacity(12 + ciphertext.len());
+    output.extend_from_slice(&nonce_bytes);
+    output.extend_from_slice(&ciphertext);
+    Ok(output)
+}
+
+/// Decrypt data previously protected by `unix_local_protect`.
+#[cfg(not(windows))]
+fn unix_local_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
+    if data.len() < 13 {
+        return Err(CryptoError::Decrypt(
+            "Protected key data too short (need nonce + ciphertext)".into(),
+        ));
+    }
+
+    let (nonce_bytes, ciphertext) = data.split_at(12);
+    let mut key_bytes = derive_unix_local_key()?;
+    let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
+    let cipher = Aes256Gcm::new(key);
+    key_bytes.zeroize();
+
+    let nonce = Nonce::from_slice(nonce_bytes);
+    cipher
+        .decrypt(nonce, ciphertext)
+        .map_err(|e| CryptoError::Decrypt(format!("Local key unprotection failed: {e}")))
 }
 
 // ---------------------------------------------------------------------------

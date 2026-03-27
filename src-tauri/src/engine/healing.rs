@@ -38,8 +38,8 @@ pub struct HealingDiagnosis {
 
 /// Maximum backoff delay in seconds (5 minutes).
 const MAX_BACKOFF_SECS: u64 = 300;
-/// Maximum timeout in milliseconds (30 minutes).
-const MAX_TIMEOUT_MS: u64 = 1_800_000;
+/// Maximum timeout in milliseconds — derived from the engine hard ceiling.
+const MAX_TIMEOUT_MS: u64 = super::ENGINE_MAX_EXECUTION_SECS * 1000;
 /// Maximum number of retries for a single execution chain.
 pub const MAX_RETRY_COUNT: i64 = 3;
 /// Occurrence count threshold at which the knowledge base triggers preemptive
@@ -78,8 +78,9 @@ pub fn diagnose(
 ) -> HealingDiagnosis {
     match category {
         FailureCategory::RateLimit => {
-            // Preemptive escalation: if the knowledge base has seen this
-            // pattern many times, skip retries entirely.
+            // Escalation policy: exhaust MAX_RETRY_COUNT retries with
+            // exponential backoff before creating a manual issue.
+            // Knowledge-base preemptive escalation also applies.
             let kb_escalate = kb_hint
                 .map(|h| h.occurrence_count >= KB_ESCALATION_THRESHOLD)
                 .unwrap_or(false);
@@ -137,18 +138,21 @@ pub fn diagnose(
             ),
         },
         FailureCategory::Timeout => {
+            // Escalation policy (consistent with RateLimit): exhaust
+            // MAX_RETRY_COUNT retries before creating a manual issue.
+            // Knowledge-base preemptive escalation also applies.
             let kb_escalate = kb_hint
                 .map(|h| h.occurrence_count >= KB_ESCALATION_THRESHOLD)
                 .unwrap_or(false);
 
-            if consecutive_failures >= 1 || retry_count >= MAX_RETRY_COUNT || kb_escalate {
-                // Already retried once, retry limit exhausted, or KB escalation -- escalate to manual issue
+            if retry_count >= MAX_RETRY_COUNT || kb_escalate {
                 HealingDiagnosis {
                     category: *category,
                     action: HealingAction::CreateIssue,
-                    title: "Repeated timeout".into(),
+                    title: "Timeout retries exhausted".into(),
                     description: format!(
-                        "Execution timed out after a previous timeout retry. Current timeout: {}ms. Error: {}",
+                        "Execution timed out and {} retries have been exhausted. Current timeout: {}ms. Error: {}",
+                        MAX_RETRY_COUNT,
                         current_timeout_ms,
                         truncate(error, 200),
                     ),
@@ -281,18 +285,7 @@ pub fn diagnose(
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn truncate(s: &str, max: usize) -> &str {
-    if s.len() <= max {
-        s
-    } else {
-        // Find the largest byte index <= max that is a valid char boundary
-        let mut end = max;
-        while end > 0 && !s.is_char_boundary(end) {
-            end -= 1;
-        }
-        &s[..end]
-    }
-}
+use super::str_utils::truncate_str as truncate;
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -452,10 +445,14 @@ mod tests {
     }
 
     #[test]
-    fn test_diagnose_timeout_consecutive_creates_issue() {
+    fn test_diagnose_timeout_consecutive_still_retries() {
+        // consecutive_failures alone no longer escalates; retry_count governs escalation
         let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 1, 0, None);
-        assert_eq!(d.action, HealingAction::CreateIssue);
-        assert_eq!(d.severity, "high");
+        assert_eq!(
+            d.action,
+            HealingAction::RetryWithTimeout { new_timeout_ms: 1_200_000 }
+        );
+        assert_eq!(d.severity, "medium");
     }
 
     #[test]

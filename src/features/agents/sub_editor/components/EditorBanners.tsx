@@ -12,7 +12,6 @@ interface BannerPrimitiveProps {
   message: ReactNode;
   actions?: ReactNode[];
   onDismiss: () => void;
-  duration?: number;
 }
 
 const COLOR_SCHEMES: Record<BannerColorScheme, { container: string; message: string }> = {
@@ -34,7 +33,7 @@ const COLOR_SCHEMES: Record<BannerColorScheme, { container: string; message: str
   },
 };
 
-function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], onDismiss, duration: _duration = 0.25 }: BannerPrimitiveProps) {
+function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], onDismiss }: BannerPrimitiveProps) {
   const palette = COLOR_SCHEMES[colorScheme];
 
   return (
@@ -85,7 +84,23 @@ export function UnsavedChangesBanner({
         </button>,
       ]}
       onDismiss={onDismiss}
-      duration={0.2}
+    />
+  );
+}
+
+interface PartialLoadBannerProps {
+  warnings: string[];
+  onDismiss: () => void;
+}
+
+export function PartialLoadBanner({ warnings, onDismiss }: PartialLoadBannerProps) {
+  return (
+    <BannerPrimitive
+      visible={warnings.length > 0}
+      colorScheme="amber"
+      icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
+      message={`Partial load: ${warnings.join('; ')}`}
+      onDismiss={onDismiss}
     />
   );
 }

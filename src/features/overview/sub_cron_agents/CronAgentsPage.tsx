@@ -13,6 +13,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
+import { formatRelative } from './libs/cronHelpers';
 
 export default function CronAgentsPage() {
   const { cronAgents, loading, fetchCronAgents } = useOverviewStore(useShallow((s) => ({
@@ -191,21 +192,3 @@ function formatInterval(seconds: number): string {
   return `${Math.round(seconds / 86400)}d`;
 }
 
-function formatRelative(iso: string): string {
-  const diff = new Date(iso).getTime() - Date.now();
-  const abs = Math.abs(diff);
-  const past = diff < 0;
-  const suffix = past ? 'ago' : '';
-
-  if (abs < 60_000) return past ? 'just now' : 'in <1m';
-  if (abs < 3_600_000) {
-    const m = Math.round(abs / 60_000);
-    return past ? `${m}m ${suffix}` : `in ${m}m`;
-  }
-  if (abs < 86_400_000) {
-    const h = Math.round(abs / 3_600_000);
-    return past ? `${h}h ${suffix}` : `in ${h}h`;
-  }
-  const d = Math.round(abs / 86_400_000);
-  return past ? `${d}d ${suffix}` : `in ${d}d`;
-}

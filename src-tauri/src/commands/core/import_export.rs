@@ -12,23 +12,15 @@ use crate::ipc_auth::require_auth_sync;
 use crate::validation;
 use crate::AppState;
 
+use super::export_types::{
+    MemoryExport, SubscriptionExport, TriggerExport,
+    MAX_CONFIG_LEN, MAX_DESCRIPTION_LEN, MAX_DESIGN_CONTEXT_LEN, MAX_MEMORIES,
+    MAX_MEMORY_CONTENT_LEN, MAX_NAME_LEN, MAX_SHORT_FIELD_LEN, MAX_STRUCTURED_PROMPT_LEN,
+    MAX_SUBSCRIPTIONS, MAX_SYSTEM_PROMPT_LEN, MAX_TRIGGERS,
+};
+
 /// Maximum import file size (5 MB).
 const MAX_IMPORT_FILE_BYTES: u64 = 5 * 1024 * 1024;
-
-/// Field length limits.
-const MAX_NAME_LEN: usize = 200;
-const MAX_DESCRIPTION_LEN: usize = 2_000;
-const MAX_SYSTEM_PROMPT_LEN: usize = 100_000; // 100 KB
-const MAX_STRUCTURED_PROMPT_LEN: usize = 100_000;
-const MAX_SHORT_FIELD_LEN: usize = 500;
-const MAX_CONFIG_LEN: usize = 10_000;
-const MAX_DESIGN_CONTEXT_LEN: usize = 50_000;
-const MAX_MEMORY_CONTENT_LEN: usize = 50_000;
-
-/// Array size caps.
-const MAX_TRIGGERS: usize = 100;
-const MAX_SUBSCRIPTIONS: usize = 50;
-const MAX_MEMORIES: usize = 500;
 
 // ============================================================================
 // Export-only data structs (no system-generated fields like id/created_at)
@@ -52,38 +44,13 @@ struct PersonaExportData {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct TriggerExportData {
-    trigger_type: String,
-    config: Option<String>,
-    enabled: bool,
-    use_case_id: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct SubscriptionExportData {
-    event_type: String,
-    source_filter: Option<String>,
-    enabled: bool,
-    use_case_id: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct MemoryExportData {
-    title: String,
-    content: String,
-    category: String,
-    importance: i32,
-    tags: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 struct PersonaExportBundle {
     version: u32,
     exported_at: String,
     persona: PersonaExportData,
-    triggers: Vec<TriggerExportData>,
-    subscriptions: Vec<SubscriptionExportData>,
-    memories: Vec<MemoryExportData>,
+    triggers: Vec<TriggerExport>,
+    subscriptions: Vec<SubscriptionExport>,
+    memories: Vec<MemoryExport>,
 }
 
 /// Result of a persona import, including the new persona ID and any warnings
@@ -133,7 +100,7 @@ pub async fn export_persona(
         },
         triggers: triggers
             .iter()
-            .map(|t| TriggerExportData {
+            .map(|t| TriggerExport {
                 trigger_type: t.trigger_type.clone(),
                 config: t.config.clone(),
                 enabled: t.enabled,
@@ -142,7 +109,7 @@ pub async fn export_persona(
             .collect(),
         subscriptions: subscriptions
             .iter()
-            .map(|s| SubscriptionExportData {
+            .map(|s| SubscriptionExport {
                 event_type: s.event_type.clone(),
                 source_filter: s.source_filter.clone(),
                 enabled: s.enabled,
@@ -151,7 +118,7 @@ pub async fn export_persona(
             .collect(),
         memories: memories
             .iter()
-            .map(|m| MemoryExportData {
+            .map(|m| MemoryExport {
                 title: m.title.clone(),
                 content: m.content.clone(),
                 category: m.category.clone(),
@@ -351,7 +318,7 @@ pub async fn import_persona(
                 persona_id: new_id.clone(),
                 title: m.title.clone(),
                 content: m.content.clone(),
-                category: Some(m.category.clone()),
+                category: Some(crate::db::models::normalize_category(&m.category).to_string()),
                 source_execution_id: None,
                 importance: Some(m.importance),
                 tags: m.tags.clone(),

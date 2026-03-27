@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { Bot, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
@@ -8,8 +10,7 @@ import { type PersonaDraft, buildDraft } from '../libs/PersonaDraft';
 import { useEditorDirtyState, useEditorHistory, TabSaveError } from '../libs/EditorDocument';
 import { tabIdsToLabels } from '../libs/editorTabConstants';
 import { useEditorSave } from '../libs/useEditorSave';
-import { UnsavedChangesBanner, CloudNudgeBanner } from './EditorBanners';
-// OnboardingBanner removed — setup stepper no longer shown
+import { UnsavedChangesBanner, CloudNudgeBanner, PartialLoadBanner } from './EditorBanners';
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
@@ -17,6 +18,7 @@ import {
   PersonaPromptEditor, PersonaSettingsTab, PersonaUseCasesTab,
   PersonaConnectorsTab, LabTab, ChatTab,
 } from './EditorLazyTabs';
+import { EditorTabContent } from './EditorTabContent';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
 
@@ -29,6 +31,11 @@ export function EditorBody() {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pendingPersonaId, setPendingPersonaId] = useState<string | null>(null);
+  const [dismissedWarnings, setDismissedWarnings] = useState(false);
+
+  const partialLoadWarnings = (!dismissedWarnings && selectedPersona?.warnings?.length)
+    ? selectedPersona.warnings
+    : [];
   const [connectorsMissing, setConnectorsMissing] = useState(0);
 
   const [draft, setDraft] = useState<PersonaDraft>(() =>
@@ -43,7 +50,7 @@ export function EditorBody() {
     setDraft((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  const { isSaving, modelDirty } = useEditorSave({ draft, baseline, setDraft, setBaseline, pendingPersonaId });
+  const { isSaving, modelDirty, saveError } = useEditorSave({ draft, baseline, setDraft, setBaseline, pendingPersonaId });
   const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, cancelAll: cancelAllDebouncedSaves, clearAll: clearAllDirty } = useEditorDirtyState();
   const { undo, redo, clearHistory } = useEditorHistory();
 
@@ -66,6 +73,7 @@ export function EditorBody() {
       setDraft(d);
       setBaseline(d);
       prevPersonaIdRef.current = selectedPersona.id;
+      setDismissedWarnings(false);
       // New persona -- clear undo history so old entries don't leak across personas
       clearHistory();
     }
@@ -124,7 +132,11 @@ export function EditorBody() {
   if (!selectedPersona) {
     return (
       <ContentBox>
-        <div className="flex-1 flex items-center justify-center text-muted-foreground/80">Select an agent to get started</div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 animate-fade-slide-in">
+          <Bot className="w-12 h-12 text-muted-foreground/20" />
+          <p className="typo-heading text-muted-foreground/80">Select an agent to get started</p>
+          <p className="typo-body text-muted-foreground/50">Choose from the sidebar or create a new agent</p>
+        </div>
       </ContentBox>
     );
   }
@@ -178,31 +190,53 @@ export function EditorBody() {
 
       <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={connectorsMissing} />
       <CloudNudgeBanner />
+      <PartialLoadBanner warnings={partialLoadWarnings} onDismiss={() => setDismissedWarnings(true)} />
+
+      {saveError && (
+        <div className="animate-fade-slide-in mx-6 my-2 rounded-xl px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
+          <RefreshCw className="w-3.5 h-3.5 text-red-400 animate-spin flex-shrink-0" style={{ animationDuration: '3s' }} />
+          <span className="typo-body text-red-300/90">Save failed — will retry on next edit</span>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-4">
         <div className="animate-fade-slide-in"
             key={editorTab}
           >
-            <Suspense fallback={null}>
+            <Suspense fallback={<SuspenseFallback />}>
               {editorTab === 'activity' && <ActivityTab />}
               {editorTab === 'matrix' && (
-                <div className="space-y-6 max-w-[900px]">
+                <EditorTabContent className="space-y-6">
                   <MatrixTab />
                   <PersonaPromptEditor />
-                </div>
+                </EditorTabContent>
               )}
-              {editorTab === 'use-cases' && <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />}
-              {editorTab === 'prompt' && <PersonaPromptEditor />}
+              {editorTab === 'use-cases' && (
+                <EditorTabContent>
+                  <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />
+                </EditorTabContent>
+              )}
+              {editorTab === 'prompt' && (
+                <EditorTabContent>
+                  <PersonaPromptEditor />
+                </EditorTabContent>
+              )}
               {editorTab === 'lab' && <LabTab />}
-              {editorTab === 'connectors' && <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />}
+              {editorTab === 'connectors' && (
+                <EditorTabContent>
+                  <PersonaConnectorsTab onMissingCountChange={setConnectorsMissing} />
+                </EditorTabContent>
+              )}
               {editorTab === 'chat' && <ChatTab />}
               {editorTab === 'settings' && (
-                <PersonaSettingsTab
-                  draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
-                  connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
-                  setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
-                  onDelete={async () => { await deletePersona(selectedPersona.id); const { buildPersonaId, resetBuildSession } = useAgentStore.getState(); if (buildPersonaId === selectedPersona.id) { resetBuildSession(); } setShowDeleteConfirm(false); }}
-                />
+                <EditorTabContent>
+                  <PersonaSettingsTab
+                    draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
+                    connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
+                    setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
+                    onDelete={async () => { await deletePersona(selectedPersona.id); const { buildPersonaId, resetBuildSession } = useAgentStore.getState(); if (buildPersonaId === selectedPersona.id) { resetBuildSession(); } setShowDeleteConfirm(false); }}
+                  />
+                </EditorTabContent>
               )}
             </Suspense>
           </div>

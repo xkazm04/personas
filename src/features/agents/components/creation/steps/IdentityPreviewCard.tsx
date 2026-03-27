@@ -1,4 +1,5 @@
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { Bot, Sparkles } from 'lucide-react';
 import type { BuilderState } from './builder/types';
 import { deriveNameFromState } from './identityHelpers';
@@ -33,7 +34,7 @@ export function IdentityPreviewCard({ name, description, icon, color, summary, b
             <span className="text-2xl">{icon}</span>
           )
         ) : (
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: color + '20' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: colorWithAlpha(color, 0.13) }}>
             <Bot className="w-4 h-4" style={{ color }} />
           </div>
         )}

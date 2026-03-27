@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, FolderOpen, Plus, Minus } from 'lucide-react';
-import { kbIngestDirectory } from '@/api/vault/database/vectorKb';
+import { kbIngestDirectory, kbPickDirectory } from '@/api/vault/database/vectorKb';
 
 interface IngestDirectoryPickerProps {
   kbId: string;
@@ -15,7 +15,21 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
   const [patterns, setPatterns] = useState<string[]>([]);
   const [customPattern, setCustomPattern] = useState('');
   const [ingesting, setIngesting] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleBrowse = async () => {
+    setBrowsing(true);
+    setError(null);
+    try {
+      const selected = await kbPickDirectory();
+      if (selected) setDirPath(selected);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBrowsing(false);
+    }
+  };
 
   // Stop Escape from propagating to parent VectorKbModal
   useEffect(() => {
@@ -63,7 +77,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       <div
-        className="animate-fade-slide-in relative w-full max-w-md bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        className="animate-fade-slide-in relative w-full max-w-md bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-primary/10">
@@ -83,14 +97,23 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
         <div className="p-5 space-y-4">
           <div>
             <label className="text-xs font-medium text-muted-foreground/60 mb-1.5 block">Directory Path</label>
-            <input
-              type="text"
-              value={dirPath}
-              onChange={(e) => setDirPath(e.target.value)}
-              placeholder="C:\Users\...\my-docs"
-              className="w-full px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground font-mono placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
-              autoFocus
-            />
+            <div className="flex items-center gap-2">
+              <div className="flex-1 px-3 py-2 text-sm bg-secondary/30 border border-primary/15 rounded-lg text-foreground font-mono min-h-[36px] flex items-center">
+                {dirPath ? (
+                  <span className="truncate">{dirPath}</span>
+                ) : (
+                  <span className="text-muted-foreground/40">No directory selected</span>
+                )}
+              </div>
+              <button
+                onClick={() => void handleBrowse()}
+                disabled={browsing || ingesting}
+                className="px-3 py-2 text-sm font-medium rounded-lg bg-secondary/50 hover:bg-secondary/70 text-foreground/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                {browsing ? 'Browsing...' : 'Browse'}
+              </button>
+            </div>
           </div>
 
           <div>

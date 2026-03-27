@@ -50,6 +50,9 @@ pub enum AppError {
     #[error("OAuth grant revoked: {0}")]
     OAuthRevoked(String),
 
+    #[error("Retry exhausted: {0}")]
+    RetryExhausted(String),
+
     #[error("{0}")]
     Internal(String),
 }
@@ -102,6 +105,7 @@ impl Serialize for AppError {
                 AppError::RateLimited(_) => "rate_limited",
                 AppError::Forbidden(_) => "forbidden",
                 AppError::OAuthRevoked(_) => "oauth_revoked",
+                AppError::RetryExhausted(_) => "retry_exhausted",
                 AppError::Internal(_) => "internal",
             },
         )?;

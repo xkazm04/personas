@@ -280,7 +280,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
                             <button
                               onClick={() => setSelectedCell(isSelected ? null : { scenario, versionId: vId, modelId: mId })}
                               className={`w-full flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 transition-all ${
-                                isSelected ? 'bg-primary/10 ring-1 ring-primary/25 shadow-sm' : 'hover:bg-secondary/40'
+                                isSelected ? 'bg-primary/10 ring-1 ring-primary/25 shadow-elevation-1' : 'hover:bg-secondary/40'
                               }`}
                             >
                               <div className={`w-2 h-2 rounded-full ${comp >= 60 ? 'bg-emerald-500/60' : comp >= 30 ? 'bg-amber-500/60' : 'bg-red-500/40'}`} />

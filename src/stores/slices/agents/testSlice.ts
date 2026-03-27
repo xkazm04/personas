@@ -23,6 +23,7 @@ export interface TestRunProgress {
   scores?: { tool_accuracy?: number; output_quality?: number; protocol_compliance?: number };
   summary?: Record<string, unknown>;
   error?: string;
+  elapsedMs?: number;
   scenarios?: unknown[];
 }
 

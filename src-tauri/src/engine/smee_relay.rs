@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use futures_util::StreamExt;
 use serde::Serialize;
@@ -15,7 +15,8 @@ use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
 
 use super::safe_json;
-use super::event_registry::event_name;
+use super::event_registry::{emit_event_bus, event_name};
+use super::ssrf_safe_dns;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::settings;
@@ -26,6 +27,11 @@ pub const SETTINGS_KEY: &str = "smee_channel_url";
 /// Maximum SSE buffer size (1 MB). If the buffer exceeds this without producing
 /// a complete SSE message, the connection is dropped to prevent memory exhaustion.
 const MAX_SSE_BUFFER_BYTES: usize = 1_024 * 1_024;
+
+/// Minimum time a connection must be alive before we consider it "stable" and
+/// reset the backoff on clean disconnect. Prevents reconnect storms when the
+/// server accepts TCP then immediately closes (e.g., rate limiting).
+const MIN_STABLE_CONNECTION_SECS: u64 = 30;
 
 /// Normalize SSE line endings: `\r\n` → `\n`, then bare `\r` → `\n`.
 /// The SSE spec allows `\r`, `\n`, or `\r\n` as line terminators; normalizing
@@ -82,6 +88,8 @@ pub struct SmeeRelayStatus {
     pub events_relayed: u64,
     pub last_event_at: Option<String>,
     pub error: Option<String>,
+    /// True when the legacy single-URL mode is active (deprecated).
+    pub legacy_active: bool,
 }
 
 fn emit_status(app: &AppHandle, state: &SmeeRelayState) {
@@ -104,12 +112,15 @@ fn emit_status(app: &AppHandle, state: &SmeeRelayState) {
             .last()
     };
 
+    let legacy_active = state.relays.contains_key("__legacy__");
+
     let status = SmeeRelayStatus {
         channel_url: state.channel_url.clone(),
         connected: any_connected,
         events_relayed: total_events,
         last_event_at: latest_event,
         error: aggregate_error,
+        legacy_active,
     };
     let _ = app.emit(event_name::SMEE_RELAY_STATUS, status);
 }
@@ -128,8 +139,11 @@ async fn relay_sse_stream(
     app: &AppHandle,
     state: &Arc<tokio::sync::Mutex<SmeeRelayState>>,
 ) -> Result<(), String> {
+    // Use SSRF-safe DNS resolver to prevent connections to internal services
+    // even if a validated smee.io URL somehow resolves to a private IP (DNS rebinding).
     let http = reqwest::Client::builder()
         .no_proxy() // SSE to smee.io — skip any local proxy config
+        .dns_resolver(std::sync::Arc::new(ssrf_safe_dns::SsrfSafeDnsResolver))
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 
@@ -213,6 +227,13 @@ async fn relay_sse_stream(
 
             let body = payload_json.get("body").cloned().unwrap_or(payload_json.clone());
 
+            tracing::warn!(
+                url = %channel_url,
+                event_type = %event_type,
+                "Legacy Smee relay publishing untargeted event (broadcasts to all personas). \
+                 Migrate to managed relays for per-persona routing."
+            );
+
             let input = CreatePersonaEventInput {
                 event_type,
                 source_type: "smee_relay".to_string(),
@@ -225,7 +246,7 @@ async fn relay_sse_stream(
 
             match event_repo::publish(pool, input) {
                 Ok(event) => {
-                    let _ = app.emit(event_name::EVENT_BUS, event.clone());
+                    emit_event_bus(app, &event);
                     let mut s = state.lock().await;
                     if let Some(r) = s.relays.get_mut("__legacy__") {
                         r.events_relayed += 1;
@@ -259,8 +280,11 @@ async fn relay_sse_stream_for_relay(
 ) -> Result<(), String> {
     use crate::db::repos::communication::smee_relays as smee_relay_repo;
 
+    // Use SSRF-safe DNS resolver to prevent connections to internal services
+    // even if a validated smee.io URL somehow resolves to a private IP (DNS rebinding).
     let http = reqwest::Client::builder()
         .no_proxy()
+        .dns_resolver(std::sync::Arc::new(ssrf_safe_dns::SsrfSafeDnsResolver))
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 
@@ -288,8 +312,8 @@ async fn relay_sse_stream_for_relay(
         emit_status(app, &s);
     }
 
-    // Clear error on successful connect
-    let _ = smee_relay_repo::set_status(pool, relay_id, "active");
+    // Clear error on successful connect (fire-and-forget, no read-back needed)
+    let _ = smee_relay_repo::set_status_quiet(pool, relay_id, "active");
 
     tracing::info!(relay_id = %relay_id, url = %channel_url, "Smee relay connected");
 
@@ -374,7 +398,7 @@ async fn relay_sse_stream_for_relay(
 
             match event_repo::publish(pool, input) {
                 Ok(event) => {
-                    let _ = app.emit(event_name::EVENT_BUS, event.clone());
+                    emit_event_bus(app, &event);
                     let _ = smee_relay_repo::record_event(pool, relay_id);
                     let mut s = state.lock().await;
                     if let Some(r) = s.relays.get_mut(relay_id) {
@@ -451,9 +475,15 @@ pub async fn run_smee_relay(
                 let mut backoff = Duration::from_secs(1);
                 let max_backoff = Duration::from_secs(30);
                 loop {
+                    let connected_at = Instant::now();
                     match relay_sse_stream_for_relay(&url2, &relay_id2, &pool2, &app2, &state2).await {
                         Ok(()) => {
-                            backoff = Duration::from_secs(1);
+                            // Only reset backoff if the connection was stable long enough.
+                            // A short-lived Ok(()) likely means the server accepted then
+                            // immediately closed (rate limiting / maintenance).
+                            if connected_at.elapsed().as_secs() >= MIN_STABLE_CONNECTION_SECS {
+                                backoff = Duration::from_secs(1);
+                            }
                         }
                         Err(e) => {
                             tracing::warn!(relay_id = %relay_id2, error = %e, "Smee relay error");
@@ -505,8 +535,13 @@ pub async fn run_smee_relay(
                             s.channel_url = Some(url.clone());
                             emit_status(&app2, &s);
                         }
+                        let connected_at = Instant::now();
                         match relay_sse_stream(&url, &pool2, &app2, &state2).await {
-                            Ok(()) => { backoff = Duration::from_secs(1); }
+                            Ok(()) => {
+                                if connected_at.elapsed().as_secs() >= MIN_STABLE_CONNECTION_SECS {
+                                    backoff = Duration::from_secs(1);
+                                }
+                            }
                             Err(e) => {
                                 let mut s = state2.lock().await;
                                 if let Some(r) = s.relays.get_mut("__legacy__") {

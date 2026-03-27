@@ -12,7 +12,6 @@ import {
   getPromptErrorRate,
   listAlertRules,
   createAlertRule,
-  updateAlertRule,
   deleteAlertRule,
   toggleAlertRule,
   listFiredAlerts,
@@ -42,8 +41,10 @@ describe("api/overview/observability", () => {
   });
 
   it("getAllMonthlySpend returns spend data", async () => {
-    mockInvoke("get_all_monthly_spend", []);
-    expect(await getAllMonthlySpend()).toEqual([]);
+    mockInvoke("get_all_monthly_spend", { periodStartUtc: "2026-03-01T00:00:00", items: [] });
+    const result = await getAllMonthlySpend();
+    expect(result.items).toEqual([]);
+    expect(result.periodStartUtc).toBe("2026-03-01T00:00:00");
   });
 
   it("getPromptPerformance returns performance data", async () => {

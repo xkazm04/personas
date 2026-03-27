@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
+import { BadgeSlot, type BadgeDefinition } from './BadgeSlot';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
@@ -57,6 +59,95 @@ export default function SidebarLevel1({
   const labelOf = useSidebarLabels();
   const { t } = useTranslation();
 
+  // Build badge definitions per section, ordered by priority (lower = higher).
+  // Priority guide: 1 = count badges (actionable), 2 = executing, 3 = testing,
+  // 4 = transforms, 5 = scan active, 6 = completion dots.
+  const badgesBySection = useMemo(() => {
+    const map: Partial<Record<SidebarSection, BadgeDefinition[]>> = {
+      overview: [
+        {
+          id: 'pending-reviews',
+          priority: 1,
+          active: pendingReviewCount > 0,
+          label: `${pendingReviewCount} pending review${pendingReviewCount !== 1 ? 's' : ''}`,
+          variant: 'count',
+          color: 'bg-amber-500 shadow-amber-500/30',
+          count: pendingReviewCount,
+        },
+      ],
+      personas: [
+        {
+          id: 'executing',
+          priority: 2,
+          active: isExecuting || isLabRunning,
+          label: isExecuting && isLabRunning ? 'Executing & lab running' : isExecuting ? 'Execution in progress' : 'Lab running',
+          variant: 'pulse',
+          color: 'bg-orange-500 border-orange-600/50',
+          pingColor: 'bg-orange-500/40',
+        },
+        {
+          id: 'lab-connector-test',
+          priority: 3,
+          active: (isLabRunning || connectorTestActive) && !isExecuting,
+          label: connectorTestActive ? 'Connector test active' : 'Lab running',
+          variant: 'pulse',
+          color: 'bg-cyan-500 border-cyan-600/50',
+          pingColor: 'bg-cyan-500/40',
+        },
+        {
+          id: 'feedback-complete',
+          priority: 6,
+          active: feedbackImprovementComplete && !isLabRunning && !isExecuting,
+          label: 'Feedback improvement complete',
+          variant: 'dot',
+          color: 'bg-emerald-500 border border-emerald-600/50 shadow-emerald-500/30',
+        },
+      ],
+      'design-reviews': [
+        {
+          id: 'transform-activity',
+          priority: 4,
+          active: n8nTransformActive || templateAdoptActive || rebuildActive || templateTestActive,
+          label: [
+            n8nTransformActive && 'Transform',
+            templateAdoptActive && 'Adoption',
+            rebuildActive && 'Rebuild',
+            templateTestActive && 'Template test',
+          ].filter(Boolean).join(', ') + ' active',
+          variant: 'pulse',
+          color: 'bg-amber-500 border-amber-600/50',
+          pingColor: 'bg-amber-500/40',
+        },
+      ],
+      plugins: [
+        {
+          id: 'context-scan-active',
+          priority: 5,
+          active: contextScanActive,
+          label: 'Context scan in progress',
+          variant: 'pulse',
+          color: 'bg-amber-500 border-amber-600/50',
+          pingColor: 'bg-amber-500/40',
+        },
+        {
+          id: 'context-scan-complete',
+          priority: 6,
+          active: !contextScanActive && contextScanComplete,
+          label: 'Context scan complete',
+          variant: 'dot',
+          color: 'bg-emerald-500 border border-emerald-600/50',
+          onClick: (e: React.MouseEvent) => { e.stopPropagation(); setContextScanComplete(false); },
+        },
+      ],
+    };
+    return map;
+  }, [
+    pendingReviewCount, isExecuting, isLabRunning, connectorTestActive,
+    feedbackImprovementComplete, n8nTransformActive, templateAdoptActive,
+    rebuildActive, templateTestActive, contextScanActive, contextScanComplete,
+    setContextScanComplete,
+  ]);
+
   return (
     <>
       <SidebarIconStyles />
@@ -96,6 +187,8 @@ export default function SidebarLevel1({
                 isDisabled ? 'cursor-not-allowed opacity-40' : ''
               } ${isDevSection ? 'ring-1 ring-amber-500/40' : ''} ${isDevModeSection ? 'ring-1 ring-amber-500/30' : ''}`}
               title={isDisabled ? `${labelOf(section.id, section.label)} (${t.sidebar.coming_soon})` : labelOf(section.id, section.label)}
+              aria-label={isDisabled ? `${labelOf(section.id, section.label)} (${t.sidebar.coming_soon})` : labelOf(section.id, section.label)}
+              aria-current={isActive ? 'page' : undefined}
             >
               {isActive && !isDisabled && (
                 <motion.div
@@ -126,46 +219,8 @@ export default function SidebarLevel1({
                   {t.sidebar.soon_badge}
                 </span>
               )}
-              {section.id === 'overview' && pendingReviewCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 z-20 min-w-[16px] h-4 px-1 flex items-center justify-center typo-heading leading-none rounded-full bg-amber-500 text-white shadow-sm shadow-amber-500/30">
-                  {pendingReviewCount > 99 ? '99+' : pendingReviewCount}
-                </span>
-              )}
-              {section.id === 'personas' && (isExecuting || isLabRunning) && (
-                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
-                  <span className="absolute inset-0 rounded-full bg-orange-500/40 animate-ping" />
-                  <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
-                </span>
-              )}
-              {section.id === 'design-reviews' && (n8nTransformActive || templateAdoptActive || rebuildActive || templateTestActive) && (
-                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
-                  <span className="absolute inset-0 rounded-full bg-amber-500/40 animate-ping" />
-                  <span className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600/50" />
-                </span>
-              )}
-              {section.id === 'personas' && (isLabRunning || connectorTestActive) && (
-                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
-                  <span className="absolute inset-0 rounded-full bg-cyan-500/40 animate-ping" />
-                  <span className="relative w-2.5 h-2.5 rounded-full bg-cyan-500 border border-cyan-600/50" />
-                </span>
-              )}
-              {section.id === 'personas' && feedbackImprovementComplete && !isLabRunning && !isExecuting && (
-                <span className="absolute top-0.5 right-0.5 z-20 w-3 h-3 rounded-full bg-emerald-500 border border-emerald-600/50 shadow-sm shadow-emerald-500/30" />
-              )}
-              {/* Plugins: pulsing amber while scanning, green when complete (click to dismiss) */}
-              {section.id === 'plugins' && contextScanActive && (
-                <span className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center">
-                  <span className="absolute inset-0 rounded-full bg-amber-500/40 animate-ping" />
-                  <span className="relative w-2.5 h-2.5 rounded-full bg-amber-500 border border-amber-600/50" />
-                </span>
-              )}
-              {section.id === 'plugins' && !contextScanActive && contextScanComplete && (
-                <span
-                  className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center cursor-pointer"
-                  onClick={(e) => { e.stopPropagation(); setContextScanComplete(false); }}
-                >
-                  <span className="relative w-2.5 h-2.5 rounded-full bg-emerald-500 border border-emerald-600/50" />
-                </span>
+              {badgesBySection[section.id] != null && (
+                <BadgeSlot badges={badgesBySection[section.id]!} />
               )}
             </button>
           );

@@ -62,22 +62,10 @@ export function healthBadge(status: string | null) {
   return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><AlertTriangle className="w-2.5 h-2.5" />{status}</span>;
 }
 
-export function timeAgo(iso: string | null): string {
-  if (!iso) return 'Never';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
+import { formatRelativeTime } from '@/lib/utils/formatters';
+export const timeAgo = (iso: string | null) => formatRelativeTime(iso, 'Never');
 
-export function formatCost(usd: number | null): string {
-  if (usd == null || usd === 0) return '$0.00';
-  if (usd < 0.01) return '<$0.01';
-  return `$${usd.toFixed(2)}`;
-}
+export { formatCost } from '@/lib/utils/formatters';
 
 export function parseConfig(configStr: string | null): Record<string, unknown> {
   if (!configStr) return {};

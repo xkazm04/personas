@@ -5,6 +5,7 @@ import { DataGrid, type DataGridColumn } from '@/features/shared/components/disp
 import { useAgentStore } from '@/stores/agentStore';
 import { listEvents } from '@/api/overview/events';
 import { formatRelativeTime, EVENT_STATUS_COLORS } from '@/lib/utils/formatters';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { PersonaEvent } from '@/lib/types/types';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';
@@ -114,7 +115,7 @@ export function LiveStreamTab() {
             <div className="flex items-center gap-2 min-w-0">
               <div
                 className="w-5 h-5 rounded-md flex items-center justify-center text-xs border border-primary/15 flex-shrink-0"
-                style={{ backgroundColor: (persona.color || '#6366f1') + '15' }}
+                style={{ backgroundColor: colorWithAlpha(persona.color || '#6366f1', 0.08) }}
               >
                 {persona.icon || '\u{1F916}'}
               </div>
@@ -164,7 +165,7 @@ export function LiveStreamTab() {
           onRowClick={setSelectedEvent}
           getRowAccent={(event) => {
             if (event.status === 'processing') return 'hover:border-l-status-processing';
-            if (event.status === 'completed' || event.status === 'processed') return 'hover:border-l-status-success';
+            if (event.status === 'completed' || event.status === 'delivered') return 'hover:border-l-status-success';
             if (event.status === 'failed') return 'hover:border-l-status-error';
             return 'hover:border-l-status-pending';
           }}

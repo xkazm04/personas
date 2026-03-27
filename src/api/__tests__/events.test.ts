@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+// eslint-disable-next-line no-restricted-imports
 import { invoke } from "@tauri-apps/api/core";
 import { vi } from "vitest";
 import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
@@ -15,7 +16,7 @@ import {
   seedMockEvent,
 } from "@/api/overview/events";
 
-const mockedInvoke = vi.mocked(invoke);
+const _mockedInvoke = vi.mocked(invoke);
 
 describe("api/overview/events", () => {
   beforeEach(() => {
@@ -36,7 +37,7 @@ describe("api/overview/events", () => {
 
   it("searchEvents calls search_events with filter", async () => {
     mockInvoke("search_events", { events: [], total: 0 });
-    const result = await searchEvents({ event_type: "webhook" } as any);
+    const result = await searchEvents({ event_type: "webhook" } as unknown);
     expect(result).toEqual({ events: [], total: 0 });
   });
 
@@ -53,13 +54,13 @@ describe("api/overview/events", () => {
   it("createSubscription calls create_subscription", async () => {
     const sub = { id: "sub-new" };
     mockInvoke("create_subscription", sub);
-    const result = await createSubscription({ event_type: "webhook" } as any);
+    const result = await createSubscription({ event_type: "webhook" } as unknown);
     expect(result).toEqual(sub);
   });
 
   it("updateSubscription calls update_subscription", async () => {
     mockInvoke("update_subscription", { id: "sub-1" });
-    const result = await updateSubscription("sub-1", {} as any);
+    const result = await updateSubscription("sub-1", {} as unknown);
     expect(result).toEqual({ id: "sub-1" });
   });
 

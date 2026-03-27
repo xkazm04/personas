@@ -204,12 +204,43 @@ pub async fn start_automation_design(
     description: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    // Gather persona context
-    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
-    let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
-    let connectors = connector_repo::get_all(&state.db)?;
-    let credentials = cred_repo::get_all(&state.db)?;
-    let automations = automation_repo::get_by_persona(&state.db, &persona_id).unwrap_or_default();
+
+    // Gather persona context — run all five independent DB reads concurrently
+    let db = state.db.clone();
+    let pid = persona_id.clone();
+    let persona_fut = tokio::task::spawn_blocking({
+        let db = db.clone();
+        let pid = pid.clone();
+        move || persona_repo::get_by_id(&db, &pid)
+    });
+    let tools_fut = tokio::task::spawn_blocking({
+        let db = db.clone();
+        let pid = pid.clone();
+        move || tool_repo::get_tools_for_persona(&db, &pid)
+    });
+    let connectors_fut = tokio::task::spawn_blocking({
+        let db = db.clone();
+        move || connector_repo::get_all(&db)
+    });
+    let credentials_fut = tokio::task::spawn_blocking({
+        let db = db.clone();
+        move || cred_repo::get_all(&db)
+    });
+    let automations_fut = tokio::task::spawn_blocking({
+        let db = db.clone();
+        let pid = pid.clone();
+        move || automation_repo::get_by_persona(&db, &pid).unwrap_or_default()
+    });
+
+    let (persona_res, tools_res, connectors_res, credentials_res, automations_res) =
+        tokio::try_join!(persona_fut, tools_fut, connectors_fut, credentials_fut, automations_fut)
+            .map_err(|e| AppError::Internal(format!("Task join error: {e}")))?;
+
+    let persona = persona_res?;
+    let tools = tools_res?;
+    let connectors = connectors_res?;
+    let credentials = credentials_res?;
+    let automations = automations_res;
 
     let tools_summary = if tools.is_empty() {
         "None configured".to_string()

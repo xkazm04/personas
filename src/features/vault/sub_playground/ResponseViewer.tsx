@@ -66,6 +66,13 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
         )}
       </div>
 
+      {/* Truncation warning */}
+      {response.truncated && (
+        <div className="px-3 py-2 rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-400 text-sm">
+          Response body was truncated (exceeded 2 MB limit). The original content-type was overridden to text/plain.
+        </div>
+      )}
+
       {/* Sub-tabs */}
       <div className="flex items-center gap-1 border-b border-primary/8">
         {(['body', 'headers', 'raw'] as const).map((tab) => (

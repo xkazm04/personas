@@ -53,7 +53,7 @@ export function RebuildModal({
       onClose={onClose}
       titleId="rebuild-modal-title"
       maxWidthClass="max-w-2xl"
-      panelClassName="max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      panelClassName="max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
     >
         {/* Header */}
         <div className="px-6 py-4 border-b border-primary/10 flex items-center justify-between">

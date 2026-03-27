@@ -1,5 +1,6 @@
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
 import { getConnectionStyle } from '../../libs/teamConstants';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 
 export default function GhostEdge({
   id,
@@ -71,8 +72,8 @@ export default function GhostEdge({
           <span
             className="px-2 py-0.5 text-sm font-mono uppercase rounded-full border backdrop-blur-sm animate-pulse"
             style={{
-              backgroundColor: typeStyle.stroke + '12',
-              borderColor: typeStyle.stroke + '25',
+              backgroundColor: colorWithAlpha(typeStyle.stroke, 0.07),
+              borderColor: colorWithAlpha(typeStyle.stroke, 0.15),
               color: typeStyle.stroke,
             }}
           >

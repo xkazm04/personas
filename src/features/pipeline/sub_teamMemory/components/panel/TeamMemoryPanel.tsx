@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
@@ -9,6 +9,11 @@ import AddTeamMemoryForm from './AddTeamMemoryForm';
 import MemoryTimeline from '../timeline/MemoryTimeline';
 import RunDiffView from '../diff/RunDiffView';
 import type { TeamMemoryViewMode as ViewMode } from '@/lib/constants/uiModes';
+
+const STORAGE_KEY = 'team-memory-panel-width';
+const MIN_WIDTH = 272;
+const MAX_WIDTH = 480;
+const DEFAULT_WIDTH = 288; // matches original w-72
 
 interface TeamMemoryPanelProps {
   teamId: string;
@@ -36,6 +41,44 @@ export default function TeamMemoryPanel({
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [activeRunFilter, setActiveRunFilter] = useState<string | null>(null);
 
+  const [panelWidth, setPanelWidth] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const n = Number(stored);
+      if (n >= MIN_WIDTH && n <= MAX_WIDTH) return n;
+    }
+    return DEFAULT_WIDTH;
+  });
+  const draggingRef = useRef(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const widthRef = useRef(panelWidth);
+
+  useEffect(() => {
+    widthRef.current = panelWidth;
+  }, [panelWidth]);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!draggingRef.current || !panelRef.current) return;
+      const rect = panelRef.current.getBoundingClientRect();
+      const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, e.clientX - rect.left));
+      setPanelWidth(newWidth);
+    };
+    const onMouseUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      localStorage.setItem(STORAGE_KEY, String(widthRef.current));
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, []);
+
   const handleLoadMore = useCallback(async () => {
     setLoadingMore(true);
     try { await onLoadMore(); } finally { setLoadingMore(false); }
@@ -46,9 +89,20 @@ export default function TeamMemoryPanel({
     onFilter(cat === 'all' ? undefined : cat, searchQuery || undefined);
   };
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   const handleSearchChange = (q: string) => {
     setSearchQuery(q);
-    onFilter(activeCategory === 'all' ? undefined : activeCategory, q || undefined);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onFilter(activeCategory === 'all' ? undefined : activeCategory, q || undefined);
+    }, 300);
   };
 
   const handleFilterByRun = useCallback((runId: string | null) => {
@@ -57,17 +111,24 @@ export default function TeamMemoryPanel({
     onFilterByRun?.(runId);
   }, [onFilterByRun]);
 
-  const displayMemories = useMemo(() => {
-    if (!activeRunFilter) return memories;
-    return memories.filter((m) => m.run_id === activeRunFilter);
-  }, [memories, activeRunFilter]);
-
   const hasRunData = stats?.run_counts && stats.run_counts.length > 0;
 
   return (
     <div
-      className="animate-fade-slide-in absolute top-14 left-3 z-30 w-72 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-xl shadow-2xl overflow-hidden"
+      ref={panelRef}
+      style={{ width: panelWidth }}
+      className="animate-fade-slide-in absolute top-14 left-3 z-30 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-xl shadow-elevation-4 overflow-hidden"
     >
+      {/* Resize handle */}
+      <div
+        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors z-10"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          draggingRef.current = true;
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+        }}
+      />
       <MemoryPanelHeader
         total={total}
         viewMode={viewMode}
@@ -88,7 +149,7 @@ export default function TeamMemoryPanel({
         </div>
       ) : (
         <MemoryPanelList
-          memories={displayMemories}
+          memories={memories}
           total={total}
           activeCategory={activeCategory}
           searchQuery={searchQuery}

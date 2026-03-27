@@ -16,7 +16,7 @@ export default function DebuggerVariables({
 }: DebuggerVariablesProps) {
   return (
     <div
-      className="animate-fade-slide-in mx-4 mb-2 rounded-xl bg-secondary/90 backdrop-blur-md border border-primary/15 shadow-2xl overflow-hidden max-h-[280px]"
+      className="animate-fade-slide-in mx-4 mb-2 rounded-xl bg-secondary/90 backdrop-blur-md border border-primary/15 shadow-elevation-4 overflow-hidden max-h-[280px]"
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <div className="flex items-center gap-2">

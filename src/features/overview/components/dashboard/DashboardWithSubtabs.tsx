@@ -2,6 +2,7 @@ import { Suspense, useState, startTransition } from 'react';
 import { LayoutDashboard, BarChart3, Radio, Activity } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
+import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import DashboardHome from '@/features/overview/components/dashboard/DashboardHome';
 import { lazyRetry } from '@/lib/lazyRetry';
 
@@ -44,7 +45,7 @@ export default function DashboardWithSubtabs() {
               icon={<Icon className="w-3.5 h-3.5" />}
               onClick={() => handleTabSwitch(tab.id)}
               className={isActive
-                ? 'bg-primary/10 text-foreground border border-primary/20 shadow-sm'
+                ? 'bg-primary/10 text-foreground border border-primary/20 shadow-elevation-1'
                 : 'text-muted-foreground/70 hover:text-muted-foreground hover:bg-secondary/40'}
             >
               {tab.label}
@@ -64,7 +65,7 @@ export default function DashboardWithSubtabs() {
             </ErrorBoundary>
           ) : (
             <ErrorBoundary name={`Dashboard/${subtab}`}>
-              <Suspense fallback={null}>
+              <Suspense fallback={<SuspenseFallback />}>
                 {subtab === 'analytics' ? <AnalyticsDashboard />
                   : subtab === 'timeline' ? <UnifiedActivityTimeline />
                   : <RealtimeVisualizerPage />}

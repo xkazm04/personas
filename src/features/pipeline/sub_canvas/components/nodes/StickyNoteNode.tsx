@@ -80,7 +80,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
   return (
     <div
       className={`group relative rounded-xl backdrop-blur-sm border transition-all min-w-[180px] max-w-[320px] ${style.bg} ${style.border} ${
-        selected ? 'ring-1 ring-primary/30 shadow-lg' : ''
+        selected ? 'ring-1 ring-primary/30 shadow-elevation-3' : ''
       }`}
       onDoubleClick={() => { if (!editing) setEditing(true); }}
     >

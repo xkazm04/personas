@@ -52,7 +52,7 @@ export default function TitleBar() {
       >
         <Bell size={14} strokeWidth={1.5} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-orange-500 text-white shadow-sm">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-orange-500 text-white shadow-elevation-1">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

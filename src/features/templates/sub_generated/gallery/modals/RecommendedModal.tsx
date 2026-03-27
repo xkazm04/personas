@@ -25,7 +25,7 @@ export function RecommendedModal({
       onClose={onClose}
       titleId="recommended-modal-title"
       maxWidthClass="max-w-lg"
-      panelClassName="max-h-[70vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      panelClassName="max-h-[70vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
     >
       {/* Header */}
       <div className="px-5 py-3.5 border-b border-primary/10 flex items-center justify-between flex-shrink-0">

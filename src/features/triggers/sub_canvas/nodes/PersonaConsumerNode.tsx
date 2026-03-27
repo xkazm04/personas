@@ -27,7 +27,7 @@ function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
             : 'border-emerald-400/70 hover:border-emerald-300'
         }
         ${!d.enabled ? 'opacity-50' : ''}
-        shadow-md min-w-[160px] transition-all
+        shadow-elevation-2 min-w-[160px] transition-all
       `}
     >
       <Handle

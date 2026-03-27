@@ -67,7 +67,7 @@ export function CreateTemplateModal({
       onClose={handleClose}
       titleId="create-template-title"
       maxWidthClass="max-w-3xl"
-      panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
     >
       <div
         className="animate-fade-slide-in relative h-full flex flex-col overflow-hidden"

@@ -59,7 +59,7 @@ export function UseCaseFixtureDropdown({
 
       {isOpen && (
           <div
-            className="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-64 rounded-xl bg-popover border border-primary/20 shadow-xl shadow-black/30 overflow-hidden"
+            className="animate-fade-slide-in absolute top-full left-0 mt-1 z-50 w-64 rounded-xl bg-popover border border-primary/20 shadow-elevation-3 shadow-black/30 overflow-hidden"
           >
             {/* No fixture option */}
             <button

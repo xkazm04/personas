@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertTriangle, XCircle } from 'lucide-react';
+import { AlertTriangle, XCircle, DatabaseZap } from 'lucide-react';
 import type { RotationStatus } from '@/api/vault/rotation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { AnomalyScorePanel } from '@/features/vault/sub_features/AnomalyScorePanel';
@@ -29,6 +29,14 @@ export function CredentialRotationSection({
 
   return (
     <div className="space-y-3">
+      {/* Corrupted Healthcheck Warning */}
+      {rotationStatus?.healthcheck_corrupted && (
+        <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 text-sm text-orange-400">
+          <DatabaseZap className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <span>Healthcheck metadata is corrupted. Anomaly scores are unavailable until the next successful healthcheck overwrites the bad data.</span>
+        </div>
+      )}
+
       {/* Windowed Anomaly Score Panel */}
       {showAnomalyPanel && (
         <AnomalyScorePanel

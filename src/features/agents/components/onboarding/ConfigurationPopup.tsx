@@ -114,7 +114,7 @@ export function ConfigurationPopup({
       onClick={handleBackdropClick}
     >
       <div
-        className="animate-fade-slide-in bg-background border border-primary/20 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        className="animate-fade-slide-in bg-background border border-primary/20 rounded-2xl shadow-elevation-4 w-full max-w-md mx-4 overflow-hidden"
       >
         <div className="px-4 py-4 border-b border-primary/10">
           <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">

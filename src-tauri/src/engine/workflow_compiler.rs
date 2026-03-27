@@ -29,7 +29,7 @@ use ts_rs::TS;
 use crate::db::models::{PersonaTeam, PersonaTeamConnection, PersonaTeamMember};
 use crate::db::DbPool;
 use crate::engine::compilation_pipeline::{CompilationPipeline, PipelineOutcome};
-use crate::engine::topology::TopologyBlueprint;
+use crate::engine::topology_types::TopologyBlueprint;
 use crate::error::AppError;
 
 // ============================================================================
@@ -362,7 +362,7 @@ mod tests {
 
     #[test]
     fn test_workflow_compiler_validate_self_loop() {
-        use crate::engine::topology::{BlueprintConnection, BlueprintMember};
+        use crate::engine::topology_types::{BlueprintConnection, BlueprintMember};
 
         let mut bp = TopologyBlueprint {
             description: "test".into(),

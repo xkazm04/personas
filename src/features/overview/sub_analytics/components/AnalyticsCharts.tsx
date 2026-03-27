@@ -7,7 +7,7 @@ import {
 import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
 import { LazyChart } from '@/features/overview/sub_usage/components/LazyChart';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
-import { CHART_COLORS, CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
+import { CHART_COLORS, CHART_COLORS_PURPLE, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { DASHBOARD_GRID } from '@/features/overview/utils/dashboardGrid';
 import { formatToolName } from '../libs/analyticsHelpers';
 import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
@@ -37,9 +37,9 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
         {/* Cost Over Time */}
         <MetricChart title="Cost Over Time" height={180}>
           <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-            <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
-            <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `$${v}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+            <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: getAxisTickFill() }} />
+            <YAxis tick={{ fontSize: 10, fill: getAxisTickFill() }} tickFormatter={(v) => `$${v}`} />
             <Tooltip content={<ChartTooltip />} />
             {compareEnabled && (
               <Area type="monotone" dataKey="prev_cost" name="Prev Cost" stroke="#6366f1" fill="none" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
@@ -57,9 +57,9 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
         {/* Execution Health */}
         <MetricChart title="Execution Health" height={180}>
           <ComposedChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-            <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
-            <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
+            <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+            <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: getAxisTickFill() }} />
+            <YAxis tick={{ fontSize: 10, fill: getAxisTickFill() }} />
             <Tooltip content={<ChartTooltip />} cursor={false} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Bar dataKey="success" name="Successful" fill="#22c55e" radius={[2, 2, 0, 0]} />
@@ -87,9 +87,9 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
           <LazyChart height={180}>
             <MetricChart title="Tool Usage Over Time" height={180}>
               <AreaChart data={areaData} margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="dateLabel" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+                <XAxis dataKey="dateLabel" tick={{ fill: getAxisTickFill(), fontSize: 10 }} />
+                <YAxis tick={{ fill: getAxisTickFill(), fontSize: 10 }} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip />} />
                 {allToolNames.map((toolName, idx) => (
                   <Area key={toolName} type="monotone" dataKey={toolName} name={formatToolName(toolName)} stackId="1" fill={CHART_COLORS[idx % CHART_COLORS.length]} fillOpacity={0.3} stroke={CHART_COLORS[idx % CHART_COLORS.length]} strokeWidth={1.5} />
@@ -127,9 +127,9 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
           <LazyChart height={180}>
             <MetricChart title="Latency (p50 / p95 / p99)" height={180}>
               <LineChart data={latencyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
-                <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`} />
+                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+                <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fill: getAxisTickFill() }} />
+                <YAxis tick={{ fontSize: 10, fill: getAxisTickFill() }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${Math.round(v)}ms`} />
                 <Tooltip content={<ChartTooltip />} />
                 <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
                 <Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
@@ -146,9 +146,9 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
         <LazyChart height={Math.max(200, barData.length * 40)}>
           <MetricChart title="Tool Invocations" height={Math.max(200, barData.length * 40)}>
             <BarChart data={barData} margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
-              <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis dataKey="name" type="category" width={120} tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} horizontal={false} />
+              <XAxis type="number" tick={{ fill: getAxisTickFill(), fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis dataKey="name" type="category" width={120} tick={{ fill: getAxisTickFill(), fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
               <Bar dataKey="invocations" name="Invocations" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} barSize={20} />
             </BarChart>

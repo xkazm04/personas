@@ -137,7 +137,7 @@ export function SavedViewsDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-background border border-primary/20 rounded-xl shadow-lg z-50 overflow-hidden flex flex-col">
+        <div className="absolute right-0 mt-2 w-64 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 overflow-hidden flex flex-col">
           {isSaving ? (
             <div className="p-2 flex items-center gap-2 border-b border-primary/10">
               <input

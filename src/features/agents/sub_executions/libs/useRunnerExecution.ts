@@ -9,7 +9,6 @@ interface UseRunnerExecutionArgs {
   personaId: string;
   inputData: string;
   setJsonError: (v: string | null) => void;
-  setOutputLines: (fn: (prev: string[]) => string[]) => void;
   disconnect: () => void;
   elapsedMs: number;
   executionSummary: { status: string; duration_ms?: number | null; cost_usd?: number | null; last_tool?: string | null } | null;
@@ -24,7 +23,6 @@ export function useRunnerExecution({
   personaId,
   inputData,
   setJsonError,
-  setOutputLines,
   disconnect,
   elapsedMs,
   executionSummary,
@@ -36,6 +34,7 @@ export function useRunnerExecution({
 }: UseRunnerExecutionArgs) {
   const executePersona = useAgentStore((state) => state.executePersona);
   const cancelExecution = useAgentStore((state) => state.cancelExecution);
+  const appendExecutionOutput = useAgentStore((state) => state.appendExecutionOutput);
   const isExecuting = useAgentStore((state) => state.isExecuting);
   const activeExecutionId = useAgentStore((state) => state.activeExecutionId);
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
@@ -49,21 +48,20 @@ export function useRunnerExecution({
       catch (e) { setJsonError(e instanceof SyntaxError ? e.message : 'Invalid JSON input'); return; }
     }
     setJsonError(null);
-    setOutputLines(() => []);
     if (cloudConfig?.is_connected) {
       try {
         const executionId = await cloudExecute(personaId, JSON.stringify(parsedInput));
-        setOutputLines(() => ['Cloud execution started: ' + executionId]);
+        appendExecutionOutput('Cloud execution started: ' + executionId);
       } catch {
-        setOutputLines(() => ['ERROR: Failed to start cloud execution']);
+        appendExecutionOutput('ERROR: Failed to start cloud execution');
         useToastStore.getState().addToast('Failed to start cloud execution', 'error');
       }
     } else {
       const executionId = await executePersona(personaId, parsedInput);
       if (executionId) {
-        setOutputLines(() => ['Execution started: ' + executionId]);
+        appendExecutionOutput('Execution started: ' + executionId);
       } else {
-        setOutputLines(() => ['ERROR: Failed to start execution']);
+        appendExecutionOutput('ERROR: Failed to start execution');
       }
     }
   };
@@ -75,7 +73,8 @@ export function useRunnerExecution({
       const cancelSummary = JSON.stringify({ status: 'cancelled', duration_ms: elapsedMs, cost_usd: null, last_tool: lastTool });
       await cancelExecution(activeExecutionId);
       disconnect();
-      setOutputLines((prev) => [...prev, '', `[SUMMARY]${cancelSummary}`]);
+      appendExecutionOutput('');
+      appendExecutionOutput(`[SUMMARY]${cancelSummary}`);
     }
   };
 
@@ -100,7 +99,6 @@ export function useRunnerExecution({
       try { parsedInput = JSON.parse(inputData); } catch { /* intentional */ }
     }
 
-    setOutputLines(() => []);
     const continuation: import('@/lib/bindings/Continuation').Continuation = sessionId
       ? { type: 'SessionResume', value: sessionId }
       : { type: 'PromptHint', value: hint };

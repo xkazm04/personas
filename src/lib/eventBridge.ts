@@ -196,6 +196,26 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Engine fallback notification ------------------------------------------
+  {
+    event: EventName.ENGINE_FALLBACK,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.ENGINE_FALLBACK,
+        (payload) => {
+          useToastStore
+            .getState()
+            .addToast(
+              `Unrecognized engine "${payload.requested}" in settings — falling back to ${payload.actual}`,
+              "error",
+              8000,
+            );
+        },
+      );
+      return [unlisten];
+    },
+  },
+
   // -- Build session events (background resilience) -------------------------
   // Only processes events when the Channel handler is NOT active (user navigated away).
   // When the matrix component is mounted, the Channel handler processes events directly.

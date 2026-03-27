@@ -19,6 +19,10 @@ interface CredentialEditFormProps {
   oauthConsentHint?: string;
   oauthConsentDisabled?: boolean;
   oauthConsentSuccessBadge?: string;
+  /** Whether an OAuth authorization is currently in progress */
+  isAuthorizingOAuth?: boolean;
+  /** Current status message from the OAuth polling hook */
+  oauthPollingMessage?: { success: boolean; message: string } | null;
   testHint?: string;
   onValuesChanged?: (key: string, value: string) => void;
   isHealthchecking?: boolean;
@@ -39,6 +43,8 @@ export function CredentialEditForm({
   oauthConsentHint,
   oauthConsentDisabled,
   oauthConsentSuccessBadge,
+  isAuthorizingOAuth,
+  oauthPollingMessage,
   testHint,
   onValuesChanged,
   isHealthchecking,
@@ -174,6 +180,8 @@ export function CredentialEditForm({
           consentHint={oauthConsentHint}
           consentDisabled={oauthConsentDisabled}
           consentSuccessBadge={oauthConsentSuccessBadge}
+          isAuthorizing={isAuthorizingOAuth}
+          pollingMessage={oauthPollingMessage}
         />
       )}
 

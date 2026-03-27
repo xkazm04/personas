@@ -281,7 +281,7 @@ export function TerminalBody({
           {unseenCount > 0 && (
             <button
               onClick={scrollToBottom}
-              className="animate-fade-slide-in absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground typo-heading shadow-lg shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
+              className="animate-fade-slide-in absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/90 text-foreground typo-heading shadow-elevation-3 shadow-primary/20 hover:bg-primary transition-colors backdrop-blur-sm"
             >
               <ArrowDown className="w-3 h-3" />
               {unseenCount} new line{unseenCount !== 1 ? 's' : ''} below

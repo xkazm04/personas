@@ -39,6 +39,8 @@ export interface TabSectionConfig {
 export interface TabSectionHandle {
   /** True while the save function is executing (debounced mode only). */
   isSaving: boolean;
+  /** Most recent save error message, or null if last save succeeded. */
+  lastError: string | null;
   /** Cancel any pending debounced save. No-op for non-debounced modes. */
   cancel: () => void;
 }
@@ -58,7 +60,7 @@ export function useTabSection(config: TabSectionConfig): TabSectionHandle {
 
   // useDebouncedSave is always called (hooks can't be conditional).
   // For non-debounced modes the isDirty guard is false so it never fires.
-  const { isSaving, cancel } = useDebouncedSave(
+  const { isSaving, lastError, cancel } = useDebouncedSave(
     save,
     mode === 'debounced' && isDirty && enabled,
     deps,
@@ -73,5 +75,5 @@ export function useTabSection(config: TabSectionConfig): TabSectionHandle {
   // Auto-unregister on unmount so consumers don't need manual cleanup.
   useEffect(() => unregister, [unregister]);
 
-  return { isSaving, cancel: mode === 'debounced' ? cancel : noop };
+  return { isSaving, lastError, cancel: mode === 'debounced' ? cancel : noop };
 }

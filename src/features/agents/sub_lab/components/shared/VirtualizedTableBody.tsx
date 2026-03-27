@@ -30,7 +30,8 @@ export function VirtualizedTableBody<T>({ items, renderRow, rowKey }: Props<T>) 
     return (
       <tbody>
         {items.map((item, idx) => (
-          <tr key={rowKey(item)} className="border-b border-primary/10 hover:bg-secondary/10 transition-colors">
+          <tr key={rowKey(item)} className="border-b border-primary/10 hover:bg-secondary/10 transition-colors animate-fade-slide-in"
+            style={{ animationDelay: `${idx * 60}ms`, animationDuration: '300ms' }}>
             {renderRow(item, idx)}
           </tr>
         ))}

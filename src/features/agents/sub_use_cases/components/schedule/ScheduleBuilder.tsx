@@ -73,7 +73,7 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
           const Icon = tab.icon;
           return (
             <button key={tab.key} type="button" onClick={() => setMode(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-all ${mode === tab.key ? 'bg-amber-500/12 text-amber-300 shadow-sm' : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/40'}`}>
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-all ${mode === tab.key ? 'bg-amber-500/12 text-amber-300 shadow-elevation-1' : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/40'}`}>
               <Icon className="w-3 h-3" />{tab.label}
             </button>
           );

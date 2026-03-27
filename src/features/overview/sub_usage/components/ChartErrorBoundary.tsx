@@ -28,8 +28,6 @@ export class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, Chart
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('[ChartErrorBoundary] Chart render error:', error);
-    console.error('Component stack:', errorInfo.componentStack);
     logger.error('Chart render error', { error: error.message, componentStack: errorInfo.componentStack });
   }
 

@@ -44,6 +44,7 @@
 /* Apply language font to body -- everything inherits */
 body {
   font-family: var(--font-lang);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 /* -- RTL & Script-Specific Tuning --------------------------------------------
@@ -236,3 +237,25 @@ body {
 [data-text-scale="larger"] .typo-label { font-size: 0.85rem; }
 [data-text-scale="larger"] .typo-data { font-size: 1rem; }
 [data-text-scale="larger"] .typo-code { font-size: 0.85rem; }
+
+/* -- JSON Viewer Line Numbers -----------------------------------------------
+   CSS-counter-based line numbers for HighlightedJson. */
+
+.json-lines {
+  counter-reset: json-line;
+}
+
+.json-line {
+  counter-increment: json-line;
+}
+
+.json-line::before {
+  content: counter(json-line);
+  display: inline-block;
+  width: 2rem;
+  text-align: right;
+  padding-right: 0.75rem;
+  color: hsl(var(--foreground) / 0.3);
+  user-select: none;
+  pointer-events: none;
+}

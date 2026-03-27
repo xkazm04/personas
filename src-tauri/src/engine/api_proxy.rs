@@ -431,6 +431,7 @@ pub struct ApiProxyResponse {
     pub body: String,
     pub duration_ms: u64,
     pub content_type: Option<String>,
+    pub truncated: bool,
 }
 
 /// Proxy an HTTP request through a stored credential.
@@ -519,7 +520,9 @@ pub async fn execute_api_request(
         .await?
         .map(|r| r.token);
 
-    let client = crate::SHARED_HTTP.clone();
+    // Use the SSRF-safe HTTP client which validates resolved IPs at
+    // connection time, preventing DNS rebinding attacks.
+    let client = crate::SSRF_SAFE_HTTP.clone();
 
     let start = Instant::now();
 
@@ -632,6 +635,7 @@ pub async fn execute_api_request(
         headers: resp_headers,
         body,
         duration_ms,
-        content_type,
+        content_type: if truncated { Some("text/plain".to_string()) } else { content_type },
+        truncated,
     })
 }

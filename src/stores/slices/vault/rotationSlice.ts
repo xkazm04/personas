@@ -21,14 +21,13 @@ import {
 export interface RotationSlice {
   // State
   rotationStatuses: Record<string, RotationStatus>;
-  rotationOverviewList: RotationOverviewItem[];
 
   // Actions
   fetchRotationStatus: (credentialId: string) => Promise<RotationStatus | null>;
   fetchAllRotationStatuses: () => Promise<void>;
   createRotationPolicy: (input: CreateRotationPolicyInput) => Promise<RotationPolicy | null>;
   updateRotationPolicy: (id: string, input: UpdateRotationPolicyInput) => Promise<RotationPolicy | null>;
-  deleteRotationPolicy: (id: string) => Promise<boolean>;
+  deleteRotationPolicy: (id: string) => Promise<string | null>;
   rotateCredentialNow: (credentialId: string) => Promise<string | null>;
   refreshOAuthNow: (credentialId: string) => Promise<string | null>;
   fetchRotationHistory: (credentialId: string, limit?: number) => Promise<RotationHistoryEntry[]>;
@@ -41,48 +40,15 @@ export interface RotationOverviewItem {
   status: RotationStatus;
 }
 
-function deriveOverviewList(
-  statuses: Record<string, RotationStatus>,
-  credentials: { id: string; name: string; service_type: string }[],
-): RotationOverviewItem[] {
-  const items: RotationOverviewItem[] = [];
-  for (const cred of credentials) {
-    const status = statuses[cred.id];
-    if (!status) continue;
-    if (!status.has_policy && !status.anomaly_detected) continue;
-    items.push({
-      credentialId: cred.id,
-      credentialName: cred.name,
-      serviceType: cred.service_type,
-      status,
-    });
-  }
-  // Sort: anomalies first, then by next_rotation_at ascending
-  items.sort((a, b) => {
-    if (a.status.anomaly_detected !== b.status.anomaly_detected) {
-      return a.status.anomaly_detected ? -1 : 1;
-    }
-    const aNext = a.status.next_rotation_at ?? "9999";
-    const bNext = b.status.next_rotation_at ?? "9999";
-    return aNext.localeCompare(bNext);
-  });
-  return items;
-}
-
 export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice> = (set, get) => ({
   rotationStatuses: {},
-  rotationOverviewList: [],
 
   fetchRotationStatus: async (credentialId) => {
     try {
       const status = await getRotationStatus(credentialId);
-      set((state) => {
-        const rotationStatuses = { ...state.rotationStatuses, [credentialId]: status };
-        return {
-          rotationStatuses,
-          rotationOverviewList: deriveOverviewList(rotationStatuses, state.credentials),
-        };
-      });
+      set((state) => ({
+        rotationStatuses: { ...state.rotationStatuses, [credentialId]: status },
+      }));
       return status;
     } catch (err) {
       reportError(err, "Failed to fetch rotation status", set);
@@ -110,10 +76,6 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
 
     set((state) => ({
       rotationStatuses: { ...state.rotationStatuses, ...statuses },
-      rotationOverviewList: deriveOverviewList(
-        { ...state.rotationStatuses, ...statuses },
-        state.credentials,
-      ),
     }));
   },
 
@@ -132,8 +94,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
   updateRotationPolicy: async (id, input) => {
     try {
       const policy = await updateRotationPolicy(id, input);
-      // Refresh all statuses since we don't know which credential this policy belongs to
-      get().fetchAllRotationStatuses();
+      get().fetchRotationStatus(policy.credential_id);
       return policy;
     } catch (err) {
       reportError(err, "Failed to update rotation policy", set);
@@ -143,12 +104,12 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
 
   deleteRotationPolicy: async (id) => {
     try {
-      const result = await deleteRotationPolicy(id);
-      get().fetchAllRotationStatuses();
-      return result;
+      const credentialId = await deleteRotationPolicy(id);
+      get().fetchRotationStatus(credentialId);
+      return credentialId;
     } catch (err) {
       reportError(err, "Failed to delete rotation policy", set);
-      return false;
+      return null;
     }
   },
 

@@ -50,8 +50,19 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
     }
   };
 
-  const handleToggleStatus = (id: string, newStatus: 'active' | 'paused') => {
-    void updateAutomation(id, { deploymentStatus: newStatus as AutomationDeploymentStatus });
+  const [transitioningIds, setTransitioningIds] = useState<Set<string>>(new Set());
+
+  const handleToggleStatus = async (id: string, newStatus: 'active' | 'paused') => {
+    setTransitioningIds((prev) => new Set(prev).add(id));
+    try {
+      await updateAutomation(id, { deploymentStatus: newStatus as AutomationDeploymentStatus });
+    } finally {
+      setTransitioningIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   };
 
   const [deleteTarget, setDeleteTarget] = useState<PersonaAutomation | null>(null);
@@ -139,6 +150,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                       onToggleStatus={handleToggleStatus}
                       onDelete={handleDelete}
                       isTesting={testingId === auto.id}
+                      isTransitioning={transitioningIds.has(auto.id)}
                       testResult={testResults[auto.id] ?? null}
                     />
                   ))}
@@ -163,7 +175,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
         onClose={() => setDeleteTarget(null)}
         titleId="delete-automation-dialog"
         maxWidthClass="max-w-sm"
-        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden"
+        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
       >
         {deleteTarget && (
           <div className="p-4 space-y-4">

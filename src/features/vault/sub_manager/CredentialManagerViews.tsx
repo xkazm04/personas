@@ -65,6 +65,7 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
             isOAuthTemplate={isUniversalOAuthConnector(viewState.connector)}
             isAuthorizingOAuth={oauth.isAuthorizing || universalOAuth.isAuthorizing}
             oauthCompletedAt={oauth.completedAt ?? universalOAuth.completedAt}
+            oauthPollingMessage={oauth.message ?? universalOAuth.message}
             oauthValues={viewState.oauthValues}
             onCreateCredential={handleCreateCredential}
             onOAuthConsent={handleTemplateOAuthConsent}

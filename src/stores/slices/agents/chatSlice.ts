@@ -10,7 +10,7 @@ import {
   createChatMessage,
   deleteChatSession,
   saveChatSessionContext,
-  getLatestChatSession,
+  getChatSessionContext,
 } from "@/api/agents/chat";
 import { executePersona, getExecution } from "@/api/agents/executions";
 import type { Continuation } from "@/lib/bindings/Continuation";
@@ -263,31 +263,37 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
 
   restoreChatSession: async (personaId) => {
     try {
-      // Check if there's already an active session loaded (from persisted store)
       const { activeChatSessionId } = get();
+
+      // Fetch sessions once — reused for both validation and latest-session lookup
+      const sessions = await listChatSessions(personaId);
+      set({ chatSessions: sessions });
+
       if (activeChatSessionId) {
         // Validate the persisted session still exists and load its messages
-        const sessions = await listChatSessions(personaId);
         const stillExists = sessions.some((s) => s.sessionId === activeChatSessionId);
         if (stillExists) {
-          set({ chatSessions: sessions });
           const messages = await getChatMessages(personaId, activeChatSessionId);
           set({ chatMessages: messages.slice(-MAX_CHAT_MESSAGES) });
           return;
         }
         // Session was deleted externally - fall through to find latest
-        set({ chatSessions: sessions });
       }
 
-      // Find the most recently active session for this persona
-      const latestCtx = await getLatestChatSession(personaId);
-      if (latestCtx) {
-        const messages = await getChatMessages(personaId, latestCtx.sessionId);
+      // Derive the latest session from the already-fetched list instead of a second query
+      if (sessions.length > 0) {
+        const latest = sessions.reduce((a, b) =>
+          a.lastMessageAt > b.lastMessageAt ? a : b,
+        );
+        const [messages, latestCtx] = await Promise.all([
+          getChatMessages(personaId, latest.sessionId),
+          getChatSessionContext(latest.sessionId),
+        ]);
         set({
-          activeChatSessionId: latestCtx.sessionId,
+          activeChatSessionId: latest.sessionId,
           chatMessages: messages.slice(-MAX_CHAT_MESSAGES),
           chatSessionContext: latestCtx,
-          chatMode: (latestCtx.chatMode === 'agent' ? 'agent' : 'ops') as ChatMode,
+          chatMode: (latestCtx?.chatMode === 'agent' ? 'agent' : 'ops') as ChatMode,
         });
       }
     } catch {

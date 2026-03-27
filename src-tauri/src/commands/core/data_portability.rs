@@ -29,30 +29,27 @@ use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged};
 use crate::validation;
 use crate::AppState;
 
-// ============================================================================
-// Field length limits (aligned with import_export.rs)
-// ============================================================================
-const MAX_NAME_LEN: usize = 200;
-const MAX_DESCRIPTION_LEN: usize = 2_000;
-const MAX_SYSTEM_PROMPT_LEN: usize = 100_000;
-const MAX_STRUCTURED_PROMPT_LEN: usize = 100_000;
-const MAX_SHORT_FIELD_LEN: usize = 500;
-const MAX_CONFIG_LEN: usize = 10_000;
-const MAX_DESIGN_CONTEXT_LEN: usize = 50_000;
-const MAX_MEMORY_CONTENT_LEN: usize = 50_000;
+use super::export_types::{
+    MemoryExport, SubscriptionExport, TriggerExport,
+    MAX_CONFIG_LEN, MAX_DESCRIPTION_LEN, MAX_DESIGN_CONTEXT_LEN, MAX_MEMORIES,
+    MAX_MEMORY_CONTENT_LEN, MAX_NAME_LEN, MAX_SHORT_FIELD_LEN, MAX_STRUCTURED_PROMPT_LEN,
+    MAX_SUBSCRIPTIONS, MAX_SYSTEM_PROMPT_LEN, MAX_TRIGGERS,
+};
+
+// Additional constants specific to data_portability (not shared with import_export)
 const MAX_CANVAS_DATA_LEN: usize = 500_000;
 const MAX_SCHEMA_LEN: usize = 100_000;
 const MAX_SCENARIOS_LEN: usize = 500_000;
 
-// Array size caps
+// Array size caps specific to data_portability
 const MAX_PERSONAS: usize = 200;
 const MAX_GROUPS: usize = 100;
 const MAX_TOOLS: usize = 500;
 const MAX_TEAMS: usize = 50;
 const MAX_CONNECTORS: usize = 100;
-const MAX_TRIGGERS_PER_PERSONA: usize = 100;
-const MAX_SUBSCRIPTIONS_PER_PERSONA: usize = 50;
-const MAX_MEMORIES_PER_PERSONA: usize = 500;
+const MAX_TRIGGERS_PER_PERSONA: usize = MAX_TRIGGERS;
+const MAX_SUBSCRIPTIONS_PER_PERSONA: usize = MAX_SUBSCRIPTIONS;
+const MAX_MEMORIES_PER_PERSONA: usize = MAX_MEMORIES;
 const MAX_TEST_SUITES_PER_PERSONA: usize = 100;
 const MAX_TEAM_MEMBERS: usize = 50;
 const MAX_TEAM_CONNECTIONS: usize = 200;
@@ -111,30 +108,7 @@ pub struct PersonaExport {
     pub test_suites: Vec<TestSuiteExport>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TriggerExport {
-    pub trigger_type: String,
-    pub config: Option<String>,
-    pub enabled: bool,
-    pub use_case_id: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SubscriptionExport {
-    pub event_type: String,
-    pub source_filter: Option<String>,
-    pub enabled: bool,
-    pub use_case_id: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MemoryExport {
-    pub title: String,
-    pub content: String,
-    pub category: String,
-    pub importance: i32,
-    pub tags: Option<String>,
-}
+// TriggerExport, SubscriptionExport, MemoryExport imported from super::export_types
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TestSuiteExport {

@@ -72,7 +72,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
             aria-pressed={!isCustomActive && value === opt.value}
             className={`px-3 py-1 rounded-xl text-sm font-medium transition-all ${
               !isCustomActive && value === opt.value
-                ? 'bg-background text-foreground shadow-sm border border-primary/20'
+                ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
                 : 'text-muted-foreground/80 hover:text-muted-foreground'
             } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
           >
@@ -85,7 +85,7 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
           aria-pressed={isCustomActive}
           className={`px-3 py-1 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${
             isCustomActive
-              ? 'bg-background text-foreground shadow-sm border border-primary/20'
+              ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
               : 'text-muted-foreground/80 hover:text-muted-foreground'
           } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
         >
@@ -140,7 +140,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
     return (
       <div
         ref={ref}
-        className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-xl shadow-xl p-4 min-w-[280px]"
+        className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-xl shadow-elevation-3 p-4 min-w-[280px]"
       >
         <div className="space-y-3">
           <div>

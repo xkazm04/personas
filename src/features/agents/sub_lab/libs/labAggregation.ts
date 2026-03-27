@@ -2,6 +2,9 @@
  * Single-pass result aggregation for all lab modes.
  * Replaces the 3-pass pattern (build maps → aggregate → build matrix) with
  * a single iteration that accumulates running totals, then finalizes averages.
+ *
+ * Null scores (unscored / failed executions) are excluded from averages
+ * instead of being treated as 0.
  */
 import { compositeScore } from '@/lib/eval/evalFramework';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
@@ -12,31 +15,39 @@ import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
 
 interface Accum {
   toolAccuracy: number;
+  toolAccuracyCount: number;
   outputQuality: number;
+  outputQualityCount: number;
   protocolCompliance: number;
+  protocolComplianceCount: number;
   totalCost: number;
   totalDuration: number;
   count: number;
 }
 
 function newAccum(): Accum {
-  return { toolAccuracy: 0, outputQuality: 0, protocolCompliance: 0, totalCost: 0, totalDuration: 0, count: 0 };
+  return {
+    toolAccuracy: 0, toolAccuracyCount: 0,
+    outputQuality: 0, outputQualityCount: 0,
+    protocolCompliance: 0, protocolComplianceCount: 0,
+    totalCost: 0, totalDuration: 0, count: 0,
+  };
 }
 
-function addToAccum(a: Accum, ta: number, oq: number, pc: number, cost: number, dur: number) {
-  a.toolAccuracy += ta;
-  a.outputQuality += oq;
-  a.protocolCompliance += pc;
+function addToAccum(a: Accum, ta: number | null, oq: number | null, pc: number | null, cost: number, dur: number) {
+  if (ta != null) { a.toolAccuracy += ta; a.toolAccuracyCount++; }
+  if (oq != null) { a.outputQuality += oq; a.outputQualityCount++; }
+  if (pc != null) { a.protocolCompliance += pc; a.protocolComplianceCount++; }
   a.totalCost += cost;
   a.totalDuration += dur;
   a.count++;
 }
 
 function finalizeAccum(a: Accum) {
+  const avgTA = a.toolAccuracyCount > 0 ? a.toolAccuracy / a.toolAccuracyCount : 0;
+  const avgOQ = a.outputQualityCount > 0 ? a.outputQuality / a.outputQualityCount : 0;
+  const avgPC = a.protocolComplianceCount > 0 ? a.protocolCompliance / a.protocolComplianceCount : 0;
   const n = a.count || 1;
-  const avgTA = a.toolAccuracy / n;
-  const avgOQ = a.outputQuality / n;
-  const avgPC = a.protocolCompliance / n;
   return {
     avgToolAccuracy: Math.round(avgTA),
     avgOutputQuality: Math.round(avgOQ),
@@ -83,7 +94,7 @@ export function aggregateArenaResults(results: LabArenaResult[]): ArenaAggregati
       modelOrder.push(r.modelId);
     }
     const acc = modelAccums.get(r.modelId)!;
-    addToAccum(acc, r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0, r.costUsd, r.durationMs);
+    addToAccum(acc, r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance, r.costUsd, r.durationMs);
 
     // Track scenarios + matrix
     scenarioSet.add(r.scenarioName);
@@ -139,7 +150,7 @@ export function aggregateAbResults(results: LabAbResult[]): AbAggregation {
       versionOrder.push(r.versionId);
     }
     const acc = versionAccums.get(r.versionId)!;
-    addToAccum(acc, r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0, r.costUsd, r.durationMs);
+    addToAccum(acc, r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance, r.costUsd, r.durationMs);
 
     scenarioSet.add(r.scenarioName);
     if (!matrix[r.scenarioName]) matrix[r.scenarioName] = {};
@@ -192,7 +203,7 @@ export function aggregateMatrixResults(results: LabMatrixResult[]): MatrixAggreg
       variantOrder.push(r.variant);
     }
     const acc = variantAccums.get(r.variant)!;
-    addToAccum(acc, r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0, r.costUsd, r.durationMs);
+    addToAccum(acc, r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance, r.costUsd, r.durationMs);
 
     scenarioSet.add(r.scenarioName);
     if (!matrix[r.scenarioName]) matrix[r.scenarioName] = {};

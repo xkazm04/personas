@@ -5,6 +5,7 @@ import {
   cancelSchemaProposal,
 } from '@/api/vault/database/schemaProposal';
 import { executeDbQuery } from '@/api/vault/database/dbSchema';
+import { clearCacheForCredential } from '@/hooks/database/useTableIntrospection';
 
 // -- Types ------------------------------------------------------------
 
@@ -161,6 +162,7 @@ export function useSchemaProposal({
         await executeDbQuery(credentialId, stmt, undefined, true);
       }
 
+      clearCacheForCredential(credentialId);
       setExecutionResult({ success: true, message: `${statements.length} statement(s) executed successfully.` });
       setPhase('completed');
       return true;

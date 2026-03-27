@@ -20,7 +20,5 @@ export const COLOR_MAP: Record<string, { text: string; bg: string; border: strin
 import { formatDuration as _formatDuration } from '@/lib/utils/formatters';
 export const formatDuration = (ms: number) => _formatDuration(ms, { precision: 'decimal' });
 
-export function formatCost(usd: number): string {
-  if (usd < 0.01) return `$${usd.toFixed(4)}`;
-  return `$${usd.toFixed(2)}`;
-}
+import { formatCost as _formatCost } from '@/lib/utils/formatters';
+export const formatCost = (usd: number) => _formatCost(usd, { precision: 'auto' });

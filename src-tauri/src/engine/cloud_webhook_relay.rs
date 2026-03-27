@@ -11,12 +11,13 @@ use tauri::{AppHandle, Emitter};
 use tokio::time::Duration;
 use ts_rs::TS;
 
-use super::event_registry::event_name;
+use super::event_registry::{emit_event_bus, event_name};
 use chrono::DateTime;
 
 use crate::cloud::client::{CloudClient, CloudTrigger};
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
+use crate::db::repos::resources::cloud_webhook_watermarks as watermark_repo;
 use crate::db::DbPool;
 
 // ---------------------------------------------------------------------------
@@ -38,6 +39,24 @@ impl CloudWebhookRelayState {
     pub fn new() -> Self {
         Self {
             last_seen: HashMap::new(),
+            total_relayed: 0,
+            last_poll_at: None,
+            last_error: None,
+            active_webhook_triggers: 0,
+        }
+    }
+
+    /// Create state pre-populated with persisted watermarks from the database.
+    pub fn load_from_db(pool: &DbPool) -> Self {
+        let last_seen = watermark_repo::load_all(pool).unwrap_or_else(|e| {
+            tracing::warn!(error = %e, "Failed to load cloud webhook watermarks from DB, starting fresh");
+            HashMap::new()
+        });
+        if !last_seen.is_empty() {
+            tracing::info!(count = last_seen.len(), "Loaded cloud webhook watermarks from DB");
+        }
+        Self {
+            last_seen,
             total_relayed: 0,
             last_poll_at: None,
             last_error: None,
@@ -239,13 +258,7 @@ pub async fn cloud_webhook_relay_tick(
 
             match event_repo::publish(pool, input) {
                 Ok(event) => {
-                    if let Err(e) = app.emit(event_name::EVENT_BUS, event.clone()) {
-                        tracing::warn!(
-                            event_id = %event.id,
-                            error = %e,
-                            "Failed to emit relayed webhook event"
-                        );
-                    }
+                    emit_event_bus(app, &event);
                     total_new += 1;
                     s.total_relayed += 1;
                 }
@@ -258,13 +271,20 @@ pub async fn cloud_webhook_relay_tick(
                 }
             }
 
-            // Update last_seen watermark
-            s.last_seen.insert(trigger.id.clone(), fired_at);
+            // Update last_seen watermark (in-memory + DB)
+            s.last_seen.insert(trigger.id.clone(), fired_at.clone());
+            if let Err(e) = watermark_repo::upsert(pool, &trigger.id, &fired_at) {
+                tracing::debug!(trigger_id = %trigger.id, error = %e, "Failed to persist webhook watermark");
+            }
         }
     }
 
     // Prune last_seen entries for triggers that no longer exist, then update state
     s.last_seen.retain(|id, _| active_trigger_ids.contains(id));
+    let active_ids: Vec<&str> = active_trigger_ids.iter().map(|s| s.as_str()).collect();
+    if let Err(e) = watermark_repo::prune(pool, &active_ids) {
+        tracing::debug!(error = %e, "Failed to prune stale webhook watermarks");
+    }
     s.last_poll_at = Some(now);
     s.last_error = None;
     s.active_webhook_triggers = trigger_count;

@@ -47,7 +47,7 @@ export default function DesignReviewRunner({
         <div
           ref={state.modalRef}
           role="dialog" aria-modal="true" aria-labelledby="design-runner-title"
-          className="animate-fade-slide-in w-[750px] max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          className="animate-fade-slide-in w-[750px] max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-primary/10 bg-primary/5">
@@ -126,7 +126,7 @@ export default function DesignReviewRunner({
 
           {/* Progress Bar */}
           {isRunning && state.progressInfo && (
-            <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
+            <div className="px-4 py-3 border-b border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-medium text-foreground/80">
                   Template {state.progressInfo.current} of {state.progressInfo.total}
@@ -140,7 +140,15 @@ export default function DesignReviewRunner({
                 <p className="text-sm text-violet-400/70 mb-2 truncate">Generating: {state.progressInfo.currentTemplateName}</p>
               )}
               <div className="w-full h-2 rounded-full bg-secondary/50 border border-primary/10 overflow-hidden">
-                <div className="animate-fade-in h-full rounded-full bg-violet-500/80" style={{ width: `${state.progressInfo.pct}%` }} />
+                <div
+                  role="progressbar"
+                  aria-valuenow={state.progressInfo.pct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`Design review progress: ${state.progressInfo.pct}%`}
+                  className="animate-fade-in h-full rounded-full bg-violet-500/80"
+                  style={{ width: `${state.progressInfo.pct}%` }}
+                />
               </div>
             </div>
           )}

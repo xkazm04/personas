@@ -30,7 +30,7 @@ export function SetupGuideModal({ connector, onClose }: SetupGuideModalProps) {
   };
 
   return (
-    <BaseModal isOpen={!!connector} onClose={onClose} titleId="setup-guide-title" size="md" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden">
+    <BaseModal isOpen={!!connector} onClose={onClose} titleId="setup-guide-title" size="md" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20">
         <div

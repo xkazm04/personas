@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useAgentStore } from "@/stores/agentStore";
-import { useRunEventListener, type RunStatusPayload, type RunEventBinding } from "@/hooks/realtime/useRunEventListener";
+import { useRunEventListener, mapRunStatusPayload, type RunStatusPayload, type RunEventBinding } from "@/hooks/realtime/useRunEventListener";
 
 export function usePersonaTests() {
   const setTestRunProgress = useAgentStore((s) => s.setTestRunProgress);
@@ -16,20 +16,7 @@ export function usePersonaTests() {
       return true;
     },
     onProgress: (p) => {
-      setTestRunProgress({
-        runId: p.run_id,
-        phase: p.phase,
-        scenariosCount: p.scenarios_count,
-        current: p.current,
-        total: p.total,
-        modelId: p.model_id,
-        scenarioName: p.scenario_name,
-        status: p.status,
-        scores: p.scores,
-        summary: p.summary,
-        error: p.error,
-        scenarios: p.scenarios,
-      });
+      setTestRunProgress(mapRunStatusPayload(p));
     },
     onTerminal: () => {
       finishTestRun();

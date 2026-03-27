@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } from 'lucide-react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -228,7 +228,7 @@ function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
 export function AlertRulesPanel() {
   const {
     alertRules, addAlertRule, updateAlertRule, deleteAlertRule,
-    toggleAlertRule, alertEvalHealth, fetchAlertRules,
+    toggleAlertRule, alertEvalHealth,
   } = useOverviewStore(useShallow((s) => ({
     alertRules: s.alertRules,
     addAlertRule: s.addAlertRule,
@@ -236,14 +236,11 @@ export function AlertRulesPanel() {
     deleteAlertRule: s.deleteAlertRule,
     toggleAlertRule: s.toggleAlertRule,
     alertEvalHealth: s.alertEvalHealth,
-    fetchAlertRules: s.fetchAlertRules,
   })));
   const personas = useAgentStore((s) => s.personas);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  useEffect(() => { void fetchAlertRules(); }, [fetchAlertRules]);
 
   const personaList = personas.map(p => ({ id: p.id, name: p.name }));
 

@@ -217,7 +217,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig, connectorOptions }
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 mt-1.5 w-60 bg-background border border-primary/20 rounded-xl shadow-xl shadow-black/20 z-50 overflow-hidden flex flex-col">
+          <div className="absolute right-0 mt-1.5 w-60 bg-background border border-primary/20 rounded-xl shadow-elevation-3 shadow-black/20 z-50 overflow-hidden flex flex-col">
             {/* Save current */}
             {isSaving ? (
               <div className="p-2 flex items-center gap-1.5 border-b border-primary/10">

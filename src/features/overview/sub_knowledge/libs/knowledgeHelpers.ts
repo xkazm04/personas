@@ -32,10 +32,8 @@ export const SCOPE_TYPES: Record<string, { label: string; icon: IconComponent; c
 import { formatDuration as _formatDuration } from '@/lib/utils/formatters';
 export const formatDuration = (ms: number) => _formatDuration(ms, { precision: 'decimal' });
 
-export function formatCost(usd: number): string {
-  if (usd < 0.01) return `$${usd.toFixed(4)}`;
-  return `$${usd.toFixed(2)}`;
-}
+import { formatCost as _formatCost } from '@/lib/utils/formatters';
+export const formatCost = (usd: number) => _formatCost(usd, { precision: 'auto' });
 
 export const COLOR_MAP: Record<string, { text: string; bg: string; border: string }> = {
   emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },

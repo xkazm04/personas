@@ -63,7 +63,7 @@ export default function OnboardingOverlay() {
       onClose={dismissOnboarding}
       titleId="onboarding-overlay-title"
       maxWidthClass="max-w-2xl"
-      panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+      panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">

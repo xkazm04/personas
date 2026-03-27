@@ -10,34 +10,37 @@ pub fn insert(
     pool: &DbPool,
     entry: &ProviderAuditEntry,
 ) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO provider_audit_log
-         (id, execution_id, persona_id, persona_name, engine_kind, model_used,
-          was_failover, routing_rule_name, compliance_rule_name, cost_usd,
-          duration_ms, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
-        params![
-            entry.id,
-            entry.execution_id,
-            entry.persona_id,
-            entry.persona_name,
-            entry.engine_kind,
-            entry.model_used,
-            entry.was_failover as i32,
-            entry.routing_rule_name,
-            entry.compliance_rule_name,
-            entry.cost_usd,
-            entry.duration_ms,
-            entry.status,
-            entry.created_at,
-        ],
-    )?;
-    Ok(())
+    timed_query!("provider_audit", "provider_audit::insert", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO provider_audit_log
+             (id, execution_id, persona_id, persona_name, engine_kind, model_used,
+              was_failover, routing_rule_name, compliance_rule_name, cost_usd,
+              duration_ms, status, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+            params![
+                entry.id,
+                entry.execution_id,
+                entry.persona_id,
+                entry.persona_name,
+                entry.engine_kind,
+                entry.model_used,
+                entry.was_failover as i32,
+                entry.routing_rule_name,
+                entry.compliance_rule_name,
+                entry.cost_usd,
+                entry.duration_ms,
+                entry.status,
+                entry.created_at,
+            ],
+        )?;
+        Ok(())
+    })
 }
 
 /// List provider audit log entries, newest first. Optional limit (default 100).
 pub fn list(pool: &DbPool, limit: Option<i64>) -> Result<Vec<ProviderAuditEntry>, AppError> {
+    timed_query!("provider_audit", "provider_audit::list", {
     let conn = pool.get()?;
     let limit = limit.unwrap_or(100);
     let mut stmt = conn.prepare(
@@ -69,6 +72,7 @@ pub fn list(pool: &DbPool, limit: Option<i64>) -> Result<Vec<ProviderAuditEntry>
         .filter_map(|r| r.ok())
         .collect();
     Ok(rows)
+    })
 }
 
 /// List provider audit entries for a specific persona.
@@ -77,6 +81,7 @@ pub fn list_by_persona(
     persona_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<ProviderAuditEntry>, AppError> {
+    timed_query!("provider_audit", "provider_audit::list_by_persona", {
     let conn = pool.get()?;
     let limit = limit.unwrap_or(100);
     let mut stmt = conn.prepare(
@@ -109,6 +114,7 @@ pub fn list_by_persona(
         .filter_map(|r| r.ok())
         .collect();
     Ok(rows)
+    })
 }
 
 /// Get aggregate provider usage stats.
@@ -135,6 +141,7 @@ pub struct ProviderUsageTimeseries {
 
 /// Get daily provider usage timeseries for the last N days.
 pub fn get_usage_timeseries(pool: &DbPool, days: i64) -> Result<Vec<ProviderUsageTimeseries>, AppError> {
+    timed_query!("provider_audit", "provider_audit::get_usage_timeseries", {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT engine_kind,
@@ -161,9 +168,11 @@ pub fn get_usage_timeseries(pool: &DbPool, days: i64) -> Result<Vec<ProviderUsag
         .filter_map(|r| r.ok())
         .collect();
     Ok(rows)
+    })
 }
 
 pub fn get_usage_stats(pool: &DbPool) -> Result<Vec<ProviderUsageStats>, AppError> {
+    timed_query!("provider_audit", "provider_audit::get_usage_stats", {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT engine_kind,
@@ -188,4 +197,5 @@ pub fn get_usage_stats(pool: &DbPool) -> Result<Vec<ProviderUsageStats>, AppErro
         .filter_map(|r| r.ok())
         .collect();
     Ok(rows)
+    })
 }

@@ -138,12 +138,11 @@ export default function TeamList() {
 
         {/* Team Grid */}
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-          {teams.map((team: PersonaTeam, i: number) => (
+          {teams.map((team: PersonaTeam) => (
             <TeamCard
               key={team.id}
               team={team}
-              index={i}
-              teams={teams}
+              parentTeamName={team.parent_team_id ? (teams.find(t => t.id === team.parent_team_id)?.name ?? null) : null}
               teamCounts={teamCounts}
               confirmDeleteId={confirmDeleteId}
               onSelect={selectTeam}

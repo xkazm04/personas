@@ -1,4 +1,5 @@
 import { sanitizeIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 
 export interface ConnectionTypeStyle {
   stroke: string;
@@ -55,8 +56,8 @@ export function PersonaAvatar({ icon, color, size = 'md' }: PersonaAvatarProps) 
     <div
       className={`${s.container} rounded-lg flex items-center justify-center border shrink-0`}
       style={{
-        backgroundColor: c + '15',
-        borderColor: c + '30',
+        backgroundColor: colorWithAlpha(c, 0.08),
+        borderColor: colorWithAlpha(c, 0.19),
       }}
     >
       {safeUrl ? (

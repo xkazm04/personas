@@ -23,7 +23,7 @@ export function useHealthyConnectors(): HealthyConnector[] {
   useEffect(() => {
     if (!credentials.length) fetchCredentials();
     if (!connectorDefinitions.length) fetchConnectorDefinitions();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return useMemo(() => {
     if (!credentials.length || !connectorDefinitions.length) return [];

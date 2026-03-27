@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{CreateToolDefinitionInput, PersonaTool, PersonaToolDefinition, UpdateToolDefinitionInput};
+use crate::db::models::{CreateToolDefinitionInput, PersonaTool, PersonaToolDefinition, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary, UpdateToolDefinitionInput};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::tool_usage;
 use crate::db::repos::resources::tools as repo;
@@ -110,7 +110,7 @@ pub fn get_tool_usage_summary(
     state: State<'_, Arc<AppState>>,
     since: String,
     persona_id: Option<String>,
-) -> Result<Vec<serde_json::Value>, AppError> {
+) -> Result<Vec<ToolUsageSummary>, AppError> {
     require_auth_sync(&state)?;
     tool_usage::get_usage_summary(&state.db, &since, persona_id.as_deref())
 }
@@ -120,7 +120,7 @@ pub fn get_tool_usage_over_time(
     state: State<'_, Arc<AppState>>,
     since: String,
     persona_id: Option<String>,
-) -> Result<Vec<serde_json::Value>, AppError> {
+) -> Result<Vec<ToolUsageOverTime>, AppError> {
     require_auth_sync(&state)?;
     tool_usage::get_usage_over_time(&state.db, &since, persona_id.as_deref())
 }
@@ -129,7 +129,7 @@ pub fn get_tool_usage_over_time(
 pub fn get_tool_usage_by_persona(
     state: State<'_, Arc<AppState>>,
     since: String,
-) -> Result<Vec<serde_json::Value>, AppError> {
+) -> Result<Vec<PersonaUsageSummary>, AppError> {
     require_auth_sync(&state)?;
     tool_usage::get_usage_by_persona(&state.db, &since)
 }

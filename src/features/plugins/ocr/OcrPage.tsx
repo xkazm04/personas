@@ -171,8 +171,8 @@ function ExtractPanel() {
         : await ocrWithClaude(filePath, prompt || undefined);
       setResult(res);
       addToast(`Extracted ${res.document.extracted_text.length} chars in ${res.document.duration_ms}ms`, 'success');
-    } catch (e: any) {
-      addToast(`OCR failed: ${e?.message || e}`, 'error');
+    } catch (e: unknown) {
+      addToast(`OCR failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
     } finally {
       setRunning(false);
     }

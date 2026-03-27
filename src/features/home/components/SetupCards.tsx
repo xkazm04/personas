@@ -111,7 +111,7 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
               onClick={() => onSelect(role.label)}
               className={`group relative flex flex-col items-center text-center rounded-xl border-2 p-5 transition-all duration-300 cursor-pointer ${
                 isSelected
-                  ? 'border-primary/40 bg-primary/8 shadow-lg'
+                  ? 'border-primary/40 bg-primary/8 shadow-elevation-3'
                   : 'border-primary/10 bg-primary/3 hover:border-primary/20 hover:bg-primary/5'
               }`}
             >
@@ -187,7 +187,7 @@ function ToolStep({
               onClick={() => onSelect(meta.label)}
               className={`group relative flex flex-col items-center text-center rounded-xl border-2 p-6 transition-all duration-300 cursor-pointer ${
                 isSelected
-                  ? 'border-primary/40 bg-primary/8 shadow-lg'
+                  ? 'border-primary/40 bg-primary/8 shadow-elevation-3'
                   : 'border-primary/10 bg-primary/3 hover:border-primary/20 hover:bg-primary/5'
               }`}
             >
@@ -448,7 +448,7 @@ function SetupCardItem({
     >
       {/* Illustration area */}
       <div
-        className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-sm ${!locked ? 'group-hover:shadow-xl' : ''} transition-all duration-400`}
+        className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-elevation-1 ${!locked ? 'group-hover:shadow-elevation-3' : ''} transition-all duration-400`}
       >
         {/* Glow blob */}
         <div

@@ -355,17 +355,7 @@ fn patch_structured_prompt_section(
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn truncate_str(s: &str, max: usize) -> &str {
-    if s.len() <= max {
-        s
-    } else {
-        let mut end = max;
-        while end > 0 && !s.is_char_boundary(end) {
-            end -= 1;
-        }
-        &s[..end]
-    }
-}
+use super::str_utils::truncate_str;
 
 // ---------------------------------------------------------------------------
 // Tests

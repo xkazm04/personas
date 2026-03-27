@@ -39,7 +39,7 @@ export function EventBlock({
       onClick={onClick}
       onMouseEnter={(e) => onHover(event, e)}
       onMouseLeave={() => onHover(null)}
-      className={`flex items-center gap-1 rounded text-left transition-all hover:scale-[1.02] hover:shadow-sm cursor-pointer ${
+      className={`flex items-center gap-1 rounded text-left transition-all hover:scale-[1.02] hover:shadow-elevation-1 cursor-pointer ${
         compact ? 'px-1 py-px text-[9px] w-full' : 'px-1.5 py-0.5 text-[10px]'
       }`}
       style={{

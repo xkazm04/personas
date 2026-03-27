@@ -68,7 +68,7 @@ export function ConfidenceArc({ value, width = 24, height = 14, showLabel = fals
         height={height}
         viewBox={`0 0 ${width} ${height}`}
         fill="none"
-        className={isFullConfidence ? 'confidence-arc-shimmer' : ''}
+        className={isFullConfidence ? 'animate-confidence-shimmer' : ''}
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
@@ -100,20 +100,10 @@ export function ConfidenceArc({ value, width = 24, height = 14, showLabel = fals
       {showLabel && (
         <AnimatedCounter
           value={pct}
-          duration={600}
           formatFn={(v) => `${Math.round(v)}%`}
           className="text-[9px] font-mono text-muted-foreground/70 leading-none mt-0.5"
         />
       )}
-      <style>{`
-        @keyframes confidence-shimmer {
-          0%, 100% { filter: brightness(1) drop-shadow(0 0 0px transparent); }
-          50% { filter: brightness(1.2) drop-shadow(0 0 3px rgba(16, 185, 129, 0.4)); }
-        }
-        .confidence-arc-shimmer {
-          animation: confidence-shimmer 2s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   );
 }

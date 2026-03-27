@@ -39,11 +39,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     const info = errorInfo.componentStack || '';
     this.setState({ errorInfo: info });
 
-    // Log to console for dev tools
-    console.error(`[ErrorBoundary:${this.props.name || 'unknown'}] Caught error:`, error);
-    console.error('Component stack:', info);
-
-    // Structured log alongside console for observability pipeline
     logger.error('Caught render error', { name: this.props.name ?? 'unknown', error: error.message, componentStack: info });
 
     // Persist to localStorage for crash reporting

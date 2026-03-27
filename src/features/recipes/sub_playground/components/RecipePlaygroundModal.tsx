@@ -35,7 +35,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
       onClose={onClose}
       titleId="recipe-playground-title"
       maxWidthClass="max-w-5xl"
-      panelClassName="flex flex-col w-[90vw] max-w-5xl h-[85vh] rounded-xl border border-border/60 bg-background shadow-2xl overflow-hidden"
+      panelClassName="flex flex-col w-[90vw] max-w-5xl h-[85vh] rounded-xl border border-border/60 bg-background shadow-elevation-4 overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-0">

@@ -4,20 +4,7 @@ import type { DesignConversation, DesignConversationMessage } from '@/lib/types/
 import { parseConversationMessages } from '@/lib/types/designTypes';
 import type { DesignDriftEvent } from '@/lib/design/designDrift';
 import { DRIFT_KIND_META } from '@/lib/design/designDrift';
-
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHrs = Math.floor(diffMin / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-}
+import { formatRelativeTime } from '@/lib/utils/formatters';
 
 export function MessageBubble({ message }: { message: DesignConversationMessage }) {
   const isUser = message.role === 'user';
@@ -38,7 +25,7 @@ export function MessageBubble({ message }: { message: DesignConversationMessage 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
           <span className={`text-sm font-medium uppercase tracking-wide ${isUser ? 'text-blue-400/80' : 'text-purple-400/80'}`}>{typeLabel}</span>
-          <span className="text-sm text-muted-foreground/50">{formatRelativeTime(message.timestamp)}</span>
+          <span className="text-sm text-muted-foreground/50">{formatRelativeTime(message.timestamp, '-', { dateFallbackDays: 7 })}</span>
         </div>
         <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap break-words">{displayContent}</p>
       </div>
@@ -68,7 +55,7 @@ export function ConversationCard({
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="text-sm text-muted-foreground/60 tabular-nums">{messageCount} msg{messageCount !== 1 ? 's' : ''}</span>
           <span className="text-sm text-muted-foreground/40">·</span>
-          <span className="text-sm text-muted-foreground/60 flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{formatRelativeTime(conversation.updatedAt)}</span>
+          <span className="text-sm text-muted-foreground/60 flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{formatRelativeTime(conversation.updatedAt, '-', { dateFallbackDays: 7 })}</span>
           {!isActive && conversation.status === 'active' && (
             <button onClick={(e) => { e.stopPropagation(); onResume(); }} className="ml-1 px-2 py-0.5 text-sm font-medium rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors" data-testid={`conversation-resume-${conversation.id}`}>Resume</button>
           )}

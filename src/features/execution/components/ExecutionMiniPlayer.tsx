@@ -135,7 +135,7 @@ export default function ExecutionMiniPlayer() {
           top: miniPlayerPosition.y,
           zIndex: 60,
         }}
-        className={`animate-fade-slide-in w-[360px] rounded-xl border border-primary/20 bg-background/95 backdrop-blur-lg shadow-2xl shadow-black/40 overflow-hidden select-none ${
+        className={`animate-fade-slide-in w-[360px] rounded-xl border border-primary/20 bg-background/95 backdrop-blur-lg shadow-elevation-4 shadow-black/40 overflow-hidden select-none ${
           isDragging ? 'cursor-grabbing' : ''
         }`}
       >

@@ -160,7 +160,7 @@ export function DesignWizard({ onComplete, onCompleteIR, onCancel }: DesignWizar
             isLastStep
               ? !canProceed() || summary.length === 0
                 ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
-                : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
+                : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'
               : !canProceed()
               ? 'bg-secondary/60 text-muted-foreground/80 cursor-not-allowed'
               : 'bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25'

@@ -78,10 +78,6 @@ export default function ByomSettings() {
 
       <ContentBody centered>
         <div className="space-y-4">
-          {bm.saved && (
-            <p className="text-sm text-emerald-400 text-center">Policy saved</p>
-          )}
-
           {/* Enable toggle */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-4">
             <div className="flex items-center justify-between">

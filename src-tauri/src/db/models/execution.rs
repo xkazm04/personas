@@ -82,8 +82,20 @@ pub struct GlobalExecutionRow {
 
 impl PersonaExecution {
     /// Parse the status string into the canonical ExecutionState enum.
+    /// Logs an error if the stored status is unrecognised so data corruption
+    /// is immediately visible instead of silently mapping to `Failed`.
     pub fn state(&self) -> ExecutionState {
-        self.status.parse().unwrap_or(ExecutionState::Failed)
+        match self.status.parse() {
+            Ok(s) => s,
+            Err(_) => {
+                tracing::error!(
+                    execution_id = %self.id,
+                    raw_status = %self.status,
+                    "Unknown execution status in DB — treating as Failed"
+                );
+                ExecutionState::Failed
+            }
+        }
     }
 }
 

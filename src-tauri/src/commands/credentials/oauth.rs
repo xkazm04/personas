@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use std::collections::HashMap;
 use std::sync::OnceLock;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine as _;
@@ -25,6 +25,7 @@ use crate::AppState;
 
 const GOOGLE_OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
+const CLEANUP_THROTTLE: Duration = Duration::from_secs(30);
 
 /// Hard cap on concurrent OAuth sessions per map. When exceeded, the oldest
 /// sessions are evicted to prevent unbounded memory growth from abandoned flows.
@@ -170,9 +171,35 @@ const DEFAULT_GOOGLE_OAUTH_SCOPES: &[&str] = &[
     "https://www.googleapis.com/auth/userinfo.email",
 ];
 
+/// Typed state for OAuth session lifecycle.
+///
+/// Transitions:  `Pending` → `Success` | `Error`.
+/// `NotFound` is only used in poll-handler responses when a session is missing/expired.
+#[derive(Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum OAuthSessionStatus {
+    Pending,
+    Success,
+    Error,
+    NotFound,
+}
+
+impl OAuthSessionStatus {
+    /// Transition to a successful terminal state.
+    fn complete() -> Self { Self::Success }
+    /// Transition to a failed terminal state.
+    fn fail() -> Self { Self::Error }
+    /// Whether the session has reached a final state and should be cleaned up.
+    fn is_terminal(self) -> bool { matches!(self, Self::Success | Self::Error) }
+}
+
+impl Zeroize for OAuthSessionStatus {
+    fn zeroize(&mut self) { *self = Self::Pending; }
+}
+
 #[derive(Clone, Zeroize, ZeroizeOnDrop)]
 struct GoogleCredentialOAuthSession {
-    status: String,
+    status: OAuthSessionStatus,
     refresh_token: Option<EncryptedToken>,
     access_token: Option<EncryptedToken>,
     scope: Option<String>,
@@ -215,13 +242,26 @@ fn evict_oldest_sessions<V>(
     tracing::info!(evicted = to_evict, remaining = sessions.len(), "Evicted oldest OAuth sessions (cap: {max_size})");
 }
 
+static GOOGLE_CLEANUP_LAST_RUN: OnceLock<Mutex<Option<Instant>>> = OnceLock::new();
+
 fn cleanup_google_oauth_sessions() {
+    let last_run = GOOGLE_CLEANUP_LAST_RUN.get_or_init(|| Mutex::new(None));
+    {
+        let guard = last_run.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(t) = *guard {
+            if t.elapsed() < CLEANUP_THROTTLE {
+                return;
+            }
+        }
+    }
     let now = now_unix_secs();
     let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
     // Remove expired sessions
     sessions.retain(|_, session| now.saturating_sub(session.created_at) <= GOOGLE_OAUTH_SESSION_TTL_SECS);
     // Evict oldest sessions if over the hard cap
     evict_oldest_sessions(&mut sessions, MAX_OAUTH_SESSIONS, |s| s.created_at);
+    drop(sessions);
+    *last_run.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
 }
 
 // -- Token encryption helpers ------------------------------------
@@ -281,7 +321,7 @@ pub async fn start_google_credential_oauth(
         sessions.insert(
             session_id.clone(),
             GoogleCredentialOAuthSession {
-                status: "pending".into(),
+                status: OAuthSessionStatus::Pending,
                 refresh_token: None,
                 access_token: None,
                 scope: None,
@@ -331,6 +371,7 @@ pub async fn start_google_credential_oauth(
     let client_id_clone = resolved_client_id.clone();
     let client_secret_clone = resolved_client_secret.duplicate();
     let db_pool = state.db.clone();
+    let auth_detect_cache = state.auth_detect_cache.clone();
     let audit_connector = connector_name.clone();
 
     tokio::spawn(async move {
@@ -361,44 +402,53 @@ pub async fn start_google_credential_oauth(
         )
         .await;
 
-        let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(existing) = sessions.get_mut(&session_id_clone) {
-            match outcome {
-                OAuthCallbackOutcome::Success(tokens) => {
-                    existing.status = "success".into();
-                    existing.refresh_token = encrypt_token(tokens.refresh_token);
-                    existing.access_token = encrypt_token(tokens.access_token);
-                    existing.scope = tokens.scope;
-                    let _ = audit_log::insert(
-                        &db_pool, &session_id_clone, &audit_connector,
-                        "oauth_completed", None, None, Some("google oauth succeeded"),
-                    );
-                }
-                OAuthCallbackOutcome::Error(ref e) => {
-                    existing.status = "error".into();
-                    existing.error = Some(e.clone());
-                    let _ = audit_log::insert(
-                        &db_pool, &session_id_clone, &audit_connector,
-                        "oauth_failed", None, None, Some(e),
-                    );
-                }
-                OAuthCallbackOutcome::Timeout => {
-                    existing.status = "error".into();
-                    existing.error = Some("OAuth callback timed out".into());
-                    let _ = audit_log::insert(
-                        &db_pool, &session_id_clone, &audit_connector,
-                        "oauth_failed", None, None, Some("callback timed out"),
-                    );
-                }
-                OAuthCallbackOutcome::AcceptFailed(ref e) => {
-                    existing.status = "error".into();
-                    existing.error = Some(e.clone());
-                    let _ = audit_log::insert(
-                        &db_pool, &session_id_clone, &audit_connector,
-                        "oauth_failed", None, None, Some(e),
-                    );
+        let is_success = matches!(outcome, OAuthCallbackOutcome::Success(_));
+
+        {
+            let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(existing) = sessions.get_mut(&session_id_clone) {
+                match outcome {
+                    OAuthCallbackOutcome::Success(tokens) => {
+                        existing.status = OAuthSessionStatus::complete();
+                        existing.refresh_token = encrypt_token(tokens.refresh_token);
+                        existing.access_token = encrypt_token(tokens.access_token);
+                        existing.scope = tokens.scope;
+                        let _ = audit_log::insert(
+                            &db_pool, &session_id_clone, &audit_connector,
+                            "oauth_completed", None, None, Some("google oauth succeeded"),
+                        );
+                    }
+                    OAuthCallbackOutcome::Error(ref e) => {
+                        existing.status = OAuthSessionStatus::fail();
+                        existing.error = Some(e.clone());
+                        let _ = audit_log::insert(
+                            &db_pool, &session_id_clone, &audit_connector,
+                            "oauth_failed", None, None, Some(e),
+                        );
+                    }
+                    OAuthCallbackOutcome::Timeout => {
+                        existing.status = OAuthSessionStatus::fail();
+                        existing.error = Some("OAuth callback timed out".into());
+                        let _ = audit_log::insert(
+                            &db_pool, &session_id_clone, &audit_connector,
+                            "oauth_failed", None, None, Some("callback timed out"),
+                        );
+                    }
+                    OAuthCallbackOutcome::AcceptFailed(ref e) => {
+                        existing.status = OAuthSessionStatus::fail();
+                        existing.error = Some(e.clone());
+                        let _ = audit_log::insert(
+                            &db_pool, &session_id_clone, &audit_connector,
+                            "oauth_failed", None, None, Some(e),
+                        );
+                    }
                 }
             }
+        } // std::sync::MutexGuard dropped here
+
+        // Invalidate auth detection cache so the negotiator sees fresh results immediately
+        if is_success {
+            *auth_detect_cache.lock().await = None;
         }
     });
 
@@ -419,26 +469,26 @@ pub fn get_google_credential_oauth_status(
     cleanup_google_oauth_sessions();
     let mut sessions = google_oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     if let Some(session) = sessions.get(&session_id) {
-        // Decrypt tokens into short-lived SecureStrings for serialization only
+        // Decrypt tokens into short-lived SecureStrings; explicitly expose for serialization
         let decrypted_refresh = decrypt_token(&session.refresh_token);
         let decrypted_access = decrypt_token(&session.access_token);
         let result = json!({
             "status": session.status,
-            "refresh_token": decrypted_refresh,
-            "access_token": decrypted_access,
+            "refresh_token": decrypted_refresh.as_ref().map(|s| s.expose_secret()),
+            "access_token": decrypted_access.as_ref().map(|s| s.expose_secret()),
             "scope": session.scope,
             "error": session.error,
         });
         // decrypted_refresh / decrypted_access are zeroized on drop here
         // Remove completed sessions immediately so tokens don't linger in memory
-        if session.status == "success" || session.status == "error" {
+        if session.status.is_terminal() {
             sessions.remove(&session_id);
         }
         return Ok(result);
     }
 
     Ok(json!({
-        "status": "not_found",
+        "status": OAuthSessionStatus::NotFound,
         "refresh_token": null,
         "access_token": null,
         "scope": null,
@@ -1000,7 +1050,7 @@ fn verify_oauth_state(state: &str) -> bool {
 #[derive(Zeroize, ZeroizeOnDrop)]
 #[allow(dead_code)]
 struct OAuthSession {
-    status: String,          // pending | success | error
+    status: OAuthSessionStatus,
     provider_id: String,
     access_token: Option<EncryptedToken>,
     refresh_token: Option<EncryptedToken>,
@@ -1024,13 +1074,26 @@ fn oauth_sessions() -> &'static Mutex<HashMap<String, OAuthSession>> {
     OAUTH_SESSIONS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+static OAUTH_CLEANUP_LAST_RUN: OnceLock<Mutex<Option<Instant>>> = OnceLock::new();
+
 fn cleanup_oauth_sessions() {
+    let last_run = OAUTH_CLEANUP_LAST_RUN.get_or_init(|| Mutex::new(None));
+    {
+        let guard = last_run.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(t) = *guard {
+            if t.elapsed() < CLEANUP_THROTTLE {
+                return;
+            }
+        }
+    }
     let now = now_unix_secs();
     let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
     // Remove expired sessions
     sessions.retain(|_, s| now.saturating_sub(s.created_at) <= OAUTH_SESSION_TTL_SECS);
     // Evict oldest sessions if over the hard cap
     evict_oldest_sessions(&mut sessions, MAX_OAUTH_SESSIONS, |s| s.created_at);
+    drop(sessions);
+    *last_run.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
 }
 
 // -- Universal OAuth Commands -------------------------------------
@@ -1180,7 +1243,7 @@ pub async fn start_oauth(
     {
         let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         sessions.insert(session_id.clone(), OAuthSession {
-            status: "pending".into(),
+            status: OAuthSessionStatus::Pending,
             provider_id: provider_id.clone(),
             access_token: None,
             refresh_token: None,
@@ -1211,6 +1274,7 @@ pub async fn start_oauth(
     let csec = client_secret.as_ref().map(|s| s.duplicate());
     let cv = code_verifier;
     let db_pool = state.db.clone();
+    let auth_detect_cache = state.auth_detect_cache.clone();
     let audit_provider = provider_id.clone();
 
     tokio::spawn(async move {
@@ -1240,47 +1304,56 @@ pub async fn start_oauth(
         )
         .await;
 
-        let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(s) = sessions.get_mut(&sid) {
-            match outcome {
-                OAuthCallbackOutcome::Success(tokens) => {
-                    s.status = "success".into();
-                    s.access_token = encrypt_token(tokens.access_token);
-                    s.refresh_token = encrypt_token(tokens.refresh_token);
-                    s.scope = tokens.scope;
-                    s.token_type = tokens.token_type;
-                    s.expires_in = tokens.expires_in;
-                    s.extra = tokens.extra;
-                    let _ = audit_log::insert(
-                        &db_pool, &sid, &audit_provider,
-                        "oauth_completed", None, None, Some("universal oauth succeeded"),
-                    );
-                }
-                OAuthCallbackOutcome::Error(ref e) => {
-                    s.status = "error".into();
-                    s.error = Some(e.clone());
-                    let _ = audit_log::insert(
-                        &db_pool, &sid, &audit_provider,
-                        "oauth_failed", None, None, Some(e),
-                    );
-                }
-                OAuthCallbackOutcome::Timeout => {
-                    s.status = "error".into();
-                    s.error = Some("OAuth callback timed out".into());
-                    let _ = audit_log::insert(
-                        &db_pool, &sid, &audit_provider,
-                        "oauth_failed", None, None, Some("callback timed out"),
-                    );
-                }
-                OAuthCallbackOutcome::AcceptFailed(ref e) => {
-                    s.status = "error".into();
-                    s.error = Some(e.clone());
-                    let _ = audit_log::insert(
-                        &db_pool, &sid, &audit_provider,
-                        "oauth_failed", None, None, Some(e),
-                    );
+        let is_success = matches!(outcome, OAuthCallbackOutcome::Success(_));
+
+        {
+            let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(s) = sessions.get_mut(&sid) {
+                match outcome {
+                    OAuthCallbackOutcome::Success(tokens) => {
+                        s.status = OAuthSessionStatus::complete();
+                        s.access_token = encrypt_token(tokens.access_token);
+                        s.refresh_token = encrypt_token(tokens.refresh_token);
+                        s.scope = tokens.scope;
+                        s.token_type = tokens.token_type;
+                        s.expires_in = tokens.expires_in;
+                        s.extra = tokens.extra;
+                        let _ = audit_log::insert(
+                            &db_pool, &sid, &audit_provider,
+                            "oauth_completed", None, None, Some("universal oauth succeeded"),
+                        );
+                    }
+                    OAuthCallbackOutcome::Error(ref e) => {
+                        s.status = OAuthSessionStatus::fail();
+                        s.error = Some(e.clone());
+                        let _ = audit_log::insert(
+                            &db_pool, &sid, &audit_provider,
+                            "oauth_failed", None, None, Some(e),
+                        );
+                    }
+                    OAuthCallbackOutcome::Timeout => {
+                        s.status = OAuthSessionStatus::fail();
+                        s.error = Some("OAuth callback timed out".into());
+                        let _ = audit_log::insert(
+                            &db_pool, &sid, &audit_provider,
+                            "oauth_failed", None, None, Some("callback timed out"),
+                        );
+                    }
+                    OAuthCallbackOutcome::AcceptFailed(ref e) => {
+                        s.status = OAuthSessionStatus::fail();
+                        s.error = Some(e.clone());
+                        let _ = audit_log::insert(
+                            &db_pool, &sid, &audit_provider,
+                            "oauth_failed", None, None, Some(e),
+                        );
+                    }
                 }
             }
+        } // std::sync::MutexGuard dropped here
+
+        // Invalidate auth detection cache so the negotiator sees fresh results immediately
+        if is_success {
+            *auth_detect_cache.lock().await = None;
         }
     });
 
@@ -1302,14 +1375,14 @@ pub fn get_oauth_status(
     cleanup_oauth_sessions();
     let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
     if let Some(s) = sessions.get(&session_id) {
-        // Decrypt tokens into short-lived SecureStrings for serialization only
+        // Decrypt tokens into short-lived SecureStrings; explicitly expose for serialization
         let decrypted_access = decrypt_token(&s.access_token);
         let decrypted_refresh = decrypt_token(&s.refresh_token);
         let result = json!({
             "status": s.status,
             "provider_id": s.provider_id,
-            "access_token": decrypted_access,
-            "refresh_token": decrypted_refresh,
+            "access_token": decrypted_access.as_ref().map(|s| s.expose_secret()),
+            "refresh_token": decrypted_refresh.as_ref().map(|s| s.expose_secret()),
             "scope": s.scope,
             "token_type": s.token_type,
             "expires_in": s.expires_in,
@@ -1318,14 +1391,14 @@ pub fn get_oauth_status(
         });
         // decrypted_access / decrypted_refresh are zeroized on drop here
         // Remove completed sessions immediately so tokens don't linger in memory
-        if s.status == "success" || s.status == "error" {
+        if s.status.is_terminal() {
             sessions.remove(&session_id);
         }
         return Ok(result);
     }
 
     Ok(json!({
-        "status": "not_found",
+        "status": OAuthSessionStatus::NotFound,
         "error": "OAuth session not found or expired",
     }))
 }

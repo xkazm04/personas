@@ -22,89 +22,104 @@ fn row_to_tool_def(row: &Row) -> rusqlite::Result<PersonaToolDefinition> {
 }
 
 pub fn get_all_definitions(pool: &DbPool) -> Result<Vec<PersonaToolDefinition>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt =
-        conn.prepare("SELECT * FROM persona_tool_definitions ORDER BY category, name")?;
-    let rows = stmt.query_map([], row_to_tool_def)?;
-    let defs = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(defs)
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::get_all_definitions", {
+        let conn = pool.get()?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM persona_tool_definitions ORDER BY category, name")?;
+        let rows = stmt.query_map([], row_to_tool_def)?;
+        let defs = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(defs)
+
+    })
 }
 
 pub fn get_definition_by_id(pool: &DbPool, id: &str) -> Result<PersonaToolDefinition, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_tool_definitions WHERE id = ?1",
-        params![id],
-        row_to_tool_def,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("Tool definition {id}"))
-        }
-        other => AppError::Database(other),
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::get_definition_by_id", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT * FROM persona_tool_definitions WHERE id = ?1",
+            params![id],
+            row_to_tool_def,
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("Tool definition {id}"))
+            }
+            other => AppError::Database(other),
+        })
+
     })
 }
 
 pub fn get_definition_by_name(pool: &DbPool, name: &str) -> Result<Option<PersonaToolDefinition>, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_tool_definitions WHERE LOWER(name) = LOWER(?1)",
-        params![name],
-        row_to_tool_def,
-    )
-    .optional()
-    .map_err(AppError::Database)
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::get_definition_by_name", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT * FROM persona_tool_definitions WHERE LOWER(name) = LOWER(?1)",
+            params![name],
+            row_to_tool_def,
+        )
+        .optional()
+        .map_err(AppError::Database)
+
+    })
 }
 
 pub fn get_definitions_by_category(
     pool: &DbPool,
     category: &str,
 ) -> Result<Vec<PersonaToolDefinition>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_tool_definitions WHERE category = ?1 ORDER BY name",
-    )?;
-    let rows = stmt.query_map(params![category], row_to_tool_def)?;
-    let defs = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(defs)
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::get_definitions_by_category", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_tool_definitions WHERE category = ?1 ORDER BY name",
+        )?;
+        let rows = stmt.query_map(params![category], row_to_tool_def)?;
+        let defs = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(defs)
+
+    })
 }
 
 pub fn create_definition(
     pool: &DbPool,
     input: CreateToolDefinitionInput,
 ) -> Result<PersonaToolDefinition, AppError> {
-    if input.name.trim().is_empty() {
-        return Err(AppError::Validation("Name cannot be empty".into()));
-    }
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::create_definition", {
+        if input.name.trim().is_empty() {
+            return Err(AppError::Validation("Name cannot be empty".into()));
+        }
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let is_builtin = input.is_builtin.unwrap_or(false) as i32;
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let is_builtin = input.is_builtin.unwrap_or(false) as i32;
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO persona_tool_definitions
-         (id, name, category, description, script_path,
-          input_schema, output_schema, requires_credential_type,
-          implementation_guide, is_builtin,
-          created_at, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
-        params![
-            id,
-            input.name,
-            input.category,
-            input.description,
-            input.script_path,
-            input.input_schema,
-            input.output_schema,
-            input.requires_credential_type,
-            input.implementation_guide,
-            is_builtin,
-            now,
-        ],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_tool_definitions
+             (id, name, category, description, script_path,
+              input_schema, output_schema, requires_credential_type,
+              implementation_guide, is_builtin,
+              created_at, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
+            params![
+                id,
+                input.name,
+                input.category,
+                input.description,
+                input.script_path,
+                input.input_schema,
+                input.output_schema,
+                input.requires_credential_type,
+                input.implementation_guide,
+                is_builtin,
+                now,
+            ],
+        )?;
 
-    get_definition_by_id(pool, &id)
+        get_definition_by_id(pool, &id)
+
+    })
 }
 
 pub fn update_definition(
@@ -112,92 +127,76 @@ pub fn update_definition(
     id: &str,
     input: UpdateToolDefinitionInput,
 ) -> Result<PersonaToolDefinition, AppError> {
-    if let Some(ref name) = input.name {
-        if name.trim().is_empty() {
-            return Err(AppError::Validation("Name cannot be empty".into()));
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::update_definition", {
+        if let Some(ref name) = input.name {
+            if name.trim().is_empty() {
+                return Err(AppError::Validation("Name cannot be empty".into()));
+            }
         }
-    }
 
-    // Verify exists
-    get_definition_by_id(pool, id)?;
+        // Verify exists
+        get_definition_by_id(pool, id)?;
 
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut param_idx = 2u32;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-    push_field!(input.name, "name", sets, param_idx);
-    push_field!(input.category, "category", sets, param_idx);
-    push_field!(input.description, "description", sets, param_idx);
-    push_field!(input.script_path, "script_path", sets, param_idx);
-    push_field!(input.input_schema, "input_schema", sets, param_idx);
-    push_field!(input.output_schema, "output_schema", sets, param_idx);
-    push_field!(input.requires_credential_type, "requires_credential_type", sets, param_idx);
-    push_field!(input.implementation_guide, "implementation_guide", sets, param_idx);
+        push_field_param!(input.name, "name", sets, param_idx, param_values, clone);
+        push_field_param!(input.category, "category", sets, param_idx, param_values, clone);
+        push_field_param!(input.description, "description", sets, param_idx, param_values, clone);
+        push_field_param!(input.script_path, "script_path", sets, param_idx, param_values, clone);
+        push_field_param!(input.input_schema, "input_schema", sets, param_idx, param_values, clone);
+        push_field_param!(input.output_schema, "output_schema", sets, param_idx, param_values, clone);
+        push_field_param!(input.requires_credential_type, "requires_credential_type", sets, param_idx, param_values, clone);
+        push_field_param!(input.implementation_guide, "implementation_guide", sets, param_idx, param_values, clone);
 
-    let sql = format!(
-        "UPDATE persona_tool_definitions SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE persona_tool_definitions SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        param_values.push(Box::new(id.to_string()));
 
-    if let Some(ref v) = input.name {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.category {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.description {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.script_path {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.input_schema {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.output_schema {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.requires_credential_type {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.implementation_guide {
-        param_values.push(Box::new(v.clone()));
-    }
-    param_values.push(Box::new(id.to_string()));
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
+        get_definition_by_id(pool, id)
 
-    get_definition_by_id(pool, id)
+    })
 }
 
 pub fn delete_definition(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows =
-        conn.execute("DELETE FROM persona_tool_definitions WHERE id = ?1", params![id])?;
-    Ok(rows > 0)
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::delete_definition", {
+        let conn = pool.get()?;
+        let rows =
+            conn.execute("DELETE FROM persona_tool_definitions WHERE id = ?1", params![id])?;
+        Ok(rows > 0)
+
+    })
 }
 
 pub fn get_tools_for_persona(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Vec<PersonaToolDefinition>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT d.* FROM persona_tool_definitions d
-         INNER JOIN persona_tools pt ON pt.tool_id = d.id
-         WHERE pt.persona_id = ?1
-         ORDER BY d.category, d.name",
-    )?;
-    let rows = stmt.query_map(params![persona_id], row_to_tool_def)?;
-    let defs = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(defs)
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::get_tools_for_persona", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT d.* FROM persona_tool_definitions d
+             INNER JOIN persona_tools pt ON pt.tool_id = d.id
+             WHERE pt.persona_id = ?1
+             ORDER BY d.category, d.name",
+        )?;
+        let rows = stmt.query_map(params![persona_id], row_to_tool_def)?;
+        let defs = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(defs)
+
+    })
 }
 
 /// Bulk-fetch tools for multiple persona IDs in a single query.
@@ -206,47 +205,50 @@ pub fn get_tools_for_personas(
     pool: &DbPool,
     persona_ids: &[String],
 ) -> Result<Vec<(String, PersonaToolDefinition)>, AppError> {
-    if persona_ids.is_empty() {
-        return Ok(Vec::new());
-    }
-    let conn = pool.get()?;
-    let placeholders: Vec<String> = persona_ids
-        .iter()
-        .enumerate()
-        .map(|(i, _)| format!("?{}", i + 1))
-        .collect();
-    let sql = format!(
-        "SELECT pt.persona_id, d.* FROM persona_tool_definitions d
-         INNER JOIN persona_tools pt ON pt.tool_id = d.id
-         WHERE pt.persona_id IN ({})
-         ORDER BY d.category, d.name",
-        placeholders.join(", ")
-    );
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
-        .iter()
-        .map(|s| s as &dyn rusqlite::types::ToSql)
-        .collect();
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), |row| {
-        let pid: String = row.get(0)?;
-        let def = PersonaToolDefinition {
-            id: row.get("id")?,
-            name: row.get("name")?,
-            category: row.get("category")?,
-            description: row.get("description")?,
-            script_path: row.get("script_path")?,
-            input_schema: row.get("input_schema")?,
-            output_schema: row.get("output_schema")?,
-            requires_credential_type: row.get("requires_credential_type")?,
-            implementation_guide: row.get("implementation_guide")?,
-            is_builtin: row.get::<_, i32>("is_builtin")? != 0,
-            created_at: row.get("created_at")?,
-            updated_at: row.get("updated_at")?,
-        };
-        Ok((pid, def))
-    })?;
-    let results = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(results)
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::get_tools_for_personas", {
+        if persona_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = pool.get()?;
+        let placeholders: Vec<String> = persona_ids
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("?{}", i + 1))
+            .collect();
+        let sql = format!(
+            "SELECT pt.persona_id, d.* FROM persona_tool_definitions d
+             INNER JOIN persona_tools pt ON pt.tool_id = d.id
+             WHERE pt.persona_id IN ({})
+             ORDER BY d.category, d.name",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| {
+            let pid: String = row.get(0)?;
+            let def = PersonaToolDefinition {
+                id: row.get("id")?,
+                name: row.get("name")?,
+                category: row.get("category")?,
+                description: row.get("description")?,
+                script_path: row.get("script_path")?,
+                input_schema: row.get("input_schema")?,
+                output_schema: row.get("output_schema")?,
+                requires_credential_type: row.get("requires_credential_type")?,
+                implementation_guide: row.get("implementation_guide")?,
+                is_builtin: row.get::<_, i32>("is_builtin")? != 0,
+                created_at: row.get("created_at")?,
+                updated_at: row.get("updated_at")?,
+            };
+            Ok((pid, def))
+        })?;
+        let results = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(results)
+
+    })
 }
 
 pub fn assign_tool(
@@ -255,58 +257,64 @@ pub fn assign_tool(
     tool_id: &str,
     tool_config: Option<String>,
 ) -> Result<PersonaTool, AppError> {
-    // Validate tool_id exists before assigning
-    get_definition_by_id(pool, tool_id)?;
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::assign_tool", {
+        // Validate tool_id exists before assigning
+        get_definition_by_id(pool, tool_id)?;
 
-    let conn = pool.get()?;
+        let conn = pool.get()?;
 
-    // Return existing assignment if already present
-    let existing: Option<PersonaTool> = conn
-        .query_row(
-            "SELECT id, persona_id, tool_id, tool_config, created_at
-             FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
-            params![persona_id, tool_id],
-            |row| {
-                Ok(PersonaTool {
-                    id: row.get(0)?,
-                    persona_id: row.get(1)?,
-                    tool_id: row.get(2)?,
-                    tool_config: row.get(3)?,
-                    created_at: row.get(4)?,
-                })
-            },
-        )
-        .ok();
+        // Return existing assignment if already present
+        let existing: Option<PersonaTool> = conn
+            .query_row(
+                "SELECT id, persona_id, tool_id, tool_config, created_at
+                 FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
+                params![persona_id, tool_id],
+                |row| {
+                    Ok(PersonaTool {
+                        id: row.get(0)?,
+                        persona_id: row.get(1)?,
+                        tool_id: row.get(2)?,
+                        tool_config: row.get(3)?,
+                        created_at: row.get(4)?,
+                    })
+                },
+            )
+            .ok();
 
-    if let Some(tool) = existing {
-        return Ok(tool);
-    }
+        if let Some(tool) = existing {
+            return Ok(tool);
+        }
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
 
-    conn.execute(
-        "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![id, persona_id, tool_id, tool_config, now],
-    )?;
+        conn.execute(
+            "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![id, persona_id, tool_id, tool_config, now],
+        )?;
 
-    Ok(PersonaTool {
-        id,
-        persona_id: persona_id.to_string(),
-        tool_id: tool_id.to_string(),
-        tool_config,
-        created_at: now,
+        Ok(PersonaTool {
+            id,
+            persona_id: persona_id.to_string(),
+            tool_id: tool_id.to_string(),
+            tool_config,
+            created_at: now,
+        })
+
     })
 }
 
 pub fn unassign_tool(pool: &DbPool, persona_id: &str, tool_id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "DELETE FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
-        params![persona_id, tool_id],
-    )?;
-    Ok(rows > 0)
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::unassign_tool", {
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "DELETE FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
+            params![persona_id, tool_id],
+        )?;
+        Ok(rows > 0)
+
+    })
 }
 
 /// Assign multiple tools to a persona in a single transaction.
@@ -315,36 +323,39 @@ pub fn bulk_assign_tools(
     persona_id: &str,
     tool_ids: &[String],
 ) -> Result<u32, AppError> {
-    if tool_ids.is_empty() {
-        return Ok(0);
-    }
-    let conn = pool.get()?;
-    let mut count = 0u32;
-    let tx = conn.unchecked_transaction()?;
-    for tool_id in tool_ids {
-        // Skip if already assigned
-        let exists: bool = tx
-            .query_row(
-                "SELECT COUNT(*) FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
-                params![persona_id, tool_id],
-                |row| row.get::<_, i64>(0),
-            )
-            .map(|c| c > 0)
-            .unwrap_or(false);
-        if exists {
-            continue;
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::bulk_assign_tools", {
+        if tool_ids.is_empty() {
+            return Ok(0);
         }
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        tx.execute(
-            "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
-             VALUES (?1, ?2, ?3, NULL, ?4)",
-            params![id, persona_id, tool_id, now],
-        )?;
-        count += 1;
-    }
-    tx.commit()?;
-    Ok(count)
+        let conn = pool.get()?;
+        let mut count = 0u32;
+        let tx = conn.unchecked_transaction()?;
+        for tool_id in tool_ids {
+            // Skip if already assigned
+            let exists: bool = tx
+                .query_row(
+                    "SELECT COUNT(*) FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
+                    params![persona_id, tool_id],
+                    |row| row.get::<_, i64>(0),
+                )
+                .map(|c| c > 0)
+                .unwrap_or(false);
+            if exists {
+                continue;
+            }
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            tx.execute(
+                "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
+                 VALUES (?1, ?2, ?3, NULL, ?4)",
+                params![id, persona_id, tool_id, now],
+            )?;
+            count += 1;
+        }
+        tx.commit()?;
+        Ok(count)
+
+    })
 }
 
 /// Remove multiple tools from a persona in a single transaction.
@@ -353,21 +364,24 @@ pub fn bulk_unassign_tools(
     persona_id: &str,
     tool_ids: &[String],
 ) -> Result<u32, AppError> {
-    if tool_ids.is_empty() {
-        return Ok(0);
-    }
-    let conn = pool.get()?;
-    let mut count = 0u32;
-    let tx = conn.unchecked_transaction()?;
-    for tool_id in tool_ids {
-        let rows = tx.execute(
-            "DELETE FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
-            params![persona_id, tool_id],
-        )?;
-        count += rows as u32;
-    }
-    tx.commit()?;
-    Ok(count)
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::bulk_unassign_tools", {
+        if tool_ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = pool.get()?;
+        let mut count = 0u32;
+        let tx = conn.unchecked_transaction()?;
+        for tool_id in tool_ids {
+            let rows = tx.execute(
+                "DELETE FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
+                params![persona_id, tool_id],
+            )?;
+            count += rows as u32;
+        }
+        tx.commit()?;
+        Ok(count)
+
+    })
 }
 
 #[cfg(test)]

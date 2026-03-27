@@ -154,7 +154,7 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
       {/* Tooltip */}
       {hoverIdx != null && tooltipPos && data[hoverIdx] && (
         <div
-          className="absolute z-20 pointer-events-none px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-primary/15 text-[11px] leading-relaxed shadow-lg backdrop-blur-sm"
+          className="absolute z-20 pointer-events-none px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-primary/15 text-[11px] leading-relaxed shadow-elevation-3 backdrop-blur-sm"
           style={{
             left: Math.min(tooltipPos.x + 12, (containerRef.current?.clientWidth ?? 300) - 140),
             top: Math.max(0, tooltipPos.y - 60),

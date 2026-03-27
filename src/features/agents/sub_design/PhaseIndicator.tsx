@@ -75,10 +75,10 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
                   className={`w-2 h-2 rounded-full transition-colors duration-300 ${
                     isActive
                       ? isError
-                        ? 'bg-red-400 shadow-sm shadow-red-400/40'
+                        ? 'bg-red-400 shadow-elevation-1 shadow-red-400/40'
                         : phase === 'awaiting-input'
-                          ? 'bg-purple-400 shadow-sm shadow-purple-400/40'
-                          : 'bg-primary shadow-sm shadow-primary/40'
+                          ? 'bg-purple-400 shadow-elevation-1 shadow-purple-400/40'
+                          : 'bg-primary shadow-elevation-1 shadow-primary/40'
                       : isCompleted
                         ? 'bg-emerald-400'
                         : 'bg-secondary/40'

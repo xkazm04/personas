@@ -255,10 +255,4 @@ pub fn build_dream_replay(trace: &ExecutionTrace) -> DreamReplaySession {
     }
 }
 
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
-        s.to_string()
-    } else {
-        format!("{}...", &s[..max.saturating_sub(3)])
-    }
-}
+use super::str_utils::truncate_owned as truncate;

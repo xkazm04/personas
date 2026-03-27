@@ -41,7 +41,7 @@ export function FilterDropdown({
       </button>
       {isOpen && (
           <div
-            className={`animate-fade-slide-in absolute top-full left-0 mt-1 z-50 ${wide ? 'w-56' : 'w-44'} p-1.5 rounded-xl border border-primary/12 bg-background/95 backdrop-blur-md shadow-xl shadow-black/20`}
+            className={`animate-fade-slide-in absolute top-full left-0 mt-1 z-50 ${wide ? 'w-56' : 'w-44'} p-1.5 rounded-xl border border-primary/12 bg-background/95 backdrop-blur-md shadow-elevation-3 shadow-black/20`}
           >
             {children}
           </div>

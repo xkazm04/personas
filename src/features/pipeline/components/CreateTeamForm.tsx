@@ -1,7 +1,18 @@
+import { Check } from 'lucide-react';
 import { FormField } from '@/features/shared/components/forms/FormField';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
-const TEAM_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6'];
+const TEAM_COLORS: Record<string, string> = {
+  '#6366f1': 'Indigo',
+  '#8b5cf6': 'Violet',
+  '#ec4899': 'Pink',
+  '#f43f5e': 'Rose',
+  '#f97316': 'Orange',
+  '#eab308': 'Yellow',
+  '#22c55e': 'Green',
+  '#06b6d4': 'Cyan',
+  '#3b82f6': 'Blue',
+};
 
 interface CreateTeamFormProps {
   newName: string;
@@ -56,15 +67,29 @@ export function CreateTeamForm({
         </FormField>
         <div>
           <label className="text-sm font-medium text-foreground/80 mb-1.5 block">Color</label>
-          <div className="flex gap-2">
-            {TEAM_COLORS.map((c) => (
-              <button
-                key={c}
-                onClick={() => onColorChange(c)}
-                className={`w-7 h-7 rounded-lg transition-all ${newColor === c ? 'ring-2 ring-offset-2 ring-offset-background scale-110' : 'hover:scale-105'}`}
-                style={{ backgroundColor: c }}
-              />
-            ))}
+          <div className="flex gap-2 flex-wrap">
+            {Object.entries(TEAM_COLORS).map(([hex, name]) => {
+              const isSelected = newColor === hex;
+              return (
+                <button
+                  key={hex}
+                  onClick={() => onColorChange(hex)}
+                  className={`flex flex-col items-center gap-1 group`}
+                >
+                  <span
+                    className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center ${isSelected ? 'ring-2 ring-offset-2 ring-offset-background scale-110' : 'hover:scale-105'}`}
+                    style={{ backgroundColor: hex }}
+                  >
+                    {isSelected && (
+                      <Check className="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
+                    )}
+                  </span>
+                  <span className={`text-[10px] leading-tight ${isSelected ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
+                    {name}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="flex justify-end gap-2 pt-2">

@@ -59,7 +59,7 @@ export function ToolSelector() {
 
       {actions.undoToast && (
           <div
-            className="animate-fade-slide-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 bg-secondary/95 backdrop-blur-sm border border-primary/20 rounded-xl shadow-xl"
+            className="animate-fade-slide-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 bg-secondary/95 backdrop-blur-sm border border-primary/20 rounded-xl shadow-elevation-3"
           >
             <span className="text-sm text-foreground/80">
               Removed <span className="font-medium text-foreground/90">{actions.undoToast.toolName}</span>

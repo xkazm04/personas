@@ -77,7 +77,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             key={q.id}
             className={`group flex items-center gap-1.5 px-2.5 py-2 rounded-xl cursor-pointer transition-all duration-150 ${
               selectedId === q.id
-                ? 'bg-primary/10 border border-primary/20 shadow-sm shadow-primary/5'
+                ? 'bg-primary/10 border border-primary/20 shadow-elevation-1 shadow-primary/5'
                 : 'hover:bg-secondary/40 border border-transparent'
             }`}
             onClick={() => onSelect(q.id)}

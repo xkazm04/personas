@@ -119,10 +119,9 @@ pub fn test_provider_connection(
 ) -> Result<ProviderConnectionResult, AppError> {
     require_auth_sync(&state)?;
 
-    let engine_kind = match provider_id.as_str() {
-        "claude_code" => EngineKind::ClaudeCode,
-        "codex_cli" => EngineKind::CodexCli,
-        _ => {
+    let engine_kind: EngineKind = match provider_id.parse() {
+        Ok(k) => k,
+        Err(_) => {
             return Ok(ProviderConnectionResult {
                 provider_id,
                 reachable: false,
@@ -135,29 +134,28 @@ pub fn test_provider_connection(
 
     let provider = resolve_provider(engine_kind);
     let candidates = provider.binary_candidates();
+    let cache = &state.binary_probe_cache;
 
-    // Try each binary candidate until one succeeds, measuring response time
+    // Try each binary candidate until one succeeds, using cached probe results
     for candidate in candidates {
         let start = Instant::now();
-        match crate::commands::infrastructure::system::command_version(candidate) {
-            Ok(version) => {
-                let elapsed = start.elapsed().as_millis() as u64;
-                return Ok(ProviderConnectionResult {
-                    provider_id,
-                    reachable: true,
-                    latency_ms: Some(elapsed),
-                    version: Some(version),
-                    error: None,
-                });
-            }
-            Err(_) => continue,
+        let probe = cache.get_or_probe(candidate);
+        let elapsed = start.elapsed().as_millis() as u64;
+        if let Some(version) = probe.version {
+            return Ok(ProviderConnectionResult {
+                provider_id,
+                reachable: true,
+                latency_ms: Some(elapsed),
+                version: Some(version),
+                error: None,
+            });
         }
     }
 
     // None of the candidates worked — check if at least one is in PATH
     let in_path = candidates
         .iter()
-        .any(|c| crate::commands::infrastructure::system::command_exists_in_path(c));
+        .any(|c| cache.get_or_probe(c).exists_in_path);
 
     let error_msg = if in_path {
         "Binary found in PATH but --version failed. The CLI may be misconfigured."

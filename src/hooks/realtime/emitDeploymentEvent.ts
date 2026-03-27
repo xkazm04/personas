@@ -11,6 +11,7 @@
 import { emit } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
+import type { PersonaEventStatus } from '@/lib/bindings/PersonaEventStatus';
 
 export type DeploymentEventType =
   | 'deploy_started'
@@ -29,7 +30,7 @@ interface EmitOptions {
   personaId?: string | null;
   /** Extra context (deployment ID, project name, etc.) */
   detail?: string;
-  status?: 'completed' | 'failed' | 'pending';
+  status?: PersonaEventStatus;
 }
 
 /**
@@ -50,6 +51,7 @@ export function emitDeploymentEvent(opts: EmitOptions): void {
     processed_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     use_case_id: null,
+    retry_count: 0,
   };
 
   // Emit through Tauri's event system -- the singleton listener picks it up

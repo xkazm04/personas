@@ -635,16 +635,8 @@ pub fn import_foraged_credential(
         session_encrypted_data: None,
     };
 
-    let cred = crate::db::repos::resources::credentials::create(&state.db, input)
+    let cred = crate::db::repos::resources::credentials::create_with_fields(&state.db, input, &fields)
         .map_err(|e| format!("Failed to create credential: {e}"))?;
-
-    // Save fields with encryption
-    crate::db::repos::resources::credentials::save_fields(&state.db, &cred.id, &fields)
-        .map_err(|e| {
-            // Rollback credential on field save failure
-            let _ = crate::db::repos::resources::credentials::delete(&state.db, &cred.id);
-            format!("Failed to save credential fields: {e}")
-        })?;
 
     // Audit log
     let _ = crate::db::repos::resources::audit_log::insert(

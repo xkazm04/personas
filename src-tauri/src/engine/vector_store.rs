@@ -125,26 +125,8 @@ impl SqliteVectorStore {
         kb_id: &str,
         chunk_ids: &[String],
     ) -> Result<usize, AppError> {
-        if chunk_ids.is_empty() {
-            return Ok(0);
-        }
-
         let conn = self.pool.get()?;
-        let table_name = vec_table_name(kb_id)?;
-
-        let placeholders: Vec<String> = (1..=chunk_ids.len()).map(|i| format!("?{i}")).collect();
-        let sql = format!(
-            "DELETE FROM [{table_name}] WHERE chunk_id IN ({})",
-            placeholders.join(",")
-        );
-
-        let params: Vec<&dyn rusqlite::types::ToSql> = chunk_ids
-            .iter()
-            .map(|id| id as &dyn rusqlite::types::ToSql)
-            .collect();
-
-        let deleted = conn.execute(&sql, params.as_slice())?;
-        Ok(deleted)
+        delete_vectors_by_chunks(&conn, kb_id, chunk_ids)
     }
 
     /// Count vectors in a knowledge base.

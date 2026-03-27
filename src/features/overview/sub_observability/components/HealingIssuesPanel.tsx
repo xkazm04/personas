@@ -39,7 +39,7 @@ export function HealingIssuesPanel({
     if (issue) setSelectedIssue(issue);
   };
   return (
-    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-sm overflow-hidden flex flex-col">
+    <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
         <div className="flex items-center gap-3">
@@ -48,7 +48,7 @@ export function HealingIssuesPanel({
           </div>
           <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">Health Issues</h3>
           {healingIssues.length > 0 && (
-            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm">
+            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
               {healingIssues.length}
             </span>
           )}
@@ -75,7 +75,7 @@ export function HealingIssuesPanel({
             onClick={handleRunAnalysis}
             disabled={healingRunning}
             aria-label={healingRunning ? 'Analysis in progress' : 'Run healing analysis'}
-            className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-gradient-to-br from-cyan-500/15 to-transparent border border-cyan-500/20 text-cyan-300 hover:from-cyan-500/25 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation-1 focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
           >
             {healingRunning ? (
               <>
@@ -139,7 +139,7 @@ export function HealingIssuesPanel({
               onClick={() => setIssueFilter(chip.key)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-xl typo-heading transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
                 issueFilter === chip.key
-                  ? 'bg-background text-foreground shadow-sm border border-primary/20'
+                  ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
                   : 'text-muted-foreground/80 hover:text-muted-foreground'
               }`}
             >

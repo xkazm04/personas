@@ -2,9 +2,9 @@ import { Globe, FolderOpen, User, Minus } from 'lucide-react';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 
 const SOURCE_META: Record<ConfigSource, { label: string; icon: typeof Globe; color: string; bg: string }> = {
-  agent:     { label: 'Agent',     icon: User,       color: 'text-violet-400',  bg: 'bg-violet-400/10' },
-  workspace: { label: 'Workspace', icon: FolderOpen, color: 'text-blue-400',    bg: 'bg-blue-400/10' },
-  global:    { label: 'Global',    icon: Globe,      color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+  agent:     { label: 'Agent',     icon: User,       color: 'text-violet-400',  bg: 'bg-violet-500/10' },
+  workspace: { label: 'Workspace', icon: FolderOpen, color: 'text-blue-400',    bg: 'bg-blue-500/10' },
+  global:    { label: 'Global',    icon: Globe,      color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
   default:   { label: 'Default',   icon: Minus,      color: 'text-muted-foreground/50', bg: 'bg-secondary/30' },
 };
 

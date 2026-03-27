@@ -7,12 +7,15 @@ import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConfirmDestructiveModal, useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
+import { getPersonaBlastRadius } from '@/api/agents/personas';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { extractConnectorNames } from '@/lib/personas/utils';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
 import { ViewPresetBar, DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './ViewPresetBar';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
+import { getTrustTier } from '@/lib/personas/personaThresholds';
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("persona-overview");
@@ -24,21 +27,6 @@ const HEALTH_STYLES: Record<string, { bg: string; text: string; label: string }>
   degraded: { bg: 'bg-amber-500/10',   text: 'text-amber-400',   label: 'Degraded' },
   failing:  { bg: 'bg-red-500/10',     text: 'text-red-400',     label: 'Failing' },
 };
-
-const TRUST_TIERS = [
-  { min: 0,  label: 'L0', color: 'text-zinc-400',    bar: 'bg-zinc-500',    bg: 'bg-zinc-500/15' },
-  { min: 25, label: 'L1', color: 'text-sky-400',     bar: 'bg-sky-500',     bg: 'bg-sky-500/15' },
-  { min: 50, label: 'L2', color: 'text-violet-400',  bar: 'bg-violet-500',  bg: 'bg-violet-500/15' },
-  { min: 75, label: 'L3', color: 'text-amber-400',   bar: 'bg-amber-500',   bg: 'bg-amber-500/15' },
-  { min: 90, label: 'L4', color: 'text-emerald-400', bar: 'bg-emerald-500', bg: 'bg-emerald-500/15' },
-] as const;
-
-function getTrustTier(score: number): (typeof TRUST_TIERS)[number] {
-  for (let i = TRUST_TIERS.length - 1; i >= 0; i--) {
-    if (score >= TRUST_TIERS[i]!.min) return TRUST_TIERS[i]!;
-  }
-  return TRUST_TIERS[0];
-}
 
 function TrustScoreBar({ score }: { score: number }) {
   const tier = getTrustTier(score);
@@ -124,7 +112,7 @@ function RowActionMenu({ persona, onDelete, onEdit }: {
         <MoreHorizontal className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 min-w-[140px] rounded-lg border border-primary/15 bg-background shadow-xl shadow-black/20 py-1">
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[140px] rounded-lg border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 py-1">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setOpen(false); onEdit(persona.id); }}
@@ -201,6 +189,7 @@ export default function PersonaOverviewPage() {
 
   const [viewConfig, setViewConfig] = useState<AgentListViewConfig>(DEFAULT_VIEW_CONFIG);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { modal, confirm } = useConfirmDestructive();
 
   // Convenience destructure
   const { statusFilter, healthFilter, connectorFilter, favoriteOnly, sortKey, sortDirection: sortDir } = viewConfig;
@@ -248,31 +237,49 @@ export default function PersonaOverviewPage() {
     }
   }, [isBuilding, isDraft, selectPersona, setIsCreatingPersona]);
 
-  const handleDelete = useCallback(async (id: string) => {
-    try {
-      await deletePersona(id);
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    } catch (err) {
-      logger.error('Failed to delete persona', { error: err });
-    }
-  }, [deletePersona]);
+  const handleDelete = useCallback((id: string) => {
+    const persona = personas.find((p) => p.id === id);
+    if (!persona) return;
+    confirm({
+      title: 'Delete Agent',
+      message: 'This agent and all its configuration will be permanently removed.',
+      details: [{ label: 'Name', value: persona.name }],
+      blastRadiusFetcher: () => getPersonaBlastRadius(id),
+      requireTypedConfirmation: persona.name,
+      onConfirm: async () => {
+        try {
+          await deletePersona(id);
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+        } catch (err) {
+          logger.error('Failed to delete persona', { error: err });
+        }
+      },
+    });
+  }, [personas, deletePersona, confirm]);
 
-  const handleBatchDelete = useCallback(async () => {
+  const handleBatchDelete = useCallback(() => {
     if (selectedIds.size === 0) return;
     const ids = [...selectedIds];
-    setSelectedIds(new Set());
-    for (const id of ids) {
-      try {
-        await deletePersona(id);
-      } catch (err) {
-        logger.error('Failed to delete persona', { id, error: err });
-      }
-    }
-  }, [selectedIds, deletePersona]);
+    const count = ids.length;
+    confirm({
+      title: `Delete ${count} Agent${count > 1 ? 's' : ''}`,
+      message: `${count} agent${count > 1 ? 's' : ''} and all their configuration will be permanently removed.`,
+      onConfirm: async () => {
+        setSelectedIds(new Set());
+        for (const id of ids) {
+          try {
+            await deletePersona(id);
+          } catch (err) {
+            logger.error('Failed to delete persona', { id, error: err });
+          }
+        }
+      },
+    });
+  }, [selectedIds, deletePersona, confirm]);
 
   const handleEdit = useCallback((id: string) => {
     selectPersona(id);
@@ -602,6 +609,8 @@ export default function PersonaOverviewPage() {
           onSelectAll={handleSelectAll}
         />
       </ContentBody>
+
+      <ConfirmDestructiveModal {...modal} />
     </ContentBox>
   );
 }

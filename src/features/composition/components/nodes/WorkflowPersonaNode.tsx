@@ -62,7 +62,7 @@ function WorkflowPersonaNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
-      className={`group relative px-4 py-3 rounded-xl bg-secondary/60 backdrop-blur-sm border transition-all min-w-[160px] cursor-grab active:cursor-grabbing hover:shadow-lg hover:shadow-indigo-500/10 ${border}`}
+      className={`group relative px-4 py-3 rounded-xl bg-secondary/60 backdrop-blur-sm border transition-all min-w-[160px] cursor-grab active:cursor-grabbing hover:shadow-elevation-3 hover:shadow-indigo-500/10 ${border}`}
     >
       {status === 'running' && (
         <div

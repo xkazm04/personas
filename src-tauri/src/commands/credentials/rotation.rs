@@ -50,9 +50,10 @@ pub fn update_rotation_policy(
 pub fn delete_rotation_policy(
     state: State<'_, Arc<AppState>>,
     id: String,
-) -> Result<bool, AppError> {
+) -> Result<String, AppError> {
     require_privileged_sync(&state, "delete_rotation_policy")?;
-    rotation_repo::delete_policy(&state.db, &id)
+    rotation_repo::delete_policy(&state.db, &id)?;
+    Ok(id)
 }
 
 // ============================================================================
@@ -93,12 +94,7 @@ pub async fn rotate_credential_now(
         Ok(_) => ("credential_rotated", "manual rotation succeeded".to_string()),
         Err(e) => ("credential_rotation_failed", format!("manual rotation failed: {e}")),
     };
-    if let Err(e) = audit_log::insert(
-        &state.db, &credential_id, &credential_id,
-        op, None, None, Some(&detail),
-    ) {
-        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for rotation");
-    }
+    audit_log::insert_warn(&state.db, &credential_id, &credential_id, op, Some(&detail));
     result
 }
 
@@ -114,12 +110,7 @@ pub async fn refresh_credential_oauth_now(
         Ok(_) => ("credential_oauth_refreshed", "manual OAuth token refresh succeeded".to_string()),
         Err(e) => ("credential_oauth_refresh_failed", format!("manual OAuth refresh failed: {e}")),
     };
-    if let Err(e) = audit_log::insert(
-        &state.db, &credential_id, &cred.name,
-        op, None, None, Some(&detail),
-    ) {
-        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for OAuth refresh");
-    }
+    audit_log::insert_warn(&state.db, &credential_id, &cred.name, op, Some(&detail));
     result
 }
 

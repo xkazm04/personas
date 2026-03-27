@@ -1,4 +1,5 @@
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
+import { ALL_EVENT_TYPES } from '@/lib/eventTypeTaxonomy';
 
 /** Filter criteria for the event bus */
 export interface EventBusFilter {
@@ -30,20 +31,7 @@ export const EMPTY_FILTER: EventBusFilter = {
   searchText: '',
 };
 
-export const KNOWN_EVENT_TYPES = [
-  'webhook_received',
-  'execution_completed',
-  'persona_action',
-  'credential_event',
-  'task_created',
-  'test_event',
-  'custom',
-  'deploy_started',
-  'deploy_succeeded',
-  'deploy_failed',
-  'agent_undeployed',
-  'credential_provisioned',
-];
+export const KNOWN_EVENT_TYPES = ALL_EVENT_TYPES;
 
 export const KNOWN_STATUSES = [
   'pending',

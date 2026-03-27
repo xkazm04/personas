@@ -104,7 +104,7 @@ export function MatrixTab() {
     }
   }, [session?.id, selectedPersona?.id]);
 
-  // Quick Execute handler — run the persona and show result inline
+  // Polling refs for future quick-execute feature
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

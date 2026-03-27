@@ -6,28 +6,30 @@ use crate::error::AppError;
 
 /// Save an execution trace to the database.
 pub fn save(pool: &DbPool, trace: &ExecutionTrace) -> Result<(), AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let spans_json =
-        serde_json::to_string(&trace.spans).map_err(|e| AppError::Internal(e.to_string()))?;
+    timed_query!("execution_traces", "execution_traces::save", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let spans_json =
+            serde_json::to_string(&trace.spans).map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO execution_traces (id, execution_id, trace_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-        params![
-            id,
-            trace.execution_id,
-            trace.trace_id,
-            trace.persona_id,
-            trace.chain_trace_id,
-            spans_json,
-            trace.total_duration_ms.map(|d| d as i64),
-            trace.evicted_span_count as i64,
-            trace.created_at,
-        ],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO execution_traces (id, execution_id, trace_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                id,
+                trace.execution_id,
+                trace.trace_id,
+                trace.persona_id,
+                trace.chain_trace_id,
+                spans_json,
+                trace.total_duration_ms.map(|d| d as i64),
+                trace.evicted_span_count as i64,
+                trace.created_at,
+            ],
+        )?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 /// Get the trace for a specific execution.
@@ -35,6 +37,7 @@ pub fn get_by_execution_id(
     pool: &DbPool,
     execution_id: &str,
 ) -> Result<Option<ExecutionTrace>, AppError> {
+    timed_query!("execution_traces", "execution_traces::get_by_execution_id", {
     let conn = pool.get()?;
     let result = conn.query_row(
         "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at
@@ -62,6 +65,7 @@ pub fn get_by_execution_id(
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
         Err(e) => Err(AppError::Database(e)),
     }
+    })
 }
 
 /// Get all traces sharing a chain_trace_id (distributed trace across chain executions).
@@ -69,6 +73,7 @@ pub fn get_by_chain_trace_id(
     pool: &DbPool,
     chain_trace_id: &str,
 ) -> Result<Vec<ExecutionTrace>, AppError> {
+    timed_query!("execution_traces", "execution_traces::get_by_chain_trace_id", {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at
@@ -91,4 +96,5 @@ pub fn get_by_chain_trace_id(
     })?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)
+    })
 }

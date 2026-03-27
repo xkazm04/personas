@@ -57,7 +57,7 @@ export function ConnectorCredentialModal({
       onClose={onClose}
       titleId="connector-credential-title"
       maxWidthClass="max-w-2xl"
-      panelClassName="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto"
+      panelClassName="bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-2xl shadow-elevation-4 p-6 max-h-[85vh] overflow-y-auto"
     >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">

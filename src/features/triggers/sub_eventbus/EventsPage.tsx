@@ -11,8 +11,10 @@ import { RateLimitDashboard } from '../sub_rate_limits/RateLimitDashboard';
 import { TestTab } from '../sub_test/TestTab';
 import { SmeeRelayTab } from '../sub_smee_relay/SmeeRelayTab';
 import { CloudWebhooksTab } from '../sub_cloud_webhooks/CloudWebhooksTab';
+import { DeadLetterTab } from '../sub_dead_letter/DeadLetterTab';
 
 const EventCanvas = lazy(() => import('../sub_canvas/EventCanvas').then(m => ({ default: m.EventCanvas })));
+const TriggerStudioCanvas = lazy(() => import('../sub_studio/TriggerStudioCanvas').then(m => ({ default: m.TriggerStudioCanvas })));
 const SharedEventsTab = lazy(() => import('../sub_shared/SharedEventsTab').then(m => ({ default: m.SharedEventsTab })));
 
 type BusHealth = "healthy" | "degraded" | "failing" | null;
@@ -81,12 +83,14 @@ export function EventsPage() {
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {eventBusTab === "canvas" && <LazyWrap><EventCanvas allTriggers={allTriggers} /></LazyWrap>}
+        {eventBusTab === "studio" && <LazyWrap><TriggerStudioCanvas /></LazyWrap>}
         {eventBusTab === "shared" && <LazyWrap><SharedEventsTab /></LazyWrap>}
         {eventBusTab === "live-stream" && <LiveStreamTab />}
         {eventBusTab === "rate-limits" && <RateLimitDashboard triggers={allTriggers} />}
         {eventBusTab === "test" && <TestTab />}
         {eventBusTab === "smee-relay" && <SmeeRelayTab onSwitchToLiveStream={() => useSystemStore.getState().setEventBusTab("live-stream")} />}
         {eventBusTab === "cloud-webhooks" && <CloudWebhooksTab />}
+        {eventBusTab === "dead-letter" && <DeadLetterTab />}
       </div>
     </ContentBox>
   );

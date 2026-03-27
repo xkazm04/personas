@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, ChevronUp, Square, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, Square } from 'lucide-react';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { getWorkflowJobOutput } from '@/api/pipeline/workflows';
 import type { WorkflowJob } from '@/api/pipeline/workflows';
 import { JOB_TYPE_LABELS, formatElapsed, statusBadgeClass, StatusIcon } from '../workflowHelpers';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 function SummaryCards({ data }: { data: { total_count: number; running_count: number; completed_count: number; failed_count: number } }) {
   const cards = [

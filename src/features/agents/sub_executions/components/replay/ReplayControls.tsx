@@ -86,7 +86,7 @@ export function TimelineScrubber({
           );
         })}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-blue-500 shadow-md shadow-blue-500/30 transition-[left] duration-75 z-20"
+          className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-blue-500 shadow-elevation-2 shadow-blue-500/30 transition-[left] duration-75 z-20"
           style={{ left: `calc(${pct}% - 7px)` }}
         />
       </div>

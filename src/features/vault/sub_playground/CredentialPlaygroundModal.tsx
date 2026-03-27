@@ -70,7 +70,7 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
   }, [connector?.name, credential.service_type, googleOAuth]);
 
   return (
-    <BaseModal isOpen onClose={onClose} titleId="credential-playground-title" size="6xl" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden h-[90vh]">
+    <BaseModal isOpen onClose={onClose} titleId="credential-playground-title" size="6xl" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]">
       <PlaygroundHeader credential={credential} connector={connector} onClose={onClose} />
       <div className="flex items-center gap-1 px-6 pt-3 border-b border-primary/10 shrink-0">
         {tabs.map((tab) => {

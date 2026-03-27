@@ -1,6 +1,6 @@
 use rusqlite::params;
 
-use crate::db::models::PersonaToolUsage;
+use crate::db::models::{PersonaToolUsage, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -39,24 +39,26 @@ pub fn record(
     tool_name: &str,
     count: i32,
 ) -> Result<PersonaToolUsage, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
+    timed_query!("tool_usage", "tool_usage::record", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO persona_tool_usage
-         (id, execution_id, persona_id, tool_name, invocation_count, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![id, execution_id, persona_id, tool_name, count, now],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_tool_usage
+             (id, execution_id, persona_id, tool_name, invocation_count, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![id, execution_id, persona_id, tool_name, count, now],
+        )?;
 
-    Ok(PersonaToolUsage {
-        id,
-        execution_id: execution_id.to_string(),
-        persona_id: persona_id.to_string(),
-        tool_name: tool_name.to_string(),
-        invocation_count: count,
-        created_at: now,
+        Ok(PersonaToolUsage {
+            id,
+            execution_id: execution_id.to_string(),
+            persona_id: persona_id.to_string(),
+            tool_name: tool_name.to_string(),
+            invocation_count: count,
+            created_at: now,
+        })
     })
 }
 
@@ -64,22 +66,25 @@ pub fn get_by_execution(
     pool: &DbPool,
     execution_id: &str,
 ) -> Result<Vec<PersonaToolUsage>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_tool_usage
-         WHERE execution_id = ?1
-         ORDER BY created_at ASC",
-    )?;
-    let rows = stmt.query_map(params![execution_id], row_to_usage)?;
-    let usages = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(usages)
+    timed_query!("tool_usage", "tool_usage::get_by_execution", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_tool_usage
+             WHERE execution_id = ?1
+             ORDER BY created_at ASC",
+        )?;
+        let rows = stmt.query_map(params![execution_id], row_to_usage)?;
+        let usages = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(usages)
+    })
 }
 
 pub fn get_usage_summary(
     pool: &DbPool,
     since: &str,
     persona_id: Option<&str>,
-) -> Result<Vec<serde_json::Value>, AppError> {
+) -> Result<Vec<ToolUsageSummary>, AppError> {
+    timed_query!("tool_usage", "tool_usage::get_usage_summary", {
     let conn = pool.get()?;
     let persona_clause = if persona_id.is_some() { " AND persona_id = ?2" } else { "" };
     let sql = format!(
@@ -103,21 +108,23 @@ pub fn get_usage_summary(
     let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
 
     let rows = stmt.query_map(params_ref.as_slice(), |row| {
-        Ok(serde_json::json!({
-            "tool_name": row.get::<_, String>("tool_name")?,
-            "total_invocations": row.get::<_, i64>("total_invocations")?,
-            "unique_executions": row.get::<_, i64>("unique_executions")?,
-            "unique_personas": row.get::<_, i64>("unique_personas")?,
-        }))
+        Ok(ToolUsageSummary {
+            tool_name: row.get("tool_name")?,
+            total_invocations: row.get("total_invocations")?,
+            unique_executions: row.get("unique_executions")?,
+            unique_personas: row.get("unique_personas")?,
+        })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
 }
 
 pub fn get_usage_over_time(
     pool: &DbPool,
     since: &str,
     persona_id: Option<&str>,
-) -> Result<Vec<serde_json::Value>, AppError> {
+) -> Result<Vec<ToolUsageOverTime>, AppError> {
+    timed_query!("tool_usage", "tool_usage::get_usage_over_time", {
     let conn = pool.get()?;
     let persona_clause = if persona_id.is_some() { " AND persona_id = ?2" } else { "" };
     let sql = format!(
@@ -140,19 +147,21 @@ pub fn get_usage_over_time(
     let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
 
     let rows = stmt.query_map(params_ref.as_slice(), |row| {
-        Ok(serde_json::json!({
-            "date": row.get::<_, String>("date")?,
-            "tool_name": row.get::<_, String>("tool_name")?,
-            "invocations": row.get::<_, i64>("invocations")?,
-        }))
+        Ok(ToolUsageOverTime {
+            date: row.get("date")?,
+            tool_name: row.get("tool_name")?,
+            invocations: row.get("invocations")?,
+        })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
 }
 
 pub fn get_usage_by_persona(
     pool: &DbPool,
     since: &str,
-) -> Result<Vec<serde_json::Value>, AppError> {
+) -> Result<Vec<PersonaUsageSummary>, AppError> {
+    timed_query!("tool_usage", "tool_usage::get_usage_by_persona", {
     let conn = pool.get()?;
     let sql = format!(
         "SELECT u.persona_id,
@@ -170,16 +179,17 @@ pub fn get_usage_by_persona(
     );
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt.query_map(params![since], |row| {
-        Ok(serde_json::json!({
-            "persona_id": row.get::<_, String>("persona_id")?,
-            "persona_name": row.get::<_, String>("persona_name")?,
-            "persona_icon": row.get::<_, Option<String>>("persona_icon")?,
-            "persona_color": row.get::<_, Option<String>>("persona_color")?,
-            "total_invocations": row.get::<_, i64>("total_invocations")?,
-            "unique_tools": row.get::<_, i64>("unique_tools")?,
-        }))
+        Ok(PersonaUsageSummary {
+            persona_id: row.get("persona_id")?,
+            persona_name: row.get("persona_name")?,
+            persona_icon: row.get("persona_icon")?,
+            persona_color: row.get("persona_color")?,
+            total_invocations: row.get("total_invocations")?,
+            unique_tools: row.get("unique_tools")?,
+        })
     })?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
 }
 
 #[cfg(test)]

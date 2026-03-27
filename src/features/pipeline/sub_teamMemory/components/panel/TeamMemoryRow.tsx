@@ -4,14 +4,7 @@ import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import { IMPORTANCE_DOTS, importanceToDots, dotsToImportance } from '../../libs/memoryConstants';
 import MemoryRowDetail from './MemoryRowDetail';
 import MemoryRowActions from './MemoryRowActions';
-
-const CATEGORY_COLORS: Record<string, { dot: string; bg: string }> = {
-  observation: { dot: 'bg-cyan-500', bg: 'bg-cyan-500/10' },
-  decision: { dot: 'bg-amber-500', bg: 'bg-amber-500/10' },
-  context: { dot: 'bg-violet-500', bg: 'bg-violet-500/10' },
-  learning: { dot: 'bg-emerald-500', bg: 'bg-emerald-500/10' },
-};
-const DEFAULT_COLOR = { dot: 'bg-gray-400', bg: 'bg-gray-400/10' };
+import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 
 interface Revision { title: string; content: string; category: string; importance: number; edited_at: string; }
 
@@ -37,7 +30,6 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
   const [editing, setEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  const colors = CATEGORY_COLORS[memory.category] ?? DEFAULT_COLOR;
   const isAuto = memory.tags?.includes('auto');
   const dots = importanceToDots(memory.importance);
   const { revisions } = useMemo(() => parseRevisions(memory.tags), [memory.tags]);
@@ -66,12 +58,12 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
       onDoubleClick={onEdit ? startEdit : undefined}
     >
       <div className="flex items-start gap-2">
-        <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${colors.dot}`} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground/90 truncate">{memory.title}</p>
           <p className="text-sm text-muted-foreground/70 line-clamp-2 mt-0.5">{memory.content}</p>
           <div className="flex items-center gap-2 mt-1.5">
-            <span className={`text-sm px-1.5 py-0.5 rounded-full ${colors.bg} text-foreground/60`}>
+            <CategoryChip category={memory.category} source="team" />
+            <span className="text-sm px-1.5 py-0.5 rounded-full bg-primary/5 text-foreground/60">
               {isAuto ? 'Auto' : 'Manual'}
             </span>
             <div className="flex items-center gap-0.5">
@@ -84,7 +76,6 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
                 />
               ))}
             </div>
-            <span className="text-sm text-muted-foreground/50 capitalize">{memory.category}</span>
             {revisions.length > 0 && (
               <button
                 onClick={() => setShowHistory(!showHistory)}

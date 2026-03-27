@@ -16,6 +16,7 @@ import { registerDriftMiddleware } from './driftMiddleware';
 import { registerNotificationMiddleware } from './notificationMiddleware';
 import { registerAnalyticsMiddleware } from './analyticsMiddleware';
 import { registerAuditMiddleware } from './auditMiddleware';
+import { registerTimingMiddleware } from './timingMiddleware';
 
 export function registerAllMiddleware(): void {
   // -- validate stage --
@@ -27,7 +28,8 @@ export function registerAllMiddleware(): void {
   // -- finalize_status stage --
   registerAnalyticsMiddleware();
 
-  // -- frontend_complete stage (priority: notification=10, budget=20, drift=30) --
+  // -- frontend_complete stage (priority: timing=5, notification=10, budget=20, drift=30) --
+  registerTimingMiddleware();
   registerNotificationMiddleware();
   registerBudgetMiddleware();
   registerDriftMiddleware();

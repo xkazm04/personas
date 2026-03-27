@@ -4,26 +4,53 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
+import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
-// -- Interactive Importance Dots (clickable) ----------------------------------
-function InteractiveImportanceDots({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  const display = hovered ?? value;
+// -- Interactive Importance Bar (clickable, 1-5 scale) -------------------------
+function getBarGradient(val: number): string {
+  if (val <= 2) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(52, 211, 153))';
+  if (val <= 3) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(251, 191, 36))';
+  return 'linear-gradient(90deg, rgb(251, 191, 36), rgb(251, 113, 133))';
+}
+
+function InteractiveImportanceBar({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const maxScale = 5;
+  const barRef = useState<HTMLDivElement | null>(null);
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const newVal = Math.max(1, Math.min(maxScale, Math.ceil((x / rect.width) * maxScale)));
+    onChange(newVal);
+  };
+
+  const pct = (value / maxScale) * 100;
+  const label = `Importance: ${value} of ${maxScale}`;
+
   return (
-    <div className="flex items-center gap-1.5">
-      <div className="flex items-center gap-1" onMouseLeave={() => setHovered(null)}>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <button
-            key={i} type="button" onMouseEnter={() => setHovered(i)} onClick={() => onChange(i)}
-            className="group/dot p-0.5 rounded-full transition-transform hover:scale-125 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400/50"
-            aria-label={`Set importance to ${i}`}
-          >
-            <div className={`w-2.5 h-2.5 rounded-full transition-colors ${i <= display ? 'bg-amber-400' : 'bg-muted-foreground/15 group-hover/dot:bg-amber-400/30'}`} />
-          </button>
-        ))}
+    <div className="flex items-center gap-1.5" title={label}>
+      <div
+        ref={(el) => { barRef[1](el); }}
+        className="relative w-24 h-2 rounded-full bg-muted-foreground/15 cursor-pointer overflow-hidden"
+        onClick={handleClick}
+        role="slider"
+        aria-valuemin={1}
+        aria-valuemax={maxScale}
+        aria-valuenow={value}
+        aria-label="Set importance"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') onChange(Math.min(maxScale, value + 1));
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') onChange(Math.max(1, value - 1));
+        }}
+      >
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-200"
+          style={{ width: `${pct}%`, background: getBarGradient(value) }}
+        />
       </div>
-      <span className="text-sm text-muted-foreground/90 tabular-nums min-w-[24px]">({display}/5)</span>
+      <span className="text-sm text-muted-foreground/90 tabular-nums min-w-[24px]">({value}/{maxScale})</span>
     </div>
   );
 }
@@ -88,13 +115,14 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
             <legend className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5">Category</legend>
             <div className="flex items-center gap-1.5 flex-wrap">
               {ALL_MEMORY_CATEGORIES.map((cat) => {
-                const defaultColors = { label: cat, bg: 'bg-gray-500/10', text: 'text-gray-600', border: 'border-gray-500/20' };
-                const colors = MEMORY_CATEGORY_COLORS[cat] ?? defaultColors;
+                const colors = MEMORY_CATEGORY_COLORS[cat];
                 const isActive = category === cat;
                 return (
                   <button key={cat} type="button" onClick={() => setCategory(cat)} aria-pressed={isActive}
-                    className={`px-2 py-1 text-sm font-mono uppercase rounded-lg border transition-all ${isActive ? `${colors.bg} ${colors.text} ${colors.border} ring-1 ring-offset-1 ring-offset-background ${colors.border.replace('border-', 'ring-')}` : 'bg-secondary/40 text-muted-foreground/80 border-primary/10 hover:text-muted-foreground hover:border-primary/20'}`}
-                  >{colors.label}</button>
+                    className={`rounded-lg transition-all ${isActive ? 'ring-1 ring-offset-1 ring-offset-background ring-current' : 'opacity-50 hover:opacity-80'}`}
+                  >
+                    <CategoryChip category={cat} colors={colors} />
+                  </button>
                 );
               })}
             </div>
@@ -114,7 +142,7 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <fieldset>
             <legend className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5">Importance</legend>
-            <InteractiveImportanceDots value={importance} onChange={setImportance} />
+            <InteractiveImportanceBar value={importance} onChange={setImportance} />
           </fieldset>
           <div>
             <label htmlFor={tagsId} className="text-sm font-mono uppercase text-muted-foreground/90 mb-1.5 block">Tags <span className="normal-case text-muted-foreground/80">(comma-separated)</span></label>

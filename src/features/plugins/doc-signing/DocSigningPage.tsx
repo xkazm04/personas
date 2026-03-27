@@ -100,8 +100,8 @@ function SignPanel() {
       const res = await signDocument(filePath, metadata || undefined);
       setResult({ sidecarJson: res.sidecar_json, fileName: res.signature.file_name });
       addToast(`Signed: ${res.signature.file_name}`, 'success');
-    } catch (e: any) {
-      addToast(`Signing failed: ${e?.message || e}`, 'error');
+    } catch (e: unknown) {
+      addToast(`Signing failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
     } finally {
       setSigning(false);
     }
@@ -246,8 +246,8 @@ function VerifyPanel() {
     try {
       const res = await verifyDocument(filePath, sidecarJson);
       setResult(res);
-    } catch (e: any) {
-      addToast(`Verification failed: ${e?.message || e}`, 'error');
+    } catch (e: unknown) {
+      addToast(`Verification failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
     } finally {
       setVerifying(false);
     }
@@ -390,8 +390,8 @@ function HistoryPanel() {
         await writeSidecarFile(path, json);
         addToast('Sidecar exported', 'success');
       }
-    } catch (e: any) {
-      addToast(`Export failed: ${e?.message || e}`, 'error');
+    } catch (e: unknown) {
+      addToast(`Export failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
     }
   }, [addToast]);
 
@@ -400,8 +400,8 @@ function HistoryPanel() {
       await deleteDocumentSignature(id);
       setSignatures((prev) => prev.filter((s) => s.id !== id));
       addToast('Signature deleted', 'success');
-    } catch (e: any) {
-      addToast(`Delete failed: ${e?.message || e}`, 'error');
+    } catch (e: unknown) {
+      addToast(`Delete failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
     }
   }, [addToast]);
 

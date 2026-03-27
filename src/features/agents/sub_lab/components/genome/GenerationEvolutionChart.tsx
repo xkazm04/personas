@@ -115,7 +115,7 @@ export function GenerationEvolutionChart({
                 />
 
                 {/* Tooltip on hover */}
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-primary/15 rounded-md px-2 py-1 text-xs whitespace-nowrap z-10 shadow-lg">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-primary/15 rounded-md px-2 py-1 text-xs whitespace-nowrap z-10 shadow-elevation-3">
                   Best: {Math.round(gen.bestFitness * 100)}% | Avg: {Math.round(gen.avgFitness * 100)}%
                 </div>
               </div>

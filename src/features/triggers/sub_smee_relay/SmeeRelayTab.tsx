@@ -1,9 +1,11 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus, Copy, Check, ExternalLink, Unplug, Plug,
-  AlertCircle, Trash2, Pause, Play, Bot, Filter, X,
+  Plus, ExternalLink, Unplug, Plug,
+  AlertCircle, Trash2, Pause, Play, Bot, Filter, X, CheckCircle2,
 } from 'lucide-react';
+import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSmeeRelayStatus } from '@/hooks/realtime/useSmeeRelayStatus';
 import { useAgentStore } from '@/stores/agentStore';
@@ -24,7 +26,6 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
   const [relays, setRelays] = useState<SmeeRelay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Add form
   const [showAdd, setShowAdd] = useState(false);
@@ -34,9 +35,12 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
   const [addFilter, setAddFilter] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
   // Confirm delete
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // Track items being animated out
+  const [exitingIds, setExitingIds] = useState<Set<string>>(new Set());
 
   const fetchRelays = useCallback(async () => {
     try {
@@ -58,12 +62,6 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     }
   }, [globalStatus.events_relayed, fetchRelays]);
 
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    }).catch(silentCatch("SmeeRelayTab:copyToClipboard"));
-  };
 
   const handleCreate = async () => {
     if (!addLabel.trim() || !addUrl.startsWith('https://smee.io/')) return;
@@ -84,6 +82,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
       setAddUrl('');
       setAddPersonaId('');
       setAddFilter('');
+      setTouchedFields(new Set());
       await fetchRelays();
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Failed to create relay');
@@ -105,12 +104,34 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
   const handleDelete = async (id: string) => {
     try {
       await smeeRelayDelete(id);
-      setRelays((prev) => prev.filter((r) => r.id !== id));
+      // Mark as exiting first so AnimatePresence can animate out
+      setExitingIds((prev) => new Set(prev).add(id));
+      // Remove from list after the exit animation duration
+      setTimeout(() => {
+        setRelays((prev) => prev.filter((r) => r.id !== id));
+        setExitingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+      }, 300);
       setConfirmDeleteId(null);
     } catch {
       // handled
     }
   };
+
+  const markTouched = (field: string) =>
+    setTouchedFields((prev) => (prev.has(field) ? prev : new Set(prev).add(field)));
+
+  const labelValid = addLabel.trim().length > 0;
+  const urlValid = addUrl.startsWith('https://smee.io/') && addUrl.length > 'https://smee.io/'.length;
+  const urlPartiallyTyped = addUrl.length > 0;
+
+  const labelError = touchedFields.has('label') && !labelValid ? 'Label is required' : null;
+  const urlError = touchedFields.has('url') && !urlValid
+    ? (!urlPartiallyTyped
+        ? 'Channel URL is required'
+        : !addUrl.startsWith('https://smee.io/')
+          ? 'URL must start with https://smee.io/'
+          : 'Enter the full channel URL (e.g. https://smee.io/abc123)')
+    : null;
 
   const activeCount = relays.filter((r) => r.status === 'active').length;
   const totalRelayed = relays.reduce((sum, r) => sum + r.eventsRelayed, 0);
@@ -159,13 +180,29 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           </div>
         </div>
 
+        {/* Legacy mode deprecation notice */}
+        {globalStatus.legacy_active && (
+          <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
+            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-400/90">
+                Legacy Smee relay mode is deprecated
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1">
+                Events from the legacy single-URL relay broadcast to <span className="font-semibold text-amber-400/70">all personas</span> without
+                targeting. Create a managed relay below to route events to specific agents and apply event filters.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Header + Add button */}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">
             Smee Relays
           </h3>
           <button
-            onClick={() => setShowAdd(!showAdd)}
+            onClick={() => { setShowAdd(!showAdd); if (showAdd) setTouchedFields(new Set()); }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/15 transition-colors"
           >
             {showAdd ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -181,25 +218,61 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">
                   Label
                 </label>
-                <input
-                  type="text"
-                  value={addLabel}
-                  onChange={(e) => setAddLabel(e.target.value)}
-                  placeholder="e.g. GitHub — my-repo"
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-border/40 bg-secondary/30 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-purple-500/40"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={addLabel}
+                    onChange={(e) => setAddLabel(e.target.value)}
+                    onBlur={() => markTouched('label')}
+                    placeholder="e.g. GitHub — my-repo"
+                    className={`w-full px-3 py-2 pr-8 text-sm rounded-lg border bg-secondary/30 text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 transition-colors ${
+                      labelError
+                        ? 'border-red-500/40 focus:ring-red-500/40'
+                        : labelValid && touchedFields.has('label')
+                          ? 'border-emerald-500/40 focus:ring-emerald-500/40'
+                          : 'border-border/40 focus:ring-purple-500/40'
+                    }`}
+                  />
+                  {touchedFields.has('label') && labelValid && (
+                    <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />
+                  )}
+                </div>
+                {labelError && (
+                  <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    {labelError}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">
                   Channel URL
                 </label>
-                <input
-                  type="text"
-                  value={addUrl}
-                  onChange={(e) => { setAddUrl(e.target.value); setCreateError(null); }}
-                  placeholder="https://smee.io/your-channel-id"
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-border/40 bg-secondary/30 text-foreground font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-purple-500/40"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={addUrl}
+                    onChange={(e) => { setAddUrl(e.target.value); setCreateError(null); }}
+                    onBlur={() => markTouched('url')}
+                    placeholder="https://smee.io/your-channel-id"
+                    className={`w-full px-3 py-2 pr-8 text-sm rounded-lg border bg-secondary/30 text-foreground font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 transition-colors ${
+                      urlError
+                        ? 'border-red-500/40 focus:ring-red-500/40'
+                        : urlValid && touchedFields.has('url')
+                          ? 'border-emerald-500/40 focus:ring-emerald-500/40'
+                          : 'border-border/40 focus:ring-purple-500/40'
+                    }`}
+                  />
+                  {touchedFields.has('url') && urlValid && (
+                    <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-400" />
+                  )}
+                </div>
+                {urlError && (
+                  <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                    {urlError}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted-foreground/80 mb-1.5">
@@ -283,7 +356,8 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         {/* Relay list */}
         {!isLoading && relays.length > 0 && (
           <div className="space-y-2">
-            {relays.map((relay) => {
+            <AnimatePresence initial={false}>
+            {relays.filter((r) => !exitingIds.has(r.id)).map((relay) => {
               const persona = relay.targetPersonaId
                 ? personas.find((p) => p.id === relay.targetPersonaId)
                 : null;
@@ -295,13 +369,18 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 : [];
 
               return (
-                <div
+                <motion.div
                   key={relay.id}
-                  className={`rounded-xl border p-4 transition-colors ${
+                  layout
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: isPaused ? 0.7 : 1, y: 0 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: 'hidden' }}
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  className={`rounded-xl border p-4 transition-[border-color,background-color] duration-300 ${
                     isError
                       ? 'border-red-500/20 bg-red-500/3'
                       : isPaused
-                        ? 'border-border/20 bg-secondary/5 opacity-70'
+                        ? 'border-border/20 bg-secondary/5'
                         : 'border-purple-500/15 bg-secondary/10'
                   }`}
                 >
@@ -310,13 +389,13 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         {/* Status dot */}
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-[background-color] duration-300 ${
                           isActive ? 'bg-emerald-400 animate-pulse' : isPaused ? 'bg-amber-400' : 'bg-red-400'
                         }`} />
                         <span className="text-sm font-semibold text-foreground/90 truncate">
                           {relay.label}
                         </span>
-                        <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
+                        <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md transition-[color,background-color,border-color] duration-300 ${
                           isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : isPaused ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                             : 'bg-red-500/10 text-red-400 border border-red-500/20'
@@ -365,17 +444,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
                     {/* Right side: actions */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        onClick={() => handleCopy(relay.channelUrl, relay.id)}
-                        className="p-1.5 rounded-lg text-foreground/50 hover:text-foreground hover:bg-secondary/50 transition-colors"
-                        title="Copy channel URL"
-                      >
-                        {copiedId === relay.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
+                      <CopyButton text={relay.channelUrl} tooltip="Copy channel URL" />
                       <button
                         onClick={() => handleToggleStatus(relay)}
                         className={`p-1.5 rounded-lg transition-colors ${
@@ -413,9 +482,10 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                       )}
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
+            </AnimatePresence>
           </div>
         )}
 

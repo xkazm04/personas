@@ -12,19 +12,7 @@ export function statusIcon(status: string) {
 
 export { formatDuration } from '@/lib/utils/formatters';
 
-export function formatCost(usd: number | null): string {
-  if (usd == null || usd === 0) return '$0.00';
-  if (usd < 0.01) return '<$0.01';
-  return `$${usd.toFixed(2)}`;
-}
+export { formatCost } from '@/lib/utils/formatters';
 
-export function timeAgo(iso: string | null): string {
-  if (!iso) return '-';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
+import { formatRelativeTime } from '@/lib/utils/formatters';
+export const timeAgo = (iso: string | null) => formatRelativeTime(iso);

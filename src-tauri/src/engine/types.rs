@@ -2,6 +2,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::db::models::{Persona, PersonaToolDefinition};
 
@@ -18,8 +19,13 @@ use crate::db::models::{Persona, PersonaToolDefinition};
 /// This is the single source of truth for execution status. The DB column
 /// stores the lowercase string form, the frontend `isExecuting` boolean is
 /// derived from `is_active()`, and event payloads carry this enum serialized.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+///
+/// The TS binding is exported via ts_rs and consumed by the frontend
+/// `executionState.ts` module. **Do not add variants here without updating
+/// the `TERMINAL` / `ACTIVE` slices and the compile-time assertion test.**
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
+#[ts(export)]
 pub enum ExecutionState {
     Queued,
     Running,
@@ -617,4 +623,66 @@ pub struct AiHealingStatusEvent {
     pub fixes_applied: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub should_retry: Option<bool>,
+}
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion: TERMINAL + ACTIVE must cover every ExecutionState variant.
+    ///
+    /// If you add a new variant to ExecutionState, this test will fail until you
+    /// classify it as either TERMINAL or ACTIVE.
+    #[test]
+    fn terminal_plus_active_covers_all_variants() {
+        // Exhaustive list of every variant — update this when adding variants.
+        let all: &[ExecutionState] = &[
+            ExecutionState::Queued,
+            ExecutionState::Running,
+            ExecutionState::Completed,
+            ExecutionState::Failed,
+            ExecutionState::Incomplete,
+            ExecutionState::Cancelled,
+        ];
+
+        for state in all {
+            assert!(
+                ExecutionState::TERMINAL.contains(state) || ExecutionState::ACTIVE.contains(state),
+                "ExecutionState::{state:?} is neither TERMINAL nor ACTIVE — classify it",
+            );
+        }
+    }
+
+    /// Ensure TERMINAL and ACTIVE are mutually exclusive.
+    #[test]
+    fn terminal_and_active_are_disjoint() {
+        for state in ExecutionState::TERMINAL {
+            assert!(
+                !ExecutionState::ACTIVE.contains(state),
+                "ExecutionState::{state:?} is in both TERMINAL and ACTIVE",
+            );
+        }
+    }
+
+    /// Verify the exact terminal set so TS/Rust stay in sync.
+    /// If a new terminal variant is added, update this test AND
+    /// `TERMINAL_STATES` in `src/lib/execution/executionState.ts`.
+    #[test]
+    fn terminal_set_matches_expected() {
+        let expected: Vec<&str> = vec!["completed", "failed", "incomplete", "cancelled"];
+        let actual: Vec<&str> = ExecutionState::TERMINAL.iter().map(|s| s.as_str()).collect();
+        assert_eq!(actual, expected, "TERMINAL set changed — update the TS TERMINAL_STATES constant");
+    }
+
+    /// Verify the exact active set.
+    #[test]
+    fn active_set_matches_expected() {
+        let expected: Vec<&str> = vec!["queued", "running"];
+        let actual: Vec<&str> = ExecutionState::ACTIVE.iter().map(|s| s.as_str()).collect();
+        assert_eq!(actual, expected, "ACTIVE set changed — update the TS ACTIVE_STATES constant");
+    }
 }

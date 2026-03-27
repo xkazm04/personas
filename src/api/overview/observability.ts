@@ -36,7 +36,9 @@ export const getPromptVersions = (personaId: string, limit?: number) =>
   });
 
 export const getAllMonthlySpend = () =>
-  invoke<Array<import('@/lib/bindings/PersonaMonthlySpend').PersonaMonthlySpend>>("get_all_monthly_spend");
+  invoke<import('@/lib/bindings/MonthlySpendResult').MonthlySpendResult>("get_all_monthly_spend", {
+    utcOffsetMinutes: -new Date().getTimezoneOffset(),
+  });
 
 // ============================================================================
 // Prompt Performance Dashboard

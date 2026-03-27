@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
@@ -19,9 +19,36 @@ import { log } from '@/lib/log';
  *   - alertRules          (Observability)
  *   - alertHistory        (Observability)
  *
- * By running at the OverviewPage level, subtab switches reuse the
- * already-cached store data instead of re-fetching on every mount.
+ * Uses Promise.allSettled() so that a failure in one source does not
+ * block the others. Per-source errors are tracked in the store so
+ * widgets with valid data still render while only the failed source
+ * shows an error indicator.
  */
+
+interface NamedFetch {
+  name: string;
+  fn: () => Promise<unknown>;
+}
+
+/** Run fetches with allSettled and report per-source errors to the store. */
+function settleAndReport(fetches: NamedFetch[], tag: string) {
+  return Promise.allSettled(fetches.map((f) => f.fn())).then((results) => {
+    const store = useOverviewStore.getState();
+    for (let i = 0; i < results.length; i++) {
+      const name = fetches[i]!.name;
+      const result = results[i]!;
+      if (result.status === 'rejected') {
+        const msg = result.reason instanceof Error ? result.reason.message : String(result.reason);
+        log.error(`[${tag}] ${name} failed:`, result.reason);
+        store.setPipelineError(name, msg);
+      } else {
+        // Clear any previous error for this source on success
+        store.setPipelineError(name, null);
+      }
+    }
+  });
+}
+
 export function useExecutionDashboardPipeline() {
   const { effectiveDays, compareEnabled, previousPeriodDays, selectedPersonaId } = useOverviewFilterValues();
   const {
@@ -39,26 +66,35 @@ export function useExecutionDashboardPipeline() {
 
   const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;
 
+  // ── Mount-only: alert data is global and not filter-dependent ──
+  useEffect(() => {
+    void settleAndReport([
+      { name: 'alertRules', fn: fetchAlertRules },
+      { name: 'alertHistory', fn: fetchAlertHistory },
+    ], 'DashboardPipeline');
+  }, [fetchAlertRules, fetchAlertHistory]);
+
   // ── Filter-dependent refresh (re-runs when days/persona/compare change) ──
   const refresh = useCallback(
-    () => Promise.all([
-      fetchExecutionDashboard(fetchDays),
-      fetchObservabilityMetrics(fetchDays, selectedPersonaId || undefined),
-      fetchToolUsage(effectiveDays, selectedPersonaId || undefined),
-      fetchHealingIssues(),
-      fetchGlobalExecutions(true, undefined, selectedPersonaId || undefined),
-      fetchAlertRules(),
-      fetchAlertHistory(),
-    ]).catch((err) => {
-      log.error('[DashboardPipeline] Fetch failed:', err);
-      useOverviewStore.getState().setPipelineError(
-        err instanceof Error ? err.message : 'Dashboard data fetch failed'
-      );
-    }),
-    [fetchExecutionDashboard, fetchObservabilityMetrics, fetchToolUsage, fetchHealingIssues, fetchGlobalExecutions, fetchAlertRules, fetchAlertHistory, fetchDays, effectiveDays, selectedPersonaId],
+    () => settleAndReport([
+      { name: 'executionDashboard', fn: () => fetchExecutionDashboard(fetchDays) },
+      { name: 'observabilityMetrics', fn: () => fetchObservabilityMetrics(fetchDays, selectedPersonaId || undefined) },
+      { name: 'toolUsage', fn: () => fetchToolUsage(effectiveDays, selectedPersonaId || undefined) },
+      { name: 'healingIssues', fn: fetchHealingIssues },
+      { name: 'globalExecutions', fn: () => fetchGlobalExecutions(true, undefined, selectedPersonaId || undefined) },
+    ], 'DashboardPipeline'),
+    [fetchExecutionDashboard, fetchObservabilityMetrics, fetchToolUsage, fetchHealingIssues, fetchGlobalExecutions, fetchDays, effectiveDays, selectedPersonaId],
   );
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  // Debounce filter-driven refreshes to avoid redundant fetches when
+  // the user clicks through day ranges or toggles compare mode rapidly.
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => { void refresh(); }, 250);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [refresh]);
 
   return { refresh };
 }

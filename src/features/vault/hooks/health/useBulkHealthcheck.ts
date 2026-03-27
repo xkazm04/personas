@@ -39,7 +39,7 @@ const STORE_FLUSH_INTERVAL = 5;
 
 export function useBulkHealthcheck() {
   const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [progress, setProgress] = useState({ done: 0, total: 0, failed: 0 });
   const cancelRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -60,11 +60,12 @@ export function useBulkHealthcheck() {
     cancelRef.current = false;
     if (mountedRef.current) {
       setIsRunning(true);
-      setProgress({ done: 0, total: credentials.length });
+      setProgress({ done: 0, total: credentials.length, failed: 0 });
     }
 
     const results: BulkResult[] = [];
     let doneCount = 0;
+    let failedCount = 0;
 
     // Batch store updates: collect patched credentials and flush periodically
     const pendingUpdates = new Map<string, CredentialMetadata>();
@@ -131,8 +132,9 @@ export function useBulkHealthcheck() {
           durationMs,
         });
         doneCount++;
+        if (!success) failedCount++;
         if (mountedRef.current) {
-          setProgress({ done: doneCount, total: credentials.length });
+          setProgress({ done: doneCount, total: credentials.length, failed: failedCount });
         }
       }
     };

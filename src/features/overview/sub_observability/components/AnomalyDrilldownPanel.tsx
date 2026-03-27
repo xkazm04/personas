@@ -130,7 +130,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
       onClose={onClose}
       titleId="anomaly-drilldown-title"
       maxWidthClass="max-w-2xl"
-      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-2xl overflow-hidden"
+      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden"
     >
       {/* Header */}
       <div className="px-5 py-4 border-b border-primary/10 bg-gradient-to-r from-red-500/5 to-transparent">

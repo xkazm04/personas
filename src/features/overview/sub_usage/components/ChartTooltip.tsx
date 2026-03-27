@@ -40,7 +40,7 @@ export function ChartTooltip({
 }) {
   if (!active || !payload || payload.length === 0) return null;
   return (
-    <div className="bg-background/95 backdrop-blur border border-foreground/10 rounded-xl shadow-2xl px-4 py-3">
+    <div className="bg-background/95 backdrop-blur border border-foreground/10 rounded-xl shadow-elevation-4 px-4 py-3">
       {label && <p className="text-sm text-foreground/90 mb-1.5">{label}</p>}
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">

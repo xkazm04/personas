@@ -1,4 +1,8 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useEffect, type ReactNode, type RefObject } from 'react';
+import { Loader2 } from 'lucide-react';
+import { SuccessCheck } from './SuccessCheck';
+import type { ValidationState } from './useFieldValidation';
+
 /** Props injected into the render-prop children for accessible input binding. */
 export interface FormFieldInputProps {
   id: string;
@@ -19,6 +23,22 @@ export interface FormFieldProps {
   hint?: string;
   /** Extra classes on the outer wrapper div. */
   className?: string;
+  /**
+   * When true and there is no error, a small animated checkmark appears next
+   * to the label to give positive reinforcement.
+   */
+  valid?: boolean;
+  /**
+   * Drives inline validation feedback: a spinner while validating, a green
+   * checkmark when valid, and the existing red error text on error.
+   * When provided, this takes precedence over the `valid` prop.
+   */
+  validationState?: ValidationState;
+  /**
+   * Ref returned by `useShakeError()`.  When an error prop is set and this
+   * ref is provided, the wrapper will shake to draw attention to the error.
+   */
+  shakeRef?: RefObject<HTMLDivElement | null>;
   /**
    * Either a plain ReactNode **or** a render-prop that receives accessible
    * input props (`id`, `aria-invalid`, `aria-describedby`).
@@ -47,6 +67,9 @@ export function FormField({
   helpText,
   hint,
   className,
+  valid,
+  validationState,
+  shakeRef,
   children,
 }: FormFieldProps) {
   const autoId = useId();
@@ -62,11 +85,40 @@ export function FormField({
     ...(describedBy ? { 'aria-describedby': describedBy } : {}),
   };
 
+  // Trigger shake when error transitions from falsy to truthy
+  useEffect(() => {
+    if (!error || !shakeRef?.current) return;
+    const el = shakeRef.current;
+    el.classList.remove('animate-shake-error');
+    void el.offsetWidth;
+    el.classList.add('animate-shake-error');
+
+    const onEnd = () => {
+      el.classList.remove('animate-shake-error');
+      el.removeEventListener('animationend', onEnd);
+    };
+    el.addEventListener('animationend', onEnd, { once: true });
+  }, [error, shakeRef]);
+
+  const showCheck = validationState ? validationState === 'valid' : (!error && valid);
+  const showSpinner = validationState === 'validating';
+
   return (
-    <div className={`space-y-1.5 ${className ?? ''}`}>
+    <div ref={shakeRef} className={`space-y-1.5 ${className ?? ''}`}>
       <label htmlFor={fieldId} className="typo-heading text-foreground/80">
         {label}
         {required && <span className="text-red-400 ml-1">*</span>}
+        {showSpinner && (
+          <Loader2
+            aria-hidden="true"
+            className="ml-1.5 inline-block w-3.5 h-3.5 animate-spin text-muted-foreground/60 align-text-bottom"
+          />
+        )}
+        {showCheck && (
+          <span className="ml-1.5">
+            <SuccessCheck visible />
+          </span>
+        )}
       </label>
 
       {hint && <p className="typo-body text-muted-foreground/80">{hint}</p>}

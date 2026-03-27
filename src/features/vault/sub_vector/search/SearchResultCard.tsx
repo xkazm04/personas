@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { FileText, Copy, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { CopyButton } from '@/features/shared/components/buttons';
 import type { VectorSearchResult } from '@/api/vault/database/vectorKb';
 
 interface SearchResultCardProps {
@@ -9,22 +10,10 @@ interface SearchResultCardProps {
 
 export function SearchResultCard({ result, rank }: SearchResultCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  useEffect(() => {
-    return () => { if (copyTimerRef.current) clearTimeout(copyTimerRef.current); };
-  }, []);
 
   const preview = result.content.length > 300 && !expanded
     ? result.content.slice(0, 300) + '...'
     : result.content;
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(result.content);
-    setCopied(true);
-    copyTimerRef.current = setTimeout(() => setCopied(false), 1200);
-  };
 
   const scorePercent = Math.round(result.score * 100);
 
@@ -46,13 +35,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <ScoreBadge score={scorePercent} />
-          <button
-            onClick={() => void handleCopy()}
-            className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/40 hover:text-foreground/70 transition-colors"
-            title="Copy content"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          </button>
+          <CopyButton text={result.content} tooltip="Copy content" />
         </div>
       </div>
 

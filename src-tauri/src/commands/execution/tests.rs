@@ -13,7 +13,7 @@ use crate::db::repos::resources::tools as tool_repo;
 use crate::engine::{eval, parser, prompt};
 use crate::engine::cli_process::CliProcessDriver;
 use crate::engine::event_registry::event_name;
-use crate::engine::test_runner::{self, TestModelConfig, TestScenario};
+use crate::engine::test_runner::{self, parse_model_configs, TestScenario};
 use crate::engine::types::{EphemeralPersona, StreamLineType};
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -35,17 +35,7 @@ pub async fn start_test_run(
     let ephemeral = EphemeralPersona::from_persisted(persona, tools);
 
     // Parse model configs from frontend
-    let mut model_configs: Vec<TestModelConfig> = Vec::new();
-    for v in models {
-        match serde_json::from_value(v.clone()) {
-            Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
-        }
-    }
-
-    if model_configs.is_empty() {
-        return Err(AppError::Validation("No valid models provided".into()));
-    }
+    let model_configs = parse_model_configs(models)?;
 
     // If a suite_id is provided, load the saved scenarios
     let preloaded_scenarios: Option<Vec<TestScenario>> = if let Some(ref sid) = suite_id {

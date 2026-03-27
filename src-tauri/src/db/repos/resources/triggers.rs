@@ -90,13 +90,16 @@ pub fn get_by_persona_id(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Vec<PersonaTrigger>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_triggers WHERE persona_id = ?1 ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map(params![persona_id], row_to_trigger)?;
-    let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(triggers)
+    timed_query!("persona_triggers", "persona_triggers::get_by_persona_id", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_triggers WHERE persona_id = ?1 ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![persona_id], row_to_trigger)?;
+        let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(triggers)
+
+    })
 }
 
 /// Bulk-fetch triggers for multiple persona IDs in a single query.
@@ -104,76 +107,82 @@ pub fn get_by_persona_ids(
     pool: &DbPool,
     persona_ids: &[String],
 ) -> Result<Vec<PersonaTrigger>, AppError> {
-    if persona_ids.is_empty() {
-        return Ok(Vec::new());
-    }
-    let conn = pool.get()?;
-    let placeholders: Vec<String> = persona_ids
-        .iter()
-        .enumerate()
-        .map(|(i, _)| format!("?{}", i + 1))
-        .collect();
-    let sql = format!(
-        "SELECT * FROM persona_triggers WHERE persona_id IN ({}) ORDER BY created_at DESC",
-        placeholders.join(", ")
-    );
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
-        .iter()
-        .map(|s| s as &dyn rusqlite::types::ToSql)
-        .collect();
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
-    let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(triggers)
+    timed_query!("persona_triggers", "persona_triggers::get_by_persona_ids", {
+        if persona_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = pool.get()?;
+        let placeholders: Vec<String> = persona_ids
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("?{}", i + 1))
+            .collect();
+        let sql = format!(
+            "SELECT * FROM persona_triggers WHERE persona_id IN ({}) ORDER BY created_at DESC",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
+        let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(triggers)
+
+    })
 }
 
 pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger, AppError> {
-    validate_trigger_type(&input.trigger_type)?;
-    validate_config(&input.trigger_type, input.config.as_deref())?;
+    timed_query!("persona_triggers", "persona_triggers::create", {
+        validate_trigger_type(&input.trigger_type)?;
+        validate_config(&input.trigger_type, input.config.as_deref())?;
 
-    // Chain triggers: reject configurations that would create a cycle
-    if input.trigger_type == "chain" {
-        if let Some(ref config_str) = input.config {
-            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(config_str) {
-                if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
-                    chain::detect_chain_cycle(pool, source_id, &input.persona_id, None)?;
+        // Chain triggers: reject configurations that would create a cycle
+        if input.trigger_type == "chain" {
+            if let Some(ref config_str) = input.config {
+                if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(config_str) {
+                    if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
+                        chain::detect_chain_cycle(pool, source_id, &input.persona_id, None)?;
+                    }
                 }
             }
         }
-    }
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let enabled = input.enabled.unwrap_or(true);
-    let status = if enabled { "active" } else { "disabled" };
-    let enabled_i = enabled as i32;
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let enabled = input.enabled.unwrap_or(true);
+        let status = if enabled { "active" } else { "disabled" };
+        let enabled_i = enabled as i32;
 
-    // Encrypt sensitive config fields before writing to DB
-    let encrypted_config = input.config.as_deref().map(encrypt_config);
+        // Encrypt sensitive config fields before writing to DB
+        let encrypted_config = input.config.as_deref().map(encrypt_config);
 
-    {
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO persona_triggers
-             (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-            params![id, input.persona_id, input.trigger_type, encrypted_config, enabled_i, status, input.use_case_id, now],
-        )?;
-    }
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO persona_triggers
+                 (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                params![id, input.persona_id, input.trigger_type, encrypted_config, enabled_i, status, input.use_case_id, now],
+            )?;
+        }
 
-    // Immediately compute and persist next_trigger_at so the scheduler loop picks
-    // up schedule/polling triggers without requiring a separate update.
-    let trigger = get_by_id(pool, &id)?;
-    if let Some(next_at) = scheduler::compute_next_trigger_at(&trigger, chrono::Utc::now()) {
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
-            params![next_at, chrono::Utc::now().to_rfc3339(), id],
-        )?;
-        return get_by_id(pool, &id);
-    }
+        // Immediately compute and persist next_trigger_at so the scheduler loop picks
+        // up schedule/polling triggers without requiring a separate update.
+        let trigger = get_by_id(pool, &id)?;
+        if let Some(next_at) = scheduler::compute_next_trigger_at(&trigger, chrono::Utc::now()) {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
+                params![next_at, chrono::Utc::now().to_rfc3339(), id],
+            )?;
+            return get_by_id(pool, &id);
+        }
 
-    Ok(trigger)
+        Ok(trigger)
+
+    })
 }
 
 pub fn update(
@@ -181,96 +190,99 @@ pub fn update(
     id: &str,
     input: UpdateTriggerInput,
 ) -> Result<PersonaTrigger, AppError> {
-    if let Some(ref tt) = input.trigger_type {
-        validate_trigger_type(tt)?;
-    }
+    timed_query!("persona_triggers", "persona_triggers::update", {
+        if let Some(ref tt) = input.trigger_type {
+            validate_trigger_type(tt)?;
+        }
 
-    // Verify exists
-    let existing = get_by_id(pool, id)?;
+        // Verify exists
+        let existing = get_by_id(pool, id)?;
 
-    let effective_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
+        let effective_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
 
-    if let Some(ref cfg) = input.config {
-        validate_config(effective_type, Some(cfg.as_str()))?;
-    }
+        if let Some(ref cfg) = input.config {
+            validate_config(effective_type, Some(cfg.as_str()))?;
+        }
 
-    // Chain triggers: reject configurations that would create a cycle
-    if effective_type == "chain" {
-        let config_str = input.config.as_deref().or(existing.config.as_deref());
-        if let Some(cfg) = config_str {
-            if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(cfg) {
-                if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
-                    chain::detect_chain_cycle(pool, source_id, &existing.persona_id, Some(id))?;
+        // Chain triggers: reject configurations that would create a cycle
+        if effective_type == "chain" {
+            let config_str = input.config.as_deref().or(existing.config.as_deref());
+            if let Some(cfg) = config_str {
+                if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(cfg) {
+                    if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
+                        chain::detect_chain_cycle(pool, source_id, &existing.persona_id, Some(id))?;
+                    }
                 }
             }
         }
-    }
 
-    // Encrypt sensitive config fields before writing to DB
-    let encrypted_config = input.config.as_deref().map(encrypt_config);
+        // Encrypt sensitive config fields before writing to DB
+        let encrypted_config = input.config.as_deref().map(encrypt_config);
 
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    // When `enabled` changes, derive the corresponding status string.
-    let derived_status: Option<String> = input.enabled.map(|e| {
-        if e { "active".into() } else { "disabled".into() }
-    });
+        // When `enabled` changes, derive the corresponding status string.
+        let derived_status: Option<String> = input.enabled.map(|e| {
+            if e { "active".into() } else { "disabled".into() }
+        });
 
-    // Build dynamic SET clause
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
+        // Build dynamic SET clause
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut param_idx = 2u32;
 
-    push_field!(input.trigger_type, "trigger_type", sets, param_idx);
-    push_field!(encrypted_config, "config", sets, param_idx);
-    push_field!(input.enabled, "enabled", sets, param_idx);
-    push_field!(derived_status, "status", sets, param_idx);
-    push_field!(input.next_trigger_at, "next_trigger_at", sets, param_idx);
+        push_field!(input.trigger_type, "trigger_type", sets, param_idx);
+        push_field!(encrypted_config, "config", sets, param_idx);
+        push_field!(input.enabled, "enabled", sets, param_idx);
+        push_field!(derived_status, "status", sets, param_idx);
+        push_field!(input.next_trigger_at, "next_trigger_at", sets, param_idx);
 
-    let sql = format!(
-        "UPDATE persona_triggers SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE persona_triggers SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-    if let Some(ref v) = input.trigger_type {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = encrypted_config {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(v) = input.enabled {
-        param_values.push(Box::new(v as i32));
-    }
-    if let Some(ref v) = derived_status {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.next_trigger_at {
-        param_values.push(Box::new(v.clone()));
-    }
-    param_values.push(Box::new(id.to_string()));
+        if let Some(ref v) = input.trigger_type {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = encrypted_config {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(v) = input.enabled {
+            param_values.push(Box::new(v as i32));
+        }
+        if let Some(ref v) = derived_status {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.next_trigger_at {
+            param_values.push(Box::new(v.clone()));
+        }
+        param_values.push(Box::new(id.to_string()));
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
-    drop(conn);
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
+        drop(conn);
 
-    // Recompute next_trigger_at when trigger_type or config changed and the
-    // caller didn't explicitly supply a next_trigger_at value.
-    let schedule_changed = input.trigger_type.is_some() || input.config.is_some();
-    if schedule_changed && input.next_trigger_at.is_none() {
-        let updated = get_by_id(pool, id)?;
-        let next_at = scheduler::compute_next_trigger_at(&updated, chrono::Utc::now());
-        let conn2 = pool.get()?;
-        conn2.execute(
-            "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
-            params![next_at, chrono::Utc::now().to_rfc3339(), id],
-        )?;
-    }
+        // Recompute next_trigger_at when trigger_type or config changed and the
+        // caller didn't explicitly supply a next_trigger_at value.
+        let schedule_changed = input.trigger_type.is_some() || input.config.is_some();
+        if schedule_changed && input.next_trigger_at.is_none() {
+            let updated = get_by_id(pool, id)?;
+            let next_at = scheduler::compute_next_trigger_at(&updated, chrono::Utc::now());
+            let conn2 = pool.get()?;
+            conn2.execute(
+                "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
+                params![next_at, chrono::Utc::now().to_rfc3339(), id],
+            )?;
+        }
 
-    get_by_id(pool, id)
+        get_by_id(pool, id)
+
+    })
 }
 
 /// Get enabled chain triggers whose source_persona_id matches the given value.
@@ -279,16 +291,19 @@ pub fn get_chain_triggers_for_source(
     pool: &DbPool,
     source_persona_id: &str,
 ) -> Result<Vec<PersonaTrigger>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_triggers
-         WHERE trigger_type = 'chain'
-           AND status = 'active'
-           AND json_extract(config, '$.source_persona_id') = ?1
-         ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map(params![source_persona_id], row_to_trigger)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("persona_triggers", "persona_triggers::get_chain_triggers_for_source", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_triggers
+             WHERE trigger_type = 'chain'
+               AND status = 'active'
+               AND json_extract(config, '$.source_persona_id') = ?1
+             ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![source_persona_id], row_to_trigger)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 /// Get enabled event_listener triggers whose listen_event_type matches the given event type.
@@ -297,16 +312,19 @@ pub fn get_event_listeners_for_event_type(
     pool: &DbPool,
     event_type: &str,
 ) -> Result<Vec<PersonaTrigger>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_triggers
-         WHERE trigger_type = 'event_listener'
-           AND status = 'active'
-           AND json_extract(config, '$.listen_event_type') = ?1
-         ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map(params![event_type], row_to_trigger)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("persona_triggers", "persona_triggers::get_event_listeners_for_event_type", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_triggers
+             WHERE trigger_type = 'event_listener'
+               AND status = 'active'
+               AND json_extract(config, '$.listen_event_type') = ?1
+             ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![event_type], row_to_trigger)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 /// Bulk-fetch enabled event_listener triggers for multiple event types in a single query.
@@ -314,113 +332,125 @@ pub fn get_event_listeners_for_event_types(
     pool: &DbPool,
     event_types: &[String],
 ) -> Result<Vec<PersonaTrigger>, AppError> {
-    if event_types.is_empty() {
-        return Ok(Vec::new());
-    }
-    let conn = pool.get()?;
-    let placeholders: Vec<String> = event_types
-        .iter()
-        .enumerate()
-        .map(|(i, _)| format!("?{}", i + 1))
-        .collect();
-    let sql = format!(
-        "SELECT * FROM persona_triggers
-         WHERE trigger_type = 'event_listener'
-           AND status = 'active'
-           AND json_extract(config, '$.listen_event_type') IN ({})
-         ORDER BY created_at DESC",
-        placeholders.join(", ")
-    );
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
-        .iter()
-        .map(|s| s as &dyn rusqlite::types::ToSql)
-        .collect();
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("persona_triggers", "persona_triggers::get_event_listeners_for_event_types", {
+        if event_types.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = pool.get()?;
+        let placeholders: Vec<String> = event_types
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("?{}", i + 1))
+            .collect();
+        let sql = format!(
+            "SELECT * FROM persona_triggers
+             WHERE trigger_type = 'event_listener'
+               AND status = 'active'
+               AND json_extract(config, '$.listen_event_type') IN ({})
+             ORDER BY created_at DESC",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 /// Get enabled triggers of a specific type using SQL-level filtering.
 /// Avoids loading all triggers and filtering in Rust — mirrors the pattern
 /// used by `get_chain_triggers_for_source` and `get_event_listeners_for_event_type`.
 pub fn get_enabled_by_type(pool: &DbPool, trigger_type: &str) -> Result<Vec<PersonaTrigger>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_triggers
-         WHERE trigger_type = ?1 AND status = 'active'
-         ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map(params![trigger_type], row_to_trigger)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("persona_triggers", "persona_triggers::get_enabled_by_type", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_triggers
+             WHERE trigger_type = ?1 AND status = 'active'
+             ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![trigger_type], row_to_trigger)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_triggers
-         WHERE status = 'active' AND next_trigger_at IS NOT NULL AND next_trigger_at <= ?1
-         ORDER BY next_trigger_at ASC",
-    )?;
-    let rows = stmt.query_map(params![now], row_to_trigger)?;
-    let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-    Ok(triggers)
+    timed_query!("persona_triggers", "persona_triggers::get_due", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_triggers
+             WHERE status = 'active' AND next_trigger_at IS NOT NULL AND next_trigger_at <= ?1
+             ORDER BY next_trigger_at ASC",
+        )?;
+        let rows = stmt.query_map(params![now], row_to_trigger)?;
+        let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(triggers)
+
+    })
 }
 
 /// Returns a map of trigger_id -> health status ("healthy", "degraded", "failing", "unknown")
 /// by joining triggers with the 3 most recent executions per trigger in a single query.
 pub fn get_health_map(pool: &DbPool) -> Result<std::collections::HashMap<String, String>, AppError> {
-    let conn = pool.get()?;
-    // For each trigger, get the 3 most recent executions (ranked by created_at DESC).
-    // Then aggregate: count failures in top 3, check if top 2 are both non-completed.
-    let mut stmt = conn.prepare(
-        "WITH ranked AS (
-           SELECT
-             e.trigger_id,
-             e.status,
-             ROW_NUMBER() OVER (PARTITION BY e.trigger_id ORDER BY e.created_at DESC) AS rn
-           FROM persona_executions e
-           WHERE e.trigger_id IS NOT NULL
-         ),
-         top3 AS (
-           SELECT trigger_id, status, rn FROM ranked WHERE rn <= 3
-         ),
-         agg AS (
-           SELECT
-             trigger_id,
-             COUNT(*) AS total,
-             SUM(CASE WHEN status IN ('failed', 'error') THEN 1 ELSE 0 END) AS fail_count,
-             -- Check if the two most recent are both non-completed
-             SUM(CASE WHEN rn <= 2 AND status != 'completed' THEN 1 ELSE 0 END) AS top2_non_completed
-           FROM top3
-           GROUP BY trigger_id
-         )
-         SELECT trigger_id, total, fail_count, top2_non_completed FROM agg",
-    )?;
+    timed_query!("persona_triggers", "persona_triggers::get_health_map", {
+        let conn = pool.get()?;
+        // For each trigger, get the 3 most recent executions (ranked by created_at DESC).
+        // Then aggregate: count failures in top 3, check if top 2 are both non-completed.
+        let mut stmt = conn.prepare(
+            "WITH ranked AS (
+               SELECT
+                 e.trigger_id,
+                 e.status,
+                 ROW_NUMBER() OVER (PARTITION BY e.trigger_id ORDER BY e.created_at DESC) AS rn
+               FROM persona_executions e
+               WHERE e.trigger_id IS NOT NULL
+             ),
+             top3 AS (
+               SELECT trigger_id, status, rn FROM ranked WHERE rn <= 3
+             ),
+             agg AS (
+               SELECT
+                 trigger_id,
+                 COUNT(*) AS total,
+                 SUM(CASE WHEN status IN ('failed', 'error') THEN 1 ELSE 0 END) AS fail_count,
+                 -- Check if the two most recent are both non-completed
+                 SUM(CASE WHEN rn <= 2 AND status != 'completed' THEN 1 ELSE 0 END) AS top2_non_completed
+               FROM top3
+               GROUP BY trigger_id
+             )
+             SELECT trigger_id, total, fail_count, top2_non_completed FROM agg",
+        )?;
 
-    let mut health_map = std::collections::HashMap::new();
-    let rows = stmt.query_map([], |row| {
-        let trigger_id: String = row.get(0)?;
-        let total: i64 = row.get(1)?;
-        let fail_count: i64 = row.get(2)?;
-        let top2_non_completed: i64 = row.get(3)?;
-        Ok((trigger_id, total, fail_count, top2_non_completed))
-    })?;
+        let mut health_map = std::collections::HashMap::new();
+        let rows = stmt.query_map([], |row| {
+            let trigger_id: String = row.get(0)?;
+            let total: i64 = row.get(1)?;
+            let fail_count: i64 = row.get(2)?;
+            let top2_non_completed: i64 = row.get(3)?;
+            Ok((trigger_id, total, fail_count, top2_non_completed))
+        })?;
 
-    for row in rows {
-        let (trigger_id, total, fail_count, top2_non_completed) = row.map_err(AppError::Database)?;
-        let health = if total == 0 {
-            "unknown"
-        } else if fail_count == 0 {
-            "healthy"
-        } else if total >= 2 && top2_non_completed >= 2 {
-            "failing"
-        } else {
-            "degraded"
-        };
-        health_map.insert(trigger_id, health.to_string());
-    }
+        for row in rows {
+            let (trigger_id, total, fail_count, top2_non_completed) = row.map_err(AppError::Database)?;
+            let health = if total == 0 {
+                "unknown"
+            } else if fail_count == 0 {
+                "healthy"
+            } else if total >= 2 && top2_non_completed >= 2 {
+                "failing"
+            } else {
+                "degraded"
+            };
+            health_map.insert(trigger_id, health.to_string());
+        }
 
-    Ok(health_map)
+        Ok(health_map)
+
+    })
 }
 
 /// Single-query chain link resolution using SQL JOINs + json_extract.
@@ -432,36 +462,39 @@ pub fn get_chain_links(
     Vec<(String, String, String, String, String, String, bool)>,
     AppError,
 > {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT
-           t.id,
-           COALESCE(json_extract(t.config, '$.source_persona_id'), '') AS source_persona_id,
-           COALESCE(sp.name, 'Unknown') AS source_persona_name,
-           t.persona_id AS target_persona_id,
-           COALESCE(tp.name, 'Unknown') AS target_persona_name,
-           COALESCE(json_extract(t.config, '$.condition.type'), 'any') AS condition_type,
-           t.enabled
-         FROM persona_triggers t
-         LEFT JOIN personas sp ON sp.id = json_extract(t.config, '$.source_persona_id')
-         LEFT JOIN personas tp ON tp.id = t.persona_id
-         WHERE t.trigger_type = 'chain'
-         ORDER BY t.created_at DESC",
-    )?;
+    timed_query!("persona_triggers", "persona_triggers::get_chain_links", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT
+               t.id,
+               COALESCE(json_extract(t.config, '$.source_persona_id'), '') AS source_persona_id,
+               COALESCE(sp.name, 'Unknown') AS source_persona_name,
+               t.persona_id AS target_persona_id,
+               COALESCE(tp.name, 'Unknown') AS target_persona_name,
+               COALESCE(json_extract(t.config, '$.condition.type'), 'any') AS condition_type,
+               t.enabled
+             FROM persona_triggers t
+             LEFT JOIN personas sp ON sp.id = json_extract(t.config, '$.source_persona_id')
+             LEFT JOIN personas tp ON tp.id = t.persona_id
+             WHERE t.trigger_type = 'chain'
+             ORDER BY t.created_at DESC",
+        )?;
 
-    let rows = stmt.query_map([], |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, String>(1)?,
-            row.get::<_, String>(2)?,
-            row.get::<_, String>(3)?,
-            row.get::<_, String>(4)?,
-            row.get::<_, String>(5)?,
-            row.get::<_, i32>(6)? != 0,
-        ))
-    })?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
+                row.get::<_, String>(5)?,
+                row.get::<_, i32>(6)? != 0,
+            ))
+        })?;
 
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 /// Atomically claim a due trigger using compare-and-swap on `next_trigger_at`.
@@ -476,15 +509,18 @@ pub fn mark_triggered(
     next_trigger_at: Option<String>,
     expected_next_trigger_at: Option<&str>,
 ) -> Result<bool, AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "UPDATE persona_triggers
-         SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1
-         WHERE id = ?3 AND next_trigger_at IS ?4",
-        params![now, next_trigger_at, id, expected_next_trigger_at],
-    )?;
-    Ok(rows > 0)
+    timed_query!("persona_triggers", "persona_triggers::mark_triggered", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "UPDATE persona_triggers
+             SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1
+             WHERE id = ?3 AND next_trigger_at IS ?4",
+            params![now, next_trigger_at, id, expected_next_trigger_at],
+        )?;
+        Ok(rows > 0)
+
+    })
 }
 
 /// Unconditionally advance a trigger's schedule after a manual execution.
@@ -498,15 +534,18 @@ pub fn advance_schedule(
     id: &str,
     next_trigger_at: Option<String>,
 ) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE persona_triggers
-         SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1
-         WHERE id = ?3",
-        params![now, next_trigger_at, id],
-    )?;
-    Ok(())
+    timed_query!("persona_triggers", "persona_triggers::advance_schedule", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_triggers
+             SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1
+             WHERE id = ?3",
+            params![now, next_trigger_at, id],
+        )?;
+        Ok(())
+
+    })
 }
 
 /// Atomically update the content hash and advance the schedule in a single
@@ -526,47 +565,53 @@ pub fn mark_triggered_with_hash(
     expected_old_hash: Option<&str>,
     next_trigger_at: Option<String>,
 ) -> Result<bool, AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+    timed_query!("persona_triggers", "persona_triggers::mark_triggered_with_hash", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    let rows = match expected_old_hash {
-        Some(old) => conn.execute(
-            "UPDATE persona_triggers
-             SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
-                 last_triggered_at = ?2,
-                 next_trigger_at = ?3,
-                 updated_at = ?2
-             WHERE id = ?4
-               AND json_extract(config, '$.content_hash') = ?5",
-            params![new_hash, now, next_trigger_at, id, old],
-        )?,
-        None => conn.execute(
-            "UPDATE persona_triggers
-             SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
-                 last_triggered_at = ?2,
-                 next_trigger_at = ?3,
-                 updated_at = ?2
-             WHERE id = ?4
-               AND json_extract(config, '$.content_hash') IS NULL",
-            params![new_hash, now, next_trigger_at, id],
-        )?,
-    };
+        let rows = match expected_old_hash {
+            Some(old) => conn.execute(
+                "UPDATE persona_triggers
+                 SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
+                     last_triggered_at = ?2,
+                     next_trigger_at = ?3,
+                     updated_at = ?2
+                 WHERE id = ?4
+                   AND json_extract(config, '$.content_hash') = ?5",
+                params![new_hash, now, next_trigger_at, id, old],
+            )?,
+            None => conn.execute(
+                "UPDATE persona_triggers
+                 SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
+                     last_triggered_at = ?2,
+                     next_trigger_at = ?3,
+                     updated_at = ?2
+                 WHERE id = ?4
+                   AND json_extract(config, '$.content_hash') IS NULL",
+                params![new_hash, now, next_trigger_at, id],
+            )?,
+        };
 
-    Ok(rows > 0)
+        Ok(rows > 0)
+
+    })
 }
 
 /// Set the `enabled` flag on a trigger. Used as a safety valve to disable
 /// triggers that fail to mark as triggered, preventing cascade re-fire loops.
 /// Also updates the `status` column to stay in sync.
 pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let status = if enabled { "active" } else { "disabled" };
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE persona_triggers SET enabled = ?1, status = ?2, updated_at = ?3 WHERE id = ?4",
-        params![enabled as i32, status, now, id],
-    )?;
-    Ok(())
+    timed_query!("persona_triggers", "persona_triggers::set_enabled", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let status = if enabled { "active" } else { "disabled" };
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_triggers SET enabled = ?1, status = ?2, updated_at = ?3 WHERE id = ?4",
+            params![enabled as i32, status, now, id],
+        )?;
+        Ok(())
+
+    })
 }
 
 /// Set the full lifecycle status on a trigger, keeping `enabled` in sync.
@@ -578,13 +623,64 @@ pub fn set_status(
     id: &str,
     status: crate::engine::lifecycle::TriggerStatus,
 ) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE persona_triggers SET status = ?1, enabled = ?2, updated_at = ?3 WHERE id = ?4",
-        params![status.as_str(), status.is_enabled() as i32, now, id],
-    )?;
-    Ok(())
+    timed_query!("persona_triggers", "persona_triggers::set_status", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_triggers SET status = ?1, enabled = ?2, updated_at = ?3 WHERE id = ?4",
+            params![status.as_str(), status.is_enabled() as i32, now, id],
+        )?;
+        Ok(())
+
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Composite trigger fire persistence
+// ---------------------------------------------------------------------------
+
+/// Load all persisted composite trigger fire timestamps.
+pub fn load_composite_fires(pool: &DbPool) -> Result<Vec<(String, String)>, AppError> {
+    timed_query!("composite_trigger_fires", "composite_fires::load_all", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT trigger_id, fired_at FROM composite_trigger_fires"
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
+        let mut result = Vec::new();
+        for r in rows {
+            result.push(r?);
+        }
+        Ok(result)
+    })
+}
+
+/// Upsert a composite trigger fire timestamp.
+pub fn upsert_composite_fire(pool: &DbPool, trigger_id: &str, fired_at: &str) -> Result<(), AppError> {
+    timed_query!("composite_trigger_fires", "composite_fires::upsert", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO composite_trigger_fires (trigger_id, fired_at)
+             VALUES (?1, ?2)
+             ON CONFLICT(trigger_id) DO UPDATE SET fired_at = excluded.fired_at",
+            params![trigger_id, fired_at],
+        )?;
+        Ok(())
+    })
+}
+
+/// Remove composite fire records older than the given cutoff timestamp.
+pub fn cleanup_composite_fires(pool: &DbPool, cutoff: &str) -> Result<(), AppError> {
+    timed_query!("composite_trigger_fires", "composite_fires::cleanup", {
+        let conn = pool.get()?;
+        conn.execute(
+            "DELETE FROM composite_trigger_fires WHERE fired_at < ?1",
+            params![cutoff],
+        )?;
+        Ok(())
+    })
 }
 
 #[cfg(test)]

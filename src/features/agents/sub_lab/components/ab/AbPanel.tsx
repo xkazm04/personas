@@ -1,14 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Play, Square, ChevronDown, Filter } from 'lucide-react';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { ChevronDown } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { DiffViewer } from '@/features/agents/sub_lab/shared';
 import { LabProgress } from '../shared/LabProgress';
 import { AbHistory } from './AbHistory';
-import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
-import { ANTHROPIC_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
+import { ModelToggleGrid, UseCaseFilterPicker, LabActionButtons } from '../../shared';
 
 export function AbPanel() {
   const promptVersions = useAgentStore((s) => s.promptVersions);
@@ -53,8 +52,6 @@ export function AbPanel() {
   const versionA = useMemo(() => promptVersions.find((v) => v.id === versionAId) ?? null, [promptVersions, versionAId]);
   const versionB = useMemo(() => promptVersions.find((v) => v.id === versionBId) ?? null, [promptVersions, versionBId]);
 
-  const useCases = useSelectedUseCases();
-  const useCaseOptions = useMemo(() => [{ value: '__all__', label: 'All Use Cases' }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
   const versionOptions = useMemo(() => promptVersions.map((v) => ({ value: v.id, label: `v${v.version_number} -- ${v.tag}` })), [promptVersions]);
 
   const handleStart = async () => {
@@ -71,14 +68,14 @@ export function AbPanel() {
       <Listbox itemCount={versionOptions.length} onSelectFocused={(idx) => { const opt = versionOptions[idx]; if (opt) onChange(opt.value); }} ariaLabel={`Select ${label}`}
         renderTrigger={({ isOpen, toggle }) => (
           <button onClick={toggle} data-testid={testId}
-           
+
             className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs border transition-all ${isOpen ? `bg-${color}-500/10 border-${color}-500/30` : 'bg-background/30 border-primary/10 hover:border-primary/20'}`}>
             <span className="text-foreground/80">{versionOptions.find((o) => o.value === value)?.label ?? 'Select version'}</span>
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
         )}>
         {({ close, focusIndex }) => (
-          <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+          <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-elevation-3 mt-1 max-h-48 overflow-y-auto">
             {versionOptions.map((opt, i) => (
               <button key={opt.value} data-testid={`ab-version-opt-${opt.label.replace(/\s+/g, '-').toLowerCase()}`} onClick={() => { onChange(opt.value); close(); }}
                 className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${value === opt.value ? `text-${color}-400 font-medium` : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>
@@ -106,42 +103,8 @@ export function AbPanel() {
             </div>
           )}
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-muted-foreground/80">Models</label>
-            <div className="flex flex-wrap gap-2">
-              {ANTHROPIC_MODELS.map((m) => (
-                <button key={m.id} onClick={() => toggleModel(m.id)}
-                 
-                  className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'}`}>
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {useCases.length > 0 && (
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-muted-foreground/80 flex items-center gap-1.5"><Filter className="w-3.5 h-3.5" />Focus</label>
-              <Listbox itemCount={useCaseOptions.length} onSelectFocused={(idx) => { const opt = useCaseOptions[idx]; if (opt) setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); }} ariaLabel="Filter by use case"
-                renderTrigger={({ isOpen, toggle }) => (
-                  <button onClick={toggle} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30' : 'bg-background/30 border-primary/10 hover:border-primary/20'}`}>
-                    <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                )}>
-                {({ close, focusIndex }) => (
-                  <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
-                    {useCaseOptions.map((opt, i) => (
-                      <button key={opt.value} onClick={() => { setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); close(); }}
-                        className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${(selectedUseCaseId ?? '__all__') === opt.value ? 'text-primary font-medium' : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </Listbox>
-            </div>
-          )}
+          <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} />
+          <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} />
 
           <div className="space-y-1">
             <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
@@ -149,27 +112,17 @@ export function AbPanel() {
               className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
           </div>
 
-          {isLabRunning ? (
-            <button data-testid="ab-cancel-btn" onClick={() => void handleCancel()} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
-              <Square className="w-4 h-4" />Cancel A/B Test
-            </button>
-          ) : (
-            <Tooltip
-              content={
-                !versionAId ? 'Select Version A to continue'
-                  : !versionBId ? 'Select Version B to continue'
-                  : selectedModels.size === 0 ? 'Select at least one model'
-                  : ''
-              }
-              placement="top"
-              delay={200}
-            >
-              <button data-testid="ab-run-btn" onClick={() => void handleStart()} disabled={!versionAId || !versionBId || selectedModels.size === 0}
-                className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
-                <Play className="w-4 h-4" />Run A/B Test
-              </button>
-            </Tooltip>
-          )}
+          <LabActionButtons
+            isRunning={isLabRunning}
+            onStart={() => void handleStart()}
+            onCancel={() => void handleCancel()}
+            disabled={!versionAId || !versionBId || selectedModels.size === 0}
+            disabledReason={!versionAId ? 'Select Version A to continue' : !versionBId ? 'Select Version B to continue' : selectedModels.size === 0 ? 'Select at least one model' : ''}
+            runLabel="Run A/B Test"
+            cancelLabel="Cancel A/B Test"
+            cancelTestId="ab-cancel-btn"
+            runTestId="ab-run-btn"
+          />
 
           <LabProgress />
         </div>

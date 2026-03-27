@@ -18,6 +18,30 @@ use super::n8n_transform::{
     parse_persona_output, run_claude_prompt_text_inner, N8nPersonaOutput,
 };
 
+// -- Template integrity helper -----------------------------------
+
+/// Verify template content against the embedded checksum manifest.
+/// Returns `Err(AppError::Validation)` if the template is known but its
+/// content does not match the expected hash (possible tampering).
+fn check_template_integrity(template_name: &str, content_json: &str) -> Result<(), AppError> {
+    let integrity =
+        crate::engine::template_checksums::verify_template(template_name, content_json);
+    if integrity.is_known_template && !integrity.valid {
+        tracing::warn!(
+            template = %template_name,
+            expected = ?integrity.expected_hash,
+            actual = %integrity.actual_hash,
+            "SECURITY: Template integrity check failed during adoption — content may have been tampered with"
+        );
+        return Err(AppError::Validation(
+            "Template integrity verification failed: content does not match the expected checksum. \
+             The template may have been tampered with."
+                .into(),
+        ));
+    }
+    Ok(())
+}
+
 // -- Adopt job extra state ---------------------------------------
 
 #[derive(Clone, Default)]
@@ -167,22 +191,7 @@ pub async fn start_template_adopt_background(
     validate_optional_json_field("connector_swaps_json", &connector_swaps_json)?;
 
     // Backend integrity check: verify the design result against the embedded manifest.
-    let integrity = crate::engine::template_checksums::verify_template(
-        &template_name,
-        &design_result_json,
-    );
-    if integrity.is_known_template && !integrity.valid {
-        tracing::warn!(
-            template = %template_name,
-            expected = ?integrity.expected_hash,
-            actual = %integrity.actual_hash,
-            "SECURITY: Template integrity check failed during adoption — content may have been tampered with"
-        );
-        return Err(AppError::Validation(
-            "Template integrity verification failed: content does not match the expected checksum. \
-             The template may have been tampered with.".into(),
-        ));
-    }
+    check_template_integrity(&template_name, &design_result_json)?;
 
     let cancel_token = CancellationToken::new();
     ADOPT_JOBS.insert_running(adopt_id.clone(), cancel_token.clone(), AdoptExtra::default())?;
@@ -463,22 +472,7 @@ pub fn instant_adopt_template_inner(
 
     // Backend integrity check: verify the design result against the embedded manifest.
     // This catches tampered templates even if the frontend checksums were bypassed.
-    let integrity = crate::engine::template_checksums::verify_template(
-        &template_name,
-        &design_result_json,
-    );
-    if integrity.is_known_template && !integrity.valid {
-        tracing::warn!(
-            template = %template_name,
-            expected = ?integrity.expected_hash,
-            actual = %integrity.actual_hash,
-            "SECURITY: Template integrity check failed during adoption — content may have been tampered with"
-        );
-        return Err(AppError::Validation(
-            "Template integrity verification failed: content does not match the expected checksum. \
-             The template may have been tampered with.".into(),
-        ));
-    }
+    check_template_integrity(&template_name, &design_result_json)?;
 
     let design: serde_json::Value = serde_json::from_str(&design_result_json)
         .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;

@@ -1,10 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, ClipboardPaste, Eye, EyeOff, Check } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
 type FieldCaptureSource = 'schema' | 'negotiator' | 'auto';
 type FieldCaptureMode = 'readonly' | 'editable' | 'confirming';
 type FieldInputType = 'text' | 'password' | 'url' | 'select';
+
+type ValidationGlow = 'none' | 'valid' | 'warning';
+
+const MIN_KEY_LENGTH = 8;
+
+function computeValidationGlow(value: string, inputType: FieldInputType): ValidationGlow {
+  if (!value) return 'none';
+  const trimmed = value.trim();
+  if (!trimmed) return 'warning';
+  if (inputType === 'url') {
+    try { new URL(trimmed); return 'valid'; } catch { return 'warning'; }
+  }
+  // For password/key fields: warn if too short or contains interior spaces (likely paste error)
+  if (inputType === 'password') {
+    if (trimmed.length < MIN_KEY_LENGTH) return 'warning';
+    if (/\s/.test(trimmed)) return 'warning';
+    return 'valid';
+  }
+  // Generic text: valid when non-empty
+  return trimmed.length > 0 ? 'valid' : 'none';
+}
+
+const GLOW_CLASSES: Record<ValidationGlow, string> = {
+  none: '',
+  valid: 'border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.15)]',
+  warning: 'border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.12)]',
+};
 
 interface FieldCaptureRowProps {
   source: FieldCaptureSource;
@@ -84,6 +111,11 @@ export function FieldCaptureRow({
       // intentional: non-critical -- clipboard copy may be denied by browser
     }
   };
+
+  const glow = useMemo(
+    () => (isEditable && inputType !== 'select') ? computeValidationGlow(value, inputType) : 'none',
+    [value, inputType, isEditable],
+  );
 
   const valueClass = mode === 'confirming'
     ? (value ? 'border-emerald-500/25 bg-emerald-500/5 text-foreground' : 'border-primary/15 bg-secondary/25 text-muted-foreground/60')
@@ -180,7 +212,7 @@ export function FieldCaptureRow({
           placeholder={placeholder}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full px-3 py-2 border rounded-xl text-sm focus-visible:outline-none focus-visible:ring-2 transition-all placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : valueClass}`}
+          className={`w-full px-3 py-2 border rounded-xl text-sm focus-visible:outline-none focus-visible:ring-2 transition-all duration-300 placeholder-muted-foreground/30 disabled:opacity-70 disabled:cursor-not-allowed ${SOURCE_ACCENT[source]} ${error ? 'border-red-500/50' : glow !== 'none' ? GLOW_CLASSES[glow] : valueClass}`}
           data-testid={testIdBase ? `${testIdBase}-input` : undefined}
         />
       )}

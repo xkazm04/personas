@@ -43,28 +43,32 @@ pub fn create_run(
     persona_id: &str,
     models_tested: &str,
 ) -> Result<PersonaTestRun, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
+    timed_query!("test_runs", "test_runs::create_run", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO persona_test_runs (id, persona_id, status, models_tested, created_at)
-         VALUES (?1, ?2, 'generating', ?3, ?4)",
-        params![id, persona_id, models_tested, now],
-    )?;
-    get_run_by_id(pool, &id)
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_test_runs (id, persona_id, status, models_tested, created_at)
+             VALUES (?1, ?2, 'generating', ?3, ?4)",
+            params![id, persona_id, models_tested, now],
+        )?;
+        get_run_by_id(pool, &id)
+    })
 }
 
 pub fn get_run_by_id(pool: &DbPool, id: &str) -> Result<PersonaTestRun, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_test_runs WHERE id = ?1",
-        params![id],
-        row_to_run,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("TestRun {id}")),
-        other => AppError::Database(other),
+    timed_query!("test_runs", "test_runs::get_run_by_id", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT * FROM persona_test_runs WHERE id = ?1",
+            params![id],
+            row_to_run,
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("TestRun {id}")),
+            other => AppError::Database(other),
+        })
     })
 }
 
@@ -73,15 +77,17 @@ pub fn get_runs_by_persona(
     persona_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaTestRun>, AppError> {
-    let limit = limit.unwrap_or(20);
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_test_runs WHERE persona_id = ?1
-         ORDER BY created_at DESC LIMIT ?2",
-    )?;
-    let rows = stmt.query_map(params![persona_id, limit], row_to_run)?;
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)
+    timed_query!("test_runs", "test_runs::get_runs_by_persona", {
+        let limit = limit.unwrap_or(20);
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_test_runs WHERE persona_id = ?1
+             ORDER BY created_at DESC LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![persona_id, limit], row_to_run)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
 }
 
 pub fn update_run_status(
@@ -93,24 +99,28 @@ pub fn update_run_status(
     error: Option<&str>,
     completed_at: Option<&str>,
 ) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE persona_test_runs SET
-            status = ?1,
-            scenarios_count = COALESCE(?2, scenarios_count),
-            summary = COALESCE(?3, summary),
-            error = COALESCE(?4, error),
-            completed_at = COALESCE(?5, completed_at)
-         WHERE id = ?6",
-        params![status, scenarios_count, summary, error, completed_at, id],
-    )?;
-    Ok(())
+    timed_query!("test_runs", "test_runs::update_run_status", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_test_runs SET
+                status = ?1,
+                scenarios_count = COALESCE(?2, scenarios_count),
+                summary = COALESCE(?3, summary),
+                error = COALESCE(?4, error),
+                completed_at = COALESCE(?5, completed_at)
+             WHERE id = ?6",
+            params![status, scenarios_count, summary, error, completed_at, id],
+        )?;
+        Ok(())
+    })
 }
 
 pub fn delete_run(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM persona_test_runs WHERE id = ?1", params![id])?;
-    Ok(rows > 0)
+    timed_query!("test_runs", "test_runs::delete_run", {
+        let conn = pool.get()?;
+        let rows = conn.execute("DELETE FROM persona_test_runs WHERE id = ?1", params![id])?;
+        Ok(rows > 0)
+    })
 }
 
 // -- Test Results -----------------------------------------------
@@ -119,6 +129,7 @@ pub fn create_result(
     pool: &DbPool,
     input: &CreateTestResultInput,
 ) -> Result<PersonaTestResult, AppError> {
+    timed_query!("test_runs", "test_runs::create_result", {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -153,18 +164,21 @@ pub fn create_result(
         ],
     )?;
     get_result_by_id(pool, &id)
+    })
 }
 
 pub fn get_result_by_id(pool: &DbPool, id: &str) -> Result<PersonaTestResult, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_test_results WHERE id = ?1",
-        params![id],
-        row_to_result,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("TestResult {id}")),
-        other => AppError::Database(other),
+    timed_query!("test_runs", "test_runs::get_result_by_id", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT * FROM persona_test_results WHERE id = ?1",
+            params![id],
+            row_to_result,
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("TestResult {id}")),
+            other => AppError::Database(other),
+        })
     })
 }
 
@@ -172,14 +186,16 @@ pub fn get_results_by_run(
     pool: &DbPool,
     test_run_id: &str,
 ) -> Result<Vec<PersonaTestResult>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_test_results WHERE test_run_id = ?1
-         ORDER BY scenario_name, model_id",
-    )?;
-    let rows = stmt.query_map(params![test_run_id], row_to_result)?;
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)
+    timed_query!("test_runs", "test_runs::get_results_by_run", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_test_results WHERE test_run_id = ?1
+             ORDER BY scenario_name, model_id",
+        )?;
+        let rows = stmt.query_map(params![test_run_id], row_to_result)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
 }
 
 #[cfg(test)]

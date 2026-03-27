@@ -92,7 +92,7 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
       setNodes(n);
       setEdges(e);
       const raw = localStorage.getItem('event_canvas_layout');
-      if (raw) { try { const l = JSON.parse(raw); if (l.stickyNotes?.length) dispatch({ type: 'SET_STICKY_NOTES', notes: l.stickyNotes }); } catch {} }
+      if (raw) { try { const l = JSON.parse(raw); if (l.stickyNotes?.length) dispatch({ type: 'SET_STICKY_NOTES', notes: l.stickyNotes }); } catch { /* ignore malformed localStorage */ } }
     } catch (err) {
       logger.error('Failed to load canvas', { error: String(err) });
     }
@@ -119,7 +119,7 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
         id: `edge-${trigger.id}`, source: sourceId, target: targetId, type: 'eventEdge',
         data: { triggerId: trigger.id, eventType: sd.eventType, sourceFilter: sd.sourceFilter ?? null, conditionType: 'always' } satisfies EventEdgeData,
       }]);
-    } catch (err) { console.error('[EventCanvas] Failed to create trigger:', err); }
+    } catch (err) { logger.error('Failed to create trigger', { error: err instanceof Error ? err.message : String(err) }); }
   }, [nodes, edges, setEdges]);
 
   const onConnect = useCallback((c: Connection) => { if (c.source && c.target) void createConnection(c.source, c.target); }, [createConnection]);
@@ -178,7 +178,7 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
   const onEdgesDelete = useCallback(async (deleted: Edge[]) => {
     for (const e of deleted) {
       const d = e.data as EventEdgeData | undefined;
-      if (d?.triggerId) { const tn = nodes.find(n => n.id === e.target); try { await deleteTrigger(d.triggerId, tn ? (tn.data as PersonaConsumerNodeData).personaId : e.target); } catch {} }
+      if (d?.triggerId) { const tn = nodes.find(n => n.id === e.target); try { await deleteTrigger(d.triggerId, tn ? (tn.data as PersonaConsumerNodeData).personaId : e.target); } catch { /* best-effort cleanup */ } }
     }
     void loadCanvas();
   }, [nodes, loadCanvas]);
@@ -217,21 +217,21 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
   const handleRemove = useCallback(async () => {
     if (!contextMenu) return;
     const conn = edges.filter(e => e.source === contextMenu.nodeId || e.target === contextMenu.nodeId);
-    for (const e of conn) { const d = e.data as EventEdgeData | undefined; if (d?.triggerId) { const tn = nodes.find(n => n.id === e.target); try { await deleteTrigger(d.triggerId, tn ? (tn.data as PersonaConsumerNodeData).personaId : e.target); } catch {} } }
+    for (const e of conn) { const d = e.data as EventEdgeData | undefined; if (d?.triggerId) { const tn = nodes.find(n => n.id === e.target); try { await deleteTrigger(d.triggerId, tn ? (tn.data as PersonaConsumerNodeData).personaId : e.target); } catch { /* best-effort cleanup */ } } }
     setNodes(prev => prev.filter(n => n.id !== contextMenu.nodeId));
     setEdges(prev => prev.filter(e => e.source !== contextMenu.nodeId && e.target !== contextMenu.nodeId));
     setContextMenu(null);
   }, [contextMenu, edges, nodes, setNodes, setEdges]);
 
   const handleConnectFromMenu = useCallback(() => { if (!contextMenu) return; startConnect(contextMenu.nodeId, contextMenu.nodeType); setContextMenu(null); }, [contextMenu, startConnect]);
-  const handleTestFire = useCallback(async () => { if (!contextMenu?.eventType) return; setTestFiring(true); try { await testEventFlow(contextMenu.eventType, JSON.stringify({ _source: 'canvas_test' })); } catch {} finally { setTestFiring(false); setContextMenu(null); } }, [contextMenu]);
+  const handleTestFire = useCallback(async () => { if (!contextMenu?.eventType) return; setTestFiring(true); try { await testEventFlow(contextMenu.eventType, JSON.stringify({ _source: 'canvas_test' })); } catch { /* test fire is best-effort */ } finally { setTestFiring(false); setContextMenu(null); } }, [contextMenu]);
 
   // Edge tooltip
   const handleEdgeTypeChange = useCallback(async (newType: string) => {
     const t = cs.edgeTooltip; if (!t) return;
     const d = t.edge.data as EventEdgeData | undefined; if (!d?.triggerId) return;
     const cfg = { listen_event_type: d.eventType, source_filter: d.sourceFilter, condition_type: newType };
-    try { await updateTrigger(d.triggerId, nodes.find(n => n.id === t.edge.target)?.id ?? t.edge.target, { trigger_type: null, config: JSON.stringify(cfg), enabled: null, next_trigger_at: null }); setEdges(prev => prev.map(e => e.id === t.edge.id ? { ...e, data: { ...e.data, conditionType: newType } } : e)); } catch {}
+    try { await updateTrigger(d.triggerId, nodes.find(n => n.id === t.edge.target)?.id ?? t.edge.target, { trigger_type: null, config: JSON.stringify(cfg), enabled: null, next_trigger_at: null }); setEdges(prev => prev.map(e => e.id === t.edge.id ? { ...e, data: { ...e.data, conditionType: newType } } : e)); } catch { /* best-effort update */ }
     dispatch({ type: 'SET_EDGE_TOOLTIP', tooltip: null });
   }, [cs.edgeTooltip, nodes, setEdges, dispatch]);
 
@@ -295,7 +295,7 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
 
         {/* Banner — only for click-to-place, not during pointer drag */}
         {showBanner && (
-          <div className="absolute top-12 left-2 z-30 flex items-center gap-2 px-3 py-2 bg-card border border-amber-500/40 rounded-lg shadow-lg">
+          <div className="absolute top-12 left-2 z-30 flex items-center gap-2 px-3 py-2 bg-card border border-amber-500/40 rounded-lg shadow-elevation-3">
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             <span className="text-[11px] text-foreground font-medium">
               {showConnectBanner ? 'Click a persona node to complete connection' : `Click on canvas to place "${getPendingLabel()}"`}
@@ -323,13 +323,13 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
           proOptions={proOptions} className="bg-background"
         >
           <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} className="opacity-30" />
-          <Controls showInteractive={false} position="bottom-right" className="!bg-card/80 !border-primary/10 !shadow-sm" />
+          <Controls showInteractive={false} position="bottom-right" className="!bg-card/80 !border-primary/10 !shadow-elevation-1" />
         </ReactFlow>
 
         {cs.dryRunState && <EventDryRunBar dryRunState={cs.dryRunState} availableEventTypes={dryRun.availableEventTypes} onStart={dryRun.start} onStep={dryRun.step} onStop={dryRun.stop} />}
 
         {variantB.ghost && (
-          <div className="fixed z-[100] pointer-events-none px-3 py-1.5 rounded-lg bg-card border border-primary/30 text-xs text-foreground shadow-xl" style={{ left: variantB.ghost.x + 14, top: variantB.ghost.y + 14 }}>
+          <div className="fixed z-[100] pointer-events-none px-3 py-1.5 rounded-lg bg-card border border-primary/30 text-xs text-foreground shadow-elevation-3" style={{ left: variantB.ghost.x + 14, top: variantB.ghost.y + 14 }}>
             {variantB.ghost.label}
           </div>
         )}
@@ -344,7 +344,7 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
         )}
 
         {contextMenu && (
-          <div className="fixed z-[100] min-w-[190px] rounded-lg bg-card border border-primary/20 shadow-2xl py-1" style={{ left: contextMenu.x, top: contextMenu.y }}>
+          <div className="fixed z-[100] min-w-[190px] rounded-lg bg-card border border-primary/20 shadow-elevation-4 py-1" style={{ left: contextMenu.x, top: contextMenu.y }}>
             <div className="px-3 py-1.5 border-b border-primary/10"><span className="text-[10px] text-muted-foreground truncate block max-w-[170px]">{contextMenu.nodeLabel}</span></div>
             {contextMenu.eventType && <button onClick={handleTestFire} disabled={testFiring} className="flex items-center gap-2 w-full px-3 py-2 text-xs text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50">{testFiring ? <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" /> : <Play className="w-3.5 h-3.5 text-emerald-400" />}{testFiring ? 'Firing...' : 'Fire Test Event'}</button>}
             {contextMenu.nodeType === NODE_TYPE_EVENT_SOURCE && <button onClick={handleConnectFromMenu} className="flex items-center gap-2 w-full px-3 py-2 text-xs text-foreground hover:bg-secondary/60 transition-colors"><Link2 className="w-3.5 h-3.5 text-cyan-400" />Connect to persona...</button>}

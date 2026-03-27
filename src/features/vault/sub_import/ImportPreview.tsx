@@ -201,7 +201,7 @@ export function ImportPreview({
         <button
           onClick={onImport}
           disabled={selectedCount === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Import className="w-4 h-4" />
           Import {selectedCount} Secret{selectedCount !== 1 ? 's' : ''}

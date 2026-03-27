@@ -14,11 +14,34 @@ use crate::error::AppError;
 use serde::Serialize;
 use tauri::AppHandle;
 
+/// Parse a credential's JSON metadata, returning `None` if absent or invalid.
+fn parse_credential_metadata(
+    cred: &crate::db::models::PersonaCredential,
+) -> Option<serde_json::Value> {
+    cred.metadata
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+}
+
+/// Extract `oauth_token_expires_at` from parsed metadata.
+fn extract_expires_at(
+    meta: &serde_json::Value,
+) -> Option<chrono::DateTime<chrono::FixedOffset>> {
+    meta.get("oauth_token_expires_at")
+        .and_then(|v| v.as_str())
+        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+}
+
 /// Threshold: refresh tokens that expire within this many seconds.
 const REFRESH_THRESHOLD_SECS: i64 = 900; // 15 minutes
 
 /// Default token lifetime fallback when the provider omits `expires_in`.
 const DEFAULT_FALLBACK_LIFETIME_SECS: u64 = 3600;
+
+/// Maximum age of an expired token that is still eligible for refresh.
+/// Both startup sweep and periodic tick use this same threshold so that no
+/// credential falls through the gap between the two code paths.
+const STALENESS_CEILING_SECS: i64 = 604800; // 7 days
 
 /// Exponential backoff steps for failed OAuth refreshes (in seconds).
 /// 15 min → 1 hr → 4 hr → 24 hr (capped).
@@ -52,24 +75,17 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
     let mut failed: u32 = 0;
 
     for cred in &all_creds {
-        let meta: Option<serde_json::Value> = cred
-            .metadata
-            .as_deref()
-            .and_then(|s| serde_json::from_str(s).ok());
+        let meta = parse_credential_metadata(cred);
 
-        let expires_at = meta
-            .as_ref()
-            .and_then(|m| m.get("oauth_token_expires_at"))
-            .and_then(|v| v.as_str())
-            .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok());
+        let expires_at = meta.as_ref().and_then(extract_expires_at);
 
         let Some(expires_at) = expires_at else {
             continue;
         };
 
         let remaining = expires_at.signed_duration_since(now);
-        // Refresh if expired (up to 7 days old) or expiring within threshold
-        if remaining.num_seconds() > startup_threshold_secs || remaining.num_seconds() < -604800 {
+        // Refresh if expired (up to STALENESS_CEILING) or expiring within threshold
+        if remaining.num_seconds() > startup_threshold_secs || remaining.num_seconds() < -STALENESS_CEILING_SECS {
             continue;
         }
 
@@ -81,7 +97,11 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
         );
 
         match refresh_single_credential(pool, cred).await {
-            Ok(_) => refreshed += 1,
+            Ok(_) => {
+                refreshed += 1;
+                // Clear backoff on success, just like refresh_expiring_tokens does
+                clear_refresh_backoff(pool, &cred.id);
+            }
             Err(e) => {
                 failed += 1;
                 if matches!(e, AppError::OAuthRevoked(_)) {
@@ -100,6 +120,8 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
                         "Startup OAuth sweep: failed to refresh token"
                     );
                 }
+                // Set backoff so periodic tick doesn't immediately re-attempt a doomed refresh
+                set_refresh_backoff(pool, &cred.id, &meta);
             }
         }
     }
@@ -125,17 +147,9 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
     let mut failed: usize = 0;
 
     for cred in &all_creds {
-        // Check metadata for oauth_token_expires_at
-        let meta: Option<serde_json::Value> = cred
-            .metadata
-            .as_deref()
-            .and_then(|s| serde_json::from_str(s).ok());
+        let meta = parse_credential_metadata(cred);
 
-        let expires_at = meta
-            .as_ref()
-            .and_then(|m| m.get("oauth_token_expires_at"))
-            .and_then(|v| v.as_str())
-            .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok());
+        let expires_at = meta.as_ref().and_then(extract_expires_at);
 
         let Some(expires_at) = expires_at else {
             continue;
@@ -144,8 +158,8 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
         oauth_eligible += 1;
 
         let remaining = expires_at.signed_duration_since(now);
-        if remaining.num_seconds() > REFRESH_THRESHOLD_SECS || remaining.num_seconds() < -86400 {
-            // Not expiring soon, or expired more than 24h ago (stale, skip)
+        if remaining.num_seconds() > REFRESH_THRESHOLD_SECS || remaining.num_seconds() < -STALENESS_CEILING_SECS {
+            // Not expiring soon, or expired beyond staleness ceiling (skip)
             continue;
         }
 
@@ -242,10 +256,7 @@ pub async fn refresh_single_credential(
     }
 
     // Extract the previous token's issued-at time from metadata (for actual lifetime calc)
-    let meta: Option<serde_json::Value> = cred
-        .metadata
-        .as_deref()
-        .and_then(|s| serde_json::from_str(s).ok());
+    let meta = parse_credential_metadata(cred);
 
     let previous_refresh_at = meta
         .as_ref()

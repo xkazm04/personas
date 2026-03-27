@@ -49,14 +49,5 @@ export function useFavoriteAgents() {
 
   const isFavorite = useCallback((id: string) => favs.has(id), [favs]);
 
-  const removeFavorite = useCallback((id: string) => {
-    if (!favorites.has(id)) return;
-    const next = new Set(favorites);
-    next.delete(id);
-    favorites = next;
-    persist(next);
-    notify();
-  }, []);
-
-  return { favorites: favs, toggleFavorite, isFavorite, removeFavorite };
+  return { favorites: favs, toggleFavorite, isFavorite };
 }

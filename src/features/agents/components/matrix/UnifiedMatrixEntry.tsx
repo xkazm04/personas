@@ -8,9 +8,6 @@
  * It uses useMatrixBuild for build orchestration and manages local state
  * for intent text and agent name. Draft persona creation follows the same
  * pattern as MatrixCreator (createPersona via agentStore).
- *
- * NOTE: This does NOT delete CreationWizard -- that happens in Plan 05.
- * This plan just creates the replacement component.
  */
 import { useState, useCallback, useEffect, useRef } from "react";
 import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix/PersonaMatrix";
@@ -21,15 +18,6 @@ import { useSystemStore } from "@/stores/systemStore";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("unified-matrix-entry");
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface UnifiedMatrixEntryProps {
-  /** @deprecated Cancel button removed. Kept for call-site compatibility. */
-  canCancel?: boolean;
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,7 +57,7 @@ function generateAgentName(intent: string): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export function UnifiedMatrixEntry(_props: UnifiedMatrixEntryProps) {
+export function UnifiedMatrixEntry() {
   const createPersona = useAgentStore((s) => s.createPersona);
   const deletePersona = useAgentStore((s) => s.deletePersona);
 
@@ -143,7 +131,7 @@ export function UnifiedMatrixEntry(_props: UnifiedMatrixEntryProps) {
     if (typeof draftName === "string" && draftName.length > 0 && draftName !== agentName) {
       setAgentName(draftName);
     }
-  }, [buildDraft]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [buildDraft]);
 
   // -- Handlers -----------------------------------------------------------
 

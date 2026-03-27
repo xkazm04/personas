@@ -163,7 +163,7 @@ export const createN8nSession = (
   workflowName: string,
   rawWorkflowJson: string,
   step: string,
-  status: string,
+  status: import('@/lib/bindings/SessionStatus').SessionStatus,
 ) =>
   invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession>(
     "create_n8n_session",
@@ -190,7 +190,7 @@ export const updateN8nSession = (
   id: string,
   updates: {
     workflowName?: string;
-    status?: string;
+    status?: import('@/lib/bindings/SessionStatus').SessionStatus;
     parserResult?: string | null;
     draftJson?: string | null;
     userAnswers?: string | null;
@@ -203,7 +203,7 @@ export const updateN8nSession = (
 ) =>
   invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession>(
     "update_n8n_session",
-    { id, ...updates },
+    { params: { id, ...updates } },
   );
 
 export const deleteN8nSession = (id: string) =>

@@ -36,13 +36,20 @@ export function useBadgeCounts(): BadgeCounts {
       void state.fetchUnreadMessageCount();
       void state.fetchRecentEvents();
 
-      // Subscribe only to the 3 badge fields with shallow equality
-      let prev = { pendingReviewCount: state.pendingReviewCount, unreadMessageCount: state.unreadMessageCount, pendingEventCount: state.pendingEventCount };
+      // Subscribe to store changes and update only when badge fields change
+      let prev = { ...state } as { pendingReviewCount: number; unreadMessageCount: number; pendingEventCount: number };
       unsub = useOverviewStore.subscribe((s) => {
-        const next = { pendingReviewCount: s.pendingReviewCount, unreadMessageCount: s.unreadMessageCount, pendingEventCount: s.pendingEventCount };
-        if (next.pendingReviewCount !== prev.pendingReviewCount || next.unreadMessageCount !== prev.unreadMessageCount || next.pendingEventCount !== prev.pendingEventCount) {
-          prev = next;
-          setCounts(next);
+        if (
+          s.pendingReviewCount !== prev.pendingReviewCount ||
+          s.unreadMessageCount !== prev.unreadMessageCount ||
+          s.pendingEventCount !== prev.pendingEventCount
+        ) {
+          prev = s;
+          setCounts({
+            pendingReviewCount: s.pendingReviewCount,
+            unreadMessageCount: s.unreadMessageCount,
+            pendingEventCount: s.pendingEventCount,
+          });
         }
       });
     });

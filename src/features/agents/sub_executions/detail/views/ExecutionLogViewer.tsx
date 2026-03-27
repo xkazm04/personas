@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { ChevronDown, ChevronRight, FileText, Loader2, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, Loader2 } from 'lucide-react';
+import { CopyButton } from '@/features/shared/components/buttons';
 import { getExecutionLog } from '@/api/agents/executions';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 
@@ -16,12 +17,23 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
   const [copied, setCopied] = useState(false);
 
   const handleCopyLog = useCallback(() => {
-    if (!logContent) return;
-    navigator.clipboard.writeText(logContent).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => { /* ignore */ });
-  }, [logContent]);
+    if (logContent) {
+      navigator.clipboard.writeText(logContent).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(() => { /* ignore */ });
+    } else {
+      getExecutionLog(executionId, personaId ?? '').then((content) => {
+        setLogContent(content ?? '');
+        if (content) {
+          navigator.clipboard.writeText(content).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }).catch(() => {});
+        }
+      }).catch(() => { /* ignore */ });
+    }
+  }, [logContent, executionId, personaId]);
 
   const handleToggleLog = useCallback(async () => {
     if (showLog) {
@@ -53,23 +65,7 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
           <FileText className="w-4 h-4" />
           Execution Log
         </button>
-        <button
-            onClick={async () => {
-              if (!logContent) {
-                try {
-                  const content = await getExecutionLog(executionId, personaId ?? '');
-                  setLogContent(content ?? '');
-                  if (content) { navigator.clipboard.writeText(content).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {}); }
-                } catch { /* ignore */ }
-              } else {
-                handleCopyLog();
-              }
-            }}
-            className="p-1 rounded-lg hover:bg-secondary/50 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-            title="Copy log to clipboard"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          </button>
+        <CopyButton copied={copied} onCopy={handleCopyLog} tooltip="Copy log to clipboard" />
       </div>
       {showLog && (
           <div>

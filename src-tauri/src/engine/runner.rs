@@ -147,39 +147,63 @@ pub async fn run_execution(
 
     let log_file_path = logger.path().to_string_lossy().to_string();
 
-    // Resolve workspace (group) defaults -- persona-level > group-level > global
+    // Resolve workspace (group) defaults via the centralised cascade:
+    // persona-level > workspace-level > global-level.
+    // `config_merge::resolve_effective_config` logs which tier supplied each
+    // value so the priority order is visible in traces.
     let workspace = persona
         .group_id
         .as_deref()
         .and_then(|gid| group_repo::get_by_id(&pool, gid).ok());
 
-    let mut persona = persona;
-    if let Some(ref ws) = workspace {
-        // Fall back to workspace model profile when persona has none
-        if persona.model_profile.is_none() && ws.default_model_profile.is_some() {
-            persona.model_profile = ws.default_model_profile.clone();
-        }
-        // Fall back to workspace budget when persona has none
-        if persona.max_budget_usd.is_none() && ws.default_max_budget_usd.is_some() {
-            persona.max_budget_usd = ws.default_max_budget_usd;
-        }
-        // Fall back to workspace max turns when persona has none
-        if persona.max_turns.is_none() && ws.default_max_turns.is_some() {
-            persona.max_turns = ws.default_max_turns;
-        }
-    }
+    let effective = super::config_merge::resolve_effective_config(
+        &pool,
+        &persona,
+        workspace.as_ref(),
+    );
 
-    // Fall back to global model profile when neither persona nor workspace provides one
-    if persona.model_profile.as_deref().map_or(true, |p| p.trim().is_empty()) {
-        if let Ok(Some(global_json)) = crate::db::repos::core::settings::get(
-            &pool,
-            settings_keys::GLOBAL_MODEL_PROFILE,
-        ) {
-            if !global_json.trim().is_empty() {
-                persona.model_profile = Some(global_json);
-            }
+    // Apply the resolved effective values back onto the persona so that
+    // downstream code (prompt building, budget enforcement, etc.) sees the
+    // cascaded result without duplicating the fallback logic.
+    let mut persona = persona;
+    if let Some(ref model_json) = effective.model.value {
+        // Reconstruct a ModelProfile JSON that reflects all resolved fields,
+        // preserving any agent-level fields not part of the cascade.
+        let mut base = persona.model_profile.as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .and_then(|v| v.as_object().cloned())
+            .unwrap_or_default();
+
+        base.insert("model".into(), serde_json::Value::String(model_json.clone()));
+        if let Some(ref p) = effective.provider.value {
+            base.insert("provider".into(), serde_json::Value::String(p.clone()));
         }
+        if let Some(ref u) = effective.base_url.value {
+            base.insert("base_url".into(), serde_json::Value::String(u.clone()));
+        }
+        if let Some(ref t) = effective.auth_token.value {
+            base.insert("auth_token".into(), serde_json::Value::String(t.clone()));
+        }
+        if let Some(ref c) = effective.prompt_cache_policy.value {
+            base.insert("prompt_cache_policy".into(), serde_json::Value::String(c.clone()));
+        }
+        persona.model_profile = Some(serde_json::to_string(&base).unwrap_or_default());
+    } else if effective.provider.value.is_some() || effective.base_url.value.is_some() {
+        // No model but other profile fields resolved — still build the JSON
+        let mut base = serde_json::Map::new();
+        if let Some(ref p) = effective.provider.value {
+            base.insert("provider".into(), serde_json::Value::String(p.clone()));
+        }
+        if let Some(ref u) = effective.base_url.value {
+            base.insert("base_url".into(), serde_json::Value::String(u.clone()));
+        }
+        if let Some(ref t) = effective.auth_token.value {
+            base.insert("auth_token".into(), serde_json::Value::String(t.clone()));
+        }
+        persona.model_profile = Some(serde_json::to_string(&base).unwrap_or_default());
     }
+    persona.max_budget_usd = effective.max_budget_usd.value;
+    persona.max_turns = effective.max_turns.value;
 
     // Parse model profile
     let mut model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
@@ -265,10 +289,25 @@ pub async fn run_execution(
     // This is the single source of truth for what config this execution used.
     let execution_config = ExecutionConfig {
         model_profile: model_profile.as_ref().map(RedactedModelProfile::from_profile),
-        engine: provider::load_engine_kind(&pool).as_setting().to_string(),
+        engine: provider::load_engine_kind_notified(&pool, &app).as_setting().to_string(),
         max_budget_usd: persona.max_budget_usd,
         max_turns: persona.max_turns,
-        timeout_ms: persona.timeout_ms,
+        timeout_ms: {
+            let ceiling = super::ENGINE_MAX_EXECUTION_MS;
+            if persona.timeout_ms > ceiling {
+                tracing::warn!(
+                    persona_id = %persona.id,
+                    configured_ms = persona.timeout_ms,
+                    ceiling_ms = ceiling,
+                    "Persona timeout_ms exceeds engine ceiling — clamped to {}ms ({}min)",
+                    ceiling,
+                    ceiling / 60_000,
+                );
+                ceiling
+            } else {
+                persona.timeout_ms
+            }
+        },
         has_workspace_instructions: workspace_instructions.is_some(),
         workspace_id: persona.group_id.clone(),
         tool_names: tools.iter().map(|t| t.name.clone()).collect(),
@@ -433,7 +472,7 @@ pub async fn run_execution(
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
     // =========================================================================
-    let primary_engine = provider::load_engine_kind(&pool);
+    let primary_engine = provider::load_engine_kind_notified(&pool, &app);
 
     // Evaluate BYOM policy if configured
     let byom_policy = super::byom::ByomPolicy::load(&pool);
@@ -1097,7 +1136,8 @@ pub async fn run_execution(
                                             notification_channels: notif_channels_for_stream.as_deref(),
                                             logger: &mut logger,
                                         };
-                                        super::dispatch::dispatch(&mut dispatch_ctx, &protocol_msg);
+                                        use super::protocol::ExecutionProtocol;
+                                        dispatch_ctx.dispatch_message(&protocol_msg);
                                         trace.end_span_ok(&dispatch_span);
                                     }
                                 }
@@ -1228,16 +1268,17 @@ pub async fn run_execution(
                 notification_channels: notif_ref,
                 logger: &mut logger,
             };
+            use super::protocol::ExecutionProtocol;
             for line in assistant_text.split('\n') {
                 let trimmed = line.trim();
                 if trimmed.starts_with('{') {
                     if let Some(protocol_msg) = parser::extract_protocol_message(trimmed) {
                         match &protocol_msg {
                             ProtocolMessage::EmitEvent { .. } if need_events => {
-                                super::dispatch::dispatch(&mut dispatch_ctx, &protocol_msg);
+                                dispatch_ctx.dispatch_message(&protocol_msg);
                             }
                             ProtocolMessage::AgentMemory { .. } if need_memories => {
-                                super::dispatch::dispatch(&mut dispatch_ctx, &protocol_msg);
+                                dispatch_ctx.dispatch_message(&protocol_msg);
                             }
                             _ => {}
                         }
@@ -1820,7 +1861,7 @@ pub(crate) async fn inject_credential(
         }
     }
 
-    let _ = cred_repo::mark_used(pool, &cred.id);
+    let _ = cred_repo::record_usage(pool, &cred.id);
     let _ = audit_log::insert(
         pool,
         &cred.id,

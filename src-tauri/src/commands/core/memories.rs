@@ -5,11 +5,19 @@ use tokio::process::Command;
 
 use ts_rs::TS;
 
-use crate::db::models::{CreatePersonaMemoryInput, PersonaMemory};
+use crate::db::models::{CreatePersonaMemoryInput, MemoryCategoryInfo, PersonaMemory};
 use crate::db::repos::core::memories as repo;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+#[tauri::command]
+pub fn list_memory_categories(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<MemoryCategoryInfo>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::db::models::all_category_info())
+}
 
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
@@ -392,69 +400,67 @@ Memories to review:
     })
 }
 
-// -- Dev seed: mock memory -------------------------------------------------------
-
-const MOCK_MEMORY_TITLES: &[&str] = &[
-    "Prefers JSON responses over XML",
-    "Retry failed API calls up to 3 times",
-    "Use UTC timezone for all timestamps",
-    "Customer prefers email over Slack",
-    "Rate limit: 100 req/min on external APIs",
-    "Always include correlation ID in logs",
-    "Summarize long documents to under 500 words",
-    "Skip weekend scheduling for notifications",
-];
-
-const MOCK_MEMORY_CONTENTS: &[&str] = &[
-    "When formatting output, always use JSON. The downstream consumers parse JSON and XML causes failures.",
-    "External API calls should retry with exponential backoff. Max 3 attempts with 1s, 2s, 4s delays.",
-    "All date/time values must be in UTC. Converting to local timezone happens on the frontend only.",
-    "Based on past interactions, this customer responds faster to email. Slack messages are often missed.",
-    "The third-party API enforces 100 requests per minute. Implement token-bucket rate limiting.",
-    "Every log entry must include the X-Correlation-ID header value for distributed tracing.",
-    "Long documents (>2000 words) should be summarized before processing to stay within token limits.",
-    "Business notifications should only be sent Mon-Fri 9am-6pm UTC. Queue weekend events for Monday.",
-];
-
-const MOCK_MEMORY_CATEGORIES: &[&str] = &[
-    "preference", "operational", "operational", "preference",
-    "constraint", "operational", "preference", "constraint",
-];
-
-const MOCK_MEMORY_TAGS: &[&str] = &[
-    r#"["formatting","output"]"#, r#"["reliability","api"]"#, r#"["timezone","standard"]"#,
-    r#"["communication","customer"]"#, r#"["api","rate-limit"]"#, r#"["logging","observability"]"#,
-    r#"["summarization","nlp"]"#, r#"["scheduling","notifications"]"#,
-];
+// -- Dev seed: mock memory (debug builds only) -----------------------------------
 
 #[tauri::command]
 pub fn seed_mock_memory(
-    state: State<'_, Arc<AppState>>,
+    _state: State<'_, Arc<AppState>>,
 ) -> Result<PersonaMemory, AppError> {
-    require_auth_sync(&state)?;
+    #[cfg(debug_assertions)]
+    {
+        require_auth_sync(&_state)?;
 
-    let personas = crate::db::repos::core::personas::get_all(&state.db)?;
-    let idx = (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
-    let persona_id = personas.get(idx).map(|p| p.id.clone())
-        .unwrap_or_else(|| "mock-persona".to_string());
+        const MOCK_TITLES: &[&str] = &[
+            "Prefers JSON responses over XML",
+            "Retry failed API calls up to 3 times",
+            "Use UTC timezone for all timestamps",
+            "Customer prefers email over Slack",
+            "Rate limit: 100 req/min on external APIs",
+            "Always include correlation ID in logs",
+            "Summarize long documents to under 500 words",
+            "Skip weekend scheduling for notifications",
+        ];
+        const MOCK_CONTENTS: &[&str] = &[
+            "When formatting output, always use JSON. The downstream consumers parse JSON and XML causes failures.",
+            "External API calls should retry with exponential backoff. Max 3 attempts with 1s, 2s, 4s delays.",
+            "All date/time values must be in UTC. Converting to local timezone happens on the frontend only.",
+            "Based on past interactions, this customer responds faster to email. Slack messages are often missed.",
+            "The third-party API enforces 100 requests per minute. Implement token-bucket rate limiting.",
+            "Every log entry must include the X-Correlation-ID header value for distributed tracing.",
+            "Long documents (>2000 words) should be summarized before processing to stay within token limits.",
+            "Business notifications should only be sent Mon-Fri 9am-6pm UTC. Queue weekend events for Monday.",
+        ];
+        const MOCK_CATEGORIES: &[&str] = &[
+            "preference", "instruction", "instruction", "preference",
+            "constraint", "instruction", "preference", "constraint",
+        ];
+        const MOCK_TAGS: &[&str] = &[
+            r#"["formatting","output"]"#, r#"["reliability","api"]"#, r#"["timezone","standard"]"#,
+            r#"["communication","customer"]"#, r#"["api","rate-limit"]"#, r#"["logging","observability"]"#,
+            r#"["summarization","nlp"]"#, r#"["scheduling","notifications"]"#,
+        ];
 
-    let t = (chrono::Utc::now().timestamp_millis() as usize) / 7; // vary selection
-    let input = CreatePersonaMemoryInput {
-        persona_id,
-        title: MOCK_MEMORY_TITLES[t % MOCK_MEMORY_TITLES.len()].to_string(),
-        content: MOCK_MEMORY_CONTENTS[t % MOCK_MEMORY_CONTENTS.len()].to_string(),
-        category: Some(MOCK_MEMORY_CATEGORIES[t % MOCK_MEMORY_CATEGORIES.len()].to_string()),
-        source_execution_id: None,
-        importance: Some(((t % 5) + 1) as i32),
-        tags: Some(MOCK_MEMORY_TAGS[t % MOCK_MEMORY_TAGS.len()].to_string()),
-    };
+        let personas = crate::db::repos::core::personas::get_all(&_state.db)?;
+        let idx = (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
+        let persona_id = personas.get(idx).map(|p| p.id.clone())
+            .unwrap_or_else(|| "mock-persona".to_string());
 
-    // Disable FK checks for dev seed (persona may not exist)
-    let conn = state.db.get()?;
-    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
-    let result = repo::create(&state.db, input);
-    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
-    result
+        let t = (chrono::Utc::now().timestamp_millis() as usize) / 7;
+        let input = CreatePersonaMemoryInput {
+            persona_id,
+            title: MOCK_TITLES[t % MOCK_TITLES.len()].to_string(),
+            content: MOCK_CONTENTS[t % MOCK_CONTENTS.len()].to_string(),
+            category: Some(MOCK_CATEGORIES[t % MOCK_CATEGORIES.len()].to_string()),
+            source_execution_id: None,
+            importance: Some(((t % 5) + 1) as i32),
+            tags: Some(MOCK_TAGS[t % MOCK_TAGS.len()].to_string()),
+        };
+
+        return repo::create(&_state.db, input);
+    }
+
+    #[allow(unreachable_code)]
+    Err(AppError::Internal("seed_mock_memory is only available in debug builds".into()))
 }
 
 /// Extract the first top-level JSON array from mixed text output.

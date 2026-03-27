@@ -9,6 +9,7 @@ export { MetricChart } from './components/MetricChart';
 // Libs
 export {
   CHART_COLORS, CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL,
+  getGridStroke, getAxisTickFill,
   CHART_HEIGHT, METRIC_UNITS_BY_KEY, metricUnitForKey,
 } from './libs/chartConstants';
 export type { MetricUnit } from './libs/chartConstants';

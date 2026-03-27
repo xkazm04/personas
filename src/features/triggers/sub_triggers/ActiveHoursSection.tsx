@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Clock, ChevronDown, ChevronRight } from 'lucide-react';
+import { Clock, ChevronDown, ChevronRight, Globe } from 'lucide-react';
 const DAYS = [
   { key: 0, label: 'Sun', short: 'S' },
   { key: 1, label: 'Mon', short: 'M' },
@@ -20,6 +20,8 @@ export interface ActiveWindowConfig {
   start_minute: number;
   end_hour: number;
   end_minute: number;
+  /** IANA timezone name (e.g. "America/New_York"). When absent, system local is used. */
+  timezone?: string;
 }
 
 const DEFAULT_ACTIVE_WINDOW: ActiveWindowConfig = {
@@ -31,6 +33,16 @@ const DEFAULT_ACTIVE_WINDOW: ActiveWindowConfig = {
   end_minute: 0,
 };
 
+/** Resolve the display name for the active timezone. */
+function resolvedTimezoneLabel(tz?: string): string {
+  if (tz) return tz;
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return 'Local';
+  }
+}
+
 function parseActiveWindow(config: Record<string, unknown>): ActiveWindowConfig {
   const raw = config.active_window as Record<string, unknown> | undefined;
   if (!raw) return { ...DEFAULT_ACTIVE_WINDOW };
@@ -41,6 +53,7 @@ function parseActiveWindow(config: Record<string, unknown>): ActiveWindowConfig 
     start_minute: typeof raw.start_minute === 'number' ? raw.start_minute : 0,
     end_hour: typeof raw.end_hour === 'number' ? raw.end_hour : 18,
     end_minute: typeof raw.end_minute === 'number' ? raw.end_minute : 0,
+    timezone: typeof raw.timezone === 'string' ? raw.timezone : undefined,
   };
 }
 
@@ -95,8 +108,9 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
     [aw.days],
   );
 
+  const tzLabel = resolvedTimezoneLabel(aw.timezone);
   const summaryLabel = aw.enabled
-    ? `${isWeekdays ? 'Weekdays' : isEveryday ? 'Every day' : `${aw.days.length} days`} ${formatTime(aw.start_hour, aw.start_minute)}–${formatTime(aw.end_hour, aw.end_minute)}`
+    ? `${isWeekdays ? 'Weekdays' : isEveryday ? 'Every day' : `${aw.days.length} days`} ${formatTime(aw.start_hour, aw.start_minute)}–${formatTime(aw.end_hour, aw.end_minute)} ${tzLabel}`
     : null;
 
   return (
@@ -198,7 +212,24 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                       }}
                       className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-ring"
                     />
-                    <span className="text-muted-foreground/40 text-xs">(local time)</span>
+                  </div>
+
+                  {/* Timezone */}
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-3 h-3 text-muted-foreground/50" />
+                    <input
+                      type="text"
+                      value={aw.timezone ?? ''}
+                      placeholder={resolvedTimezoneLabel()}
+                      onChange={(e) => {
+                        const val = e.target.value.trim();
+                        update({ timezone: val || undefined });
+                      }}
+                      className="px-2 py-1 text-sm bg-background/50 border border-primary/10 rounded-lg text-foreground/80 focus-ring w-48"
+                    />
+                    <span className="text-muted-foreground/40 text-xs">
+                      {aw.timezone ? aw.timezone : `System: ${resolvedTimezoneLabel()}`}
+                    </span>
                   </div>
                 </>
               )}

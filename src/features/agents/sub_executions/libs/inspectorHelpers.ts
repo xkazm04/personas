@@ -25,10 +25,8 @@ export function durationColor(ms: number | undefined): string {
   return 'bg-red-500/15 text-red-400 border-red-500/20';
 }
 
-export function formatCost(value: number): string {
-  if (value < 0.001) return '<$0.001';
-  return `$${value.toFixed(4)}`;
-}
+import { formatCost as _formatCost } from '@/lib/utils/formatters';
+export const formatCost = (value: number) => _formatCost(value, { precision: 4 });
 
 export function formatTimeGap(ms: number): string {
   if (ms < 1000) return `+${Math.round(ms)}ms`;

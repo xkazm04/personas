@@ -2,16 +2,17 @@ import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
 import type { AlertRule } from "@/lib/bindings/AlertRule";
 import type { FiredAlert } from "@/lib/bindings/FiredAlert";
+import type { AlertMetric } from "@/lib/bindings/AlertMetric";
+import type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
 import * as api from "@/api/overview/observability";
 
-// -- Alert metric / severity display helpers (frontend-only constants) --------
+// -- Alert metric / severity display helpers (sourced from backend enums) -----
 
-export type AlertMetric = 'error_rate' | 'success_rate' | 'cost' | 'cost_spike' | 'executions';
-export type AlertOperator = '>' | '<' | '>=' | '<=';
-export type AlertSeverity = 'info' | 'warning' | 'critical';
-
-export { type AlertRule } from "@/lib/bindings/AlertRule";
-export { type FiredAlert } from "@/lib/bindings/FiredAlert";
+export type { AlertMetric } from "@/lib/bindings/AlertMetric";
+export type { AlertOperator } from "@/lib/bindings/AlertOperator";
+export type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
+export type { AlertRule } from "@/lib/bindings/AlertRule";
+export type { FiredAlert } from "@/lib/bindings/FiredAlert";
 
 export const ALERT_METRIC_OPTIONS: { value: AlertMetric; label: string; unit: string }[] = [
   { value: 'error_rate', label: 'Error Rate', unit: '%' },
@@ -104,14 +105,18 @@ export interface AlertSlice {
   alertRulesLoading: boolean;
   alertHistoryLoading: boolean;
 
+  // TTL tracking for filter-independent fetches
+  _alertRulesFetchedAt: number;
+  _alertHistoryFetchedAt: number;
+
   // Ephemeral client-side state
   alertFiredCooldowns: Record<string, number>;
   activeToasts: FiredAlert[];
   alertEvalHealth: AlertEvalHealth;
 
-  // Backend CRUD
-  fetchAlertRules: () => Promise<void>;
-  fetchAlertHistory: () => Promise<void>;
+  // Backend CRUD (pass force=true to bypass TTL guard)
+  fetchAlertRules: (force?: boolean) => Promise<void>;
+  fetchAlertHistory: (force?: boolean) => Promise<void>;
   addAlertRule: (rule: Omit<AlertRule, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateAlertRule: (id: string, updates: Partial<Omit<AlertRule, 'id' | 'created_at' | 'updated_at'>>) => Promise<void>;
   deleteAlertRule: (id: string) => Promise<void>;
@@ -129,11 +134,16 @@ export interface AlertSlice {
 /** Cooldown window to avoid repeat alerts for the same rule. */
 const FIRED_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
+/** TTL for filter-independent fetches (alert rules & history). */
+const ALERT_FETCH_TTL_MS = 60_000; // 60 seconds
+
 export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> = (set, get) => ({
   alertRules: [],
   alertHistory: [],
   alertRulesLoading: false,
   alertHistoryLoading: false,
+  _alertRulesFetchedAt: 0,
+  _alertHistoryFetchedAt: 0,
   alertFiredCooldowns: {},
   activeToasts: [],
   alertEvalHealth: {
@@ -145,21 +155,23 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
     totalFailures: 0,
   },
 
-  fetchAlertRules: async () => {
+  fetchAlertRules: async (force) => {
+    if (!force && Date.now() - get()._alertRulesFetchedAt < ALERT_FETCH_TTL_MS) return;
     set({ alertRulesLoading: true });
     try {
       const rules = await api.listAlertRules();
-      set({ alertRules: rules, alertRulesLoading: false });
+      set({ alertRules: rules, alertRulesLoading: false, _alertRulesFetchedAt: Date.now() });
     } catch {
       set({ alertRulesLoading: false });
     }
   },
 
-  fetchAlertHistory: async () => {
+  fetchAlertHistory: async (force) => {
+    if (!force && Date.now() - get()._alertHistoryFetchedAt < ALERT_FETCH_TTL_MS) return;
     set({ alertHistoryLoading: true });
     try {
       const history = await api.listFiredAlerts(MAX_ALERT_HISTORY);
-      set({ alertHistory: history, alertHistoryLoading: false });
+      set({ alertHistory: history, alertHistoryLoading: false, _alertHistoryFetchedAt: Date.now() });
     } catch {
       set({ alertHistoryLoading: false });
     }
@@ -276,10 +288,10 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       const todayCost = chartData.length > 0 ? chartData[chartData.length - 1]!.cost : 0;
 
       const snapshot: MetricsSnapshot = {
-        totalExecutions: summary.total_executions,
-        successfulExecutions: summary.successful_executions,
-        failedExecutions: summary.failed_executions,
-        totalCostUsd: summary.total_cost_usd,
+        totalExecutions: summary.totalExecutions,
+        successfulExecutions: summary.successfulExecutions,
+        failedExecutions: summary.failedExecutions,
+        totalCostUsd: summary.totalCostUsd,
         avgCostUsd: avgDailyCost,
       };
 

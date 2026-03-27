@@ -41,6 +41,8 @@ export interface AutomationRun {
   platformLogsUrl: string | null;
   durationMs: number | null;
   errorMessage: string | null;
+  /** JSON array of warning strings (auth fallbacks, method defaults, etc.) */
+  warnings: string | null;
   startedAt: string;
   completedAt: string | null;
 }

@@ -1,5 +1,80 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+
+// ============================================================================
+// Observability: Alert Enums (shared contract between frontend & backend)
+// ============================================================================
+
+/// Supported alert metrics.  Must mirror `ALERT_METRIC_OPTIONS` on the frontend.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum AlertMetric {
+    ErrorRate,
+    SuccessRate,
+    Cost,
+    CostSpike,
+    Executions,
+}
+
+impl fmt::Display for AlertMetric {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ErrorRate => write!(f, "error_rate"),
+            Self::SuccessRate => write!(f, "success_rate"),
+            Self::Cost => write!(f, "cost"),
+            Self::CostSpike => write!(f, "cost_spike"),
+            Self::Executions => write!(f, "executions"),
+        }
+    }
+}
+
+/// Supported alert comparison operators.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub enum AlertOperator {
+    #[serde(rename = ">")]
+    Gt,
+    #[serde(rename = "<")]
+    Lt,
+    #[serde(rename = ">=")]
+    Gte,
+    #[serde(rename = "<=")]
+    Lte,
+}
+
+impl fmt::Display for AlertOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Gt => write!(f, ">"),
+            Self::Lt => write!(f, "<"),
+            Self::Gte => write!(f, ">="),
+            Self::Lte => write!(f, "<="),
+        }
+    }
+}
+
+/// Supported alert severity levels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum AlertSeverity {
+    Info,
+    Warning,
+    Critical,
+}
+
+impl fmt::Display for AlertSeverity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Info => write!(f, "info"),
+            Self::Warning => write!(f, "warning"),
+            Self::Critical => write!(f, "critical"),
+        }
+    }
+}
 
 // ============================================================================
 // Observability: Metrics Snapshots
@@ -31,6 +106,30 @@ pub struct PersonaMetricsSnapshot {
     #[ts(type = "number")]
     pub messages_sent: i64,
     pub created_at: String,
+}
+
+// ============================================================================
+// Observability: Metrics Summary
+// ============================================================================
+
+/// Typed summary returned by `get_metrics_summary`.
+/// Replaces the previous `serde_json::Value` return, enabling compile-time
+/// checking and automatic ts-rs TypeScript binding generation.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct MetricsSummary {
+    #[ts(type = "number")]
+    pub total_executions: i64,
+    #[ts(type = "number")]
+    pub successful_executions: i64,
+    #[ts(type = "number")]
+    pub failed_executions: i64,
+    pub total_cost_usd: f64,
+    #[ts(type = "number")]
+    pub active_personas: i64,
+    #[ts(type = "number")]
+    pub period_days: i64,
 }
 
 // ============================================================================
@@ -74,6 +173,7 @@ pub struct MetricsPersonaBreakdown {
 pub struct MetricsChartData {
     pub chart_points: Vec<MetricsChartPoint>,
     pub persona_breakdown: Vec<MetricsPersonaBreakdown>,
+    pub anomalies: Vec<MetricAnomaly>,
 }
 
 // ============================================================================
@@ -255,10 +355,10 @@ pub struct FiredAlert {
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateAlertRuleInput {
     pub name: String,
-    pub metric: String,
-    pub operator: String,
+    pub metric: AlertMetric,
+    pub operator: AlertOperator,
     pub threshold: f64,
-    pub severity: String,
+    pub severity: AlertSeverity,
     pub persona_id: Option<String>,
     pub enabled: bool,
 }
@@ -266,10 +366,10 @@ pub struct CreateAlertRuleInput {
 #[derive(Debug, Clone, Deserialize)]
 pub struct UpdateAlertRuleInput {
     pub name: Option<String>,
-    pub metric: Option<String>,
-    pub operator: Option<String>,
+    pub metric: Option<AlertMetric>,
+    pub operator: Option<AlertOperator>,
     pub threshold: Option<f64>,
-    pub severity: Option<String>,
+    pub severity: Option<AlertSeverity>,
     pub persona_id: Option<String>,
     pub enabled: Option<bool>,
 }

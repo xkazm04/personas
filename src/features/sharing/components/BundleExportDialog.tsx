@@ -201,7 +201,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             onClick={() => setMode('bundle')}
             className={`flex-1 px-3 py-1.5 text-xs rounded-md transition-colors flex items-center justify-center gap-1.5 ${
               mode === 'bundle'
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-background text-foreground shadow-elevation-1'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -212,7 +212,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             onClick={() => setMode('enclave')}
             className={`flex-1 px-3 py-1.5 text-xs rounded-md transition-colors flex items-center justify-center gap-1.5 ${
               mode === 'enclave'
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-background text-foreground shadow-elevation-1'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >

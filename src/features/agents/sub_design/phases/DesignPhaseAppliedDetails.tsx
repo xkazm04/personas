@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Key, Zap, Play, FileText, ChevronRight, type LucideIcon } from 'lucide-react';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useSystemStore } from "@/stores/systemStore";
 import type { AgentIR } from '@/lib/types/designTypes';
 
@@ -104,11 +105,11 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border"
                   style={{
-                    backgroundColor: step.color + '12',
-                    borderColor: step.color + '25',
+                    backgroundColor: colorWithAlpha(step.color, 0.07),
+                    borderColor: colorWithAlpha(step.color, 0.15),
                   }}
                 >
-                  <Icon className="w-4 h-4" style={{ color: step.color + 'cc' }} />
+                  <Icon className="w-4 h-4" style={{ color: colorWithAlpha(step.color, 0.8) }} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium text-foreground/85 group-hover:text-foreground/95 transition-colors">

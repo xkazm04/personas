@@ -55,8 +55,8 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
     return (
       <span className={`flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border ${
         hasPlaintext
-          ? 'bg-amber-600/15 border-amber-500/20 text-amber-400'
-          : 'bg-emerald-600/15 border-emerald-500/20 text-emerald-400'
+          ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+          : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
       }`}>
         {hasPlaintext ? <ShieldAlert className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
         {hasPlaintext ? 'Needs attention' : 'Secure'}
@@ -67,10 +67,10 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
 
   const badgeClass = `flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-lg border cursor-pointer transition-colors ${
     hasPlaintext
-      ? 'bg-amber-600/15 border-amber-600/25 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-600/20 dark:hover:bg-amber-500/15'
+      ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/15 hover:border-amber-500/30'
       : isKeychain
-        ? 'bg-emerald-600/15 border-emerald-600/25 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-600/20 dark:hover:bg-emerald-500/15'
-        : 'bg-yellow-600/15 border-yellow-600/25 dark:border-yellow-500/20 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-600/20 dark:hover:bg-yellow-500/15'
+        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-500/30'
+        : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/15 hover:border-yellow-500/30'
   }`;
 
   return (
@@ -90,14 +90,14 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-80 rounded-xl bg-background border border-primary/15 shadow-xl z-30 overflow-hidden">
+        <div className="absolute right-0 top-full mt-1.5 w-80 rounded-xl bg-background border border-primary/15 shadow-elevation-3 z-30 overflow-hidden">
           {/* Header */}
           <div className={`px-4 py-3 border-b ${
             hasPlaintext
-              ? 'border-amber-500/15 bg-amber-500/5'
+              ? 'border-amber-500/20 bg-amber-500/10'
               : isKeychain
-                ? 'border-emerald-500/15 bg-emerald-500/5'
-                : 'border-yellow-500/15 bg-yellow-500/5'
+                ? 'border-emerald-500/20 bg-emerald-500/10'
+                : 'border-yellow-500/20 bg-yellow-500/10'
           }`}>
             <div className="flex items-center gap-2">
               {hasPlaintext ? (
@@ -147,7 +147,7 @@ export function VaultStatusBadge({ vault, onVaultRefresh }: VaultStatusBadgeProp
               <button
                 onClick={handleEncryptNow}
                 disabled={isMigrating}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-300 text-sm font-medium hover:bg-amber-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-medium hover:bg-amber-500/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isMigrating ? (
                   <><LoadingSpinner size="sm" />Encrypting...</>

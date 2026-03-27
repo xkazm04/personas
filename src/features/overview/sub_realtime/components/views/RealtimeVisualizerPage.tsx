@@ -83,7 +83,7 @@ export default function RealtimeVisualizerPage() {
                   title={m.description}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition-all ${
                     isActive
-                      ? 'bg-primary/10 text-foreground/90 shadow-sm'
+                      ? 'bg-primary/10 text-foreground/90 shadow-elevation-1'
                       : 'text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-secondary/50'
                   }`}
                 >

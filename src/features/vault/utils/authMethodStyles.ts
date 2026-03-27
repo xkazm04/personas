@@ -4,16 +4,16 @@ import type { ConnectorAuthMethod } from '@/lib/types/types';
 /** Returns Tailwind classes for auth method badge styling. */
 export function getAuthBadgeClasses(method: ConnectorAuthMethod): string {
   if (method.type === 'mcp')
-    return 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400';
+    return 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400';
   if (method.type === 'oauth' || method.label.toLowerCase() === 'oauth')
-    return 'bg-blue-500/20 border-blue-500/30 text-blue-400';
+    return 'bg-blue-500/10 border-blue-500/20 text-blue-400';
 
   const id = method.id.toLowerCase();
   if (id.includes('bot') || method.label.toLowerCase().includes('bot'))
-    return 'bg-purple-500/20 border-purple-500/30 text-purple-400';
+    return 'bg-purple-500/10 border-purple-500/20 text-purple-400';
 
-  // Default: white/bright instead of gray
-  return 'bg-white/10 border-white/20 text-white/90';
+  // Default: neutral variant
+  return 'bg-white/10 border-white/20 text-white/80';
 }
 
 /** Map auth type id -> lucide icon component. */

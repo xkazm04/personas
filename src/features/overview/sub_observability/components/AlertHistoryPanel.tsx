@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
-import { Bell, CheckCircle2, Trash2, AlertTriangle, Info, XCircle } from 'lucide-react';
+import { CheckCircle2, Trash2, AlertTriangle, Info, XCircle } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import type { FiredAlert } from '@/lib/bindings/FiredAlert';
+import { EmptyState } from '@/features/shared/components/display/EmptyState';
 
 const SEVERITY_CONFIG: Record<string, { icon: typeof Info; color: string }> = {
   info: { icon: Info, color: '#3b82f6' },
@@ -25,7 +25,7 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
 
   return (
     <div
-      className={`animate-fade-slide-in flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${
+      className={`animate-fade-slide-in motion-reduce:opacity-100 flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${
         alert.dismissed ? 'border-primary/8 bg-secondary/10 opacity-50' : 'border-primary/15 bg-secondary/20'
       }`}
     >
@@ -52,15 +52,12 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
 
 export function AlertHistoryPanel() {
   const {
-    alertHistory, dismissAlert, clearAlertHistory, fetchAlertHistory,
+    alertHistory, dismissAlert, clearAlertHistory,
   } = useOverviewStore(useShallow((s) => ({
     alertHistory: s.alertHistory,
     dismissAlert: s.dismissAlert,
     clearAlertHistory: s.clearAlertHistory,
-    fetchAlertHistory: s.fetchAlertHistory,
   })));
-
-  useEffect(() => { void fetchAlertHistory(); }, [fetchAlertHistory]);
 
   const activeCount = alertHistory.filter(a => !a.dismissed).length;
 
@@ -86,10 +83,7 @@ export function AlertHistoryPanel() {
       </div>
 
       {alertHistory.length === 0 && (
-        <div className="text-center py-6">
-          <Bell className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground/50">No alerts yet. Alerts will appear here when rules are triggered.</p>
-        </div>
+        <EmptyState variant="alerts" />
       )}
 
       <div className="space-y-2 max-h-[400px] overflow-y-auto">

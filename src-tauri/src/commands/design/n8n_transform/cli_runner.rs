@@ -115,7 +115,7 @@ pub async fn start_n8n_transform_background(
     if let Some(ref sid) = session_id {
         let state = app.state::<Arc<AppState>>();
         let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
-            status: Some(SessionStatus::Transforming.as_str().into()),
+            status: Some(SessionStatus::Transforming),
             step: Some("transform".into()),
             ..Default::default()
         });
@@ -325,7 +325,7 @@ fn handle_transform_result(
                 let state = app.state::<Arc<AppState>>();
                 let draft_str = serde_json::to_string(&draft).unwrap_or_default();
                 let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
-                    status: Some(SessionStatus::Editing.as_str().into()),
+                    status: Some(SessionStatus::Editing),
                     step: Some("edit".into()),
                     draft_json: Some(Some(draft_str)),
                     error: Some(None),
@@ -341,7 +341,7 @@ fn handle_transform_result(
             if let Some(sid) = session_id {
                 let state = app.state::<Arc<AppState>>();
                 let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
-                    status: Some(SessionStatus::Failed.as_str().into()),
+                    status: Some(SessionStatus::Failed),
                     error: Some(Some(msg)),
                     ..Default::default()
                 });

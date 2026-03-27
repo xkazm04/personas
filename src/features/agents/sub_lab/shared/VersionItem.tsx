@@ -178,7 +178,7 @@ export function VersionItem({
 
             {/* Inline error panel */}
             {actionError && (
-              <div className="mx-3 mb-3 flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="mx-3 mb-3 flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 shadow-elevation-1 animate-in fade-in slide-in-from-top-1 duration-200">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 space-y-0.5">
                   <p className="text-sm font-semibold text-red-400 uppercase tracking-tight">Operation Failed</p>

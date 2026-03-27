@@ -1,6 +1,6 @@
 export { default as MemoriesPage } from './components/MemoriesPage';
 export { MemoryConflictReview } from './components/MemoryConflictReview';
-export { MemoryRow, ImportanceDots } from './components/MemoryCard';
+export { MemoryRow, ImportanceBar, ImportanceDots } from './components/MemoryCard';
 export { InlineAddMemoryForm } from './components/CreateMemoryForm';
 export { MemoryActionsPanel } from './components/MemoryActionCard';
 export { MemoryFilterBar } from './components/MemoryFilterBar';

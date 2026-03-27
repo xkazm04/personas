@@ -1,11 +1,12 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use chrono::{Datelike, TimeZone};
 use serde::Serialize;
 use tauri::State;
 use tracing::{info, instrument};
 use ts_rs::TS;
 
-use crate::db::models::{AlertRule, CreateAlertRuleInput, FiredAlert, MetricsChartData, PersonaPromptVersion, PromptPerformanceData, ExecutionDashboardData, UpdateAlertRuleInput, AnomalyDrilldownData};
+use crate::db::models::{AlertRule, CreateAlertRuleInput, FiredAlert, MetricsChartData, MetricsSummary, PersonaPromptVersion, PromptPerformanceData, ExecutionDashboardData, UpdateAlertRuleInput, AnomalyDrilldownData};
 use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -23,13 +24,24 @@ pub struct PersonaMonthlySpend {
     pub name: String,
 }
 
+/// Wrapper returned by get_all_monthly_spend so the frontend knows exactly
+/// which period the spend figures cover.
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct MonthlySpendResult {
+    /// ISO-8601 UTC timestamp of the period start used in the query.
+    pub period_start_utc: String,
+    pub items: Vec<PersonaMonthlySpend>,
+}
+
 #[tauri::command]
 #[instrument(skip(state), fields(days, persona_id))]
 pub fn get_metrics_summary(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
     persona_id: Option<String>,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<MetricsSummary, AppError> {
     require_auth_sync(&state)?;
     let start = std::time::Instant::now();
     let days = days.map(|d| d.clamp(1, 365));
@@ -63,13 +75,49 @@ pub fn get_prompt_versions(
     repo::get_prompt_versions(&state.db, &persona_id, limit)
 }
 
+/// Returns per-persona monthly spend.
+///
+/// `utc_offset_minutes` — the user's local UTC offset in minutes (e.g. UTC-8 → -480,
+/// UTC+2 → 120).  When provided the "start of month" boundary is computed in the
+/// user's local timezone so that spend totals match their calendar month.  When
+/// omitted the query falls back to UTC.
 #[tauri::command]
-#[instrument(skip(state))]
+#[instrument(skip(state), fields(utc_offset_minutes))]
 pub fn get_all_monthly_spend(
     state: State<'_, Arc<AppState>>,
-) -> Result<Vec<PersonaMonthlySpend>, AppError> {
+    utc_offset_minutes: Option<i32>,
+) -> Result<MonthlySpendResult, AppError> {
     require_auth_sync(&state)?;
     let start = std::time::Instant::now();
+
+    // Compute the start-of-month boundary in the user's local timezone,
+    // expressed as a UTC datetime string for the SQL query.
+    let offset_mins = utc_offset_minutes
+        .map(|m| m.clamp(-840, 840)) // max ±14 hours
+        .unwrap_or(0);
+
+    let now_utc = chrono::Utc::now();
+    let local_offset = chrono::FixedOffset::east_opt(offset_mins * 60)
+        .unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
+    let local_now = now_utc.with_timezone(&local_offset);
+    let local_month_start = local_now
+        .date_naive()
+        .with_day(1)
+        .unwrap_or(local_now.date_naive());
+    let local_month_start_dt = local_month_start
+        .and_hms_opt(0, 0, 0)
+        .unwrap();
+    // Convert local start-of-month back to UTC
+    let period_start_utc: chrono::DateTime<chrono::Utc> = local_offset
+        .from_local_datetime(&local_month_start_dt)
+        .single()
+        .map(|dt| dt.with_timezone(&chrono::Utc))
+        .unwrap_or_else(|| {
+            chrono::DateTime::from_naive_utc_and_offset(local_month_start_dt, chrono::Utc)
+        });
+
+    let period_start_str = period_start_utc.format("%Y-%m-%dT%H:%M:%S").to_string();
+
     let conn = state.db.get()?;
     let mut stmt = conn.prepare(
         "SELECT p.id, COALESCE(e.spend, 0.0), p.max_budget_usd, p.name
@@ -78,12 +126,12 @@ pub fn get_all_monthly_spend(
              SELECT persona_id, SUM(cost_usd) AS spend
              FROM persona_executions
              WHERE status = 'completed'
-               AND created_at >= datetime('now', 'start of month')
+               AND created_at >= ?1
              GROUP BY persona_id
          ) e ON e.persona_id = p.id
          ORDER BY p.name",
     )?;
-    let rows = stmt.query_map([], |row| {
+    let rows = stmt.query_map(rusqlite::params![period_start_str], |row| {
         Ok(PersonaMonthlySpend {
             id: row.get(0)?,
             spend: row.get(1)?,
@@ -91,9 +139,12 @@ pub fn get_all_monthly_spend(
             name: row.get(3)?,
         })
     })?;
-    let result: Vec<PersonaMonthlySpend> = rows.collect::<Result<Vec<_>, _>>()?;
-    info!(duration_ms = start.elapsed().as_millis() as u64, rows = result.len(), "cmd::get_all_monthly_spend");
-    Ok(result)
+    let items: Vec<PersonaMonthlySpend> = rows.collect::<Result<Vec<_>, _>>()?;
+    info!(duration_ms = start.elapsed().as_millis() as u64, rows = items.len(), "cmd::get_all_monthly_spend");
+    Ok(MonthlySpendResult {
+        period_start_utc: period_start_str,
+        items,
+    })
 }
 
 // =============================================================================

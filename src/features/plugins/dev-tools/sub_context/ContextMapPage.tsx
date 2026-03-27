@@ -98,7 +98,6 @@ export default function ContextMapPage() {
     };
   }, [activeScanId, fetchContextMap]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run once on mount
   useEffect(() => { fetchContextMap(); }, []);
 
   const handleScan = useCallback(async () => {

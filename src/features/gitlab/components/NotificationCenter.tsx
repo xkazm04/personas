@@ -166,7 +166,7 @@ export function NotificationCenter() {
 
           {/* Panel */}
           <div
-            className="animate-fade-in fixed top-0 right-0 bottom-0 z-[91] w-[380px] max-w-[90vw] bg-background border-l border-primary/15 shadow-2xl flex flex-col"
+            className="animate-fade-in fixed top-0 right-0 bottom-0 z-[91] w-[380px] max-w-[90vw] bg-background border-l border-primary/15 shadow-elevation-4 flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">

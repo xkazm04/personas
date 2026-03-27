@@ -1,4 +1,4 @@
-import { Sparkles, Server, Link, Database, ArrowLeft, Radar, Monitor, Bot, Globe } from 'lucide-react';
+import { Sparkles, Server, Link, Database, ArrowLeft, Radar, Monitor, Bot, Globe, Zap } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
 interface CredentialTypePickerProps {
@@ -8,6 +8,7 @@ interface CredentialTypePickerProps {
   onSelectDatabase: () => void;
   onSelectDesktop: () => void;
   onSelectWizard: () => void;
+  onSelectAutopilot: () => void;
   onWorkspaceConnect: () => void;
   onForage: () => void;
   onBack: () => void;
@@ -74,6 +75,16 @@ const TYPES = [
     badgeColor: '#7C3AED',
     useCase: 'Use this for: first-time setup or when you\'re not sure what to pick',
   },
+  {
+    id: 'autopilot',
+    icon: Zap,
+    title: 'API Autopilot',
+    description: 'Paste an OpenAPI spec URL and auto-generate a typed connector with tools and playground.',
+    color: '#F43F5E',
+    badge: 'New',
+    badgeColor: '#F43F5E',
+    useCase: 'Use this for: any SaaS with a documented API (OpenAPI / Swagger)',
+  },
 ] as const;
 
 export function CredentialTypePicker({
@@ -83,6 +94,7 @@ export function CredentialTypePicker({
   onSelectDatabase,
   onSelectDesktop,
   onSelectWizard,
+  onSelectAutopilot,
   onWorkspaceConnect,
   onForage,
   onBack,
@@ -94,6 +106,7 @@ export function CredentialTypePicker({
     'database': onSelectDatabase,
     'desktop': onSelectDesktop,
     'wizard': onSelectWizard,
+    'autopilot': onSelectAutopilot,
   };
 
   return (

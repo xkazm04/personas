@@ -133,7 +133,7 @@ export function NotificationChannelSettings({ personaId, credentials, connectorD
       {!isDraftMode && isDirty && (
         <button onClick={handleSave} disabled={isSaving}
           title={isSaving ? 'Saving channels...' : undefined}
-          className="flex items-center gap-2 px-4 py-2 mt-3 rounded-xl font-medium text-sm bg-primary hover:bg-primary/90 text-foreground shadow-lg shadow-primary/20 transition-all">
+          className="flex items-center gap-2 px-4 py-2 mt-3 rounded-xl font-medium text-sm bg-primary hover:bg-primary/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all">
           {isSaving ? 'Saving...' : 'Save Channels'}
         </button>
       )}

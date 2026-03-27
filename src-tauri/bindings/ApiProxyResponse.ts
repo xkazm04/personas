@@ -3,4 +3,4 @@
 /**
  * Result of a proxied API request.
  */
-export type ApiProxyResponse = { status: number, status_text: string, headers: { [key in string]?: string }, body: string, duration_ms: bigint, content_type: string | null, };
+export type ApiProxyResponse = { status: number, status_text: string, headers: { [key in string]?: string }, body: string, duration_ms: bigint, content_type: string | null, truncated: boolean, };

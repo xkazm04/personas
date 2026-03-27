@@ -200,28 +200,4 @@ describe("UnifiedMatrixEntry", () => {
     expect(capturedMatrixProps.launchDisabled).toBe(true);
   });
 
-  // -- Cancel -------------------------------------------------------------
-
-  it("renders cancel link when canCancel is true", () => {
-    render(<UnifiedMatrixEntry canCancel />);
-    expect(screen.getByText("Cancel")).toBeDefined();
-  });
-
-  it("does NOT render cancel link when canCancel is false", () => {
-    render(<UnifiedMatrixEntry canCancel={false} />);
-    expect(screen.queryByText("Cancel")).toBeNull();
-  });
-
-  it("calls handleCancel and setIsCreatingPersona(false) when cancel is clicked", async () => {
-    render(<UnifiedMatrixEntry canCancel />);
-    const cancelButton = screen.getByText("Cancel");
-    fireEvent.click(cancelButton);
-    // handleCancel is async -- wait for it to complete
-    await waitFor(() => {
-      expect(mockHandleCancel).toHaveBeenCalled();
-    });
-    await waitFor(() => {
-      expect(mockSetIsCreatingPersona).toHaveBeenCalledWith(false);
-    });
-  });
 });

@@ -6,6 +6,7 @@ import { useExecutionStream } from '@/hooks/execution/useExecutionStream';
 import { ChatBubble, StreamingBubble } from './ChatBubbles';
 import { SessionSidebar } from './SessionSidebar';
 import { OpsLaunchpad, ModeButton } from './OpsLaunchpad';
+import { ROW_SEPARATOR } from '@/lib/design/listTokens';
 
 // ── Main Chat Tab ───────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ export function ChatTab() {
       {/* Chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mode toggle */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10">
+        <div className={`flex items-center gap-2 px-4 py-2 border-b ${ROW_SEPARATOR}`}>
           <div className="flex gap-0.5 p-0.5 bg-secondary/50 rounded-lg">
             <ModeButton mode="ops" current={chatMode} onClick={setChatMode} icon={<Wrench className="w-3 h-3" />} label="Ops" />
             <ModeButton mode="agent" current={chatMode} onClick={setChatMode} icon={<Bot className="w-3 h-3" />} label="Agent" />
@@ -118,7 +119,7 @@ export function ChatTab() {
         </div>
 
         {/* Input area */}
-        <div className="border-t border-primary/10 p-3">
+        <div className={`border-t ${ROW_SEPARATOR} p-3`}>
           <div className="flex gap-2 items-end">
             <textarea
               ref={inputRef}

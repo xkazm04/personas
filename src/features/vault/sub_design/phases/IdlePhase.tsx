@@ -188,7 +188,7 @@ export function IdlePhase({
           <button
             onClick={onAutoSetup}
             disabled={!instruction.trim()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-cyan-600/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-cyan-600/20"
           >
             <Bot className="w-4 h-4" />
             Auto-Setup
@@ -197,7 +197,7 @@ export function IdlePhase({
         <button
           onClick={onStart}
           disabled={!instruction.trim()}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Sparkles className="w-4 h-4" />
           Design Credential

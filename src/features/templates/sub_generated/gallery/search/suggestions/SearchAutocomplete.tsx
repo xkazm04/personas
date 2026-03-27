@@ -1,10 +1,31 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { GraduationCap, Clock } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import { getCategoryMeta } from '../filters/searchConstants';
 import { DIFFICULTY_OPTIONS, SETUP_OPTIONS, DIFFICULTY_META, SETUP_META } from '../../../shared/templateComplexity';
 import type { QueryChip } from './useStructuredQuery';
+
+type ChipType = QueryChip['type'];
+interface SuggestionItem { chip: QueryChip; icon: React.ElementType; color: string }
+
+function buildSuggestions(
+  options: { value: string; label: string; icon: React.ElementType; color: string }[],
+  activeChips: QueryChip[],
+  chipType: ChipType,
+  query: string,
+): SuggestionItem[] {
+  const activeValues = new Set(activeChips.filter((c) => c.type === chipType).map((c) => c.value));
+  const q = query.toLowerCase();
+  return options
+    .filter((o) => !activeValues.has(o.value))
+    .filter((o) => !q || o.value.toLowerCase().includes(q) || o.label.toLowerCase().includes(q))
+    .map((o) => ({
+      chip: { type: chipType, value: o.value, label: o.label },
+      icon: o.icon,
+      color: o.color,
+    }));
+}
 
 interface SearchAutocompleteProps {
   /** The recognized prefix being typed (e.g. "category:") */
@@ -35,67 +56,28 @@ export function SearchAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
   const [focusIndex, setFocusIndex] = useState(-1);
 
-  // Filter suggestions based on prefix type and query
-  const suggestions = (() => {
+  // Filter suggestions based on prefix type and query (memoized to stabilise reference)
+  const suggestions = useMemo(() => {
     if (prefix.startsWith('category')) {
-      const activeValues = new Set(activeChips.filter((c) => c.type === 'category').map((c) => c.value));
-      return availableCategories
-        .filter((cat) => !activeValues.has(cat.name))
-        .filter((cat) => {
-          if (!query) return true;
-          const meta = getCategoryMeta(cat.name);
-          return (
-            cat.name.toLowerCase().includes(query.toLowerCase()) ||
-            meta.label.toLowerCase().includes(query.toLowerCase())
-          );
-        })
-        .slice(0, 10)
-        .map((cat) => {
-          const meta = getCategoryMeta(cat.name);
-          return {
-            chip: { type: 'category' as const, value: cat.name, label: meta.label },
-            icon: meta.icon,
-            color: meta.color,
-            count: undefined as number | undefined,
-            countNum: cat.count,
-          };
-        });
+      const opts = availableCategories.slice(0, 10).map((cat) => {
+        const meta = getCategoryMeta(cat.name);
+        return { value: cat.name, label: meta.label, icon: meta.icon, color: meta.color };
+      });
+      return buildSuggestions(opts, activeChips, 'category', query);
     }
 
     if (prefix.startsWith('difficulty')) {
-      const activeValues = new Set(activeChips.filter((c) => c.type === 'difficulty').map((c) => c.value));
-      return DIFFICULTY_OPTIONS
-        .filter((opt) => !activeValues.has(opt.value))
-        .filter((opt) => {
-          if (!query) return true;
-          return opt.value.includes(query.toLowerCase()) || opt.label.toLowerCase().includes(query.toLowerCase());
-        })
-        .map((opt) => ({
-          chip: { type: 'difficulty' as const, value: opt.value, label: opt.label },
-          icon: GraduationCap,
-          color: DIFFICULTY_META[opt.value].color,
-          count: undefined as number | undefined,
-        }));
+      const opts = DIFFICULTY_OPTIONS.map((o) => ({ ...o, icon: GraduationCap, color: DIFFICULTY_META[o.value].color }));
+      return buildSuggestions(opts, activeChips, 'difficulty', query);
     }
 
     if (prefix.startsWith('setup')) {
-      const activeValues = new Set(activeChips.filter((c) => c.type === 'setup').map((c) => c.value));
-      return SETUP_OPTIONS
-        .filter((opt) => !activeValues.has(opt.value))
-        .filter((opt) => {
-          if (!query) return true;
-          return opt.value.includes(query.toLowerCase()) || opt.label.toLowerCase().includes(query.toLowerCase());
-        })
-        .map((opt) => ({
-          chip: { type: 'setup' as const, value: opt.value, label: opt.label },
-          icon: Clock,
-          color: SETUP_META[opt.value].color,
-          count: undefined as number | undefined,
-        }));
+      const opts = SETUP_OPTIONS.map((o) => ({ ...o, icon: Clock, color: SETUP_META[o.value].color }));
+      return buildSuggestions(opts, activeChips, 'setup', query);
     }
 
     return [];
-  })();
+  }, [prefix, query, availableCategories, activeChips]);
 
   // Reset focus when suggestions change
   useEffect(() => {
@@ -103,10 +85,8 @@ export function SearchAutocomplete({
   }, [suggestions.length]);
 
   // Keyboard navigation
-  useEffect(() => {
-    if (suggestions.length === 0) return;
-
-    const handleKey = (e: KeyboardEvent) => {
+  const handleKey = useCallback(
+    (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setFocusIndex((i) => Math.min(i + 1, suggestions.length - 1));
@@ -121,11 +101,15 @@ export function SearchAutocomplete({
         e.preventDefault();
         onDismiss();
       }
-    };
+    },
+    [suggestions, focusIndex, onSelect, onDismiss],
+  );
 
+  useEffect(() => {
+    if (suggestions.length === 0) return;
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [suggestions, focusIndex, onSelect, onDismiss]);
+  }, [suggestions.length, handleKey]);
 
   useClickOutside(containerRef, true, onDismiss);
 
@@ -139,7 +123,7 @@ export function SearchAutocomplete({
   return (
     <div ref={containerRef} className="absolute top-full left-0 right-0 z-50 mt-1">
       <div
-          className="animate-fade-slide-in bg-background border border-primary/15 rounded-xl shadow-lg overflow-hidden"
+          className="animate-fade-slide-in bg-background border border-primary/15 rounded-xl shadow-elevation-3 overflow-hidden"
           role="listbox"
           id="search-suggestions-listbox"
           aria-label="Search suggestions"
@@ -169,9 +153,6 @@ export function SearchAutocomplete({
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" style={{ color: suggestion.color }} />
                   <span className="flex-1 text-left">{suggestion.chip.label}</span>
-                  {suggestion.count !== undefined && (
-                    <span className="text-sm text-muted-foreground/50 tabular-nums">{suggestion.count}</span>
-                  )}
                 </button>
               );
             })}

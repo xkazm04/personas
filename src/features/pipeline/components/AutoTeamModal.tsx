@@ -60,7 +60,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
       onClose={onClose}
       titleId="auto-team-title"
       size="md"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
     >
       <div onKeyDown={handleKeyDown}>
         {/* Header */}

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useDesignReviews } from "../template/useDesignReviews";
 import { mockInvokeMap, resetInvokeMocks, mockInvokeError } from "@/test/tauriMock";
+import { clearSWRCache } from "@/lib/utils/staleWhileRevalidate";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 
 function makeReview(overrides: Partial<PersonaDesignReview> = {}): PersonaDesignReview {
@@ -35,6 +36,7 @@ function makeReview(overrides: Partial<PersonaDesignReview> = {}): PersonaDesign
 describe("useDesignReviews", () => {
   beforeEach(() => {
     resetInvokeMocks();
+    clearSWRCache();
   });
 
   it("fetches reviews on mount", async () => {

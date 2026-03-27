@@ -37,7 +37,7 @@ export function AutomationCardActions({
 
       {menuOpen && (
           <div
-            className="animate-fade-slide-in absolute right-0 top-full mt-1 z-[100] w-40 rounded-lg border border-border bg-background shadow-lg py-1"
+            className="animate-fade-slide-in absolute right-0 top-full mt-1 z-[100] w-40 rounded-lg border border-border bg-background shadow-elevation-3 py-1"
           >
             <button
               onClick={() => { onEdit(automation.id); setMenuOpen(false); }}

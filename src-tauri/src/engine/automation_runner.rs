@@ -41,7 +41,8 @@ pub async fn invoke_automation(
 
     // Resolve auth headers BEFORE creating the run record to prevent
     // orphaned runs stuck in initial status when auth resolution fails.
-    let auth_headers = resolve_auth_headers(pool, automation).await?;
+    let auth_resolution = resolve_auth_headers(pool, automation).await?;
+    let mut warnings = auth_resolution.warnings;
 
     // Create run record (only after auth succeeds)
     let run = repo::create_run(pool, &automation.id, execution_id, input_json)?;
@@ -53,46 +54,25 @@ pub async fn invoke_automation(
     let body = input_json.unwrap_or("{}");
     let timeout_ms = automation.timeout_ms;
 
-    let result = invoke_webhook(webhook_url, method, body, &auth_headers, timeout_ms).await;
+    let result = invoke_webhook(webhook_url, method, body, &auth_resolution.headers, timeout_ms).await;
 
     let duration_ms = start.elapsed().as_millis() as i64;
 
-    let completed_run = match result {
-        Ok((output, _status_code)) => {
-            let completed_run = repo::complete_run(
-                pool,
-                &run.id,
-                "completed",
-                Some(&output),
-                Some(duration_ms),
-                None,
-                automation.platform_url.as_deref(),
-                None,
-            )?;
+    // Collect webhook-level warnings (e.g. method fallback)
+    if let Ok((_, _, ref webhook_warnings)) = result {
+        warnings.extend(webhook_warnings.iter().cloned());
+    }
 
-            // Update automation's last trigger status
-            let _ = repo::record_trigger_result(pool, &automation.id, "success", None);
-
-            completed_run
-        }
-        Err(e) => {
-            let error_msg = e.to_string();
-            let completed_run = repo::complete_run(
-                pool,
-                &run.id,
-                "failed",
-                None,
-                Some(duration_ms),
-                None,
-                None,
-                Some(&error_msg),
-            )?;
-
-            let _ = repo::record_trigger_result(pool, &automation.id, "failed", Some(&error_msg));
-
-            completed_run
-        }
-    };
+    let completed_run = finalize_run(
+        pool,
+        &run.id,
+        &automation.id,
+        result
+            .map(|(output, _status, _warnings)| (output, automation.platform_url.clone()))
+            .map_err(|e| e.to_string()),
+        duration_ms,
+        &warnings,
+    )?;
 
     // Structured audit logging (best-effort)
     let (status, err_msg) = if completed_run.status == "completed" {
@@ -131,16 +111,27 @@ fn sanitize_header_value(value: &str) -> String {
     value.chars().filter(|c| !c.is_control()).collect()
 }
 
+/// Result of resolving auth headers: the headers themselves plus any warnings
+/// that should be surfaced to the user in the run record.
+struct AuthResolution {
+    headers: HashMap<String, String>,
+    warnings: Vec<String>,
+}
+
 /// Resolve authentication headers from the automation's platform credential.
+///
+/// Returns headers alongside user-visible warnings when credentials are
+/// missing or cannot be decrypted (instead of silently proceeding).
 async fn resolve_auth_headers(
     pool: &DbPool,
     automation: &PersonaAutomation,
-) -> Result<HashMap<String, String>, AppError> {
+) -> Result<AuthResolution, AppError> {
     let mut headers = HashMap::new();
+    let mut warnings = Vec::new();
 
     let cred_id = match automation.platform_credential_id.as_deref() {
         Some(id) if !id.is_empty() => id,
-        _ => return Ok(headers),
+        _ => return Ok(AuthResolution { headers, warnings }),
     };
 
     // Load credential record, then decrypt fields.
@@ -154,7 +145,10 @@ async fn resolve_auth_headers(
                 error = %e,
                 "Credential not found, proceeding without auth headers"
             );
-            return Ok(headers);
+            warnings.push(format!(
+                "Auth fallback: credential '{cred_id}' not found — request sent without authentication. Error: {e}"
+            ));
+            return Ok(AuthResolution { headers, warnings });
         }
     };
     let fields = match cred_repo::get_decrypted_fields(pool, &credential) {
@@ -166,7 +160,11 @@ async fn resolve_auth_headers(
                 error = %e,
                 "Failed to decrypt credential, proceeding without auth headers"
             );
-            return Ok(headers);
+            warnings.push(format!(
+                "Auth fallback: failed to decrypt credential '{}' ({cred_id}) — request sent without authentication. Error: {e}",
+                credential.name
+            ));
+            return Ok(AuthResolution { headers, warnings });
         }
     };
 
@@ -188,36 +186,103 @@ async fn resolve_auth_headers(
                     header_name = %header_name,
                     "Skipping custom header with invalid name"
                 );
+                warnings.push(format!(
+                    "Skipped custom auth header with invalid name '{header_name}'"
+                ));
             } else {
                 headers.insert(header_name.clone(), sanitize_header_value(header_value));
             }
         }
     }
 
-    Ok(headers)
+    Ok(AuthResolution { headers, warnings })
 }
 
-/// POST/GET to a webhook URL and return the response body.
+/// Finalize an automation run by recording the result in the run record and
+/// updating the automation's last trigger status.
+///
+/// On success, `output` and `platform_url` are written to the run.
+/// On failure, the error message is recorded instead.
+/// Any collected `warnings` are serialized as a JSON array into the run record.
+fn finalize_run(
+    pool: &DbPool,
+    run_id: &str,
+    automation_id: &str,
+    result: Result<(String, Option<String>), String>,
+    duration_ms: i64,
+    warnings: &[String],
+) -> Result<AutomationRun, AppError> {
+    let warnings_json = if warnings.is_empty() {
+        None
+    } else {
+        Some(serde_json::to_string(warnings).unwrap_or_default())
+    };
+
+    match result {
+        Ok((output, platform_url)) => {
+            let completed = repo::complete_run(
+                pool,
+                run_id,
+                "completed",
+                Some(&output),
+                Some(duration_ms),
+                None,
+                platform_url.as_deref(),
+                None,
+                warnings_json.as_deref(),
+            )?;
+            let _ = repo::record_trigger_result(pool, automation_id, "success", None);
+            Ok(completed)
+        }
+        Err(error_msg) => {
+            let completed = repo::complete_run(
+                pool,
+                run_id,
+                "failed",
+                None,
+                Some(duration_ms),
+                None,
+                None,
+                Some(&error_msg),
+                warnings_json.as_deref(),
+            )?;
+            let _ = repo::record_trigger_result(pool, automation_id, "failed", Some(&error_msg));
+            Ok(completed)
+        }
+    }
+}
+
+/// POST/GET to a webhook URL and return (response_body, status, warnings).
 async fn invoke_webhook(
     url: &str,
     method: &str,
     body: &str,
     auth_headers: &HashMap<String, String>,
     timeout_ms: i64,
-) -> Result<(String, u16), AppError> {
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_millis(timeout_ms.max(1000) as u64))
-        .build()
-        .map_err(|e| AppError::Execution(format!("Failed to create HTTP client: {e}")))?;
-
-    let req_method = match method.to_uppercase().as_str() {
+) -> Result<(String, u16, Vec<String>), AppError> {
+    let mut warnings = Vec::new();
+    let upper = method.to_uppercase();
+    let req_method = match upper.as_str() {
         "GET" => reqwest::Method::GET,
+        "POST" => reqwest::Method::POST,
         "PUT" => reqwest::Method::PUT,
         "PATCH" => reqwest::Method::PATCH,
-        _ => reqwest::Method::POST,
+        "DELETE" => reqwest::Method::DELETE,
+        other => {
+            tracing::warn!(
+                requested_method = %other,
+                "Unrecognized HTTP method, defaulting to POST"
+            );
+            warnings.push(format!(
+                "Method fallback: unrecognized HTTP method '{other}' defaulted to POST"
+            ));
+            reqwest::Method::POST
+        }
     };
 
-    let mut req = client.request(req_method, url);
+    let mut req = crate::SSRF_SAFE_HTTP
+        .request(req_method, url)
+        .timeout(std::time::Duration::from_millis(timeout_ms.max(1000) as u64));
 
     // Set content-type for body methods
     if method != "GET" {
@@ -252,7 +317,7 @@ async fn invoke_webhook(
         )));
     }
 
-    Ok((body, status))
+    Ok((body, status, warnings))
 }
 
 /// Convert an automation into a virtual `PersonaToolDefinition` for LLM consumption.
@@ -286,10 +351,11 @@ pub fn automation_to_virtual_tool(
          Simply call this tool with the expected input JSON.{fallback_note}"
     );
 
+    let vtid = crate::db::models::VirtualToolId::new(&auto.id);
     crate::db::models::PersonaToolDefinition {
-        id: format!("auto_{}", auto.id),
+        id: vtid.into_string(),
         name: auto.name.clone(),
-        category: "automation".into(),
+        category: crate::db::models::VirtualToolId::CATEGORY.into(),
         description,
         script_path: String::new(),
         input_schema: auto.input_schema.clone(),
@@ -365,35 +431,15 @@ async fn invoke_github_dispatch(
 
     let duration_ms = start.elapsed().as_millis() as i64;
 
-    match result {
-        Ok(()) => {
-            let completed_run = repo::complete_run(
-                pool,
-                &run.id,
-                "completed",
-                Some(&serde_json::json!({"dispatched": true, "event_type": event_type}).to_string()),
-                Some(duration_ms),
-                None,
-                Some(&format!("https://github.com/{repo}/actions")),
-                None,
-            )?;
-            let _ = repo::record_trigger_result(pool, &automation.id, "success", None);
-            Ok(completed_run)
-        }
-        Err(e) => {
-            let error_msg = e.to_string();
-            let completed_run = repo::complete_run(
-                pool,
-                &run.id,
-                "failed",
-                None,
-                Some(duration_ms),
-                None,
-                None,
-                Some(&error_msg),
-            )?;
-            let _ = repo::record_trigger_result(pool, &automation.id, "failed", Some(&error_msg));
-            Ok(completed_run)
-        }
-    }
+    finalize_run(
+        pool,
+        &run.id,
+        &automation.id,
+        result.map(|()| (
+            serde_json::json!({"dispatched": true, "event_type": event_type}).to_string(),
+            Some(format!("https://github.com/{repo}/actions")),
+        )).map_err(|e| e.to_string()),
+        duration_ms,
+        &[], // GitHub dispatch has no auth fallback path
+    )
 }

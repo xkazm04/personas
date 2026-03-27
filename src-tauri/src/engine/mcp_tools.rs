@@ -999,29 +999,91 @@ fn parse_env_vars(fields: &HashMap<String, String>) -> HashMap<String, String> {
         .collect()
 }
 
-fn spawn_mcp_process(
-    command: &str,
-    working_directory: Option<&String>,
-    env_vars: &HashMap<String, String>,
-) -> Result<tokio::process::Child, AppError> {
+/// Allowlisted MCP server binary basenames.
+///
+/// Only these executables may be spawned as MCP stdio servers. The check is
+/// performed against the first whitespace-delimited token of the command
+/// string (i.e. the program name, without arguments). Both bare names and
+/// names with common extensions (.exe, .cmd, .bat) are accepted.
+const MCP_ALLOWED_BINARIES: &[&str] = &[
+    "npx", "node", "python", "python3", "uvx", "uv", "deno", "bun",
+    "docker", "podman", "cargo",
+];
+
+/// Shell metacharacters that must never appear in an MCP command string.
+/// Their presence suggests an injection attempt (pipes, redirects, subshells,
+/// command chaining, variable expansion, etc.).
+const SHELL_METACHARACTERS: &[char] = &[
+    '|', ';', '&', '`', '$', '(', ')', '{', '}', '<', '>', '!', '\n', '\r',
+];
+
+/// Validate the MCP command against the binary allowlist and reject shell
+/// metacharacters. Returns the sanitized parts (program + args) on success.
+fn validate_mcp_command(command: &str) -> Result<Vec<String>, AppError> {
     let trimmed = command.trim();
     if trimmed.is_empty() {
         return Err(AppError::Validation("MCP command is empty".into()));
     }
 
+    // Reject shell metacharacters anywhere in the command string.
+    if let Some(bad) = trimmed.chars().find(|c| SHELL_METACHARACTERS.contains(c)) {
+        return Err(AppError::Validation(format!(
+            "MCP command contains forbidden shell metacharacter: '{bad}'"
+        )));
+    }
+
+    let parts: Vec<String> = trimmed.split_whitespace().map(String::from).collect();
+    let program = &parts[0];
+
+    // Extract the basename (strip any directory prefix) and any extension.
+    let basename = std::path::Path::new(program.as_str())
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or(program.as_str());
+
+    // Strip common extensions for matching (.exe, .cmd, .bat).
+    let stem = std::path::Path::new(basename)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(basename);
+
+    if !MCP_ALLOWED_BINARIES.iter().any(|&allowed| allowed.eq_ignore_ascii_case(stem)) {
+        return Err(AppError::Validation(format!(
+            "MCP binary '{}' is not in the allowlist. Permitted: {}",
+            basename,
+            MCP_ALLOWED_BINARIES.join(", ")
+        )));
+    }
+
+    Ok(parts)
+}
+
+fn spawn_mcp_process(
+    command: &str,
+    working_directory: Option<&String>,
+    env_vars: &HashMap<String, String>,
+) -> Result<tokio::process::Child, AppError> {
+    let parts = validate_mcp_command(command)?;
+
     // On Windows, commands like `npx` are actually `.cmd` wrappers that
-    // require shell dispatch. Use `cmd /C` so PATHEXT resolution works.
+    // require shell dispatch. Use `cmd /C` with explicit arg list so
+    // PATHEXT resolution works without exposing a raw shell string.
     #[cfg(windows)]
     let mut cmd = {
         let mut c = tokio::process::Command::new("cmd");
-        c.args(["/C", trimmed]);
+        // Pass "/C" followed by each part as a separate argument.
+        // This avoids passing the entire command as a single shell string,
+        // preventing metacharacter interpretation by cmd.exe.
+        c.arg("/C");
+        for part in &parts {
+            c.arg(part);
+        }
         c
     };
 
     #[cfg(not(windows))]
     let mut cmd = {
-        let parts: Vec<&str> = trimmed.split_whitespace().collect();
-        let mut c = tokio::process::Command::new(parts[0]);
+        let mut c = tokio::process::Command::new(&parts[0]);
         if parts.len() > 1 {
             c.args(&parts[1..]);
         }

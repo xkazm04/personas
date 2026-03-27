@@ -45,7 +45,7 @@ export function AccessibleToggle({
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
     >
       <span
-        className={`absolute top-0.5 left-0.5 ${size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} rounded-full bg-white shadow-sm transition-transform duration-200 ${
+        className={`absolute top-0.5 left-0.5 ${size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} rounded-full bg-white shadow-elevation-1 transition-transform duration-200 ${
           checked ? (size === 'sm' ? 'translate-x-3' : 'translate-x-4') : 'translate-x-0'
         }`}
       />

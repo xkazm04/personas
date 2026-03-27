@@ -16,6 +16,7 @@ import { rankCredentialsForConnector, matchCredentialToConnector } from "@/featu
 import { answerBuildQuestion } from "@/api/agents/buildSession";
 import { MatrixCredentialPicker } from "./MatrixCredentialPicker";
 import type { DraftConnector } from "./useMatrixCredentialGap";
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("connectors-cell");
@@ -152,7 +153,7 @@ export function ConnectorsCellContent({ connectors }: ConnectorsCellContentProps
               {/* Connector icon — from definition or fallback */}
               <div
                 className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: (connDef?.color ?? '#6366f1') + '20' }}
+                style={{ backgroundColor: colorWithAlpha(connDef?.color ?? '#6366f1', 0.13) }}
               >
                 {connDef?.icon_url ? (
                   <img src={connDef.icon_url} alt="" className="w-3.5 h-3.5 object-contain" />

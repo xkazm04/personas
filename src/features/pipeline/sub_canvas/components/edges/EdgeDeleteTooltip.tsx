@@ -46,7 +46,7 @@ export default function EdgeDeleteTooltip({
   return (
     <div
       ref={ref}
-      className="animate-fade-slide-in fixed z-50 flex flex-col gap-2 p-3 rounded-xl bg-secondary/95 backdrop-blur-md border border-primary/15 shadow-xl shadow-black/20 min-w-[180px]"
+      className="animate-fade-slide-in fixed z-50 flex flex-col gap-2 p-3 rounded-xl bg-secondary/95 backdrop-blur-md border border-primary/15 shadow-elevation-3 shadow-black/20 min-w-[180px]"
       style={{ left: clampedPos.x, top: clampedPos.y, transform: 'translate(-50%, -120%)' }}
     >
       {/* Header */}

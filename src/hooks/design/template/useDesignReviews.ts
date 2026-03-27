@@ -6,6 +6,10 @@ import { cancelDesignReviewRun, deleteDesignReview, deleteStaleSeedTemplates, im
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { getActiveSeedIds, getSeedReviews, SEED_RUN_ID } from '@/lib/personas/templates/seedTemplates';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+import { createSWRFetcher, invalidateSWRCache } from '@/lib/utils/staleWhileRevalidate';
+
+const SWR_KEY = 'design-reviews';
+const fetchReviewsSWR = createSWRFetcher(SWR_KEY, () => listDesignReviews());
 
 interface ReviewStatusPayload {
   run_id: string;
@@ -56,9 +60,11 @@ export function useDesignReviews() {
   }, [reviews]);
 
   const refresh = useCallback(async () => {
+    // Invalidate cache so the next SWR fetch is forced
+    invalidateSWRCache(SWR_KEY);
     setIsLoading(true);
     try {
-      const data = await listDesignReviews();
+      const { data } = await fetchReviewsSWR();
       setReviews(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch reviews');
@@ -71,7 +77,7 @@ export function useDesignReviews() {
 
   // Seed catalog templates into the database on first mount.
   // Also prunes templates that were renamed or deleted from the catalog.
-  const seedCatalogTemplates = useCallback(async (_existingReviews: PersonaDesignReview[]) => {
+  const seedCatalogTemplates = useCallback(async () => {
     if (seedDoneRef.current) return;
     seedDoneRef.current = true;
 
@@ -92,8 +98,9 @@ export function useDesignReviews() {
         await deleteStaleSeedTemplates(SEED_RUN_ID, activeIds);
       }
 
-      // Re-fetch to include seeded records (and reflect deletions)
-      const data = await listDesignReviews();
+      // Invalidate cache and re-fetch to include seeded records (and reflect deletions)
+      invalidateSWRCache(SWR_KEY);
+      const { data } = await fetchReviewsSWR();
       setReviews(data);
     } catch {
       // intentional: non-critical -- seeding catalog templates is best-effort
@@ -101,18 +108,41 @@ export function useDesignReviews() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     (async () => {
       setIsLoading(true);
       try {
-        const data = await listDesignReviews();
+        // SWR: returns cached data instantly if available, revalidates in background
+        const { data, fromCache } = await fetchReviewsSWR();
+        if (cancelled) return;
         setReviews(data);
-        await seedCatalogTemplates(data);
+
+        // Only seed on first real fetch, not from stale cache
+        if (!fromCache) {
+          await seedCatalogTemplates();
+        } else {
+          // Data shown from cache — kick off seed in background, then refresh
+          seedCatalogTemplates().then(() => {
+            if (!cancelled) {
+              // After seeding, do a background revalidation
+              invalidateSWRCache(SWR_KEY);
+              fetchReviewsSWR().then(({ data: fresh }) => {
+                if (!cancelled) setReviews(fresh);
+              }).catch(() => { /* non-critical */ });
+            }
+          });
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch reviews');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch reviews');
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     })();
+
+    return () => { cancelled = true; };
   }, [seedCatalogTemplates]);
 
   const startNewReview = useCallback(async (personaId?: string, testCases?: object[]) => {

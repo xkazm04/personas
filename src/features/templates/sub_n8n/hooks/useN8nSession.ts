@@ -11,10 +11,11 @@ import {
 } from './n8nTypes';
 import { useToastStore } from '@/stores/toastStore';
 import type { N8nImportState, N8nImportAction } from './useN8nImportReducer';
+import type { SessionStatus } from '@/lib/bindings/SessionStatus';
 
 // -- Derived status from reducer state --
 
-function deriveSessionStatus(state: N8nImportState): string {
+function deriveSessionStatus(state: N8nImportState): SessionStatus {
   if (state.created) return 'confirmed';
   if (state.transforming) return 'transforming';
   if (state.transformSubPhase === 'answering') return 'awaiting_answers';
@@ -27,7 +28,7 @@ function deriveSessionStatus(state: N8nImportState): string {
 
 interface DbSlice {
   step: string;
-  status: string;
+  status: SessionStatus;
   parserResult: string | null;
   draftJson: string | null;
   questionsJson: string | null;

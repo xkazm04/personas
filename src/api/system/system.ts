@@ -1,12 +1,14 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { HealthCheckItem } from "@/lib/bindings/HealthCheckItem";
+import type { HealthCheckStatus } from "@/lib/bindings/HealthCheckStatus";
 import type { HealthCheckSection } from "@/lib/bindings/HealthCheckSection";
 import type { SystemHealthReport } from "@/lib/bindings/SystemHealthReport";
 import type { CrashLogEntry } from "@/lib/bindings/CrashLogEntry";
 import type { FrontendCrashRow } from "@/lib/bindings/FrontendCrashRow";
 import type { SetupStartResult } from "@/lib/bindings/SetupStartResult";
-export type { HealthCheckItem, HealthCheckSection, SystemHealthReport, CrashLogEntry, FrontendCrashRow, SetupStartResult };
+import type { DbPerfSnapshot } from "@/lib/bindings/DbPerfSnapshot";
+export type { HealthCheckItem, HealthCheckStatus, HealthCheckSection, SystemHealthReport, CrashLogEntry, FrontendCrashRow, SetupStartResult, DbPerfSnapshot };
 
 export const systemHealthCheck = () =>
   invoke<SystemHealthReport>("system_health_check");
@@ -71,6 +73,13 @@ export const clearFrontendCrashes = () =>
 
 export const getFrontendCrashCount = (hours?: number) =>
   invoke<number>("get_frontend_crash_count", { hours: hours ?? null });
+
+// ============================================================================
+// DB Performance
+// ============================================================================
+
+export const getDbPerformance = () =>
+  invoke<DbPerfSnapshot>("get_db_performance");
 
 // ============================================================================
 // Setup / Auto-install

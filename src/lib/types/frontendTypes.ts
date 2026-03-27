@@ -146,7 +146,7 @@ export type CredentialServiceType = "api_key" | "oauth" | "webhook" | "smtp" | "
 
 // -- Memory Categories --------------------------------------------------
 
-export type PersonaMemoryCategory = "fact" | "preference" | "instruction" | "context" | "learned" | "custom";
+export type PersonaMemoryCategory = "fact" | "preference" | "instruction" | "context" | "learned" | "constraint";
 
 // -- Design Context Types ----------------------------------------------
 

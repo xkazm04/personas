@@ -3,6 +3,7 @@ import { testEventFlow } from "@/api/overview/events";
 
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
+import type { PersonaEventStatus } from '@/lib/bindings/PersonaEventStatus';
 import { useEventPhaseProgressor } from '@/hooks/realtime/useEventPhaseProgressor';
 
 // -- Color Map (from centralized event tokens) ----------
@@ -19,7 +20,7 @@ export interface RealtimeEvent {
   source_id: string | null;
   target_persona_id: string | null;
   payload: string | null;
-  status: string;
+  status: PersonaEventStatus;
   error_message: string | null;
   processed_at: string | null;
   created_at: string;
@@ -59,7 +60,7 @@ function computeStats(events: RealtimeEvent[]): RealtimeStats {
   );
 
   const delivered = windowEvents.filter(
-    (e) => e.status === 'completed' || e.status === 'processed'
+    (e) => e.status === 'completed' || e.status === 'delivered'
   ).length;
   const failed = windowEvents.filter((e) => e.status === 'failed').length;
   const pending = events.filter(

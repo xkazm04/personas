@@ -1,11 +1,12 @@
 import { X, Tag, ExternalLink, Bot } from 'lucide-react';
 import type { PersonaMemory } from '@/lib/types/types';
-import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
+import { formatRelativeTime } from '@/lib/utils/formatters';
+import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { ImportanceDots, TierBadge } from './MemoryCard';
+import { ImportanceBar } from './MemoryCard';
 
 function parseTags(tagsJson: string | null): string[] {
   if (!tagsJson) return [];
@@ -25,8 +26,6 @@ interface MemoryDetailModalProps {
 export default function MemoryDetailModal({
   memory, personaName, personaColor, onClose, onDelete,
 }: MemoryDetailModalProps) {
-  const defaultCat = { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' };
-  const cat = MEMORY_CATEGORY_COLORS[memory.category] ?? defaultCat;
   const tags = parseTags(memory.tags);
 
   return (
@@ -35,7 +34,7 @@ export default function MemoryDetailModal({
       onClick={onClose}
     >
       <div
-        className="animate-fade-slide-in bg-background border border-primary/15 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden"
+        className="animate-fade-slide-in bg-background border border-primary/15 rounded-2xl shadow-elevation-4 w-full max-w-2xl mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -77,23 +76,13 @@ export default function MemoryDetailModal({
           {/* Meta row */}
           <div className="flex items-center gap-4 flex-wrap">
             <div>
-              <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Tier</div>
-              <TierBadge tier={memory.tier} />
-            </div>
-            <div>
               <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Category</div>
-              <span className={`inline-flex px-2 py-0.5 text-xs font-mono uppercase rounded-lg border ${cat.bg} ${cat.text} ${cat.border}`}>{cat.label}</span>
+              <CategoryChip category={memory.category} />
             </div>
             <div>
               <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Importance</div>
-              <ImportanceDots value={memory.importance} />
+              <ImportanceBar value={memory.importance} />
             </div>
-            {memory.access_count > 0 && (
-              <div>
-                <div className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wider mb-1">Accessed</div>
-                <span className="text-xs text-muted-foreground/80 tabular-nums">{memory.access_count}x</span>
-              </div>
-            )}
           </div>
 
           {/* Tags */}

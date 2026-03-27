@@ -213,7 +213,7 @@ export function ModeButton({ mode, current, onClick, icon, label }: {
     <button
       onClick={() => onClick(mode)}
       className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-        active ? 'bg-primary/15 text-primary shadow-sm' : 'text-muted-foreground/60 hover:text-muted-foreground/80'
+        active ? 'bg-primary/15 text-primary shadow-elevation-1' : 'text-muted-foreground/60 hover:text-muted-foreground/80'
       }`}
     >
       {icon} {label}

@@ -8,7 +8,7 @@ use crate::cloud::client::CloudClient;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::{events as event_repo, shared_events as repo};
 use crate::db::DbPool;
-use crate::engine::event_registry::event_name;
+use crate::engine::event_registry::emit_event_bus;
 use crate::error::AppError;
 
 // ---------------------------------------------------------------------------
@@ -20,6 +20,10 @@ pub struct SharedEventRelayState {
     pub last_poll_at: Option<String>,
     pub last_error: Option<String>,
     pub active_feeds: u32,
+    /// Serializes the entire tick cycle (read subscriptions → poll feeds →
+    /// advance cursors) so overlapping scheduler intervals cannot produce
+    /// duplicate events from stale cursors.
+    tick_lock: Arc<Mutex<()>>,
 }
 
 impl SharedEventRelayState {
@@ -29,6 +33,7 @@ impl SharedEventRelayState {
             last_poll_at: None,
             last_error: None,
             active_feeds: 0,
+            tick_lock: Arc::new(Mutex::new(())),
         }
     }
 }
@@ -58,6 +63,21 @@ pub async fn shared_event_relay_tick(
     app: &AppHandle,
     state: &Mutex<SharedEventRelayState>,
 ) {
+    // Grab the tick serialization lock (non-blocking). If another tick is
+    // already running we skip this cycle entirely — the in-flight tick will
+    // advance cursors past anything we would have polled.
+    let tick_lock = {
+        let st = state.lock().await;
+        Arc::clone(&st.tick_lock)
+    };
+    let _tick_guard = match tick_lock.try_lock() {
+        Ok(guard) => guard,
+        Err(_) => {
+            tracing::debug!("SharedEventRelay: tick already in progress, skipping");
+            return;
+        }
+    };
+
     let now = chrono::Utc::now().to_rfc3339();
 
     // 1. Get enabled subscriptions
@@ -107,7 +127,7 @@ pub async fn shared_event_relay_tick(
 
                     match event_repo::publish(pool, input) {
                         Ok(event) => {
-                            let _ = app.emit(event_name::EVENT_BUS, event);
+                            emit_event_bus(app, &event);
                             total_new += 1;
                         }
                         Err(e) => {

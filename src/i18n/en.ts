@@ -88,6 +88,15 @@ export const en = {
     created: "Created",
     id: "ID",
 
+    // Unified destructive-action confirmation dialog
+    confirm_destructive_cannot_undo: "This action cannot be undone.",
+    confirm_destructive_type_to_confirm: "Type {name} to confirm",
+    confirm_destructive_discard: "Discard",
+    confirm_destructive_delete_persona: "Delete Agent",
+    confirm_destructive_delete_persona_warning: "This agent and all its configuration will be permanently removed.",
+    confirm_destructive_discard_event: "Discard Event",
+    confirm_destructive_discard_event_warning: "This dead-letter event will be permanently discarded.",
+
     // Generic feedback labels
     error: "Error",
     success: "Success",
@@ -1858,8 +1867,8 @@ export const en = {
       // Severity level descriptions (shown in notification settings)
       // "Circuit breaker tripped" = an agent was auto-disabled due to repeated failures
       severity_critical: "Agent auto-paused due to repeated failures, required tools not found",
-      severity_high: "Login errors, usage limits reached, repeated timeouts",
-      severity_medium: "Speed limits, first timeouts (usually fixes itself)",
+      severity_high: "Login errors, usage limits reached, timeout retries exhausted",
+      severity_medium: "Speed limits, timeouts with retries remaining (usually fixes itself)",
       severity_low: "Informational issues",
       // Weekly digest toggle
       weekly_digest: "Weekly Health Digest",

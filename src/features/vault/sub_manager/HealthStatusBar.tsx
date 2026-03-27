@@ -1,9 +1,60 @@
 import { useMemo } from 'react';
 import { HeartPulse, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/hooks/health/useBulkHealthcheck';
+
+/* ── Compact SVG progress ring (24×24) ── */
+
+const RING_SIZE = 24;
+const RING_STROKE = 2.5;
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+function HealthProgressRing({ done, total, failed }: { done: number; total: number; failed: number }) {
+  const fraction = total > 0 ? done / total : 0;
+  const offset = RING_CIRCUMFERENCE - fraction * RING_CIRCUMFERENCE;
+  const strokeColor = failed > 0 ? '#ef4444' : '#34d399'; // red-500 / emerald-400
+
+  return (
+    <div className="relative flex-shrink-0" style={{ width: RING_SIZE, height: RING_SIZE }}>
+      <svg width={RING_SIZE} height={RING_SIZE} className="-rotate-90">
+        {/* Background track */}
+        <circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RING_RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={RING_STROKE}
+          className="text-primary/10"
+        />
+        {/* Progress arc */}
+        <circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RING_RADIUS}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={RING_STROKE}
+          strokeDasharray={RING_CIRCUMFERENCE}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 0.35s ease, stroke 0.3s ease' }}
+        />
+      </svg>
+      {/* Centered count */}
+      <span
+        className="absolute inset-0 flex items-center justify-center text-[8px] font-bold leading-none text-foreground/70"
+        aria-label={`${done} of ${total}`}
+      >
+        {done}
+      </span>
+    </div>
+  );
+}
+
+/* ── HealthStatusBar ── */
 
 interface HealthStatusBarProps {
   credentials: CredentialMetadata[];
@@ -73,7 +124,11 @@ export function HealthStatusBar({ credentials, bulk, isDailyRun }: HealthStatusB
         title={bulk.isRunning ? 'Cancel healthcheck' : 'Test all credentials'}
       >
         {bulk.isRunning ? (
-          <LoadingSpinner size="xs" />
+          <HealthProgressRing
+            done={bulk.progress.done}
+            total={bulk.progress.total}
+            failed={bulk.progress.failed}
+          />
         ) : bulk.summary ? (
           <CheckCircle2 className="w-3 h-3" />
         ) : (

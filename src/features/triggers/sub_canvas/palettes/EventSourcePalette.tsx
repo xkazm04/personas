@@ -51,7 +51,7 @@ export function SystemEventsToolbar({ onCanvasEventTypes, onStartPointerDrag }: 
       >
         <div
           ref={contentRef}
-          className="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-card border border-primary/10 shadow-lg w-max max-w-[600px]"
+          className="flex flex-wrap items-center gap-1.5 p-3 rounded-xl bg-card border border-primary/10 shadow-elevation-3 w-max max-w-[600px]"
         >
           {allTemplates.map(t => (
             <SourceChip

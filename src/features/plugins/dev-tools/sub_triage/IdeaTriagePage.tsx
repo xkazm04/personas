@@ -109,7 +109,7 @@ function SwipeCard({
         if (info.offset.x > SWIPE_THRESHOLD) onSwipe('right');
         else if (info.offset.x < -SWIPE_THRESHOLD) onSwipe('left');
       }}
-      className={`absolute inset-0 border-2 rounded-2xl bg-background shadow-lg ${isTop ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
+      className={`absolute inset-0 border-2 rounded-2xl bg-background shadow-elevation-3 ${isTop ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
     >
       {/* Swipe overlays */}
       {isTop && (
@@ -431,7 +431,7 @@ export default function IdeaTriagePage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-80 rounded-2xl border border-primary/15 bg-background/95 backdrop-blur-xl shadow-2xl p-6"
+              className="w-80 rounded-2xl border border-primary/15 bg-background/95 backdrop-blur-xl shadow-elevation-4 p-6"
             >
               <h3 className="text-sm font-semibold text-foreground/90 mb-4">Keyboard Shortcuts</h3>
               <div className="space-y-2.5">

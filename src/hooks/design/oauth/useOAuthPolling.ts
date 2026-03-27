@@ -9,9 +9,11 @@ export interface OAuthStartResult {
   session_id: string;
 }
 
+import type { OAuthSessionStatus } from '@/lib/bindings/OAuthSessionStatus';
+
 /** Minimum shape a poll result must satisfy. */
 export interface OAuthPollResultBase {
-  status: 'pending' | 'success' | 'error' | string;
+  status: OAuthSessionStatus;
   error?: string | null;
 }
 

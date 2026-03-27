@@ -105,7 +105,19 @@ pub struct PipelineRun {
 
 impl PipelineRun {
     /// Parse the status string into the canonical ExecutionState enum.
+    /// Logs an error if the stored status is unrecognised so data corruption
+    /// is immediately visible instead of silently mapping to `Failed`.
     pub fn state(&self) -> crate::engine::types::ExecutionState {
-        self.status.parse().unwrap_or(crate::engine::types::ExecutionState::Failed)
+        match self.status.parse() {
+            Ok(s) => s,
+            Err(_) => {
+                tracing::error!(
+                    run_id = %self.id,
+                    raw_status = %self.status,
+                    "Unknown pipeline run status in DB — treating as Failed"
+                );
+                crate::engine::types::ExecutionState::Failed
+            }
+        }
     }
 }

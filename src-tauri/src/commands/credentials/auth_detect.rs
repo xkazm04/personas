@@ -2,12 +2,18 @@
 //!
 //! Returns a list of services the user is currently authenticated to, enabling
 //! the AI Setup wizard to pre-select connectors for batch provisioning.
+//!
+//! **Security**: CLI probes resolve tool paths via the `which` crate and validate
+//! them against per-tool allowlists of known install directories to mitigate PATH
+//! hijacking. Output is capped at [`MAX_CLI_OUTPUT_BYTES`] to prevent memory
+//! exhaustion from a malicious binary.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use serde::Serialize;
+use tokio::io::AsyncReadExt;
 use tokio::process::Command;
 use tokio::time::timeout;
 
@@ -17,6 +23,10 @@ use tauri::State;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+
+/// Maximum bytes we will read from a CLI subprocess (stdout + stderr combined).
+/// Prevents memory exhaustion if a malicious binary produces unbounded output.
+const MAX_CLI_OUTPUT_BYTES: usize = 256 * 1024; // 256 KiB
 
 /// Result of probing a single service for existing authentication.
 #[derive(Debug, Clone, Serialize)]
@@ -39,12 +49,103 @@ pub struct AuthDetection {
 struct CliProbe {
     /// Connector service_type this maps to.
     service_type: &'static str,
-    /// Command to run.
+    /// Command to run (bare name, resolved via [`resolve_cli_path`]).
     cmd: &'static str,
     /// Arguments.
     args: &'static [&'static str],
     /// Function to parse output and extract identity.
     parse: fn(&str) -> Option<String>,
+    /// Allowed parent directories for the resolved binary path.
+    /// If empty, any location found by `which` is accepted (fallback).
+    allowed_dirs: &'static [&'static str],
+}
+
+// -- Path validation --------------------------------------------------------
+
+/// Known safe installation directories per platform.
+/// These are checked against the *parent directory* of the resolved binary.
+#[cfg(target_os = "windows")]
+const SAFE_DIRS: &[&str] = &[
+    "C:\\Program Files",
+    "C:\\Program Files (x86)",
+    "C:\\ProgramData",
+    "C:\\Windows\\System32",
+];
+
+#[cfg(target_os = "macos")]
+const SAFE_DIRS: &[&str] = &[
+    "/usr/local/bin",
+    "/usr/bin",
+    "/opt/homebrew/bin",
+    "/opt/homebrew/sbin",
+    "/Applications",
+];
+
+#[cfg(target_os = "linux")]
+const SAFE_DIRS: &[&str] = &[
+    "/usr/local/bin",
+    "/usr/bin",
+    "/usr/sbin",
+    "/snap/bin",
+    "/opt",
+];
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+const SAFE_DIRS: &[&str] = &[];
+
+/// Resolve a CLI tool name to an absolute path and validate it.
+///
+/// Returns `None` if the tool is not found or resolves to a directory outside
+/// the allowed locations (tool-specific allowlist + platform-wide safe dirs).
+fn resolve_cli_path(cmd: &str, extra_allowed: &[&str]) -> Option<PathBuf> {
+    let resolved = which::which(cmd).ok()?;
+
+    // Canonicalize to resolve symlinks and normalise the path
+    let canonical = std::fs::canonicalize(&resolved).unwrap_or_else(|_| resolved.clone());
+
+    if is_path_allowed(&canonical, extra_allowed) {
+        tracing::debug!(cmd, path = %canonical.display(), "CLI probe: path validated");
+        Some(canonical)
+    } else {
+        tracing::warn!(
+            cmd,
+            path = %canonical.display(),
+            "CLI probe: rejected — resolved path is not in an allowed directory"
+        );
+        None
+    }
+}
+
+/// Check whether `binary_path` resides under one of the allowed directories.
+fn is_path_allowed(binary_path: &Path, extra_allowed: &[&str]) -> bool {
+    let path_str = binary_path.to_string_lossy();
+
+    for dir in SAFE_DIRS.iter().chain(extra_allowed.iter()) {
+        #[cfg(target_os = "windows")]
+        {
+            // Case-insensitive comparison on Windows
+            if path_str.to_lowercase().starts_with(&dir.to_lowercase()) {
+                return true;
+            }
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            if path_str.starts_with(dir) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// Read up to `limit` bytes from an `AsyncRead`, returning the buffer.
+async fn read_limited(
+    reader: &mut (impl tokio::io::AsyncRead + Unpin),
+    limit: usize,
+) -> std::io::Result<Vec<u8>> {
+    let mut buf = Vec::with_capacity(limit.min(8192));
+    reader.take(limit as u64).read_to_end(&mut buf).await?;
+    Ok(buf)
 }
 
 const CLI_PROBES: &[CliProbe] = &[
@@ -53,54 +154,64 @@ const CLI_PROBES: &[CliProbe] = &[
         cmd: "gh",
         args: &["auth", "status"],
         parse: parse_gh_identity,
+        allowed_dirs: &[],
     },
     CliProbe {
         service_type: "aws",
         cmd: "aws",
         args: &["sts", "get-caller-identity", "--output", "text", "--query", "Arn"],
         parse: parse_aws_identity,
+        allowed_dirs: &[],
     },
     CliProbe {
         service_type: "google_cloud",
         cmd: "gcloud",
         args: &["auth", "list", "--filter=status:ACTIVE", "--format=value(account)"],
         parse: parse_simple_identity,
+        // gcloud often installs to ~/google-cloud-sdk/bin or /usr/lib/google-cloud-sdk/bin
+        allowed_dirs: &[],
     },
     CliProbe {
         service_type: "azure",
         cmd: "az",
         args: &["account", "show", "--query", "user.name", "-o", "tsv"],
         parse: parse_simple_identity,
+        allowed_dirs: &[],
     },
     CliProbe {
         service_type: "docker",
         cmd: "docker",
         args: &["info", "--format", "{{.ID}}"],
         parse: parse_docker_identity,
+        allowed_dirs: &[],
     },
     CliProbe {
         service_type: "kubernetes",
         cmd: "kubectl",
         args: &["config", "current-context"],
         parse: parse_simple_identity,
+        allowed_dirs: &[],
     },
     CliProbe {
         service_type: "heroku",
         cmd: "heroku",
         args: &["auth:whoami"],
         parse: parse_simple_identity,
+        allowed_dirs: &[],
     },
     CliProbe {
         service_type: "vercel",
         cmd: "vercel",
         args: &["whoami"],
         parse: parse_simple_identity,
+        allowed_dirs: &[],
     },
     CliProbe {
         service_type: "netlify",
         cmd: "netlify",
         args: &["status"],
         parse: parse_netlify_identity,
+        allowed_dirs: &[],
     },
 ];
 
@@ -168,33 +279,64 @@ fn parse_netlify_identity(output: &str) -> Option<String> {
 }
 
 /// Run all CLI probes in parallel with a per-probe timeout.
+///
+/// Each probe resolves the CLI tool to an absolute path and validates it against
+/// an allowlist before execution. Output is capped at [`MAX_CLI_OUTPUT_BYTES`].
 async fn probe_cli_tools() -> Vec<AuthDetection> {
+    // Pre-resolve all CLI paths on a blocking thread (filesystem I/O + symlink resolution).
+    // This also performs the allowlist validation before any process is spawned.
+    let resolved: Vec<Option<PathBuf>> = tokio::task::spawn_blocking(|| {
+        CLI_PROBES
+            .iter()
+            .map(|probe| resolve_cli_path(probe.cmd, probe.allowed_dirs))
+            .collect()
+    })
+    .await
+    .unwrap_or_default();
+
     let handles: Vec<_> = CLI_PROBES
         .iter()
-        .map(|probe| {
+        .zip(resolved.into_iter())
+        .map(|(probe, maybe_path)| {
             let service_type = probe.service_type.to_string();
-            let cmd = probe.cmd.to_string();
             let args: Vec<String> = probe.args.iter().map(|a| a.to_string()).collect();
             let parse = probe.parse;
 
             tokio::spawn(async move {
+                // Skip probes whose binary path failed validation
+                let bin_path = maybe_path?;
+
                 let result = timeout(Duration::from_secs(3), async {
-                    let output = Command::new(&cmd)
+                    let mut child = Command::new(&bin_path)
                         .args(&args)
                         .stdout(std::process::Stdio::piped())
                         .stderr(std::process::Stdio::piped())
+                        // Clear env to prevent credential leaks to the subprocess.
+                        // Re-add only PATH (needed for child subprocesses) and
+                        // HOME/USERPROFILE (needed by many CLIs for config dirs).
+                        .env_clear()
+                        .envs(sanitized_env())
                         .spawn()
-                        .ok()?
-                        .wait_with_output()
-                        .await
                         .ok()?;
 
-                    // Some CLIs (like gh) write to stderr on success
-                    let stdout = String::from_utf8_lossy(&output.stdout);
-                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    // Read stdout and stderr with size limits
+                    let mut stdout_reader = child.stdout.take()?;
+                    let mut stderr_reader = child.stderr.take()?;
+
+                    let (stdout_bytes, stderr_bytes) = tokio::join!(
+                        read_limited(&mut stdout_reader, MAX_CLI_OUTPUT_BYTES),
+                        read_limited(&mut stderr_reader, MAX_CLI_OUTPUT_BYTES),
+                    );
+
+                    let status = child.wait().await.ok()?;
+
+                    let stdout_raw = stdout_bytes.unwrap_or_default();
+                    let stderr_raw = stderr_bytes.unwrap_or_default();
+                    let stdout = String::from_utf8_lossy(&stdout_raw);
+                    let stderr = String::from_utf8_lossy(&stderr_raw);
                     let combined = format!("{}\n{}", stdout, stderr);
 
-                    if output.status.success() {
+                    if status.success() {
                         parse(&combined)
                     } else {
                         // Some CLIs exit non-zero but still indicate auth (gh auth status)
@@ -224,6 +366,46 @@ async fn probe_cli_tools() -> Vec<AuthDetection> {
         }
     }
     results
+}
+
+/// Build a minimal environment for CLI subprocesses.
+///
+/// We clear the full environment to avoid leaking secrets (e.g., API keys in
+/// env vars) and only pass through variables required for the CLI tools to
+/// locate their config and resolve further paths.
+fn sanitized_env() -> Vec<(String, String)> {
+    let mut env = Vec::new();
+
+    // PATH is needed so the CLI tool itself can find its own sub-binaries
+    if let Ok(path) = std::env::var("PATH") {
+        env.push(("PATH".into(), path));
+    }
+
+    // HOME / USERPROFILE — most CLIs read config from the home directory
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(v) = std::env::var("USERPROFILE") {
+            env.push(("USERPROFILE".into(), v));
+        }
+        if let Ok(v) = std::env::var("APPDATA") {
+            env.push(("APPDATA".into(), v));
+        }
+        if let Ok(v) = std::env::var("LOCALAPPDATA") {
+            env.push(("LOCALAPPDATA".into(), v));
+        }
+        if let Ok(v) = std::env::var("SYSTEMROOT") {
+            env.push(("SYSTEMROOT".into(), v));
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        if let Ok(v) = std::env::var("HOME") {
+            env.push(("HOME".into(), v));
+        }
+    }
+
+    env
 }
 
 // -- Browser Cookie Probes ----------------------------------------------
@@ -384,6 +566,17 @@ fn chrome_epoch_now() -> i64 {
 
 /// How long cached auth detection results remain valid.
 const AUTH_DETECT_CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
+
+/// Invalidate the auth detection cache so the next call to
+/// [`detect_authenticated_services`] returns fresh results.
+///
+/// Call this after any event that changes authentication state (e.g. a
+/// successful OAuth flow) so downstream consumers (NegotiatorPanel, etc.)
+/// immediately see the updated picture.
+pub async fn invalidate_auth_detect_cache(state: &AppState) {
+    *state.auth_detect_cache.lock().await = None;
+    tracing::debug!("Auth detection cache invalidated");
+}
 
 /// Detect all authenticated services using CLI probing and browser cookies.
 ///

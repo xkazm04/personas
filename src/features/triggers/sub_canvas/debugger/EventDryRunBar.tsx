@@ -16,7 +16,7 @@ export function EventDryRunBar({ dryRunState, availableEventTypes, onStart, onSt
   const isDone = dryRunState.currentStep >= dryRunState.totalSteps && dryRunState.totalSteps > 0;
 
   return (
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2.5 bg-card border border-primary/15 rounded-xl shadow-xl">
+    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2.5 bg-card border border-primary/15 rounded-xl shadow-elevation-3">
       {/* Event selector */}
       <div className="relative">
         <select

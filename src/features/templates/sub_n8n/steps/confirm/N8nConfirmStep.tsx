@@ -3,11 +3,14 @@ import { useState, useMemo } from 'react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
-import { extractProtocolCapabilities, countByType } from '../../edit/protocolParser';
+import { useN8nDesignData } from '../../hooks/useN8nDesignData';
+import { useResolvedEntities } from '../../hooks/useResolvedEntities';
+import { countByType } from '../../edit/protocolParser';
 import { matchCredentialToConnector } from '../../edit/connectorMatching';
 import { buildConnectorRailItems } from '../../edit/connectorHealth';
 import { useVaultStore } from "@/stores/vaultStore";
+import { ENTITY_CARD_COLORS, TAG_COLORS, CAPABILITY_SPLIT_STYLES } from '../../colorTokens';
+import type { ColorKey } from '../../colorTokens';
 import { SuccessBanner } from './SuccessBanner';
 import { ConnectorHealthRail } from './ConnectorHealthRail';
 import type { ConfirmResult } from './n8nConfirmTypes';
@@ -37,32 +40,16 @@ export function N8nConfirmStep({
 }: N8nConfirmStepProps) {
   const [showPrompt, setShowPrompt] = useState(false);
 
-  // Use draft entity fields if available, fall back to parser results
-  const draftTools = draft.tools ?? null;
-  const draftTriggers = draft.triggers ?? null;
-  const draftConnectors = draft.required_connectors ?? null;
+  // Resolve entities via shared hook (draft-first, parser fallback)
+  const resolved = useResolvedEntities(draft, parsedResult, selectedToolIndices, selectedTriggerIndices, selectedConnectorNames);
 
-  const selectedTools = parsedResult.suggested_tools.filter((_, i) => selectedToolIndices.has(i));
-  const selectedTriggers = parsedResult.suggested_triggers.filter((_, i) => selectedTriggerIndices.has(i));
-  const selectedConnectors = (parsedResult.suggested_connectors ?? []).filter((c) =>
-    selectedConnectorNames.has(c.name),
-  );
-
-  const toolCount = draftTools ? draftTools.length : selectedTools.length;
-  const triggerCount = draftTriggers ? draftTriggers.length : selectedTriggers.length;
-  const connectorCount = draftConnectors ? draftConnectors.length : selectedConnectors.length;
-  const credentialLinks = useMemo(
-    () => parseDesignContext(draft.design_context).credentialLinks ?? {},
-    [draft.design_context],
-  );
-
-  // Protocol capability counts from prompt analysis
-  const capabilities = useMemo(
-    () => extractProtocolCapabilities(
-      draft.system_prompt,
-      draft.structured_prompt as Record<string, unknown> | null,
-    ),
-    [draft.system_prompt, draft.structured_prompt],
+  const toolCount = resolved.tools.length;
+  const triggerCount = resolved.triggers.length;
+  const connectorCount = resolved.connectors.length;
+  const { credentialLinks, capabilities } = useN8nDesignData(
+    draft.design_context,
+    draft.system_prompt,
+    draft.structured_prompt as Record<string, unknown> | null,
   );
   const capCounts = useMemo(() => countByType(capabilities), [capabilities]);
   const reviewCount = capCounts.manual_review;
@@ -72,18 +59,18 @@ export function N8nConfirmStep({
   // Tool-credential validation
   const credentials = useVaultStore((s) => s.credentials);
   const toolsNeedingCredentials = useMemo(() => {
-    if (!draftTools) return [];
-    return draftTools.filter((tool) => {
+    if (!resolved.hasDraftTools) return [];
+    return resolved.tools.filter((tool) => {
       if (!tool.requires_credential_type) return false;
       const credType = tool.requires_credential_type;
       if (credentialLinks[credType]) return false;
       return !matchCredentialToConnector(credentials, credType);
     });
-  }, [draftTools, credentialLinks, credentials]);
+  }, [resolved.hasDraftTools, resolved.tools, credentialLinks, credentials]);
 
   const connectorRailItems = useMemo(
-    () => buildConnectorRailItems(draftConnectors, credentialLinks, credentials),
-    [draftConnectors, credentialLinks, credentials],
+    () => buildConnectorRailItems(resolved.hasDraftConnectors ? resolved.connectors : null, credentialLinks, credentials),
+    [resolved.hasDraftConnectors, resolved.connectors, credentialLinks, credentials],
   );
 
   const readyConnectorCount = connectorRailItems.filter((c) => c.health === 'ready').length;
@@ -108,7 +95,7 @@ export function N8nConfirmStep({
 
           <div className="flex items-center gap-4 mb-4">
             <div
-              className="animate-fade-scale-in w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-lg"
+              className="animate-fade-scale-in w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-elevation-3"
               style={{
                 backgroundColor: `${draft.color ?? '#8b5cf6'}18`,
                 borderColor: `${draft.color ?? '#8b5cf6'}30`,
@@ -138,17 +125,17 @@ export function N8nConfirmStep({
           </div>
 
           {/* Items breakdown */}
-          {draftTools && draftTools.length > 0 ? (
-            <TagList items={draftTools.map((t) => ({ key: t.name, label: t.name, title: t.description }))} color="blue" />
-          ) : selectedTools.length > 0 ? (
-            <TagList items={selectedTools.map((t) => ({ key: t, label: t }))} color="blue" />
-          ) : null}
+          {resolved.tools.length > 0 && (
+            resolved.hasDraftTools ? (
+              <TagList items={resolved.tools.map((t) => ({ key: t.name, label: t.name, title: t.description }))} color="blue" />
+            ) : (
+              <TagList items={resolved.tools.map((t) => ({ key: t.name, label: t.name }))} color="blue" />
+            )
+          )}
 
-          {draftTriggers && draftTriggers.length > 0 ? (
-            <TagList items={draftTriggers.map((t, i) => ({ key: String(i), label: t.trigger_type, title: t.description ?? undefined }))} color="amber" />
-          ) : selectedTriggers.length > 0 ? (
-            <TagList items={selectedTriggers.map((t, i) => ({ key: String(i), label: t.trigger_type }))} color="amber" />
-          ) : null}
+          {resolved.triggers.length > 0 && (
+            <TagList items={resolved.triggers.map((t, i) => ({ key: String(i), label: t.trigger_type, title: t.description ?? undefined }))} color="amber" />
+          )}
 
           {/* Connector health rail */}
           <ConnectorHealthRail
@@ -160,16 +147,11 @@ export function N8nConfirmStep({
           {capabilities.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-3">
               {capabilities.map((cap) => {
-                const styles: Record<string, string> = {
-                  manual_review: 'bg-rose-500/10 text-rose-400/70 border-rose-500/15',
-                  user_message: 'bg-amber-500/10 text-amber-400/70 border-amber-500/15',
-                  agent_memory: 'bg-cyan-500/10 text-cyan-400/70 border-cyan-500/15',
-                  emit_event: 'bg-violet-500/10 text-violet-400/70 border-violet-500/15',
-                };
+                const style = CAPABILITY_SPLIT_STYLES[cap.type];
                 return (
                   <span
                     key={cap.type}
-                    className={`px-2 py-0.5 text-sm font-mono rounded border ${styles[cap.type] ?? ''}`}
+                    className={`px-2 py-0.5 text-sm font-mono rounded border ${style ? `${style.bg} ${style.text}` : ''}`}
                     title={cap.context}
                   >
                     {cap.label.toLowerCase()}
@@ -234,17 +216,6 @@ export function N8nConfirmStep({
 
 /* ---- Local helper components ---- */
 
-type ColorKey = 'blue' | 'amber' | 'emerald' | 'rose' | 'cyan' | 'orange';
-
-const colorMap: Record<ColorKey, string> = {
-  blue: 'bg-blue-500/5 border-blue-500/10 text-blue-400/70',
-  amber: 'bg-amber-500/5 border-amber-500/10 text-amber-400/70',
-  emerald: 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400/70',
-  rose: 'bg-rose-500/5 border-rose-500/10 text-rose-400/70',
-  cyan: 'bg-cyan-500/5 border-cyan-500/10 text-cyan-400/70',
-  orange: 'bg-orange-500/5 border-orange-500/10 text-orange-400/70',
-};
-
 function EntityCard({ icon: Icon, count, label, color }: {
   icon: React.ComponentType<{ className?: string }>;
   count: number;
@@ -252,7 +223,7 @@ function EntityCard({ icon: Icon, count, label, color }: {
   color: ColorKey;
 }) {
   return (
-    <div className={`px-2 py-3 rounded-xl border text-center ${colorMap[color]}`}>
+    <div className={`px-2 py-3 rounded-xl border text-center ${ENTITY_CARD_COLORS[color]}`}>
       <Icon className="w-3.5 h-3.5 mx-auto mb-1" />
       <p className="text-base font-semibold text-foreground/80 tabular-nums">{count}</p>
       <p className="text-sm text-muted-foreground/70 uppercase tracking-wider">{label}</p>
@@ -260,10 +231,6 @@ function EntityCard({ icon: Icon, count, label, color }: {
   );
 }
 
-const tagColorMap: Record<string, string> = {
-  blue: 'bg-blue-500/10 text-blue-400/70 border-blue-500/15',
-  amber: 'bg-amber-500/10 text-amber-400/70 border-amber-500/15',
-};
 
 function TagList({ items, color }: {
   items: { key: string; label: string; title?: string }[];
@@ -274,7 +241,7 @@ function TagList({ items, color }: {
       {items.map((item) => (
         <span
           key={item.key}
-          className={`px-2 py-0.5 text-sm font-mono rounded border ${tagColorMap[color] ?? ''}`}
+          className={`px-2 py-0.5 text-sm font-mono rounded border ${TAG_COLORS[color as ColorKey] ?? ''}`}
           title={item.title}
         >
           {item.label}

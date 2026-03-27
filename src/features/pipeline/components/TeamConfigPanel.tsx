@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Trash2, AlertTriangle, Wrench, Zap, Link, Clock, ExternalLink, Cpu } from 'lucide-react';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { TEAM_ROLES, PersonaAvatar } from '@/features/pipeline/sub_canvas';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { extractConnectorNames } from '@/lib/personas/utils';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { AgentIR } from '@/lib/types/designTypes';
 
 interface TeamConfigPanelProps {
@@ -33,18 +35,6 @@ function extractToolCount(designResult: string | null): number {
     // intentional: non-critical -- JSON parse fallback
     return 0;
   }
-}
-
-/** Format a relative time string from an ISO timestamp */
-function formatRelativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
 }
 
 export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemove }: TeamConfigPanelProps) {
@@ -221,7 +211,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
 function StatPill({ icon: Icon, label, value, color }: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; label: string; value: string; color: string }) {
   return (
     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-secondary/30 border border-primary/8">
-      <Icon className="w-3 h-3 shrink-0" style={{ color: color + 'aa' }} />
+      <Icon className="w-3 h-3 shrink-0" style={{ color: colorWithAlpha(color, 0.67) }} />
       <span className="text-sm text-muted-foreground/70 truncate">{label}</span>
       <span className="text-sm text-foreground/80 font-semibold ml-auto">{value}</span>
     </div>

@@ -65,9 +65,7 @@ pub fn create_credential(
     // Create credential + save fields in a single transaction to prevent orphaned rows
     let cred = repo::create_with_fields(&state.db, db_input, &field_map)?;
 
-    if let Err(e) = audit_log::insert(&state.db, &cred.id, &name, "create", None, None, None) {
-        tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential create");
-    }
+    audit_log::insert_warn(&state.db, &cred.id, &name, "create", None);
 
     // Auto-provision a keepalive rotation policy for OAuth credentials
     crate::engine::rotation::auto_provision_single(&state.db, &cred.id);
@@ -115,9 +113,7 @@ pub fn update_credential(
     let cred = repo::update_with_fields(&state.db, &id, metadata_input, field_map.as_ref())?;
 
     let detail = if has_data_change { "credential data changed" } else { "metadata updated" };
-    if let Err(e) = audit_log::insert(&state.db, &id, &cred.name, "update", None, None, Some(detail)) {
-        tracing::warn!(credential_id = %id, error = %e, "Failed to write audit log for credential update");
-    }
+    audit_log::insert_warn(&state.db, &id, &cred.name, "update", Some(detail));
 
     // Auto-provision a keepalive rotation policy if this is now an OAuth credential
     if has_data_change {
@@ -167,9 +163,7 @@ pub fn delete_credential(
         .unwrap_or_else(|_| id.clone());
     let result = repo::delete(&state.db, &id)?;
     if result {
-        if let Err(e) = audit_log::insert(&state.db, &id, &name, "delete", None, None, None) {
-            tracing::warn!(credential_id = %id, error = %e, "Failed to write audit log for credential delete");
-        }
+        audit_log::insert_warn(&state.db, &id, &name, "delete", None);
     }
     Ok(result)
 }
@@ -232,9 +226,7 @@ pub async fn healthcheck_credential(
     let name = cred.as_ref().map(|c| c.name.clone())
         .unwrap_or_else(|| credential_id.clone());
     let detail = if result.success { "passed" } else { &result.message };
-    if let Err(e) = audit_log::insert(&state.db, &credential_id, &name, "healthcheck", None, None, Some(detail)) {
-        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for credential healthcheck");
-    }
+    audit_log::insert_warn(&state.db, &credential_id, &name, "healthcheck", Some(detail));
 
     // Record credential usage
     if let Err(e) = repo::record_usage(&state.db, &credential_id) {
@@ -364,17 +356,7 @@ pub fn update_credential_field(
     repo::upsert_field(&state.db, &credential_id, &field_key, &field_value, is_sensitive)?;
 
     let cred = repo::get_by_id(&state.db, &credential_id)?;
-    if let Err(e) = audit_log::insert(
-        &state.db,
-        &credential_id,
-        &cred.name,
-        "field_update",
-        None,
-        None,
-        Some(&format!("field '{field_key}' updated")),
-    ) {
-        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for field update");
-    }
+    audit_log::insert_warn(&state.db, &credential_id, &cred.name, "field_update", Some(&format!("field '{field_key}' updated")));
     Ok(true)
 }
 

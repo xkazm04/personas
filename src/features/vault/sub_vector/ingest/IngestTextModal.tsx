@@ -39,7 +39,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       titleId="ingest-text-title"
       size="md"
       containerClassName="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-primary/10">

@@ -18,6 +18,7 @@ pub mod smee_relay;
 pub mod connector_strategy;
 pub mod credential_design;
 pub mod dispatch;
+pub mod protocol;
 pub mod credential_negotiator;
 pub mod cron;
 pub mod crypto;
@@ -39,8 +40,9 @@ pub mod optimizer;
 pub mod parser;
 pub mod pipeline;
 pub mod polling;
-pub mod topology;
 pub mod topology_graph;
+pub mod topology_heuristic;
+pub mod topology_types;
 pub mod prompt;
 pub mod provider;
 pub mod queue;
@@ -81,10 +83,12 @@ pub mod embedder;
 pub mod vector_store;
 pub mod kb_ingest;
 pub mod api_proxy;
+pub mod ssrf_safe_dns;
 pub mod api_definition;
 pub mod share_link;
 pub mod mcp_tools;
 pub mod automation_runner;
+pub mod str_utils;
 pub mod cli_process;
 pub mod management_api;
 pub mod path_safety;
@@ -128,7 +132,10 @@ use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
 /// Hard engine-level ceiling for any single execution (30 minutes).
 /// This is a non-overridable safety net that prevents runaway executions
 /// regardless of per-persona timeout configuration.
-const ENGINE_MAX_EXECUTION_SECS: u64 = 30 * 60;
+pub const ENGINE_MAX_EXECUTION_SECS: u64 = 30 * 60;
+
+/// Engine ceiling expressed in milliseconds for validation and clamping.
+pub const ENGINE_MAX_EXECUTION_MS: i32 = (ENGINE_MAX_EXECUTION_SECS * 1000) as i32;
 
 /// Maximum retry attempts for DB status persistence.
 const PERSIST_MAX_RETRIES: u32 = 3;

@@ -54,6 +54,8 @@ export interface PersonaWithDetails extends Persona {
   triggers: PersonaTrigger[];
   subscriptions?: PersonaEventSubscription[];
   automations?: import("@/lib/bindings/PersonaAutomation").PersonaAutomation[];
+  /** Non-empty when one or more sub-resource queries failed during load. */
+  warnings?: string[];
 }
 
 /** Credential metadata (without encrypted data) */
@@ -232,37 +234,19 @@ export type EditorTab = "activity" | "matrix" | "use-cases" | "prompt" | "lab" |
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "schedules" | "health" | "observability";
 export type TemplateTab = "n8n" | "generated";
 export type CloudTab = "cloud" | "gitlab" | "unified";
-export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin";
+export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config";
 export type DevToolsTab = "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner";
 export type AgentTab = "all" | "create" | "team" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "doc-signing" | "ocr";
-export type EventBusTab = "canvas" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks";
+export type EventBusTab = "canvas" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
 export type CliEngine = "claude_code" | "codex_cli";
 
-// -- Analytics Types ----------------------------------------------------
+// -- Analytics Types (re-exported from ts-rs bindings) ---------------------
 
-export interface ToolUsageSummary {
-  tool_name: string;
-  total_invocations: number;
-  unique_executions: number;
-  unique_personas: number;
-}
-
-export interface ToolUsageOverTime {
-  date: string;
-  tool_name: string;
-  invocations: number;
-}
-
-export interface PersonaUsageSummary {
-  persona_id: string;
-  persona_name: string;
-  persona_icon: string | null;
-  persona_color: string | null;
-  total_invocations: number;
-  unique_tools: number;
-}
+export type { ToolUsageSummary } from "@/lib/bindings/ToolUsageSummary";
+export type { ToolUsageOverTime } from "@/lib/bindings/ToolUsageOverTime";
+export type { PersonaUsageSummary } from "@/lib/bindings/PersonaUsageSummary";
 
 // -- Execution Output Types ---------------------------------------------
 

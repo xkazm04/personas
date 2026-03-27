@@ -74,6 +74,69 @@ fn sanitize_error(msg: &str, fields: &HashMap<String, String>) -> String {
     sanitized
 }
 
+/// Shared result handler for query/introspection functions.
+///
+/// Sets `duration_ms` on success, logs the outcome via `tracing`, and on error
+/// sanitizes credential material before wrapping in `AppError::Internal`.
+fn finalize_result(
+    result: Result<QueryResult, AppError>,
+    duration_ms: u64,
+    service: &str,
+    credential_id: &str,
+    fields: &HashMap<String, String>,
+    label: &str,
+    table_name: Option<&str>,
+) -> Result<QueryResult, AppError> {
+    match result {
+        Ok(mut qr) => {
+            qr.duration_ms = duration_ms;
+            if let Some(tbl) = table_name {
+                tracing::info!(
+                    service_type = %service,
+                    credential_id = %credential_id,
+                    duration_ms = duration_ms,
+                    row_count = qr.row_count,
+                    truncated = qr.truncated,
+                    table_name = %tbl,
+                    "db_query::{label} completed"
+                );
+            } else {
+                tracing::info!(
+                    service_type = %service,
+                    credential_id = %credential_id,
+                    duration_ms = duration_ms,
+                    row_count = qr.row_count,
+                    truncated = qr.truncated,
+                    "db_query::{label} completed"
+                );
+            }
+            Ok(qr)
+        }
+        Err(e) => {
+            let sanitized = sanitize_error(&e.to_string(), fields);
+            if let Some(tbl) = table_name {
+                tracing::warn!(
+                    service_type = %service,
+                    credential_id = %credential_id,
+                    duration_ms = duration_ms,
+                    table_name = %tbl,
+                    error = %sanitized,
+                    "db_query::{label} failed"
+                );
+            } else {
+                tracing::warn!(
+                    service_type = %service,
+                    credential_id = %credential_id,
+                    duration_ms = duration_ms,
+                    error = %sanitized,
+                    "db_query::{label} failed"
+                );
+            }
+            Err(AppError::Internal(sanitized))
+        }
+    }
+}
+
 /// Classifies a SQL/Redis/Convex statement as read-only or mutating.
 ///
 /// Returns `true` if the statement is a mutation (INSERT, UPDATE, DELETE,
@@ -183,32 +246,7 @@ pub async fn execute_query(
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
-
-    match result {
-        Ok(mut qr) => {
-            qr.duration_ms = duration_ms;
-            tracing::info!(
-                service_type = %service,
-                credential_id = %credential_id,
-                duration_ms = duration_ms,
-                row_count = qr.row_count,
-                truncated = qr.truncated,
-                "db_query::execute_query completed"
-            );
-            Ok(qr)
-        }
-        Err(e) => {
-            let sanitized = sanitize_error(&e.to_string(), &fields);
-            tracing::warn!(
-                service_type = %service,
-                credential_id = %credential_id,
-                duration_ms = duration_ms,
-                error = %sanitized,
-                "db_query::execute_query failed"
-            );
-            Err(AppError::Internal(sanitized))
-        }
-    }
+    finalize_result(result, duration_ms, service, credential_id, &fields, "execute_query", None)
 }
 
 // ============================================================================
@@ -262,31 +300,7 @@ pub async fn introspect_tables(
 
     let duration_ms = start.elapsed().as_millis() as u64;
     let service = credential.service_type.as_str();
-    match result {
-        Ok(mut qr) => {
-            qr.duration_ms = duration_ms;
-            tracing::info!(
-                service_type = %service,
-                credential_id = %credential_id,
-                duration_ms = duration_ms,
-                row_count = qr.row_count,
-                truncated = qr.truncated,
-                "db_query::introspect_tables completed"
-            );
-            Ok(qr)
-        }
-        Err(e) => {
-            let sanitized = sanitize_error(&e.to_string(), &fields);
-            tracing::warn!(
-                service_type = %service,
-                credential_id = %credential_id,
-                duration_ms = duration_ms,
-                error = %sanitized,
-                "db_query::introspect_tables failed"
-            );
-            Err(AppError::Internal(sanitized))
-        }
-    }
+    finalize_result(result, duration_ms, service, credential_id, &fields, "introspect_tables", None)
 }
 
 /// Introspect columns for a specific table. Supabase uses OpenAPI spec;
@@ -349,33 +363,7 @@ pub async fn introspect_columns(
 
     let duration_ms = start.elapsed().as_millis() as u64;
     let service = credential.service_type.as_str();
-    match result {
-        Ok(mut qr) => {
-            qr.duration_ms = duration_ms;
-            tracing::info!(
-                service_type = %service,
-                credential_id = %credential_id,
-                duration_ms = duration_ms,
-                row_count = qr.row_count,
-                truncated = qr.truncated,
-                table_name = %safe_name,
-                "db_query::introspect_columns completed"
-            );
-            Ok(qr)
-        }
-        Err(e) => {
-            let sanitized = sanitize_error(&e.to_string(), &fields);
-            tracing::warn!(
-                service_type = %service,
-                credential_id = %credential_id,
-                duration_ms = duration_ms,
-                table_name = %safe_name,
-                error = %sanitized,
-                "db_query::introspect_columns failed"
-            );
-            Err(AppError::Internal(sanitized))
-        }
-    }
+    finalize_result(result, duration_ms, service, credential_id, &fields, "introspect_columns", Some(&safe_name))
 }
 
 // -- Supabase OpenAPI introspection --------------------------------------

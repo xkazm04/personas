@@ -4,6 +4,7 @@ pub mod codex;
 use crate::db::DbPool;
 use crate::db::models::Persona;
 use super::types::{CliArgs, ModelProfile, StreamLineType};
+use tauri::Emitter;
 
 // =============================================================================
 // PromptDelivery -- how the provider sends the prompt to the CLI process
@@ -33,12 +34,20 @@ pub enum EngineKind {
 }
 
 impl EngineKind {
-    /// Parse from the string stored in the settings DB.
+    /// All known engine variants. Use this instead of hand-rolled lists.
+    pub const ALL: [EngineKind; 2] = [EngineKind::ClaudeCode, EngineKind::CodexCli];
+
+    /// Parse from the string stored in the settings DB, logging a warning and
+    /// falling back to `ClaudeCode` for unrecognised values.
     pub fn from_setting(s: &str) -> Self {
-        match s {
-            "codex_cli" => EngineKind::CodexCli,
-            _ => EngineKind::ClaudeCode,
-        }
+        s.parse().unwrap_or_else(|_| {
+            tracing::warn!(
+                engine_setting = s,
+                "Unrecognized engine setting '{}', falling back to ClaudeCode",
+                s
+            );
+            EngineKind::ClaudeCode
+        })
     }
 
     /// Serialize to the string stored in the settings DB.
@@ -47,6 +56,18 @@ impl EngineKind {
         match self {
             EngineKind::ClaudeCode => "claude_code",
             EngineKind::CodexCli => "codex_cli",
+        }
+    }
+}
+
+impl std::str::FromStr for EngineKind {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "claude_code" => Ok(EngineKind::ClaudeCode),
+            "codex_cli" => Ok(EngineKind::CodexCli),
+            other => Err(format!("unknown engine kind '{}'", other)),
         }
     }
 }
@@ -140,4 +161,32 @@ pub fn load_engine_kind(pool: &DbPool) -> EngineKind {
         .flatten()
         .map(|s| EngineKind::from_setting(&s))
         .unwrap_or(EngineKind::ClaudeCode)
+}
+
+/// Like [`load_engine_kind`] but emits an `engine-fallback` event to the
+/// frontend when an unrecognized engine setting triggers the ClaudeCode
+/// fallback, so the user sees a toast notification.
+pub fn load_engine_kind_notified(pool: &DbPool, app: &tauri::AppHandle) -> EngineKind {
+    use super::event_registry::event_name;
+
+    let raw = crate::db::repos::core::settings::get(pool, crate::db::settings_keys::CLI_ENGINE)
+        .ok()
+        .flatten();
+
+    match raw {
+        Some(ref s) if s.parse::<EngineKind>().is_err() => {
+            // Unrecognized value — from_setting will log the warning
+            let kind = EngineKind::from_setting(s);
+            let _ = app.emit(
+                event_name::ENGINE_FALLBACK,
+                serde_json::json!({
+                    "requested": s,
+                    "actual": kind.as_setting(),
+                }),
+            );
+            kind
+        }
+        Some(ref s) => EngineKind::from_setting(s),
+        None => EngineKind::ClaudeCode,
+    }
 }

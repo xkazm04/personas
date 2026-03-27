@@ -3,7 +3,7 @@ import { Sparkles, AlertCircle, RefreshCw, Trash2, HelpCircle, Send, ChevronLeft
 import { motion, AnimatePresence } from 'framer-motion';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
-import { BORDER_SUBTLE, BORDER_DEFAULT, BORDER_EMPHASIS } from '@/lib/utils/designTokens';
+import { BORDER_SUBTLE, BORDER_DEFAULT, BORDER_EMPHASIS, CARD_PADDING } from '@/lib/utils/designTokens';
 
 /** Parse transform lines to derive a user-friendly phase description. */
 function derivePhaseLabel(lines: string[]): string {
@@ -97,7 +97,7 @@ function BuildQuestionnaire({
               animate="center"
               exit="exit"
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className={`p-3.5 rounded-xl border ${tone.border} ${tone.bg}`}
+              className={`${CARD_PADDING.standard} rounded-xl border ${tone.border} ${tone.bg}`}
             >
               <p className="text-sm font-medium text-foreground/90 leading-relaxed mb-1">{q.question}</p>
               {q.context && <p className="text-xs text-foreground/50 mb-3 leading-relaxed">{q.context}</p>}

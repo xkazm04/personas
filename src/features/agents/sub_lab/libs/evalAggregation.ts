@@ -27,8 +27,24 @@ export interface EvalGridData {
 interface VersionAccum {
   versionNumber: number;
   toolAccuracy: number;
+  toolAccuracyCount: number;
   outputQuality: number;
+  outputQualityCount: number;
   protocolCompliance: number;
+  protocolComplianceCount: number;
+  totalCost: number;
+  totalDuration: number;
+  count: number;
+}
+
+/** Accumulator for grid cells that tracks scored counts per metric. */
+interface CellAccum {
+  toolAccuracy: number;
+  toolAccuracyCount: number;
+  outputQuality: number;
+  outputQualityCount: number;
+  protocolCompliance: number;
+  protocolComplianceCount: number;
   totalCost: number;
   totalDuration: number;
   count: number;
@@ -37,59 +53,61 @@ interface VersionAccum {
 /**
  * Single-pass aggregation: builds version aggregates AND per-cell grid
  * in one iteration over results, then finalizes averages.
+ * Null scores (unscored / failed executions) are excluded from averages.
  */
 export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
   const versionAccums = new Map<string, VersionAccum>();
   const versionOrder: string[] = [];
   const modelSet = new Set<string>();
-  const grid: Record<string, Record<string, CellAggregate>> = {};
+  const cellAccums: Record<string, Record<string, CellAccum>> = {};
 
   for (const r of results) {
     // Version-level accumulation
     if (!versionAccums.has(r.versionId)) {
       versionAccums.set(r.versionId, {
         versionNumber: r.versionNumber,
-        toolAccuracy: 0, outputQuality: 0, protocolCompliance: 0,
+        toolAccuracy: 0, toolAccuracyCount: 0,
+        outputQuality: 0, outputQualityCount: 0,
+        protocolCompliance: 0, protocolComplianceCount: 0,
         totalCost: 0, totalDuration: 0, count: 0,
       });
       versionOrder.push(r.versionId);
     }
     const va = versionAccums.get(r.versionId)!;
-    const ta = r.toolAccuracyScore ?? 0;
-    const oq = r.outputQualityScore ?? 0;
-    const pc = r.protocolCompliance ?? 0;
-    va.toolAccuracy += ta;
-    va.outputQuality += oq;
-    va.protocolCompliance += pc;
+    if (r.toolAccuracyScore != null) { va.toolAccuracy += r.toolAccuracyScore; va.toolAccuracyCount++; }
+    if (r.outputQualityScore != null) { va.outputQuality += r.outputQualityScore; va.outputQualityCount++; }
+    if (r.protocolCompliance != null) { va.protocolCompliance += r.protocolCompliance; va.protocolComplianceCount++; }
     va.totalCost += r.costUsd;
     va.totalDuration += r.durationMs;
     va.count++;
 
     // Grid cell accumulation
     modelSet.add(r.modelId);
-    if (!grid[r.versionId]) grid[r.versionId] = {};
-    if (!grid[r.versionId]![r.modelId]) {
-      grid[r.versionId]![r.modelId] = {
-        avgToolAccuracy: 0, avgOutputQuality: 0, avgProtocolCompliance: 0,
-        compositeScore: 0, totalCost: 0, avgDuration: 0, count: 0,
+    if (!cellAccums[r.versionId]) cellAccums[r.versionId] = {};
+    if (!cellAccums[r.versionId]![r.modelId]) {
+      cellAccums[r.versionId]![r.modelId] = {
+        toolAccuracy: 0, toolAccuracyCount: 0,
+        outputQuality: 0, outputQualityCount: 0,
+        protocolCompliance: 0, protocolComplianceCount: 0,
+        totalCost: 0, totalDuration: 0, count: 0,
       };
     }
-    const cell = grid[r.versionId]![r.modelId]!;
+    const cell = cellAccums[r.versionId]![r.modelId]!;
     cell.count++;
-    cell.avgToolAccuracy += ta;
-    cell.avgOutputQuality += oq;
-    cell.avgProtocolCompliance += pc;
+    if (r.toolAccuracyScore != null) { cell.toolAccuracy += r.toolAccuracyScore; cell.toolAccuracyCount++; }
+    if (r.outputQualityScore != null) { cell.outputQuality += r.outputQualityScore; cell.outputQualityCount++; }
+    if (r.protocolCompliance != null) { cell.protocolCompliance += r.protocolCompliance; cell.protocolComplianceCount++; }
     cell.totalCost += r.costUsd;
-    cell.avgDuration += r.durationMs;
+    cell.totalDuration += r.durationMs;
   }
 
   // Finalize version aggregates
   const aggs: VersionAggregate[] = versionOrder.map((vId) => {
     const a = versionAccums.get(vId)!;
     const n = a.count || 1;
-    const avgTA = a.toolAccuracy / n;
-    const avgOQ = a.outputQuality / n;
-    const avgPC = a.protocolCompliance / n;
+    const avgTA = a.toolAccuracyCount > 0 ? a.toolAccuracy / a.toolAccuracyCount : 0;
+    const avgOQ = a.outputQualityCount > 0 ? a.outputQuality / a.outputQualityCount : 0;
+    const avgPC = a.protocolComplianceCount > 0 ? a.protocolCompliance / a.protocolComplianceCount : 0;
     return {
       versionId: vId,
       versionNumber: a.versionNumber,
@@ -105,16 +123,24 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
   aggs.sort((a, b) => b.compositeScore - a.compositeScore);
 
   // Finalize grid cells
-  for (const vId of Object.keys(grid)) {
-    for (const mId of Object.keys(grid[vId]!)) {
-      const c = grid[vId]![mId]!;
-      if (c.count > 0) {
-        c.avgToolAccuracy = Math.round(c.avgToolAccuracy / c.count);
-        c.avgOutputQuality = Math.round(c.avgOutputQuality / c.count);
-        c.avgProtocolCompliance = Math.round(c.avgProtocolCompliance / c.count);
-        c.avgDuration = Math.round(c.avgDuration / c.count);
-        c.compositeScore = compositeScore(c.avgToolAccuracy, c.avgOutputQuality, c.avgProtocolCompliance);
-      }
+  const grid: Record<string, Record<string, CellAggregate>> = {};
+  for (const vId of Object.keys(cellAccums)) {
+    grid[vId] = {};
+    for (const mId of Object.keys(cellAccums[vId]!)) {
+      const c = cellAccums[vId]![mId]!;
+      const avgTA = c.toolAccuracyCount > 0 ? Math.round(c.toolAccuracy / c.toolAccuracyCount) : 0;
+      const avgOQ = c.outputQualityCount > 0 ? Math.round(c.outputQuality / c.outputQualityCount) : 0;
+      const avgPC = c.protocolComplianceCount > 0 ? Math.round(c.protocolCompliance / c.protocolComplianceCount) : 0;
+      const n = c.count || 1;
+      grid[vId]![mId] = {
+        avgToolAccuracy: avgTA,
+        avgOutputQuality: avgOQ,
+        avgProtocolCompliance: avgPC,
+        compositeScore: compositeScore(avgTA, avgOQ, avgPC),
+        totalCost: c.totalCost,
+        avgDuration: Math.round(c.totalDuration / n),
+        count: c.count,
+      };
     }
   }
 

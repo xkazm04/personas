@@ -3,8 +3,9 @@ import { SIMPLE_MODE } from '@/lib/utils/designTokens';
 import { StatusShape } from '@/features/shared/components/display/StatusShape';
 import type { StatusKey } from '@/lib/design/statusTokens';
 import type { HealthCheckItem } from "@/api/system/system";
+import type { HealthCheckStatus } from "@/lib/bindings/HealthCheckStatus";
 
-export function getStatusIcon(status: string) {
+export function getStatusIcon(status: HealthCheckStatus) {
   if (status === 'ok') return <CheckCircle2 className="w-4 h-4 text-status-success" />;
   if (status === 'warn') return <AlertTriangle className="w-4 h-4 text-status-warning" />;
   if (status === 'info' || status === 'inactive') return <Info className="w-4 h-4 text-status-neutral" />;

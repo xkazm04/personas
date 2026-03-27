@@ -166,7 +166,7 @@ export const SIMPLE_MODE = {
     problem: { label: 'Problem',   color: STATUS_PALETTE.error.text,   bg: STATUS_PALETTE.error.bg,   dot: STATUS_PALETTE.error.icon },
   } satisfies Record<SimpleStatus, SimpleStatusToken>,
   /** Card style for simple mode -- larger, rounder, more breathing room */
-  CARD: `rounded-xl border ${BORDER_DEFAULT} bg-background/60 p-5 shadow-sm`,
+  CARD: `rounded-xl border ${BORDER_DEFAULT} bg-background/60 p-5 shadow-elevation-1`,
   /** Minimum touch target for simple mode interactive elements */
   MIN_TARGET: 'min-h-[44px] min-w-[44px]',
 } as const;
