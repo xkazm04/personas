@@ -125,7 +125,7 @@ export function DesignPhasePreview({
       <div className="flex items-center gap-2">
         <button
           onClick={actions.onApply}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-elevation-3 shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
         >
           <Check className="w-3.5 h-3.5" />
           Apply Changes

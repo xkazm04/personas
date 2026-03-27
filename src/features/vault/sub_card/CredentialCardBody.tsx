@@ -80,6 +80,8 @@ export function CredentialCardBody({
             oauthConsentDisabled={googleOAuth.isAuthorizing}
             oauthConsentHint={isGoogleOAuthFlow ? 'Launches app-managed Google consent and updates refresh token after approval.' : undefined}
             oauthConsentSuccessBadge={googleOAuth.completedAt ? `Google consent completed at ${googleOAuth.completedAt}` : undefined}
+            isAuthorizingOAuth={googleOAuth.isAuthorizing}
+            oauthPollingMessage={googleOAuth.message}
             onCancel={() => setEditingId(null)}
             onHealthcheck={(values) => health.checkPreview(credential.service_type, values)}
             onValuesChanged={() => {

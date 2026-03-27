@@ -3,26 +3,16 @@ import { useAgentStore } from "@/stores/agentStore";
 import { sendAppNotification } from "@/api/system/system";
 import type { LabRunStatus } from "@/lib/bindings/LabRunStatus";
 import type { LabMode, LabRunProgress } from "@/stores/slices/agents/labSlice";
-import { useRunEventListener, type RunStatusPayload, type RunEventBinding } from "@/hooks/realtime/useRunEventListener";
+import { useRunEventListener, mapRunStatusPayload, type RunStatusPayload, type RunEventBinding } from "@/hooks/realtime/useRunEventListener";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("lab-events");
 
 function mapPayload(p: RunStatusPayload, mode: LabMode): LabRunProgress {
   return {
-    runId: p.run_id,
+    ...mapRunStatusPayload(p),
     mode,
-    phase: p.phase,
-    scenariosCount: p.scenarios_count,
-    current: p.current,
-    total: p.total,
-    modelId: p.model_id,
-    scenarioName: p.scenario_name,
     status: p.status as LabRunStatus | undefined,
-    scores: p.scores,
-    summary: p.summary,
-    error: p.error,
-    elapsedMs: p.elapsed_ms,
   };
 }
 

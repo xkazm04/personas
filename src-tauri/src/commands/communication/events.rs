@@ -1,14 +1,13 @@
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, CreateTriggerInput,
-    EventFilterInput, PaginatedEvents, PersonaEvent, PersonaEventSubscription,
+    EventFilterInput, PaginatedEvents, PersonaEvent, PersonaEventStatus, PersonaEventSubscription,
     UpdateEventSubscriptionInput,
 };
 use crate::db::repos::communication::events as repo;
-use crate::db::repos::resources::triggers as trigger_repo;
-use crate::engine::event_registry::event_name;
+use crate::engine::event_registry::emit_event_bus;
 use crate::engine::rate_limiter::EVENT_SOURCE_WINDOW;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -63,9 +62,7 @@ pub fn publish_event(
     }
 
     let event = repo::publish(&state.db, input)?;
-    if let Err(e) = app.emit(event_name::EVENT_BUS, event.clone()) {
-        tracing::warn!(event_id = %event.id, error = %e, "Failed to emit event-bus event to frontend");
-    }
+    emit_event_bus(&app, &event);
     Ok(event)
 }
 
@@ -92,24 +89,21 @@ pub fn create_subscription(
     input: CreateEventSubscriptionInput,
 ) -> Result<PersonaEventSubscription, AppError> {
     require_auth_sync(&state)?;
-    // Dual-write: create the legacy subscription AND an event_listener trigger.
-    // The event bus deduplicates by persona_id so both existing paths work.
+
     let config = serde_json::json!({
         "listen_event_type": input.event_type,
         "source_filter": input.source_filter,
     });
-    trigger_repo::create(
-        &state.db,
-        CreateTriggerInput {
-            persona_id: input.persona_id.clone(),
-            trigger_type: "event_listener".into(),
-            config: Some(serde_json::to_string(&config).unwrap_or_default()),
-            enabled: input.enabled,
-            use_case_id: input.use_case_id.clone(),
-        },
-    )?;
 
-    repo::create_subscription(&state.db, input)
+    let trigger_input = CreateTriggerInput {
+        persona_id: input.persona_id.clone(),
+        trigger_type: "event_listener".into(),
+        config: Some(serde_json::to_string(&config).unwrap_or_default()),
+        enabled: input.enabled,
+        use_case_id: input.use_case_id.clone(),
+    };
+
+    repo::create_subscription_with_trigger(&state.db, input, trigger_input)
 }
 
 #[tauri::command]
@@ -157,29 +151,52 @@ pub fn test_event_flow(
         use_case_id: None,
     };
     let event = repo::publish(&state.db, input)?;
-    if let Err(e) = app.emit(event_name::EVENT_BUS, event.clone()) {
-        tracing::warn!(event_id = %event.id, error = %e, "Failed to emit test event-bus event to frontend");
-    }
+    emit_event_bus(&app, &event);
     Ok(event)
 }
 
+// -- Dead Letter Queue commands --------------------------------------------------
+
+#[tauri::command]
+pub fn list_dead_letter_events(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<i64>,
+) -> Result<Vec<PersonaEvent>, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_dead_letter_events(&state.db, limit)
+}
+
+#[tauri::command]
+pub fn count_dead_letter_events(
+    state: State<'_, Arc<AppState>>,
+) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
+    repo::count_dead_letter(&state.db)
+}
+
+#[tauri::command]
+pub fn retry_dead_letter_event(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<PersonaEvent, AppError> {
+    require_auth_sync(&state)?;
+    let event = repo::retry_dead_letter(&state.db, &id)?;
+    emit_event_bus(&app, &event);
+    Ok(event)
+}
+
+#[tauri::command]
+pub fn discard_dead_letter_event(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::discard_dead_letter(&state.db, &id)?;
+    Ok(true)
+}
+
 // -- Dev seed: mock event -------------------------------------------------------
-
-const MOCK_EVENT_TYPES: &[&str] = &[
-    "webhook_received", "execution_completed", "trigger_fired",
-    "credential_rotated", "health_check_failed", "deployment_started",
-    "memory_created", "review_submitted",
-];
-
-const MOCK_EVENT_SOURCES: &[&str] = &[
-    "webhook", "scheduler", "trigger_engine", "vault",
-    "health_monitor", "cloud_deploy", "memory_engine", "review_pipeline",
-];
-
-const MOCK_EVENT_STATUSES: &[&str] = &[
-    "completed", "completed", "processing", "completed",
-    "failed", "processing", "completed", "pending",
-];
 
 #[tauri::command]
 pub fn seed_mock_event(
@@ -188,27 +205,24 @@ pub fn seed_mock_event(
 ) -> Result<PersonaEvent, AppError> {
     require_auth_sync(&state)?;
 
-    let personas = crate::db::repos::core::personas::get_all(&state.db)?;
-    let t = chrono::Utc::now().timestamp_millis() as usize;
-    let idx = t % std::cmp::max(personas.len(), 1);
-    let target_persona_id = personas.get(idx).map(|p| p.id.clone());
+    use super::mock_seed::{self, MOCK_EVENT_TEMPLATES};
 
-    let event_type = MOCK_EVENT_TYPES[t % MOCK_EVENT_TYPES.len()].to_string();
-    let source_type = MOCK_EVENT_SOURCES[t % MOCK_EVENT_SOURCES.len()].to_string();
-    let status = MOCK_EVENT_STATUSES[t % MOCK_EVENT_STATUSES.len()].to_string();
+    let t = mock_seed::seed_index();
+    let target_persona_id = mock_seed::pick_persona_id(&state.db, t)?;
+    let tpl = &MOCK_EVENT_TEMPLATES[t % MOCK_EVENT_TEMPLATES.len()];
 
     let now = chrono::Utc::now().to_rfc3339();
     let payload = serde_json::json!({
         "mock": true,
         "timestamp": now,
-        "detail": format!("Mock {} event from {}", event_type, source_type),
+        "detail": format!("Mock {} event from {}", tpl.event_type, tpl.source),
     }).to_string();
 
     // Route through publish() to ensure validation and encryption are applied,
     // keeping mock events structurally identical to production events.
     let input = CreatePersonaEventInput {
-        event_type: event_type.clone(),
-        source_type,
+        event_type: tpl.event_type.to_string(),
+        source_type: tpl.source.to_string(),
         project_id: Some("mock".into()),
         source_id: None,
         target_persona_id,
@@ -218,14 +232,12 @@ pub fn seed_mock_event(
     let mut event = repo::publish(&state.db, input)?;
 
     // Update status to the mock's chosen status (publish() always sets 'pending').
-    if status != "pending" {
-        repo::update_status(&state.db, &event.id, &status, None)?;
-        event.status = status;
+    if tpl.status != PersonaEventStatus::Pending {
+        repo::update_status(&state.db, &event.id, tpl.status.clone(), None)?;
+        event.status = tpl.status.clone();
     }
 
-    if let Err(e) = app.emit(event_name::EVENT_BUS, event.clone()) {
-        tracing::warn!(error = %e, "Failed to emit mock event-bus event");
-    }
+    emit_event_bus(&app, &event);
 
     Ok(event)
 }

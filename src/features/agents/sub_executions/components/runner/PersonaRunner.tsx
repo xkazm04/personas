@@ -2,7 +2,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
-import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Monitor } from 'lucide-react';
+import { Play, Square, ChevronDown, ChevronRight, Cloud, Clock, Timer, DollarSign, RotateCw, Wrench, Monitor, AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { BudgetRecoveryCard } from './BudgetRecoveryCard';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
@@ -13,6 +13,7 @@ import { useRunnerExecution } from '../../libs/useRunnerExecution';
 import { MiniPlayerPinButton, StatusIcon } from './RunnerHeader';
 import { HealingCard, AiHealingCounters } from './RunnerToolCalls';
 import { RunnerPhaseTimeline } from './RunnerStreamView';
+import { StuckExecutionGuidance } from './StuckExecutionGuidance';
 
 export function PersonaRunner() {
   const selectedPersona = useAgentStore((state) => state.selectedPersona);
@@ -26,6 +27,9 @@ export function PersonaRunner() {
   const overrideBudgetPause = useAgentStore((s) => s.overrideBudgetPause);
   const overrideStaleBudget = useAgentStore((s) => s.overrideStaleBudget);
   const budgetEntry = useAgentStore((s) => s.budgetSpendMap.get(selectedPersona?.id ?? ''));
+  const executionVerificationFailed = useAgentStore((s) => s.executionVerificationFailed);
+  const retryExecutionVerification = useAgentStore((s) => s.retryExecutionVerification);
+  const dismissVerificationFailure = useAgentStore((s) => s.dismissVerificationFailure);
   const personaId = selectedPersona?.id || '';
 
   const state = useRunnerState(personaId);
@@ -33,7 +37,6 @@ export function PersonaRunner() {
     personaId,
     inputData: state.inputData,
     setJsonError: state.setJsonError,
-    setOutputLines: state.setOutputLines as (fn: (prev: string[]) => string[]) => void,
     disconnect: state.disconnect,
     elapsedMs: state.elapsedMs,
     executionSummary: state.executionSummary,
@@ -84,7 +87,7 @@ export function PersonaRunner() {
         {IS_MOBILE ? (
           <button
             onClick={() => { try { window.open('https://claude.ai/code', '_blank'); } catch { /* intentional no-op */ } }}
-            className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl typo-heading transition-all bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 text-foreground shadow-lg shadow-cyan-500/20"
+            className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl typo-heading transition-all bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 text-foreground shadow-elevation-3 shadow-cyan-500/20"
           >
             <Monitor className="w-5 h-5" />
             Connect via Remote Control
@@ -92,11 +95,27 @@ export function PersonaRunner() {
         ) : (
           <button data-testid="execute-persona-btn" onClick={isExecuting ? exec.handleStop : exec.handleExecute}
             disabled={isBudgetBlocked}
-            className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl typo-heading transition-all ${isBudgetBlocked ? 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed' : isExecuting ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20' : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'}`}>
+            className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl typo-heading transition-all ${isBudgetBlocked ? 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed' : isExecuting ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-elevation-3 shadow-red-500/20' : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'}`}>
             {isExecuting ? (<><Square className="w-5 h-5" />Stop Execution</>) : (<>{cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}{cloudConfig?.is_connected ? 'Execute on Cloud' : 'Execute Persona'}</>)}
           </button>
         )}
       </div>
+
+      {/* Execution verification failure banner */}
+      {executionVerificationFailed && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-500/30 bg-amber-500/10">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+          <span className="text-sm text-amber-200/90 flex-1">
+            Could not verify a previously running execution. It may still be active on the backend.
+          </span>
+          <button onClick={() => void retryExecutionVerification()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors">
+            <RefreshCw className="w-3 h-3" /> Retry
+          </button>
+          <button onClick={dismissVerificationFailure} className="p-1 rounded hover:bg-amber-500/20 text-amber-400/60 hover:text-amber-400 transition-colors" title="Dismiss and abandon execution">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Progress Indicator */}
       {isExecuting && state.isThisPersonasExecution && (
@@ -117,6 +136,15 @@ export function PersonaRunner() {
             ) : <span className="typo-body text-muted-foreground/90">{formatElapsed(state.elapsedMs)} elapsed</span>}
           </div>
         </div>
+      )}
+
+      {/* Stuck Execution Guidance */}
+      {isExecuting && state.isThisPersonasExecution && state.silenceLevel !== 'active' && (
+        <StuckExecutionGuidance
+          silenceLevel={state.silenceLevel}
+          onCancel={exec.handleStop}
+          executionId={activeExecutionId}
+        />
       )}
 
       {/* Summary Card */}

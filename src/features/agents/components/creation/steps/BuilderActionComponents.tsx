@@ -98,7 +98,7 @@ export function BuilderActionBar({
             disabled={!hasIntent}
             className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all flex items-center gap-2 ${
               hasIntent
-                ? 'bg-btn-primary hover:bg-btn-primary/90 text-white shadow-md shadow-btn-primary/25 hover:shadow-btn-primary/35 hover:scale-[1.01] active:scale-[0.99]'
+                ? 'bg-btn-primary hover:bg-btn-primary/90 text-white shadow-elevation-2 shadow-btn-primary/25 hover:shadow-btn-primary/35 hover:scale-[1.01] active:scale-[0.99]'
                 : 'bg-secondary/50 text-muted-foreground/50 cursor-not-allowed'
             }`}
           >

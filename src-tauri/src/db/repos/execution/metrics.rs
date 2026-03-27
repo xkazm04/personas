@@ -56,7 +56,9 @@ pub fn create_prompt_version(
     system_prompt: Option<String>,
     change_summary: Option<String>,
 ) -> Result<PersonaPromptVersion, AppError> {
-    create_prompt_version_with_snapshot(pool, persona_id, structured_prompt, system_prompt, change_summary, VersionSnapshotFields::default())
+    timed_query!("execution_metrics", "execution_metrics::create_prompt_version", {
+        create_prompt_version_with_snapshot(pool, persona_id, structured_prompt, system_prompt, change_summary, VersionSnapshotFields::default())
+    })
 }
 
 pub fn create_prompt_version_with_snapshot(
@@ -67,6 +69,7 @@ pub fn create_prompt_version_with_snapshot(
     change_summary: Option<String>,
     snapshot: VersionSnapshotFields,
 ) -> Result<PersonaPromptVersion, AppError> {
+    timed_query!("execution_metrics", "execution_metrics::create_prompt_version_with_snapshot", {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let tag = "experimental".to_string();
@@ -97,6 +100,7 @@ pub fn create_prompt_version_with_snapshot(
         design_context: snapshot.design_context, last_design_result: snapshot.last_design_result,
         resolved_cells: snapshot.resolved_cells, icon: snapshot.icon, color: snapshot.color,
     })
+    })
 }
 
 /// Creates a version only if the prompt actually changed from the latest version.
@@ -107,6 +111,7 @@ pub fn create_prompt_version_if_changed(
     structured_prompt: Option<String>,
     system_prompt: Option<String>,
 ) -> Result<Option<PersonaPromptVersion>, AppError> {
+    timed_query!("execution_metrics", "execution_metrics::create_prompt_version_if_changed", {
     let conn = pool.get()?;
 
     // Get latest version's prompt to diff
@@ -134,6 +139,7 @@ pub fn create_prompt_version_if_changed(
         Some("Auto-saved".into()),
     )?;
     Ok(Some(version))
+    })
 }
 
 pub fn get_prompt_versions(
@@ -141,28 +147,32 @@ pub fn get_prompt_versions(
     persona_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaPromptVersion>, AppError> {
-    let limit = limit.unwrap_or(50);
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT ?2",
-    )?;
-    let rows = stmt.query_map(params![persona_id, limit], row_to_prompt_version)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+    timed_query!("execution_metrics", "execution_metrics::get_prompt_versions", {
+        let limit = limit.unwrap_or(50);
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![persona_id, limit], row_to_prompt_version)?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    })
 }
 
 pub fn get_prompt_version_by_id(
     pool: &DbPool,
     id: &str,
 ) -> Result<PersonaPromptVersion, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM persona_prompt_versions WHERE id = ?1",
-        params![id],
-        row_to_prompt_version,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Prompt version {id}")),
-        other => AppError::Database(other),
+    timed_query!("execution_metrics", "execution_metrics::get_prompt_version_by_id", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT * FROM persona_prompt_versions WHERE id = ?1",
+            params![id],
+            row_to_prompt_version,
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Prompt version {id}")),
+            other => AppError::Database(other),
+        })
     })
 }
 
@@ -171,15 +181,17 @@ pub fn update_prompt_version_tag(
     id: &str,
     tag: &str,
 ) -> Result<PersonaPromptVersion, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
-        params![tag, id],
-    )?;
-    if rows == 0 {
-        return Err(AppError::NotFound(format!("Prompt version {id}")));
-    }
-    get_prompt_version_by_id(pool, id)
+    timed_query!("execution_metrics", "execution_metrics::update_prompt_version_tag", {
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
+            params![tag, id],
+        )?;
+        if rows == 0 {
+            return Err(AppError::NotFound(format!("Prompt version {id}")));
+        }
+        get_prompt_version_by_id(pool, id)
+    })
 }
 
 /// Get the current production version for a persona, if any.
@@ -187,17 +199,19 @@ pub fn get_production_version(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Option<PersonaPromptVersion>, AppError> {
-    let conn = pool.get()?;
-    let result = conn.query_row(
-        "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 AND tag = 'production' ORDER BY version_number DESC LIMIT 1",
-        params![persona_id],
-        row_to_prompt_version,
-    );
-    match result {
-        Ok(v) => Ok(Some(v)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(AppError::Database(e)),
-    }
+    timed_query!("execution_metrics", "execution_metrics::get_production_version", {
+        let conn = pool.get()?;
+        let result = conn.query_row(
+            "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 AND tag = 'production' ORDER BY version_number DESC LIMIT 1",
+            params![persona_id],
+            row_to_prompt_version,
+        );
+        match result {
+            Ok(v) => Ok(Some(v)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
 }
 
 /// Get recent error rate for a persona (last N executions).
@@ -206,17 +220,19 @@ pub fn get_recent_error_rate(
     persona_id: &str,
     window: i64,
 ) -> Result<f64, AppError> {
-    let conn = pool.get()?;
-    let (total, failed): (i64, i64) = conn.query_row(
-        "SELECT COUNT(*), COALESCE(SUM(CASE WHEN status IN ('failed','error') THEN 1 ELSE 0 END), 0)
-         FROM (SELECT status FROM persona_executions WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2)",
-        params![persona_id, window],
-        |row| Ok((row.get(0)?, row.get(1)?)),
-    )?;
-    if total == 0 {
-        return Ok(0.0);
-    }
-    Ok(failed as f64 / total as f64)
+    timed_query!("execution_metrics", "execution_metrics::get_recent_error_rate", {
+        let conn = pool.get()?;
+        let (total, failed): (i64, i64) = conn.query_row(
+            "SELECT COUNT(*), COALESCE(SUM(CASE WHEN status IN ('failed','error') THEN 1 ELSE 0 END), 0)
+             FROM (SELECT status FROM persona_executions WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2)",
+            params![persona_id, window],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        if total == 0 {
+            return Ok(0.0);
+        }
+        Ok(failed as f64 / total as f64)
+    })
 }
 
 // ============================================================================
@@ -249,7 +265,8 @@ fn persona_filter_params(
 // ============================================================================
 
 #[instrument(skip(pool), fields(days, persona_id))]
-pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -> Result<serde_json::Value, AppError> {
+pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -> Result<crate::db::models::MetricsSummary, AppError> {
+    timed_query!("execution_metrics", "execution_metrics::get_summary", {
     let start = std::time::Instant::now();
     let days = days.unwrap_or(30).clamp(1, 365);
     let conn = pool.get()?;
@@ -269,33 +286,26 @@ pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -
     let params_ref: Vec<&dyn rusqlite::types::ToSql> =
         param_values.iter().map(|p| p.as_ref()).collect();
 
-    let row = conn.query_row(&sql, params_ref.as_slice(), |row| {
-        Ok((
-            row.get::<_, i64>(0)?,
-            row.get::<_, i64>(1)?,
-            row.get::<_, i64>(2)?,
-            row.get::<_, f64>(3)?,
-            row.get::<_, i64>(4)?,
-        ))
+    let result = conn.query_row(&sql, params_ref.as_slice(), |row| {
+        Ok(crate::db::models::MetricsSummary {
+            total_executions: row.get(0)?,
+            successful_executions: row.get(1)?,
+            failed_executions: row.get(2)?,
+            total_cost_usd: row.get(3)?,
+            active_personas: row.get(4)?,
+            period_days: days,
+        })
     })?;
-
-    let result = serde_json::json!({
-        "total_executions": row.0,
-        "successful_executions": row.1,
-        "failed_executions": row.2,
-        "total_cost_usd": row.3,
-        "active_personas": row.4,
-        "period_days": days,
-    });
 
     info!(
         duration_ms = start.elapsed().as_millis() as u64,
-        total_executions = row.0,
-        active_personas = row.4,
+        total_executions = result.total_executions,
+        active_personas = result.active_personas,
         "get_summary completed"
     );
 
     Ok(result)
+    })
 }
 
 // ============================================================================
@@ -311,6 +321,7 @@ pub fn get_chart_data(
     days: Option<i64>,
     persona_id: Option<&str>,
 ) -> Result<MetricsChartData, AppError> {
+    timed_query!("execution_metrics", "execution_metrics::get_chart_data", {
     let start = std::time::Instant::now();
     let days = days.unwrap_or(30).clamp(1, 365);
     let conn = pool.get()?;
@@ -335,7 +346,7 @@ pub fn get_chart_data(
     let params_ref: Vec<&dyn rusqlite::types::ToSql> =
         param_values.iter().map(|p| p.as_ref()).collect();
 
-    let chart_points = {
+    let chart_points: Vec<MetricsChartPoint> = {
         let mut stmt = conn.prepare(&chart_sql)?;
         let rows = stmt.query_map(params_ref.as_slice(), |row| {
             Ok(MetricsChartPoint {
@@ -375,9 +386,12 @@ pub fn get_chart_data(
         rows.filter_map(|r| r.ok()).collect()
     };
 
+    let anomalies = detect_chart_anomalies(&chart_points);
+
     let result = MetricsChartData {
         chart_points,
         persona_breakdown,
+        anomalies,
     };
 
     info!(
@@ -388,6 +402,7 @@ pub fn get_chart_data(
     );
 
     Ok(result)
+    })
 }
 
 // ============================================================================
@@ -422,6 +437,44 @@ fn percentile(sorted: &[f64], p: f64) -> f64 {
         let frac = idx - lower as f64;
         sorted[lower] * (1.0 - frac) + sorted[upper] * frac
     }
+}
+
+/// Detect cost anomalies in global chart data using the same rolling
+/// 5-day window with >100% deviation threshold as the per-persona detector.
+fn detect_chart_anomalies(points: &[MetricsChartPoint]) -> Vec<MetricAnomaly> {
+    let mut anomalies = Vec::new();
+    let window = 5;
+
+    for i in 0..points.len() {
+        let value = points[i].cost;
+        if value == 0.0 {
+            continue;
+        }
+
+        let start = i.saturating_sub(window);
+        let preceding: Vec<f64> = (start..i).map(|j| points[j].cost).collect();
+        if preceding.is_empty() {
+            continue;
+        }
+        let baseline = preceding.iter().sum::<f64>() / preceding.len() as f64;
+        if baseline == 0.0 {
+            continue;
+        }
+
+        let deviation_pct = ((value - baseline) / baseline) * 100.0;
+        if deviation_pct > 100.0 {
+            anomalies.push(MetricAnomaly {
+                date: points[i].date.clone(),
+                metric: "cost".to_string(),
+                value,
+                baseline,
+                deviation_pct,
+                execution_id: None,
+            });
+        }
+    }
+
+    anomalies
 }
 
 /// Detect anomalies: points where a metric deviates > 2x from its
@@ -491,6 +544,7 @@ pub fn get_prompt_performance(
     persona_id: &str,
     days: i64,
 ) -> Result<PromptPerformanceData, AppError> {
+    timed_query!("execution_metrics", "execution_metrics::get_prompt_performance", {
     let start = std::time::Instant::now();
     let days = days.clamp(1, 365);
     let conn = pool.get()?;
@@ -621,6 +675,7 @@ pub fn get_prompt_performance(
         version_markers,
         anomalies,
     })
+    })
 }
 
 // ============================================================================
@@ -637,6 +692,7 @@ pub fn get_execution_dashboard(
     pool: &DbPool,
     days: i64,
 ) -> Result<ExecutionDashboardData, AppError> {
+    timed_query!("execution_metrics", "execution_metrics::get_execution_dashboard", {
     let start = std::time::Instant::now();
     let days = days.clamp(1, 365);
     let conn = pool.get()?;
@@ -958,6 +1014,7 @@ pub fn get_execution_dashboard(
         projected_monthly_cost,
         burn_rate,
     })
+    })
 }
 
 // =============================================================================
@@ -977,6 +1034,7 @@ pub fn get_anomaly_drilldown(
     anomaly_deviation_pct: f64,
     persona_id: Option<&str>,
 ) -> Result<AnomalyDrilldownData, AppError> {
+    timed_query!("execution_metrics", "execution_metrics::get_anomaly_drilldown", {
     let start = std::time::Instant::now();
     let conn = pool.get()?;
 
@@ -1149,6 +1207,7 @@ pub fn get_anomaly_drilldown(
         anomaly_deviation_pct,
         correlated_events: correlated,
         root_cause_suggestions: suggestions,
+    })
     })
 }
 

@@ -6,6 +6,29 @@ import type { UnregisteredCommand } from "./commandNames.overrides";
 /** All valid command names: registered + known-unregistered forward-references. */
 export type CommandName = RegisteredCommand | UnregisteredCommand;
 
+/**
+ * Maps a TypeScript args interface so that every property whose Rust
+ * counterpart is `Option<T>` can be passed as `T | null | undefined`.
+ *
+ * `invokeWithTimeout` coerces `undefined` to `null` before serialisation, so
+ * the Rust side always receives either a concrete value or `None`.
+ *
+ * Usage in API wrappers:
+ * ```ts
+ * interface ListMemoriesArgs {
+ *   personaId: string | null;  // Rust Option<String>
+ *   category: string | null;   // Rust Option<String>
+ *   limit: number | null;      // Rust Option<i64>
+ * }
+ * // RustArgs<ListMemoriesArgs> allows `undefined` wherever `null` is accepted
+ * export const listMemories = (args: RustArgs<ListMemoriesArgs>) =>
+ *   invoke<PersonaMemory[]>("list_memories", args);
+ * ```
+ */
+export type RustArgs<T extends Record<string, unknown>> = {
+  [K in keyof T]: null extends T[K] ? T[K] | undefined : T[K];
+};
+
 /** Default timeout for Tauri IPC calls (90 seconds). */
 const DEFAULT_TIMEOUT_MS = 90_000;
 
@@ -57,6 +80,20 @@ export interface InvokeOpts {
  * returned promise rejects with an `InvokeTimeoutError`.
  *
  * Every call is recorded into the IPC metrics ring buffer for observability.
+ *
+ * ### undefined-to-null coercion
+ *
+ * Before forwarding `args` to the Tauri bridge, every top-level property whose
+ * value is `undefined` is replaced with `null`.  This is required because
+ * `JSON.stringify` **omits** `undefined` properties entirely, which causes Rust
+ * `serde_json` to reject the payload when the corresponding field is
+ * `Option<T>` (missing key !== `null`).  After coercion, Rust sees `null` and
+ * deserialises it as `None`.
+ *
+ * **Callers may therefore pass `undefined` for any Rust `Option<T>` parameter**
+ * and rely on this wrapper to produce the correct wire format.  Prefer using
+ * the {@link RustArgs} utility type in new API wrappers so the contract is
+ * visible at the type level.
  *
  * **Memory-leak fix**: the timeout branch now eagerly releases its reference
  * to the original invocation promise so GC can reclaim args/closures even if
@@ -113,6 +150,17 @@ function _invokeCore<T>(
   timeoutMs: number,
 ): Promise<T> {
   const start = performance.now();
+
+  // Inject IPC session token for privileged command authentication.
+  // The Rust backend sets window.__IPC_TOKEN via a js_init_script.
+  const token = (globalThis as Record<string, unknown>).__IPC_TOKEN as string | undefined;
+  if (token) {
+    const opts = options ?? {};
+    const h = new Headers(opts.headers);
+    h.set("x-ipc-token", token);
+    options = { ...opts, headers: h };
+  }
+
   const invocation = invoke<T>(cmd, args ? coerceArgs(args) : undefined, options);
 
   // We use a mutable holder so the timeout callback can release its reference

@@ -5,6 +5,7 @@ import { ForagingPanel } from '@/features/vault/sub_foraging/ForagingPanel';
 import { DesktopDiscoveryPanel } from '@/features/vault/sub_desktop/DesktopDiscoveryPanel';
 import { DatabaseListView } from '@/features/vault/sub_databases/DatabaseListView';
 import { ProvisioningWizard } from '@/features/vault/sub_wizard/ProvisioningWizard';
+import { AutopilotPanel } from '@/features/vault/sub_autopilot/AutopilotPanel';
 import { silentCatch } from "@/lib/silentCatch";
 import { WorkspaceConnectPanel } from '@/features/vault/sub_workspace/WorkspaceConnectPanel';
 import type { useCredentialManagerState } from './useCredentialManagerState';
@@ -35,6 +36,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
           onSelectDatabase={() => dispatch({ type: 'GO_ADD_DATABASE' })}
           onSelectDesktop={() => dispatch({ type: 'GO_ADD_DESKTOP' })}
           onSelectWizard={() => dispatch({ type: 'GO_ADD_WIZARD' })}
+          onSelectAutopilot={() => dispatch({ type: 'GO_ADD_AUTOPILOT' })}
           onWorkspaceConnect={() => dispatch({ type: 'GO_WORKSPACE_CONNECT' })}
           onForage={() => dispatch({ type: 'GO_FORAGING' })}
           onBack={() => dispatch({ type: 'GO_LIST' })}
@@ -121,6 +123,17 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
           config={DATABASE_SCHEMA}
           onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
           onComplete={() => dispatch({ type: 'GO_LIST' })}
+        />
+      )}
+
+      {viewState.view === 'add-autopilot' && (
+        <AutopilotPanel
+          onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
+          onComplete={() => {
+            void fetchCredentials();
+            fetchConnectorDefinitions();
+            dispatch({ type: 'GO_CATALOG' });
+          }}
         />
       )}
 

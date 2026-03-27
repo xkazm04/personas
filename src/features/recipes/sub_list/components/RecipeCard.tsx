@@ -136,7 +136,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
           </button>
 
           {showDeleteConfirm && (
-            <div className="absolute bottom-full right-0 mb-2 z-50 w-56 rounded-xl border border-border/60 bg-card p-3 shadow-lg transition-all duration-150">
+            <div className="absolute bottom-full right-0 mb-2 z-50 w-56 rounded-xl border border-border/60 bg-card p-3 shadow-elevation-3 transition-all duration-150">
               <p className="text-sm text-foreground mb-1">
                 Delete <span className="font-semibold">{recipe.name}</span>?
               </p>

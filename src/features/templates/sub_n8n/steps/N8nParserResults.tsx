@@ -4,7 +4,7 @@ import { Button } from '@/features/shared/components/buttons';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { WorkflowPlatform } from '@/lib/personas/parsers/workflowDetector';
 import { PLATFORM_LABELS } from '@/lib/personas/parsers/workflowDetector';
-import { PLATFORM_COLORS } from './SelectionCheckbox';
+import { PLATFORM_COLORS, TAG_COLORS } from '../colorTokens';
 import { ToolsSection, TriggersSection, ConnectorsSection } from './N8nParserResultsSections';
 
 interface N8nParserResultsProps {
@@ -152,13 +152,13 @@ export function N8nParserResults({
       {/* Selection summary */}
       {hasSelection && (
         <div className="flex items-center gap-2 text-sm font-mono uppercase tracking-wider text-muted-foreground/45">
-          <span className="px-2.5 py-1 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/15">
+          <span className={`px-2.5 py-1 rounded-xl border ${TAG_COLORS.blue}`}>
             {toolCount} tools
           </span>
-          <span className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/15">
+          <span className={`px-2.5 py-1 rounded-xl border ${TAG_COLORS.amber}`}>
             {triggerCount} triggers
           </span>
-          <span className="px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+          <span className={`px-2.5 py-1 rounded-xl border ${TAG_COLORS.emerald}`}>
             {connectorCount} connectors
           </span>
           <span className="text-muted-foreground/80 ml-1">selected for import</span>

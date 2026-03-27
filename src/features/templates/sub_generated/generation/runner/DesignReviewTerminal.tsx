@@ -55,6 +55,9 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
       <div
         ref={terminalRef}
         onScroll={handleScroll}
+        role="log"
+        aria-live="polite"
+        aria-label="Design review output"
         className={`${hasStarted ? 'h-[400px]' : 'h-[100px]'} overflow-y-auto font-mono text-sm bg-background transition-all`}
       >
         {!hasStarted ? (
@@ -100,7 +103,7 @@ export function TerminalOutput({ lines, isRunning, hasStarted, animateFromRef }:
 
 export function ResultSummary({ result }: { result: TestRunResult }) {
   return (
-    <div className="px-4 py-3 border-t border-primary/10 bg-primary/5">
+    <div className="px-4 py-3 border-t border-primary/10 bg-primary/5" aria-live="polite" aria-atomic="true">
       <div className="flex items-center gap-4 text-sm">
         <span className="flex items-center gap-1.5 text-emerald-400">
           <CheckCircle2 className="w-4 h-4" />

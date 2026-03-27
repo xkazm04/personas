@@ -11,7 +11,10 @@ import type { PersonaEvent } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
+import { createLogger } from '@/lib/log';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
+
+const logger = createLogger('activity-tab');
 import { ExecutionDetail } from '@/features/agents/sub_executions/detail/ExecutionDetail';
 import { EventDetailModal } from '@/features/overview/sub_events/EventDetailModal';
 import MemoryDetailModal from '@/features/overview/sub_memories/components/MemoryDetailModal';
@@ -76,10 +79,10 @@ export function ActivityTab() {
       // Auto-reset status and refresh after brief confirmation
       setTimeout(() => { setExecState('idle'); loadData(); }, 2000);
     } catch (err) {
-      console.error('Quick execute failed:', err);
+      logger.error('Quick execute failed', { error: err instanceof Error ? err.message : String(err) });
       setExecState('idle');
     }
-  }, [personaId, execState]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [personaId, execState]);
 
   const loadData = useCallback(async () => {
     if (!personaId) return;

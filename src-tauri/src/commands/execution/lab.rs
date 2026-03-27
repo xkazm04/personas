@@ -11,7 +11,7 @@ use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::lab::eval as eval_repo;
 use crate::db::repos::lab::ratings as ratings_repo;
 use crate::db::repos::resources::tools as tool_repo;
-use crate::engine::test_runner::{self, TestModelConfig};
+use crate::engine::test_runner::{self, parse_model_configs};
 use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -34,16 +34,7 @@ pub async fn lab_start_arena(
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
     let ephemeral = EphemeralPersona::from_persisted(persona, tools);
 
-    let mut model_configs: Vec<TestModelConfig> = Vec::new();
-    for v in models {
-        match serde_json::from_value(v.clone()) {
-            Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
-        }
-    }
-    if model_configs.is_empty() {
-        return Err(AppError::Validation("No valid models provided".into()));
-    }
+    let model_configs = parse_model_configs(models)?;
 
     let models_json = serde_json::to_string(
         &model_configs.iter().map(|m| &m.id).collect::<Vec<_>>(),
@@ -145,16 +136,7 @@ pub async fn lab_start_ab(
         return Err(AppError::Validation("Both versions must belong to the specified persona".into()));
     }
 
-    let mut model_configs: Vec<TestModelConfig> = Vec::new();
-    for v in models {
-        match serde_json::from_value(v.clone()) {
-            Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
-        }
-    }
-    if model_configs.is_empty() {
-        return Err(AppError::Validation("No valid models provided".into()));
-    }
+    let model_configs = parse_model_configs(models)?;
 
     let models_json = serde_json::to_string(
         &model_configs.iter().map(|m| &m.id).collect::<Vec<_>>(),
@@ -273,16 +255,7 @@ pub async fn lab_start_matrix(
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
     let ephemeral = EphemeralPersona::from_persisted(persona, tools);
 
-    let mut model_configs: Vec<TestModelConfig> = Vec::new();
-    for v in models {
-        match serde_json::from_value(v.clone()) {
-            Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
-        }
-    }
-    if model_configs.is_empty() {
-        return Err(AppError::Validation("No valid models provided".into()));
-    }
+    let model_configs = parse_model_configs(models)?;
 
     let models_json = serde_json::to_string(
         &model_configs.iter().map(|m| &m.id).collect::<Vec<_>>(),
@@ -429,16 +402,7 @@ pub async fn lab_start_eval(
         versions.push(v);
     }
 
-    let mut model_configs: Vec<TestModelConfig> = Vec::new();
-    for v in models {
-        match serde_json::from_value(v.clone()) {
-            Ok(config) => model_configs.push(config),
-            Err(e) => return Err(AppError::Validation(format!("Invalid model config: {e}"))),
-        }
-    }
-    if model_configs.is_empty() {
-        return Err(AppError::Validation("No valid models provided".into()));
-    }
+    let model_configs = parse_model_configs(models)?;
 
     let version_ids_json = serde_json::to_string(&version_ids).unwrap_or_default();
     let version_numbers_json = serde_json::to_string(

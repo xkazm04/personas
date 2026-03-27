@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { CredentialCardHeader } from '@/features/vault/sub_card/CredentialCardHeader';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { useRotationTicker, formatCountdown } from '@/features/vault/hooks/useRotationTicker';
-import type { RotationStatus } from '@/api/vault/rotation';
-import { getRotationStatus } from '@/api/vault/rotation';
 import { useVaultStore } from '@/stores/vaultStore';
 
 interface CredentialCardProps {
@@ -21,7 +19,8 @@ export function CredentialCard({
   onSelect,
   onDelete,
 }: CredentialCardProps) {
-  const [rotationStatus, setRotationStatus] = useState<RotationStatus | null>(null);
+  const rotationStatus = useVaultStore((s) => s.rotationStatuses[credential.id] ?? null);
+  const storeFetchRotationStatus = useVaultStore((s) => s.fetchRotationStatus);
   const isPendingDelete = useVaultStore((s) => s.pendingDeleteCredentialIds.has(credential.id));
 
   const { result: healthcheckResult } = useCredentialHealth(credential.id);
@@ -30,17 +29,14 @@ export function CredentialCard({
   const rotationCountdown = formatCountdown(rotationStatus?.next_rotation_at);
 
   const fetchRotationStatus = useCallback(async () => {
-    try {
-      const status = await getRotationStatus(credential.id);
-      setRotationStatus(status);
-    } catch {
-      // intentional: non-critical -- rotation status not yet configured for this credential
-    }
-  }, [credential.id]);
+    await storeFetchRotationStatus(credential.id);
+  }, [storeFetchRotationStatus, credential.id]);
 
   useEffect(() => {
-    fetchRotationStatus();
-  }, [fetchRotationStatus]);
+    if (!rotationStatus) {
+      fetchRotationStatus();
+    }
+  }, [rotationStatus, fetchRotationStatus]);
 
   const effectiveHealthcheckResult = useMemo(() =>
     healthcheckResult ?? (

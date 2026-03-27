@@ -83,7 +83,7 @@ export default function CanvasFlowLayer({
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={24} size={1} className="opacity-30" />
-        <Controls className="!bg-secondary/60 !border-primary/15 !rounded-xl !shadow-lg [&>button]:!bg-secondary/80 [&>button]:!border-primary/15 [&>button]:!text-foreground/80 [&>button:hover]:!bg-secondary [&>button:hover]:!text-foreground/90" />
+        <Controls className="!bg-secondary/60 !border-primary/15 !rounded-xl !shadow-elevation-3 [&>button]:!bg-secondary/80 [&>button]:!border-primary/15 [&>button]:!text-foreground/80 [&>button:hover]:!bg-secondary [&>button:hover]:!text-foreground/90" />
         <MiniMap
           className="!bg-secondary/40 !border-primary/15 !rounded-xl"
           maskColor="rgba(0,0,0,0.3)"

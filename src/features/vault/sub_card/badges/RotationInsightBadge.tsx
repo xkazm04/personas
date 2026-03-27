@@ -13,7 +13,7 @@ const BADGE_CONFIG: Record<
   disable: {
     label: 'Disabled',
     Icon: ShieldOff,
-    classes: 'bg-red-500/15 border-red-500/25 text-red-400',
+    classes: 'bg-red-500/10 border-red-500/20 text-red-400',
   },
   rotate_then_alert: {
     label: 'Perm Errors',

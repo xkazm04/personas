@@ -48,3 +48,19 @@ export const testEventFlow = (eventType: string, payload?: string) =>
 
 export const seedMockEvent = () =>
   invoke<PersonaEvent>("seed_mock_event", {});
+
+// ============================================================================
+// Dead Letter Queue
+// ============================================================================
+
+export const listDeadLetterEvents = (limit?: number) =>
+  invoke<PersonaEvent[]>("list_dead_letter_events", { limit });
+
+export const countDeadLetterEvents = () =>
+  invoke<number>("count_dead_letter_events");
+
+export const retryDeadLetterEvent = (id: string) =>
+  invoke<PersonaEvent>("retry_dead_letter_event", { id });
+
+export const discardDeadLetterEvent = (id: string) =>
+  invoke<boolean>("discard_dead_letter_event", { id });

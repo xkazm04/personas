@@ -490,7 +490,7 @@ pub fn confirm_n8n_persona_draft(
                     // Clear the stale persona_id so we can retry
                     let _ = session_repo::update(&state.db, sid, &UpdateN8nSessionInput {
                         persona_id: Some(None),
-                        status: Some(SessionStatus::Transforming.as_str().into()),
+                        status: Some(SessionStatus::Transforming),
                         ..Default::default()
                     });
                     tracing::info!(
@@ -534,7 +534,7 @@ pub fn confirm_n8n_persona_draft(
             if let Some(pid) = persona_val.get("id").and_then(|v| v.as_str()) {
                 let _ = session_repo::update(&state.db, sid, &UpdateN8nSessionInput {
                     persona_id: Some(Some(pid.to_string())),
-                    status: Some(SessionStatus::Confirmed.as_str().into()),
+                    status: Some(SessionStatus::Confirmed),
                     ..Default::default()
                 });
             }

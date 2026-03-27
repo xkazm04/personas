@@ -1,4 +1,5 @@
 import { RefreshCw, BarChart3, AlertTriangle } from 'lucide-react';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import HealingIssueModal from '@/features/overview/sub_observability/components/HealingIssueModal';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -38,10 +39,10 @@ export default function AnalyticsDashboard() {
         actions={
           <div className="flex items-center gap-2 flex-shrink-0">
             <AnalyticsSummaryCards
-              totalCost={metrics.summary?.total_cost_usd || 0}
-              totalExecutions={metrics.summary?.total_executions || 0}
+              totalCost={metrics.summary?.totalCostUsd || 0}
+              totalExecutions={metrics.summary?.totalExecutions || 0}
               successRate={metrics.successRate}
-              activePersonas={metrics.summary?.active_personas || 0}
+              activePersonas={metrics.summary?.activePersonas || 0}
             />
             <button
               onClick={() => { void metrics.refreshAllSafe(); }}
@@ -79,18 +80,12 @@ export default function AnalyticsDashboard() {
         <div className="space-y-5">
           {/* Error banner */}
           {metrics.observabilityError && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-red-300">Metrics unavailable</p>
-                  <p className="text-sm text-red-400/70 mt-0.5">{metrics.observabilityError}</p>
-                </div>
-                <button onClick={() => { void metrics.refreshAllSafe(); }} className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
-                  <RefreshCw className="w-3 h-3" /> Retry
-                </button>
-              </div>
-            </div>
+            <InlineErrorBanner
+              severity="error"
+              title="Metrics unavailable"
+              message={metrics.observabilityError}
+              onRetry={() => { void metrics.refreshAllSafe(); }}
+            />
           )}
 
           {/* Cost anomaly alerts */}

@@ -51,7 +51,7 @@ export function DeploymentFilters({
         </button>
 
         {filterOpen && (
-          <div className="absolute top-full right-0 mt-1 z-30 bg-background border border-primary/20 rounded-xl shadow-xl p-3 min-w-[200px] space-y-3">
+          <div className="absolute top-full right-0 mt-1 z-30 bg-background border border-primary/20 rounded-xl shadow-elevation-3 p-3 min-w-[200px] space-y-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wider">Target</label>
               <div className="flex flex-wrap gap-1 mt-1.5">

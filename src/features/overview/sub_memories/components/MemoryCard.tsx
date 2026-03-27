@@ -1,31 +1,47 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trash2, Bot } from 'lucide-react';
 import type { PersonaMemory } from '@/lib/types/types';
-import { formatRelativeTime, MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
+import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 
-// -- Importance dots (1-10 scale) ---------------------------------------------
-export function ImportanceDots({ value }: { value: number }) {
+// -- Importance bar (1-10 scale, gradient fill) --------------------------------
+function getImportanceColor(value: number): string {
+  if (value <= 3) return 'rgb(52, 211, 153)';   // emerald-400
+  if (value <= 6) return 'rgb(251, 191, 36)';    // amber-400
+  return 'rgb(251, 113, 133)';                    // rose-400
+}
+
+function getImportanceGradient(value: number): string {
+  if (value <= 3) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(52, 211, 153))';
+  if (value <= 6) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(251, 191, 36))';
+  return 'linear-gradient(90deg, rgb(251, 191, 36), rgb(251, 113, 133))';
+}
+
+export function ImportanceBar({ value }: { value: number }) {
   const maxScale = 10;
+  const pct = (Math.max(1, Math.min(value, maxScale)) / maxScale) * 100;
   const label = `Importance: ${value} of ${maxScale}`;
+  const highImportance = value >= 8;
+
   return (
-    <div className="flex items-center gap-1" title={label} aria-label={label}>
-      <div className="flex items-center gap-[2px]">
-        {Array.from({ length: maxScale }, (_, i) => i + 1).map((i) => (
-          <div
-            key={i}
-            className={`w-1.5 h-1.5 rounded-full transition-colors ${
-              i <= value
-                ? value >= 8 ? 'bg-red-400' : value >= 5 ? 'bg-amber-400' : 'bg-emerald-400'
-                : 'bg-muted-foreground/15'
-            }`}
-          />
-        ))}
+    <div className="flex items-center gap-1.5" title={label} aria-label={label}>
+      <div
+        className="relative w-10 h-1.5 rounded-full bg-muted-foreground/15 overflow-hidden"
+        style={highImportance ? { boxShadow: `0 1px 4px ${getImportanceColor(value)}60` } : undefined}
+      >
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+          style={{ width: `${pct}%`, background: getImportanceGradient(value) }}
+        />
       </div>
       <span className="text-xs text-muted-foreground/70 tabular-nums">({value}/{maxScale})</span>
     </div>
   );
 }
+
+/** @deprecated Use ImportanceBar instead */
+export const ImportanceDots = ImportanceBar;
 
 // -- Memory Row ---------------------------------------------------------------
 export function MemoryRow({
@@ -35,8 +51,6 @@ export function MemoryRow({
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const defaultCat = { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' };
-  const cat = MEMORY_CATEGORY_COLORS[memory.category] ?? defaultCat;
 
   useEffect(() => {
     if (!confirmDelete) return;
@@ -51,7 +65,7 @@ export function MemoryRow({
   );
 
   const categoryBadge = (
-    <span className={`inline-flex px-2 py-0.5 text-sm font-mono uppercase rounded-lg border flex-shrink-0 ${cat.bg} ${cat.text} ${cat.border}`}>{cat.label}</span>
+    <CategoryChip category={memory.category} className="flex-shrink-0" />
   );
 
   const deleteButton = (
@@ -76,7 +90,7 @@ export function MemoryRow({
         <div className="w-[140px] flex items-center gap-2 flex-shrink-0">{agentAvatar}<span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
         <div className="flex-1 min-w-0"><span className="text-sm text-foreground/80 truncate block">{stripHtml(memory.title)}</span></div>
         {categoryBadge}
-        <div className="w-[60px] flex-shrink-0"><ImportanceDots value={memory.importance} /></div>
+        <div className="w-[60px] flex-shrink-0"><ImportanceBar value={memory.importance} /></div>
         <span className="text-sm text-muted-foreground/80 w-[60px] text-right flex-shrink-0">{formatRelativeTime(memory.created_at)}</span>
         <div className="w-[32px] flex-shrink-0">{deleteButton}</div>
       </div>
@@ -90,7 +104,7 @@ export function MemoryRow({
         <span className="text-sm text-foreground/80 line-clamp-2">{stripHtml(memory.title)}</span>
         <div className="flex items-center gap-2 flex-wrap">
           {categoryBadge}
-          <ImportanceDots value={memory.importance} />
+          <ImportanceBar value={memory.importance} />
           <span className="text-sm text-muted-foreground/80 ml-auto">{formatRelativeTime(memory.created_at)}</span>
         </div>
       </div>

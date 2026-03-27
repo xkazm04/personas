@@ -98,6 +98,7 @@ pub struct AutomationRun {
     pub platform_logs_url: Option<String>,
     pub duration_ms: Option<i64>,
     pub error_message: Option<String>,
+    pub warnings: Option<String>,
     pub started_at: String,
     pub completed_at: Option<String>,
 }

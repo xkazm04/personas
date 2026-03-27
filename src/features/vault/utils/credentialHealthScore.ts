@@ -92,9 +92,11 @@ export function computeHealthScore(
     {
       name: 'anomaly',
       value: an,
-      reason: rotationStatus?.anomaly_score
-        ? anomalyReason(rotationStatus.anomaly_score)
-        : 'No anomaly data',
+      reason: rotationStatus?.healthcheck_corrupted
+        ? 'Healthcheck data corrupted'
+        : rotationStatus?.anomaly_score
+          ? anomalyReason(rotationStatus.anomaly_score)
+          : 'No anomaly data',
     },
     {
       name: 'rotation',

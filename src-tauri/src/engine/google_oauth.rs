@@ -53,47 +53,31 @@ pub fn dotenv_var_first_nonempty(keys: &[&str]) -> Option<String> {
     None
 }
 
+/// Resolve an env value by checking compile-time embed, then runtime env vars,
+/// then `.env` files. The `compile_time` parameter should come from `option_env!()`.
+fn resolve_env_value(compile_time: Option<&str>, runtime_keys: &[&str]) -> Option<String> {
+    compile_time
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+        .or_else(|| env_var_first_nonempty(runtime_keys))
+        .or_else(|| dotenv_var_first_nonempty(runtime_keys))
+}
+
 /// Resolve Google OAuth client ID and secret from compile-time env, runtime env,
 /// or `.env` files.
 ///
 /// Returns `(client_id, client_secret)` on success.
 pub fn resolve_google_oauth_env_credentials(
 ) -> Result<(String, String), crate::error::AppError> {
-    let client_id = option_env!("GCP_CLIENT_ID")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| {
-            env_var_first_nonempty(&[
-                "GCP_CLIENT_ID",
-                "GOOGLE_OAUTH_CLIENT_ID",
-                "GOOGLE_CLIENT_ID",
-            ])
-        })
-        .or_else(|| {
-            dotenv_var_first_nonempty(&[
-                "GCP_CLIENT_ID",
-                "GOOGLE_OAUTH_CLIENT_ID",
-                "GOOGLE_CLIENT_ID",
-            ])
-        });
+    let client_id = resolve_env_value(
+        option_env!("GCP_CLIENT_ID"),
+        &["GCP_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_CLIENT_ID"],
+    );
 
-    let client_secret = option_env!("GCP_CLIENT_SECRET")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| {
-            env_var_first_nonempty(&[
-                "GCP_CLIENT_SECRET",
-                "GOOGLE_OAUTH_CLIENT_SECRET",
-                "GOOGLE_CLIENT_SECRET",
-            ])
-        })
-        .or_else(|| {
-            dotenv_var_first_nonempty(&[
-                "GCP_CLIENT_SECRET",
-                "GOOGLE_OAUTH_CLIENT_SECRET",
-                "GOOGLE_CLIENT_SECRET",
-            ])
-        });
+    let client_secret = resolve_env_value(
+        option_env!("GCP_CLIENT_SECRET"),
+        &["GCP_CLIENT_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"],
+    );
 
     match (client_id, client_secret) {
         (Some(id), Some(secret)) => Ok((id, secret)),
@@ -115,17 +99,15 @@ pub fn resolve_google_oauth_env_credentials(
 pub fn resolve_google_desktop_oauth_credentials(
 ) -> Result<(String, String), crate::error::AppError> {
     // Try Desktop-specific credentials first
-    let desktop_id = option_env!("GCP_DESKTOP_CLIENT_ID")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| env_var_first_nonempty(&["GCP_DESKTOP_CLIENT_ID"]))
-        .or_else(|| dotenv_var_first_nonempty(&["GCP_DESKTOP_CLIENT_ID"]));
+    let desktop_id = resolve_env_value(
+        option_env!("GCP_DESKTOP_CLIENT_ID"),
+        &["GCP_DESKTOP_CLIENT_ID"],
+    );
 
-    let desktop_secret = option_env!("GCP_DESKTOP_CLIENT_SECRET")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| env_var_first_nonempty(&["GCP_DESKTOP_CLIENT_SECRET"]))
-        .or_else(|| dotenv_var_first_nonempty(&["GCP_DESKTOP_CLIENT_SECRET"]));
+    let desktop_secret = resolve_env_value(
+        option_env!("GCP_DESKTOP_CLIENT_SECRET"),
+        &["GCP_DESKTOP_CLIENT_SECRET"],
+    );
 
     if let (Some(id), Some(secret)) = (desktop_id, desktop_secret) {
         return Ok((id, secret));
@@ -141,17 +123,15 @@ pub fn resolve_google_desktop_oauth_credentials(
 /// Returns `(client_id, client_secret)` on success.
 pub fn resolve_microsoft_oauth_credentials(
 ) -> Result<(String, String), crate::error::AppError> {
-    let client_id = option_env!("MICROSOFT_CLIENT_ID")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| env_var_first_nonempty(&["MICROSOFT_CLIENT_ID"]))
-        .or_else(|| dotenv_var_first_nonempty(&["MICROSOFT_CLIENT_ID"]));
+    let client_id = resolve_env_value(
+        option_env!("MICROSOFT_CLIENT_ID"),
+        &["MICROSOFT_CLIENT_ID"],
+    );
 
-    let client_secret = option_env!("MICROSOFT_CLIENT_SECRET")
-        .map(|v| v.trim().to_string())
-        .filter(|v| !v.is_empty())
-        .or_else(|| env_var_first_nonempty(&["MICROSOFT_CLIENT_SECRET"]))
-        .or_else(|| dotenv_var_first_nonempty(&["MICROSOFT_CLIENT_SECRET"]));
+    let client_secret = resolve_env_value(
+        option_env!("MICROSOFT_CLIENT_SECRET"),
+        &["MICROSOFT_CLIENT_SECRET"],
+    );
 
     match (client_id, client_secret) {
         (Some(id), Some(secret)) => Ok((id, secret)),

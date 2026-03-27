@@ -22,6 +22,7 @@ import { MOTION_TIMING } from '@/features/templates/animationPresets';
 export function NegotiatorStepCard({
   step,
   stepIndex,
+  totalSteps,
   isActive,
   isCompleted,
   capturedValues,
@@ -34,6 +35,7 @@ export function NegotiatorStepCard({
 }: NegotiatorStepCardProps) {
   const Icon = ACTION_ICONS[step.action_type] || Globe;
   const colorClasses = ACTION_COLORS[step.action_type] || ACTION_COLORS.navigate;
+  const headerId = `negotiator-step-header-${stepIndex}`;
 
   const handleOpenUrl = async () => {
     const safe = sanitizeExternalUrl(step.url);
@@ -60,9 +62,11 @@ export function NegotiatorStepCard({
         scale: isActive ? 1 : 0.98,
       }}
       aria-current={isActive ? 'step' : undefined}
+      aria-roledescription="step"
+      aria-label={`Step ${stepIndex + 1} of ${totalSteps}: ${step.title}`}
       className={`rounded-xl border transition-all ${
         isActive
-          ? 'border-violet-500/30 bg-violet-500/5 shadow-lg shadow-violet-500/5'
+          ? 'border-violet-500/30 bg-violet-500/5 shadow-elevation-3 shadow-violet-500/5'
           : isCompleted
             ? 'border-emerald-500/20 bg-emerald-500/5'
             : 'border-primary/10 bg-secondary/20'
@@ -77,12 +81,15 @@ export function NegotiatorStepCard({
         onSelect={onSelect}
         colorClasses={colorClasses}
         Icon={Icon}
+        id={headerId}
       />
 
       {/* Expanded content */}
       <AnimatePresence>
         {isActive && (
           <motion.div
+            role="region"
+            aria-labelledby={headerId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}

@@ -4,13 +4,7 @@ import {
   User,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-}
+import type { ChatMessage } from '@/lib/bindings/ChatMessage';
 
 interface ChatThreadProps {
   messages: ChatMessage[];

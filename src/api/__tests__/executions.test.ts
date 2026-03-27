@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
+// eslint-disable-next-line no-restricted-imports
 import { invoke } from "@tauri-apps/api/core";
 import { vi } from "vitest";
-import { mockInvoke, mockInvokeMap, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
 import {
   listExecutions,
   listAllExecutions,

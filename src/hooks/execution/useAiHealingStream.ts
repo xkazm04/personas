@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   validatePayload,
@@ -46,86 +46,77 @@ const INITIAL_STATE: AiHealingState = {
  */
 export function useAiHealingStream(personaId: string): AiHealingState {
   const [state, setState] = useState<AiHealingState>(INITIAL_STATE);
-  const unlistenersRef = useRef<UnlistenFn[]>([]);
   const personaIdRef = useRef(personaId);
   personaIdRef.current = personaId;
-
-  const cleanup = useCallback(() => {
-    for (const unlisten of unlistenersRef.current) {
-      unlisten();
-    }
-    unlistenersRef.current = [];
-  }, []);
 
   useEffect(() => {
     // Reset when persona changes
     setState(INITIAL_STATE);
-    cleanup();
 
     let mounted = true;
+    const pendingListeners: Promise<UnlistenFn>[] = [];
 
-    const setup = async () => {
-      const unlistenOutput = await listen<Record<string, unknown>>(
-        EventName.AI_HEALING_OUTPUT,
-        (event) => {
-          if (!mounted) return;
-          const raw = event.payload ?? {};
-          const validated = validatePayload(EventName.AI_HEALING_OUTPUT, raw, HealingOutputSchema);
-          if (!validated) return;
-          if (validated.persona_id !== personaIdRef.current) return;
+    const outputPromise = listen<Record<string, unknown>>(
+      EventName.AI_HEALING_OUTPUT,
+      (event) => {
+        if (!mounted) return;
+        const raw = event.payload ?? {};
+        const validated = validatePayload(EventName.AI_HEALING_OUTPUT, raw, HealingOutputSchema);
+        if (!validated) return;
+        if (validated.persona_id !== personaIdRef.current) return;
 
-          const rawLine = validated.line;
-          if (rawLine.trim().length === 0) return;
+        const rawLine = validated.line;
+        if (rawLine.trim().length === 0) return;
 
-          const line =
-            rawLine.length > MAX_LINE_LENGTH
-              ? rawLine.slice(0, MAX_LINE_LENGTH) + '...[truncated]'
-              : rawLine;
+        const line =
+          rawLine.length > MAX_LINE_LENGTH
+            ? rawLine.slice(0, MAX_LINE_LENGTH) + '...[truncated]'
+            : rawLine;
 
-          setState((prev) => {
-            const lines =
-              prev.lines.length >= MAX_LINES
-                ? [...prev.lines.slice(prev.lines.length - MAX_LINES + 1), line]
-                : [...prev.lines, line];
-            return { ...prev, lines, lastLine: line };
-          });
-        },
-      );
+        setState((prev) => {
+          const lines =
+            prev.lines.length >= MAX_LINES
+              ? [...prev.lines.slice(prev.lines.length - MAX_LINES + 1), line]
+              : [...prev.lines, line];
+          return { ...prev, lines, lastLine: line };
+        });
+      },
+    );
+    pendingListeners.push(outputPromise);
 
-      const unlistenStatus = await listen<Record<string, unknown>>(
-        EventName.AI_HEALING_STATUS,
-        (event) => {
-          if (!mounted) return;
-          const raw = event.payload ?? {};
-          const validated = validatePayload(EventName.AI_HEALING_STATUS, raw, HealingStatusSchema);
-          if (!validated) return;
-          if (validated.persona_id !== personaIdRef.current) return;
+    const statusPromise = listen<Record<string, unknown>>(
+      EventName.AI_HEALING_STATUS,
+      (event) => {
+        if (!mounted) return;
+        const raw = event.payload ?? {};
+        const validated = validatePayload(EventName.AI_HEALING_STATUS, raw, HealingStatusSchema);
+        if (!validated) return;
+        if (validated.persona_id !== personaIdRef.current) return;
 
-          const phase = validated.phase as AiHealingPhase;
+        const phase = validated.phase as AiHealingPhase;
 
-          setState((prev) => ({
-            ...prev,
-            phase,
-            executionId: validated.execution_id ?? prev.executionId,
-            diagnosis: validated.diagnosis ?? prev.diagnosis,
-            fixesApplied: validated.fixes_applied
-              ? (validated.fixes_applied as string[])
-              : prev.fixesApplied,
-            shouldRetry: validated.should_retry ?? prev.shouldRetry,
-          }));
-        },
-      );
-
-      unlistenersRef.current = [unlistenOutput, unlistenStatus];
-    };
-
-    setup();
+        setState((prev) => ({
+          ...prev,
+          phase,
+          executionId: validated.execution_id ?? prev.executionId,
+          diagnosis: validated.diagnosis ?? prev.diagnosis,
+          fixesApplied: validated.fixes_applied
+            ? (validated.fixes_applied as string[])
+            : prev.fixesApplied,
+          shouldRetry: validated.should_retry ?? prev.shouldRetry,
+        }));
+      },
+    );
+    pendingListeners.push(statusPromise);
 
     return () => {
       mounted = false;
-      cleanup();
+      // Await any still-pending listener registrations, then tear them all down
+      void Promise.all(pendingListeners).then((fns) => {
+        for (const fn of fns) fn();
+      });
     };
-  }, [personaId, cleanup]);
+  }, [personaId]);
 
   return state;
 }

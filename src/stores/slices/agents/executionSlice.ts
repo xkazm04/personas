@@ -24,6 +24,7 @@ import { loadDriftEvents, saveDriftEvents } from "@/lib/design/designDrift";
 import { cancelExecution, executePersona, getExecution, listExecutions } from "@/api/agents/executions";
 
 import { executionSink } from "@/lib/execution/executionSink";
+import { TERMINAL_STATUS_SET } from "@/lib/execution/executionState";
 import { classifyLine } from "@/lib/utils/terminalColors";
 import { createRunLifecycle } from "./runLifecycle";
 
@@ -60,6 +61,13 @@ export interface ExecutionSlice {
   executionOutput: string[];
   /** Total bytes accumulated in executionOutput (for budget enforcement). */
   executionOutputBytes: number;
+  /**
+   * Per-execution output snapshots, keyed by execution ID.
+   * Populated by `finishExecution` so that DAG walkers can retrieve
+   * output for a completed execution even after the shared
+   * `executionOutput` array has been cleared by a subsequent run.
+   */
+  completedExecutionOutputs: Record<string, string[]>;
   isExecuting: boolean;
   /** Structured progress tracking (managed by RunLifecycle). */
   executionProgress: ExecutionRunProgress | null;
@@ -73,6 +81,8 @@ export interface ExecutionSlice {
   designDriftEvents: DesignDriftEvent[];
   /** Last completed/cancelled execution ID -- survives state reset so Resume can fetch its session. */
   lastExecutionId: string | null;
+  /** True when startup recovery could not reach the backend to verify a recovered execution. */
+  executionVerificationFailed: boolean;
 
   // Actions
   executePersona: (personaId: string, inputData?: object, useCaseId?: string, continuation?: Continuation) => Promise<string | null>;
@@ -84,6 +94,12 @@ export interface ExecutionSlice {
   setQueueStatus: (position: number | null, depth: number | null) => void;
   setExecutionProgress: (progress: ExecutionRunProgress | null) => void;
   dismissDriftEvent: (eventId: string) => void;
+  /** Retrieve and remove a completed execution's output snapshot (one-shot read). */
+  consumeCompletedOutput: (executionId: string) => string[] | undefined;
+  /** Retry verifying a recovered execution after a previous network failure. */
+  retryExecutionVerification: () => Promise<void>;
+  /** Dismiss the verification failure and abandon the recovered execution. */
+  dismissVerificationFailure: () => void;
 }
 
 export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSlice> = (set, get) => {
@@ -115,7 +131,6 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   // Reconcile recovered execution against the backend. If the execution already
   // reached a terminal state (completed/cancelled/failed) while the app was closed,
   // clear the stale isExecuting flag so the UI doesn't show a phantom active run.
-  const TERMINAL_STATUSES = new Set(['completed', 'cancelled', 'failed', 'error', 'timed_out']);
 
   if (recoveredState) {
     const { activeExecutionId, executionPersonaId } = recoveredState;
@@ -123,7 +138,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     void (async () => {
       try {
         const execution = await getExecution(activeExecutionId, executionPersonaId ?? activeExecutionId);
-        if (TERMINAL_STATUSES.has(execution.status)) {
+        if (TERMINAL_STATUS_SET.has(execution.status)) {
           logger.info("Recovered execution already finished — clearing stale state", { executionId: activeExecutionId, status: execution.status });
           executionLifecycle.markFinished(set);
           set({ activeExecutionId: null, lastExecutionId: activeExecutionId, executionPersonaId: null });
@@ -132,11 +147,11 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
           logger.info("Recovered execution still active — keeping state", { executionId: activeExecutionId, status: execution.status });
         }
       } catch {
-        // Backend unreachable or execution not found — clear stale state to unblock UI.
-        logger.warn("Could not verify recovered execution — clearing stale state", { executionId: activeExecutionId });
-        executionLifecycle.markFinished(set);
-        set({ activeExecutionId: null, executionPersonaId: null });
-        try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
+        // Backend unreachable — do NOT clear execution state. The execution may
+        // still be running and consuming resources. Set a flag so the UI can
+        // show a retry prompt instead of silently abandoning the job.
+        logger.warn("Could not verify recovered execution — flagging for retry", { executionId: activeExecutionId });
+        set({ executionVerificationFailed: true });
       }
     })();
   }
@@ -153,6 +168,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   activeUseCaseId: null,
   executionOutput: [],
   executionOutputBytes: 0,
+  completedExecutionOutputs: {},
   isExecuting: recoveredState?.isExecuting ?? false,
   executionProgress: null,
   pipelineTrace: null,
@@ -160,6 +176,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   queueDepth: null,
   designDriftEvents: loadDriftEvents(),
   lastExecutionId: null,
+  executionVerificationFailed: false,
 
   executePersona: async (personaId, inputData, useCaseId, continuation) => {
     // Guard: reject concurrent executions. The store tracks a single active
@@ -284,6 +301,19 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     // we reset execution state.
     executionSink.forceFlush();
 
+    // Snapshot the output for this execution so DAG walkers can retrieve it
+    // after the shared executionOutput array is cleared by the next run.
+    const finishedExecId = get().activeExecutionId;
+    if (finishedExecId) {
+      const snapshot = [...get().executionOutput];
+      set({
+        completedExecutionOutputs: {
+          ...get().completedExecutionOutputs,
+          [finishedExecId]: snapshot,
+        },
+      });
+    }
+
     // If a chat stream is active, finalize it now -- this runs at the store
     // level so it works even when ChatTab is unmounted (e.g. user switched tabs).
     const { chatStreaming, executionOutput: output, activeChatSessionId, executionPersonaId: chatPersonaId } = get();
@@ -293,9 +323,18 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       void get().finishChatStream(fullResponse, chatPersonaId, activeChatSessionId, get().activeExecutionId ?? undefined);
     }
 
-    // Capture context for drift detection before resetting state
+    // Capture context for drift detection before resetting state.
+    // Snapshot executions now so drift middleware doesn't read stale/wrong data
+    // after the state reset below (the store's executions list may be refreshed
+    // or belong to a different persona by the time middleware runs).
     const execPersonaId = get().executionPersonaId;
     const execId = get().activeExecutionId;
+    const recentExecutions = execPersonaId
+      ? get().executions
+          .filter((e) => e.persona_id === execPersonaId)
+          .slice(0, 4)
+          .map((e) => ({ persona_id: e.persona_id, status: e.status }))
+      : [];
 
     // Pipeline: frontend_complete stage
     let trace = get().pipelineTrace;
@@ -305,14 +344,9 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       set({ pipelineTrace: trace });
     }
 
-    executionLifecycle.markFinished(set);
-    set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
-    const personaId = get().selectedPersona?.id;
-    if (personaId) get().fetchExecutions(personaId);
-
-    // Run frontend_complete middleware (fire-and-forget -- non-blocking).
-    // Middleware handles notification dispatch, budget cache invalidation,
-    // and design drift detection as composable pipeline concerns.
+    // Run frontend_complete middleware BEFORE resetting state so that
+    // middleware (e.g. drift detection) can read persona data from the store
+    // while execution context is still intact.
     if (trace) {
       const completePayload: FrontendCompletePayload = {
         executionId: execId ?? '',
@@ -321,11 +355,18 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         durationMs: statusData?.durationMs,
         costUsd: statusData?.costUsd,
         errorMessage: statusData?.errorMessage,
+        recentExecutions,
       };
       void runMiddleware('frontend_complete', completePayload, trace).catch((err) => {
         logger.warn("frontend_complete middleware failed", { executionId: execId, personaId: execPersonaId, error: String(err) });
       });
     }
+
+    executionLifecycle.markFinished(set);
+    set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
+    const personaId = get().selectedPersona?.id;
+    if (personaId) get().fetchExecutions(personaId);
+    get().fetchPersonaSummaries();
 
     // Clear recovery state
     try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
@@ -383,6 +424,50 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     );
     saveDriftEvents(updated);
     set({ designDriftEvents: updated });
+  },
+
+  consumeCompletedOutput: (executionId) => {
+    const map = get().completedExecutionOutputs;
+    const output = map[executionId];
+    if (output) {
+      const { [executionId]: _, ...rest } = map;
+      set({ completedExecutionOutputs: rest });
+    }
+    return output;
+  },
+
+  retryExecutionVerification: async () => {
+    const execId = get().activeExecutionId;
+    const personaId = get().executionPersonaId;
+    if (!execId) {
+      // Nothing to verify — clear the flag.
+      set({ executionVerificationFailed: false });
+      return;
+    }
+    try {
+      const execution = await getExecution(execId, personaId ?? execId);
+      set({ executionVerificationFailed: false });
+      if (TERMINAL_STATUS_SET.has(execution.status)) {
+        logger.info("Recovered execution already finished — clearing stale state", { executionId: execId, status: execution.status });
+        executionLifecycle.markFinished(set);
+        set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null });
+        try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
+      } else {
+        logger.info("Recovered execution still active — keeping state", { executionId: execId, status: execution.status });
+      }
+    } catch {
+      logger.warn("Retry verification failed — backend still unreachable", { executionId: execId });
+      // Keep the flag set so the user can retry again.
+    }
+  },
+
+  dismissVerificationFailure: () => {
+    const execId = get().activeExecutionId;
+    logger.info("User dismissed verification failure — abandoning recovered execution", { executionId: execId });
+    set({ executionVerificationFailed: false });
+    executionLifecycle.markFinished(set);
+    set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null });
+    try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
   },
 });
 };

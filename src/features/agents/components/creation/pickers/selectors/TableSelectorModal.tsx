@@ -32,7 +32,7 @@ export function TableSelectorModal({
       titleId="table-selector-title"
       containerClassName="fixed inset-0 z-[100] flex items-center justify-center p-4"
       size="sm"
-      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3.5 border-b border-primary/10">

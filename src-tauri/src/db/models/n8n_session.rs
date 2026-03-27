@@ -1,3 +1,4 @@
+use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -6,7 +7,6 @@ use ts_rs::TS;
 // ============================================================================
 
 /// Valid session statuses for an n8n transform session.
-/// Use `as_str()` when writing to the database or setting status fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "snake_case")]
@@ -18,6 +18,7 @@ pub enum SessionStatus {
     Editing,
     Confirmed,
     Failed,
+    Interrupted,
 }
 
 impl SessionStatus {
@@ -30,6 +31,7 @@ impl SessionStatus {
             Self::Editing => "editing",
             Self::Confirmed => "confirmed",
             Self::Failed => "failed",
+            Self::Interrupted => "interrupted",
         }
     }
 }
@@ -37,6 +39,30 @@ impl SessionStatus {
 impl std::fmt::Display for SessionStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())
+    }
+}
+
+impl FromSql for SessionStatus {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        match value.as_str()? {
+            "draft" => Ok(Self::Draft),
+            "analyzing" => Ok(Self::Analyzing),
+            "transforming" => Ok(Self::Transforming),
+            "awaiting_answers" => Ok(Self::AwaitingAnswers),
+            "editing" => Ok(Self::Editing),
+            "confirmed" => Ok(Self::Confirmed),
+            "failed" => Ok(Self::Failed),
+            "interrupted" => Ok(Self::Interrupted),
+            other => Err(FromSqlError::Other(
+                format!("invalid SessionStatus: {other}").into(),
+            )),
+        }
+    }
+}
+
+impl ToSql for SessionStatus {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::Borrowed(ValueRef::Text(self.as_str().as_bytes())))
     }
 }
 
@@ -49,7 +75,7 @@ impl std::fmt::Display for SessionStatus {
 pub struct N8nTransformSession {
     pub id: String,
     pub workflow_name: String,
-    pub status: String,
+    pub status: SessionStatus,
     pub raw_workflow_json: String,
     pub parser_result: Option<String>,
     pub draft_json: Option<String>,
@@ -69,7 +95,7 @@ pub struct N8nTransformSession {
 pub struct N8nSessionSummary {
     pub id: String,
     pub workflow_name: String,
-    pub status: String,
+    pub status: SessionStatus,
     pub step: String,
     pub error: Option<String>,
     pub created_at: String,
@@ -81,13 +107,13 @@ pub struct CreateN8nSessionInput {
     pub workflow_name: String,
     pub raw_workflow_json: String,
     pub step: String,
-    pub status: String,
+    pub status: SessionStatus,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct UpdateN8nSessionInput {
     pub workflow_name: Option<String>,
-    pub status: Option<String>,
+    pub status: Option<SessionStatus>,
     pub parser_result: Option<Option<String>>,
     pub draft_json: Option<Option<String>>,
     pub user_answers: Option<Option<String>>,

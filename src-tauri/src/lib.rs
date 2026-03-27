@@ -39,6 +39,13 @@ pub(crate) static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
         .expect("Failed to build shared HTTP client")
 });
 
+/// HTTP client with SSRF-safe DNS resolver that rejects private/internal IPs
+/// at connection time.  Used by the API proxy and any other path where the
+/// target URL is influenced by user-supplied credential data.
+pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    engine::ssrf_safe_dns::build_ssrf_safe_client()
+});
+
 /// Tracks an active CLI-backed process: its task ID and optional child PID.
 #[derive(Default)]
 pub struct ActiveProcess {
@@ -270,6 +277,9 @@ pub struct AppState {
     pub session_key: Arc<engine::crypto::SessionKeyPair>,
     /// Current tier configuration (rate limits, queue depth).
     pub tier_config: Arc<Mutex<engine::tier::TierConfig>>,
+    /// TTL-cached tier usage snapshot (avoids repeated lock contention on
+    /// tier_config + concurrency tracker for dashboard polling).
+    pub tier_usage_cache: Arc<Mutex<Option<(std::time::Instant, commands::infrastructure::tier_usage::TierUsageSnapshot)>>>,
     /// Desktop connector capability approvals.
     #[cfg(feature = "desktop")]
     pub desktop_approvals: Arc<engine::desktop_security::DesktopApprovalStore>,
@@ -293,6 +303,10 @@ pub struct AppState {
     pub vector_store: Option<Arc<engine::vector_store::SqliteVectorStore>>,
     /// Build session manager for multi-turn agent builder sessions.
     pub build_session_manager: Arc<engine::build_session::BuildSessionManager>,
+    /// TTL-based cache for CLI binary probes (version / PATH checks).
+    /// Shared across health check and BYOM connection test to avoid redundant
+    /// process spawns.
+    pub binary_probe_cache: Arc<commands::infrastructure::system::BinaryProbeCache>,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -363,10 +377,16 @@ pub fn run() {
             .plugin(tauri_plugin_updater::Builder::new().build());
     }
 
+    // Generate IPC session token for privileged command validation
+    let ipc_token = ipc_auth::generate_ipc_session_token();
+    ipc_auth::init_session_token(ipc_token.clone());
+    let ipc_auth_script = ipc_auth::generate_ipc_auth_script(&ipc_token);
+    tracing::info!("IPC session token initialised (privileged commands protected)");
+
     builder
         .plugin(
             tauri::plugin::Builder::<tauri::Wry, ()>::new("ipc-auth")
-                .js_init_script(ipc_auth::IPC_AUTH_SCRIPT.to_string())
+                .js_init_script(ipc_auth_script)
                 .build(),
         )
         .setup(|app| {
@@ -580,6 +600,7 @@ pub fn run() {
                 rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
                 session_key: Arc::new(engine::crypto::SessionKeyPair::generate()?),
                 tier_config: Arc::new(Mutex::new(engine::tier::TierConfig::default())),
+                tier_usage_cache: Arc::new(Mutex::new(None)),
                 #[cfg(feature = "desktop")]
                 desktop_approvals: Arc::new(engine::desktop_security::DesktopApprovalStore::new()),
                 #[cfg(feature = "desktop")]
@@ -593,6 +614,11 @@ pub fn run() {
                 embedding_manager: Some(embedding_manager),
                 vector_store: Some(vector_store),
                 build_session_manager: Arc::new(engine::build_session::BuildSessionManager::new()),
+                binary_probe_cache: Arc::new(
+                    commands::infrastructure::system::BinaryProbeCache::new(
+                        std::time::Duration::from_secs(60),
+                    ),
+                ),
             });
             app.manage(state_arc.clone());
 
@@ -737,7 +763,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
+        .invoke_handler(ipc_auth::wrap_invoke_handler(tauri::generate_handler![
             // Phase 1
             greet,
             log_frontend_error,
@@ -765,6 +791,7 @@ pub fn run() {
             commands::core::groups::delete_group,
             commands::core::groups::reorder_groups,
             // Core -- Memories
+            commands::core::memories::list_memory_categories,
             commands::core::memories::list_memories,
             commands::core::memories::list_memories_with_stats,
             commands::core::memories::get_memory_count,
@@ -1028,6 +1055,11 @@ pub fn run() {
             commands::credentials::connectors::create_connector,
             commands::credentials::connectors::update_connector,
             commands::credentials::connectors::delete_connector,
+            // OpenAPI Autopilot
+            commands::credentials::openapi_autopilot::openapi_parse_from_url,
+            commands::credentials::openapi_autopilot::openapi_parse_from_content,
+            commands::credentials::openapi_autopilot::openapi_generate_connector,
+            commands::credentials::openapi_autopilot::openapi_playground_test,
             // Credentials -- Credential Design
             commands::credentials::credential_design::start_credential_design,
             commands::credentials::credential_design::cancel_credential_design,
@@ -1195,6 +1227,10 @@ pub fn run() {
             commands::communication::events::update_subscription,
             commands::communication::events::delete_subscription,
             commands::communication::events::test_event_flow,
+            commands::communication::events::list_dead_letter_events,
+            commands::communication::events::count_dead_letter_events,
+            commands::communication::events::retry_dead_letter_event,
+            commands::communication::events::discard_dead_letter_event,
             // Communication -- Shared Events
             commands::communication::shared_events::shared_events_browse_catalog,
             commands::communication::shared_events::shared_events_refresh_catalog,
@@ -1374,6 +1410,7 @@ pub fn run() {
             commands::infrastructure::system::get_frontend_crashes,
             commands::infrastructure::system::clear_frontend_crashes,
             commands::infrastructure::system::get_frontend_crash_count,
+            commands::infrastructure::system::get_db_performance,
             // Infrastructure -- Setup / Auto-install
             commands::infrastructure::setup::start_setup_install,
             commands::infrastructure::setup::cancel_setup_install,
@@ -1607,13 +1644,15 @@ pub fn run() {
             commands::credentials::vector_kb::list_knowledge_bases,
             commands::credentials::vector_kb::get_knowledge_base,
             commands::credentials::vector_kb::delete_knowledge_base,
+            commands::credentials::vector_kb::kb_pick_files,
+            commands::credentials::vector_kb::kb_pick_directory,
             commands::credentials::vector_kb::kb_ingest_files,
             commands::credentials::vector_kb::kb_ingest_text,
             commands::credentials::vector_kb::kb_ingest_directory,
             commands::credentials::vector_kb::kb_search,
             commands::credentials::vector_kb::kb_list_documents,
             commands::credentials::vector_kb::kb_delete_document,
-        ])
+        ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
             eprintln!("Fatal: Tauri application failed to start: {e}");

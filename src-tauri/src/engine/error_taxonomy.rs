@@ -16,7 +16,6 @@ use ts_rs::TS;
 ///
 /// Covers the union of categories previously defined independently in:
 /// - `healing::FailureCategory`
-/// - `failover::FailoverReason`
 /// - `personaSlice::DegradationCategory`
 /// - `designDrift` regex-based classification
 /// - `healthCheckSlice::inferSeverity`

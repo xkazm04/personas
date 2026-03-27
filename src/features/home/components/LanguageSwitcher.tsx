@@ -34,7 +34,7 @@ export function LanguageCardGrid() {
               type="button"
               onClick={() => setLanguage(lang.code)}
               className={`group relative overflow-hidden rounded-xl border transition-all ${
-                isActive ? 'ring-2 ring-primary/60 border-primary/30 shadow-md' : 'border-primary/10 hover:border-primary/25 hover:ring-1 hover:ring-primary/20'
+                isActive ? 'ring-2 ring-primary/60 border-primary/30 shadow-elevation-2' : 'border-primary/10 hover:border-primary/25 hover:ring-1 hover:ring-primary/20'
               }`}
             >
               <div className="relative aspect-[4/3] bg-secondary/30 overflow-hidden">
@@ -83,7 +83,7 @@ export default function LanguageSwitcher() {
               onClick={() => setIsOpen(false)}
             />
             <div
-              className="animate-fade-slide-in absolute top-full mt-2 right-0 rounded-xl bg-card border border-border shadow-xl z-50 overflow-hidden p-2"
+              className="animate-fade-slide-in absolute top-full mt-2 right-0 rounded-xl bg-card border border-border shadow-elevation-3 z-50 overflow-hidden p-2"
             >
               {/* Card grid with illustration backgrounds */}
               <div className="grid grid-cols-3 gap-2" style={{ width: '340px' }}>
@@ -100,7 +100,7 @@ export default function LanguageSwitcher() {
                       }}
                       className={`group relative overflow-hidden text-left p-0 h-auto ${
                         isActive
-                          ? 'ring-2 ring-primary/60 shadow-md'
+                          ? 'ring-2 ring-primary/60 shadow-elevation-2'
                           : 'hover:ring-1 hover:ring-primary/30'
                       }`}
                     >

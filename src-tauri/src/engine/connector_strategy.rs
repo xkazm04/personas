@@ -45,17 +45,23 @@ impl ResolvedToken {
 #[async_trait]
 pub trait ConnectorStrategy: Send + Sync {
     /// Whether this credential uses OAuth token refresh for rotation.
-    fn is_oauth(&self, fields: &HashMap<String, String>) -> bool;
+    /// Default: checks for `refresh_token` or `refreshToken` keys in fields.
+    fn is_oauth(&self, fields: &HashMap<String, String>) -> bool {
+        fields.contains_key("refresh_token") || fields.contains_key("refreshToken")
+    }
 
     /// Resolve the auth token to use for healthcheck / API requests.
     /// Returns `Ok(Some(resolved))` when a token is available, `Ok(None)` when
     /// the credential doesn't carry a token (e.g. basic-auth only).
     /// The `ResolvedToken` includes `expires_in_secs` when the provider reports it.
+    /// Default: finds the first common token key and returns it as a plain token.
     async fn resolve_auth_token(
         &self,
-        connector_metadata: Option<&str>,
+        _connector_metadata: Option<&str>,
         fields: &HashMap<String, String>,
-    ) -> Result<Option<ResolvedToken>, AppError>;
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        Ok(find_auth_token(fields).map(ResolvedToken::plain))
+    }
 
     /// Apply authentication to an outgoing healthcheck request.
     /// Default: `Authorization: Bearer <token>`.
@@ -294,18 +300,6 @@ pub struct DefaultStrategy;
 
 #[async_trait]
 impl ConnectorStrategy for DefaultStrategy {
-    fn is_oauth(&self, fields: &HashMap<String, String>) -> bool {
-        fields.contains_key("refresh_token") || fields.contains_key("refreshToken")
-    }
-
-    async fn resolve_auth_token(
-        &self,
-        _connector_metadata: Option<&str>,
-        fields: &HashMap<String, String>,
-    ) -> Result<Option<ResolvedToken>, AppError> {
-        Ok(find_auth_token(fields).map(ResolvedToken::plain))
-    }
-
     /// For OAuth credentials, rotate via token refresh; for API keys, use default healthcheck.
     async fn rotate(
         &self,
@@ -545,14 +539,6 @@ impl ConnectorStrategy for BufferStrategy {
         false
     }
 
-    async fn resolve_auth_token(
-        &self,
-        _connector_metadata: Option<&str>,
-        fields: &HashMap<String, String>,
-    ) -> Result<Option<ResolvedToken>, AppError> {
-        Ok(find_auth_token(fields).map(ResolvedToken::plain))
-    }
-
     /// Buffer expects the access token as a query parameter, not a header.
     fn apply_auth(
         &self,
@@ -573,14 +559,6 @@ impl ConnectorStrategy for CircleCIStrategy {
         false
     }
 
-    async fn resolve_auth_token(
-        &self,
-        _connector_metadata: Option<&str>,
-        fields: &HashMap<String, String>,
-    ) -> Result<Option<ResolvedToken>, AppError> {
-        Ok(find_auth_token(fields).map(ResolvedToken::plain))
-    }
-
     /// CircleCI expects a `Circle-Token` header, not Bearer.
     fn apply_auth(
         &self,
@@ -597,18 +575,6 @@ pub struct ClickUpStrategy;
 
 #[async_trait]
 impl ConnectorStrategy for ClickUpStrategy {
-    fn is_oauth(&self, fields: &HashMap<String, String>) -> bool {
-        fields.contains_key("refresh_token") || fields.contains_key("refreshToken")
-    }
-
-    async fn resolve_auth_token(
-        &self,
-        _connector_metadata: Option<&str>,
-        fields: &HashMap<String, String>,
-    ) -> Result<Option<ResolvedToken>, AppError> {
-        Ok(find_auth_token(fields).map(ResolvedToken::plain))
-    }
-
     /// ClickUp expects a raw `Authorization: <token>` header, not Bearer.
     fn apply_auth(
         &self,
@@ -624,16 +590,4 @@ impl ConnectorStrategy for ClickUpStrategy {
 pub struct GitHubStrategy;
 
 #[async_trait]
-impl ConnectorStrategy for GitHubStrategy {
-    fn is_oauth(&self, fields: &HashMap<String, String>) -> bool {
-        fields.contains_key("refresh_token") || fields.contains_key("refreshToken")
-    }
-
-    async fn resolve_auth_token(
-        &self,
-        _connector_metadata: Option<&str>,
-        fields: &HashMap<String, String>,
-    ) -> Result<Option<ResolvedToken>, AppError> {
-        Ok(find_auth_token(fields).map(ResolvedToken::plain))
-    }
-}
+impl ConnectorStrategy for GitHubStrategy {}

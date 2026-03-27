@@ -6,6 +6,7 @@ import {
   Package, Clock,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
@@ -136,7 +137,7 @@ export function PeerDetailDrawer({
         ref={drawerRef}
         tabIndex={-1}
         onKeyDown={handleFocusTrap}
-        className="relative w-full max-w-md bg-background border-l border-border shadow-xl flex flex-col animate-in slide-in-from-right duration-200 outline-none"
+        className="relative w-full max-w-md bg-background border-l border-border shadow-elevation-3 flex flex-col animate-in slide-in-from-right duration-200 outline-none"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
@@ -283,16 +284,6 @@ export function PeerDetailDrawer({
       </div>
     </div>
   );
-}
-
-function formatRelativeTime(dateStr: string): string {
-  const diffMs = Date.now() - new Date(dateStr).getTime();
-  const diffMins = Math.floor(diffMs / 60_000);
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return `${Math.floor(diffHours / 24)}d ago`;
 }
 
 function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {

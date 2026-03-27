@@ -90,7 +90,7 @@ export function ChartTooltipContent({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-lg backdrop-blur-sm">
+    <div className="bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-elevation-3 backdrop-blur-sm">
       <p className="text-sm text-muted-foreground/80 mb-1">{label}</p>
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">

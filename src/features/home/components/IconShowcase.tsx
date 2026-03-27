@@ -19,7 +19,7 @@ export default function IconShowcase() {
             variant={mode === 'lucide' ? 'primary' : 'ghost'}
             size="sm"
             onClick={() => setMode('lucide')}
-            className={mode === 'lucide' ? 'shadow-sm' : ''}
+            className={mode === 'lucide' ? 'shadow-elevation-1' : ''}
           >
             Lucide (Library)
           </Button>
@@ -27,7 +27,7 @@ export default function IconShowcase() {
             variant={mode === 'custom' ? 'primary' : 'ghost'}
             size="sm"
             onClick={() => setMode('custom')}
-            className={mode === 'custom' ? 'shadow-sm' : ''}
+            className={mode === 'custom' ? 'shadow-elevation-1' : ''}
           >
             Personas (Animated)
           </Button>
@@ -45,7 +45,7 @@ export default function IconShowcase() {
             >
               <div className={`relative w-11 h-11 p-2 rounded-xl border transition-all duration-300 cursor-default ${
                 hoveredIcon === icon.id
-                  ? 'border-primary/40 bg-primary/10 shadow-lg shadow-primary/10 scale-110'
+                  ? 'border-primary/40 bg-primary/10 shadow-elevation-3 shadow-primary/10 scale-110'
                   : 'border-primary/10 bg-secondary/20'
               } ${mode === 'custom' ? 'text-primary' : 'text-muted-foreground'}`}>
                 {mode === 'lucide' ? icon.lucide : icon.custom}

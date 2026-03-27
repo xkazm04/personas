@@ -375,7 +375,6 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         watermarkColor: events.length > 0 ? 'text-teal-400' : 'text-muted-foreground',
         render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description && ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode, draftConnectors, protocolByCellKey,
     isDraftPhase, buildDraft, cellConnectors, connectorsCellRaw, handleEditDirty, quickConfig, healthyConnectors,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
@@ -399,7 +398,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       )}
       {!hideHeader && (
         <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center border border-primary/25 shadow-sm shadow-primary/20">
+          <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center border border-primary/25 shadow-elevation-1 shadow-primary/20">
             <span className="text-[10px] font-bold text-foreground/60">M</span>
           </div>
           <h4 className="text-base font-bold text-foreground/80 uppercase tracking-wider">Persona Matrix</h4>
@@ -417,7 +416,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
             <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={(isDraftPhase && isCreationMode) || isSavedMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
           </motion.div>
         ))}
-        <div className={`relative rounded-xl border border-primary/40 p-5 ${isPreBuild ? 'min-h-[280px]' : 'min-h-[200px]'} ring-1 ring-primary/15 shadow-2xl shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden transition-[min-height] duration-400 ease-out${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
+        <div className={`relative rounded-xl border border-primary/40 p-5 ${isPreBuild ? 'min-h-[280px]' : 'min-h-[200px]'} ring-1 ring-primary/15 shadow-elevation-4 shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden transition-[min-height] duration-400 ease-out${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
           {/* Corner glows -- stronger at corners, thinner mid-lanes */}
           <div className="absolute inset-0 pointer-events-none matrix-center-corner-glow" />
           {/* Subtle mid-lane fill */}

@@ -1,4 +1,5 @@
 import { Cpu, Check, Settings2 } from 'lucide-react';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import { OLLAMA_CLOUD_PRESETS, isOllamaCloudValue } from '../libs/OllamaCloudPresets';
@@ -156,11 +157,11 @@ export function ModelSelector({
           {COLUMNS.map((col) => {
             const Logo = PROVIDER_LOGOS[col.key];
             return (
-            <div key={col.key} className="space-y-1 rounded-lg" style={{ backgroundColor: col.color + '08' }}>
+            <div key={col.key} className="space-y-1 rounded-lg" style={{ backgroundColor: colorWithAlpha(col.color, 0.03) }}>
               {/* Column header */}
               <div
                 className="flex items-center justify-center gap-1.5 text-sm font-semibold uppercase tracking-wider px-2 py-1.5 rounded-lg"
-                style={{ color: col.color, backgroundColor: col.color + '12' }}
+                style={{ color: col.color, backgroundColor: colorWithAlpha(col.color, 0.07) }}
               >
                 {Logo && <Logo color={col.color} />}
                 {col.label}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useToastStore } from '@/stores/toastStore';
 
 /**
  * Debounces an async save function, firing `delay`ms after the last dep change.
@@ -47,7 +48,13 @@ export function useDebouncedSave(
         await saveFnRef.current();
         setLastError(null);
       } catch (err) {
-        setLastError(err instanceof Error ? err.message : 'Save failed');
+        const msg = err instanceof Error ? err.message : 'Save failed';
+        setLastError(msg);
+        console.error('[useDebouncedSave] auto-save failed:', err);
+        useToastStore.getState().addToast(
+          `Auto-save failed: ${msg}. Changes will retry on next edit.`,
+          'error',
+        );
       } finally {
         setIsSaving(false);
       }

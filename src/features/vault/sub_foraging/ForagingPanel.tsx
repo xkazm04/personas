@@ -11,6 +11,7 @@ import { EmptyIllustration } from '@/features/shared/components/display/EmptyIll
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useCredentialForaging } from "@/hooks/design/credential/useCredentialForaging";
 import { ForagingResultCard } from "./ForagingResultCard";
+import { ForagingStepIndicator } from "./ForagingStepIndicator";
 import { Button } from "@/features/shared/components/buttons";
 
 interface ForagingPanelProps {
@@ -52,6 +53,9 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
           </span>
         )}
       </div>
+
+      {/* Step indicator */}
+      <ForagingStepIndicator phase={forage.phase} />
 
       {/* Idle / Start state */}
       {forage.phase === "idle" && (

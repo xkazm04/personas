@@ -23,6 +23,7 @@ export interface TeamSlice {
   teamMemoryStats: TeamMemoryStats | null;
   memoryFilterCategory: string | undefined;
   memoryFilterSearch: string | undefined;
+  memoryFilterRunId: string | undefined;
 
   // Actions
   fetchTeams: () => Promise<void>;
@@ -37,7 +38,8 @@ export interface TeamSlice {
   deleteTeamConnection: (connectionId: string) => Promise<void>;
   updateTeamConnection: (connectionId: string, connectionType: string) => Promise<void>;
   setMemoryFilters: (category?: string, search?: string) => void;
-  fetchTeamMemories: (teamId: string, category?: string, search?: string) => Promise<void>;
+  filterByRunId: (teamId: string, runId: string | null) => Promise<void>;
+  fetchTeamMemories: (teamId: string, category?: string, search?: string, runId?: string) => Promise<void>;
   loadMoreTeamMemories: (teamId: string, category?: string, search?: string) => Promise<void>;
   createTeamMemory: (input: CreateTeamMemoryInput) => Promise<TeamMemory | null>;
   deleteTeamMemory: (id: string) => Promise<void>;
@@ -56,6 +58,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
   teamMemoryStats: null,
   memoryFilterCategory: undefined,
   memoryFilterSearch: undefined,
+  memoryFilterRunId: undefined,
 
   fetchTeams: async () => {
     try {
@@ -67,7 +70,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
   },
 
   selectTeam: (teamId) => {
-    set({ selectedTeamId: teamId, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined });
+    set({ selectedTeamId: teamId, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined, memoryFilterRunId: undefined });
     if (teamId) get().fetchTeamDetails(teamId);
   },
 
@@ -77,10 +80,13 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
         listTeamMembers(teamId),
         listTeamConnections(teamId),
       ]);
+      // Staleness guard: user may have switched teams while we were fetching
+      if (get().selectedTeamId !== teamId) return;
       set({ teamMembers: members, teamConnections: connections });
       // Also fetch team memories
       get().fetchTeamMemories(teamId);
     } catch (err) {
+      if (get().selectedTeamId !== teamId) return;
       reportError(err, "Failed to load team details", set);
     }
   },
@@ -121,7 +127,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
   deleteTeam: async (teamId) => {
     try {
       await deleteTeam(teamId);
-      if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined });
+      if (get().selectedTeamId === teamId) set({ selectedTeamId: null, teamMembers: [], teamConnections: [], teamMemories: [], teamMemoriesTotal: 0, teamMemoryStats: null, memoryFilterCategory: undefined, memoryFilterSearch: undefined, memoryFilterRunId: undefined });
       await get().fetchTeams();
     } catch (err) {
       reportError(err, "Failed to delete team", set);
@@ -250,16 +256,25 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
     set({ memoryFilterCategory: category, memoryFilterSearch: search });
   },
 
-  fetchTeamMemories: async (teamId, category, search) => {
-    set({ memoryFilterCategory: category, memoryFilterSearch: search });
+  filterByRunId: async (teamId, runId) => {
+    const { memoryFilterCategory, memoryFilterSearch } = get();
+    set({ memoryFilterRunId: runId ?? undefined });
+    await get().fetchTeamMemories(teamId, memoryFilterCategory, memoryFilterSearch, runId ?? undefined);
+  },
+
+  fetchTeamMemories: async (teamId, category, search, runId) => {
+    set({ memoryFilterCategory: category, memoryFilterSearch: search, memoryFilterRunId: runId });
     try {
       const [memories, total, stats] = await Promise.all([
-        listTeamMemories(teamId, undefined, category, search, 100),
-        getTeamMemoryCount(teamId, undefined, category),
+        listTeamMemories(teamId, runId, category, search, 100),
+        getTeamMemoryCount(teamId, runId, category),
         getTeamMemoryStats(teamId, category, search),
       ]);
+      // Staleness guard: user may have switched teams while we were fetching
+      if (get().selectedTeamId !== teamId) return;
       set({ teamMemories: memories, teamMemoriesTotal: total, teamMemoryStats: stats });
     } catch (err) {
+      if (get().selectedTeamId !== teamId) return;
       reportError(err, "Failed to load team memories", set);
     }
   },
@@ -267,9 +282,13 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
   loadMoreTeamMemories: async (teamId, category, search) => {
     try {
       const offset = get().teamMemories.length;
-      const more = await listTeamMemories(teamId, undefined, category, search, 100, offset);
+      const runId = get().memoryFilterRunId;
+      const more = await listTeamMemories(teamId, runId, category, search, 100, offset);
+      // Staleness guard: user may have switched teams while we were fetching
+      if (get().selectedTeamId !== teamId) return;
       set((state) => ({ teamMemories: [...state.teamMemories, ...more] }));
     } catch (err) {
+      if (get().selectedTeamId !== teamId) return;
       reportError(err, "Failed to load more memories", set);
     }
   },

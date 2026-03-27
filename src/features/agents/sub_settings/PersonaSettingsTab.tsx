@@ -113,17 +113,21 @@ export function PersonaSettingsTab({
               <label className="block text-sm font-medium text-foreground/80 mb-1">
                 Timeout (sec)
                 <FieldHint
-                  text="How long a single execution can run before being cancelled. Prevents stuck runs from consuming resources."
-                  range="10--3600 seconds"
-                  example="1000"
+                  text="How long a single execution can run before being cancelled. The engine hard ceiling is 1800 seconds (30 min) — values above this are rejected."
+                  range="10--1800 seconds"
+                  example="300"
                 />
               </label>
               <input
                 type="number"
                 value={Math.round(draft.timeout / 1000)}
-                onChange={(e) => patch({ timeout: (parseInt(e.target.value, 10) || 1000) * 1000 })}
+                onChange={(e) => {
+                  const raw = parseInt(e.target.value, 10) || 10;
+                  patch({ timeout: Math.min(raw, 1800) * 1000 });
+                }}
                 placeholder="Seconds — e.g. 120"
                 min={10}
+                max={1800}
                 step={10}
                 className={INPUT_FIELD}
               />

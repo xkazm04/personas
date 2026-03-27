@@ -18,76 +18,85 @@ crud_get_all!(ConnectorDefinition, "connector_definitions", row_to_connector, "i
 crud_delete!("connector_definitions");
 
 pub fn get_by_name(pool: &DbPool, name: &str) -> Result<Option<ConnectorDefinition>, AppError> {
-    let conn = pool.get()?;
-    let result = conn.query_row(
-        "SELECT * FROM connector_definitions WHERE name = ?1",
-        params![name],
-        row_to_connector,
-    );
+    timed_query!("connector_definitions", "connector_definitions::get_by_name", {
+        let conn = pool.get()?;
+        let result = conn.query_row(
+            "SELECT * FROM connector_definitions WHERE name = ?1",
+            params![name],
+            row_to_connector,
+        );
 
-    match result {
-        Ok(def) => Ok(Some(def)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(AppError::Database(e)),
-    }
+        match result {
+            Ok(def) => Ok(Some(def)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+
+    })
 }
 
 pub fn get_by_category(
     pool: &DbPool,
     category: &str,
 ) -> Result<Vec<ConnectorDefinition>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM connector_definitions WHERE category = ?1 ORDER BY is_builtin DESC, name",
-    )?;
-    let rows = stmt.query_map(params![category], row_to_connector)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("connector_definitions", "connector_definitions::get_by_category", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM connector_definitions WHERE category = ?1 ORDER BY is_builtin DESC, name",
+        )?;
+        let rows = stmt.query_map(params![category], row_to_connector)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 pub fn create(
     pool: &DbPool,
     input: CreateConnectorDefinitionInput,
 ) -> Result<ConnectorDefinition, AppError> {
-    if input.name.trim().is_empty() {
-        return Err(AppError::Validation("Name cannot be empty".into()));
-    }
-    if input.label.trim().is_empty() {
-        return Err(AppError::Validation("Label cannot be empty".into()));
-    }
+    timed_query!("connector_definitions", "connector_definitions::create", {
+        if input.name.trim().is_empty() {
+            return Err(AppError::Validation("Name cannot be empty".into()));
+        }
+        if input.label.trim().is_empty() {
+            return Err(AppError::Validation("Label cannot be empty".into()));
+        }
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let color = input.color.unwrap_or_else(|| "#6B7280".into());
-    let category = input.category.unwrap_or_else(|| "general".into());
-    let services = input.services.unwrap_or_else(|| "[]".into());
-    let events = input.events.unwrap_or_else(|| "[]".into());
-    let is_builtin = input.is_builtin.unwrap_or(false) as i32;
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let color = input.color.unwrap_or_else(|| "#6B7280".into());
+        let category = input.category.unwrap_or_else(|| "general".into());
+        let services = input.services.unwrap_or_else(|| "[]".into());
+        let events = input.events.unwrap_or_else(|| "[]".into());
+        let is_builtin = input.is_builtin.unwrap_or(false) as i32;
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO connector_definitions
-         (id, name, label, icon_url, color, category, fields,
-          healthcheck_config, services, events, metadata, is_builtin,
-          created_at, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?13)",
-        params![
-            id,
-            input.name,
-            input.label,
-            input.icon_url,
-            color,
-            category,
-            input.fields,
-            input.healthcheck_config,
-            services,
-            events,
-            input.metadata,
-            is_builtin,
-            now,
-        ],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO connector_definitions
+             (id, name, label, icon_url, color, category, fields,
+              healthcheck_config, services, events, metadata, is_builtin,
+              created_at, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?13)",
+            params![
+                id,
+                input.name,
+                input.label,
+                input.icon_url,
+                color,
+                category,
+                input.fields,
+                input.healthcheck_config,
+                services,
+                events,
+                input.metadata,
+                is_builtin,
+                now,
+            ],
+        )?;
 
-    get_by_id(pool, &id)
+        get_by_id(pool, &id)
+
+    })
 }
 
 pub fn update(
@@ -95,61 +104,64 @@ pub fn update(
     id: &str,
     input: UpdateConnectorDefinitionInput,
 ) -> Result<ConnectorDefinition, AppError> {
-    if let Some(ref name) = input.name {
-        if name.trim().is_empty() {
-            return Err(AppError::Validation("Name cannot be empty".into()));
+    timed_query!("connector_definitions", "connector_definitions::update", {
+        if let Some(ref name) = input.name {
+            if name.trim().is_empty() {
+                return Err(AppError::Validation("Name cannot be empty".into()));
+            }
         }
-    }
-    if let Some(ref label) = input.label {
-        if label.trim().is_empty() {
-            return Err(AppError::Validation("Label cannot be empty".into()));
+        if let Some(ref label) = input.label {
+            if label.trim().is_empty() {
+                return Err(AppError::Validation("Label cannot be empty".into()));
+            }
         }
-    }
 
-    get_by_id(pool, id)?;
+        get_by_id(pool, id)?;
 
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut param_idx = 2u32;
 
-    push_field!(input.name, "name", sets, param_idx);
-    push_field!(input.label, "label", sets, param_idx);
-    push_field!(input.icon_url, "icon_url", sets, param_idx);
-    push_field!(input.color, "color", sets, param_idx);
-    push_field!(input.category, "category", sets, param_idx);
-    push_field!(input.fields, "fields", sets, param_idx);
-    push_field!(input.healthcheck_config, "healthcheck_config", sets, param_idx);
-    push_field!(input.services, "services", sets, param_idx);
-    push_field!(input.events, "events", sets, param_idx);
-    push_field!(input.metadata, "metadata", sets, param_idx);
+        push_field!(input.name, "name", sets, param_idx);
+        push_field!(input.label, "label", sets, param_idx);
+        push_field!(input.icon_url, "icon_url", sets, param_idx);
+        push_field!(input.color, "color", sets, param_idx);
+        push_field!(input.category, "category", sets, param_idx);
+        push_field!(input.fields, "fields", sets, param_idx);
+        push_field!(input.healthcheck_config, "healthcheck_config", sets, param_idx);
+        push_field!(input.services, "services", sets, param_idx);
+        push_field!(input.events, "events", sets, param_idx);
+        push_field!(input.metadata, "metadata", sets, param_idx);
 
-    let sql = format!(
-        "UPDATE connector_definitions SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE connector_definitions SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-    if let Some(ref v) = input.name { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.label { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.icon_url { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.category { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.fields { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.healthcheck_config { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.services { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.events { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.metadata { param_values.push(Box::new(v.clone())); }
-    param_values.push(Box::new(id.to_string()));
+        if let Some(ref v) = input.name { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.label { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.icon_url { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.category { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.fields { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.healthcheck_config { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.services { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.events { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.metadata { param_values.push(Box::new(v.clone())); }
+        param_values.push(Box::new(id.to_string()));
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
 
-    get_by_id(pool, id)
+        get_by_id(pool, id)
+
+    })
 }
 
 #[cfg(test)]

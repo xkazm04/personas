@@ -55,7 +55,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
       className={`group relative px-4 py-3 rounded-xl bg-secondary/60 backdrop-blur-sm border transition-all min-w-[160px] ${
         isGhost
           ? 'opacity-40 border-dashed border-indigo-500/40 pointer-events-none'
-          : `cursor-grab active:cursor-grabbing hover:shadow-lg hover:shadow-indigo-500/10 ${borderStyles}`
+          : `cursor-grab active:cursor-grabbing hover:shadow-elevation-3 hover:shadow-indigo-500/10 ${borderStyles}`
       }`}
     >
       {/* Running spin-ring overlay */}

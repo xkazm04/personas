@@ -1,13 +1,9 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Check, AlertTriangle, Loader2, Clock, X, DollarSign, Zap } from 'lucide-react';
 import type { WorkflowExecution, WorkflowNode, WorkflowNodeExecution } from '@/lib/types/compositionTypes';
-import { formatDuration } from '@/lib/utils/formatters';
+import { formatDuration, formatCost as _formatCost } from '@/lib/utils/formatters';
 
-function formatCost(usd: number | undefined): string {
-  if (usd == null) return '—';
-  if (usd < 0.01) return `$${usd.toFixed(4)}`;
-  return `$${usd.toFixed(2)}`;
-}
+const formatCost = (usd: number | undefined) => _formatCost(usd, { precision: 'auto' });
 
 function formatTokens(n: number | undefined): string {
   if (n == null) return '—';
@@ -125,7 +121,7 @@ export default function WorkflowExecutionPanel({ execution, nodes }: WorkflowExe
     'border-primary/15 bg-secondary/20';
 
   return (
-    <div className={`absolute bottom-4 right-4 w-80 rounded-xl border shadow-xl backdrop-blur-md ${overallColor} z-20`}>
+    <div className={`absolute bottom-4 right-4 w-80 rounded-xl border shadow-elevation-3 backdrop-blur-md ${overallColor} z-20`}>
       {/* Header */}
       <button
         onClick={() => setCollapsed(!collapsed)}

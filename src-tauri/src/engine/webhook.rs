@@ -4,7 +4,7 @@ use std::sync::Arc;
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Path, State as AxumState},
-    http::{HeaderMap, StatusCode},
+    http::{HeaderMap, HeaderValue, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
@@ -55,7 +55,7 @@ pub async fn start_webhook_server(
         .with_state(Arc::new(state))
         .merge(super::share_link::share_link_router());
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 9420));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 9420));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!("Webhook server listening on http://{}", addr);
 
@@ -104,7 +104,7 @@ pub async fn start_webhook_server_with_management(
         .merge(super::management_api::management_router(mgmt_state))
         .merge(super::share_link::share_link_router());
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 9420));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 9420));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!("Webhook server listening on http://{}", addr);
 
@@ -124,7 +124,8 @@ async fn health() -> impl IntoResponse {
     Json(serde_json::json!({ "status": "ok", "service": "personas-webhook" }))
 }
 
-/// GET /webhook/{trigger_id} -- returns info about the trigger (for debugging).
+/// GET /webhook/{trigger_id} -- confirms the webhook endpoint exists and
+/// documents active window behavior without leaking internal metadata.
 async fn webhook_info(
     AxumState(state): AxumState<Arc<WebhookState>>,
     Path(trigger_id): Path<String>,
@@ -133,27 +134,47 @@ async fn webhook_info(
         Ok(trigger) => {
             if trigger.trigger_type != "webhook" {
                 return (
-                    StatusCode::BAD_REQUEST,
-                    Json(serde_json::json!({
-                        "error": "Trigger is not a webhook trigger",
-                        "trigger_type": trigger.trigger_type,
-                    })),
+                    StatusCode::NOT_FOUND,
+                    Json(serde_json::json!({ "error": "Not found" })),
                 );
             }
+
+            // Build active window info for callers
+            let active_window_info = match trigger.parse_active_window() {
+                Some(aw) if aw.enabled && !aw.days.is_empty() => {
+                    let utc_now = chrono::Utc::now();
+                    let is_active = aw.is_active_at(utc_now);
+                    let retry_after = if is_active {
+                        None
+                    } else {
+                        aw.seconds_until_next_open(utc_now)
+                    };
+                    serde_json::json!({
+                        "has_active_window": true,
+                        "currently_active": is_active,
+                        "retry_after_seconds": retry_after,
+                        "note": "Webhooks received outside the active window are rejected with HTTP 422 and a Retry-After header."
+                    })
+                }
+                _ => serde_json::json!({
+                    "has_active_window": false,
+                    "currently_active": true,
+                }),
+            };
+
             (
                 StatusCode::OK,
                 Json(serde_json::json!({
                     "trigger_id": trigger.id,
-                    "persona_id": trigger.persona_id,
-                    "enabled": trigger.enabled,
                     "trigger_type": "webhook",
-                    "last_triggered_at": trigger.last_triggered_at,
+                    "accepts": "POST",
+                    "active_window": active_window_info,
                 })),
             )
         }
         Err(_) => (
             StatusCode::NOT_FOUND,
-            Json(serde_json::json!({ "error": "Trigger not found" })),
+            Json(serde_json::json!({ "error": "Not found" })),
         ),
     }
 }
@@ -190,7 +211,7 @@ async fn handle_webhook(
     let body_str = String::from_utf8_lossy(&body).to_string();
     let body_for_log = if body_str.is_empty() { None } else { Some(body_str.clone()) };
 
-    let (status, response) = process_webhook(&state, &trigger_id, &headers, &body).await;
+    let (status, extra_headers, response) = process_webhook(&state, &trigger_id, &headers, &body).await;
 
     // Log the request regardless of outcome
     let log_input = CreateWebhookRequestLogInput {
@@ -207,7 +228,12 @@ async fn handle_webhook(
         tracing::warn!("Failed to log webhook request: {}", e);
     }
 
-    (status, Json(response))
+    (status, extra_headers, Json(response))
+}
+
+/// No extra response headers.
+fn no_headers() -> HeaderMap {
+    HeaderMap::new()
 }
 
 /// Core webhook processing logic, separated for clean logging.
@@ -216,13 +242,14 @@ async fn process_webhook(
     trigger_id: &str,
     headers: &HeaderMap,
     body: &Bytes,
-) -> (StatusCode, WebhookResponse) {
+) -> (StatusCode, HeaderMap, WebhookResponse) {
     // 1. Look up the trigger
     let trigger = match trigger_repo::get_by_id(&state.pool, trigger_id) {
         Ok(t) => t,
         Err(_) => {
             return (
                 StatusCode::NOT_FOUND,
+                no_headers(),
                 WebhookResponse {
                     accepted: false,
                     event_id: None,
@@ -236,6 +263,7 @@ async fn process_webhook(
     if trigger.trigger_type != "webhook" {
         return (
             StatusCode::BAD_REQUEST,
+            no_headers(),
             WebhookResponse {
                 accepted: false,
                 event_id: None,
@@ -247,6 +275,7 @@ async fn process_webhook(
     if !trigger.enabled {
         return (
             StatusCode::FORBIDDEN,
+            no_headers(),
             WebhookResponse {
                 accepted: false,
                 event_id: None,
@@ -266,6 +295,7 @@ async fn process_webhook(
         );
         return (
             StatusCode::TOO_MANY_REQUESTS,
+            no_headers(),
             WebhookResponse {
                 accepted: false,
                 event_id: None,
@@ -301,6 +331,7 @@ async fn process_webhook(
                     if !verify_hmac_sha256(secret, body, sig) {
                         return (
                             StatusCode::UNAUTHORIZED,
+                            no_headers(),
                             WebhookResponse {
                                 accepted: false,
                                 event_id: None,
@@ -312,6 +343,7 @@ async fn process_webhook(
                 None => {
                     return (
                         StatusCode::UNAUTHORIZED,
+                        no_headers(),
                         WebhookResponse {
                             accepted: false,
                             event_id: None,
@@ -331,6 +363,7 @@ async fn process_webhook(
             );
             return (
                 StatusCode::FORBIDDEN,
+                no_headers(),
                 WebhookResponse {
                     accepted: false,
                     event_id: None,
@@ -340,15 +373,40 @@ async fn process_webhook(
         }
     }
 
-    // 3b. Active window gate
-    if !trigger.is_within_active_window(chrono::Utc::now()) {
-        tracing::debug!(trigger_id = %trigger_id, "Webhook received outside active window, rejecting");
+    // 3b. Active window gate — return 422 so webhook senders know to retry
+    let utc_now = chrono::Utc::now();
+    if !trigger.is_within_active_window(utc_now) {
+        let retry_after_secs = trigger
+            .parse_active_window()
+            .and_then(|aw| aw.seconds_until_next_open(utc_now));
+
+        let mut resp_headers = HeaderMap::new();
+        if let Some(secs) = retry_after_secs {
+            if let Ok(val) = HeaderValue::from_str(&secs.to_string()) {
+                resp_headers.insert("retry-after", val);
+            }
+        }
+
+        let msg = match retry_after_secs {
+            Some(secs) => format!(
+                "Trigger is outside its active hours window. Retry after {}s",
+                secs
+            ),
+            None => "Trigger is outside its active hours window".into(),
+        };
+
+        tracing::debug!(
+            trigger_id = %trigger_id,
+            retry_after = ?retry_after_secs,
+            "Webhook received outside active window, rejecting with 422",
+        );
         return (
-            StatusCode::OK,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            resp_headers,
             WebhookResponse {
                 accepted: false,
                 event_id: None,
-                error: Some("Trigger is outside its active hours window".into()),
+                error: Some(msg),
             },
         );
     }
@@ -384,8 +442,24 @@ async fn process_webhook(
         },
     ) {
         Ok(event) => {
-            // 7. Mark trigger as fired
-            let _ = trigger_repo::mark_triggered(&state.pool, trigger_id, None, trigger.next_trigger_at.as_deref());
+            // 7. Mark trigger as fired — propagate error to prevent duplicate events
+            if let Err(e) = trigger_repo::mark_triggered(&state.pool, trigger_id, None, trigger.next_trigger_at.as_deref()) {
+                tracing::error!(
+                    trigger_id = %trigger_id,
+                    event_id = %event.id,
+                    "Failed to mark trigger as fired, risk of duplicate events: {}",
+                    e,
+                );
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    no_headers(),
+                    WebhookResponse {
+                        accepted: false,
+                        event_id: Some(event.id),
+                        error: Some("Webhook event published but trigger schedule not advanced".into()),
+                    },
+                );
+            }
 
             tracing::info!(
                 trigger_id = %trigger_id,
@@ -396,6 +470,7 @@ async fn process_webhook(
 
             (
                 StatusCode::OK,
+                no_headers(),
                 WebhookResponse {
                     accepted: true,
                     event_id: Some(event.id),
@@ -407,6 +482,7 @@ async fn process_webhook(
             tracing::error!(trigger_id = %trigger_id, "Failed to publish webhook event: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
+                no_headers(),
                 WebhookResponse {
                     accepted: false,
                     event_id: None,
@@ -426,9 +502,13 @@ fn verify_hmac_sha256(secret: &str, body: &[u8], signature: &str) -> bool {
         .strip_prefix("sha256=")
         .unwrap_or(signature);
 
-    let expected_bytes = match hex::decode(hex_sig) {
-        Ok(b) => b,
-        Err(_) => return false,
+    // Use a dummy 32-byte value when hex decode fails so that both valid-hex
+    // and invalid-hex signatures follow the same constant-time comparison path,
+    // preventing timing side-channels that leak whether the hex was valid.
+    let dummy = [0u8; 32];
+    let (expected_bytes, hex_valid) = match hex::decode(hex_sig) {
+        Ok(b) => (b, true),
+        Err(_) => (dummy.to_vec(), false),
     };
 
     let mut mac = match HmacSha256::new_from_slice(secret.as_bytes()) {
@@ -437,7 +517,9 @@ fn verify_hmac_sha256(secret: &str, body: &[u8], signature: &str) -> bool {
     };
 
     mac.update(body);
-    mac.verify_slice(&expected_bytes).is_ok()
+    // Always run the constant-time comparison, then AND with hex_valid
+    // so invalid hex is still rejected without leaking timing information.
+    mac.verify_slice(&expected_bytes).is_ok() && hex_valid
 }
 
 #[cfg(test)]

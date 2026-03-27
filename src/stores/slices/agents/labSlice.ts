@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
+import { createLogger } from "@/lib/log";
 import type { LabArenaRun } from "@/lib/bindings/LabArenaRun";
 import type { LabArenaResult } from "@/lib/bindings/LabArenaResult";
 import type { LabAbRun } from "@/lib/bindings/LabAbRun";
@@ -15,6 +16,8 @@ import type { LabRunStatus } from "@/lib/bindings/LabRunStatus";
 import type { ModelTestConfig } from "@/api/agents/tests";
 import * as api from "@/api/agents/lab";
 import { createRunLifecycle } from "./runLifecycle";
+
+const logger = createLogger("lab-slice");
 
 const arenaLifecycle = createRunLifecycle('isArenaRunning', 'arenaProgress');
 const matrixLifecycle = createRunLifecycle('isMatrixRunning', 'matrixProgress');
@@ -64,12 +67,15 @@ interface LabCrudActions<TRun> {
   wrapStart: <T extends unknown[]>(fn: (...args: T) => Promise<TRun>, ...args: T) => Promise<string | null>;
 }
 
-function createLabCrud<TRun extends { id: string }, TResult>(
+const TERMINAL_STATUSES: Set<LabRunStatus> = new Set(["completed", "failed", "cancelled"]);
+
+function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResult>(
   runsKey: keyof AgentStore,
   resultsMapKey: keyof AgentStore,
   label: string,
   calls: LabCrudApi<TRun, TResult>,
   set: StoreSetter,
+  getState: () => AgentStore,
   lifecycle?: ReturnType<typeof createRunLifecycle>,
 ): LabCrudActions<TRun> {
   const lc = lifecycle ?? labLifecycle;
@@ -93,6 +99,14 @@ function createLabCrud<TRun extends { id: string }, TResult>(
     },
     fetchResults: async (runId) => {
       try {
+        // Skip fetch if results are already cached and the run is in a terminal state
+        const state = getState();
+        const cachedResults = (state[resultsMapKey] as unknown as Record<string, unknown[]>)[runId];
+        if (cachedResults) {
+          const runs = state[runsKey] as unknown as TRun[];
+          const run = runs.find((r) => r.id === runId);
+          if (run && TERMINAL_STATUSES.has(run.status)) return;
+        }
         const results = await calls.results(runId);
         set((state) => {
           const existing = state[resultsMapKey] as unknown as Record<string, unknown[]>;
@@ -222,10 +236,10 @@ export interface LabSlice {
 
 export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, get) => {
   // Instantiate CRUD factories -- one line per mode
-  const arena  = createLabCrud<LabArenaRun, LabArenaResult>('arenaRuns', 'arenaResultsMap', 'arena', { list: api.labListArenaRuns, results: api.labGetArenaResults, remove: api.labDeleteArenaRun, cancel: api.labCancelArena }, set, arenaLifecycle);
-  const ab     = createLabCrud<LabAbRun, LabAbResult>('abRuns', 'abResultsMap', 'A/B', { list: api.labListAbRuns, results: api.labGetAbResults, remove: api.labDeleteAbRun, cancel: api.labCancelAb }, set, matrixLifecycle);
-  const matrix = createLabCrud<LabMatrixRun, LabMatrixResult>('matrixRuns', 'matrixResultsMap', 'matrix', { list: api.labListMatrixRuns, results: api.labGetMatrixResults, remove: api.labDeleteMatrixRun, cancel: api.labCancelMatrix }, set, matrixLifecycle);
-  const eval_  = createLabCrud<LabEvalRun, LabEvalResult>('evalRuns', 'evalResultsMap', 'eval', { list: api.labListEvalRuns, results: api.labGetEvalResults, remove: api.labDeleteEvalRun, cancel: api.labCancelEval }, set, matrixLifecycle);
+  const arena  = createLabCrud<LabArenaRun, LabArenaResult>('arenaRuns', 'arenaResultsMap', 'arena', { list: api.labListArenaRuns, results: api.labGetArenaResults, remove: api.labDeleteArenaRun, cancel: api.labCancelArena }, set, get, arenaLifecycle);
+  const ab     = createLabCrud<LabAbRun, LabAbResult>('abRuns', 'abResultsMap', 'A/B', { list: api.labListAbRuns, results: api.labGetAbResults, remove: api.labDeleteAbRun, cancel: api.labCancelAb }, set, get, matrixLifecycle);
+  const matrix = createLabCrud<LabMatrixRun, LabMatrixResult>('matrixRuns', 'matrixResultsMap', 'matrix', { list: api.labListMatrixRuns, results: api.labGetMatrixResults, remove: api.labDeleteMatrixRun, cancel: api.labCancelMatrix }, set, get, matrixLifecycle);
+  const eval_  = createLabCrud<LabEvalRun, LabEvalResult>('evalRuns', 'evalResultsMap', 'eval', { list: api.labListEvalRuns, results: api.labGetEvalResults, remove: api.labDeleteEvalRun, cancel: api.labCancelEval }, set, get, matrixLifecycle);
 
   return {
     // Mode
@@ -262,11 +276,12 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
       if (mode && fetchByMode[mode]) {
         fetchByMode[mode]();
       } else {
-        // Fallback: refresh all if mode unknown
-        arena.fetchRuns(personaId);
-        ab.fetchRuns(personaId);
-        matrix.fetchRuns(personaId);
-        eval_.fetchRuns(personaId);
+        // All callers (useLabEvents) provide mode — log if we ever hit this
+        logger.warn("finishLabRun called without mode; refreshing active labMode only", { labMode: get().labMode });
+        const fallbackMode = get().labMode;
+        if (fetchByMode[fallbackMode]) {
+          fetchByMode[fallbackMode]();
+        }
       }
     },
 

@@ -10,9 +10,7 @@ export function formatMs(ms: number): string {
   return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
-export function formatCost(v: number): string {
-  if (v < 0.001) return '<$0.001';
-  return `$${v.toFixed(4)}`;
-}
+import { formatCost as _formatCost } from '@/lib/utils/formatters';
+export const formatCost = (v: number) => _formatCost(v, { precision: 4 });
 
 export const SPEED_OPTIONS = [1, 2, 4, 8] as const;

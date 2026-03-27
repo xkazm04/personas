@@ -27,45 +27,49 @@ fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
 
 /// Insert a new build session.
 pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO build_sessions
-         (id, persona_id, phase, resolved_cells, pending_question, agent_ir,
-          intent, error_message, cli_pid, workflow_json, parser_result_json,
-          created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
-        params![
-            session.id,
-            session.persona_id,
-            session.phase.as_str(),
-            session.resolved_cells,
-            session.pending_question,
-            session.agent_ir,
-            session.intent,
-            session.error_message,
-            session.cli_pid.map(|p| p as i64),
-            session.workflow_json,
-            session.parser_result_json,
-            session.created_at,
-            session.updated_at,
-        ],
-    )?;
-    Ok(())
+    timed_query!("build_sessions", "build_sessions::create", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO build_sessions
+             (id, persona_id, phase, resolved_cells, pending_question, agent_ir,
+              intent, error_message, cli_pid, workflow_json, parser_result_json,
+              created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+            params![
+                session.id,
+                session.persona_id,
+                session.phase.as_str(),
+                session.resolved_cells,
+                session.pending_question,
+                session.agent_ir,
+                session.intent,
+                session.error_message,
+                session.cli_pid.map(|p| p as i64),
+                session.workflow_json,
+                session.parser_result_json,
+                session.created_at,
+                session.updated_at,
+            ],
+        )?;
+        Ok(())
+    })
 }
 
 /// Get a build session by ID.
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Option<BuildSession>, AppError> {
-    let conn = pool.get()?;
-    let result = conn.query_row(
-        "SELECT * FROM build_sessions WHERE id = ?1",
-        params![id],
-        row_to_build_session,
-    );
-    match result {
-        Ok(session) => Ok(Some(session)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(AppError::Database(e)),
-    }
+    timed_query!("build_sessions", "build_sessions::get_by_id", {
+        let conn = pool.get()?;
+        let result = conn.query_row(
+            "SELECT * FROM build_sessions WHERE id = ?1",
+            params![id],
+            row_to_build_session,
+        );
+        match result {
+            Ok(session) => Ok(Some(session)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
 }
 
 /// Get the active (non-terminal) build session for a persona, if any.
@@ -73,74 +77,78 @@ pub fn get_active_for_persona(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Option<BuildSession>, AppError> {
-    let conn = pool.get()?;
-    let result = conn.query_row(
-        "SELECT * FROM build_sessions
-         WHERE persona_id = ?1 AND phase NOT IN ('completed', 'failed', 'cancelled')
-         ORDER BY updated_at DESC LIMIT 1",
-        params![persona_id],
-        row_to_build_session,
-    );
-    match result {
-        Ok(session) => Ok(Some(session)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(AppError::Database(e)),
-    }
+    timed_query!("build_sessions", "build_sessions::get_active_for_persona", {
+        let conn = pool.get()?;
+        let result = conn.query_row(
+            "SELECT * FROM build_sessions
+             WHERE persona_id = ?1 AND phase NOT IN ('completed', 'failed', 'cancelled', 'promoted')
+             ORDER BY updated_at DESC LIMIT 1",
+            params![persona_id],
+            row_to_build_session,
+        );
+        match result {
+            Ok(session) => Ok(Some(session)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
 }
 
 /// Update a build session with only the provided (non-None) fields.
 /// Always updates `updated_at`.
 pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    let now = chrono::Utc::now().to_rfc3339();
+    timed_query!("build_sessions", "build_sessions::update", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
 
-    let mut set_clauses: Vec<String> = Vec::new();
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+        let mut set_clauses: Vec<String> = Vec::new();
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
-    if let Some(ref phase) = updates.phase {
-        set_clauses.push(format!("phase = ?{}", set_clauses.len() + 1));
-        param_values.push(Box::new(phase.clone()));
-    }
-    if let Some(ref resolved_cells) = updates.resolved_cells {
-        set_clauses.push(format!("resolved_cells = ?{}", set_clauses.len() + 1));
-        param_values.push(Box::new(resolved_cells.clone()));
-    }
-    if let Some(ref pending_question) = updates.pending_question {
-        set_clauses.push(format!("pending_question = ?{}", set_clauses.len() + 1));
-        param_values.push(Box::new(pending_question.clone()));
-    }
-    if let Some(ref agent_ir) = updates.agent_ir {
-        set_clauses.push(format!("agent_ir = ?{}", set_clauses.len() + 1));
-        param_values.push(Box::new(agent_ir.clone()));
-    }
-    if let Some(ref error_message) = updates.error_message {
-        set_clauses.push(format!("error_message = ?{}", set_clauses.len() + 1));
-        param_values.push(Box::new(error_message.clone()));
-    }
-    if let Some(ref cli_pid) = updates.cli_pid {
-        set_clauses.push(format!("cli_pid = ?{}", set_clauses.len() + 1));
-        param_values.push(Box::new(cli_pid.map(|p| p as i64)));
-    }
+        if let Some(ref phase) = updates.phase {
+            set_clauses.push(format!("phase = ?{}", set_clauses.len() + 1));
+            param_values.push(Box::new(phase.clone()));
+        }
+        if let Some(ref resolved_cells) = updates.resolved_cells {
+            set_clauses.push(format!("resolved_cells = ?{}", set_clauses.len() + 1));
+            param_values.push(Box::new(resolved_cells.clone()));
+        }
+        if let Some(ref pending_question) = updates.pending_question {
+            set_clauses.push(format!("pending_question = ?{}", set_clauses.len() + 1));
+            param_values.push(Box::new(pending_question.clone()));
+        }
+        if let Some(ref agent_ir) = updates.agent_ir {
+            set_clauses.push(format!("agent_ir = ?{}", set_clauses.len() + 1));
+            param_values.push(Box::new(agent_ir.clone()));
+        }
+        if let Some(ref error_message) = updates.error_message {
+            set_clauses.push(format!("error_message = ?{}", set_clauses.len() + 1));
+            param_values.push(Box::new(error_message.clone()));
+        }
+        if let Some(ref cli_pid) = updates.cli_pid {
+            set_clauses.push(format!("cli_pid = ?{}", set_clauses.len() + 1));
+            param_values.push(Box::new(cli_pid.map(|p| p as i64)));
+        }
 
-    // Always update updated_at
-    set_clauses.push(format!("updated_at = ?{}", set_clauses.len() + 1));
-    param_values.push(Box::new(now));
+        // Always update updated_at
+        set_clauses.push(format!("updated_at = ?{}", set_clauses.len() + 1));
+        param_values.push(Box::new(now));
 
-    // Add the id parameter
-    let id_param_idx = set_clauses.len() + 1;
-    param_values.push(Box::new(id.to_string()));
+        // Add the id parameter
+        let id_param_idx = set_clauses.len() + 1;
+        param_values.push(Box::new(id.to_string()));
 
-    let sql = format!(
-        "UPDATE build_sessions SET {} WHERE id = ?{}",
-        set_clauses.join(", "),
-        id_param_idx,
-    );
+        let sql = format!(
+            "UPDATE build_sessions SET {} WHERE id = ?{}",
+            set_clauses.join(", "),
+            id_param_idx,
+        );
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
 
-    conn.execute(&sql, params_ref.as_slice())?;
-    Ok(())
+        conn.execute(&sql, params_ref.as_slice())?;
+        Ok(())
+    })
 }
 
 /// List non-terminal build sessions, optionally filtered by persona_id.
@@ -148,30 +156,34 @@ pub fn list_non_terminal(
     pool: &DbPool,
     persona_id: Option<&str>,
 ) -> Result<Vec<BuildSession>, AppError> {
-    let conn = pool.get()?;
+    timed_query!("build_sessions", "build_sessions::list_non_terminal", {
+        let conn = pool.get()?;
 
-    if let Some(pid) = persona_id {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM build_sessions
-             WHERE persona_id = ?1 AND phase NOT IN ('completed', 'failed', 'cancelled')
-             ORDER BY updated_at DESC",
-        )?;
-        let rows = stmt.query_map(params![pid], row_to_build_session)?;
-        Ok(collect_rows(rows, "build_sessions::list_non_terminal"))
-    } else {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM build_sessions
-             WHERE phase NOT IN ('completed', 'failed', 'cancelled')
-             ORDER BY updated_at DESC",
-        )?;
-        let rows = stmt.query_map([], row_to_build_session)?;
-        Ok(collect_rows(rows, "build_sessions::list_non_terminal"))
-    }
+        if let Some(pid) = persona_id {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM build_sessions
+                 WHERE persona_id = ?1 AND phase NOT IN ('completed', 'failed', 'cancelled', 'promoted')
+                 ORDER BY updated_at DESC",
+            )?;
+            let rows = stmt.query_map(params![pid], row_to_build_session)?;
+            Ok(collect_rows(rows, "build_sessions::list_non_terminal"))
+        } else {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM build_sessions
+                 WHERE phase NOT IN ('completed', 'failed', 'cancelled', 'promoted')
+                 ORDER BY updated_at DESC",
+            )?;
+            let rows = stmt.query_map([], row_to_build_session)?;
+            Ok(collect_rows(rows, "build_sessions::list_non_terminal"))
+        }
+    })
 }
 
 /// Delete a build session by ID.
 pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute("DELETE FROM build_sessions WHERE id = ?1", params![id])?;
-    Ok(())
+    timed_query!("build_sessions", "build_sessions::delete", {
+        let conn = pool.get()?;
+        conn.execute("DELETE FROM build_sessions WHERE id = ?1", params![id])?;
+        Ok(())
+    })
 }

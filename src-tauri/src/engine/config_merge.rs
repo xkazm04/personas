@@ -59,6 +59,9 @@ pub struct EffectiveModelConfig {
 /// 1. Global settings (lowest priority)
 /// 2. Workspace/group defaults (medium priority)
 /// 3. Persona-level overrides (highest priority)
+///
+/// Each resolved field logs which tier supplied the value so that config
+/// inheritance is visible in traces rather than implicit in code.
 pub fn resolve_effective_config(
     pool: &DbPool,
     persona: &Persona,
@@ -119,7 +122,7 @@ pub fn resolve_effective_config(
         global_profile.as_ref().and_then(|p| p.prompt_cache_policy.clone()),
     );
 
-    EffectiveModelConfig {
+    let config = EffectiveModelConfig {
         persona_id: persona.id.clone(),
         persona_name: persona.name.clone(),
         workspace_name: workspace.map(|ws| ws.name.clone()),
@@ -130,7 +133,40 @@ pub fn resolve_effective_config(
         max_budget_usd,
         max_turns,
         prompt_cache_policy,
+    };
+
+    // Log the resolution chain so admins can trace which tier won for each field.
+    log_resolution(&config);
+
+    config
+}
+
+/// Log the resolved config showing which tier supplied each value.
+fn log_resolution(config: &EffectiveModelConfig) {
+    fn source_label(source: &ConfigSource) -> &'static str {
+        match source {
+            ConfigSource::Agent => "agent",
+            ConfigSource::Workspace => "workspace",
+            ConfigSource::Global => "global",
+            ConfigSource::Default => "default",
+        }
     }
+
+    tracing::debug!(
+        persona_id = %config.persona_id,
+        persona_name = %config.persona_name,
+        model_source = source_label(&config.model.source),
+        provider_source = source_label(&config.provider.source),
+        budget_source = source_label(&config.max_budget_usd.source),
+        turns_source = source_label(&config.max_turns.source),
+        cache_source = source_label(&config.prompt_cache_policy.source),
+        "Config resolution: model={} provider={} budget={} turns={} cache={}",
+        config.model.value.as_deref().unwrap_or("--"),
+        config.provider.value.as_deref().unwrap_or("--"),
+        config.max_budget_usd.value.map_or("--".to_string(), |v| format!("${v:.2}")),
+        config.max_turns.value.map_or("--".to_string(), |v| v.to_string()),
+        config.prompt_cache_policy.value.as_deref().unwrap_or("--"),
+    );
 }
 
 /// Build a global-level ModelProfile from app_settings.

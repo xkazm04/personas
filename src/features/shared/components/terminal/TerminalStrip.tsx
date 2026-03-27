@@ -1,7 +1,7 @@
 import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
-import { ChevronDown, ChevronUp, X, Copy, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
-import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import { CopyButton } from '../buttons';
 import { Tooltip } from '../display/Tooltip';
 import type { CliOperation } from '@/features/settings/sub_engine/libs/engineCapabilities';
 
@@ -52,7 +52,7 @@ export function TerminalStrip({
   operation,
 }: TerminalStripProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { copied, copy } = useCopyToClipboard();
+  const logText = lines.join('\n');
 
   // Auto-scroll expanded panel on new lines
   useEffect(() => {
@@ -87,15 +87,7 @@ export function TerminalStrip({
 
         {/* Copy log */}
         {!isRunning && lines.length > 0 && (
-          <Tooltip content="Copy log">
-            <button
-              title="Copy log"
-              onClick={() => copy(lines.join('\n'))}
-              className="p-1 rounded hover:bg-secondary/40 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors shrink-0"
-            >
-              {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-            </button>
-          </Tooltip>
+          <CopyButton text={logText} tooltip="Copy log" iconSize="w-3 h-3" className="p-1 shrink-0" />
         )}
 
         {/* Expand / collapse */}

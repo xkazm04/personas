@@ -168,11 +168,267 @@ export const EventName = {
   // Share link (deep link received from OS)
   SHARE_LINK_RECEIVED: 'share-link-received',
 
+  // Engine fallback (unrecognized engine setting)
+  ENGINE_FALLBACK: 'engine-fallback',
+
   // System trace (frontend-only, emitted by systemTrace module)
   SYSTEM_TRACE_UPDATED: 'system-trace-updated',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
+
+// ---------------------------------------------------------------------------
+// Concrete payload interfaces (mirrors Rust structs in src-tauri/src)
+// ---------------------------------------------------------------------------
+
+/** Discriminated union for structured execution events (engine/types.rs StructuredExecutionEvent). */
+export type ExecutionEventPayload =
+  | { type: 'text'; execution_id: string; content: string }
+  | { type: 'tool_use'; execution_id: string; tool_name: string; input_preview: string }
+  | { type: 'tool_result'; execution_id: string; content_preview: string }
+  | { type: 'system_init'; execution_id: string; model: string; session_id?: string }
+  | {
+      type: 'result';
+      execution_id: string;
+      duration_ms?: number;
+      cost_usd?: number;
+      input_tokens?: number;
+      output_tokens?: number;
+      model?: string;
+      session_id?: string;
+    }
+  | { type: 'file_change'; execution_id: string; path: string; change_type: string }
+  | { type: 'heartbeat'; execution_id: string; elapsed_ms: number; silence_ms: number };
+
+/** Cloud execution progress (cloud/runner.rs). */
+export interface ExecutionProgressPayload {
+  execution_id: string;
+  progress: {
+    stage?: string;
+    tool?: string;
+    percent?: number;
+  };
+}
+
+/** Cloud execution review request (cloud/runner.rs). */
+export interface ExecutionReviewRequestPayload {
+  execution_id: string;
+  reviews: Array<{
+    review_id: string;
+    title: string;
+    description?: string;
+    status: string;
+  }>;
+}
+
+/** Healing event (engine/types.rs HealingEventPayload). */
+export interface HealingEventPayload {
+  issue_id: string;
+  persona_id: string;
+  execution_id: string;
+  title: string;
+  action: string;
+  auto_fixed: boolean;
+  severity: string;
+  suggested_fix?: string;
+  persona_name: string;
+  description?: string;
+  strategy?: string;
+  backoff_seconds?: number;
+  retry_number?: number;
+  max_retries?: number;
+}
+
+/** Design status (BackgroundJob pattern). */
+export interface DesignStatusPayload {
+  job_id: string;
+  status: string;
+  error?: string;
+}
+
+/** Design review status (commands/design/reviews.rs DesignReviewStatusEvent). */
+export interface DesignReviewStatusPayload {
+  run_id: string;
+  test_case_index: number;
+  total: number;
+  status: string;
+  test_case_name: string;
+  error_message?: string;
+  elapsed_ms?: number;
+}
+
+/** Design review output (commands/design/reviews.rs DesignReviewOutputEvent). */
+export interface DesignReviewOutputPayload {
+  run_id: string;
+  test_case_index: number;
+  line: string;
+}
+
+/** Manual review resolved (commands/design/reviews.rs ManualReviewResolvedEvent). */
+export interface ManualReviewResolvedPayload {
+  review_id: string;
+  execution_id: string;
+  persona_id: string;
+  status: string;
+}
+
+/** Review message added (db/models/review.rs ReviewMessage). */
+export interface ReviewMessageAddedPayload {
+  id: string;
+  review_id: string;
+  role: string;
+  content: string;
+  metadata?: string;
+  created_at: string;
+}
+
+/** Build session event (discriminated by `type` field, engine/build_session.rs). */
+export type BuildSessionEventPayload =
+  | { type: 'cell_update'; session_id: string; cell_key: string; data: unknown; status: string }
+  | { type: 'question'; session_id: string; cell_key: string; question: string; options: string[] | null }
+  | { type: 'progress'; session_id: string; dimension: string | null; message: string; percent: number | null; activity?: string }
+  | { type: 'error'; session_id: string; cell_key: string | null; message: string; retryable: boolean }
+  | { type: 'session_status'; session_id: string; phase: string; resolved_count: number; total_count: number };
+
+/** Build test tool result (engine/build_session.rs). */
+export interface BuildTestToolResultPayload {
+  session_id: string;
+  tool_name: string;
+  status: string;
+  http_status?: number;
+  latency_ms?: number;
+  error?: string;
+  connector?: string;
+  tested?: number;
+}
+
+/** Test run status (engine/test_runner.rs TestRunStatusEvent). */
+export interface TestRunStatusPayload {
+  run_id: string;
+  phase: string;
+  scenarios_count?: number;
+  current?: number;
+  total?: number;
+  model_id?: string;
+  scenario_name?: string;
+  status?: string;
+  scores?: {
+    tool_accuracy?: number;
+    output_quality?: number;
+    protocol_compliance?: number;
+  };
+  summary?: unknown;
+  error?: string;
+  scenarios?: Array<{ name: string; input: string; expected_behavior?: string }>;
+  elapsed_ms?: number;
+}
+
+/** N8N transform section (commands/design/n8n_transform/cli_runner.rs). */
+export interface N8nTransformSectionPayload {
+  transformId: string;
+  section: {
+    kind?: string;
+    index?: number;
+    label?: string;
+    data?: unknown;
+    validation?: {
+      valid: boolean;
+      errors?: string[];
+      warnings?: string[];
+    };
+  };
+}
+
+/** KB ingest progress (db/models/knowledge_base.rs KbIngestProgress, camelCase). */
+export interface KbIngestProgressPayload {
+  jobId: string;
+  kbId: string;
+  status: string;
+  documentsTotal: number;
+  documentsDone: number;
+  chunksCreated: number;
+  currentFile?: string;
+  error?: string;
+}
+
+/** Context generation complete (commands/infrastructure/context_generation.rs). */
+export interface ContextGenCompletePayload {
+  scan_id: string;
+  groups_created: number;
+  contexts_created: number;
+  files_mapped: number;
+  status: string;
+  error?: string;
+}
+
+/** Idea scan complete (commands/infrastructure/idea_scanner.rs). */
+export interface IdeaScanCompletePayload {
+  scan_id: string;
+  idea_count: number;
+}
+
+/** Cloud webhook relay status (engine/cloud_webhook_relay.rs, camelCase). */
+export interface CloudWebhookRelayStatusPayload {
+  connected: boolean;
+  lastPollAt?: string;
+  activeWebhookTriggers: number;
+  totalRelayed: number;
+  error?: string;
+}
+
+/** Smee relay status (engine/smee_relay.rs, camelCase). */
+export interface SmeeRelayStatusPayload {
+  channelUrl?: string;
+  connected: boolean;
+  eventsRelayed: number;
+  lastEventAt?: string;
+  error?: string;
+  legacyActive: boolean;
+}
+
+/** Context rule match (engine/context_rules.rs ContextRuleMatch, camelCase). */
+export interface ContextRuleMatchPayload {
+  ruleId: string;
+  personaId: string;
+  ruleName: string;
+  eventSummary: string;
+  matchedAt: number;
+}
+
+/** Assertion results summary (db/models/output_assertion.rs ExecutionAssertionSummary, camelCase). */
+export interface AssertionResultsPayload {
+  executionId: string;
+  total: number;
+  passed: number;
+  failed: number;
+  results: Array<{
+    id: string;
+    assertionId: string;
+    executionId: string;
+    personaId: string;
+    passed: boolean;
+    explanation: string;
+    matchedValue?: string;
+    evaluationMs: number;
+    createdAt: string;
+  }>;
+}
+
+/** Pipeline node status (commands/teams/teams.rs json!). */
+export interface PipelineNodeStatus {
+  member_id: string;
+  persona_id: string;
+  status: string;
+}
+
+/** Pipeline status event (commands/teams/teams.rs). */
+export interface PipelineStatusPayload {
+  pipeline_id: string;
+  team_id: string;
+  status: string;
+  node_statuses: PipelineNodeStatus[];
+  memories_created?: number;
+}
 
 // ---------------------------------------------------------------------------
 // Payload type map
@@ -189,7 +445,7 @@ export interface EventPayloadMap {
     duration_ms?: number;
     cost_usd?: number;
   };
-  [EventName.EXECUTION_EVENT]: { type: string; execution_id: string; [key: string]: unknown };
+  [EventName.EXECUTION_EVENT]: ExecutionEventPayload;
   [EventName.EXECUTION_TRACE_SPAN]: {
     execution_id: string;
     span: TraceSpan;
@@ -206,11 +462,8 @@ export interface EventPayloadMap {
     path: string;
     change_type: string;
   };
-  [EventName.EXECUTION_PROGRESS]: { execution_id: string; progress: Record<string, unknown> };
-  [EventName.EXECUTION_REVIEW_REQUEST]: {
-    execution_id: string;
-    reviews: unknown[];
-  };
+  [EventName.EXECUTION_PROGRESS]: ExecutionProgressPayload;
+  [EventName.EXECUTION_REVIEW_REQUEST]: ExecutionReviewRequestPayload;
 
   // Queue
   [EventName.QUEUE_STATUS]: {
@@ -226,7 +479,7 @@ export interface EventPayloadMap {
   [EventName.AUTH_ERROR]: { error: string };
 
   // Healing
-  [EventName.HEALING_EVENT]: Record<string, unknown>;
+  [EventName.HEALING_EVENT]: HealingEventPayload;
   [EventName.AI_HEALING_STATUS]: {
     execution_id: string;
     persona_id: string;
@@ -252,30 +505,26 @@ export interface EventPayloadMap {
   [EventName.MESSAGE_CREATED]: PersonaMessage;
 
   // Design & review
-  [EventName.DESIGN_STATUS]: Record<string, unknown>;
+  [EventName.DESIGN_STATUS]: DesignStatusPayload;
   [EventName.DESIGN_OUTPUT]: { line: string };
-  [EventName.DESIGN_REVIEW_STATUS]: Record<string, unknown>;
-  [EventName.DESIGN_REVIEW_OUTPUT]: Record<string, unknown>;
-  [EventName.MANUAL_REVIEW_RESOLVED]: Record<string, unknown>;
-  [EventName.REVIEW_MESSAGE_ADDED]: Record<string, unknown>;
+  [EventName.DESIGN_REVIEW_STATUS]: DesignReviewStatusPayload;
+  [EventName.DESIGN_REVIEW_OUTPUT]: DesignReviewOutputPayload;
+  [EventName.MANUAL_REVIEW_RESOLVED]: ManualReviewResolvedPayload;
+  [EventName.REVIEW_MESSAGE_ADDED]: ReviewMessageAddedPayload;
 
   // Build session
-  [EventName.BUILD_SESSION_EVENT]: {
-    type: string;
-    session_id: string;
-    [key: string]: unknown;
-  };
-  [EventName.BUILD_TEST_TOOL_RESULT]: Record<string, unknown>;
+  [EventName.BUILD_SESSION_EVENT]: BuildSessionEventPayload;
+  [EventName.BUILD_TEST_TOOL_RESULT]: BuildTestToolResultPayload;
 
   // Test runner
-  [EventName.TEST_RUN_STATUS]: Record<string, unknown>;
+  [EventName.TEST_RUN_STATUS]: TestRunStatusPayload;
   [EventName.N8N_TEST_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.N8N_TEST_OUTPUT]: { job_id: string; line: string };
 
   // N8N transform
   [EventName.N8N_TRANSFORM_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.N8N_TRANSFORM_OUTPUT]: { job_id: string; line: string };
-  [EventName.N8N_TRANSFORM_SECTION]: { transformId: string; section: Record<string, unknown> };
+  [EventName.N8N_TRANSFORM_SECTION]: N8nTransformSectionPayload;
 
   // Template generation & adoption
   [EventName.TEMPLATE_GENERATE_STATUS]: { job_id: string; status: string; error?: string };
@@ -284,8 +533,8 @@ export interface EventPayloadMap {
   [EventName.TEMPLATE_ADOPT_OUTPUT]: { job_id: string; line: string };
 
   // Knowledge base
-  [EventName.KB_INGEST_PROGRESS]: Record<string, unknown>;
-  [EventName.KB_INGEST_COMPLETE]: Record<string, unknown>;
+  [EventName.KB_INGEST_PROGRESS]: KbIngestProgressPayload;
+  [EventName.KB_INGEST_COMPLETE]: KbIngestProgressPayload;
   [EventName.KB_INGEST_ERROR]: { jobId: string; error: string };
 
   // Credential automation
@@ -319,10 +568,10 @@ export interface EventPayloadMap {
   // Context gen & idea scan (BackgroundJob pattern)
   [EventName.CONTEXT_GEN_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.CONTEXT_GEN_OUTPUT]: { job_id: string; line: string };
-  [EventName.CONTEXT_GEN_COMPLETE]: Record<string, unknown>;
+  [EventName.CONTEXT_GEN_COMPLETE]: ContextGenCompletePayload;
   [EventName.IDEA_SCAN_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.IDEA_SCAN_OUTPUT]: { job_id: string; line: string };
-  [EventName.IDEA_SCAN_COMPLETE]: Record<string, unknown>;
+  [EventName.IDEA_SCAN_COMPLETE]: IdeaScanCompletePayload;
 
   // Task executor (BackgroundJob pattern)
   [EventName.TASK_EXEC_STATUS]: { job_id: string; status: string; error?: string };
@@ -360,17 +609,17 @@ export interface EventPayloadMap {
   };
 
   // Relay
-  [EventName.CLOUD_WEBHOOK_RELAY_STATUS]: Record<string, unknown>;
-  [EventName.SMEE_RELAY_STATUS]: Record<string, unknown>;
+  [EventName.CLOUD_WEBHOOK_RELAY_STATUS]: CloudWebhookRelayStatusPayload;
+  [EventName.SMEE_RELAY_STATUS]: SmeeRelayStatusPayload;
 
   // Context rules
-  [EventName.CONTEXT_RULE_MATCH]: Record<string, unknown>;
+  [EventName.CONTEXT_RULE_MATCH]: ContextRuleMatchPayload;
 
   // Assertion results
-  [EventName.ASSERTION_RESULTS]: Record<string, unknown>;
+  [EventName.ASSERTION_RESULTS]: AssertionResultsPayload;
 
   // Pipeline
-  [EventName.PIPELINE_STATUS]: Record<string, unknown>;
+  [EventName.PIPELINE_STATUS]: PipelineStatusPayload;
 
   // P2P
   [EventName.P2P_MANIFEST_SYNC_PROGRESS]: {
@@ -409,6 +658,12 @@ export interface EventPayloadMap {
     url: string;
   };
 
+  // Engine fallback
+  [EventName.ENGINE_FALLBACK]: {
+    requested: string;
+    actual: string;
+  };
+
   // System trace
   [EventName.SYSTEM_TRACE_UPDATED]: {
     trace_id: string;
@@ -416,6 +671,28 @@ export interface EventPayloadMap {
     event_type: 'started' | 'span_update' | 'completed';
   };
 }
+
+// ---------------------------------------------------------------------------
+// Exhaustiveness check — compile error if EventName and EventPayloadMap drift
+// ---------------------------------------------------------------------------
+
+/**
+ * These two assertions produce a compile error when a developer adds a new
+ * EventName constant without a matching EventPayloadMap entry (or vice-versa).
+ *
+ * If you see an error here, ensure every value in `EventName` has a
+ * corresponding key in `EventPayloadMap` and vice-versa.
+ */
+type _AssertAllNamesHavePayloads =
+  EventNameValue extends keyof EventPayloadMap ? true : { error: 'EventName has values missing from EventPayloadMap'; missing: Exclude<EventNameValue, keyof EventPayloadMap> };
+type _AssertNoExtraPayloads =
+  keyof EventPayloadMap extends EventNameValue ? true : { error: 'EventPayloadMap has keys missing from EventName'; extra: Exclude<keyof EventPayloadMap, EventNameValue> };
+
+// These resolve to `true` when the two are in sync; if not, the assignment
+// fails with a descriptive error type showing which keys are missing.
+const _exhaustiveCheck1: _AssertAllNamesHavePayloads = true as const;
+const _exhaustiveCheck2: _AssertNoExtraPayloads = true as const;
+void _exhaustiveCheck1; void _exhaustiveCheck2;
 
 // ---------------------------------------------------------------------------
 // Typed helpers

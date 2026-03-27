@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Brain } from 'lucide-react';
-import { MEMORY_CATEGORY_COLORS } from '@/lib/utils/formatters';
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import { isTerminalState } from '@/lib/execution/executionState';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
+import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 
 interface ExecutionMemoriesProps {
   executionId: string;
@@ -42,14 +42,10 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
       {showMemories && (
           <div className="animate-fade-slide-in space-y-1.5">
             {executionMemories.map((mem) => {
-              const defaultCat = { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' };
-              const cat = MEMORY_CATEGORY_COLORS[mem.category] ?? defaultCat;
               return (
                 <div key={mem.id} className="p-3 bg-violet-500/5 border border-violet-500/15 rounded-xl">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${cat.bg} ${cat.text} ${cat.border}`}>
-                      {cat.label}
-                    </span>
+                    <CategoryChip category={mem.category} />
                     <span className="typo-heading text-foreground/90">{stripHtml(mem.title)}</span>
                   </div>
                   <p className="typo-body text-foreground/70 line-clamp-2">{stripHtml(mem.content)}</p>

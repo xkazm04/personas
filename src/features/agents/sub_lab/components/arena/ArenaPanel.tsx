@@ -1,14 +1,13 @@
 import { useEffect, useMemo } from 'react';
-import { Play, Square, ChevronDown, Filter, AlertCircle } from 'lucide-react';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { AlertCircle } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { LabProgress } from '../shared/LabProgress';
 import { ArenaHistory } from './ArenaHistory';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
-import { Listbox } from '@/features/shared/components/forms/Listbox';
-import { ANTHROPIC_MODELS, ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
+import { ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 import { useHealthCheck, HealthCheckPanel } from '@/features/agents/health';
+import { ModelToggleGrid, UseCaseFilterPicker, LabActionButtons } from '../../shared';
 
 export function ArenaPanel() {
   const arenaRuns = useAgentStore((s) => s.arenaRuns);
@@ -35,7 +34,6 @@ export function ArenaPanel() {
 
   const useCases = useSelectedUseCases();
   const selectedUseCase = useMemo(() => useCases.find((uc) => uc.id === selectedUseCaseId) ?? null, [useCases, selectedUseCaseId]);
-  const useCaseOptions = useMemo(() => [{ value: '__all__', label: 'All Use Cases' }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))], [useCases]);
 
   useEffect(() => {
     if (selectedUseCase?.model_override) {
@@ -76,62 +74,20 @@ export function ArenaPanel() {
             </div>
           )}
 
-          {useCases.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground/80 flex items-center gap-1.5"><Filter className="w-3.5 h-3.5" />Focus on Use Case</label>
-              <Listbox itemCount={useCaseOptions.length} onSelectFocused={(idx) => { const opt = useCaseOptions[idx]; if (opt) setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); }} ariaLabel="Filter by use case"
-                renderTrigger={({ isOpen, toggle }) => (
-                  <button onClick={toggle} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border transition-all ${isOpen ? 'bg-primary/10 border-primary/30 text-foreground/90' : 'bg-background/30 border-primary/10 text-muted-foreground/90 hover:border-primary/20'} cursor-pointer`}>
-                    <span>{useCaseOptions.find((o) => o.value === (selectedUseCaseId ?? '__all__'))?.label ?? 'All Use Cases'}</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                )}>
-                {({ close, focusIndex }) => (
-                  <div className="py-1 bg-background border border-primary/20 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
-                    {useCaseOptions.map((opt, i) => (
-                      <button key={opt.value} onClick={() => { setSelectedUseCaseId(opt.value === '__all__' ? null : opt.value); close(); }}
-                        className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${focusIndex === i ? 'bg-primary/15 text-foreground' : ''} ${(selectedUseCaseId ?? '__all__') === opt.value ? 'text-primary font-medium' : 'text-muted-foreground/90 hover:bg-secondary/30'}`}>
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </Listbox>
-            </div>
-          )}
+          <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} label="Focus on Use Case" />
+          <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} testIdPrefix="arena" />
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground/80">Models</label>
-            <div className="flex flex-wrap gap-2">
-              {ANTHROPIC_MODELS.map((m) => (
-                <button key={m.id} data-testid={`arena-model-${m.id}`} onClick={() => toggleModel(m.id)}
-                  className={`px-2.5 py-1 rounded-xl text-sm font-medium border transition-all cursor-pointer ${selectedModels.has(m.id) ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20 hover:text-foreground/95'}`}>
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {isLabRunning ? (
-            <button data-testid="arena-cancel-btn" onClick={() => void handleCancel()} className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-red-500/80 hover:bg-red-500 text-foreground shadow-lg shadow-red-500/20">
-              <Square className="w-4 h-4" />Cancel Test
-            </button>
-          ) : (
-            <Tooltip
-              content={
-                !hasPrompt ? 'Add a prompt to this persona first'
-                  : selectedModels.size === 0 ? 'Select at least one model'
-                  : ''
-              }
-              placement="top"
-              delay={200}
-            >
-              <button data-testid="arena-run-btn" onClick={() => void handleStart()} disabled={selectedModels.size === 0 || !hasPrompt}
-                className="w-full flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-medium text-sm transition-all bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100">
-                <Play className="w-4 h-4" />Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})
-              </button>
-            </Tooltip>
-          )}
+          <LabActionButtons
+            isRunning={isLabRunning}
+            onStart={() => void handleStart()}
+            onCancel={() => void handleCancel()}
+            disabled={selectedModels.size === 0 || !hasPrompt}
+            disabledReason={!hasPrompt ? 'Add a prompt to this persona first' : selectedModels.size === 0 ? 'Select at least one model' : ''}
+            runLabel={<>Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})</>}
+            cancelLabel="Cancel Test"
+            cancelTestId="arena-cancel-btn"
+            runTestId="arena-run-btn"
+          />
 
           <LabProgress />
         </div>

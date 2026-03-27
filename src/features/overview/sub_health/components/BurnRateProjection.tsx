@@ -25,7 +25,9 @@ export function BurnRateProjection({ signals }: BurnRateProjectionProps) {
         </div>
         <div>
           <h3 className="typo-heading text-foreground/90">Burn Rate Projections</h3>
-          <p className="text-xs text-muted-foreground/70">{projections.activeCount} active personas</p>
+          <p className="text-xs text-muted-foreground/70">
+            {projections.activeCount} active personas &middot; local month boundary
+          </p>
         </div>
       </div>
 

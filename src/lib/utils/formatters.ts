@@ -1,17 +1,21 @@
 import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import type { LucideIcon } from 'lucide-react';
-import { CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Loader2, HelpCircle } from 'lucide-react';
 
 export function formatTimestamp(timestamp: string | null, fallback = '-'): string {
   if (!timestamp) return fallback;
   return new Date(timestamp).toLocaleString();
 }
 
-export function formatRelativeTime(dateStr: string | null, fallback = '-'): string {
+export function formatRelativeTime(
+  dateStr: string | null,
+  fallback = '-',
+  opts?: { dateFallbackDays?: number },
+): string {
   if (!dateStr) return fallback;
-  const now = Date.now();
   const then = new Date(dateStr).getTime();
   if (isNaN(then)) return fallback;
+  const now = Date.now();
   const diffSeconds = Math.floor((now - then) / 1000);
   if (diffSeconds < 5) return 'just now';
   if (diffSeconds < 60) return `${diffSeconds}s ago`;
@@ -20,7 +24,42 @@ export function formatRelativeTime(dateStr: string | null, fallback = '-'): stri
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) return `${diffHours}h ago`;
   const diffDays = Math.floor(diffHours / 24);
+  if (opts?.dateFallbackDays != null && diffDays >= opts.dateFallbackDays) {
+    return new Date(then).toLocaleDateString();
+  }
   return `${diffDays}d ago`;
+}
+
+/**
+ * Format a USD cost with configurable precision.
+ *
+ * @param usd        The cost in US dollars.
+ * @param opts.precision
+ *   - `2`  (default): two decimals, `<$0.01` for sub-penny, `$0.00` for null/zero.
+ *   - `4`:  four decimals, `<$0.001` for tiny values, `—` for null.
+ *   - `'auto'`: adaptive — 4 decimals below $0.01, 3 below $1, 2 otherwise.
+ */
+export function formatCost(
+  usd: number | null | undefined,
+  opts?: { precision?: 2 | 4 | 'auto' },
+): string {
+  const precision = opts?.precision ?? 2;
+
+  if (usd == null) return precision === 2 ? '$0.00' : '\u2014';
+  if (precision === 2) {
+    if (usd === 0) return '$0.00';
+    if (usd < 0.01) return '<$0.01';
+    return `$${usd.toFixed(2)}`;
+  }
+  if (precision === 4) {
+    if (usd < 0.001) return '<$0.001';
+    return `$${usd.toFixed(4)}`;
+  }
+  // 'auto'
+  if (usd < 0.001) return '<$0.001';
+  if (usd < 0.01) return `$${usd.toFixed(4)}`;
+  if (usd < 1) return `$${usd.toFixed(3)}`;
+  return `$${usd.toFixed(2)}`;
 }
 
 // -- Badge color maps ----------------------------------------------------
@@ -48,10 +87,11 @@ export const EXECUTION_STATUS_MAP: Record<string, ExecutionStatusEntry> = {
   failed:     { label: 'Failed',     icon: XCircle,       text: 'text-status-error',        bg: 'bg-status-error/10',      border: 'border-status-error/20' },
   cancelled:  { label: 'Cancelled',  icon: Pause,         text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
   incomplete: { label: 'Incomplete', icon: AlertTriangle,  text: 'text-status-warning',      bg: 'bg-status-warning/10',    border: 'border-status-warning/20' },
+  unknown:    { label: 'Unknown',    icon: HelpCircle,      text: 'text-neutral-400',         bg: 'bg-neutral-500/10',       border: 'border-neutral-500/20' },
 };
 
-/** Fallback entry for unknown statuses. */
-export const DEFAULT_STATUS_ENTRY: ExecutionStatusEntry = EXECUTION_STATUS_MAP.failed!;
+/** Fallback entry for unknown/corrupted statuses (gray badge, not red). */
+export const DEFAULT_STATUS_ENTRY: ExecutionStatusEntry = EXECUTION_STATUS_MAP.unknown!;
 
 /** Look up a status entry with fallback. */
 export function getStatusEntry(status: string): ExecutionStatusEntry {
@@ -75,13 +115,29 @@ export const HEALING_CATEGORY_COLORS: Record<string, BadgeColors> = {
   external: { bg: 'bg-gray-500/10', text: 'text-gray-600', border: 'border-gray-500/20' },
 };
 
-export const MEMORY_CATEGORY_COLORS: Record<string, BadgeColors & { label: string }> = {
-  fact: { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
-  preference: { label: 'Preference', bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
-  instruction: { label: 'Instruction', bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' },
-  context: { label: 'Context', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  learned: { label: 'Learned', bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20' },
-  custom: { label: 'Custom', bg: 'bg-gray-500/10', text: 'text-gray-600', border: 'border-gray-500/20' },
+export interface CategoryColors extends BadgeColors {
+  label: string;
+  accent: string;
+}
+
+export const MEMORY_CATEGORY_COLORS: Record<string, CategoryColors> = {
+  fact: { label: 'Fact', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20', accent: 'border-l-blue-500' },
+  preference: { label: 'Preference', bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', accent: 'border-l-amber-500' },
+  instruction: { label: 'Instruction', bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20', accent: 'border-l-violet-500' },
+  context: { label: 'Context', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20', accent: 'border-l-emerald-500' },
+  learned: { label: 'Learned', bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20', accent: 'border-l-cyan-500' },
+  constraint: { label: 'Constraint', bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20', accent: 'border-l-red-500' },
+};
+
+export const TEAM_MEMORY_CATEGORY_COLORS: Record<string, CategoryColors> = {
+  observation: { label: 'Observation', bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20', accent: 'border-l-cyan-500' },
+  decision: { label: 'Decision', bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', accent: 'border-l-amber-500' },
+  context: { label: 'Context', bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20', accent: 'border-l-violet-500' },
+  learning: { label: 'Learning', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20', accent: 'border-l-emerald-500' },
+};
+
+export const DEFAULT_CATEGORY_COLORS: CategoryColors = {
+  label: 'Unknown', bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20', accent: 'border-l-gray-500',
 };
 
 export const ALL_MEMORY_CATEGORIES = Object.keys(MEMORY_CATEGORY_COLORS) as PersonaMemoryCategory[];

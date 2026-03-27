@@ -65,12 +65,14 @@ export const EVENT_TYPE_HEX_COLORS: Record<string, string> = Object.fromEntries(
 export type EventStatusColor = Pick<StatusToken, 'bg' | 'text' | 'border'>;
 
 export const EVENT_STATUS_COLORS: Record<string, EventStatusColor> = {
-  pending:    { bg: 'bg-status-pending/10',    text: 'text-status-pending',    border: 'border-status-pending/20' },
-  processing: { bg: 'bg-status-processing/10', text: 'text-status-processing', border: 'border-status-processing/20' },
-  completed:  { bg: 'bg-status-success/10',    text: 'text-status-success',    border: 'border-status-success/20' },
-  processed:  { bg: 'bg-status-success/10',    text: 'text-status-success',    border: 'border-status-success/20' },
-  failed:     { bg: 'bg-status-error/10',      text: 'text-status-error',      border: 'border-status-error/20' },
-  skipped:    { bg: 'bg-status-neutral/10',    text: 'text-status-neutral',    border: 'border-status-neutral/20' },
+  pending:     { bg: 'bg-status-pending/10',    text: 'text-status-pending',    border: 'border-status-pending/20' },
+  processing:  { bg: 'bg-status-processing/10', text: 'text-status-processing', border: 'border-status-processing/20' },
+  delivered:   { bg: 'bg-status-success/10',    text: 'text-status-success',    border: 'border-status-success/20' },
+  completed:   { bg: 'bg-status-success/10',    text: 'text-status-success',    border: 'border-status-success/20' },
+  failed:      { bg: 'bg-status-error/10',      text: 'text-status-error',      border: 'border-status-error/20' },
+  skipped:     { bg: 'bg-status-neutral/10',    text: 'text-status-neutral',    border: 'border-status-neutral/20' },
+  dead_letter: { bg: 'bg-status-error/10',      text: 'text-status-error',      border: 'border-status-error/20' },
+  discarded:   { bg: 'bg-status-neutral/10',    text: 'text-status-neutral',    border: 'border-status-neutral/20' },
 };
 
 /** Fallback status color for unknown statuses */

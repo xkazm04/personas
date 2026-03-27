@@ -167,7 +167,7 @@ function ConnectorSwapModal({ connectorName, onSelect, onClose }: {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6">
       <div
         ref={modalRef}
-        className="w-full max-w-lg max-h-[70vh] flex flex-col rounded-2xl border border-primary/15 bg-background shadow-2xl overflow-hidden"
+        className="w-full max-w-lg max-h-[70vh] flex flex-col rounded-2xl border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
       >
         <div className="flex items-center justify-between px-5 py-3 border-b border-primary/10 bg-primary/[0.03]">
           <div>

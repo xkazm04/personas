@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::n8n_transform::run_claude_prompt_text_inner;
+use crate::db::repos::resources::credentials as cred_repo;
 use crate::engine::ai_helpers;
 use crate::engine::db_query;
 use crate::engine::event_registry::event_name;
@@ -149,7 +150,17 @@ pub async fn validate_db_schema(
         .columns
         .iter()
         .position(|c| c == "table_name")
-        .unwrap_or(0);
+        .or_else(|| tables_result.columns.iter().position(|c| c == "TABLE_NAME"))
+        .ok_or_else(|| {
+            let service_type = cred_repo::get_by_id(&state.db, &credential_id)
+                .map(|c| c.service_type)
+                .unwrap_or_else(|_| "unknown".to_string());
+            AppError::Internal(format!(
+                "Schema validation is not supported for connector '{}': \
+                 introspection result has columns {:?} but expected a 'table_name' column",
+                service_type, tables_result.columns,
+            ))
+        })?;
 
     let existing: Vec<String> = tables_result
         .rows

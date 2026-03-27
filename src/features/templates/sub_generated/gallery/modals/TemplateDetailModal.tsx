@@ -80,7 +80,7 @@ export function TemplateDetailModal({
       onClose={onClose}
       titleId="template-detail-title"
       maxWidthClass="max-w-7xl"
-      panelClassName="h-[calc(100vh-2rem)] bg-background border border-primary/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      panelClassName="h-[calc(100vh-2rem)] bg-background border border-primary/10 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
     >
         {/* Header with gradient accent */}
         <div className="relative flex-shrink-0 overflow-hidden">
@@ -187,7 +187,7 @@ export function TemplateDetailModal({
                   variant="secondary"
                   size="sm"
                   icon={<Download className="w-4 h-4" />}
-                  className="bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 shadow-lg shadow-violet-500/5"
+                  className="bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 shadow-elevation-3 shadow-violet-500/5"
                   data-testid="button-adopt-template"
                 >
                   Adopt as Persona
@@ -201,7 +201,7 @@ export function TemplateDetailModal({
                     variant="secondary"
                     size="sm"
                     icon={<Play className="w-4 h-4" />}
-                    className="bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 shadow-lg shadow-emerald-500/5"
+                    className="bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 shadow-elevation-3 shadow-emerald-500/5"
                   >
                     Try It
                   </Button>

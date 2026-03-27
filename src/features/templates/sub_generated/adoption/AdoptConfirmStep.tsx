@@ -129,7 +129,7 @@ export function AdoptConfirmStep({
             <motion.div
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
-              className="w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-lg"
+              className="w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-elevation-3"
               style={{
                 backgroundColor: `${draft.color ?? DEFAULT_ACCENT}18`,
                 borderColor: `${draft.color ?? DEFAULT_ACCENT}30`,

@@ -1,42 +1,36 @@
 import { useEffect, useRef, useState } from 'react';
-
-function easeOut(t: number): number {
-  return 1 - (1 - t) ** 3;
-}
+import {
+  registerAnimation,
+  setAnimationTarget,
+  unregisterAnimation,
+} from '@/lib/utils/rafAnimationEngine';
 
 /**
- * Animates a number from its previous value to the target using requestAnimationFrame.
- * Returns the current interpolated value.
+ * Animates a number from its previous value to the target using a shared rAF spring loop.
+ * Returns the current interpolated value with a smooth ease-out feel (~600ms settling).
+ *
+ * Note: This hook still uses setState for the return value since the caller needs
+ * the numeric value in render. For DOM-only updates prefer AnimatedCounter directly.
+ * The benefit here is sharing one rAF loop instead of N independent spring subscriptions.
  */
-export function useAnimatedNumber(target: number, duration = 400): number {
+export function useAnimatedNumber(target: number): number {
   const [display, setDisplay] = useState(target);
-  const prevRef = useRef(target);
-  const rafRef = useRef<number | null>(null);
+  const keyRef = useRef<symbol | null>(null);
 
   useEffect(() => {
-    const from = prevRef.current;
-    prevRef.current = target;
-
-    if (from === target) return;
-
-    const start = performance.now();
-
-    function tick(now: number) {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = easeOut(progress);
-      setDisplay(from + (target - from) * eased);
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    }
-
-    rafRef.current = requestAnimationFrame(tick);
-
+    const key = registerAnimation(target, (v) => setDisplay(v));
+    keyRef.current = key;
     return () => {
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      unregisterAnimation(key);
+      keyRef.current = null;
     };
-  }, [target, duration]);
+  }, []);
+
+  useEffect(() => {
+    if (keyRef.current) {
+      setAnimationTarget(keyRef.current, target);
+    }
+  }, [target]);
 
   return display;
 }

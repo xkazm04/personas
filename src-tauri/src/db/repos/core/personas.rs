@@ -15,6 +15,29 @@ use crate::error::AppError;
 /// rotation issues before users report broken model configs.
 static DECRYPTION_FAILURE_COUNT: AtomicU64 = AtomicU64::new(0);
 
+// ---------------------------------------------------------------------------
+// Persona health / trust thresholds (single source of truth)
+//
+// Frontend mirror: src/lib/personas/personaThresholds.ts
+// Keep both files in sync when changing any value.
+// ---------------------------------------------------------------------------
+
+/// Failure ratio at or above which a persona is classified as "failing".
+/// Below this (but > 0) the persona is "degraded"; exactly 0 is "healthy".
+const HEALTH_FAILING_RATIO: f64 = 0.6;
+
+/// Trust score component weights (must sum to 100).
+const TRUST_W_SUCCESS: f64 = 50.0;
+const TRUST_W_COST: f64 = 20.0;
+const TRUST_W_HEALING: f64 = 15.0;
+const TRUST_W_VOLUME: f64 = 15.0;
+
+/// Healing penalty per consecutive failure (score = 1.0 − failures × this).
+const HEALING_PENALTY_PER_FAILURE: f64 = 0.2;
+
+/// Volume bonus reaches 1.0 at this many terminal executions.
+const VOLUME_FULL_CREDIT_RUNS: f64 = 20.0;
+
 // -- Model profile auth_token encryption helpers -----------------------------
 
 /// Encrypt the `auth_token` field inside a model_profile JSON string before DB storage.
@@ -214,6 +237,14 @@ fn validate_max_concurrent(v: i32) -> Result<(), AppError> {
 fn validate_timeout_ms(v: i32) -> Result<(), AppError> {
     if v < 1000 {
         return Err(AppError::Validation("timeout_ms must be >= 1000".into()));
+    }
+    let ceiling = crate::engine::ENGINE_MAX_EXECUTION_MS;
+    if v > ceiling {
+        return Err(AppError::Validation(format!(
+            "timeout_ms must be <= {} (engine ceiling is {} minutes)",
+            ceiling,
+            ceiling / 60_000,
+        )));
     }
     Ok(())
 }
@@ -436,34 +467,38 @@ fn row_to_persona_redacted(row: &Row) -> rusqlite::Result<Persona> {
 
 #[instrument(skip(pool))]
 pub fn get_all(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
-    let start = Instant::now();
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare("SELECT * FROM personas ORDER BY created_at DESC")?;
-    let rows = stmt.query_map([], row_to_persona_redacted)?;
-    let result = collect_rows(rows, "personas::get_all");
-    let elapsed_ms = start.elapsed().as_millis() as u64;
-    tracing::debug!(elapsed_ms, count = result.len(), "personas::get_all");
-    if elapsed_ms > 100 {
-        tracing::warn!(elapsed_ms, "personas::get_all exceeded 100ms threshold");
-    }
-    Ok(result)
+    timed_query!("personas", "personas::get_all", {
+        let start = Instant::now();
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare("SELECT * FROM personas ORDER BY created_at DESC")?;
+        let rows = stmt.query_map([], row_to_persona_redacted)?;
+        let result = collect_rows(rows, "personas::get_all");
+        let elapsed_ms = start.elapsed().as_millis() as u64;
+        tracing::debug!(elapsed_ms, count = result.len(), "personas::get_all");
+        if elapsed_ms > 100 {
+            tracing::warn!(elapsed_ms, "personas::get_all exceeded 100ms threshold");
+        }
+        Ok(result)
+    })
 }
 
 #[instrument(skip(pool))]
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
-    let start = Instant::now();
-    let conn = pool.get()?;
-    let result = conn.query_row("SELECT * FROM personas WHERE id = ?1", params![id], row_to_persona)
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Persona {id}")),
-            other => AppError::Database(other),
-        });
-    let elapsed_ms = start.elapsed().as_millis() as u64;
-    tracing::debug!(elapsed_ms, persona_id = %id, "personas::get_by_id");
-    if elapsed_ms > 100 {
-        tracing::warn!(elapsed_ms, persona_id = %id, "personas::get_by_id exceeded 100ms threshold");
-    }
-    result
+    timed_query!("personas", "personas::get_by_id", {
+        let start = Instant::now();
+        let conn = pool.get()?;
+        let result = conn.query_row("SELECT * FROM personas WHERE id = ?1", params![id], row_to_persona)
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Persona {id}")),
+                other => AppError::Database(other),
+            });
+        let elapsed_ms = start.elapsed().as_millis() as u64;
+        tracing::debug!(elapsed_ms, persona_id = %id, "personas::get_by_id");
+        if elapsed_ms > 100 {
+            tracing::warn!(elapsed_ms, persona_id = %id, "personas::get_by_id exceeded 100ms threshold");
+        }
+        result
+    })
 }
 
 /// Bulk-fetch personas by a list of IDs in a single query.
@@ -471,203 +506,213 @@ pub fn get_by_ids(pool: &DbPool, ids: &[String]) -> Result<Vec<Persona>, AppErro
     if ids.is_empty() {
         return Ok(Vec::new());
     }
-    let conn = pool.get()?;
-    let placeholders: Vec<String> = ids
-        .iter()
-        .enumerate()
-        .map(|(i, _)| format!("?{}", i + 1))
-        .collect();
-    let sql = format!(
-        "SELECT * FROM personas WHERE id IN ({})",
-        placeholders.join(", ")
-    );
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> = ids
-        .iter()
-        .map(|s| s as &dyn rusqlite::types::ToSql)
-        .collect();
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_to_persona)?;
-    Ok(collect_rows(rows, "personas::get_by_ids"))
+    timed_query!("personas", "personas::get_by_ids", {
+        let conn = pool.get()?;
+        let placeholders: Vec<String> = ids
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("?{}", i + 1))
+            .collect();
+        let sql = format!(
+            "SELECT * FROM personas WHERE id IN ({})",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = ids
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), row_to_persona)?;
+        Ok(collect_rows(rows, "personas::get_by_ids"))
+    })
 }
 
 #[instrument(skip(pool))]
 pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
-    let start = Instant::now();
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare("SELECT * FROM personas WHERE enabled = 1 ORDER BY name")?;
-    let rows = stmt.query_map([], row_to_persona)?;
-    let result = collect_rows(rows, "personas::get_enabled");
-    let elapsed_ms = start.elapsed().as_millis() as u64;
-    tracing::debug!(elapsed_ms, count = result.len(), "personas::get_enabled");
-    if elapsed_ms > 100 {
-        tracing::warn!(elapsed_ms, "personas::get_enabled exceeded 100ms threshold");
-    }
-    Ok(result)
+    timed_query!("personas", "personas::get_enabled", {
+        let start = Instant::now();
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare("SELECT * FROM personas WHERE enabled = 1 ORDER BY name")?;
+        let rows = stmt.query_map([], row_to_persona)?;
+        let result = collect_rows(rows, "personas::get_enabled");
+        let elapsed_ms = start.elapsed().as_millis() as u64;
+        tracing::debug!(elapsed_ms, count = result.len(), "personas::get_enabled");
+        if elapsed_ms > 100 {
+            tracing::warn!(elapsed_ms, "personas::get_enabled exceeded 100ms threshold");
+        }
+        Ok(result)
+    })
 }
 
 #[instrument(skip(pool, input), fields(persona_name = %input.name))]
 pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppError> {
-    validate_name(&input.name)?;
-    validate_system_prompt(&input.system_prompt)?;
-    if let Some(ref sp) = input.structured_prompt { validate_structured_prompt(sp)?; }
-    if let Some(v) = input.max_concurrent { validate_max_concurrent(v)?; }
-    if let Some(v) = input.timeout_ms { validate_timeout_ms(v)?; }
-    if let Some(v) = input.max_budget_usd { validate_max_budget_usd(v)?; }
-    if let Some(v) = input.max_turns { validate_max_turns(v)?; }
+    timed_query!("personas", "personas::create", {
+        validate_name(&input.name)?;
+        validate_system_prompt(&input.system_prompt)?;
+        if let Some(ref sp) = input.structured_prompt { validate_structured_prompt(sp)?; }
+        if let Some(v) = input.max_concurrent { validate_max_concurrent(v)?; }
+        if let Some(v) = input.timeout_ms { validate_timeout_ms(v)?; }
+        if let Some(v) = input.max_budget_usd { validate_max_budget_usd(v)?; }
+        if let Some(v) = input.max_turns { validate_max_turns(v)?; }
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let project_id = input.project_id.unwrap_or_else(|| "default".into());
-    let enabled = input.enabled.unwrap_or(true) as i32;
-    let sensitive = 0i32;
-    let max_concurrent = input.max_concurrent.unwrap_or(4);
-    let timeout_ms = input.timeout_ms.unwrap_or(600_000);
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let project_id = input.project_id.unwrap_or_else(|| "default".into());
+        let enabled = input.enabled.unwrap_or(true) as i32;
+        let sensitive = 0i32;
+        let max_concurrent = input.max_concurrent.unwrap_or(4);
+        let timeout_ms = input.timeout_ms.unwrap_or(600_000);
 
-    if let Some(ref channels_json) = input.notification_channels {
-        validate_notification_channels(channels_json)?;
-    }
+        if let Some(ref channels_json) = input.notification_channels {
+            validate_notification_channels(channels_json)?;
+        }
 
-    let encrypted_profile = encrypt_input_profile(&input.model_profile)?;
-    let encrypted_channels = match &input.notification_channels {
-        Some(json) if !json.trim().is_empty() => Some(encrypt_notification_channels(json)?),
-        other => other.clone(),
-    };
+        let encrypted_profile = encrypt_input_profile(&input.model_profile)?;
+        let encrypted_channels = match &input.notification_channels {
+            Some(json) if !json.trim().is_empty() => Some(encrypt_notification_channels(json)?),
+            other => other.clone(),
+        };
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO personas
-         (id, project_id, name, description, system_prompt, structured_prompt,
-          icon, color, enabled, sensitive, max_concurrent, timeout_ms,
-          model_profile, max_budget_usd, max_turns, design_context, group_id,
-          notification_channels, created_at, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)",
-        params![
-            id, project_id, input.name, input.description, input.system_prompt,
-            input.structured_prompt, input.icon, input.color, enabled, sensitive,
-            max_concurrent, timeout_ms, encrypted_profile,
-            input.max_budget_usd, input.max_turns, input.design_context,
-            input.group_id, encrypted_channels, now,
-        ],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO personas
+             (id, project_id, name, description, system_prompt, structured_prompt,
+              icon, color, enabled, sensitive, max_concurrent, timeout_ms,
+              model_profile, max_budget_usd, max_turns, design_context, group_id,
+              notification_channels, created_at, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)",
+            params![
+                id, project_id, input.name, input.description, input.system_prompt,
+                input.structured_prompt, input.icon, input.color, enabled, sensitive,
+                max_concurrent, timeout_ms, encrypted_profile,
+                input.max_budget_usd, input.max_turns, input.design_context,
+                input.group_id, encrypted_channels, now,
+            ],
+        )?;
 
-    get_by_id(pool, &id)
+        get_by_id(pool, &id)
+    })
 }
 
 #[instrument(skip(pool, input))]
 pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Persona, AppError> {
-    // Verify exists
-    let existing = get_by_id(pool, id)?;
+    timed_query!("personas", "personas::update", {
+        // Verify exists
+        let existing = get_by_id(pool, id)?;
 
-    // Auto-version if structured_prompt is changing
-    if let Some(ref new_sp) = input.structured_prompt {
-        let changed = match (&existing.structured_prompt, new_sp.as_deref()) {
-            (None, None) => false,
-            (Some(old), Some(new)) => old != new,
-            _ => true,
-        };
-        if changed {
-            let _ = crate::db::repos::execution::metrics::create_prompt_version_if_changed(
-                pool,
-                id,
-                new_sp.clone(),
-                input.system_prompt.clone(),
-            );
+        // Auto-version if structured_prompt is changing
+        if let Some(ref new_sp) = input.structured_prompt {
+            let changed = match (&existing.structured_prompt, new_sp.as_deref()) {
+                (None, None) => false,
+                (Some(old), Some(new)) => old != new,
+                _ => true,
+            };
+            if changed {
+                let _ = crate::db::repos::execution::metrics::create_prompt_version_if_changed(
+                    pool,
+                    id,
+                    new_sp.clone(),
+                    input.system_prompt.clone(),
+                );
+            }
         }
-    }
 
-    // Validate fields when provided
-    if let Some(ref name) = input.name { validate_name(name)?; }
-    if let Some(ref prompt) = input.system_prompt { validate_system_prompt(prompt)?; }
-    if let Some(Some(ref sp)) = input.structured_prompt { validate_structured_prompt(sp)?; }
-    if let Some(v) = input.max_concurrent { validate_max_concurrent(v)?; }
-    if let Some(v) = input.timeout_ms { validate_timeout_ms(v)?; }
-    if let Some(Some(v)) = input.max_budget_usd { validate_max_budget_usd(v)?; }
-    if let Some(Some(v)) = input.max_turns { validate_max_turns(v)?; }
-    if let Some(ref channels_json) = input.notification_channels {
-        validate_notification_channels(channels_json)?;
-    }
+        // Validate fields when provided
+        if let Some(ref name) = input.name { validate_name(name)?; }
+        if let Some(ref prompt) = input.system_prompt { validate_system_prompt(prompt)?; }
+        if let Some(Some(ref sp)) = input.structured_prompt { validate_structured_prompt(sp)?; }
+        if let Some(v) = input.max_concurrent { validate_max_concurrent(v)?; }
+        if let Some(v) = input.timeout_ms { validate_timeout_ms(v)?; }
+        if let Some(Some(v)) = input.max_budget_usd { validate_max_budget_usd(v)?; }
+        if let Some(Some(v)) = input.max_turns { validate_max_turns(v)?; }
+        if let Some(ref channels_json) = input.notification_channels {
+            validate_notification_channels(channels_json)?;
+        }
 
-    // Encrypt auth_token inside model_profile before storing
-    let encrypted_profile = encrypt_update_profile(&input.model_profile)?;
+        // Encrypt auth_token inside model_profile before storing
+        let encrypted_profile = encrypt_update_profile(&input.model_profile)?;
 
-    // Encrypt sensitive notification channel secrets before storing
-    let encrypted_channels = match &input.notification_channels {
-        Some(json) if !json.trim().is_empty() => Some(encrypt_notification_channels(json)?),
-        other => other.clone(),
-    };
+        // Encrypt sensitive notification channel secrets before storing
+        let encrypted_channels = match &input.notification_channels {
+            Some(json) if !json.trim().is_empty() => Some(encrypt_notification_channels(json)?),
+            other => other.clone(),
+        };
 
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    // Build dynamic SET clause
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
+        // Build dynamic SET clause
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut param_idx = 2u32;
 
-    push_field!(input.name, "name", sets, param_idx);
-    push_field!(input.description, "description", sets, param_idx);
-    push_field!(input.system_prompt, "system_prompt", sets, param_idx);
-    push_field!(input.structured_prompt, "structured_prompt", sets, param_idx);
-    push_field!(input.icon, "icon", sets, param_idx);
-    push_field!(input.color, "color", sets, param_idx);
-    push_field!(input.enabled, "enabled", sets, param_idx);
-    push_field!(input.sensitive, "sensitive", sets, param_idx);
-    push_field!(input.headless, "headless", sets, param_idx);
-    push_field!(input.max_concurrent, "max_concurrent", sets, param_idx);
-    push_field!(input.timeout_ms, "timeout_ms", sets, param_idx);
-    push_field!(encrypted_channels, "notification_channels", sets, param_idx);
-    push_field!(input.last_design_result, "last_design_result", sets, param_idx);
-    push_field!(encrypted_profile, "model_profile", sets, param_idx);
-    push_field!(input.max_budget_usd, "max_budget_usd", sets, param_idx);
-    push_field!(input.max_turns, "max_turns", sets, param_idx);
-    push_field!(input.design_context, "design_context", sets, param_idx);
-    push_field!(input.group_id, "group_id", sets, param_idx);
-    push_field!(input.parameters, "parameters", sets, param_idx);
+        push_field!(input.name, "name", sets, param_idx);
+        push_field!(input.description, "description", sets, param_idx);
+        push_field!(input.system_prompt, "system_prompt", sets, param_idx);
+        push_field!(input.structured_prompt, "structured_prompt", sets, param_idx);
+        push_field!(input.icon, "icon", sets, param_idx);
+        push_field!(input.color, "color", sets, param_idx);
+        push_field!(input.enabled, "enabled", sets, param_idx);
+        push_field!(input.sensitive, "sensitive", sets, param_idx);
+        push_field!(input.headless, "headless", sets, param_idx);
+        push_field!(input.max_concurrent, "max_concurrent", sets, param_idx);
+        push_field!(input.timeout_ms, "timeout_ms", sets, param_idx);
+        push_field!(encrypted_channels, "notification_channels", sets, param_idx);
+        push_field!(input.last_design_result, "last_design_result", sets, param_idx);
+        push_field!(encrypted_profile, "model_profile", sets, param_idx);
+        push_field!(input.max_budget_usd, "max_budget_usd", sets, param_idx);
+        push_field!(input.max_turns, "max_turns", sets, param_idx);
+        push_field!(input.design_context, "design_context", sets, param_idx);
+        push_field!(input.group_id, "group_id", sets, param_idx);
+        push_field!(input.parameters, "parameters", sets, param_idx);
 
-    let sql = format!(
-        "UPDATE personas SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE personas SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    // Use a boxed params approach to handle dynamic binding
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        // Use a boxed params approach to handle dynamic binding
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-    if let Some(ref v) = input.name { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.description { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.system_prompt { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.structured_prompt { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.icon { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
-    if let Some(v) = input.enabled { param_values.push(Box::new(v as i32)); }
-    if let Some(v) = input.sensitive { param_values.push(Box::new(v as i32)); }
-    if let Some(v) = input.headless { param_values.push(Box::new(v as i32)); }
-    if let Some(v) = input.max_concurrent { param_values.push(Box::new(v)); }
-    if let Some(v) = input.timeout_ms { param_values.push(Box::new(v)); }
-    if let Some(ref v) = encrypted_channels { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.last_design_result { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = encrypted_profile { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.max_budget_usd { param_values.push(Box::new(*v)); }
-    if let Some(ref v) = input.max_turns { param_values.push(Box::new(*v)); }
-    if let Some(ref v) = input.design_context { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.group_id { param_values.push(Box::new(v.clone())); }
-    if let Some(ref v) = input.parameters { param_values.push(Box::new(v.clone())); }
-    param_values.push(Box::new(id.to_string()));
+        if let Some(ref v) = input.name { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.description { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.system_prompt { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.structured_prompt { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.icon { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
+        if let Some(v) = input.enabled { param_values.push(Box::new(v as i32)); }
+        if let Some(v) = input.sensitive { param_values.push(Box::new(v as i32)); }
+        if let Some(v) = input.headless { param_values.push(Box::new(v as i32)); }
+        if let Some(v) = input.max_concurrent { param_values.push(Box::new(v)); }
+        if let Some(v) = input.timeout_ms { param_values.push(Box::new(v)); }
+        if let Some(ref v) = encrypted_channels { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.last_design_result { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = encrypted_profile { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.max_budget_usd { param_values.push(Box::new(*v)); }
+        if let Some(ref v) = input.max_turns { param_values.push(Box::new(*v)); }
+        if let Some(ref v) = input.design_context { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.group_id { param_values.push(Box::new(v.clone())); }
+        if let Some(ref v) = input.parameters { param_values.push(Box::new(v.clone())); }
+        param_values.push(Box::new(id.to_string()));
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
 
-    get_by_id(pool, id)
+        get_by_id(pool, id)
+    })
 }
 
 /// Lightweight name-only update used by build sessions to rename a persona from the agent_ir.
 pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> {
-    validate_name(name)?;
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE personas SET name = ?1, updated_at = datetime('now') WHERE id = ?2",
-        params![name, id],
-    )?;
-    Ok(())
+    timed_query!("personas", "personas::update_name", {
+        validate_name(name)?;
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE personas SET name = ?1, updated_at = datetime('now') WHERE id = ?2",
+            params![name, id],
+        )?;
+        Ok(())
+    })
 }
 
 /// Batch-fetch sidebar summary data (enabled trigger count + last execution time + health)
@@ -676,6 +721,7 @@ pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> 
 /// now uses 1 base query + 3 batched queries across all personas.
 #[instrument(skip(pool))]
 pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
+    timed_query!("personas", "personas::get_summaries", {
     let start = Instant::now();
     let conn = pool.get()?;
 
@@ -791,7 +837,7 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
             let fail_ratio = fail_count / total_recent as f64;
             if fail_ratio == 0.0 {
                 "healthy"
-            } else if fail_ratio >= 0.6 {
+            } else if fail_ratio >= HEALTH_FAILING_RATIO {
                 "failing"
             } else {
                 "degraded"
@@ -831,6 +877,7 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     }
 
     Ok(summaries)
+    })
 }
 
 /// Compute a trust score (0.0–100.0) for a persona from its recent execution history.
@@ -841,136 +888,152 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
 /// - **Healing frequency** (weight 0.15): penalised by consecutive failures
 /// - **Volume bonus** (weight 0.15): more executions = more confidence in the score
 pub fn compute_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
-    let conn = pool.get()?;
+    timed_query!("personas", "personas::compute_trust_score", {
+        let conn = pool.get()?;
 
-    // Last 50 terminal executions
-    let mut stmt = conn.prepare(
-        "SELECT status, cost_usd FROM persona_executions
-         WHERE persona_id = ?1 AND status IN ('completed', 'failed')
-         ORDER BY created_at DESC LIMIT 50",
-    )?;
-    let rows: Vec<(String, f64)> = stmt
-        .query_map(params![persona_id], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, Option<f64>>(1)?.unwrap_or(0.0)))
-        })?
-        .filter_map(|r| r.ok())
-        .collect();
-
-    if rows.is_empty() {
-        return Ok(0.0);
-    }
-
-    let total = rows.len() as f64;
-    let successes = rows.iter().filter(|(s, _)| s == "completed").count() as f64;
-    let success_rate = successes / total;
-
-    // Cost discipline: compare monthly spend vs budget
-    let budget: Option<f64> = conn
-        .query_row(
-            "SELECT max_budget_usd FROM personas WHERE id = ?1",
-            params![persona_id],
-            |row| row.get(0),
-        )
-        .unwrap_or(None);
-    let monthly_spend: f64 = conn
-        .query_row(
-            "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
-             WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
-             AND created_at >= datetime('now', 'start of month')",
-            params![persona_id],
-            |row| row.get(0),
-        )
-        .unwrap_or(0.0);
-    let cost_score = match budget {
-        Some(b) if b > 0.0 => (1.0 - (monthly_spend / b).min(2.0) / 2.0).max(0.0),
-        _ => 1.0, // no budget set = full marks
-    };
-
-    // Healing frequency: penalise consecutive failures
-    let consecutive_failures: u32 = {
-        let mut stmt2 = conn.prepare(
-            "SELECT status FROM persona_executions
-             WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT 20",
+        // Last 50 terminal executions
+        let mut stmt = conn.prepare(
+            "SELECT status, cost_usd FROM persona_executions
+             WHERE persona_id = ?1 AND status IN ('completed', 'failed')
+             ORDER BY created_at DESC LIMIT 50",
         )?;
-        let statuses: Vec<String> = stmt2
-            .query_map(params![persona_id], |row| row.get::<_, String>(0))?
+        let rows: Vec<(String, f64)> = stmt
+            .query_map(params![persona_id], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, Option<f64>>(1)?.unwrap_or(0.0)))
+            })?
             .filter_map(|r| r.ok())
             .collect();
-        statuses.iter().take_while(|s| s.as_str() == "failed").count() as u32
-    };
-    let healing_score = (1.0 - (consecutive_failures as f64 * 0.2)).max(0.0);
 
-    // Volume bonus: more executions build confidence (sigmoid-like curve capped at 1.0)
-    let volume_score = (total / 20.0).min(1.0);
+        if rows.is_empty() {
+            return Ok(0.0);
+        }
 
-    // Weighted combination
-    let score = (success_rate * 50.0)
-        + (cost_score * 20.0)
-        + (healing_score * 15.0)
-        + (volume_score * 15.0);
+        let total = rows.len() as f64;
+        let successes = rows.iter().filter(|(s, _)| s == "completed").count() as f64;
+        let success_rate = successes / total;
 
-    Ok(score.clamp(0.0, 100.0))
+        // Cost discipline: compare monthly spend vs budget
+        let budget: Option<f64> = conn
+            .query_row(
+                "SELECT max_budget_usd FROM personas WHERE id = ?1",
+                params![persona_id],
+                |row| row.get(0),
+            )
+            .unwrap_or(None);
+        let monthly_spend: f64 = conn
+            .query_row(
+                "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
+                 WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
+                 AND created_at >= datetime('now', 'start of month')",
+                params![persona_id],
+                |row| row.get(0),
+            )
+            .unwrap_or(0.0);
+        let cost_score = match budget {
+            Some(b) if b > 0.0 => (1.0 - (monthly_spend / b).min(2.0) / 2.0).max(0.0),
+            _ => 1.0, // no budget set = full marks
+        };
+
+        // Healing frequency: penalise consecutive failures
+        let consecutive_failures: u32 = {
+            let mut stmt2 = conn.prepare(
+                "SELECT status FROM persona_executions
+                 WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT 20",
+            )?;
+            let statuses: Vec<String> = stmt2
+                .query_map(params![persona_id], |row| row.get::<_, String>(0))?
+                .filter_map(|r| r.ok())
+                .collect();
+            statuses.iter().take_while(|s| s.as_str() == "failed").count() as u32
+        };
+        let healing_score = (1.0 - (consecutive_failures as f64 * HEALING_PENALTY_PER_FAILURE)).max(0.0);
+
+        // Volume bonus: more executions build confidence (sigmoid-like curve capped at 1.0)
+        let volume_score = (total / VOLUME_FULL_CREDIT_RUNS).min(1.0);
+
+        // Weighted combination
+        let score = (success_rate * TRUST_W_SUCCESS)
+            + (cost_score * TRUST_W_COST)
+            + (healing_score * TRUST_W_HEALING)
+            + (volume_score * TRUST_W_VOLUME);
+
+        Ok(score.clamp(0.0, 100.0))
+    })
 }
 
 /// Recompute and persist the trust score for a persona.
 /// Called after every execution completion.
 pub fn refresh_trust_score(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
-    let score = compute_trust_score(pool, persona_id)?;
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE personas SET trust_score = ?1, updated_at = datetime('now') WHERE id = ?2",
-        params![score, persona_id],
-    )?;
-    tracing::debug!(persona_id, trust_score = score, "Trust score updated");
-    Ok(score)
+    timed_query!("personas", "personas::refresh_trust_score", {
+        let score = compute_trust_score(pool, persona_id)?;
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE personas SET trust_score = ?1, updated_at = datetime('now') WHERE id = ?2",
+            params![score, persona_id],
+        )?;
+        tracing::debug!(persona_id, trust_score = score, "Trust score updated");
+        Ok(score)
+    })
 }
 
 /// Duplicate a persona server-side, preserving the encrypted model_profile
 /// so the BYOM auth token is never exposed to (or lost by) the frontend.
 #[instrument(skip(pool))]
 pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<Persona, AppError> {
-    let conn = pool.get()?;
-    let new_id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
+    timed_query!("personas", "personas::duplicate", {
+        let conn = pool.get()?;
+        let new_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
 
-    // Copy all fields from source, generating a new id/timestamps and appending " (Copy)" to name.
-    // model_profile is copied as-is (already encrypted) so the auth token is preserved.
-    conn.execute(
-        "INSERT INTO personas
-         (id, project_id, name, description, system_prompt, structured_prompt,
-          icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
-          model_profile, max_budget_usd, max_turns, design_context, group_id,
-          notification_channels, created_at, updated_at)
-         SELECT ?1, project_id, name || ' (Copy)', description, system_prompt, structured_prompt,
-                icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
-                model_profile, max_budget_usd, max_turns, design_context, group_id,
-                notification_channels, ?2, ?2
-         FROM personas WHERE id = ?3",
-        params![new_id, now, source_id],
-    )?;
+        // Copy all fields from source, generating a new id/timestamps and appending " (Copy)" to name.
+        // model_profile is copied as-is (already encrypted) so the auth token is preserved.
+        conn.execute(
+            "INSERT INTO personas
+             (id, project_id, name, description, system_prompt, structured_prompt,
+              icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
+              model_profile, max_budget_usd, max_turns, design_context, group_id,
+              notification_channels, parameters, trust_level, trust_origin,
+              trust_verified_at, trust_score, source_review_id, last_design_result,
+              created_at, updated_at)
+             SELECT ?1, project_id, name || ' (Copy)', description, system_prompt, structured_prompt,
+                    icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
+                    model_profile, max_budget_usd, max_turns, design_context, group_id,
+                    notification_channels, parameters, trust_level, trust_origin,
+                    trust_verified_at, trust_score, source_review_id, last_design_result,
+                    ?2, ?2
+             FROM personas WHERE id = ?3",
+            params![new_id, now, source_id],
+        )?;
 
-    get_by_id(pool, &new_id)
+        get_by_id(pool, &new_id)
+    })
 }
 
 #[instrument(skip(pool))]
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
+    timed_query!("personas", "personas::delete", {
+        let conn = pool.get()?;
 
-    // Clean up records that lack ON DELETE CASCADE foreign keys.
-    // Tables with CASCADE (persona_tools, persona_triggers, persona_executions,
-    // persona_event_subscriptions, etc.) are handled automatically by SQLite.
-    conn.execute("DELETE FROM persona_memories WHERE persona_id = ?1", params![id])?;
-    conn.execute("DELETE FROM persona_messages WHERE persona_id = ?1", params![id])?;
-    conn.execute("DELETE FROM persona_events WHERE source_id = ?1 OR target_persona_id = ?1", params![id, id])?;
-    conn.execute("DELETE FROM persona_healing_issues WHERE persona_id = ?1", params![id])?;
+        let tx = conn.unchecked_transaction()?;
 
-    let rows = conn.execute("DELETE FROM personas WHERE id = ?1", params![id])?;
-    Ok(rows > 0)
+        // Clean up records that lack ON DELETE CASCADE foreign keys.
+        // Tables with CASCADE (persona_tools, persona_triggers, persona_executions,
+        // persona_event_subscriptions, etc.) are handled automatically by SQLite.
+        tx.execute("DELETE FROM persona_memories WHERE persona_id = ?1", params![id])?;
+        tx.execute("DELETE FROM persona_messages WHERE persona_id = ?1", params![id])?;
+        tx.execute("DELETE FROM persona_events WHERE source_id = ?1 OR target_persona_id = ?1", params![id, id])?;
+        tx.execute("DELETE FROM persona_healing_issues WHERE persona_id = ?1", params![id])?;
+
+        let rows = tx.execute("DELETE FROM personas WHERE id = ?1", params![id])?;
+        tx.commit()?;
+        Ok(rows > 0)
+    })
 }
 
 /// Returns a summary of resources that will be affected by deleting a persona.
 #[instrument(skip(pool))]
 pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
+    timed_query!("personas", "personas::blast_radius", {
     let conn = pool.get()?;
     let mut impacts: Vec<(String, String)> = Vec::new();
 
@@ -1061,6 +1124,7 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
     }
 
     Ok(impacts)
+    })
 }
 
 #[cfg(test)]
@@ -1287,6 +1351,11 @@ mod tests {
         input.timeout_ms = Some(999);
         assert!(create(&pool, input).is_err());
 
+        // timeout_ms > engine ceiling
+        let mut input = base();
+        input.timeout_ms = Some(crate::engine::ENGINE_MAX_EXECUTION_MS + 1);
+        assert!(create(&pool, input).is_err());
+
         // max_budget_usd < 0
         let mut input = base();
         input.max_budget_usd = Some(-0.01);
@@ -1335,6 +1404,11 @@ mod tests {
         input.timeout_ms = Some(500);
         assert!(update(&pool, &persona.id, input).is_err());
 
+        // timeout_ms > engine ceiling
+        let mut input = base();
+        input.timeout_ms = Some(crate::engine::ENGINE_MAX_EXECUTION_MS + 1);
+        assert!(update(&pool, &persona.id, input).is_err());
+
         // max_budget_usd negative
         let mut input = base();
         input.max_budget_usd = Some(Some(-1.0));
@@ -1350,5 +1424,203 @@ mod tests {
         input.max_budget_usd = Some(None);
         input.max_turns = Some(None);
         assert!(update(&pool, &persona.id, input).is_ok());
+    }
+
+    // -----------------------------------------------------------------------
+    // Option<Option<T>> update semantics: set / clear / skip round-trip
+    // -----------------------------------------------------------------------
+
+    /// Helper: create a persona with known nullable fields populated.
+    fn create_persona_with_nullable_fields(pool: &DbPool) -> Persona {
+        create(
+            pool,
+            CreatePersonaInput {
+                name: "Nullable Agent".into(),
+                system_prompt: "Prompt.".into(),
+                project_id: None,
+                description: Some("initial description".into()),
+                structured_prompt: None,
+                icon: Some("rocket".into()),
+                color: Some("#ff0000".into()),
+                enabled: None,
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: Some(5.0),
+                max_turns: Some(10),
+                design_context: Some(r#"{"use_cases":[]}"#.into()),
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn test_option_option_set_field() {
+        let pool = init_test_db().unwrap();
+        let persona = create_persona_with_nullable_fields(&pool);
+
+        // Set description to a new value via Some(Some(v))
+        let updated = update(
+            &pool,
+            &persona.id,
+            UpdatePersonaInput {
+                description: Some(Some("new description".into())),
+                icon: Some(Some("star".into())),
+                max_budget_usd: Some(Some(10.0)),
+                max_turns: Some(Some(20)),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(updated.description.as_deref(), Some("new description"));
+        assert_eq!(updated.icon.as_deref(), Some("star"));
+        assert_eq!(updated.max_budget_usd, Some(10.0));
+        assert_eq!(updated.max_turns, Some(20));
+
+        // Verify round-trip through re-fetch
+        let fetched = get_by_id(&pool, &persona.id).unwrap();
+        assert_eq!(fetched.description.as_deref(), Some("new description"));
+        assert_eq!(fetched.icon.as_deref(), Some("star"));
+        assert_eq!(fetched.max_budget_usd, Some(10.0));
+        assert_eq!(fetched.max_turns, Some(20));
+    }
+
+    #[test]
+    fn test_option_option_clear_field_to_null() {
+        let pool = init_test_db().unwrap();
+        let persona = create_persona_with_nullable_fields(&pool);
+        assert!(persona.description.is_some(), "precondition: description is set");
+        assert!(persona.icon.is_some(), "precondition: icon is set");
+        assert!(persona.max_budget_usd.is_some(), "precondition: max_budget_usd is set");
+
+        // Clear fields by sending Some(None)
+        let updated = update(
+            &pool,
+            &persona.id,
+            UpdatePersonaInput {
+                description: Some(None),
+                icon: Some(None),
+                color: Some(None),
+                max_budget_usd: Some(None),
+                max_turns: Some(None),
+                design_context: Some(None),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(updated.description, None, "description should be cleared to NULL");
+        assert_eq!(updated.icon, None, "icon should be cleared to NULL");
+        assert_eq!(updated.color, None, "color should be cleared to NULL");
+        assert_eq!(updated.max_budget_usd, None, "max_budget_usd should be cleared to NULL");
+        assert_eq!(updated.max_turns, None, "max_turns should be cleared to NULL");
+        assert_eq!(updated.design_context, None, "design_context should be cleared to NULL");
+
+        // Verify round-trip: re-fetch confirms columns are actually NULL in DB
+        let fetched = get_by_id(&pool, &persona.id).unwrap();
+        assert_eq!(fetched.description, None);
+        assert_eq!(fetched.icon, None);
+        assert_eq!(fetched.max_budget_usd, None);
+    }
+
+    #[test]
+    fn test_option_option_skip_field() {
+        let pool = init_test_db().unwrap();
+        let persona = create_persona_with_nullable_fields(&pool);
+        let original_description = persona.description.clone();
+        let original_icon = persona.icon.clone();
+        let original_budget = persona.max_budget_usd;
+
+        // Update only the name — all Option<Option<T>> fields should be skipped (None = skip)
+        let updated = update(
+            &pool,
+            &persona.id,
+            UpdatePersonaInput {
+                name: Some("Renamed Agent".into()),
+                // All Option<Option<T>> fields left as None (default) = skip
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(updated.name, "Renamed Agent");
+        assert_eq!(updated.description, original_description, "description should be unchanged");
+        assert_eq!(updated.icon, original_icon, "icon should be unchanged");
+        assert_eq!(updated.max_budget_usd, original_budget, "max_budget_usd should be unchanged");
+    }
+
+    #[test]
+    fn test_option_option_serde_json_boundary() {
+        // Verify that serde_json deserialization of UpdatePersonaInput matches
+        // the documented contract:
+        //   - field absent (with Default) → None (skip)
+        //   - field: null               → None (skip, same as absent for standard serde)
+        //   - field: "value"            → Some(Some("value")) (set)
+        //
+        // IMPORTANT: Standard serde cannot distinguish absent vs null for
+        // Option<Option<T>>. Both produce None. The "clear" semantic (Some(None))
+        // is only achievable via Rust constructors, not via JSON. This test
+        // documents that limitation.
+
+        // Case 1: field present with value → Some(Some(value))
+        let json = serde_json::json!({
+            "name": null,
+            "description": "hello",
+            "system_prompt": null,
+            "structured_prompt": null,
+            "icon": null,
+            "color": null,
+            "enabled": null,
+            "sensitive": null,
+            "headless": null,
+            "max_concurrent": null,
+            "timeout_ms": null,
+            "notification_channels": null,
+            "last_design_result": null,
+            "model_profile": null,
+            "max_budget_usd": 5.0,
+            "max_turns": null,
+            "design_context": null,
+            "group_id": null,
+            "parameters": null
+        });
+        let input: UpdatePersonaInput = serde_json::from_value(json).unwrap();
+        assert_eq!(input.description, Some(Some("hello".into())), "value → Some(Some(v))");
+        assert_eq!(input.max_budget_usd, Some(Some(5.0)), "numeric value → Some(Some(v))");
+
+        // Case 2: field present as null → None (skip) for Option<Option<T>>
+        // This is the critical boundary: null does NOT produce Some(None) (clear)
+        // without a custom deserializer. It produces None (skip).
+        let json = serde_json::json!({
+            "name": null,
+            "description": null,
+            "system_prompt": null,
+            "structured_prompt": null,
+            "icon": null,
+            "color": null,
+            "enabled": null,
+            "sensitive": null,
+            "headless": null,
+            "max_concurrent": null,
+            "timeout_ms": null,
+            "notification_channels": null,
+            "last_design_result": null,
+            "model_profile": null,
+            "max_budget_usd": null,
+            "max_turns": null,
+            "design_context": null,
+            "group_id": null,
+            "parameters": null
+        });
+        let input: UpdatePersonaInput = serde_json::from_value(json).unwrap();
+        // With standard serde, null for Option<Option<T>> becomes None (skip), NOT Some(None) (clear).
+        // The frontend buildUpdateInput sends null for both "skip" and "clear" cases,
+        // so they are indistinguishable at the JSON boundary.
+        assert_eq!(input.description, None, "null → None (skip), not Some(None) (clear)");
+        assert_eq!(input.max_budget_usd, None, "null → None (skip)");
+        assert_eq!(input.icon, None, "null → None (skip)");
     }
 }

@@ -53,6 +53,21 @@ fn clear_backoff(trigger_id: &str) {
     }
 }
 
+/// Call `mark_triggered` and handle the backoff bookkeeping on success/failure.
+fn try_mark_triggered(
+    pool: &DbPool,
+    trigger_id: &str,
+    next: Option<String>,
+    expected: Option<&str>,
+) {
+    if let Err(e) = trigger_repo::mark_triggered(pool, trigger_id, next, expected) {
+        tracing::error!(trigger_id = %trigger_id, "mark_triggered failed: {}", e);
+        record_mark_failure(trigger_id);
+    } else {
+        clear_backoff(trigger_id);
+    }
+}
+
 /// Remove backoff entries for trigger IDs that no longer exist in the database.
 /// Called once per poll cycle to prevent unbounded growth when triggers are deleted.
 fn purge_stale_backoff(pool: &DbPool) {
@@ -155,12 +170,7 @@ pub async fn poll_due_triggers(
                 tracing::warn!(trigger_id = %trigger.id, "Polling trigger missing 'url' in config");
                 // Still mark triggered to advance next_trigger_at
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
-                    tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
-                    record_mark_failure(&trigger.id);
-                } else {
-                    clear_backoff(&trigger.id);
-                }
+                try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
                 continue;
             }
         };
@@ -173,12 +183,7 @@ pub async fn poll_due_triggers(
                 "Polling trigger URL blocked (SSRF protection): {}", reason
             );
             let next = sched_logic::compute_next_trigger_at(&trigger, now);
-            if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
-                tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
-                record_mark_failure(&trigger.id);
-            } else {
-                clear_backoff(&trigger.id);
-            }
+            try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
             continue;
         }
 
@@ -202,12 +207,7 @@ pub async fn poll_due_triggers(
                     "Polling HTTP request failed: {}", e
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                if let Err(me) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
-                    tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", me);
-                    record_mark_failure(&trigger.id);
-                } else {
-                    clear_backoff(&trigger.id);
-                }
+                try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
                 continue;
             }
         };
@@ -221,12 +221,7 @@ pub async fn poll_due_triggers(
                     "Polling: failed to read response body: {}", e
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                if let Err(me) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
-                    tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", me);
-                    record_mark_failure(&trigger.id);
-                } else {
-                    clear_backoff(&trigger.id);
-                }
+                try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
                 continue;
             }
         };
@@ -316,12 +311,7 @@ pub async fn poll_due_triggers(
             );
 
             // No content change -- still advance the schedule so we don't re-poll immediately
-            if let Err(e) = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
-                tracing::error!(trigger_id = %trigger.id, "mark_triggered failed: {}", e);
-                record_mark_failure(&trigger.id);
-            } else {
-                clear_backoff(&trigger.id);
-            }
+            try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
         }
     }
 }

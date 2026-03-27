@@ -150,9 +150,14 @@ export function useEventLog() {
   const filteredEvents = useMemo(() => {
     const hasFilters = statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim();
     if (hasFilters && serverResults.length > 0) {
+      // Pre-compute timestamps to avoid repeated Date constructions in sort comparator
+      const tsMap = new Map<string, number>();
+      for (const e of serverResults) {
+        tsMap.set(e.id, new Date(e.created_at).getTime());
+      }
       const sorted = [...serverResults].sort((a, b) => {
-        const ta = new Date(a.created_at).getTime();
-        const tb = new Date(b.created_at).getTime();
+        const ta = tsMap.get(a.id)!;
+        const tb = tsMap.get(b.id)!;
         return sortDirection === 'desc' ? tb - ta : ta - tb;
       });
       return sorted;
@@ -164,10 +169,13 @@ export function useEventLog() {
     }
 
     // No filters active — use local events
-    let events = recentEvents;
-    const sorted = [...events].sort((a, b) => {
-      const ta = new Date(a.created_at).getTime();
-      const tb = new Date(b.created_at).getTime();
+    const tsMap = new Map<string, number>();
+    for (const e of recentEvents) {
+      tsMap.set(e.id, new Date(e.created_at).getTime());
+    }
+    const sorted = [...recentEvents].sort((a, b) => {
+      const ta = tsMap.get(a.id)!;
+      const tb = tsMap.get(b.id)!;
       return sortDirection === 'desc' ? tb - ta : ta - tb;
     });
     return sorted;

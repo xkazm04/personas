@@ -22,6 +22,7 @@ export type ViewName =
   | 'add-database'
   | 'add-desktop'
   | 'add-wizard'
+  | 'add-autopilot'
   | 'workspace-connect'
   | 'foraging'
   | 'databases'
@@ -41,6 +42,7 @@ export type CredentialViewState =
   | { view: 'add-database' }
   | { view: 'add-desktop' }
   | { view: 'add-wizard' }
+  | { view: 'add-autopilot' }
   | { view: 'workspace-connect' }
   | { view: 'foraging' }
   | { view: 'databases' }
@@ -63,6 +65,7 @@ export type CredentialViewAction =
   | { type: 'GO_ADD_DATABASE' }
   | { type: 'GO_ADD_DESKTOP' }
   | { type: 'GO_ADD_WIZARD' }
+  | { type: 'GO_ADD_AUTOPILOT' }
   | { type: 'GO_WORKSPACE_CONNECT' }
   | { type: 'GO_FORAGING' }
   | { type: 'GO_DATABASES' }
@@ -82,7 +85,7 @@ export type CredentialViewAction =
 type ActionType = CredentialViewAction['type'];
 
 // Sidebar navigation actions are valid from any view
-const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES', 'GO_GRAPH'];
+const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_ADD_WIZARD', 'GO_ADD_AUTOPILOT', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES', 'GO_GRAPH'];
 
 /** View-specific transitions (in addition to global actions). */
 const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
@@ -90,13 +93,14 @@ const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
   'catalog-browse':     ['PICK_CONNECTOR', 'SET_CATALOG_SEARCH'],
   'catalog-form':       ['CANCEL_FORM', 'GO_AUTO_SETUP', 'GO_ADD_DESKTOP', 'SET_CREDENTIAL_NAME', 'SET_OAUTH_VALUES'],
   'catalog-auto-setup': ['CANCEL_FORM'],
-  'add-new':            ['GO_ADD_API_TOOL', 'GO_ADD_MCP', 'GO_ADD_CUSTOM', 'GO_ADD_DATABASE', 'GO_ADD_DESKTOP', 'GO_ADD_WIZARD', 'GO_WORKSPACE_CONNECT', 'GO_FORAGING'],
+  'add-new':            ['GO_ADD_API_TOOL', 'GO_ADD_MCP', 'GO_ADD_CUSTOM', 'GO_ADD_DATABASE', 'GO_ADD_DESKTOP', 'GO_ADD_WIZARD', 'GO_ADD_AUTOPILOT', 'GO_WORKSPACE_CONNECT', 'GO_FORAGING'],
   'add-api-tool':       [],
   'add-mcp':            [],
   'add-custom':         [],
   'add-database':       [],
   'add-desktop':        [],
   'add-wizard':         [],
+  'add-autopilot':      [],
   'workspace-connect':  [],
   'foraging':           [],
   'databases':          [],
@@ -111,13 +115,14 @@ export const credentialViewFSM = createFSM<ViewName>({
     'catalog-browse':     ['list', 'catalog-form', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
     'catalog-form':       ['list', 'catalog-browse', 'catalog-auto-setup', 'add-new', 'add-desktop', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
     'catalog-auto-setup': ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'add-new':            ['list', 'catalog-browse', 'add-api-tool', 'add-mcp', 'add-custom', 'add-database', 'add-desktop', 'add-wizard', 'workspace-connect', 'foraging', 'databases', 'graph'],
+    'add-new':            ['list', 'catalog-browse', 'add-api-tool', 'add-mcp', 'add-custom', 'add-database', 'add-desktop', 'add-wizard', 'add-autopilot', 'workspace-connect', 'foraging', 'databases', 'graph'],
     'add-api-tool':       ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
     'add-mcp':            ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
     'add-custom':         ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
     'add-database':       ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
     'add-desktop':        ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
     'add-wizard':         ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'add-autopilot':      ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
     'workspace-connect':  ['list', 'catalog-browse', 'add-new', 'add-wizard', 'databases', 'graph'],
     'foraging':           ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
     'databases':          ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'graph'],
@@ -154,6 +159,7 @@ const NAV_KEY_MAP: Record<ViewName, CredentialNavKey> = {
   'add-database':       'add-new',
   'add-desktop':        'add-new',
   'add-wizard':         'add-new',
+  'add-autopilot':      'autopilot',
   'workspace-connect':  'add-new',
   'foraging':           'add-new',
   'databases':          'databases',
@@ -181,6 +187,7 @@ const GO_ADD_CUSTOM: ActionHandler = () => ({ view: 'add-custom' });
 const GO_ADD_DATABASE: ActionHandler = () => ({ view: 'add-database' });
 const GO_ADD_DESKTOP: ActionHandler = () => ({ view: 'add-desktop' });
 const GO_ADD_WIZARD: ActionHandler = () => ({ view: 'add-wizard' });
+const GO_ADD_AUTOPILOT: ActionHandler = () => ({ view: 'add-autopilot' });
 const GO_WORKSPACE_CONNECT: ActionHandler = () => ({ view: 'workspace-connect' });
 const GO_FORAGING: ActionHandler = () => ({ view: 'foraging' });
 const GO_DATABASES: ActionHandler = () => ({ view: 'databases' });
@@ -253,6 +260,7 @@ const ACTION_HANDLERS: Record<ActionType, ActionHandler<never>> = {
   GO_ADD_DATABASE: GO_ADD_DATABASE as ActionHandler<never>,
   GO_ADD_DESKTOP: GO_ADD_DESKTOP as ActionHandler<never>,
   GO_ADD_WIZARD: GO_ADD_WIZARD as ActionHandler<never>,
+  GO_ADD_AUTOPILOT: GO_ADD_AUTOPILOT as ActionHandler<never>,
   GO_WORKSPACE_CONNECT: GO_WORKSPACE_CONNECT as ActionHandler<never>,
   GO_FORAGING: GO_FORAGING as ActionHandler<never>,
   GO_DATABASES: GO_DATABASES as ActionHandler<never>,
@@ -317,6 +325,8 @@ export function getBreadcrumbs(state: CredentialViewState): BreadcrumbSegment[] 
       return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Desktop App', action: null }];
     case 'add-wizard':
       return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Setup Wizard', action: null }];
+    case 'add-autopilot':
+      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'API Autopilot', action: null }];
     case 'workspace-connect':
       return [root, { label: 'Workspace Connect', action: null }];
     case 'foraging':
@@ -356,6 +366,9 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
         break;
       case 'graph':
         dispatch({ type: 'GO_GRAPH' });
+        break;
+      case 'autopilot':
+        dispatch({ type: 'GO_ADD_AUTOPILOT' });
         break;
     }
   }, []);

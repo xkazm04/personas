@@ -98,6 +98,10 @@ pub struct PersonaDetail {
     pub triggers: Vec<PersonaTrigger>,
     pub subscriptions: Vec<PersonaEventSubscription>,
     pub automations: Vec<PersonaAutomation>,
+    /// Non-empty when one or more sub-resource queries failed.
+    /// Each entry describes which resource could not be loaded.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<String>,
 }
 
 #[tauri::command]
@@ -107,16 +111,52 @@ pub fn get_persona_detail(
 ) -> Result<PersonaDetail, AppError> {
     require_auth_sync(&state)?;
     let persona = repo::get_by_id(&state.db, &id)?;
-    let tools = tool_repo::get_tools_for_persona(&state.db, &id).unwrap_or_default();
-    let triggers = trigger_repo::get_by_persona_id(&state.db, &id).unwrap_or_default();
-    let subscriptions = event_repo::get_subscriptions_by_persona(&state.db, &id).unwrap_or_default();
-    let automations = automation_repo::get_by_persona(&state.db, &id).unwrap_or_default();
+
+    let mut warnings: Vec<String> = Vec::new();
+
+    let tools = match tool_repo::get_tools_for_persona(&state.db, &id) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(persona_id = %id, error = %e, "Failed to load tools for persona");
+            warnings.push("Tools could not be loaded".into());
+            Vec::new()
+        }
+    };
+
+    let triggers = match trigger_repo::get_by_persona_id(&state.db, &id) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(persona_id = %id, error = %e, "Failed to load triggers for persona");
+            warnings.push("Triggers could not be loaded".into());
+            Vec::new()
+        }
+    };
+
+    let subscriptions = match event_repo::get_subscriptions_by_persona(&state.db, &id) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!(persona_id = %id, error = %e, "Failed to load subscriptions for persona");
+            warnings.push("Event subscriptions could not be loaded".into());
+            Vec::new()
+        }
+    };
+
+    let automations = match automation_repo::get_by_persona(&state.db, &id) {
+        Ok(a) => a,
+        Err(e) => {
+            tracing::warn!(persona_id = %id, error = %e, "Failed to load automations for persona");
+            warnings.push("Automations could not be loaded".into());
+            Vec::new()
+        }
+    };
+
     Ok(PersonaDetail {
         persona,
         tools,
         triggers,
         subscriptions,
         automations,
+        warnings,
     })
 }
 

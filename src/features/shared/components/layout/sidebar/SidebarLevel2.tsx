@@ -190,7 +190,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
           items={settingsItems}
           activeId={settingsTab}
           onSelect={(id) => setSettingsTab(id as SettingsTab)}
-          devItems={isDev ? new Set(['engine', 'byom', 'network', 'admin']) : undefined}
+          devItems={isDev ? new Set(['engine', 'byom', 'network', 'config', 'admin']) : undefined}
         />
       );
 
@@ -256,6 +256,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
         {/* All Agents */}
         <button
           onClick={() => { selectPersona(null); setAgentTab('all'); useSystemStore.getState().setIsCreatingPersona(false); }}
+          aria-current={agentTab === 'all' && !isCreatingPersona ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             agentTab === 'all' && !isCreatingPersona
               ? 'bg-primary/10 text-foreground/90'
@@ -291,9 +292,10 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
           <div className="mt-3 pt-3 border-t border-primary/10">
             <button
               onClick={() => setFavoritesCollapsed(!favoritesCollapsed)}
+              aria-expanded={!favoritesCollapsed}
               className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-amber-400/60 hover:text-amber-400/80 transition-colors"
             >
-              <Star className="w-3 h-3 fill-amber-400/60" />
+              <Star className="w-3 h-3 fill-amber-400/60" aria-hidden="true" />
               Favorites
               <span className="text-[10px] font-mono text-amber-400/40 ml-0.5">{favoritePersonas.length}</span>
               <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${favoritesCollapsed ? '-rotate-90' : ''}`} />
@@ -318,8 +320,9 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
                       className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
                       title="Remove from favorites"
+                      aria-label="Remove from favorites"
                     >
-                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" aria-hidden="true" />
                     </span>
                   </button>
                 ))}
@@ -333,9 +336,10 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
           <div className="mt-3 pt-3 border-t border-primary/10">
             <button
               onClick={() => setRecentsCollapsed(!recentsCollapsed)}
+              aria-expanded={!recentsCollapsed}
               className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-blue-400/60 hover:text-blue-400/80 transition-colors"
             >
-              <Clock className="w-3 h-3" />
+              <Clock className="w-3 h-3" aria-hidden="true" />
               Recent
               <span className="text-[10px] font-mono text-blue-400/40 ml-0.5">{recentPersonas.length}</span>
               <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${recentsCollapsed ? '-rotate-90' : ''}`} />
@@ -360,8 +364,9 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
                       className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
                       title="Add to favorites"
+                      aria-label="Add to favorites"
                     >
-                      <Star className="w-3 h-3 text-muted-foreground/40" />
+                      <Star className="w-3 h-3 text-muted-foreground/40" aria-hidden="true" />
                     </span>
                   </button>
                 ))}
@@ -375,6 +380,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
           <div className="mt-3 pt-3 border-t border-amber-500/20 space-y-1">
             <button
               onClick={() => { selectPersona(null); setAgentTab('team'); useSystemStore.getState().setIsCreatingPersona(false); }}
+              aria-current={agentTab === 'team' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
                 agentTab === 'team'
                   ? 'bg-amber-500/10 text-foreground/90'
@@ -386,6 +392,7 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
             </button>
             <button
               onClick={() => { selectPersona(null); setAgentTab('cloud'); useSystemStore.getState().setIsCreatingPersona(false); }}
+              aria-current={agentTab === 'cloud' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
                 agentTab === 'cloud'
                   ? 'bg-amber-500/10 text-foreground/90'
@@ -446,6 +453,7 @@ function PluginsSidebarNav() {
         {/* Browse */}
         <button
           onClick={() => setPluginTab('browse')}
+          aria-current={pluginTab === 'browse' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             pluginTab === 'browse'
               ? 'bg-primary/10 text-foreground/90'
@@ -459,6 +467,7 @@ function PluginsSidebarNav() {
         {/* Doc Signing */}
         <button
           onClick={() => setPluginTab('doc-signing')}
+          aria-current={pluginTab === 'doc-signing' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             pluginTab === 'doc-signing'
               ? 'bg-primary/10 text-foreground/90'
@@ -472,6 +481,7 @@ function PluginsSidebarNav() {
         {/* OCR */}
         <button
           onClick={() => setPluginTab('ocr')}
+          aria-current={pluginTab === 'ocr' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             pluginTab === 'ocr'
               ? 'bg-primary/10 text-foreground/90'
@@ -487,6 +497,7 @@ function PluginsSidebarNav() {
           <div className="mt-3 pt-3 border-t border-amber-500/20 space-y-1">
             <button
               onClick={() => setPluginTab('dev-tools')}
+              aria-current={pluginTab === 'dev-tools' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
                 pluginTab === 'dev-tools'
                   ? 'bg-amber-500/10 text-foreground/90'

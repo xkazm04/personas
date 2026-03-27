@@ -151,8 +151,8 @@ export function PreviewPanel({
               isActivating || isThinking || completeness < 40
                 ? 'bg-secondary/40 text-muted-foreground/50 cursor-not-allowed'
                 : completeness >= 80
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.99]'
-                  : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.99]'
+                  : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-elevation-3 shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
             }`}
           >
             {isActivating ? (

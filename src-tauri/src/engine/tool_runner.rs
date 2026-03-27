@@ -4,7 +4,7 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::{PersonaToolDefinition, ToolKind};
+use crate::db::models::{PersonaToolDefinition, ToolKind, VirtualToolId};
 use crate::db::repos::resources::automations as automation_repo;
 use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
@@ -86,32 +86,21 @@ pub async fn invoke_tool_direct(
 
     let kind = tool.tool_kind().map_err(AppError::Execution)?;
 
-    let result = match kind {
-        ToolKind::Automation => {
-            tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_automation_tool(pool, tool, input_json))
-                .await
-                .map_err(|_| AppError::Execution(format!(
-                    "Tool '{}' timed out after {}s",
-                    tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
-                )))?
-        }
-        ToolKind::Script => {
-            tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_script(tool, input_json, &env_map))
-                .await
-                .map_err(|_| AppError::Execution(format!(
-                    "Tool '{}' timed out after {}s",
-                    tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
-                )))?
-        }
-        ToolKind::Api => {
-            let guide = tool.implementation_guide.as_ref().unwrap();
-            tokio::time::timeout(DIRECT_TOOL_TIMEOUT, invoke_api(tool, guide, input_json, &env_map))
-                .await
-                .map_err(|_| AppError::Execution(format!(
-                    "Tool '{}' timed out after {}s",
-                    tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
-                )))?
-        }
+    let result = {
+        let fut: std::pin::Pin<Box<dyn std::future::Future<Output = Result<(String, String), AppError>> + Send>> = match kind {
+            ToolKind::Automation => Box::pin(invoke_automation_tool(pool, tool, input_json)),
+            ToolKind::Script => Box::pin(invoke_script(tool, input_json, &env_map)),
+            ToolKind::Api => {
+                let guide = tool.implementation_guide.as_ref().unwrap();
+                Box::pin(invoke_api(tool, guide, input_json, &env_map))
+            }
+        };
+        tokio::time::timeout(DIRECT_TOOL_TIMEOUT, fut)
+            .await
+            .map_err(|_| AppError::Execution(format!(
+                "Tool '{}' timed out after {}s",
+                tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
+            )))?
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
@@ -421,23 +410,22 @@ fn shell_tokenize(input: &str) -> Vec<String> {
 
 /// Invoke an automation-backed tool via webhook.
 ///
-/// Virtual automation tools have IDs in the form `auto_{automation_id}`.
-/// Extracts the automation_id, loads the automation, and delegates to the runner.
+/// Virtual automation tools use [`VirtualToolId`] to encode the automation ID.
+/// Parses the tool ID, extracts the automation_id, and delegates to the runner.
 async fn invoke_automation_tool(
     pool: &DbPool,
     tool: &PersonaToolDefinition,
     input_json: &str,
 ) -> Result<(String, String), AppError> {
-    // Virtual tool IDs follow the pattern "auto_{automation_id}"
-    let automation_id = tool
-        .id
-        .strip_prefix("auto_")
-        .ok_or_else(|| {
-            AppError::Execution(format!(
-                "Automation tool '{}' has invalid ID format (expected auto_<id>): {}",
-                tool.name, tool.id
-            ))
-        })?;
+    let vtid = VirtualToolId::parse(&tool.id).ok_or_else(|| {
+        AppError::Execution(format!(
+            "Automation tool '{}' has invalid ID format (expected {}<id>): {}",
+            tool.name,
+            VirtualToolId::PREFIX,
+            tool.id
+        ))
+    })?;
+    let automation_id = vtid.automation_id();
 
     let automation = automation_repo::get_by_id(pool, automation_id)?;
     let run = invoke_automation(pool, &automation, Some(input_json), None).await?;

@@ -185,7 +185,7 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
                     </div>
                   </div>
                 )}
-                <div className={`rounded-xl border overflow-hidden ${isWinner ? `${c.border} shadow-lg shadow-primary/5` : 'border-primary/10'}`}>
+                <div className={`rounded-xl border overflow-hidden ${isWinner ? `${c.border} shadow-elevation-3 shadow-primary/5` : 'border-primary/10'}`}>
                   {/* Version header */}
                   <div className={`px-4 py-3 bg-gradient-to-r ${c.gradient}`}>
                     <div className="flex items-center justify-between">
@@ -318,7 +318,7 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate }: P
                         <button
                           onClick={() => setSelectedCell(isSelected ? null : { scenario, versionId: agg.versionId })}
                           className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 transition-all ${
-                            isSelected ? 'bg-primary/10 ring-1 ring-primary/25 shadow-sm' : 'hover:bg-secondary/40'
+                            isSelected ? 'bg-primary/10 ring-1 ring-primary/25 shadow-elevation-1' : 'hover:bg-secondary/40'
                           }`}
                         >
                           <div className={`w-2 h-2 rounded-full ${comp >= 60 ? 'bg-emerald-500/60' : comp >= 30 ? 'bg-amber-500/60' : 'bg-red-500/40'}`} />

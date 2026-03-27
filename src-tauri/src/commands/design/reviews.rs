@@ -18,7 +18,7 @@ use crate::db::repos::communication::{
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::{connectors as connector_repo, tools as tool_repo};
 use crate::engine::design;
-use crate::engine::event_registry::event_name;
+use crate::engine::event_registry::{emit_event_bus, event_name};
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -869,7 +869,7 @@ pub fn update_manual_review_status(
                 source_execution_id: Some(review.execution_id.clone()),
                 title: format!("Review {decision}: {}", review.title),
                 content: memory_content,
-                category: Some("review_decision".to_string()),
+                category: Some("learned".to_string()),
                 importance: Some(6),
                 tags: Some(serde_json::json!(["review", decision]).to_string()),
             },
@@ -900,7 +900,7 @@ pub fn update_manual_review_status(
             },
         ) {
             Ok(event) => {
-                let _ = app.emit(event_name::EVENT_BUS, event.clone());
+                emit_event_bus(&app, &event);
                 tracing::info!(
                     review_id = %review.id,
                     event_type = %event_type,

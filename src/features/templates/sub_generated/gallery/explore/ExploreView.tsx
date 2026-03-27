@@ -6,6 +6,7 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import type { CategoryWithCount } from '@/api/overview/reviews';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { CATEGORY_ROLE_GROUPS } from '../search/filters/searchConstants';
+import { CARD_PADDING } from '@/lib/utils/designTokens';
 import { RoleGroupCard } from './RoleGroupCard';
 import { AutomationOpportunitiesRail } from './AutomationOpportunitiesRail';
 import { useAutomationDiscovery } from './useAutomationDiscovery';
@@ -102,7 +103,7 @@ export function ExploreView({
                 variant="ghost"
                 size="sm"
                 onClick={() => onSelectTemplate(t)}
-                className="flex-shrink-0 w-52 bg-secondary/20 border border-emerald-500/15 p-3 text-left hover:border-emerald-500/30 hover:bg-secondary/30"
+                className={`flex-shrink-0 w-52 bg-secondary/20 border border-emerald-500/15 ${CARD_PADDING.compact} text-left hover:border-emerald-500/30 hover:bg-secondary/30`}
               >
                 <div className="text-sm font-medium text-foreground/80 truncate">{t.test_case_name}</div>
                 <div className="text-sm text-muted-foreground/80 truncate mt-0.5">

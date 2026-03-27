@@ -55,6 +55,10 @@ pub struct GlobalSlaStats {
     pub total_executions: i64,
     pub successful: i64,
     pub failed: i64,
+    pub cancelled: i64,
+    /// Success rate as 0.0--1.0.  Denominator is successful + failed only;
+    /// cancelled executions are excluded because they are user-initiated and
+    /// do not reflect system reliability.
     pub success_rate: f64,
     pub avg_duration_ms: f64,
     pub total_cost_usd: f64,
@@ -77,6 +81,9 @@ pub struct SlaDailyPoint {
     pub total: i64,
     pub successful: i64,
     pub failed: i64,
+    pub cancelled: i64,
+    /// Success rate as 0.0--1.0.  Denominator is successful + failed only;
+    /// cancelled executions are excluded (user-initiated, not a reliability signal).
     pub success_rate: f64,
 }
 
@@ -285,8 +292,11 @@ pub fn get_sla_dashboard(
         let consecutive_failures = consec_map.get(&rp.persona_id).copied().unwrap_or(0);
         let auto_healed = healed_map.get(&rp.persona_id).copied().unwrap_or(0);
 
-        let success_rate = if rp.total > 0 {
-            rp.successful as f64 / rp.total as f64
+        // Cancelled executions are user-initiated and excluded from the
+        // success-rate denominator so the metric reflects system reliability.
+        let decided = rp.successful + rp.failed;
+        let success_rate = if decided > 0 {
+            rp.successful as f64 / decided as f64
         } else {
             0.0
         };
@@ -312,6 +322,7 @@ pub fn get_sla_dashboard(
     let g_total: i64 = persona_stats.iter().map(|p| p.total_executions).sum();
     let g_success: i64 = persona_stats.iter().map(|p| p.successful).sum();
     let g_failed: i64 = persona_stats.iter().map(|p| p.failed).sum();
+    let g_cancelled: i64 = persona_stats.iter().map(|p| p.cancelled).sum();
     let g_cost: f64 = persona_stats.iter().map(|p| p.total_cost_usd).sum();
     let g_avg_dur = if g_total > 0 {
         persona_stats
@@ -322,12 +333,14 @@ pub fn get_sla_dashboard(
     } else {
         0.0
     };
+    let g_decided = g_success + g_failed;
 
     let global = GlobalSlaStats {
         total_executions: g_total,
         successful: g_success,
         failed: g_failed,
-        success_rate: if g_total > 0 { g_success as f64 / g_total as f64 } else { 0.0 },
+        cancelled: g_cancelled,
+        success_rate: if g_decided > 0 { g_success as f64 / g_decided as f64 } else { 0.0 },
         avg_duration_ms: g_avg_dur,
         total_cost_usd: g_cost,
         active_persona_count: persona_stats.len() as i64,
@@ -360,15 +373,18 @@ pub fn get_sla_dashboard(
         });
 
     // -- Daily trend -----------------------------------------------------
+    // Include cancelled in the query for visibility, but compute success_rate
+    // using only successful+failed as the denominator (consistent with per-persona).
     let mut daily_stmt = conn.prepare(
         "SELECT
             DATE(created_at) AS date,
             COUNT(*) AS total,
             SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS successful,
-            SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
+            SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed,
+            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
          FROM persona_executions
          WHERE created_at >= datetime('now', ?1)
-           AND status IN ('completed', 'failed')
+           AND status IN ('completed', 'failed', 'cancelled')
          GROUP BY DATE(created_at)
          ORDER BY date ASC",
     )?;
@@ -377,13 +393,17 @@ pub fn get_sla_dashboard(
         .query_map(params![date_filter], |row| {
             let total: i64 = row.get(1)?;
             let successful: i64 = row.get(2)?;
+            let failed: i64 = row.get(3)?;
+            let cancelled: i64 = row.get(4)?;
+            let decided = successful + failed;
             Ok(SlaDailyPoint {
                 date: row.get(0)?,
                 total,
                 successful,
-                failed: row.get(3)?,
-                success_rate: if total > 0 {
-                    successful as f64 / total as f64
+                failed,
+                cancelled,
+                success_rate: if decided > 0 {
+                    successful as f64 / decided as f64
                 } else {
                     0.0
                 },

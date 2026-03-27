@@ -105,16 +105,6 @@ pub fn build_design_prompt(
     prompt
 }
 
-/// Build a prompt for refining an existing design with user feedback.
-#[allow(dead_code)]
-pub fn build_refinement_prompt(
-    current_result_json: &str,
-    feedback: &str,
-    design_context: Option<&str>,
-) -> String {
-    build_refinement_prompt_with_history(current_result_json, feedback, design_context, None)
-}
-
 /// Build a refinement prompt that includes conversation history for richer multi-turn context.
 /// When `conversation_history` is provided, earlier exchanges are injected so the LLM
 /// can see the full thread of instructions, questions, answers, and intermediate results.
@@ -710,7 +700,7 @@ mod tests {
     #[test]
     fn test_build_refinement_prompt() {
         let result = sample_design_result();
-        let prompt = build_refinement_prompt(result, "Add error reporting to Slack", None);
+        let prompt = build_refinement_prompt_with_history(result, "Add error reporting to Slack", None, None);
 
         assert!(prompt.contains("# Design Refinement"));
         assert!(prompt.contains("Email monitor agent"));
@@ -723,7 +713,7 @@ mod tests {
     fn test_build_refinement_prompt_with_context() {
         let result = sample_design_result();
         let ctx = r#"{"files":[{"name":"api.yaml","content":"openapi: 3.0"}],"references":["https://example.com"]}"#;
-        let prompt = build_refinement_prompt(result, "Add error reporting to Slack", Some(ctx));
+        let prompt = build_refinement_prompt_with_history(result, "Add error reporting to Slack", Some(ctx), None);
 
         assert!(prompt.contains("# Design Refinement"));
         assert!(prompt.contains("## Design Context"));

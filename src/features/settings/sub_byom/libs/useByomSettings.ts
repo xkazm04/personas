@@ -1,5 +1,6 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useToastStore } from '@/stores/toastStore';
 import {
   getByomPolicy,
   setByomPolicy,
@@ -60,7 +61,6 @@ export type ByomSection = 'policy' | 'keys' | 'routing' | 'compliance' | 'audit'
 export function useByomSettings() {
   const [policy, setPolicy] = useState<ByomPolicy>(defaultPolicy());
   const [loaded, setLoaded] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [auditLog, setAuditLog] = useState<ProviderAuditEntry[]>([]);
   const [usageStats, setUsageStats] = useState<ProviderUsageStats[]>([]);
   const [usageTimeseries, setUsageTimeseries] = useState<ProviderUsageTimeseries[]>([]);
@@ -70,6 +70,10 @@ export function useByomSettings() {
   const savedSnapshotRef = useRef<ByomPolicy>(defaultPolicy());
   const isDirty = useMemo(() => !policyEqual(policy, savedSnapshotRef.current), [policy]);
 
+  // Track which tab-specific data has already been fetched to avoid re-fetching on tab switches
+  const fetchedTabs = useRef<Set<ByomSection>>(new Set());
+
+  // Always load core policy on mount
   useEffect(() => {
     getByomPolicy().then((p) => {
       const initial = p ?? defaultPolicy();
@@ -77,16 +81,25 @@ export function useByomSettings() {
       savedSnapshotRef.current = initial;
       setLoaded(true);
     }).catch(() => setLoaded(true));
-    listProviderAuditLog(50).then(setAuditLog).catch(silentCatch("useByomSettings:listAuditLog"));
-    getProviderUsageStats().then(setUsageStats).catch(silentCatch("useByomSettings:getUsageStats"));
-    getProviderUsageTimeseries(30).then(setUsageTimeseries).catch(silentCatch("useByomSettings:getTimeseries"));
   }, []);
+
+  // Lazy-load tab-specific data only when the user navigates to that tab
+  useEffect(() => {
+    if (activeSection === 'policy' && !fetchedTabs.current.has('policy')) {
+      fetchedTabs.current.add('policy');
+      getProviderUsageStats().then(setUsageStats).catch(silentCatch("useByomSettings:getUsageStats"));
+      getProviderUsageTimeseries(30).then(setUsageTimeseries).catch(silentCatch("useByomSettings:getTimeseries"));
+    }
+    if (activeSection === 'audit' && !fetchedTabs.current.has('audit')) {
+      fetchedTabs.current.add('audit');
+      listProviderAuditLog(50).then(setAuditLog).catch(silentCatch("useByomSettings:listAuditLog"));
+    }
+  }, [activeSection]);
 
   const handleSave = useCallback(async () => {
     await setByomPolicy(policy);
     savedSnapshotRef.current = policy;
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    useToastStore.getState().addToast('Policy saved', 'success');
   }, [policy]);
 
   const handleReset = useCallback(async () => {
@@ -94,8 +107,7 @@ export function useByomSettings() {
     const reset = defaultPolicy();
     setPolicy(reset);
     savedSnapshotRef.current = reset;
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    useToastStore.getState().addToast('Policy reset to defaults', 'success');
   }, []);
 
   const discardChanges = useCallback(() => {
@@ -195,7 +207,6 @@ export function useByomSettings() {
   return {
     policy,
     loaded,
-    saved,
     isDirty,
     auditLog,
     usageStats,

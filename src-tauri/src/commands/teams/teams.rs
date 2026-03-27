@@ -9,7 +9,8 @@ use crate::db::repos::resources::teams as repo;
 use crate::db::repos::resources::team_memories as team_memories_repo;
 use crate::engine::event_registry::event_name;
 use crate::engine::optimizer::{self, PipelineAnalytics};
-use crate::engine::topology::{self, TopologyBlueprint};
+use crate::engine::topology_heuristic;
+use crate::engine::topology_types::TopologyBlueprint;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -653,12 +654,58 @@ pub fn suggest_topology(
         vec![]
     };
 
-    Ok(topology::suggest_topology(&query, &personas, &existing_member_ids))
+    Ok(topology_heuristic::suggest_topology(&query, &personas, &existing_member_ids))
 }
 
 /// LLM model for team building -- needs reasoning for composition decisions.
 const TEAM_BUILDER_MODEL: &str = "claude-sonnet-4-6";
 const TEAM_BUILDER_TIMEOUT_SECS: u64 = 120;
+
+/// Shared helper that runs the LLM topology pipeline: builds the prompt, calls
+/// Claude, parses the response, and falls back to keyword-based topology when
+/// the LLM returns empty members.
+async fn run_llm_topology_request(
+    db: &crate::db::DbPool,
+    query: &str,
+    existing_member_ids: &[String],
+    empty_output_msg: &str,
+) -> Result<TopologyBlueprint, AppError> {
+    use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
+    use crate::db::repos::communication::reviews as review_repo;
+    use crate::db::repos::core::personas as persona_repo;
+    use crate::engine::llm_topology;
+    use crate::engine::prompt;
+
+    let personas = persona_repo::get_all(db)?;
+    let templates = review_repo::get_reviews(db, None, Some(50))?;
+
+    let prompt_text = llm_topology::build_llm_topology_prompt(
+        query,
+        &personas,
+        &templates,
+        existing_member_ids,
+    );
+
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(TEAM_BUILDER_MODEL.to_string());
+    cli_args.args.push("--max-turns".to_string());
+    cli_args.args.push("1".to_string());
+
+    let output_text = run_claude_prompt(
+        prompt_text,
+        &cli_args,
+        TEAM_BUILDER_TIMEOUT_SECS,
+        empty_output_msg,
+    )
+    .await
+    .map_err(AppError::Internal)?;
+
+    match llm_topology::parse_llm_topology_response(&output_text, &personas) {
+        Some(bp) if !bp.members.is_empty() => Ok(bp),
+        _ => Ok(topology_heuristic::suggest_topology(query, &personas, existing_member_ids)),
+    }
+}
 
 #[tauri::command]
 pub async fn suggest_topology_llm(
@@ -667,14 +714,7 @@ pub async fn suggest_topology_llm(
     team_id: Option<String>,
 ) -> Result<TopologyBlueprint, AppError> {
     require_auth(&state).await?;
-    use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
-    use crate::db::repos::communication::reviews as review_repo;
-    use crate::db::repos::core::personas as persona_repo;
-    use crate::engine::llm_topology;
-    use crate::engine::prompt;
 
-    let personas = persona_repo::get_all(&state.db)?;
-    let templates = review_repo::get_reviews(&state.db, None, Some(50))?;
     let existing_member_ids: Vec<String> = if let Some(ref tid) = team_id {
         repo::get_members(&state.db, tid)?
             .iter()
@@ -684,47 +724,13 @@ pub async fn suggest_topology_llm(
         vec![]
     };
 
-    // Build prompt
-    let prompt_text = llm_topology::build_llm_topology_prompt(
+    run_llm_topology_request(
+        &state.db,
         &query,
-        &personas,
-        &templates,
         &existing_member_ids,
-    );
-
-    // Build CLI args with sonnet model
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(TEAM_BUILDER_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
-
-    // Call Claude
-    let output_text = run_claude_prompt(
-        prompt_text,
-        &cli_args,
-        TEAM_BUILDER_TIMEOUT_SECS,
         "Claude produced no output for team composition",
     )
     .await
-    .map_err(AppError::Internal)?;
-
-    // Parse response
-    let blueprint = llm_topology::parse_llm_topology_response(&output_text, &personas)
-        .ok_or_else(|| {
-            AppError::Internal("Failed to parse team composition from Claude output".into())
-        })?;
-
-    // Fallback to keyword-based if LLM returns empty members
-    if blueprint.members.is_empty() {
-        return Ok(topology::suggest_topology(
-            &query,
-            &personas,
-            &existing_member_ids,
-        ));
-    }
-
-    Ok(blueprint)
 }
 
 // ============================================================================
@@ -742,11 +748,7 @@ pub async fn compile_workflow(
     description: String,
 ) -> Result<crate::engine::workflow_compiler::CompiledWorkflow, AppError> {
     require_auth(&state).await?;
-    use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
-    use crate::db::repos::communication::reviews as review_repo;
     use crate::db::repos::core::personas as persona_repo;
-    use crate::engine::llm_topology;
-    use crate::engine::prompt;
     use crate::engine::workflow_compiler;
 
     let description = description.trim().to_string();
@@ -763,44 +765,19 @@ pub async fn compile_workflow(
         ));
     }
 
-    let templates = review_repo::get_reviews(&state.db, None, Some(50))?;
-
-    // Build prompt and call LLM
-    let prompt_text = llm_topology::build_llm_topology_prompt(
+    let blueprint = run_llm_topology_request(
+        &state.db,
         &description,
-        &personas,
-        &templates,
-        &[], // no existing members to exclude
-    );
-
-    let mut cli_args = prompt::build_cli_args(None, None);
-    cli_args.args.push("--model".to_string());
-    cli_args.args.push(TEAM_BUILDER_MODEL.to_string());
-    cli_args.args.push("--max-turns".to_string());
-    cli_args.args.push("1".to_string());
-
-    let output_text = run_claude_prompt(
-        prompt_text,
-        &cli_args,
-        TEAM_BUILDER_TIMEOUT_SECS,
+        &[],
         "Claude produced no output for workflow compilation",
     )
-    .await
-    .map_err(AppError::Internal)?;
+    .await?;
 
-    // Parse LLM response, falling back to keyword-based topology
-    let blueprint = match llm_topology::parse_llm_topology_response(&output_text, &personas) {
-        Some(bp) if !bp.members.is_empty() => bp,
-        _ => {
-            let bp = topology::suggest_topology(&description, &personas, &[]);
-            if bp.members.is_empty() {
-                return Err(AppError::Internal(
-                    "Could not find matching personas for this workflow description".into(),
-                ));
-            }
-            bp
-        }
-    };
+    if blueprint.members.is_empty() {
+        return Err(AppError::Internal(
+            "Could not find matching personas for this workflow description".into(),
+        ));
+    }
 
     // Persist as a new team
     workflow_compiler::persist_blueprint(&state.db, &blueprint, &description)

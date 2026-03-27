@@ -51,12 +51,13 @@ export interface OverviewSlice {
   executionDashboardLoading: boolean;
   executionDashboardError: string | null;
 
-  // State -- pipeline-level error (set when dashboard refresh fails)
-  pipelineError: string | null;
+  // State -- per-source pipeline errors (set when individual dashboard fetches fail)
+  pipelineErrors: Record<string, string>;
 
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
-  setPipelineError: (error: string | null) => void;
+  setPipelineError: (source: string, error: string | null) => void;
+  clearPipelineErrors: () => void;
   fetchGlobalExecutions: (reset?: boolean, status?: string, personaId?: string) => Promise<void>;
   fetchManualReviews: (status?: string) => Promise<void>;
   updateManualReview: (id: string, updates: { status?: ManualReviewStatus; reviewer_notes?: string }) => Promise<void>;
@@ -117,10 +118,16 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   executionDashboard: null,
   executionDashboardLoading: false,
   executionDashboardError: null,
-  pipelineError: null,
+  pipelineErrors: {},
 
   setOverviewTab: (tab) => set({ overviewTab: tab }),
-  setPipelineError: (error) => set({ pipelineError: error }),
+  setPipelineError: (source, error) => set((prev) => {
+    const next = { ...prev.pipelineErrors };
+    if (error) next[source] = error;
+    else delete next[source];
+    return { pipelineErrors: next };
+  }),
+  clearPipelineErrors: () => set({ pipelineErrors: {} }),
 
   fetchGlobalExecutions: async (reset = false, status?: string, personaId?: string) => {
     const seq = ++fetchGlobalSeq;
@@ -269,12 +276,12 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
         () => Promise.all([
           canReuseDashboard
             ? Promise.resolve({
-                total_executions: dashboard.total_executions,
-                successful_executions: dashboard.successful_executions,
-                failed_executions: dashboard.failed_executions,
-                total_cost_usd: dashboard.total_cost,
-                active_personas: dashboard.active_personas,
-                period_days: days,
+                totalExecutions: dashboard.total_executions,
+                successfulExecutions: dashboard.successful_executions,
+                failedExecutions: dashboard.failed_executions,
+                totalCostUsd: dashboard.total_cost,
+                activePersonas: dashboard.active_personas,
+                periodDays: days,
               })
             : getMetricsSummary(days, personaId),
           getMetricsChartData(days, personaId),

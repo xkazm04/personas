@@ -10,6 +10,7 @@ import {
   type CloudDeployment, type CloudTrigger, type CloudTriggerFiring,
 } from '@/api/system/cloud';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 
 interface WebhookTriggerRow {
   trigger: CloudTrigger;
@@ -275,7 +276,7 @@ export function CloudWebhooksTab() {
                   <div className="flex items-center gap-3 min-w-0">
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-                      style={{ backgroundColor: (row.personaColor || '#6366f1') + '15' }}
+                      style={{ backgroundColor: colorWithAlpha(row.personaColor || '#6366f1', 0.08) }}
                     >
                       {row.personaIcon || <Cloud className="w-4 h-4 text-foreground/50" />}
                     </div>

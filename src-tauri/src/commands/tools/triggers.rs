@@ -44,24 +44,6 @@ fn validate_config_json(config: Option<&str>) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Webhook triggers require a non-empty `webhook_secret` for HMAC signature
-/// verification. Reject creation/update if the secret is missing.
-fn validate_webhook_secret(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
-    if trigger_type != "webhook" {
-        return Ok(());
-    }
-    let has_secret = config
-        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
-        .and_then(|v| v.get("webhook_secret")?.as_str().map(|s| !s.is_empty()))
-        .unwrap_or(false);
-    if !has_secret {
-        return Err(AppError::Validation(
-            "Webhook triggers require an HMAC secret. Provide a webhook_secret in the config.".into(),
-        ));
-    }
-    Ok(())
-}
-
 /// If the trigger is a polling type, validate that any configured URL does not
 /// point to a private/internal address (SSRF protection).
 fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
@@ -84,8 +66,8 @@ fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Result<(), 
     Ok(())
 }
 
-/// If the trigger is a chain type, extract source_persona_id from config and
-/// run cycle detection to prevent infinite execution loops.
+/// If the trigger is a chain type, validate the condition type and extract
+/// source_persona_id from config to run cycle detection.
 fn validate_chain_cycle(
     pool: &crate::db::DbPool,
     trigger_type: &str,
@@ -96,8 +78,23 @@ fn validate_chain_cycle(
     if trigger_type != "chain" {
         return Ok(());
     }
-    let source = config
-        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
+    let val = config
+        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok());
+
+    // Validate condition type if present
+    if let Some(ref v) = val {
+        if let Some(condition) = v.get("condition") {
+            if let Some(ctype) = condition.get("type").and_then(|t| t.as_str()) {
+                use crate::db::models::ChainConditionType;
+                ctype.parse::<ChainConditionType>().map_err(|e| {
+                    AppError::Validation(e)
+                })?;
+            }
+        }
+    }
+
+    // Cycle detection
+    let source = val
         .and_then(|v| v.get("source_persona_id")?.as_str().map(String::from));
     if let Some(src) = source {
         chain::detect_chain_cycle(pool, &src, target_persona_id, exclude_trigger_id)?;
@@ -112,7 +109,6 @@ pub fn create_trigger(
 ) -> Result<PersonaTrigger, AppError> {
     require_auth_sync(&state)?;
     validate_config_json(input.config.as_deref())?;
-    validate_webhook_secret(&input.trigger_type, input.config.as_deref())?;
     validate_polling_url(&input.trigger_type, input.config.as_deref())?;
     validate_chain_cycle(
         &state.db,
@@ -146,7 +142,6 @@ pub fn update_trigger(
     if input.trigger_type.is_some() || input.config.is_some() {
         let trigger_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
         let config = input.config.as_deref().or(existing.config.as_deref());
-        validate_webhook_secret(trigger_type, config)?;
         validate_polling_url(trigger_type, config)?;
         validate_chain_cycle(&state.db, trigger_type, config, &existing.persona_id, Some(&id))?;
     }
@@ -999,14 +994,30 @@ pub async fn dry_run_trigger(
     let subs = event_repo::get_subscriptions_by_event_type(&state.db, &event_type)
         .unwrap_or_default();
 
+    // 4. Find downstream chain triggers using SQL-level filtering instead of get_all
+    let chain_triggers = repo::get_chain_triggers_for_source(&state.db, &target_persona_id)
+        .unwrap_or_default();
+
+    // 5. Batch-fetch all persona names needed for subscriptions + chain targets
+    let mut persona_ids_needed: Vec<String> = subs.iter().map(|s| s.persona_id.clone()).collect();
+    persona_ids_needed.extend(chain_triggers.iter().map(|t| t.persona_id.clone()));
+    persona_ids_needed.sort_unstable();
+    persona_ids_needed.dedup();
+
+    let personas = crate::db::repos::core::personas::get_by_ids(&state.db, &persona_ids_needed)
+        .unwrap_or_default();
+    let persona_name_map: std::collections::HashMap<String, String> = personas
+        .into_iter()
+        .map(|p| (p.id, p.name))
+        .collect();
+
     let matched_subscriptions: Vec<DryRunMatchedSubscription> = subs
         .into_iter()
         .map(|sub| {
-            let persona_name =
-                match crate::db::repos::core::personas::get_by_id(&state.db, &sub.persona_id) {
-                    Ok(p) => p.name,
-                    Err(_) => "Unknown".into(),
-                };
+            let persona_name = persona_name_map
+                .get(&sub.persona_id)
+                .cloned()
+                .unwrap_or_else(|| "Unknown".into());
             DryRunMatchedSubscription {
                 subscription_id: sub.id,
                 persona_id: sub.persona_id,
@@ -1017,34 +1028,21 @@ pub async fn dry_run_trigger(
         })
         .collect();
 
-    // 4. Find downstream chain triggers that would fire from this persona's output
-    let all_triggers = repo::get_all(&state.db).unwrap_or_default();
-    let chain_targets: Vec<DryRunChainTarget> = all_triggers
+    let chain_targets: Vec<DryRunChainTarget> = chain_triggers
         .into_iter()
-        .filter(|t| {
-            if t.trigger_type != "chain" { return false; }
-            let config: serde_json::Value = t.config.as_deref()
-                .and_then(|c| serde_json::from_str(c).ok())
-                .unwrap_or(serde_json::Value::Null);
-            config.get("source_persona_id")
-                .and_then(|v| v.as_str())
-                .map(|sid| sid == target_persona_id)
-                .unwrap_or(false)
-        })
         .map(|t| {
             let config: serde_json::Value = t.config.as_deref()
                 .and_then(|c| serde_json::from_str(c).ok())
                 .unwrap_or(serde_json::Value::Null);
             let condition_type = config.get("condition")
-                .or(config.get("condition_type"))
+                .and_then(|c| c.get("type"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("any")
                 .to_string();
-            let persona_name =
-                match crate::db::repos::core::personas::get_by_id(&state.db, &t.persona_id) {
-                    Ok(p) => p.name,
-                    Err(_) => "Unknown".into(),
-                };
+            let persona_name = persona_name_map
+                .get(&t.persona_id)
+                .cloned()
+                .unwrap_or_else(|| "Unknown".into());
             DryRunChainTarget {
                 trigger_id: t.id,
                 target_persona_id: t.persona_id,
@@ -1422,7 +1420,7 @@ pub fn get_persona_config_warnings(
     // 2. Check tool kind ambiguity (both script_path and implementation_guide set)
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
     for tool in &tools {
-        if tool.category == "automation" {
+        if tool.category == crate::db::models::VirtualToolId::CATEGORY {
             continue;
         }
         let has_script = !tool.script_path.is_empty();

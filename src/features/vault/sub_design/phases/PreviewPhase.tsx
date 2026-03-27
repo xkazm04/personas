@@ -223,6 +223,8 @@ export function PreviewPhase() {
           ? `Authorizing with ${providerLabel}...`
           : `Authorize with ${providerLabel}`}
         oauthConsentDisabled={isAuthorizingOAuth}
+        isAuthorizingOAuth={isAuthorizingOAuth}
+        oauthPollingMessage={oauthStatusMessage}
         oauthConsentHint={getOAuthConsentHint(credentialFlow)}
         oauthConsentSuccessBadge={oauthConsentCompletedAt
           ? `${providerLabel} consent completed at ${oauthConsentCompletedAt}`

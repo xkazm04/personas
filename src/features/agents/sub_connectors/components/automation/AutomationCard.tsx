@@ -1,12 +1,15 @@
 import {
-  Zap, CheckCircle2, XCircle, AlertCircle,
-  ExternalLink, Activity, Pause, ShieldCheck,
+  Zap, CheckCircle2, XCircle,
+  ExternalLink, Activity, ShieldCheck,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
-import { AUTOMATION_STATUS_CONFIG, PLATFORM_CONFIG, formatRelativeTime } from '../../libs/automationTypes';
+import { PLATFORM_CONFIG } from '../../libs/automationTypes';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AutomationCardActions } from './AutomationCardActions';
+import { AutomationStatusBadge } from './AutomationStatusBadge';
 import { TOOLS_BTN_STANDARD, TOOLS_BTN_COMPACT, TOOLS_SECTION_GAP } from '@/lib/utils/designTokens';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
@@ -17,32 +20,39 @@ interface AutomationCardProps {
   onToggleStatus: (id: string, newStatus: 'active' | 'paused') => void;
   onDelete: (id: string) => void;
   isTesting?: boolean;
+  isTransitioning?: boolean;
   testResult?: { success: boolean; message: string } | null;
 }
 
-const STATUS_ICON = {
-  active: CheckCircle2, draft: AlertCircle, paused: Pause, error: XCircle,
-} as const;
-
 export function AutomationCard({
-  automation, onTest, onEdit, onToggleStatus, onDelete, isTesting, testResult,
+  automation, onTest, onEdit, onToggleStatus, onDelete, isTesting, isTransitioning, testResult,
 }: AutomationCardProps) {
-  const statusConfig = AUTOMATION_STATUS_CONFIG[automation.deploymentStatus] ?? AUTOMATION_STATUS_CONFIG.draft;
   const platformConfig = PLATFORM_CONFIG[automation.platform] ?? PLATFORM_CONFIG.custom;
-  const StatusIcon = STATUS_ICON[automation.deploymentStatus] ?? AlertCircle;
 
   return (
     <SectionCard size="md">
-      <div className="flex items-center gap-3">
+      <div className="relative flex items-center gap-3">
+        {/* Loading overlay during status transition */}
+        <AnimatePresence>
+          {isTransitioning && (
+            <motion.div
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-[1px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <LoadingSpinner size="sm" />
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
           <Zap className="w-3.5 h-3.5 text-accent/60" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-foreground/80 truncate" title={automation.name}>{automation.name}</p>
-            <span className={`animate-fade-in inline-flex items-center gap-1 px-2 py-0.5 text-sm font-medium rounded-full border ${statusConfig.bg} ${statusConfig.color}`}>
-              <StatusIcon className="w-2.5 h-2.5" /> {statusConfig.label}
-            </span>
+            <AutomationStatusBadge automationId={automation.id} status={automation.deploymentStatus} />
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <span className={`inline-flex items-center px-1.5 py-0 text-sm font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{platformConfig.label}</span>

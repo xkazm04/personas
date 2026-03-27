@@ -5,8 +5,9 @@
 //! "code-optimizer") and outputs structured idea protocol messages. Ideas are
 //! persisted as DevIdea records. Progress streams via Tauri events.
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
+use serde::Deserialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -39,214 +40,23 @@ static IDEA_SCAN_JOBS: BackgroundJobManager<IdeaScanExtra> = BackgroundJobManage
 );
 
 // =============================================================================
-// Built-in scan agent registry
+// Built-in scan agent registry (loaded from embedded TOML)
 // =============================================================================
 
-fn get_scan_agents() -> Vec<ScanAgentMeta> {
-    vec![
-        ScanAgentMeta {
-            key: "code-optimizer".into(),
-            label: "Code Optimizer".into(),
-            emoji: "⚡".into(),
-            abbreviation: "OPT".into(),
-            color: "#3B82F6".into(),
-            category_group: "technical".into(),
-            description: "Identifies performance bottlenecks and optimization opportunities".into(),
-            examples: "Reduce bundle size, Optimize database queries, Improve render performance"
-                .into(),
-        },
-        ScanAgentMeta {
-            key: "security-auditor".into(),
-            label: "Security Auditor".into(),
-            emoji: "🔒".into(),
-            abbreviation: "SEC".into(),
-            color: "#EF4444".into(),
-            category_group: "technical".into(),
-            description: "Identifies security vulnerabilities and best practice violations".into(),
-            examples: "XSS prevention, SQL injection risks, Authentication gaps".into(),
-        },
-        ScanAgentMeta {
-            key: "architecture-analyst".into(),
-            label: "Architecture Analyst".into(),
-            emoji: "🏗️".into(),
-            abbreviation: "ARC".into(),
-            color: "#8B5CF6".into(),
-            category_group: "technical".into(),
-            description: "Evaluates system architecture and suggests structural improvements"
-                .into(),
-            examples: "Reduce coupling, Improve modularity, Better separation of concerns".into(),
-        },
-        ScanAgentMeta {
-            key: "test-strategist".into(),
-            label: "Test Strategist".into(),
-            emoji: "🧪".into(),
-            abbreviation: "TST".into(),
-            color: "#10B981".into(),
-            category_group: "technical".into(),
-            description: "Identifies gaps in test coverage and suggests testing strategies".into(),
-            examples: "Missing edge cases, Integration test gaps, E2E scenarios".into(),
-        },
-        ScanAgentMeta {
-            key: "dependency-auditor".into(),
-            label: "Dependency Auditor".into(),
-            emoji: "📦".into(),
-            abbreviation: "DEP".into(),
-            color: "#F59E0B".into(),
-            category_group: "technical".into(),
-            description: "Analyzes dependencies for updates, vulnerabilities, and bloat".into(),
-            examples: "Outdated packages, Unused dependencies, Version conflicts".into(),
-        },
-        ScanAgentMeta {
-            key: "ux-reviewer".into(),
-            label: "UX Reviewer".into(),
-            emoji: "🎨".into(),
-            abbreviation: "UXR".into(),
-            color: "#EC4899".into(),
-            category_group: "user".into(),
-            description: "Reviews user experience patterns and suggests improvements".into(),
-            examples: "Loading states, Error handling UX, Navigation clarity".into(),
-        },
-        ScanAgentMeta {
-            key: "accessibility-checker".into(),
-            label: "Accessibility Checker".into(),
-            emoji: "♿".into(),
-            abbreviation: "A11Y".into(),
-            color: "#6366F1".into(),
-            category_group: "user".into(),
-            description: "Identifies accessibility issues and WCAG compliance gaps".into(),
-            examples: "Missing ARIA labels, Color contrast, Keyboard navigation".into(),
-        },
-        ScanAgentMeta {
-            key: "mobile-specialist".into(),
-            label: "Mobile Specialist".into(),
-            emoji: "📱".into(),
-            abbreviation: "MOB".into(),
-            color: "#14B8A6".into(),
-            category_group: "user".into(),
-            description: "Evaluates mobile experience and responsive design".into(),
-            examples: "Touch targets, Viewport handling, Mobile performance".into(),
-        },
-        ScanAgentMeta {
-            key: "error-handler".into(),
-            label: "Error Handler".into(),
-            emoji: "🚨".into(),
-            abbreviation: "ERR".into(),
-            color: "#F97316".into(),
-            category_group: "user".into(),
-            description: "Reviews error handling, recovery flows, and user messaging".into(),
-            examples: "Graceful degradation, Retry logic, Error boundaries".into(),
-        },
-        ScanAgentMeta {
-            key: "onboarding-designer".into(),
-            label: "Onboarding Designer".into(),
-            emoji: "🎯".into(),
-            abbreviation: "ONB".into(),
-            color: "#06B6D4".into(),
-            category_group: "user".into(),
-            description: "Evaluates first-time user experience and onboarding flows".into(),
-            examples: "Setup wizards, Progressive disclosure, Empty states".into(),
-        },
-        ScanAgentMeta {
-            key: "feature-scout".into(),
-            label: "Feature Scout".into(),
-            emoji: "🔭".into(),
-            abbreviation: "SCT".into(),
-            color: "#8B5CF6".into(),
-            category_group: "business".into(),
-            description: "Identifies missing features and enhancement opportunities".into(),
-            examples: "Competitive features, User-requested features, Market gaps".into(),
-        },
-        ScanAgentMeta {
-            key: "monetization-advisor".into(),
-            label: "Monetization Advisor".into(),
-            emoji: "💰".into(),
-            abbreviation: "MON".into(),
-            color: "#F59E0B".into(),
-            category_group: "business".into(),
-            description: "Suggests revenue optimization and pricing strategies".into(),
-            examples: "Premium features, Usage limits, Conversion funnels".into(),
-        },
-        ScanAgentMeta {
-            key: "analytics-planner".into(),
-            label: "Analytics Planner".into(),
-            emoji: "📊".into(),
-            abbreviation: "ANA".into(),
-            color: "#3B82F6".into(),
-            category_group: "business".into(),
-            description: "Plans analytics instrumentation and data collection".into(),
-            examples: "Event tracking, Funnel analysis, User behavior insights".into(),
-        },
-        ScanAgentMeta {
-            key: "documentation-auditor".into(),
-            label: "Documentation Auditor".into(),
-            emoji: "📝".into(),
-            abbreviation: "DOC".into(),
-            color: "#10B981".into(),
-            category_group: "business".into(),
-            description: "Reviews documentation completeness and quality".into(),
-            examples: "API docs, README quality, Code comments".into(),
-        },
-        ScanAgentMeta {
-            key: "growth-hacker".into(),
-            label: "Growth Hacker".into(),
-            emoji: "🚀".into(),
-            abbreviation: "GRW".into(),
-            color: "#EC4899".into(),
-            category_group: "business".into(),
-            description: "Identifies growth opportunities and viral mechanics".into(),
-            examples: "Sharing features, Referral programs, Network effects".into(),
-        },
-        ScanAgentMeta {
-            key: "tech-debt-tracker".into(),
-            label: "Tech Debt Tracker".into(),
-            emoji: "🏦".into(),
-            abbreviation: "TDT".into(),
-            color: "#EF4444".into(),
-            category_group: "mastermind".into(),
-            description: "Catalogs technical debt and prioritizes repayment".into(),
-            examples: "Legacy code, Missing abstractions, Workarounds".into(),
-        },
-        ScanAgentMeta {
-            key: "innovation-catalyst".into(),
-            label: "Innovation Catalyst".into(),
-            emoji: "💡".into(),
-            abbreviation: "INN".into(),
-            color: "#F59E0B".into(),
-            category_group: "mastermind".into(),
-            description: "Suggests innovative approaches and paradigm shifts".into(),
-            examples: "AI integration, New architectures, Emerging patterns".into(),
-        },
-        ScanAgentMeta {
-            key: "risk-assessor".into(),
-            label: "Risk Assessor".into(),
-            emoji: "⚠️".into(),
-            abbreviation: "RSK".into(),
-            color: "#F97316".into(),
-            category_group: "mastermind".into(),
-            description: "Identifies project risks and mitigation strategies".into(),
-            examples: "Single points of failure, Scaling risks, Data loss scenarios".into(),
-        },
-        ScanAgentMeta {
-            key: "integration-planner".into(),
-            label: "Integration Planner".into(),
-            emoji: "🔗".into(),
-            abbreviation: "INT".into(),
-            color: "#6366F1".into(),
-            category_group: "mastermind".into(),
-            description: "Plans system integrations and API design".into(),
-            examples: "Third-party APIs, Webhook design, Data synchronization".into(),
-        },
-        ScanAgentMeta {
-            key: "devops-optimizer".into(),
-            label: "DevOps Optimizer".into(),
-            emoji: "🔧".into(),
-            abbreviation: "OPS".into(),
-            color: "#14B8A6".into(),
-            category_group: "mastermind".into(),
-            description: "Optimizes build, deploy, and operations workflows".into(),
-            examples: "CI/CD pipelines, Docker optimization, Monitoring gaps".into(),
-        },
-    ]
+#[derive(Deserialize)]
+struct ScanAgentRegistry {
+    agents: Vec<ScanAgentMeta>,
+}
+
+static SCAN_AGENTS: OnceLock<Vec<ScanAgentMeta>> = OnceLock::new();
+
+fn get_scan_agents() -> &'static Vec<ScanAgentMeta> {
+    SCAN_AGENTS.get_or_init(|| {
+        let raw = include_str!("scan_agents.toml");
+        let registry: ScanAgentRegistry =
+            toml::from_str(raw).expect("scan_agents.toml is invalid");
+        registry.agents
+    })
 }
 
 // =============================================================================
@@ -402,7 +212,7 @@ pub fn dev_tools_list_scan_agents(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<ScanAgentMeta>, AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
-    Ok(get_scan_agents())
+    Ok(get_scan_agents().clone())
 }
 
 #[tauri::command]

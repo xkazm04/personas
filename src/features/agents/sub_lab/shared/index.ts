@@ -6,3 +6,6 @@ export {
   getSectionSummary,
   diffStrings,
 } from './labPrimitives';
+export { ModelToggleGrid } from './ModelToggleGrid';
+export { UseCaseFilterPicker } from './UseCaseFilterPicker';
+export { LabActionButtons } from './LabActionButtons';

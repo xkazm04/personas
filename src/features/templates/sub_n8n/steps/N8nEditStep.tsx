@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Wrench, ListChecks, ChevronDown, ChevronRight } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
@@ -7,7 +8,7 @@ import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/e
 import { ExecutionTerminal } from '@/features/agents/sub_executions';
 import { N8nEntitiesTab } from '../edit/N8nEntitiesTab';
 import { N8nUseCasesTab } from '../edit/N8nUseCasesTab';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { useN8nDesignData } from '../hooks/useN8nDesignData';
 import { useVaultStore } from "@/stores/vaultStore";
 
 interface N8nEditStepProps {
@@ -69,11 +70,11 @@ export function N8nEditStep({
 
   // Initialize manualLinks from persisted credential_links in design_context
   const credentials = useVaultStore((s) => s.credentials);
+  const { credentialLinks } = useN8nDesignData(draft.design_context, draft.system_prompt, draft.structured_prompt as Record<string, unknown> | null);
   useEffect(() => {
-    const data = parseDesignContext(draft.design_context);
-    if (data.credentialLinks && Object.keys(data.credentialLinks).length > 0) {
+    if (Object.keys(credentialLinks).length > 0) {
       const links: Record<string, { id: string; name: string }> = {};
-      for (const [connName, credId] of Object.entries(data.credentialLinks)) {
+      for (const [connName, credId] of Object.entries(credentialLinks)) {
         const cred = credentials.find((c) => c.id === credId);
         if (cred) {
           links[connName] = { id: cred.id, name: cred.name };
@@ -83,7 +84,7 @@ export function N8nEditStep({
         setManualLinks((prev) => (Object.keys(prev).length > 0 ? prev : links));
       }
     }
-  }, [draft.design_context, credentials]);
+  }, [credentialLinks, credentials]);
 
   const handleConnectorLink = useCallback((connectorName: string, credentialId: string, credentialName: string) => {
     setManualLinks((prev) => ({ ...prev, [connectorName]: { id: credentialId, name: credentialName } }));
@@ -204,14 +205,25 @@ export function N8nEditStep({
             <span className="text-sm text-muted-foreground/60 font-mono">{testLines.length} lines</span>
           </button>
 
-          {testPanelOpen && (
-            <ExecutionTerminal
-              lines={testLines}
-              isRunning={testPhase === 'running'}
-              label={testRunId ? `test:${testRunId.slice(0, 8)}` : undefined}
-              terminalHeight={200}
-            />
-          )}
+          <AnimatePresence initial={false}>
+            {testPanelOpen && (
+              <motion.div
+                key="test-panel-body"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                style={{ overflow: 'hidden' }}
+              >
+                <ExecutionTerminal
+                  lines={testLines}
+                  isRunning={testPhase === 'running'}
+                  label={testRunId ? `test:${testRunId.slice(0, 8)}` : undefined}
+                  terminalHeight={200}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>

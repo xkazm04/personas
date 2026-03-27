@@ -65,6 +65,7 @@ export default function CanvasOverlays({
   const deleteTeamMemory = usePipelineStore((s) => s.deleteTeamMemory);
   const updateTeamMemoryImportance = usePipelineStore((s) => s.updateTeamMemoryImportance);
   const updateTeamMemory = usePipelineStore((s) => s.updateTeamMemory);
+  const filterByRunId = usePipelineStore((s) => s.filterByRunId);
 
   return (
     <>
@@ -87,6 +88,7 @@ export default function CanvasOverlays({
             onCreate={createTeamMemory}
             onFilter={(category, search) => fetchTeamMemories(selectedTeamId, category, search)}
             onLoadMore={() => loadMoreTeamMemories(selectedTeamId, memoryFilterCategory, memoryFilterSearch)}
+            onFilterByRun={(runId) => filterByRunId(selectedTeamId, runId)}
             onEdit={(id, title, content, category, importance) => updateTeamMemory(id, title, content, category, importance)}
           />
         )}

@@ -75,7 +75,7 @@ export function DesignPhasePanelSaved({
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
               !instruction.trim()
                 ? 'bg-secondary/40 text-muted-foreground/80 cursor-not-allowed'
-                : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
+                : 'bg-gradient-to-r from-primary to-accent text-foreground shadow-elevation-3 shadow-primary/20 hover:from-primary/90 hover:to-accent/90'
             }`}
           >
             <Pencil className="w-3.5 h-3.5" />

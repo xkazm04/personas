@@ -82,31 +82,3 @@ pub struct ProtocolMapRule {
     pub condition: String,
 }
 
-// ============================================================================
-// DB-persisted platform definition
-// ============================================================================
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PlatformDefinitionRow {
-    pub id: String,
-    pub label: String,
-    pub format: PlatformFormat,
-    pub definition_json: String,
-    pub is_builtin: bool,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreatePlatformDefinitionInput {
-    pub id: String,
-    pub label: String,
-    pub format: PlatformFormat,
-    pub definition_json: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdatePlatformDefinitionInput {
-    pub label: Option<String>,
-    pub definition_json: Option<String>,
-}

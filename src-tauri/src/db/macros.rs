@@ -22,6 +22,56 @@ macro_rules! push_field {
     };
 }
 
+/// Build a dynamic SET clause AND collect the parameter in a single call.
+///
+/// Combines `push_field!` with parameter collection, eliminating the need
+/// for a mirrored if-let chain. The kind annotation controls how the value
+/// is boxed:
+///
+/// - `clone` — `Box::new(v.clone())`        (String, Option<String>)
+/// - `copy`  — `Box::new(*v)`               (i32, f64 — Copy types)
+/// - `bool`  — `Box::new(*v as i32)`        (bool stored as integer)
+/// - `as_str` — `Box::new(v.as_str().to_string())` (enums with as_str())
+///
+/// # Usage
+///
+/// ```ignore
+/// push_field_param!(input.name, "name", sets, param_idx, params, clone);
+/// push_field_param!(input.timeout_ms, "timeout_ms", sets, param_idx, params, copy);
+/// push_field_param!(input.deployment_status, "deployment_status", sets, param_idx, params, as_str);
+/// ```
+#[macro_export]
+macro_rules! push_field_param {
+    ($field:expr, $col:expr, $sets:expr, $param_idx:expr, $params:expr, clone) => {
+        if let Some(ref v) = $field {
+            $sets.push(format!("{} = ?{}", $col, $param_idx));
+            $param_idx += 1;
+            $params.push(Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>);
+        }
+    };
+    ($field:expr, $col:expr, $sets:expr, $param_idx:expr, $params:expr, copy) => {
+        if let Some(ref v) = $field {
+            $sets.push(format!("{} = ?{}", $col, $param_idx));
+            $param_idx += 1;
+            $params.push(Box::new(*v) as Box<dyn rusqlite::types::ToSql>);
+        }
+    };
+    ($field:expr, $col:expr, $sets:expr, $param_idx:expr, $params:expr, bool) => {
+        if let Some(ref v) = $field {
+            $sets.push(format!("{} = ?{}", $col, $param_idx));
+            $param_idx += 1;
+            $params.push(Box::new(*v as i32) as Box<dyn rusqlite::types::ToSql>);
+        }
+    };
+    ($field:expr, $col:expr, $sets:expr, $param_idx:expr, $params:expr, as_str) => {
+        if let Some(ref v) = $field {
+            $sets.push(format!("{} = ?{}", $col, $param_idx));
+            $param_idx += 1;
+            $params.push(Box::new(v.as_str().to_string()) as Box<dyn rusqlite::types::ToSql>);
+        }
+    };
+}
+
 // ============================================================================
 // CRUD Repository Macros
 //
@@ -85,8 +135,9 @@ macro_rules! crud_get_by_id {
             pool: &crate::db::DbPool,
             id: &str,
         ) -> Result<$model, crate::error::AppError> {
+            let _start = std::time::Instant::now();
             let conn = pool.get()?;
-            conn.query_row(
+            let result = conn.query_row(
                 concat!("SELECT * FROM ", $table, " WHERE id = ?1"),
                 rusqlite::params![id],
                 $mapper,
@@ -96,7 +147,9 @@ macro_rules! crud_get_by_id {
                     crate::error::AppError::NotFound(format!(concat!($entity, " {}"), id))
                 }
                 other => crate::error::AppError::Database(other),
-            })
+            });
+            crate::db::perf::record_query($table, concat!($table, "::get_by_id"), _start.elapsed());
+            result
         }
     };
 }
@@ -116,14 +169,17 @@ macro_rules! crud_get_all {
         pub fn get_all(
             pool: &crate::db::DbPool,
         ) -> Result<Vec<$model>, crate::error::AppError> {
+            let _start = std::time::Instant::now();
             let conn = pool.get()?;
             let mut stmt =
                 conn.prepare(concat!("SELECT * FROM ", $table, " ORDER BY ", $order))?;
             let rows = stmt.query_map([], $mapper)?;
-            Ok(crate::db::repos::utils::collect_rows(
+            let result = Ok(crate::db::repos::utils::collect_rows(
                 rows,
                 concat!($table, "::get_all"),
-            ))
+            ));
+            crate::db::perf::record_query($table, concat!($table, "::get_all"), _start.elapsed());
+            result
         }
     };
 }
@@ -144,11 +200,13 @@ macro_rules! crud_delete {
             pool: &crate::db::DbPool,
             id: &str,
         ) -> Result<bool, crate::error::AppError> {
+            let _start = std::time::Instant::now();
             let conn = pool.get()?;
             let rows = conn.execute(
                 concat!("DELETE FROM ", $table, " WHERE id = ?1"),
                 rusqlite::params![id],
             )?;
+            crate::db::perf::record_query($table, concat!($table, "::delete"), _start.elapsed());
             Ok(rows > 0)
         }
     };
@@ -195,6 +253,7 @@ macro_rules! crud_update {
             id: &str,
             input: $input_type,
         ) -> Result<$model, crate::error::AppError> {
+            let _start = std::time::Instant::now();
             get_by_id(pool, id)?;
 
             let now = chrono::Utc::now().to_rfc3339();
@@ -219,7 +278,9 @@ macro_rules! crud_update {
                 param_values.iter().map(|p| p.as_ref()).collect();
             conn.execute(&sql, params_ref.as_slice())?;
 
-            get_by_id(pool, id)
+            let result = get_by_id(pool, id);
+            crate::db::perf::record_query($table, concat!($table, "::update"), _start.elapsed());
+            result
         }
     };
 
@@ -238,4 +299,31 @@ macro_rules! crud_update {
             $params.push(Box::new(v as i32));
         }
     };
+}
+
+/// Wrap a block of DB code with query timing instrumentation.
+///
+/// Records the duration to the perf ring buffer and emits a `tracing::warn`
+/// if the query exceeds the 100ms slow-query threshold.
+///
+/// # Usage
+///
+/// ```ignore
+/// pub fn get_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<Item>, AppError> {
+///     timed_query!("my_table", "my_table::get_by_persona", {
+///         let conn = pool.get()?;
+///         let mut stmt = conn.prepare("SELECT * FROM my_table WHERE persona_id = ?1")?;
+///         // ...
+///         Ok(results)
+///     })
+/// }
+/// ```
+#[macro_export]
+macro_rules! timed_query {
+    ($table:expr, $operation:expr, $body:expr) => {{
+        let _tq_start = std::time::Instant::now();
+        let _tq_result = $body;
+        crate::db::perf::record_query($table, $operation, _tq_start.elapsed());
+        _tq_result
+    }};
 }

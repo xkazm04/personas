@@ -18,40 +18,42 @@ pub fn get_all(
     persona_id: Option<&str>,
     status: Option<&str>,
 ) -> Result<Vec<PersonaHealingIssue>, AppError> {
-    let conn = pool.get()?;
+    timed_query!("healing_events", "healing_events::get_all", {
+        let conn = pool.get()?;
 
-    let mut conditions: Vec<String> = Vec::new();
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    let mut param_idx = 1u32;
+        let mut conditions: Vec<String> = Vec::new();
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+        let mut param_idx = 1u32;
 
-    if let Some(pid) = persona_id {
-        conditions.push(format!("persona_id = ?{param_idx}"));
-        param_values.push(Box::new(pid.to_string()));
-        param_idx += 1;
-    }
-    if let Some(st) = status {
-        conditions.push(format!("status = ?{param_idx}"));
-        param_values.push(Box::new(st.to_string()));
-        #[allow(unused_assignments)]
-        { param_idx += 1; }
-    }
+        if let Some(pid) = persona_id {
+            conditions.push(format!("persona_id = ?{param_idx}"));
+            param_values.push(Box::new(pid.to_string()));
+            param_idx += 1;
+        }
+        if let Some(st) = status {
+            conditions.push(format!("status = ?{param_idx}"));
+            param_values.push(Box::new(st.to_string()));
+            #[allow(unused_assignments)]
+            { param_idx += 1; }
+        }
 
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
 
-    let sql = format!(
-        "SELECT * FROM persona_healing_issues {where_clause} ORDER BY created_at DESC"
-    );
+        let sql = format!(
+            "SELECT * FROM persona_healing_issues {where_clause} ORDER BY created_at DESC"
+        );
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
 
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_to_healing_issue)?;
-    Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_list"))
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), row_to_healing_issue)?;
+        Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_list"))
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -66,131 +68,147 @@ pub fn create(
     execution_id: Option<&str>,
     suggested_fix: Option<&str>,
 ) -> Result<Option<PersonaHealingIssue>, AppError> {
-    if title.trim().is_empty() {
-        return Err(AppError::Validation("Title cannot be empty".into()));
-    }
-    if description.trim().is_empty() {
-        return Err(AppError::Validation("Description cannot be empty".into()));
-    }
+    timed_query!("healing_events", "healing_events::create", {
+        if title.trim().is_empty() {
+            return Err(AppError::Validation("Title cannot be empty".into()));
+        }
+        if description.trim().is_empty() {
+            return Err(AppError::Validation("Description cannot be empty".into()));
+        }
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let severity = severity.unwrap_or("low");
-    let category = category.unwrap_or("config");
-    let is_circuit_breaker = if is_circuit_breaker { 1 } else { 0 };
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let severity = severity.unwrap_or("low");
+        let category = category.unwrap_or("config");
+        let is_circuit_breaker = if is_circuit_breaker { 1 } else { 0 };
 
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "INSERT OR IGNORE INTO persona_healing_issues
-         (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, 'open', ?10)",
-        params![
-            id,
-            persona_id,
-            execution_id,
-            title,
-            description,
-            is_circuit_breaker,
-            severity,
-            category,
-            suggested_fix,
-            now,
-        ],
-    )?;
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "INSERT OR IGNORE INTO persona_healing_issues
+             (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 0, 'open', ?10)",
+            params![
+                id,
+                persona_id,
+                execution_id,
+                title,
+                description,
+                is_circuit_breaker,
+                severity,
+                category,
+                suggested_fix,
+                now,
+            ],
+        )?;
 
-    if rows == 0 {
-        // Duplicate -- a healing issue already exists for this (persona_id, execution_id).
-        return Ok(None);
-    }
+        if rows == 0 {
+            // Duplicate -- a healing issue already exists for this (persona_id, execution_id).
+            return Ok(None);
+        }
 
-    Ok(Some(get_by_id(pool, &id)?))
+        Ok(Some(get_by_id(pool, &id)?))
+    })
 }
 
 pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppError> {
-    // Verify exists
-    get_by_id(pool, id)?;
+    timed_query!("healing_events", "healing_events::update_status", {
+        // Verify exists
+        get_by_id(pool, id)?;
 
-    let conn = pool.get()?;
+        let conn = pool.get()?;
 
-    if status == "resolved" {
-        let now = chrono::Utc::now().to_rfc3339();
-        conn.execute(
-            "UPDATE persona_healing_issues SET status = ?1, resolved_at = ?2 WHERE id = ?3",
-            params![status, now, id],
-        )?;
-    } else {
-        conn.execute(
-            "UPDATE persona_healing_issues SET status = ?1 WHERE id = ?2",
-            params![status, id],
-        )?;
-    }
+        if status == "resolved" {
+            let now = chrono::Utc::now().to_rfc3339();
+            conn.execute(
+                "UPDATE persona_healing_issues SET status = ?1, resolved_at = ?2 WHERE id = ?3",
+                params![status, now, id],
+            )?;
+        } else {
+            conn.execute(
+                "UPDATE persona_healing_issues SET status = ?1 WHERE id = ?2",
+                params![status, id],
+            )?;
+        }
 
-    Ok(())
-}
-
-pub fn mark_auto_fixed(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE persona_healing_issues SET auto_fixed = 1, status = 'resolved', resolved_at = ?1 WHERE id = ?2",
-        params![now, id],
-    )?;
-    Ok(())
+        Ok(())
+    })
 }
 
 /// Mark a healing issue as pending auto-fix. Called at schedule time before the
 /// retry actually runs. The issue stays in `auto_fix_pending` until
 /// [`confirm_auto_fix`] (on success) or [`revert_auto_fix_pending`] (on failure).
 pub fn mark_auto_fix_pending(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE persona_healing_issues SET auto_fixed = 1, status = 'auto_fix_pending' WHERE id = ?1",
-        params![id],
-    )?;
-    Ok(())
+    timed_query!("healing_events", "healing_events::mark_auto_fix_pending", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_healing_issues SET auto_fixed = 1, status = 'auto_fix_pending' WHERE id = ?1",
+            params![id],
+        )?;
+        Ok(())
+    })
 }
 
 /// Transition a healing issue from `auto_fix_pending` to `resolved` after the
 /// retry execution succeeds.
 pub fn confirm_auto_fix(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE persona_healing_issues SET status = 'resolved', resolved_at = ?1 WHERE id = ?2 AND status = 'auto_fix_pending'",
-        params![now, id],
-    )?;
-    Ok(())
+    timed_query!("healing_events", "healing_events::confirm_auto_fix", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "UPDATE persona_healing_issues SET status = 'resolved', resolved_at = ?1 WHERE id = ?2 AND status = 'auto_fix_pending'",
+            params![now, id],
+        )?;
+        if rows == 0 {
+            tracing::warn!("confirm_auto_fix: 0 rows updated for issue {id} — status was not 'auto_fix_pending' (possible race condition)");
+            return Err(AppError::Execution(format!(
+                "Healing issue {id} is not in 'auto_fix_pending' status; transition to 'resolved' was lost"
+            )));
+        }
+        Ok(())
+    })
 }
 
 /// Revert a healing issue from `auto_fix_pending` back to `open` after the
 /// retry execution fails — the problem was not actually fixed.
 pub fn revert_auto_fix_pending(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE persona_healing_issues SET auto_fixed = 0, status = 'open' WHERE id = ?1 AND status = 'auto_fix_pending'",
-        params![id],
-    )?;
-    Ok(())
+    timed_query!("healing_events", "healing_events::revert_auto_fix_pending", {
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "UPDATE persona_healing_issues SET auto_fixed = 0, status = 'open' WHERE id = ?1 AND status = 'auto_fix_pending'",
+            params![id],
+        )?;
+        if rows == 0 {
+            tracing::warn!("revert_auto_fix_pending: 0 rows updated for issue {id} — status was not 'auto_fix_pending' (possible race condition)");
+            return Err(AppError::Execution(format!(
+                "Healing issue {id} is not in 'auto_fix_pending' status; revert to 'open' was lost"
+            )));
+        }
+        Ok(())
+    })
 }
 
 /// Find healing issues associated with an execution ID (used to update status
 /// after a retry completes).
 pub fn get_by_execution_id(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaHealingIssue>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_healing_issues WHERE execution_id = ?1",
-    )?;
-    let rows = stmt.query_map(params![execution_id], row_to_healing_issue)?;
-    Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_by_exec"))
+    timed_query!("healing_events", "healing_events::get_by_execution_id", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_healing_issues WHERE execution_id = ?1",
+        )?;
+        let rows = stmt.query_map(params![execution_id], row_to_healing_issue)?;
+        Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_by_exec"))
+    })
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "DELETE FROM persona_healing_issues WHERE id = ?1",
-        params![id],
-    )?;
-    Ok(rows > 0)
+    timed_query!("healing_events", "healing_events::delete", {
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "DELETE FROM persona_healing_issues WHERE id = ?1",
+            params![id],
+        )?;
+        Ok(rows > 0)
+    })
 }
 
 // ============================================================================
@@ -219,6 +237,7 @@ pub fn upsert_knowledge(
     description: &str,
     recommended_delay_secs: Option<i64>,
 ) -> Result<HealingKnowledge, AppError> {
+    timed_query!("healing_events", "healing_events::upsert_knowledge", {
     let conn = pool.get()?;
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -258,6 +277,7 @@ pub fn upsert_knowledge(
         row_to_knowledge,
     )
     .map_err(AppError::Database)
+    })
 }
 
 /// Get knowledge entries for a given service type (e.g., "gmail", "slack").
@@ -265,22 +285,26 @@ pub fn get_knowledge_by_service(
     pool: &DbPool,
     service_type: &str,
 ) -> Result<Vec<HealingKnowledge>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM healing_knowledge WHERE service_type = ?1 ORDER BY occurrence_count DESC",
-    )?;
-    let rows = stmt.query_map(params![service_type], row_to_knowledge)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("healing_events", "healing_events::get_knowledge_by_service", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM healing_knowledge WHERE service_type = ?1 ORDER BY occurrence_count DESC",
+        )?;
+        let rows = stmt.query_map(params![service_type], row_to_knowledge)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
 }
 
 /// Get all knowledge entries.
 pub fn get_all_knowledge(pool: &DbPool) -> Result<Vec<HealingKnowledge>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM healing_knowledge ORDER BY occurrence_count DESC, last_seen_at DESC",
-    )?;
-    let rows = stmt.query_map([], row_to_knowledge)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("healing_events", "healing_events::get_all_knowledge", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM healing_knowledge ORDER BY occurrence_count DESC, last_seen_at DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_knowledge)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
 }
 
 /// Look up a knowledge hint (recommended delay + occurrence count) for a
@@ -290,47 +314,27 @@ pub fn get_knowledge_hint(
     service_type: &str,
     pattern_key: &str,
 ) -> Result<Option<crate::engine::healing::KnowledgeHint>, AppError> {
-    let conn = pool.get()?;
-    let result = conn.query_row(
-        "SELECT recommended_delay_secs, occurrence_count FROM healing_knowledge
-         WHERE service_type = ?1 AND pattern_key = ?2",
-        params![service_type, pattern_key],
-        |row| {
-            let delay: Option<i64> = row.get(0)?;
-            let count: i64 = row.get::<_, Option<i64>>(1)?.unwrap_or(1);
-            Ok((delay, count))
-        },
-    );
-    match result {
-        Ok((delay, count)) => Ok(Some(crate::engine::healing::KnowledgeHint {
-            recommended_delay_secs: delay.map(|d| d as u64),
-            occurrence_count: count,
-        })),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(AppError::Database(e)),
-    }
-}
-
-/// Look up recommended delay for a specific service + pattern combination.
-/// Returns the recommended delay if a knowledge entry exists with sufficient occurrences.
-pub fn get_recommended_delay(
-    pool: &DbPool,
-    service_type: &str,
-    pattern_key: &str,
-) -> Result<Option<u64>, AppError> {
-    let conn = pool.get()?;
-    let result: Result<Option<i64>, _> = conn.query_row(
-        "SELECT recommended_delay_secs FROM healing_knowledge
-         WHERE service_type = ?1 AND pattern_key = ?2 AND occurrence_count >= 2",
-        params![service_type, pattern_key],
-        |row| row.get(0),
-    );
-    match result {
-        Ok(Some(delay)) => Ok(Some(delay as u64)),
-        Ok(None) => Ok(None),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(AppError::Database(e)),
-    }
+    timed_query!("healing_events", "healing_events::get_knowledge_hint", {
+        let conn = pool.get()?;
+        let result = conn.query_row(
+            "SELECT recommended_delay_secs, occurrence_count FROM healing_knowledge
+             WHERE service_type = ?1 AND pattern_key = ?2",
+            params![service_type, pattern_key],
+            |row| {
+                let delay: Option<i64> = row.get(0)?;
+                let count: i64 = row.get::<_, Option<i64>>(1)?.unwrap_or(1);
+                Ok((delay, count))
+            },
+        );
+        match result {
+            Ok((delay, count)) => Ok(Some(crate::engine::healing::KnowledgeHint {
+                recommended_delay_secs: delay.map(|d| d as u64),
+                occurrence_count: count,
+            })),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
 }
 
 #[cfg(test)]
@@ -501,5 +505,104 @@ mod tests {
         let all = get_all(&pool, Some(&persona.id), None).unwrap();
         assert_eq!(all.len(), 1);
         assert_eq!(all[0].title, "Error A");
+    }
+
+    #[test]
+    fn test_confirm_auto_fix_lost_transition_returns_error() {
+        let pool = init_test_db().unwrap();
+
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Race Test".into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        let issue = create(
+            &pool, &persona.id, "Flaky API", "timeout", false,
+            None, None, None, None,
+        )
+        .unwrap()
+        .expect("should create");
+
+        // Issue is in 'open' status — confirm_auto_fix should fail (not auto_fix_pending)
+        let err = confirm_auto_fix(&pool, &issue.id);
+        assert!(err.is_err(), "confirm on non-pending issue should error");
+
+        // Same for revert
+        let err = revert_auto_fix_pending(&pool, &issue.id);
+        assert!(err.is_err(), "revert on non-pending issue should error");
+
+        // Now transition to auto_fix_pending and confirm — should succeed
+        mark_auto_fix_pending(&pool, &issue.id).unwrap();
+        confirm_auto_fix(&pool, &issue.id).unwrap();
+        let resolved = get_by_id(&pool, &issue.id).unwrap();
+        assert_eq!(resolved.status, "resolved");
+
+        // Second confirm on already-resolved issue should fail (race simulation)
+        let err = confirm_auto_fix(&pool, &issue.id);
+        assert!(err.is_err(), "double confirm should error");
+    }
+
+    #[test]
+    fn test_revert_auto_fix_pending_lost_transition_returns_error() {
+        let pool = init_test_db().unwrap();
+
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Revert Test".into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        let issue = create(
+            &pool, &persona.id, "Bad config", "missing key", false,
+            None, None, None, None,
+        )
+        .unwrap()
+        .expect("should create");
+
+        // Transition to pending, then revert — should succeed
+        mark_auto_fix_pending(&pool, &issue.id).unwrap();
+        revert_auto_fix_pending(&pool, &issue.id).unwrap();
+        let reverted = get_by_id(&pool, &issue.id).unwrap();
+        assert_eq!(reverted.status, "open");
+        assert!(!reverted.auto_fixed);
+
+        // Second revert on already-open issue should fail (race simulation)
+        let err = revert_auto_fix_pending(&pool, &issue.id);
+        assert!(err.is_err(), "double revert should error");
     }
 }

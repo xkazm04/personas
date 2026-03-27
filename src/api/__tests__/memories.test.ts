@@ -11,7 +11,6 @@ import {
   updateMemoryImportance,
   batchDeleteMemories,
   reviewMemoriesWithCli,
-  seedMockMemory,
 } from "@/api/overview/memories";
 
 describe("api/overview/memories", () => {
@@ -26,7 +25,7 @@ describe("api/overview/memories", () => {
 
   it("createMemory returns new memory", async () => {
     mockInvoke("create_memory", { id: "mem-new" });
-    expect(await createMemory({ content: "test" } as any)).toEqual({ id: "mem-new" });
+    expect(await createMemory({ content: "test" } as unknown)).toEqual({ id: "mem-new" });
   });
 
   it("getMemoryCount returns number", async () => {
@@ -62,7 +61,23 @@ describe("api/overview/memories", () => {
 
   it("updateMemoryImportance returns boolean", async () => {
     mockInvoke("update_memory_importance", true);
-    expect(await updateMemoryImportance("mem-1", 0.9)).toBe(true);
+    expect(await updateMemoryImportance("mem-1", 4)).toBe(true);
+  });
+
+  it("updateMemoryImportance rejects out-of-range values", () => {
+    expect(() => updateMemoryImportance("mem-1", 0)).toThrow("Importance must be");
+    expect(() => updateMemoryImportance("mem-1", 6)).toThrow("Importance must be");
+    expect(() => updateMemoryImportance("mem-1", -1)).toThrow("Importance must be");
+    expect(() => updateMemoryImportance("mem-1", 1.5)).toThrow("Importance must be");
+  });
+
+  it("createMemory rejects out-of-range importance", () => {
+    expect(() =>
+      createMemory({ persona_id: "p-1", title: "t", content: "c", importance: 0 } as any),
+    ).toThrow("Importance must be");
+    expect(() =>
+      createMemory({ persona_id: "p-1", title: "t", content: "c", importance: 6 } as any),
+    ).toThrow("Importance must be");
   });
 
   it("batchDeleteMemories returns count", async () => {
@@ -74,11 +89,6 @@ describe("api/overview/memories", () => {
     const result = { reviewed: 10, deleted: 2, updated: 3, details: [] };
     mockInvoke("review_memories_with_cli", result);
     expect(await reviewMemoriesWithCli("p-1", 0.3)).toEqual(result);
-  });
-
-  it("seedMockMemory returns memory", async () => {
-    mockInvoke("seed_mock_memory", { id: "mem-mock" });
-    expect(await seedMockMemory()).toEqual({ id: "mem-mock" });
   });
 
   it("rejects on backend error", async () => {

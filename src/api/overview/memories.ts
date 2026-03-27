@@ -2,10 +2,29 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaMemory } from "@/lib/bindings/PersonaMemory";
 import type { CreatePersonaMemoryInput } from "@/lib/bindings/CreatePersonaMemoryInput";
+import type { MemoryCategoryInfo } from "@/lib/bindings/MemoryCategoryInfo";
 
 // ============================================================================
 // Memories
 // ============================================================================
+
+// -- Category taxonomy --------------------------------------------------------
+
+export type { MemoryCategoryInfo } from "@/lib/bindings/MemoryCategoryInfo";
+
+/** Fetch the canonical list of memory categories from the backend. */
+export const listMemoryCategories = () =>
+  invoke<MemoryCategoryInfo[]>("list_memory_categories");
+
+/** Valid importance range: 1 (low) to 5 (critical). */
+export const IMPORTANCE_MIN = 1;
+export const IMPORTANCE_MAX = 5;
+
+function assertImportance(value: number): void {
+  if (!Number.isInteger(value) || value < IMPORTANCE_MIN || value > IMPORTANCE_MAX) {
+    throw new Error(`Importance must be an integer between ${IMPORTANCE_MIN} and ${IMPORTANCE_MAX}, got ${value}`);
+  }
+}
 
 export const listMemories = (
   personaId?: string,
@@ -22,8 +41,10 @@ export const listMemories = (
     offset: offset,
   });
 
-export const createMemory = (input: CreatePersonaMemoryInput) =>
-  invoke<PersonaMemory>("create_memory", { input });
+export const createMemory = (input: CreatePersonaMemoryInput) => {
+  if (input.importance != null) assertImportance(input.importance);
+  return invoke<PersonaMemory>("create_memory", { input });
+};
 
 export const getMemoryCount = (personaId?: string, category?: string, search?: string) =>
   invoke<number>("get_memory_count", {
@@ -77,8 +98,10 @@ export const listMemoriesByExecution = (executionId: string) =>
 export const deleteMemory = (id: string) =>
   invoke<boolean>("delete_memory", { id });
 
-export const updateMemoryImportance = (id: string, importance: number) =>
-  invoke<boolean>("update_memory_importance", { id, importance });
+export const updateMemoryImportance = (id: string, importance: number) => {
+  assertImportance(importance);
+  return invoke<boolean>("update_memory_importance", { id, importance });
+};
 
 export const batchDeleteMemories = (ids: string[]) =>
   invoke<number>("batch_delete_memories", { ids });
@@ -104,5 +127,3 @@ export const reviewMemoriesWithCli = (personaId?: string, threshold?: number) =>
     threshold: threshold,
   });
 
-export const seedMockMemory = () =>
-  invoke<PersonaMemory>("seed_mock_memory", {});

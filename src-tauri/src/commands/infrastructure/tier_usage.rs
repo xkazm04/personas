@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use tauri::State;
@@ -9,6 +10,9 @@ use crate::engine::tier::TierConfig;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+
+/// How long a cached tier usage snapshot is considered fresh.
+const TIER_USAGE_CACHE_TTL: Duration = Duration::from_secs(3);
 
 /// A single rate-limit bucket's current usage.
 #[derive(Debug, Clone, Serialize, TS)]
@@ -47,6 +51,18 @@ pub async fn get_tier_usage(
     state: State<'_, Arc<AppState>>,
 ) -> Result<TierUsageSnapshot, AppError> {
     require_auth(&state).await?;
+
+    // Return cached snapshot if still fresh
+    {
+        let cache = state.tier_usage_cache.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some((cached_at, ref snapshot)) = *cache {
+            if cached_at.elapsed() < TIER_USAGE_CACHE_TTL {
+                return Ok(snapshot.clone());
+            }
+        }
+    }
+
+    // Cache miss or expired — compute fresh snapshot
     let tier = state.tier_config.lock().unwrap_or_else(|e| e.into_inner()).clone();
 
     // Snapshot rate limiter buckets
@@ -78,12 +94,20 @@ pub async fn get_tier_usage(
 
     let approaching_limit = rate_buckets.iter().any(|b| b.percent >= 80.0);
 
-    Ok(TierUsageSnapshot {
+    let snapshot = TierUsageSnapshot {
         tier,
         rate_buckets,
         total_running,
         total_queued,
         max_queue_depth,
         approaching_limit,
-    })
+    };
+
+    // Store in cache
+    {
+        let mut cache = state.tier_usage_cache.lock().unwrap_or_else(|e| e.into_inner());
+        *cache = Some((Instant::now(), snapshot.clone()));
+    }
+
+    Ok(snapshot)
 }

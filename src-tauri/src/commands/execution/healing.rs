@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{HealingKnowledge, HealingTimelineEvent, PersonaExecution, PersonaHealingIssue};
+use crate::db::models::{ConnectorDefinition, HealingKnowledge, HealingTimelineEvent, PersonaExecution, PersonaHealingIssue, PersonaToolDefinition};
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as repo;
 use crate::engine::healing;
@@ -31,6 +31,44 @@ fn resolve_knowledge_hint(
 
     for tool in &tools {
         for connector in &connectors {
+            let services: Vec<serde_json::Value> =
+                serde_json::from_str(&connector.services).unwrap_or_default();
+            let tool_listed = services.iter().any(|s| {
+                s.get("toolName")
+                    .and_then(|v| v.as_str())
+                    .map(|name| name == tool.name)
+                    .unwrap_or(false)
+            });
+            if tool_listed {
+                if let Ok(Some(hint)) = repo::get_knowledge_hint(pool, &connector.name, pattern_key) {
+                    return Some(hint);
+                }
+            }
+        }
+    }
+
+    None
+}
+
+/// Like [`resolve_knowledge_hint`] but accepts pre-fetched tools and connectors
+/// to avoid redundant DB queries when called in a loop.
+fn resolve_knowledge_hint_with_cache(
+    pool: &crate::db::DbPool,
+    category: &healing::FailureCategory,
+    tools: Option<&[PersonaToolDefinition]>,
+    connectors: Option<&[ConnectorDefinition]>,
+) -> Option<healing::KnowledgeHint> {
+    let pattern_key = match category {
+        healing::FailureCategory::RateLimit => "rate_limit",
+        healing::FailureCategory::Timeout => "timeout",
+        _ => return None,
+    };
+
+    let tools = tools?;
+    let connectors = connectors?;
+
+    for tool in tools {
+        for connector in connectors {
             let services: Vec<serde_json::Value> =
                 serde_json::from_str(&connector.services).unwrap_or_default();
             let tool_listed = services.iter().any(|s| {
@@ -119,6 +157,11 @@ pub async fn run_healing_analysis(
     // Consecutive failure count is stable for a single scan -- compute once.
     let consecutive = exec_repo::get_consecutive_failure_count(pool, &persona_id)?;
 
+    // Hoist tools/connectors lookups outside the loop to avoid re-fetching
+    // the same data for each failure (up to 10 times).
+    let tools = crate::db::repos::resources::tools::get_tools_for_persona(pool, &persona_id).ok();
+    let connectors = crate::db::repos::resources::connectors::get_all(pool).ok();
+
     for exec in &failures {
         let error = exec.error_message.as_deref().unwrap_or("");
         let timed_out = error.contains("timed out");
@@ -126,7 +169,7 @@ pub async fn run_healing_analysis(
         let timeout_ms = exec.duration_ms.unwrap_or(600_000) as u64;
 
         let category = healing::classify_error(error, timed_out, session_limit);
-        let kb_hint = resolve_knowledge_hint(pool, &persona_id, &category);
+        let kb_hint = resolve_knowledge_hint_with_cache(pool, &category, tools.as_deref(), connectors.as_deref());
         let diagnosis = healing::diagnose(&category, error, timeout_ms, consecutive, exec.retry_count, kb_hint.as_ref());
 
         // INSERT OR IGNORE: returns None if a duplicate already exists for
@@ -273,6 +316,13 @@ pub fn get_healing_timeline(
     let knowledge = repo::get_all_knowledge(pool)?;
     let mut events: Vec<HealingTimelineEvent> = Vec::new();
 
+    // Batch-fetch all retry chains in a single query instead of N+1 individual calls
+    let exec_ids: Vec<&str> = issues
+        .iter()
+        .filter_map(|i| i.execution_id.as_deref())
+        .collect();
+    let retry_chains = exec_repo::get_retry_chains_batch(pool, &exec_ids)?;
+
     for issue in &issues {
         let chain_id = issue
             .execution_id
@@ -327,10 +377,10 @@ pub fn get_healing_timeline(
             suggested_fix: issue.suggested_fix.clone(),
         });
 
-        // 3. Retry chain events (if execution_id present)
+        // 3. Retry chain events (from batched lookup)
         if let Some(ref exec_id) = issue.execution_id {
-            if let Ok(chain) = exec_repo::get_retry_chain(pool, exec_id) {
-                for exec in &chain {
+            if let Some(chain) = retry_chains.get(exec_id) {
+                for exec in chain {
                     if exec.retry_count > 0 {
                         let outcome_label = match exec.status.as_str() {
                             "success" | "completed" => "succeeded",

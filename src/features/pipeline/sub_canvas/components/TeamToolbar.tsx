@@ -60,7 +60,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
           </button>
 
           {showDropdown && (
-            <div className="absolute right-0 top-full mt-1 w-56 rounded-xl bg-background/95 backdrop-blur-md border border-primary/20 shadow-xl z-50 overflow-hidden">
+            <div className="absolute right-0 top-full mt-1 w-56 rounded-xl bg-background/95 backdrop-blur-md border border-primary/20 shadow-elevation-3 z-50 overflow-hidden">
               <div className="p-1.5 max-h-60 overflow-y-auto">
                 {availablePersonas.length === 0 ? (
                   <div className="px-3 py-4 text-center text-sm text-muted-foreground/90">

@@ -31,8 +31,8 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
       <span
         className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded-full border ${
           capable
-            ? 'bg-emerald-500/10 text-emerald-400/80 border-emerald-500/20'
-            : 'bg-amber-500/10 text-amber-400/80 border-amber-500/20'
+            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+            : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
         }`}
         title={
           capable
@@ -53,7 +53,7 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
   if (capable) return null; // Only show warning when engine is not capable
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/8 border-b border-amber-500/15 text-[11px] text-amber-400/80">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-[11px] text-amber-400">
       <AlertTriangle className="w-3 h-3 flex-shrink-0" />
       <span>
         <strong>{provider?.shortLabel ?? activeEngine}</strong> has not passed integration tests for this

@@ -46,7 +46,7 @@ export function EventCanvasAssistant({ open, onClose, onApply: _onApply }: Props
   if (!open) return null;
 
   return (
-    <div className="absolute top-12 left-2 z-30 w-72 rounded-xl bg-card border border-primary/15 shadow-2xl overflow-hidden flex flex-col max-h-[60vh]">
+    <div className="absolute top-12 left-2 z-30 w-72 rounded-xl bg-card border border-primary/15 shadow-elevation-4 overflow-hidden flex flex-col max-h-[60vh]">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-primary/10">
         <div className="flex items-center gap-1.5">

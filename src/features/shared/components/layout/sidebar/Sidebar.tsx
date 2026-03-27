@@ -89,7 +89,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (isDev) return;
-    if (settingsTab === 'engine' || settingsTab === 'byom') {
+    if (settingsTab === 'engine' || settingsTab === 'byom' || settingsTab === 'config') {
       setSettingsTab('account');
     }
   }, [isDev, settingsTab, setSettingsTab]);

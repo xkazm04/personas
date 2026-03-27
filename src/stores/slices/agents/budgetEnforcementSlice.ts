@@ -102,8 +102,8 @@ export const createBudgetEnforcementSlice: StateCreator<AgentStore, [], [], Budg
   fetchBudgetSpend: deduplicateFetch('budgetSpend', async () => {
     set({ budgetEnforcementLoading: true });
     try {
-      const rows = await getAllMonthlySpend();
-      set({ budgetSpendMap: buildMap(rows), budgetEnforcementLoading: false, budgetStale: false, budgetLastFetchedAt: Date.now() });
+      const result = await getAllMonthlySpend();
+      set({ budgetSpendMap: buildMap(result.items), budgetEnforcementLoading: false, budgetStale: false, budgetLastFetchedAt: Date.now() });
     } catch (err) {
       logger.warn("fetchBudgetSpend failed — budget enforcement active (fail-closed)", { error: String(err) });
       set({ budgetEnforcementLoading: false, budgetStale: true });

@@ -65,7 +65,7 @@ export function useStatusPageData() {
   // Initial load
   useEffect(() => {
     void loadData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const entries = useMemo((): CompositeHealthEntry[] => {
     const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS) ?? [];

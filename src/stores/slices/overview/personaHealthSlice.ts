@@ -248,9 +248,10 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
           getProviderUsageStats(),
         ]);
 
-        const monthlySpend = settled[0].status === 'fulfilled'
+        const monthlySpendResult = settled[0].status === 'fulfilled'
           ? settled[0].value
-          : [] as Awaited<ReturnType<typeof getAllMonthlySpend>>;
+          : null;
+        const monthlySpend = monthlySpendResult?.items ?? [];
         const healingIssues = settled[1].status === 'fulfilled'
           ? settled[1].value
           : [] as PersonaHealingIssue[];

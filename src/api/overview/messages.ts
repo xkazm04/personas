@@ -2,6 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaMessage } from "@/lib/bindings/PersonaMessage";
 import type { PersonaMessageDelivery } from "@/lib/bindings/PersonaMessageDelivery";
+import type { MessageDeliverySummary } from "@/lib/bindings/MessageDeliverySummary";
 import type { MessageThreadSummary } from "@/lib/bindings/MessageThreadSummary";
 
 // ============================================================================
@@ -36,13 +37,6 @@ export const getMessageCount = () =>
 
 export const getMessageDeliveries = (messageId: string) =>
   invoke<PersonaMessageDelivery[]>("get_message_deliveries", { messageId });
-
-export interface MessageDeliverySummary {
-  messageId: string;
-  delivered: number;
-  pending: number;
-  failed: number;
-}
 
 export const getBulkDeliverySummaries = (messageIds: string[]) =>
   invoke<MessageDeliverySummary[]>("get_bulk_delivery_summaries", { messageIds });

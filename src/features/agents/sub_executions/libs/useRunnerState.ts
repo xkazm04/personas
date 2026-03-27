@@ -11,6 +11,14 @@ import { useExecutionList } from './useExecutionList';
 import type { HealingEventPayload, PhaseEntry } from './runnerHelpers';
 import { detectPhaseFromLine, PHASE_META } from './runnerHelpers';
 
+const EMPTY_LINES: string[] = [];
+
+/** How long (ms) without new output before each silence level triggers. */
+const SILENCE_WAITING_MS = 60_000;
+const SILENCE_STUCK_MS = 120_000;
+
+export type SilenceLevel = 'active' | 'waiting' | 'stuck';
+
 export function useRunnerState(personaId: string) {
   const isExecuting = useAgentStore((state) => state.isExecuting);
   const executionOutput = useAgentStore((state) => state.executionOutput);
@@ -25,14 +33,21 @@ export function useRunnerState(personaId: string) {
 
   const isThisPersonasExecution = executionPersonaId === personaId && personaId !== '';
 
+  // Read output directly from the store — no local copy
+  const outputLines = isThisPersonasExecution ? executionOutput : EMPTY_LINES;
+
   // Shared execution list — provides typicalDurationMs derived from store data
   const { typicalDurationMs } = useExecutionList(personaId);
 
   const [inputData, setInputData] = useState('{}');
   const [showInputEditor, setShowInputEditor] = useState(false);
-  const [outputLines, setOutputLines] = useState<string[]>([]);
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [healingNotification, setHealingNotification] = useState<HealingEventPayload | null>(null);
+
+  // Silence / stuck detection
+  const lastOutputCountRef = useRef(0);
+  const lastOutputTimeRef = useRef(Date.now());
+  const [silenceLevel, setSilenceLevel] = useState<SilenceLevel>('active');
 
   // Phase tracking
   const [phases, setPhases] = useState<PhaseEntry[]>([]);
@@ -65,15 +80,6 @@ export function useRunnerState(personaId: string) {
     if (queuePosition != null) return { kind: 'queued', position: queuePosition + 1, depth: queueDepth ?? undefined };
     return 'connecting';
   }, [isExecuting, queuePosition, queueDepth]);
-
-  // Sync store output
-  useEffect(() => {
-    if (isThisPersonasExecution && executionOutput.length > 0) {
-      setOutputLines(executionOutput);
-    } else if (!isThisPersonasExecution) {
-      setOutputLines([]);
-    }
-  }, [executionOutput, isThisPersonasExecution]);
 
   // Derive phases
   useEffect(() => {
@@ -109,9 +115,30 @@ export function useRunnerState(personaId: string) {
     phaseLineCount.current = outputLines.length;
   }, [outputLines, elapsedMs]);
 
+  // Track silence: update lastOutputTime when new lines arrive
+  useEffect(() => {
+    if (outputLines.length !== lastOutputCountRef.current) {
+      lastOutputCountRef.current = outputLines.length;
+      lastOutputTimeRef.current = Date.now();
+      setSilenceLevel('active');
+    }
+  }, [outputLines]);
+
+  // Poll silence level while executing (piggybacks on elapsedMs updates every 500ms)
+  useEffect(() => {
+    if (!isExecuting || !isThisPersonasExecution) {
+      setSilenceLevel('active');
+      return;
+    }
+    const gap = Date.now() - lastOutputTimeRef.current;
+    if (gap >= SILENCE_STUCK_MS) setSilenceLevel('stuck');
+    else if (gap >= SILENCE_WAITING_MS) setSilenceLevel('waiting');
+    else setSilenceLevel('active');
+  }, [isExecuting, isThisPersonasExecution, elapsedMs]);
+
   // Reset phases
   useEffect(() => {
-    if (isExecuting) { setPhases([]); phaseLineCount.current = 0; hasSeenToolsRef.current = false; }
+    if (isExecuting) { setPhases([]); phaseLineCount.current = 0; hasSeenToolsRef.current = false; lastOutputCountRef.current = 0; lastOutputTimeRef.current = Date.now(); setSilenceLevel('active'); }
   }, [isExecuting]);
 
   useEffect(() => {
@@ -150,8 +177,8 @@ export function useRunnerState(personaId: string) {
 
   return {
     inputData, setInputData, showInputEditor, setShowInputEditor,
-    outputLines, setOutputLines, jsonError, setJsonError,
-    typicalDurationMs, elapsedMs, isThisPersonasExecution,
+    outputLines, jsonError, setJsonError,
+    typicalDurationMs, elapsedMs, isThisPersonasExecution, silenceLevel,
     phases, showPhases, setShowPhases,
     healingNotification, setHealingNotification,
     aiHealing, showHealingLog, setShowHealingLog,

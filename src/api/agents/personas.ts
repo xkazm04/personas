@@ -16,6 +16,8 @@ export interface PersonaDetailResponse extends Persona {
   triggers: PersonaTrigger[];
   subscriptions: PersonaEventSubscription[];
   automations: PersonaAutomation[];
+  /** Non-empty when one or more sub-resource queries failed to load. */
+  warnings?: string[];
 }
 
 // ============================================================================

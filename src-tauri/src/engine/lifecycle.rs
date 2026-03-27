@@ -276,6 +276,13 @@ impl FromStr for RotationEntryStatus {
     }
 }
 
+impl rusqlite::types::FromSql for RotationEntryStatus {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        let s = value.as_str()?;
+        Self::from_str(s).map_err(|e| rusqlite::types::FromSqlError::Other(e.into()))
+    }
+}
+
 // =============================================================================
 // Tests
 // =============================================================================

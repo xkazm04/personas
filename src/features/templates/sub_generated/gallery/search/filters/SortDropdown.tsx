@@ -40,7 +40,7 @@ export function SortDropdown({
       </button>
 
       {isOpen && (
-        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full right-0 mt-1 z-20 bg-background border border-primary/20 rounded-xl shadow-xl min-w-[190px] py-1.5 overflow-hidden">
+        <div ref={popupRef} style={{ transform: clampStyle.transform }} className="absolute top-full right-0 mt-1 z-20 bg-background border border-primary/20 rounded-xl shadow-elevation-3 min-w-[190px] py-1.5 overflow-hidden">
           {SORT_OPTIONS.map((option) => {
             const optSort = option.value.replace(/_(?:asc|desc)$/, '');
             const isSelected = optSort === sortBy && option.dir === sortDir;

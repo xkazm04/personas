@@ -33,30 +33,32 @@ pub fn create(
     pool: &DbPool,
     input: CreateManualReviewInput,
 ) -> Result<PersonaManualReview, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let severity = input.severity.unwrap_or_else(|| "info".to_string());
+    timed_query!("manual_reviews", "manual_reviews::create", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let severity = input.severity.unwrap_or_else(|| "info".to_string());
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO persona_manual_reviews
-         (id, execution_id, persona_id, title, description, severity, status,
-          context_data, suggested_actions, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9)",
-        params![
-            id,
-            input.execution_id,
-            input.persona_id,
-            input.title,
-            input.description,
-            severity,
-            input.context_data,
-            input.suggested_actions,
-            now,
-        ],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_manual_reviews
+             (id, execution_id, persona_id, title, description, severity, status,
+              context_data, suggested_actions, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9)",
+            params![
+                id,
+                input.execution_id,
+                input.persona_id,
+                input.title,
+                input.description,
+                severity,
+                input.context_data,
+                input.suggested_actions,
+                now,
+            ],
+        )?;
 
-    get_by_id(pool, &id)
+        get_by_id(pool, &id)
+    })
 }
 
 pub fn get_by_persona(
@@ -64,63 +66,69 @@ pub fn get_by_persona(
     persona_id: &str,
     status: Option<&str>,
 ) -> Result<Vec<PersonaManualReview>, AppError> {
-    let conn = pool.get()?;
+    timed_query!("manual_reviews", "manual_reviews::get_by_persona", {
+        let conn = pool.get()?;
 
-    if let Some(status_filter) = status {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_manual_reviews
-             WHERE persona_id = ?1 AND status = ?2
-             ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map(params![persona_id, status_filter], row_to_review)?;
-        Ok(collect_rows(rows, "manual_reviews::get_by_persona(filtered)"))
-    } else {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_manual_reviews
-             WHERE persona_id = ?1
-             ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map(params![persona_id], row_to_review)?;
-        Ok(collect_rows(rows, "manual_reviews::get_by_persona"))
-    }
+        if let Some(status_filter) = status {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_manual_reviews
+                 WHERE persona_id = ?1 AND status = ?2
+                 ORDER BY created_at DESC",
+            )?;
+            let rows = stmt.query_map(params![persona_id, status_filter], row_to_review)?;
+            Ok(collect_rows(rows, "manual_reviews::get_by_persona(filtered)"))
+        } else {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_manual_reviews
+                 WHERE persona_id = ?1
+                 ORDER BY created_at DESC",
+            )?;
+            let rows = stmt.query_map(params![persona_id], row_to_review)?;
+            Ok(collect_rows(rows, "manual_reviews::get_by_persona"))
+        }
+    })
 }
 
 pub fn get_all(
     pool: &DbPool,
     status: Option<&str>,
 ) -> Result<Vec<PersonaManualReview>, AppError> {
-    let conn = pool.get()?;
+    timed_query!("manual_reviews", "manual_reviews::get_all", {
+        let conn = pool.get()?;
 
-    if let Some(status_filter) = status {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_manual_reviews
-             WHERE status = ?1
-             ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map(params![status_filter], row_to_review)?;
-        Ok(collect_rows(rows, "manual_reviews::get_all(filtered)"))
-    } else {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_manual_reviews
-             ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map([], row_to_review)?;
-        Ok(collect_rows(rows, "manual_reviews::get_all"))
-    }
+        if let Some(status_filter) = status {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_manual_reviews
+                 WHERE status = ?1
+                 ORDER BY created_at DESC",
+            )?;
+            let rows = stmt.query_map(params![status_filter], row_to_review)?;
+            Ok(collect_rows(rows, "manual_reviews::get_all(filtered)"))
+        } else {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_manual_reviews
+                 ORDER BY created_at DESC",
+            )?;
+            let rows = stmt.query_map([], row_to_review)?;
+            Ok(collect_rows(rows, "manual_reviews::get_all"))
+        }
+    })
 }
 
 pub fn get_by_execution(
     pool: &DbPool,
     execution_id: &str,
 ) -> Result<Vec<PersonaManualReview>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_manual_reviews
-         WHERE execution_id = ?1
-         ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map(params![execution_id], row_to_review)?;
-    Ok(collect_rows(rows, "manual_reviews::get_by_execution"))
+    timed_query!("manual_reviews", "manual_reviews::get_by_execution", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_manual_reviews
+             WHERE execution_id = ?1
+             ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![execution_id], row_to_review)?;
+        Ok(collect_rows(rows, "manual_reviews::get_by_execution"))
+    })
 }
 
 pub fn update_status(
@@ -129,57 +137,61 @@ pub fn update_status(
     status: ManualReviewStatus,
     reviewer_notes: Option<String>,
 ) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+    timed_query!("manual_reviews", "manual_reviews::update_status", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    // Fetch current status and validate the transition
-    let current = get_by_id(pool, id)?;
-    current.status.validate_transition(status).map_err(AppError::Validation)?;
+        // Fetch current status and validate the transition
+        let current = get_by_id(pool, id)?;
+        current.status.validate_transition(status).map_err(AppError::Validation)?;
 
-    let resolved_at = match status {
-        ManualReviewStatus::Approved | ManualReviewStatus::Rejected | ManualReviewStatus::Resolved => Some(now.clone()),
-        ManualReviewStatus::Pending => None,
-    };
+        let resolved_at = match status {
+            ManualReviewStatus::Approved | ManualReviewStatus::Rejected | ManualReviewStatus::Resolved => Some(now.clone()),
+            ManualReviewStatus::Pending => None,
+        };
 
-    let rows = conn.execute(
-        "UPDATE persona_manual_reviews
-         SET status = ?1,
-             reviewer_notes = COALESCE(?2, reviewer_notes),
-             resolved_at = COALESCE(?3, resolved_at),
-             updated_at = ?4
-         WHERE id = ?5",
-        params![status.as_str(), reviewer_notes, resolved_at, now, id],
-    )?;
+        let rows = conn.execute(
+            "UPDATE persona_manual_reviews
+             SET status = ?1,
+                 reviewer_notes = COALESCE(?2, reviewer_notes),
+                 resolved_at = COALESCE(?3, resolved_at),
+                 updated_at = ?4
+             WHERE id = ?5",
+            params![status.as_str(), reviewer_notes, resolved_at, now, id],
+        )?;
 
-    if rows == 0 {
-        return Err(AppError::NotFound(format!("Manual review {id}")));
-    }
+        if rows == 0 {
+            return Err(AppError::NotFound(format!("Manual review {id}")));
+        }
 
-    Ok(())
+        Ok(())
+    })
 }
 
 pub fn get_pending_count(
     pool: &DbPool,
     persona_id: Option<&str>,
 ) -> Result<i64, AppError> {
-    let conn = pool.get()?;
+    timed_query!("manual_reviews", "manual_reviews::get_pending_count", {
+        let conn = pool.get()?;
 
-    if let Some(pid) = persona_id {
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_manual_reviews
-             WHERE status = 'pending' AND persona_id = ?1",
-            params![pid],
-            |row| row.get(0),
-        )?;
-        Ok(count)
-    } else {
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_manual_reviews WHERE status = 'pending'",
-            [],
-            |row| row.get(0),
-        )?;
-        Ok(count)
-    }
+        if let Some(pid) = persona_id {
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM persona_manual_reviews
+                 WHERE status = 'pending' AND persona_id = ?1",
+                params![pid],
+                |row| row.get(0),
+            )?;
+            Ok(count)
+        } else {
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM persona_manual_reviews WHERE status = 'pending'",
+                [],
+                |row| row.get(0),
+            )?;
+            Ok(count)
+        }
+    })
 }
 
 // -- Review Messages ---------------------------------------------
@@ -188,33 +200,37 @@ pub fn create_message(
     pool: &DbPool,
     input: CreateReviewMessageInput,
 ) -> Result<ReviewMessage, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO review_messages (id, review_id, role, content, metadata, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![id, input.review_id, input.role, input.content, input.metadata, now],
-    )?;
+    timed_query!("manual_reviews", "manual_reviews::create_message", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO review_messages (id, review_id, role, content, metadata, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![id, input.review_id, input.role, input.content, input.metadata, now],
+        )?;
 
-    conn.query_row(
-        "SELECT * FROM review_messages WHERE id = ?1",
-        params![id],
-        row_to_message,
-    )
-    .map_err(AppError::Database)
+        conn.query_row(
+            "SELECT * FROM review_messages WHERE id = ?1",
+            params![id],
+            row_to_message,
+        )
+        .map_err(AppError::Database)
+    })
 }
 
 pub fn list_messages(
     pool: &DbPool,
     review_id: &str,
 ) -> Result<Vec<ReviewMessage>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM review_messages WHERE review_id = ?1 ORDER BY created_at ASC",
-    )?;
-    let rows = stmt.query_map(params![review_id], row_to_message)?;
-    Ok(collect_rows(rows, "review_messages::list"))
+    timed_query!("manual_reviews", "manual_reviews::list_messages", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM review_messages WHERE review_id = ?1 ORDER BY created_at ASC",
+        )?;
+        let rows = stmt.query_map(params![review_id], row_to_message)?;
+        Ok(collect_rows(rows, "review_messages::list"))
+    })
 }
 
 #[cfg(test)]

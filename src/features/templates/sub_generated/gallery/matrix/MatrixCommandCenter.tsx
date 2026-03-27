@@ -203,7 +203,7 @@ export function MatrixCommandCenter({
               onClick={() => setInputMode('describe')}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-medium transition-colors ${
                 inputMode === 'describe'
-                  ? 'bg-primary/15 text-primary shadow-sm'
+                  ? 'bg-primary/15 text-primary shadow-elevation-1'
                   : 'text-muted-foreground/50 hover:text-muted-foreground/70'
               }`}
             >
@@ -215,7 +215,7 @@ export function MatrixCommandCenter({
               onClick={() => setInputMode('import')}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-medium transition-colors ${
                 inputMode === 'import'
-                  ? 'bg-primary/15 text-primary shadow-sm'
+                  ? 'bg-primary/15 text-primary shadow-elevation-1'
                   : 'text-muted-foreground/50 hover:text-muted-foreground/70'
               }`}
             >

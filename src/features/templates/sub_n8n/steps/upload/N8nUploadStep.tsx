@@ -56,7 +56,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
             onClick={() => setMode(m.id)}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
               mode === m.id
-                ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 shadow-sm'
+                ? 'bg-violet-500/15 text-violet-300 border border-violet-500/25 shadow-elevation-1'
                 : 'text-muted-foreground/70 hover:text-foreground/80 hover:bg-secondary/40 border border-transparent'
             }`}
           >

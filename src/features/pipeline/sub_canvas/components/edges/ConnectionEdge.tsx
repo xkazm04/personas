@@ -1,5 +1,6 @@
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
 import { getConnectionStyle } from '../../libs/teamConstants';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 
 export default function ConnectionEdge({
   id,
@@ -100,8 +101,8 @@ export default function ConnectionEdge({
             <span
               className="px-2 py-0.5 text-sm font-mono rounded-full border backdrop-blur-sm"
               style={{
-                backgroundColor: typeStyle.stroke + '15',
-                borderColor: typeStyle.stroke + '30',
+                backgroundColor: colorWithAlpha(typeStyle.stroke, 0.08),
+                borderColor: colorWithAlpha(typeStyle.stroke, 0.19),
                 color: typeStyle.stroke,
               }}
             >

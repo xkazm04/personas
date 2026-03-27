@@ -34,7 +34,7 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
 
   return (
     <div
-      className="bg-background/95 border border-primary/20 rounded-xl shadow-2xl backdrop-blur-sm p-4 space-y-3 max-w-sm"
+      className="bg-background/95 border border-primary/20 rounded-xl shadow-elevation-4 backdrop-blur-sm p-4 space-y-3 max-w-sm"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}

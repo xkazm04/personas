@@ -42,7 +42,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
       className="group relative text-left cursor-pointer focus-ring h-[200px] flex flex-col"
     >
       {/* Illustration area -- fixed height */}
-      <div className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-sm group-hover:shadow-xl transition-all duration-400`}>
+      <div className={`relative w-full h-[140px] flex-shrink-0 rounded-xl border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-elevation-1 group-hover:shadow-elevation-3 transition-all duration-400`}>
         {/* Glow blob */}
         <div className={`absolute inset-0 ${card.glowColor} blur-3xl rounded-full opacity-0 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none scale-75`} />
 

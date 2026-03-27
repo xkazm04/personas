@@ -109,7 +109,7 @@ export function QueryEditorPane({
           disabled={saveState === 'saving'}
           className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-sm font-medium border transition-all duration-300 ${
             saveState === 'saved'
-              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25 shadow-sm shadow-emerald-500/10'
+              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25 shadow-elevation-1 shadow-emerald-500/10'
               : saveState === 'saving'
                 ? 'text-muted-foreground/40 border-transparent'
                 : 'text-muted-foreground/50 hover:text-foreground/70 hover:bg-secondary/40 border-transparent hover:border-primary/10'
@@ -131,7 +131,7 @@ export function QueryEditorPane({
         <button
           onClick={handleAiRun}
           disabled={queryDebug.isRunning || !editorValue.trim()}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium bg-gradient-to-r from-violet-500/15 to-fuchsia-500/10 text-violet-400 border border-violet-500/20 hover:from-violet-500/25 hover:to-fuchsia-500/20 hover:border-violet-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm shadow-violet-500/5"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium bg-gradient-to-r from-violet-500/15 to-fuchsia-500/10 text-violet-400 border border-violet-500/20 hover:from-violet-500/25 hover:to-fuchsia-500/20 hover:border-violet-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-elevation-1 shadow-violet-500/5"
         >
           {queryDebug.isRunning ? <LoadingSpinner size="xs" /> : <Wand2 className="w-3 h-3" />}
           {queryDebug.isRunning ? 'Debugging...' : 'AI Run'}

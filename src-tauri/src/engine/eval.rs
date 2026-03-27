@@ -563,8 +563,10 @@ fn parse_llm_eval_response(raw: &str) -> Result<LlmEvalResult, String> {
 }
 
 fn validate_llm_result(mut result: LlmEvalResult) -> Result<LlmEvalResult, String> {
+    // Clamp all scores to valid 0-100 range
     result.tool_accuracy = result.tool_accuracy.clamp(0, 100);
     result.output_quality = result.output_quality.clamp(0, 100);
+    result.protocol_compliance = result.protocol_compliance.clamp(0, 100);
 
     // Build combined rationale from per-metric fields if the rationale is empty or generic
     if result.rationale.is_empty() || result.rationale.len() < 20 {
@@ -582,7 +584,6 @@ fn validate_llm_result(mut result: LlmEvalResult) -> Result<LlmEvalResult, Strin
             result.rationale = parts.join(" | ");
         }
     }
-    result.protocol_compliance = result.protocol_compliance.clamp(0, 100);
     Ok(result)
 }
 

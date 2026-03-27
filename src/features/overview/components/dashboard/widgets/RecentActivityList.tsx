@@ -1,6 +1,7 @@
-import { Activity, Zap, AlertCircle, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 import { DASHBOARD_GRID_SPAN_MAJOR, CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
+import { EmptyState } from '@/features/shared/components/display/EmptyState';
 
 interface Execution {
   id: string;
@@ -45,7 +46,7 @@ export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityLis
                 }`}>
                   {exec.status === 'completed' ? <CheckCircle2 className="w-3.5 h-3.5" /> :
                    exec.status === 'failed' ? <AlertCircle className="w-3.5 h-3.5" /> :
-                   <Activity className="w-3.5 h-3.5 animate-pulse" />}
+                   <Activity className="w-3.5 h-3.5 animate-pulse motion-reduce:animate-none" />}
                 </div>
                 <span className="typo-heading text-foreground/90 truncate min-w-0">{exec.persona_name || 'Agent'}</span>
                 <span className={`typo-heading px-1.5 py-0.5 rounded-lg flex-shrink-0 ${
@@ -63,13 +64,7 @@ export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityLis
             ))}
           </AnimatedList>
         ) : (
-          <div className="p-8 text-center flex flex-col items-center justify-center">
-            <div className="w-14 h-14 rounded-xl bg-secondary/50 border border-primary/10 shadow-inner flex items-center justify-center mb-4 opacity-70">
-              <Zap className="w-6 h-6 text-muted-foreground" />
-            </div>
-            <p className="typo-heading text-foreground/70">No recent activity found.</p>
-            <p className="typo-body text-muted-foreground mt-1">Run an agent to see activity here.</p>
-          </div>
+          <EmptyState variant="activity" />
         )}
       </div>
     </div>

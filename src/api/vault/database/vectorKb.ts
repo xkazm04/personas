@@ -24,6 +24,16 @@ export const deleteKnowledgeBase = (kbId: string) =>
   invoke<void>('delete_knowledge_base', { kbId });
 
 // ============================================================================
+// Native File/Directory Pickers
+// ============================================================================
+
+export const kbPickFiles = () =>
+  invoke<string[]>('kb_pick_files');
+
+export const kbPickDirectory = () =>
+  invoke<string | null>('kb_pick_directory');
+
+// ============================================================================
 // Document Ingestion
 // ============================================================================
 

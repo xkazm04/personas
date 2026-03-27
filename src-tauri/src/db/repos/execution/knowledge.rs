@@ -44,6 +44,7 @@ pub fn upsert(
     duration_ms: f64,
     execution_id: &str,
 ) -> Result<(), AppError> {
+    timed_query!("knowledge_entries", "knowledge_entries::upsert", {
     let conn = pool.get()?;
     let now = chrono::Utc::now().to_rfc3339();
     let id = uuid::Uuid::new_v4().to_string();
@@ -123,6 +124,7 @@ pub fn upsert(
     )?;
 
     Ok(())
+    })
 }
 
 /// Upsert a knowledge annotation -- cross-persona knowledge scoped to a tool, connector, or global.
@@ -136,6 +138,7 @@ pub fn upsert_annotation(
     annotation_source: &str,
     execution_id: Option<&str>,
 ) -> Result<ExecutionKnowledge, AppError> {
+    timed_query!("knowledge_entries", "knowledge_entries::upsert_annotation", {
     let conn = pool.get()?;
     let now = chrono::Utc::now().to_rfc3339();
     let id = uuid::Uuid::new_v4().to_string();
@@ -149,7 +152,7 @@ pub fn upsert_annotation(
     // Pattern key: scope_type:scope_id:hash_of_text for dedup
     let scope_key = scope_id.unwrap_or("_global");
     let pattern_key = format!("{}:{}:{}", scope_type, scope_key,
-        &format!("{:x}", md5_simple(annotation_text))[..8]);
+        &format!("{:x}", fnv1a_hash(annotation_text))[..8]);
 
     let pattern_data = serde_json::json!({
         "scope_type": scope_type,
@@ -188,10 +191,11 @@ pub fn upsert_annotation(
         row_to_knowledge,
     )?;
     Ok(row)
+    })
 }
 
-/// Simple hash for deduplication (not cryptographic).
-fn md5_simple(input: &str) -> u64 {
+/// FNV-1a hash for deduplication (not cryptographic).
+fn fnv1a_hash(input: &str) -> u64 {
     let mut hash: u64 = 0xcbf29ce484222325;
     for byte in input.bytes() {
         hash ^= byte as u64;
@@ -202,20 +206,24 @@ fn md5_simple(input: &str) -> u64 {
 
 /// Mark a knowledge annotation as verified by a user.
 pub fn verify_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    let now = chrono::Utc::now().to_rfc3339();
-    conn.execute(
-        "UPDATE execution_knowledge SET is_verified = 1, confidence = 1.0, updated_at = ?1 WHERE id = ?2",
-        params![now, knowledge_id],
-    )?;
-    Ok(())
+    timed_query!("knowledge_entries", "knowledge_entries::verify_annotation", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE execution_knowledge SET is_verified = 1, confidence = 1.0, updated_at = ?1 WHERE id = ?2",
+            params![now, knowledge_id],
+        )?;
+        Ok(())
+    })
 }
 
 /// Dismiss (delete) a knowledge annotation.
 pub fn dismiss_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute("DELETE FROM execution_knowledge WHERE id = ?1", params![knowledge_id])?;
-    Ok(())
+    timed_query!("knowledge_entries", "knowledge_entries::dismiss_annotation", {
+        let conn = pool.get()?;
+        conn.execute("DELETE FROM execution_knowledge WHERE id = ?1", params![knowledge_id])?;
+        Ok(())
+    })
 }
 
 /// List knowledge by scope (cross-persona). Returns entries from any persona
@@ -226,28 +234,30 @@ pub fn list_by_scope(
     scope_id: Option<&str>,
     limit: Option<i64>,
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
-    let conn = pool.get()?;
-    let limit = limit.unwrap_or(50);
+    timed_query!("knowledge_entries", "knowledge_entries::list_by_scope", {
+        let conn = pool.get()?;
+        let limit = limit.unwrap_or(50);
 
-    if let Some(sid) = scope_id {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM execution_knowledge
-             WHERE scope_type = ?1 AND scope_id = ?2
-             ORDER BY is_verified DESC, confidence DESC, updated_at DESC
-             LIMIT ?3",
-        )?;
-        let rows = stmt.query_map(params![scope_type, sid, limit], row_to_knowledge)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    } else {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM execution_knowledge
-             WHERE scope_type = ?1
-             ORDER BY is_verified DESC, confidence DESC, updated_at DESC
-             LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![scope_type, limit], row_to_knowledge)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    }
+        if let Some(sid) = scope_id {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM execution_knowledge
+                 WHERE scope_type = ?1 AND scope_id = ?2
+                 ORDER BY is_verified DESC, confidence DESC, updated_at DESC
+                 LIMIT ?3",
+            )?;
+            let rows = stmt.query_map(params![scope_type, sid, limit], row_to_knowledge)?;
+            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        } else {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM execution_knowledge
+                 WHERE scope_type = ?1
+                 ORDER BY is_verified DESC, confidence DESC, updated_at DESC
+                 LIMIT ?2",
+            )?;
+            let rows = stmt.query_map(params![scope_type, limit], row_to_knowledge)?;
+            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        }
+    })
 }
 
 /// Get cross-persona knowledge for prompt injection based on tool/connector assignments.
@@ -257,6 +267,7 @@ pub fn get_shared_injection(
     tool_names: &[&str],
     connector_types: &[&str],
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
+    timed_query!("knowledge_entries", "knowledge_entries::get_shared_injection", {
     let conn = pool.get()?;
 
     let mut results = Vec::new();
@@ -323,6 +334,7 @@ pub fn get_shared_injection(
     results.retain(|e| seen.insert(e.pattern_key.clone()));
 
     Ok(results)
+    })
 }
 
 /// List knowledge entries for a persona, optionally filtered by type.
@@ -332,28 +344,30 @@ pub fn list_for_persona(
     knowledge_type: Option<&str>,
     limit: Option<i64>,
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
-    let conn = pool.get()?;
-    let limit = limit.unwrap_or(50);
+    timed_query!("knowledge_entries", "knowledge_entries::list_for_persona", {
+        let conn = pool.get()?;
+        let limit = limit.unwrap_or(50);
 
-    if let Some(kt) = knowledge_type {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM execution_knowledge
-             WHERE persona_id = ?1 AND knowledge_type = ?2
-             ORDER BY confidence DESC, updated_at DESC
-             LIMIT ?3",
-        )?;
-        let rows = stmt.query_map(params![persona_id, kt, limit], row_to_knowledge)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    } else {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM execution_knowledge
-             WHERE persona_id = ?1
-             ORDER BY confidence DESC, updated_at DESC
-             LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![persona_id, limit], row_to_knowledge)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    }
+        if let Some(kt) = knowledge_type {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM execution_knowledge
+                 WHERE persona_id = ?1 AND knowledge_type = ?2
+                 ORDER BY confidence DESC, updated_at DESC
+                 LIMIT ?3",
+            )?;
+            let rows = stmt.query_map(params![persona_id, kt, limit], row_to_knowledge)?;
+            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        } else {
+            let mut stmt = conn.prepare(
+                "SELECT * FROM execution_knowledge
+                 WHERE persona_id = ?1
+                 ORDER BY confidence DESC, updated_at DESC
+                 LIMIT ?2",
+            )?;
+            let rows = stmt.query_map(params![persona_id, limit], row_to_knowledge)?;
+            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        }
+    })
 }
 
 /// Get high-confidence knowledge for injection into execution prompts.
@@ -362,23 +376,40 @@ pub fn get_injection_guidance(
     persona_id: &str,
     use_case_id: Option<&str>,
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
-    let conn = pool.get()?;
+    timed_query!("knowledge_entries", "knowledge_entries::get_injection_guidance", {
+        let conn = pool.get()?;
 
-    let mut stmt = conn.prepare(
-        "SELECT * FROM execution_knowledge
-         WHERE persona_id = ?1
-           AND (use_case_id IS NULL OR use_case_id = ?2)
-           AND confidence >= 0.5
-           AND (success_count + failure_count) >= 3
-         ORDER BY confidence DESC
-         LIMIT 20",
-    )?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM execution_knowledge
+             WHERE persona_id = ?1
+               AND (use_case_id IS NULL OR use_case_id = ?2)
+               AND confidence >= 0.5
+               AND (success_count + failure_count) >= 3
+             ORDER BY confidence DESC
+             LIMIT 20",
+        )?;
 
-    let rows = stmt.query_map(
-        params![persona_id, use_case_id.unwrap_or("")],
-        row_to_knowledge,
-    )?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        let rows = stmt.query_map(
+            params![persona_id, use_case_id.unwrap_or("")],
+            row_to_knowledge,
+        )?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
+/// Query execution_knowledge with an optional persona_id filter, returning mapped rows.
+fn query_with_optional_persona(
+    conn: &rusqlite::Connection,
+    sql: &str,
+    persona_id: Option<&str>,
+) -> Result<Vec<ExecutionKnowledge>, AppError> {
+    let mut stmt = conn.prepare(sql)?;
+    let rows = if let Some(pid) = persona_id {
+        stmt.query_map(params![pid], row_to_knowledge)?
+    } else {
+        stmt.query_map([], row_to_knowledge)?
+    };
+    Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
 /// Get a summary of the knowledge graph for dashboard display.
@@ -386,12 +417,13 @@ pub fn get_summary(
     pool: &DbPool,
     persona_id: Option<&str>,
 ) -> Result<KnowledgeGraphSummary, AppError> {
+    timed_query!("knowledge_entries", "knowledge_entries::get_summary", {
     let conn = pool.get()?;
 
-    let (where_clause, persona_filter) = if let Some(pid) = persona_id {
-        ("WHERE persona_id = ?1", Some(pid.to_string()))
+    let where_clause = if persona_id.is_some() {
+        "WHERE persona_id = ?1"
     } else {
-        ("", None)
+        ""
     };
 
     let count_sql = format!(
@@ -404,7 +436,7 @@ pub fn get_summary(
          FROM execution_knowledge {where_clause}"
     );
 
-    let (total, tool_seq, fail_pat, model_perf, annotation_cnt) = if let Some(ref pid) = persona_filter {
+    let (total, tool_seq, fail_pat, model_perf, annotation_cnt) = if let Some(pid) = persona_id {
         conn.query_row(&count_sql, params![pid], |row| {
             Ok((
                 row.get::<_, i64>(0)?,
@@ -426,37 +458,19 @@ pub fn get_summary(
         })?
     };
 
-    // Top patterns by confidence
     let top_sql = format!(
         "SELECT * FROM execution_knowledge {where_clause}
          ORDER BY confidence DESC, (success_count + failure_count) DESC
          LIMIT 10"
     );
-    let top_patterns = if let Some(ref pid) = persona_filter {
-        let mut stmt = conn.prepare(&top_sql)?;
-        let rows = stmt.query_map(params![pid], row_to_knowledge)?;
-        rows.filter_map(|r| r.ok()).collect()
-    } else {
-        let mut stmt = conn.prepare(&top_sql)?;
-        let rows = stmt.query_map([], row_to_knowledge)?;
-        rows.filter_map(|r| r.ok()).collect()
-    };
+    let top_patterns = query_with_optional_persona(&conn, &top_sql, persona_id)?;
 
-    // Recent learnings
     let recent_sql = format!(
         "SELECT * FROM execution_knowledge {where_clause}
          ORDER BY updated_at DESC
          LIMIT 10"
     );
-    let recent_learnings = if let Some(ref pid) = persona_filter {
-        let mut stmt = conn.prepare(&recent_sql)?;
-        let rows = stmt.query_map(params![pid], row_to_knowledge)?;
-        rows.filter_map(|r| r.ok()).collect()
-    } else {
-        let mut stmt = conn.prepare(&recent_sql)?;
-        let rows = stmt.query_map([], row_to_knowledge)?;
-        rows.filter_map(|r| r.ok()).collect()
-    };
+    let recent_learnings = query_with_optional_persona(&conn, &recent_sql, persona_id)?;
 
     Ok(KnowledgeGraphSummary {
         total_entries: total,
@@ -466,5 +480,6 @@ pub fn get_summary(
         annotation_count: annotation_cnt,
         top_patterns,
         recent_learnings,
+    })
     })
 }

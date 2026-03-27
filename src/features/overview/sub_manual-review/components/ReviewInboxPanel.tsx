@@ -184,7 +184,7 @@ export function ReviewInboxPanel({
         {!IS_MOBILE && viewMode === 'table' && slideOverOpen && activeReview && (
             <div
               key="slide-over"
-              className="animate-fade-in absolute right-0 top-0 bottom-0 w-[480px] 2xl:w-[560px] bg-background border-l border-primary/10 shadow-2xl shadow-black/20 flex flex-col z-20"
+              className="animate-fade-in absolute right-0 top-0 bottom-0 w-[480px] 2xl:w-[560px] bg-background border-l border-primary/10 shadow-elevation-4 shadow-black/20 flex flex-col z-20"
             >
               <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 flex-shrink-0 bg-secondary/20">
                 <span className="typo-caption text-foreground/70">Review Detail</span>

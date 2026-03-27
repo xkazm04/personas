@@ -36,7 +36,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
   };
 
   return (
-    <BaseModal isOpen onClose={onClose} titleId="annotate-modal-title" size="sm" panelClassName="bg-background border border-primary/10 rounded-2xl shadow-2xl overflow-hidden p-6 space-y-4">
+    <BaseModal isOpen onClose={onClose} titleId="annotate-modal-title" size="sm" panelClassName="bg-background border border-primary/10 rounded-2xl shadow-elevation-4 overflow-hidden p-6 space-y-4">
       <h3 id="annotate-modal-title" className="text-base font-semibold text-foreground/90 flex items-center gap-2">
         <MessageSquare className="w-4 h-4 text-cyan-400" /> Add Knowledge Annotation
       </h3>

@@ -18,7 +18,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, childre
       titleId="detail-modal-title"
       size="full"
       containerClassName="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      panelClassName="relative bg-gradient-to-b from-background via-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-2xl shadow-2xl shadow-black/30 overflow-hidden flex flex-col h-[90vh]"
+      panelClassName="relative bg-gradient-to-b from-background via-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-2xl shadow-elevation-4 shadow-black/30 overflow-hidden flex flex-col h-[90vh]"
     >
       {/* Ambient glow effects */}
       <div className="absolute top-0 left-1/4 w-1/2 h-32 bg-primary/[0.04] blur-3xl pointer-events-none" />

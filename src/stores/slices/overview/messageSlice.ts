@@ -6,7 +6,7 @@ import { createLogger } from "@/lib/log";
 const logger = createLogger("messages");
 import type { PersonaMessage } from "@/lib/types/types";
 import { deleteMessage, getMessageCount, getUnreadMessageCount, listMessages, markAllMessagesRead, markMessageRead, getBulkDeliverySummaries, getThreadSummaries, getThreadCount, getMessagesByThread } from "@/api/overview/messages";
-import type { MessageDeliverySummary } from "@/api/overview/messages";
+import type { MessageDeliverySummary } from "@/lib/bindings/MessageDeliverySummary";
 import type { MessageThreadSummary } from "@/lib/bindings/MessageThreadSummary";
 import { deduplicateFetch } from "@/lib/utils/deduplicateFetch";
 

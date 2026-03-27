@@ -55,7 +55,7 @@ function EllipsisDropdown({ segments }: { segments: BreadcrumbSegment[] }) {
         <MoreHorizontal className="w-3.5 h-3.5" />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[140px]">
+        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-elevation-3 py-1 min-w-[140px]">
           {segments.map((seg, i) => (
             <button
               key={i}

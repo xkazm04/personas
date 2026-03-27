@@ -22,6 +22,8 @@
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { SpanType } from '@/lib/bindings/SpanType';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
+import { storeBus } from '@/lib/storeBus';
+import type { TerminalStatus } from '@/lib/execution/executionState';
 
 // =============================================================================
 // Stage definitions
@@ -141,7 +143,7 @@ export interface StreamOutputPayload {
 /** Payload when execution reaches a terminal status. */
 export interface FinalizeStatusPayload {
   executionId: string;
-  status: 'completed' | 'failed' | 'cancelled' | 'incomplete';
+  status: TerminalStatus;
   error: string | null;
   durationMs: number | null;
   costUsd: number | null;
@@ -159,6 +161,9 @@ export interface FrontendCompletePayload {
   costUsd?: number | null;
   /** Error message from backend (needed by drift middleware). */
   errorMessage?: string | null;
+  /** Pre-captured recent executions for the persona, snapshotted before state reset.
+   *  Avoids the drift middleware reading stale/wrong data from the store. */
+  recentExecutions?: Array<{ persona_id: string; status: string }>;
 }
 
 /**
@@ -277,6 +282,113 @@ export type PipelineTraceEntry = UnifiedSpan;
 export type PipelineTrace = UnifiedTrace;
 
 // =============================================================================
+// Stage timing
+// =============================================================================
+
+/** High-resolution timing record for a single pipeline stage. */
+export interface StageTiming {
+  stage: PipelineStage;
+  /** Absolute performance.now() timestamp when the stage was entered. */
+  entryAt: number;
+  /** Absolute performance.now() timestamp when the stage exited (null if still open). */
+  exitAt: number | null;
+  /** Duration in milliseconds (exitAt - entryAt), null if still open. */
+  durationMs: number | null;
+}
+
+/** Per-execution collection of stage timings. */
+export interface PipelineTimingRecord {
+  executionId: string;
+  stages: StageTiming[];
+  /** Total pipeline duration from first entry to last exit (ms). */
+  totalMs: number | null;
+}
+
+/**
+ * Internal map tracking performance.now() entry timestamps for open stages.
+ * Keyed by executionId so concurrent traces don't collide.
+ */
+const _perfEntryMap = new Map<string, Map<PipelineStage, number>>();
+
+/** Record a stage entry using performance.now(). */
+function _recordStageEntry(executionId: string, stage: PipelineStage): void {
+  if (!_perfEntryMap.has(executionId)) _perfEntryMap.set(executionId, new Map());
+  _perfEntryMap.get(executionId)!.set(stage, performance.now());
+}
+
+/** Finalize the previous open stage and return its StageTiming (or null). */
+function _finalizeOpenStage(executionId: string, currentStage?: PipelineStage): StageTiming | null {
+  const entryMap = _perfEntryMap.get(executionId);
+  if (!entryMap) return null;
+
+  // Find the open stage (any stage with an entry but not yet finalized)
+  for (const [stage, entryAt] of entryMap) {
+    if (stage !== currentStage) {
+      const exitAt = performance.now();
+      entryMap.delete(stage);
+      return { stage, entryAt, exitAt, durationMs: exitAt - entryAt };
+    }
+  }
+  return null;
+}
+
+/** Finalize all remaining open stages for an execution. */
+function _finalizeAllStages(executionId: string): StageTiming[] {
+  const entryMap = _perfEntryMap.get(executionId);
+  if (!entryMap) return [];
+  const exitAt = performance.now();
+  const results: StageTiming[] = [];
+  for (const [stage, entryAt] of entryMap) {
+    results.push({ stage, entryAt, exitAt, durationMs: exitAt - entryAt });
+  }
+  _perfEntryMap.delete(executionId);
+  return results;
+}
+
+/**
+ * Accumulated stage timings per execution. Built up as stages complete
+ * and consumed via `getTimingRecord()`.
+ */
+const _timingRecords = new Map<string, StageTiming[]>();
+
+function _appendTiming(executionId: string, timing: StageTiming): void {
+  if (!_timingRecords.has(executionId)) _timingRecords.set(executionId, []);
+  _timingRecords.get(executionId)!.push(timing);
+}
+
+/**
+ * Retrieve the accumulated timing record for an execution.
+ * Returns null if no timings have been recorded.
+ */
+export function getTimingRecord(executionId: string): PipelineTimingRecord | null {
+  const stages = _timingRecords.get(executionId);
+  if (!stages || stages.length === 0) return null;
+
+  const firstEntry = Math.min(...stages.map((s) => s.entryAt));
+  const lastExit = Math.max(...stages.filter((s) => s.exitAt != null).map((s) => s.exitAt!));
+  const totalMs = lastExit > 0 ? lastExit - firstEntry : null;
+
+  return { executionId, stages: [...stages], totalMs };
+}
+
+/**
+ * Remove the timing record for an execution (cleanup after persistence).
+ */
+export function clearTimingRecord(executionId: string): void {
+  _timingRecords.delete(executionId);
+  _perfEntryMap.delete(executionId);
+}
+
+/** Emit a stage-complete event via StoreBus. */
+function _emitStageComplete(executionId: string, timing: StageTiming): void {
+  storeBus.emit('pipeline:stage-complete', {
+    executionId,
+    stage: timing.stage,
+    durationMs: timing.durationMs ?? 0,
+  });
+}
+
+// =============================================================================
 // Trace lifecycle
 // =============================================================================
 
@@ -293,7 +405,8 @@ export function createPipelineTrace(executionId: string): UnifiedTrace {
 
 /**
  * Record a pipeline stage span in the trace.
- * Automatically finalizes the previous stage's end_ms/duration_ms.
+ * Automatically finalizes the previous stage's end_ms/duration_ms and
+ * records high-resolution `performance.now()` stage timings.
  */
 export function traceStage(
   trace: UnifiedTrace,
@@ -303,6 +416,16 @@ export function traceStage(
 ): UnifiedTrace {
   const now = Date.now();
   const relativeMs = now - trace.startedAt;
+
+  // Finalize previous stage's high-resolution timing and emit event
+  const completedTiming = _finalizeOpenStage(trace.executionId, stage);
+  if (completedTiming) {
+    _appendTiming(trace.executionId, completedTiming);
+    _emitStageComplete(trace.executionId, completedTiming);
+  }
+
+  // Record entry for the new stage
+  _recordStageEntry(trace.executionId, stage);
 
   // Finalize previous pipeline stage span
   const spans = trace.spans.map((s) => {
@@ -332,11 +455,18 @@ export function traceStage(
 }
 
 /**
- * Mark the trace as complete. Finalizes any open spans.
+ * Mark the trace as complete. Finalizes any open spans and stage timings.
  */
 export function completeTrace(trace: UnifiedTrace): UnifiedTrace {
   const now = Date.now();
   const relativeMs = now - trace.startedAt;
+
+  // Finalize all remaining high-resolution stage timings
+  const remainingTimings = _finalizeAllStages(trace.executionId);
+  for (const timing of remainingTimings) {
+    _appendTiming(trace.executionId, timing);
+    _emitStageComplete(trace.executionId, timing);
+  }
 
   const spans = trace.spans.map((s) => {
     if (s.end_ms === null) {

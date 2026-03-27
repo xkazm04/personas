@@ -135,7 +135,7 @@ pub async fn synthesize_team_from_templates(
     use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
     use crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching;
     use crate::engine::prompt;
-    use crate::engine::topology::compute_dag_layout;
+    use crate::engine::topology_types::compute_dag_layout;
 
     if query.trim().is_empty() {
         return Err(AppError::Validation("Query cannot be empty".into()));

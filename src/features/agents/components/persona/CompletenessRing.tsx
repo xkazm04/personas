@@ -1,9 +1,11 @@
+import { completenessColor } from '@/lib/personas/personaThresholds';
+
 /** Completeness ring SVG. */
 export function CompletenessRing({ percent }: { percent: number }) {
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percent / 100) * circumference;
-  const color = percent >= 80 ? '#34d399' : percent >= 40 ? '#fbbf24' : '#94a3b8';
+  const color = completenessColor(percent);
 
   return (
     <div className="relative w-12 h-12 flex items-center justify-center">

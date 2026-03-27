@@ -1,5 +1,6 @@
 import { ChevronRight, Cloud } from 'lucide-react';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { STATUS_LABELS, SEVERITY_LABELS } from '../libs/reviewHelpers';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -75,7 +76,7 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
       <div className="flex items-start gap-2.5">
         <div
           className="w-7 h-7 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0 mt-0.5"
-          style={{ backgroundColor: (review.persona_color || '#6366f1') + '15' }}
+          style={{ backgroundColor: colorWithAlpha(review.persona_color || '#6366f1', 0.08) }}
         >
           {review.persona_icon || '?'}
         </div>

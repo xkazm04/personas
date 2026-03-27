@@ -189,7 +189,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
 
       <div className="flex justify-end gap-2 pt-2">
         <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-xl text-sm transition-colors">Cancel</button>
-        <button onClick={handleAddTrigger} className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-lg shadow-primary/20">Create Trigger</button>
+        <button onClick={handleAddTrigger} className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20">Create Trigger</button>
       </div>
     </div>
   );

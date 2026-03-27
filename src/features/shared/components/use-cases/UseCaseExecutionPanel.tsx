@@ -88,8 +88,8 @@ export function UseCaseExecutionPanel({ personaId, useCase, onClose, onExecution
           onClick={exec.isExecuting && exec.isThisUseCaseExecution ? exec.handleStop : exec.handleExecute}
           disabled={exec.isExecuting && !exec.isThisUseCaseExecution}
           className={exec.isExecuting && exec.isThisUseCaseExecution
-            ? 'shadow-lg shadow-red-500/10'
-            : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg shadow-primary/10'
+            ? 'shadow-elevation-3 shadow-red-500/10'
+            : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-elevation-3 shadow-primary/10'
           }
         >
           {exec.isExecuting && exec.isThisUseCaseExecution ? 'Stop Execution' : 'Execute Use Case'}

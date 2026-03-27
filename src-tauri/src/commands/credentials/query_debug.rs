@@ -305,18 +305,9 @@ async fn run_query_debug(params: RunParams) {
 
         // Audit log the query execution (log a length fingerprint, not raw query text)
         let query_fingerprint = format!("len={}, attempt={}", query_to_run.len(), attempt + 1);
-        let is_mutation = {
-            let upper = query_to_run.trim().to_uppercase();
-            upper.starts_with("INSERT") || upper.starts_with("UPDATE") || upper.starts_with("DELETE") || upper.starts_with("DROP") || upper.starts_with("ALTER") || upper.starts_with("CREATE")
-        };
+        let is_mutation = db_query::is_mutation(&query_to_run);
         let mutation_label = if is_mutation { "mutation" } else { "read" };
-        if let Err(e) = audit_log::insert(
-            &pool, &credential_id, &credential_id,
-            "db_query_execute", None, None,
-            Some(&format!("{mutation_label}, {query_fingerprint}")),
-        ) {
-            tracing::warn!(credential_id = %credential_id, error = %e, "Failed to write audit log for DB query execution");
-        }
+        audit_log::insert_warn(&pool, &credential_id, &credential_id, "db_query_execute", Some(&format!("{mutation_label}, {query_fingerprint}")));
 
         // Execute the extracted query
         match db_query::execute_query(&pool, &credential_id, &query_to_run, None, true).await {

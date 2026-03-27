@@ -89,6 +89,9 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: node scripts/bundle-comment.mjs
 
+      - name: Check for unused bindings
+        run: bash scripts/check-unused-bindings.sh
+
       - name: Run frontend tests
         run: npm run test -- --run
 
@@ -145,7 +148,29 @@ jobs:
         if: always()
         run: sccache --show-stats
 
-  # ─── Job C: Check TypeScript bindings are up to date ────────
+  # ─── Job C: Check generated command names are fresh ─────────
+  command-name-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Regenerate command names
+        run: node scripts/generate-command-names.mjs
+
+      - name: Check for command name drift
+        run: |
+          if ! git diff --quiet src/lib/commandNames.generated.ts src/lib/commandNames.overrides.ts; then
+            echo "::error::Generated command names are out of date. Run 'node scripts/generate-command-names.mjs' locally and commit the changes."
+            git diff src/lib/commandNames.generated.ts src/lib/commandNames.overrides.ts
+            exit 1
+          fi
+          echo "Command names are up to date."
+
+  # ─── Job D: Check TypeScript bindings are up to date ────────
   binding-drift:
     runs-on: ubuntu-22.04
     env:

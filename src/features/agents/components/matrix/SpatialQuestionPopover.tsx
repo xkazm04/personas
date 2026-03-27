@@ -104,7 +104,7 @@ function QuestionModal({
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
     >
       {/* Modal — wider (max-w-xl → ~36rem ≈ 20% more than max-w-lg ~32rem) */}
-      <div className="w-full max-w-xl max-h-[80vh] bg-background border border-primary/20 rounded-2xl shadow-2xl shadow-primary/10 flex flex-col overflow-hidden">
+      <div className="w-full max-w-xl max-h-[80vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 shadow-primary/10 flex flex-col overflow-hidden">
         {/* Header with dimension color accent */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/[0.03]">
           <div className="flex items-center gap-3">
@@ -143,7 +143,7 @@ function QuestionModal({
                   key={option}
                   type="button"
                   onClick={() => onAnswer(question.cellKey, option)}
-                  className="w-full flex items-start gap-3 rounded-xl border border-primary/12 bg-card-bg px-4 py-3 text-left transition-all hover:bg-primary/8 hover:border-primary/25 hover:shadow-md hover:shadow-primary/5 group"
+                  className="w-full flex items-start gap-3 rounded-xl border border-primary/12 bg-card-bg px-4 py-3 text-left transition-all hover:bg-primary/8 hover:border-primary/25 hover:shadow-elevation-2 hover:shadow-primary/5 group"
                   data-testid={`option-button-${idx}`}
                 >
                   {/* Number badge */}

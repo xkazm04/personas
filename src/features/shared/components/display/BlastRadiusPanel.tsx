@@ -84,7 +84,7 @@ export function useBlastRadius(
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled]);
 
   return { items, loading };
 }

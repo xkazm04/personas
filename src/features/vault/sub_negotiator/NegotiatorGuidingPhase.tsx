@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Clock, AlertTriangle, Lightbulb, CheckCircle, SkipForward } from 'lucide-react';
 import type { NegotiationPlan } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { StepNode } from '@/hooks/design/credential/negotiatorStepGraph';
@@ -43,11 +44,41 @@ export function NegotiatorGuidingPhase({
   const allDone = totalSteps > 0 && completedCount >= totalSteps;
   const progressPercent = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
 
+  // Focus management: move focus to the newly active step header on transitions
+  const prevStepRef = useRef(activeStepIndex);
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
+
+  useEffect(() => {
+    if (prevStepRef.current !== activeStepIndex) {
+      prevStepRef.current = activeStepIndex;
+      const headerId = `negotiator-step-header-${activeStepIndex}`;
+      // Allow the DOM to update before focusing (animation frame)
+      requestAnimationFrame(() => {
+        document.getElementById(headerId)?.focus();
+      });
+      // Announce step transition for screen readers
+      const activeStep = visibleSteps[activeStepIndex];
+      if (activeStep) {
+        setLiveAnnouncement(
+          `Step ${activeStepIndex + 1} of ${totalSteps}: ${activeStep.step.title}`,
+        );
+      }
+    }
+  }, [activeStepIndex, visibleSteps, totalSteps]);
+
   return (
     <div
       key="negotiator-guiding"
       className="animate-fade-slide-in space-y-4"
     >
+      {/* Live region for screen reader step-transition announcements */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {liveAnnouncement}
+      </div>
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-secondary/30 border border-primary/10 rounded-xl">
         <div className="flex items-center gap-3">
@@ -124,6 +155,7 @@ export function NegotiatorGuidingPhase({
             key={node.originalIndex}
             step={node.step}
             stepIndex={visibleIndex}
+            totalSteps={totalSteps}
             isActive={activeStepIndex === visibleIndex}
             isCompleted={completedSteps.has(visibleIndex)}
             capturedValues={capturedValues}

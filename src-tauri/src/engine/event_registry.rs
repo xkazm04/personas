@@ -176,6 +176,9 @@ event_names! {
 
     // Share link (deep link received from OS)
     SHARE_LINK_RECEIVED        => "share-link-received",
+
+    // Engine fallback (unrecognized engine setting)
+    ENGINE_FALLBACK            => "engine-fallback",
 }
 
 // ---------------------------------------------------------------------------
@@ -191,6 +194,16 @@ event_names! {
 /// ```
 pub fn emit_event<P: Serialize + Clone>(app: &AppHandle, event: &str, payload: &P) {
     let _ = app.emit(event, payload.clone());
+}
+
+/// Emit a [`PersonaEvent`] to the frontend event bus (`event-bus` channel).
+///
+/// Logs a warning if the emit fails. This is the canonical way to push events
+/// to the React event-bus listener — prefer this over raw `app.emit()` calls.
+pub fn emit_event_bus(app: &AppHandle, event: &crate::db::models::PersonaEvent) {
+    if let Err(e) = app.emit(event_name::EVENT_BUS, event.clone()) {
+        tracing::warn!(event_id = %event.id, error = %e, "Failed to emit event-bus event");
+    }
 }
 
 /// Like [`emit_event`] but propagates the emit error instead of swallowing it.

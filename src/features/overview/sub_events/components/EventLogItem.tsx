@@ -3,6 +3,8 @@ import { AlertCircle, CheckCircle2, Clock, Server, Bot, Copy, Check } from 'luci
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import { EVENT_STATUS_COLORS, EVENT_TYPE_COLORS, formatRelativeTime } from '@/lib/utils/formatters';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { ROW_SEPARATOR } from '@/lib/design/listTokens';
 import type { PersonaEvent, Persona } from '@/lib/types/types';
 
 // -- HighlightedJson --------------------------------------------------
@@ -144,18 +146,18 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
   const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
   const targetPersona = getPersona(event.target_persona_id);
-  const hoverAccent =
-    event.status === 'processing' ? 'hover:border-l-status-processing'
-    : event.status === 'completed' || event.status === 'processed' ? 'hover:border-l-status-success'
-    : event.status === 'failed' ? 'hover:border-l-status-error'
-    : 'hover:border-l-status-pending';
+  const borderAccent =
+    event.status === 'processing' ? 'border-l-status-processing'
+    : event.status === 'completed' || event.status === 'delivered' ? 'border-l-status-success'
+    : event.status === 'failed' ? 'border-l-status-error'
+    : 'border-l-status-pending';
 
   return (
     <tr
       key={event.id}
       data-testid={`event-row-${event.id}`}
       onClick={onClick}
-      className={`cursor-pointer transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+      className={`cursor-pointer transition-colors border-b ${ROW_SEPARATOR} border-l-2 ${borderAccent} hover:bg-white/[0.05] ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
       style={{
         position: 'absolute', top: 0, left: 0, width: '100%',
         height: `${size}px`, transform: `translateY(${start}px)`,
@@ -173,7 +175,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
           <div className="flex items-center gap-2">
             <div
               className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-              style={{ backgroundColor: (targetPersona.color || '#6366f1') + '15' }}
+              style={{ backgroundColor: colorWithAlpha(targetPersona.color || '#6366f1', 0.08) }}
             >
               {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-foreground/50" />}
             </div>
@@ -190,7 +192,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
       </td>
       <td className="px-4 py-2.5">
         <span className={`inline-flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-          {event.status === 'completed' || event.status === 'processed' ? <CheckCircle2 className="w-3 h-3" />
+          {event.status === 'completed' || event.status === 'delivered' ? <CheckCircle2 className="w-3 h-3" />
            : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
            : event.status === 'processing' ? <LoadingSpinner size="xs" />
            : <Clock className="w-3 h-3" />}
@@ -220,17 +222,17 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
   const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
   const targetPersona = getPersona(event.target_persona_id);
-  const hoverAccent =
-    event.status === 'processing' ? 'hover:border-l-status-processing'
-    : event.status === 'completed' || event.status === 'processed' ? 'hover:border-l-status-success'
-    : event.status === 'failed' ? 'hover:border-l-status-error'
-    : 'hover:border-l-status-pending';
+  const borderAccent =
+    event.status === 'processing' ? 'border-l-status-processing'
+    : event.status === 'completed' || event.status === 'delivered' ? 'border-l-status-success'
+    : event.status === 'failed' ? 'border-l-status-error'
+    : 'border-l-status-pending';
 
   return (
     <div
       data-testid={`event-row-${event.id}`}
       onClick={onClick}
-      className={`grid ${gridCols} gap-0 cursor-pointer transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+      className={`grid ${gridCols} gap-0 cursor-pointer transition-colors border-b ${ROW_SEPARATOR} border-l-2 ${borderAccent} hover:bg-white/[0.05] ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
     >
       <div className="px-4 py-2.5 flex items-center min-w-0">
         <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>
@@ -243,7 +245,7 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
           <div className="flex items-center gap-2 min-w-0">
             <div
               className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-              style={{ backgroundColor: (targetPersona.color || '#6366f1') + '15' }}
+              style={{ backgroundColor: colorWithAlpha(targetPersona.color || '#6366f1', 0.08) }}
             >
               {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-foreground/50" />}
             </div>
@@ -260,7 +262,7 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
       </div>
       <div className="px-4 py-2.5 flex items-center">
         <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-          {event.status === 'completed' || event.status === 'processed' ? <CheckCircle2 className="w-3 h-3" />
+          {event.status === 'completed' || event.status === 'delivered' ? <CheckCircle2 className="w-3 h-3" />
             : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
             : event.status === 'processing' ? <LoadingSpinner size="xs" />
             : <Clock className="w-3 h-3" />}

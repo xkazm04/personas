@@ -129,11 +129,16 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
 
   // Build a preview of what will be improved
   const results = getResultsForRun(runId, mode);
-  const avgScores = results.length > 0 ? {
-    ta: Math.round(results.reduce((s, r) => s + ((r.toolAccuracyScore as number | null) ?? 0), 0) / results.length),
-    oq: Math.round(results.reduce((s, r) => s + ((r.outputQualityScore as number | null) ?? 0), 0) / results.length),
-    pc: Math.round(results.reduce((s, r) => s + ((r.protocolCompliance as number | null) ?? 0), 0) / results.length),
-  } : null;
+  const avgScores = results.length > 0 ? (() => {
+    const scoredTA = results.filter((r) => (r.toolAccuracyScore as number | null) != null);
+    const scoredOQ = results.filter((r) => (r.outputQualityScore as number | null) != null);
+    const scoredPC = results.filter((r) => (r.protocolCompliance as number | null) != null);
+    return {
+      ta: scoredTA.length > 0 ? Math.round(scoredTA.reduce((s, r) => s + (r.toolAccuracyScore as number), 0) / scoredTA.length) : 0,
+      oq: scoredOQ.length > 0 ? Math.round(scoredOQ.reduce((s, r) => s + (r.outputQualityScore as number), 0) / scoredOQ.length) : 0,
+      pc: scoredPC.length > 0 ? Math.round(scoredPC.reduce((s, r) => s + (r.protocolCompliance as number), 0) / scoredPC.length) : 0,
+    };
+  })() : null;
 
   const weakest = avgScores
     ? [

@@ -1,11 +1,13 @@
 import { memo, useId, useMemo, useCallback } from 'react';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   AreaChart, Area, PieChart, Pie, Cell, Legend, ReferenceLine,
 } from 'recharts';
-import { CHART_COLORS_PURPLE, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
+import { CHART_COLORS_PURPLE, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
+import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import type { MetricsChartPoint } from '@/lib/bindings/MetricsChartPoint';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 import type { ChartAnnotationRecord } from '../libs/chartAnnotations';
@@ -20,6 +22,7 @@ export interface PieDataPoint {
 export interface MetricsChartsProps {
   chartData: MetricsChartPoint[];
   pieData: PieDataPoint[];
+  anomalies?: MetricAnomaly[];
   annotations?: ChartAnnotationRecord[];
   /** Called when a failure bar is clicked with the date string (YYYY-MM-DD). */
   onFailureBarClick?: (date: string) => void;
@@ -27,42 +30,15 @@ export interface MetricsChartsProps {
   onAnomalyClick?: (anomaly: MetricAnomaly) => void;
 }
 
-/** Detect cost anomalies using rolling 5-day average with >100% deviation threshold. */
-function detectCostAnomalies(chartData: MetricsChartPoint[]): MetricAnomaly[] {
-  const anomalies: MetricAnomaly[] = [];
-  const window = 5;
-  for (let i = 0; i < chartData.length; i++) {
-    const point = chartData[i]!;
-    const value = point.cost;
-    if (value === 0) continue;
-    const start = Math.max(0, i - window);
-    const preceding = chartData.slice(start, i).map((p) => p.cost);
-    if (preceding.length === 0) continue;
-    const baseline = preceding.reduce((a, b) => a + b, 0) / preceding.length;
-    if (baseline === 0) continue;
-    const deviationPct = ((value - baseline) / baseline) * 100;
-    if (deviationPct > 100) {
-      anomalies.push({
-        date: point.date,
-        metric: 'cost',
-        value,
-        baseline,
-        deviation_pct: deviationPct,
-        execution_id: null,
-      });
-    }
-  }
-  return anomalies;
-}
-
-export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, annotations = [], onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
+export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, anomalies = [], annotations = [], onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
+  const { shouldAnimate } = useMotion();
   const costGradId = useId();
   const visibleAnnotations = useMemo(() => {
     const chartDates = new Set(chartData.map((point) => point.date));
     return annotations.filter((annotation) => chartDates.has(annotation.date));
   }, [chartData, annotations]);
 
-  const costAnomalies = useMemo(() => detectCostAnomalies(chartData), [chartData]);
+  const costAnomalies = useMemo(() => anomalies.filter((a) => a.metric === 'cost'), [anomalies]);
 
   const handleAnomalyMarkerClick = useCallback((date: string) => {
     if (!onAnomalyClick) return;
@@ -77,9 +53,9 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
         {/* Cost Over Time */}
         <MetricChart title="Cost Over Time" height={240}>
           <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
-            <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => `$${v}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+            <XAxis dataKey="date" tick={{ fontSize: 10, fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+            <YAxis tick={{ fontSize: 10, fill: getAxisTickFill() }} tickFormatter={(v) => `$${v}`} />
             <Tooltip content={<ChartTooltip />} />
             <Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${costGradId})`} strokeWidth={2} />
             {visibleAnnotations.map((annotation, index) => (
@@ -118,11 +94,15 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
                       onClick={() => handleAnomalyMarkerClick(anomaly.date)}
                     >
                       <title>{`Anomaly: cost +${anomaly.deviation_pct.toFixed(0)}% vs baseline — click to drill down`}</title>
-                      {/* Pulse ring */}
-                      <circle cx={cx} cy={cy} r={6} fill="none" stroke="#ef4444" strokeWidth={1} opacity={0.3}>
-                        <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
-                      </circle>
+                      {/* Pulse ring — static when reduced motion preferred */}
+                      {shouldAnimate ? (
+                        <circle cx={cx} cy={cy} r={6} fill="none" stroke="#ef4444" strokeWidth={1} opacity={0.3}>
+                          <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
+                          <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
+                        </circle>
+                      ) : (
+                        <circle cx={cx} cy={cy} r={6} fill="none" stroke="#ef4444" strokeWidth={1} opacity={0.3} />
+                      )}
                       {/* Diamond marker */}
                       <polygon
                         points={`${cx},${cy - 4} ${cx + 4},${cy} ${cx},${cy + 4} ${cx - 4},${cy}`}
@@ -150,9 +130,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
           height={240}
           emptySlot={
             pieData.length === 0 ? (
-              <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground/80">
-                No execution data
-              </div>
+              <EmptyState variant="metrics" className="h-[240px] py-0" />
             ) : undefined
           }
         >
@@ -182,9 +160,9 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
       {/* Charts Row 2 */}
       <MetricChart title="Execution Health" height={240}>
         <BarChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-          <XAxis dataKey="date" tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
-          <YAxis tick={{ fontSize: 10, fill: AXIS_TICK_FILL }} />
+          <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+          <XAxis dataKey="date" tick={{ fontSize: 10, fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+          <YAxis tick={{ fontSize: 10, fill: getAxisTickFill() }} />
           <Tooltip content={<ChartTooltip />} cursor={false} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Bar dataKey="success" name="Successful" fill="#22c55e" radius={[2, 2, 0, 0]} />

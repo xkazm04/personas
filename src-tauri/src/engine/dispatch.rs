@@ -7,6 +7,10 @@
 use tauri::{AppHandle, Emitter};
 
 use super::event_registry::event_name;
+use super::protocol::{ExecutionProtocol, StatusFinalization};
+use super::types::{
+    ExecutionOutputEvent, HeartbeatEvent, StructuredExecutionEvent,
+};
 use crate::db::models::{
     CreateManualReviewInput, CreateMessageInput, CreatePersonaEventInput, CreatePersonaMemoryInput,
 };
@@ -63,6 +67,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     content_type: content_type.clone(),
                     priority: priority.clone(),
                     metadata: None,
+                    thread_id: None,
                 },
             ) {
                 Ok(m) => {
@@ -291,6 +296,35 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 Err(e) => ctx.logger.log(&format!("[KNOWLEDGE] Failed to store annotation: {e}")),
             }
         }
+    }
+}
+
+// =============================================================================
+// ExecutionProtocol implementation for DispatchContext (Tauri/Desktop mode)
+// =============================================================================
+
+impl ExecutionProtocol for DispatchContext<'_> {
+    fn dispatch_message(&mut self, msg: &ProtocolMessage) {
+        dispatch(self, msg);
+    }
+
+    fn emit_output(&self, event: &ExecutionOutputEvent) {
+        let _ = self.app.emit(event_name::EXECUTION_OUTPUT, event);
+    }
+
+    fn emit_structured_event(&self, event: &StructuredExecutionEvent) {
+        let _ = self.app.emit(event_name::EXECUTION_EVENT, event);
+    }
+
+    fn emit_heartbeat(&self, event: &HeartbeatEvent) {
+        let _ = self.app.emit(event_name::EXECUTION_HEARTBEAT, event);
+    }
+
+    fn finalize_status(&self, finalization: &StatusFinalization) {
+        let _ = self.app.emit(
+            event_name::EXECUTION_STATUS,
+            finalization.to_status_event(),
+        );
     }
 }
 

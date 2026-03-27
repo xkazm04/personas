@@ -12,6 +12,7 @@ export interface AutomationDesignResult {
   webhook_method: string;
   input_schema: string | null;
   output_schema: string | null;
+  /** Seconds — converted to ms by the Rust deploy backend before DB insert. */
   timeout_secs: number;
   fallback_mode: 'connector' | 'fail' | 'skip';
   platform_reasoning: string;

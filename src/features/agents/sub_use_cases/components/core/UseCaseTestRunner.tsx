@@ -171,7 +171,7 @@ export function UseCaseTestRunner({ useCaseId, useCase, defaultModelProfile }: U
           <button
             onClick={handleRun}
             disabled={!hasPrompt || !resolved.config}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-lg shadow-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="w-3.5 h-3.5" /> Test Use Case
           </button>

@@ -62,18 +62,21 @@ pub fn list_scoped_knowledge(
     )
 }
 
-// -- Dev seed: mock knowledge pattern -------------------------------------------
+// -- Dev seed: mock knowledge pattern (debug builds only) -----------------------
 
+#[cfg(debug_assertions)]
 const MOCK_KNOWLEDGE_TYPES: &[&str] = &[
     "tool_sequence", "failure_pattern", "cost_quality", "model_performance",
     "data_flow", "agent_annotation",
 ];
 
+#[cfg(debug_assertions)]
 const MOCK_PATTERN_KEYS: &[&str] = &[
     "gmail→sheets_sync", "slack_timeout_retry", "gpt4_vs_haiku_cost",
     "sonnet_accuracy_report", "jira→github_flow", "memory_cleanup_rule",
 ];
 
+#[cfg(debug_assertions)]
 const MOCK_PATTERN_DATA: &[&str] = &[
     r#"{"sequence":["gmail.read","sheets.append"],"avg_latency_ms":1200,"notes":"Batch rows for efficiency"}"#,
     r#"{"error":"timeout","retry_strategy":"exponential","max_retries":3,"success_rate_after_retry":0.92}"#,
@@ -89,60 +92,70 @@ pub fn seed_mock_knowledge(
 ) -> Result<ExecutionKnowledge, AppError> {
     require_auth_sync(&state)?;
 
-    let personas = crate::db::repos::core::personas::get_all(&state.db)?;
-    if personas.is_empty() {
-        return Err(AppError::Validation("No personas exist. Create an agent first.".into()));
+    #[cfg(not(debug_assertions))]
+    {
+        return Err(AppError::Validation(
+            "seed_mock_knowledge is only available in debug builds".into(),
+        ));
     }
-    let idx = (chrono::Utc::now().timestamp_millis() as usize) % personas.len();
-    let persona_id = &personas[idx].id;
 
-    let t = (chrono::Utc::now().timestamp_millis() as usize) / 7;
-    let knowledge_type = MOCK_KNOWLEDGE_TYPES[t % MOCK_KNOWLEDGE_TYPES.len()];
-    let pattern_key = MOCK_PATTERN_KEYS[t % MOCK_PATTERN_KEYS.len()];
-    let pattern_data = MOCK_PATTERN_DATA[t % MOCK_PATTERN_DATA.len()];
+    #[cfg(debug_assertions)]
+    {
+        let personas = crate::db::repos::core::personas::get_all(&state.db)?;
+        if personas.is_empty() {
+            return Err(AppError::Validation("No personas exist. Create an agent first.".into()));
+        }
+        let idx = (chrono::Utc::now().timestamp_millis() as usize) % personas.len();
+        let persona_id = &personas[idx].id;
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let success_count = ((t % 20) + 5) as i64;
-    let failure_count = (t % 4) as i64;
-    let avg_cost = 0.001 + (t % 10) as f64 * 0.002;
-    let avg_duration = 800.0 + (t % 15) as f64 * 200.0;
-    let confidence = 0.6 + (t % 4) as f64 * 0.1;
+        let t = (chrono::Utc::now().timestamp_millis() as usize) / 7;
+        let knowledge_type = MOCK_KNOWLEDGE_TYPES[t % MOCK_KNOWLEDGE_TYPES.len()];
+        let pattern_key = MOCK_PATTERN_KEYS[t % MOCK_PATTERN_KEYS.len()];
+        let pattern_data = MOCK_PATTERN_DATA[t % MOCK_PATTERN_DATA.len()];
 
-    let conn = state.db.get()?;
-    conn.execute(
-        "INSERT INTO execution_knowledge
-         (id, persona_id, use_case_id, knowledge_type, pattern_key, pattern_data,
-          success_count, failure_count, avg_cost_usd, avg_duration_ms, confidence,
-          last_execution_id, scope_type, scope_id, created_at, updated_at)
-         VALUES (?1, ?2, NULL, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, NULL, 'persona', NULL, ?11, ?11)",
-        rusqlite::params![
-            id, persona_id, knowledge_type, pattern_key, pattern_data,
-            success_count, failure_count, avg_cost, avg_duration, confidence, now
-        ],
-    )?;
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let success_count = ((t % 20) + 5) as i64;
+        let failure_count = (t % 4) as i64;
+        let avg_cost = 0.001 + (t % 10) as f64 * 0.002;
+        let avg_duration = 800.0 + (t % 15) as f64 * 200.0;
+        let confidence = 0.6 + (t % 4) as f64 * 0.1;
 
-    Ok(ExecutionKnowledge {
-        id,
-        persona_id: persona_id.clone(),
-        use_case_id: None,
-        knowledge_type: knowledge_type.to_string(),
-        pattern_key: pattern_key.to_string(),
-        pattern_data: pattern_data.to_string(),
-        success_count,
-        failure_count,
-        avg_cost_usd: avg_cost,
-        avg_duration_ms: avg_duration,
-        confidence,
-        last_execution_id: None,
-        created_at: now.clone(),
-        updated_at: now,
-        scope_type: "persona".to_string(),
-        scope_id: None,
-        annotation_text: None,
-        annotation_source: None,
-        is_verified: false,
-    })
+        let conn = state.db.get()?;
+        conn.execute(
+            "INSERT INTO execution_knowledge
+             (id, persona_id, use_case_id, knowledge_type, pattern_key, pattern_data,
+              success_count, failure_count, avg_cost_usd, avg_duration_ms, confidence,
+              last_execution_id, scope_type, scope_id, created_at, updated_at)
+             VALUES (?1, ?2, NULL, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, NULL, 'persona', NULL, ?11, ?11)",
+            rusqlite::params![
+                id, persona_id, knowledge_type, pattern_key, pattern_data,
+                success_count, failure_count, avg_cost, avg_duration, confidence, now
+            ],
+        )?;
+
+        Ok(ExecutionKnowledge {
+            id,
+            persona_id: persona_id.clone(),
+            use_case_id: None,
+            knowledge_type: knowledge_type.to_string(),
+            pattern_key: pattern_key.to_string(),
+            pattern_data: pattern_data.to_string(),
+            success_count,
+            failure_count,
+            avg_cost_usd: avg_cost,
+            avg_duration_ms: avg_duration,
+            confidence,
+            last_execution_id: None,
+            created_at: now.clone(),
+            updated_at: now,
+            scope_type: "persona".to_string(),
+            scope_id: None,
+            annotation_text: None,
+            annotation_source: None,
+            is_verified: false,
+        })
+    }
 }
 
 /// Valid scope_type values for knowledge annotations.

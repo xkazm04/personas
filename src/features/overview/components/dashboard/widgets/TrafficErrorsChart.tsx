@@ -4,8 +4,9 @@ import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCo
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
-import { GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
+import { getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
+import { EmptyState } from '@/features/shared/components/display/EmptyState';
 
 interface ChartDataPoint {
   date: string;
@@ -61,9 +62,9 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
                     <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 9 }} tickFormatter={(v: string) => v.slice(5)} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 9 }} width={24} axisLine={false} tickLine={false} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: 9 }} tickFormatter={(v: string) => v.slice(5)} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: getAxisTickFill(), fontSize: 9 }} width={24} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip />} />
                 <Area type="monotone" dataKey="traffic" name="Traffic" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill={`url(#${trafficGradId})`} />
                 <Area type="monotone" dataKey="errors" name="Errors" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill={`url(#${errorGradId})`} />
@@ -71,9 +72,7 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
             </ResponsiveContainer>
           </ChartErrorBoundary>
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <p className="typo-body text-muted-foreground/50">No execution data yet</p>
-          </div>
+          <EmptyState variant="chart" className="py-6" />
         )}
       </div>
 

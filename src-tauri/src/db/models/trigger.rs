@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use chrono::{DateTime, Datelike, Timelike, Utc};
+use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -10,20 +11,95 @@ use crate::engine::lifecycle::TriggerStatus;
 // Triggers
 // ============================================================================
 
-/// Condition for chain triggers: when a source persona finishes, what outcome
-/// should fire the chain?
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChainCondition {
-    /// Condition type: "any", "success", "failure", etc.
-    #[serde(rename = "type", default = "default_chain_condition_type")]
-    pub condition_type: String,
-    /// Optional status filter.
-    #[serde(default)]
-    pub status: Option<String>,
+/// Valid condition types for chain triggers.
+///
+/// Determines when a chain trigger fires based on the source persona's
+/// execution outcome.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ChainConditionType {
+    /// Fire regardless of execution outcome (default).
+    Any,
+    /// Fire only when the source execution completed successfully
+    /// (execution status == "completed").
+    Success,
+    /// Fire only when the source execution failed
+    /// (execution status == "failed").
+    Failure,
+    /// Fire based on a JSONPath expression evaluated against the execution
+    /// output. Requires `jsonpath` and optionally `expected` fields in the
+    /// condition object.
+    Jsonpath,
 }
 
-fn default_chain_condition_type() -> String {
-    "any".into()
+impl ChainConditionType {
+    /// All valid condition type values, for use in error messages.
+    pub const VALID_VALUES: &'static [&'static str] = &["any", "success", "failure", "jsonpath"];
+}
+
+impl std::fmt::Display for ChainConditionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Any => write!(f, "any"),
+            Self::Success => write!(f, "success"),
+            Self::Failure => write!(f, "failure"),
+            Self::Jsonpath => write!(f, "jsonpath"),
+        }
+    }
+}
+
+impl std::str::FromStr for ChainConditionType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "any" => Ok(Self::Any),
+            "success" => Ok(Self::Success),
+            "failure" => Ok(Self::Failure),
+            "jsonpath" => Ok(Self::Jsonpath),
+            other => Err(format!(
+                "Unknown chain condition type \"{}\". Valid values: {}",
+                other,
+                Self::VALID_VALUES.join(", ")
+            )),
+        }
+    }
+}
+
+impl Default for ChainConditionType {
+    fn default() -> Self {
+        Self::Any
+    }
+}
+
+/// Condition for chain triggers: when a source persona finishes, what outcome
+/// should fire the chain?
+///
+/// ## Condition types
+///
+/// | `type`      | Fires when                                         | `status` field |
+/// |-------------|-----------------------------------------------------|---------------|
+/// | `"any"`     | Always, regardless of outcome (default)             | Ignored       |
+/// | `"success"` | Execution status is `"completed"`                   | Ignored       |
+/// | `"failure"` | Execution status is `"failed"`                      | Ignored       |
+/// | `"jsonpath"`| A JSONPath expression on the output matches         | Ignored       |
+///
+/// ## Status mapping
+///
+/// The `status` field is an optional filter on the raw execution status string.
+/// Execution statuses are: `"completed"`, `"failed"`, `"running"`, `"queued"`.
+/// When set, only executions with a matching status will fire the chain.
+/// In practice, prefer using `condition_type` (`success`/`failure`) instead of
+/// the raw `status` field for readability.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChainCondition {
+    /// Condition type — must be one of: "any", "success", "failure", "jsonpath".
+    #[serde(rename = "type", default)]
+    pub condition_type: ChainConditionType,
+    /// Optional raw execution status filter (e.g. "completed", "failed").
+    /// Prefer using `condition_type` instead for standard success/failure matching.
+    #[serde(default)]
+    pub status: Option<String>,
 }
 
 /// A single condition within a composite trigger.
@@ -46,38 +122,66 @@ pub struct ActiveWindow {
     /// Days of the week when the trigger is active (0 = Sunday .. 6 = Saturday).
     #[serde(default)]
     pub days: Vec<u8>,
-    /// Start hour (0-23) in local time.
+    /// Start hour (0-23) in the configured timezone.
     #[serde(default = "default_start_hour")]
     pub start_hour: u8,
     /// Start minute (0-59).
     #[serde(default)]
     pub start_minute: u8,
-    /// End hour (0-23) in local time.
+    /// End hour (0-23) in the configured timezone.
     #[serde(default = "default_end_hour")]
     pub end_hour: u8,
     /// End minute (0-59).
     #[serde(default)]
     pub end_minute: u8,
+    /// IANA timezone name (e.g. "America/New_York", "Europe/London").
+    /// When `None`, the system's local timezone is used.
+    #[serde(default)]
+    pub timezone: Option<String>,
 }
 
 fn default_start_hour() -> u8 { 9 }
 fn default_end_hour() -> u8 { 18 }
 
 impl ActiveWindow {
+    /// Resolve the configured timezone. Falls back to system local offset
+    /// when `timezone` is `None` or contains an unrecognised IANA name.
+    fn resolve_tz(&self) -> Option<Tz> {
+        self.timezone.as_deref().and_then(|s| s.parse::<Tz>().ok())
+    }
+
+    /// Return the IANA timezone name that will actually be used at evaluation
+    /// time. Useful for displaying in the UI so users know which timezone is
+    /// in effect.
+    pub fn resolved_timezone_name(&self) -> String {
+        match self.resolve_tz() {
+            Some(tz) => tz.name().to_string(),
+            None => iana_time_zone::get_timezone().unwrap_or_else(|_| "Local".to_string()),
+        }
+    }
+
     /// Check whether the given UTC time falls within this active window.
-    /// Uses the system's local timezone offset to convert UTC → local.
+    /// Uses the configured timezone (or system local when unset).
     pub fn is_active_at(&self, utc_now: DateTime<Utc>) -> bool {
         if !self.enabled || self.days.is_empty() {
             return true; // no constraint → always active
         }
 
-        let local_now = utc_now.with_timezone(&chrono::Local);
-        let weekday = local_now.weekday().num_days_from_sunday() as u8; // 0=Sun
+        let (weekday, now_minutes) = match self.resolve_tz() {
+            Some(tz) => {
+                let t = utc_now.with_timezone(&tz);
+                (t.weekday().num_days_from_sunday() as u8, t.hour() as u16 * 60 + t.minute() as u16)
+            }
+            None => {
+                let t = utc_now.with_timezone(&chrono::Local);
+                (t.weekday().num_days_from_sunday() as u8, t.hour() as u16 * 60 + t.minute() as u16)
+            }
+        };
+
         if !self.days.contains(&weekday) {
             return false;
         }
 
-        let now_minutes = local_now.hour() as u16 * 60 + local_now.minute() as u16;
         let start_minutes = self.start_hour as u16 * 60 + self.start_minute as u16;
         let end_minutes = self.end_hour as u16 * 60 + self.end_minute as u16;
 
@@ -87,6 +191,56 @@ impl ActiveWindow {
             // Overnight window (e.g. 22:00 → 06:00)
             now_minutes >= start_minutes || now_minutes < end_minutes
         }
+    }
+
+    /// Compute the number of seconds until the next active window opens.
+    ///
+    /// Searches up to 7 days ahead for the next matching day + start_hour:start_minute.
+    /// Returns `None` if no active days are configured or the window is disabled.
+    pub fn seconds_until_next_open(&self, utc_now: DateTime<Utc>) -> Option<u64> {
+        if !self.enabled || self.days.is_empty() {
+            return None;
+        }
+
+        let (now_minutes, current_weekday, seconds_into_minute) = match self.resolve_tz() {
+            Some(tz) => {
+                let t = utc_now.with_timezone(&tz);
+                (
+                    t.hour() as u16 * 60 + t.minute() as u16,
+                    t.weekday().num_days_from_sunday() as u8,
+                    t.second() as u64,
+                )
+            }
+            None => {
+                let t = utc_now.with_timezone(&chrono::Local);
+                (
+                    t.hour() as u16 * 60 + t.minute() as u16,
+                    t.weekday().num_days_from_sunday() as u8,
+                    t.second() as u64,
+                )
+            }
+        };
+
+        let start_minutes = self.start_hour as u16 * 60 + self.start_minute as u16;
+
+        // Check today first: if we're before the start time on an active day
+        if self.days.contains(&current_weekday) && now_minutes < start_minutes {
+            let diff = (start_minutes - now_minutes) as u64 * 60;
+            return Some(diff.saturating_sub(seconds_into_minute));
+        }
+
+        // Search up to 7 days ahead for the next active day
+        for offset in 1..=7u8 {
+            let candidate_day = (current_weekday + offset) % 7;
+            if self.days.contains(&candidate_day) {
+                let remaining_today_minutes = (24 * 60) - now_minutes as u64;
+                let full_days_between = (offset as u64 - 1) * 24 * 60;
+                let total_minutes = remaining_today_minutes + full_days_between + start_minutes as u64;
+                return Some(total_minutes * 60 - seconds_into_minute);
+            }
+        }
+
+        None
     }
 }
 
@@ -512,7 +666,7 @@ mod tests {
             TriggerConfig::Chain { source_persona_id, condition, .. } => {
                 assert_eq!(source_persona_id.as_deref(), Some("sp1"));
                 let cond = condition.unwrap();
-                assert_eq!(cond.condition_type, "success");
+                assert_eq!(cond.condition_type, ChainConditionType::Success);
                 assert_eq!(cond.status.as_deref(), Some("completed"));
             }
             other => panic!("Expected Chain, got {other:?}"),
@@ -584,8 +738,43 @@ mod tests {
         let t = make_trigger("chain", Some(r#"{"source_persona_id":"sp1","condition":{}}"#));
         if let TriggerConfig::Chain { condition, .. } = t.parse_config() {
             let cond = condition.unwrap();
-            assert_eq!(cond.condition_type, "any");
+            assert_eq!(cond.condition_type, ChainConditionType::Any);
         }
+    }
+
+    #[test]
+    fn test_chain_condition_type_parse_valid() {
+        assert_eq!("any".parse::<ChainConditionType>().unwrap(), ChainConditionType::Any);
+        assert_eq!("success".parse::<ChainConditionType>().unwrap(), ChainConditionType::Success);
+        assert_eq!("failure".parse::<ChainConditionType>().unwrap(), ChainConditionType::Failure);
+        assert_eq!("jsonpath".parse::<ChainConditionType>().unwrap(), ChainConditionType::Jsonpath);
+    }
+
+    #[test]
+    fn test_chain_condition_type_parse_invalid() {
+        let err = "succcess".parse::<ChainConditionType>().unwrap_err();
+        assert!(err.contains("Unknown chain condition type"), "got: {err}");
+        assert!(err.contains("succcess"));
+        assert!(err.contains("any, success, failure, jsonpath"));
+    }
+
+    #[test]
+    fn test_chain_condition_type_roundtrip() {
+        let cond_json = r#"{"type":"success","status":"completed"}"#;
+        let cond: ChainCondition = serde_json::from_str(cond_json).unwrap();
+        assert_eq!(cond.condition_type, ChainConditionType::Success);
+        assert_eq!(cond.status.as_deref(), Some("completed"));
+
+        let serialized = serde_json::to_string(&cond).unwrap();
+        assert!(serialized.contains("\"type\":\"success\""));
+    }
+
+    #[test]
+    fn test_chain_condition_deserialize_unknown_type() {
+        // Unknown condition type should fail deserialization
+        let cond_json = r#"{"type":"succcess"}"#;
+        let result = serde_json::from_str::<ChainCondition>(cond_json);
+        assert!(result.is_err());
     }
 
     #[test]

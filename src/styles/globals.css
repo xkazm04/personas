@@ -145,6 +145,10 @@
   --duration-slow: 400ms;
 
   /* Focus ring tokens — single source of truth for :focus-visible indicators */
+  /* Chart tokens — grid lines and axis label fills */
+  --chart-grid-stroke: rgba(255, 255, 255, 0.06);
+  --chart-axis-fill: rgba(255, 255, 255, 0.4);
+
   --focus-ring-color: color-mix(in srgb, var(--accent) 60%, transparent);
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
@@ -211,6 +215,15 @@
   --shadow-elevation-2: var(--shadow-elevation-2);
   --shadow-elevation-3: var(--shadow-elevation-3);
   --shadow-elevation-4: var(--shadow-elevation-4);
+
+  /* Override Tailwind default shadow scale → elevation tokens.
+     Even accidental shadow-md usage resolves to the correct tier. */
+  --shadow-sm: var(--shadow-elevation-1);
+  --shadow: var(--shadow-elevation-1);
+  --shadow-md: var(--shadow-elevation-2);
+  --shadow-lg: var(--shadow-elevation-3);
+  --shadow-xl: var(--shadow-elevation-3);
+  --shadow-2xl: var(--shadow-elevation-4);
 
   /* Ultra-wide breakpoints */
   --breakpoint-3xl: 1920px;
@@ -340,6 +353,50 @@ input[type="number"] {
   from { opacity: 0; transform: scale(0.95); }
 }
 
+@keyframes shake-error {
+  0%   { transform: translateX(0); }
+  15%  { transform: translateX(-6px); }
+  30%  { transform: translateX(6px); }
+  50%  { transform: translateX(-4px); }
+  70%  { transform: translateX(4px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes draw-check {
+  from { stroke-dashoffset: 24; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes avatar-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes hero-orb-drift {
+  0%   { transform: translate(0, 0); }
+  50%  { transform: translate(20px, -10px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+@keyframes confidence-shimmer {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 0px transparent); }
+  50% { filter: brightness(1.2) drop-shadow(0 0 3px rgba(16, 185, 129, 0.4)); }
+}
+
+.animate-avatar-breathe { animation: avatar-breathe 2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-hero-orb-drift { animation: hero-orb-drift 30s ease-in-out infinite; }
+  .animate-hero-orb-drift:nth-child(2) { animation-delay: -10s; }
+  .animate-hero-orb-drift:nth-child(3) { animation-delay: -20s; }
+}
+.animate-typing-dot { animation: typing-dot 1.4s ease-in-out infinite; }
+
 .animate-float { animation: float 5s ease-in-out infinite; }
 .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
 .animate-spin-slow { animation: spin-slow 30s linear infinite; }
@@ -347,6 +404,9 @@ input[type="number"] {
 .animate-fade-in { animation: fade-in 150ms ease-out both; }
 .animate-fade-slide-in { animation: fade-slide-in 150ms ease-out both; }
 .animate-fade-scale-in { animation: fade-scale-in 150ms ease-out both; }
+.animate-shake-error { animation: shake-error 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+.animate-draw-check { animation: draw-check 0.3s ease forwards; }
+.animate-confidence-shimmer { animation: confidence-shimmer 2s ease-in-out infinite; }
 
 /* -- Animation timing utilities -- */
 .duration-instant { transition-duration: var(--duration-instant); }
@@ -536,6 +596,8 @@ input[type="number"] {
   --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.06);
   --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.08);
   --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.12), 0 16px 32px rgba(0, 0, 0, 0.1);
+  --chart-grid-stroke: rgba(0, 0, 0, 0.10);
+  --chart-axis-fill: rgba(0, 0, 0, 0.55);
 }
 
 /* Light: Ice -- icy blue-white palette, toned-down brightness */
@@ -576,6 +638,8 @@ input[type="number"] {
   --shadow-elevation-2: 0 2px 4px rgba(37, 99, 235, 0.06), 0 4px 8px rgba(37, 99, 235, 0.05);
   --shadow-elevation-3: 0 4px 8px rgba(37, 99, 235, 0.08), 0 8px 16px rgba(37, 99, 235, 0.06);
   --shadow-elevation-4: 0 8px 16px rgba(37, 99, 235, 0.1), 0 16px 32px rgba(37, 99, 235, 0.08);
+  --chart-grid-stroke: rgba(37, 99, 235, 0.10);
+  --chart-axis-fill: rgba(15, 23, 42, 0.55);
 }
 
 [data-theme="light"] * {
@@ -662,6 +726,8 @@ input[type="number"] {
   --shadow-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
   --shadow-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
   --shadow-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.14), 0 16px 32px rgba(0, 0, 0, 0.1);
+  --chart-grid-stroke: rgba(0, 0, 0, 0.12);
+  --chart-axis-fill: rgba(17, 17, 17, 0.6);
 }
 
 [data-theme="light-news"] * {
@@ -1668,8 +1734,27 @@ input[type="number"] {
   .animate-pulse,
   .animate-spin,
   .animate-pulse-slow,
-  .animate-spin-slow {
+  .animate-spin-slow,
+  .animate-float,
+  .animate-hero-orb-drift,
+  .animate-fade-slide-in,
+  .animate-fade-in,
+  .animate-fade-scale-in,
+  .animate-expand-in,
+  .animate-shake-error,
+  .animate-draw-check {
     animation: none !important;
+  }
+
+  /* Ensure fade-slide-in elements are visible immediately */
+  .animate-fade-slide-in {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* SVG SMIL animations — force static state */
+  animate, animateTransform, animateMotion {
+    display: none !important;
   }
 
   /* Glow system: keep static opacity, disable animation timing */
@@ -1841,4 +1926,47 @@ input[type="number"] {
 }
 .livestream-highlight {
   animation: livestream-highlight-fade 1.5s ease-out forwards;
+}
+
+/* -- OAuth Progress Ring Animations -- */
+@keyframes oauth-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes oauth-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+@keyframes oauth-fill {
+  from { stroke-dashoffset: var(--oauth-ring-circ); }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes oauth-check-draw {
+  from { stroke-dashoffset: 40; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes oauth-icon-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50%      { transform: scale(1.08); opacity: 1; }
+}
+
+.oauth-ring-spin {
+  animation: oauth-spin 1.8s linear infinite;
+}
+.oauth-ring-pulse circle:last-of-type {
+  animation: oauth-pulse 1.6s ease-in-out infinite;
+}
+.oauth-ring-success circle:last-of-type {
+  transition: stroke-dashoffset 0.5s ease-out;
+}
+.oauth-ring-fill-anim {
+  transition: stroke-dashoffset 0.5s ease-out;
+}
+.oauth-ring-check-draw {
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: oauth-check-draw 0.4s ease-out 0.3s forwards;
+}
+.oauth-icon-pulse {
+  animation: oauth-icon-pulse 1.6s ease-in-out infinite;
 }

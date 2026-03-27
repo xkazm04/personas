@@ -357,12 +357,51 @@ pub fn append_healthcheck_entry(
     entries
 }
 
+/// Result of parsing healthcheck entries from credential metadata.
+/// Distinguishes between "no entries recorded" and "metadata is corrupted".
+#[derive(Debug, Clone)]
+pub enum HealthcheckParseResult {
+    /// Successfully parsed entries (may be empty if none have been recorded).
+    Ok(Vec<HealthcheckEntry>),
+    /// The `healthcheck_results` key exists but contains malformed JSON.
+    Corrupted(String),
+}
+
+impl HealthcheckParseResult {
+    /// Get the entries, returning an empty vec for both empty and corrupted states.
+    /// Prefer matching on the enum directly when the distinction matters.
+    pub fn entries_or_empty(&self) -> Vec<HealthcheckEntry> {
+        match self {
+            Self::Ok(entries) => entries.clone(),
+            Self::Corrupted(_) => Vec::new(),
+        }
+    }
+
+    pub fn is_corrupted(&self) -> bool {
+        matches!(self, Self::Corrupted(_))
+    }
+}
+
 /// Parse healthcheck entries from credential metadata JSON.
-pub fn parse_healthcheck_entries(metadata: &serde_json::Value) -> Vec<HealthcheckEntry> {
-    metadata
-        .get("healthcheck_results")
-        .and_then(|v| serde_json::from_value::<Vec<HealthcheckEntry>>(v.clone()).ok())
-        .unwrap_or_default()
+///
+/// Returns `HealthcheckParseResult::Ok(entries)` when the key is absent (empty vec)
+/// or contains valid JSON. Returns `HealthcheckParseResult::Corrupted` when the
+/// `healthcheck_results` key exists but cannot be deserialized, indicating metadata
+/// corruption rather than a lack of healthcheck data.
+pub fn parse_healthcheck_entries(metadata: &serde_json::Value) -> HealthcheckParseResult {
+    match metadata.get("healthcheck_results") {
+        None => HealthcheckParseResult::Ok(Vec::new()),
+        Some(v) => match serde_json::from_value::<Vec<HealthcheckEntry>>(v.clone()) {
+            Ok(entries) => HealthcheckParseResult::Ok(entries),
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "Corrupted healthcheck ring buffer: failed to parse healthcheck_results"
+                );
+                HealthcheckParseResult::Corrupted(e.to_string())
+            }
+        },
+    }
 }
 
 /// Evaluate all due rotation policies and execute rotations.
@@ -436,7 +475,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                     .as_deref()
                     .and_then(|s| serde_json::from_str(s).ok())
                     .unwrap_or(serde_json::Value::Null);
-                let existing = parse_healthcheck_entries(&metadata);
+                let existing = parse_healthcheck_entries(&metadata).entries_or_empty();
                 let updated = append_healthcheck_entry(&existing, true, &detail);
                 let mut meta_obj = metadata.as_object().cloned().unwrap_or_default();
                 meta_obj.insert(
@@ -480,7 +519,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                     .and_then(|s| serde_json::from_str(s).ok())
                     .unwrap_or(serde_json::Value::Null);
 
-                let existing = parse_healthcheck_entries(&metadata);
+                let existing = parse_healthcheck_entries(&metadata).entries_or_empty();
                 let updated = append_healthcheck_entry(&existing, false, &msg);
                 let tolerance = resolve_tolerance(&metadata);
                 let score = compute_anomaly_score(&updated, Some(tolerance));
@@ -620,7 +659,30 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
             .and_then(|s| serde_json::from_str(s).ok())
             .unwrap_or(serde_json::Value::Null);
 
-        let entries = parse_healthcheck_entries(&metadata);
+        let parse_result = parse_healthcheck_entries(&metadata);
+        if parse_result.is_corrupted() {
+            tracing::warn!(
+                credential_id = %cred.id,
+                name = %cred.name,
+                "Anomaly detection: skipping credential with corrupted healthcheck ring buffer"
+            );
+            // Record corruption as an anomaly so it surfaces in the UI
+            let history = rotation_repo::get_history(pool, &cred.id, Some(1)).unwrap_or_default();
+            let already_recorded = history
+                .first()
+                .is_some_and(|h| h.rotation_type == "anomaly" && h.detail.as_deref().unwrap_or("").contains("corrupted"));
+            if !already_recorded {
+                let _ = rotation_repo::record_rotation(
+                    pool,
+                    &cred.id,
+                    "anomaly",
+                    RotationEntryStatus::Failed,
+                    Some("Healthcheck ring buffer metadata is corrupted -- anomaly score unavailable"),
+                );
+            }
+            continue;
+        }
+        let entries = parse_result.entries_or_empty();
         if entries.is_empty() {
             // No healthcheck data -- fall back to legacy binary check
             let last_success = metadata
@@ -809,7 +871,9 @@ pub fn get_rotation_status(
         .and_then(|s| serde_json::from_str(s).ok())
         .unwrap_or(serde_json::Value::Null);
 
-    let entries = parse_healthcheck_entries(&metadata);
+    let parse_result = parse_healthcheck_entries(&metadata);
+    let healthcheck_corrupted = parse_result.is_corrupted();
+    let entries = parse_result.entries_or_empty();
     let tolerance = resolve_tolerance(&metadata);
     let anomaly_score = if entries.is_empty() {
         None
@@ -830,6 +894,7 @@ pub fn get_rotation_status(
         recent_history: history,
         anomaly_score,
         anomaly_tolerance: tolerance,
+        healthcheck_corrupted,
     })
 }
 
@@ -849,6 +914,10 @@ pub struct RotationStatus {
     pub recent_history: Vec<crate::db::models::CredentialRotationEntry>,
     pub anomaly_score: Option<AnomalyScore>,
     pub anomaly_tolerance: f64,
+    /// True when the healthcheck ring buffer metadata is corrupted and could
+    /// not be deserialized. The UI should show a corruption warning instead of
+    /// a misleading zero-anomaly score.
+    pub healthcheck_corrupted: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -1025,7 +1094,16 @@ async fn evaluate_healthcheck_event(
         .unwrap_or(serde_json::Value::Null);
 
     // If we have ring buffer data, use windowed scoring
-    let entries = parse_healthcheck_entries(&metadata);
+    let parse_result = parse_healthcheck_entries(&metadata);
+    if parse_result.is_corrupted() {
+        // Corrupted metadata -- can't determine health, don't trigger rotation
+        tracing::warn!(
+            credential_id = %credential_id,
+            "should_trigger_anomaly_rotation: corrupted healthcheck ring buffer, skipping"
+        );
+        return false;
+    }
+    let entries = parse_result.entries_or_empty();
     if !entries.is_empty() {
         let tolerance = resolve_tolerance(&metadata);
         let score = compute_anomaly_score(&entries, Some(tolerance));

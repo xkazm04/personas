@@ -2,44 +2,15 @@ import { useEffect, useState } from 'react';
 import { Clock, Trash2, ChevronRight, RefreshCw, RotateCcw } from 'lucide-react';
 import { listN8nSessionSummaries, deleteN8nSession, getN8nSession } from '@/api/templates/n8nTransform';
 import type { N8nSessionSummary } from '@/lib/bindings/N8nSessionSummary';
-import type { SessionStatus } from '@/lib/bindings/SessionStatus';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { N8nWizardStep, TransformQuestion, TransformSubPhase, SessionLoadedPayload } from '../hooks/useN8nImportReducer';
 import { STEP_META, WIZARD_STEPS } from '../hooks/useN8nImportReducer';
+import { formatRelativeTime } from '@/lib/utils/formatters';
+import { SESSION_STATUS_STYLES } from '../colorTokens';
 
 interface N8nSessionListProps {
   onLoadSession: (payload: SessionLoadedPayload) => void;
-}
-
-/** Detect sessions interrupted by app exit (vs genuine failures) */
-function isInterruptedSession(session: N8nSessionSummary): boolean {
-  return session.status === 'failed'
-    && !!session.error?.includes('App closed during transform');
-}
-
-const STATUS_STYLES: Record<SessionStatus | 'interrupted', { bg: string; text: string; label: string }> = {
-  draft:              { bg: 'bg-zinc-500/15', text: 'text-zinc-400', label: 'Draft' },
-  analyzing:          { bg: 'bg-blue-500/15', text: 'text-blue-400', label: 'Analyzing' },
-  transforming:       { bg: 'bg-amber-500/15', text: 'text-amber-400', label: 'Transforming' },
-  awaiting_answers:   { bg: 'bg-violet-500/15', text: 'text-violet-400', label: 'Needs Input' },
-  editing:            { bg: 'bg-violet-500/15', text: 'text-violet-400', label: 'Editing' },
-  confirmed:          { bg: 'bg-emerald-500/15', text: 'text-emerald-400', label: 'Confirmed' },
-  failed:             { bg: 'bg-red-500/15', text: 'text-red-400', label: 'Failed' },
-  interrupted:        { bg: 'bg-amber-500/15', text: 'text-amber-400', label: 'Interrupted' },
-};
-
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = Date.now();
-  const diffMs = now - date.getTime();
-  const diffMins = Math.floor(diffMs / 60_000);
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
 }
 
 export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
@@ -117,7 +88,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
 
       // Smart step routing for interrupted/failed sessions
       let targetStep: N8nWizardStep;
-      if (full.status === 'failed' || full.status === 'transforming') {
+      if (full.status === 'failed' || full.status === 'interrupted' || full.status === 'transforming') {
         if (draft) {
           targetStep = 'edit';
         } else if (parsedResult) {
@@ -214,9 +185,9 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         )}
 
         {activeSessions.map((session, _i) => {
-          const interrupted = isInterruptedSession(session);
-          const statusKey = interrupted ? 'interrupted' : session.status;
-          const style = STATUS_STYLES[statusKey] ?? STATUS_STYLES.draft!;
+          const interrupted = session.status === 'interrupted';
+          const statusKey = session.status;
+          const style = SESSION_STATUS_STYLES[statusKey] ?? SESSION_STATUS_STYLES.draft!;
           return (
             <div
               key={session.id}

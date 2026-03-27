@@ -36,6 +36,9 @@ export interface StoreBusEventMap {
 
   /** Move a persona into a group (agentStore subscribes to apply the operation). */
   'persona:move-to-group': { personaId: string; groupId: string | null };
+
+  /** A pipeline stage finished with high-resolution timing (observability subscribers). */
+  'pipeline:stage-complete': { executionId: string; stage: string; durationMs: number };
 }
 
 // ---------------------------------------------------------------------------

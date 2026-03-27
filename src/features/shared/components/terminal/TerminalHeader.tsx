@@ -1,6 +1,7 @@
 import { useElapsedTimer } from '@/hooks';
 import { formatElapsed } from '@/lib/utils/formatters';
-import { Square, Copy, Check, Maximize2, Minimize2 } from 'lucide-react';
+import { Square, X, Minus, Plus } from 'lucide-react';
+import { CopyButton } from '../buttons';
 import { Tooltip } from '../display/Tooltip';
 
 interface TerminalHeaderProps {
@@ -15,19 +16,56 @@ interface TerminalHeaderProps {
   onToggleFullscreen?: () => void;
   /** Whether the terminal is currently in fullscreen mode */
   isFullscreen?: boolean;
+  /** Close / collapse the terminal panel */
+  onClose?: () => void;
+  /** Minimize to a single-line summary strip */
+  onMinimize?: () => void;
 }
 
 
-export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, label, onToggleFullscreen, isFullscreen }: TerminalHeaderProps) {
+export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, label, onToggleFullscreen, isFullscreen, onClose, onMinimize }: TerminalHeaderProps) {
   const elapsed = useElapsedTimer(isRunning, 1000);
 
   return (
     <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/40 border-b border-border/20">
       <div className="flex items-center gap-2.5">
-        <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-red-500/80" />
-          <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-          <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+        <div className="group/dots flex gap-1.5">
+          {onClose ? (
+            <Tooltip content="Close">
+              <button
+                onClick={onClose}
+                className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-2 h-2 text-red-900 opacity-0 group-hover/dots:opacity-100 transition-opacity" />
+              </button>
+            </Tooltip>
+          ) : (
+            <div className="w-3 h-3 rounded-full bg-red-500/80" />
+          )}
+          {onMinimize ? (
+            <Tooltip content="Minimize">
+              <button
+                onClick={onMinimize}
+                className="w-3 h-3 rounded-full bg-amber-500/80 hover:bg-amber-500 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <Minus className="w-2 h-2 text-amber-900 opacity-0 group-hover/dots:opacity-100 transition-opacity" />
+              </button>
+            </Tooltip>
+          ) : (
+            <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+          )}
+          {onToggleFullscreen ? (
+            <Tooltip content={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
+              <button
+                onClick={onToggleFullscreen}
+                className="w-3 h-3 rounded-full bg-emerald-500/80 hover:bg-emerald-500 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <Plus className="w-2 h-2 text-emerald-900 opacity-0 group-hover/dots:opacity-100 transition-opacity" />
+              </button>
+            </Tooltip>
+          ) : (
+            <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+          )}
         </div>
         <span className="typo-code text-muted-foreground/90 ml-1">
           {isRunning ? (
@@ -47,24 +85,15 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
       </div>
 
       <div className="flex items-center gap-2">
-        {onToggleFullscreen && (
-          <Tooltip content={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
-            <button
-              onClick={onToggleFullscreen}
-              className="flex items-center px-2 py-1 text-muted-foreground/70 hover:text-foreground/90 transition-colors"
-            >
-              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-            </button>
-          </Tooltip>
-        )}
         {!isRunning && lineCount > 0 && (
-          <button
-            onClick={onCopy}
-            className="flex items-center gap-1.5 px-2.5 py-1 typo-body text-muted-foreground/90 hover:text-foreground/95 transition-colors"
-          >
-            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-            {copied ? 'Copied' : 'Copy Log'}
-          </button>
+          <CopyButton
+            copied={copied}
+            onCopy={onCopy}
+            label="Copy Log"
+            copiedLabel="Copied"
+            iconSize="w-3 h-3"
+            className="px-2.5 py-1 typo-body text-muted-foreground/90 hover:text-foreground/95"
+          />
         )}
 
         {isRunning && onStop && (

@@ -49,11 +49,11 @@ export function DayRangePicker({ value, onChange, customDateRange, onCustomDateR
       <div role="group" aria-label="Time range" className="flex items-center gap-1 p-1 bg-secondary/50 backdrop-blur-md rounded-xl border border-primary/20">
         {DAY_OPTIONS.map((opt) => (
           <button key={opt.value} onClick={() => { onChange(opt.value); setShowCustom(false); }} aria-pressed={!isCustomActive && value === opt.value}
-            className={`px-3 py-1 rounded-xl text-sm font-medium transition-all ${!isCustomActive && value === opt.value ? 'bg-background text-foreground shadow-sm border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+            className={`px-3 py-1 rounded-xl text-sm font-medium transition-all ${!isCustomActive && value === opt.value ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
           >{opt.label}</button>
         ))}
         <button ref={buttonRef} onClick={() => setShowCustom((p) => !p)} aria-pressed={isCustomActive}
-          className={`px-3 py-1 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${isCustomActive ? 'bg-background text-foreground shadow-sm border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+          className={`px-3 py-1 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${isCustomActive ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
         >
           <Calendar className="w-3 h-3" />
           {isCustomActive ? formatRangeLabel(customDateRange) : 'Custom'}
@@ -90,7 +90,7 @@ const DateRangePopover = forwardRef<HTMLDivElement, DateRangePopoverProps>(
     const dayCount = isValid ? Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24))) : 0;
 
     return (
-      <div ref={ref} className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-xl shadow-xl p-4 min-w-[280px]">
+      <div ref={ref} className="absolute top-full right-0 mt-2 z-50 bg-background/95 backdrop-blur-md border border-primary/20 rounded-xl shadow-elevation-3 p-4 min-w-[280px]">
         <div className="space-y-3">
           <div>
             <label className="block text-sm text-muted-foreground/70 mb-1">Start Date</label>

@@ -64,7 +64,7 @@ export function AssignModal({
       titleId="assign-modal-title"
       containerClassName="fixed inset-0 z-[100] flex items-center justify-center p-4"
       size="md"
-      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-2xl max-h-[70vh] flex flex-col overflow-hidden"
+      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 max-h-[70vh] flex flex-col overflow-hidden"
     >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-primary/10">

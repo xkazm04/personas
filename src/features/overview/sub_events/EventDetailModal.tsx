@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { HighlightedJson } from './HighlightedJson';
@@ -11,13 +9,12 @@ interface EventDetailModalProps {
 }
 
 export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
-  const [copiedPayload, setCopiedPayload] = useState(false);
 
   return (
     <DetailModal
         title={`Event: ${event.event_type}`}
         subtitle={`Status: ${event.status}`}
-        onClose={() => { onClose(); setCopiedPayload(false); }}
+        onClose={onClose}
       >
         <div className="space-y-4">
           {/* IDs & metadata */}
@@ -51,33 +48,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
           {/* Payload */}
           {event.payload && (
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm text-foreground/70 font-medium">Event Data</span>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      (() => { try { return JSON.stringify(JSON.parse(event.payload!), null, 2); } catch { return event.payload!; } })()
-                    ).then(() => {
-                      setCopiedPayload(true);
-                      setTimeout(() => setCopiedPayload(false), 2000);
-                    }).catch(() => { /* intentional: non-critical -- clipboard copy fallback */ });
-                  }}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-secondary/50 transition-colors"
-                  title="Copy event data"
-                >
-                  {copiedPayload ? (
-                    <>
-                      <Check className="w-3 h-3 text-emerald-400" />
-                      <span className="text-emerald-400">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3" />
-                      Copy
-                    </>
-                  )}
-                </button>
-              </div>
+              <span className="text-sm text-foreground/70 font-medium block mb-1">Event Data</span>
               <div className="rounded-xl border border-primary/10 bg-secondary/20 p-3 overflow-hidden">
                 <HighlightedJson raw={event.payload} />
               </div>

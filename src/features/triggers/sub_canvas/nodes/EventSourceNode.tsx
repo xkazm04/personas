@@ -29,7 +29,7 @@ function EventSourceNodeInner({ data, selected, id: _id }: NodeProps) {
             ? 'border-cyan-400 ring-2 ring-cyan-400/25 shadow-[0_0_16px_rgba(34,211,238,0.2)]'
             : 'border-cyan-400/70 hover:border-cyan-300'
         }
-        shadow-md min-w-[160px] transition-all
+        shadow-elevation-2 min-w-[160px] transition-all
       `}
     >
       <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/15 ${d.color}`}>

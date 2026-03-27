@@ -50,35 +50,41 @@ pub fn get_by_service_type(
     pool: &DbPool,
     service_type: &str,
 ) -> Result<Vec<PersonaCredential>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM persona_credentials WHERE service_type = ?1 ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map(params![service_type], row_to_credential)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("persona_credentials", "persona_credentials::get_by_service_type", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM persona_credentials WHERE service_type = ?1 ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![service_type], row_to_credential)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 pub fn create(pool: &DbPool, input: CreateCredentialInput) -> Result<PersonaCredential, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
+    timed_query!("persona_credentials", "persona_credentials::create", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO persona_credentials
-         (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-        params![
-            id,
-            input.name,
-            input.service_type,
-            input.encrypted_data,
-            input.iv,
-            input.metadata,
-            now,
-        ],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_credentials
+             (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+            params![
+                id,
+                input.name,
+                input.service_type,
+                input.encrypted_data,
+                input.iv,
+                input.metadata,
+                now,
+            ],
+        )?;
 
-    get_by_id(pool, &id)
+        get_by_id(pool, &id)
+
+    })
 }
 
 /// Create a credential and save its fields in a single SQLite transaction.
@@ -89,54 +95,57 @@ pub fn create_with_fields(
     input: CreateCredentialInput,
     fields: &HashMap<String, String>,
 ) -> Result<PersonaCredential, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
+    timed_query!("persona_credentials", "persona_credentials::create_with_fields", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
 
-    let mut conn = pool.get()?;
-    let tx = conn.transaction().map_err(AppError::Database)?;
-
-    tx.execute(
-        "INSERT INTO persona_credentials
-         (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-        params![
-            id,
-            input.name,
-            input.service_type,
-            input.encrypted_data,
-            input.iv,
-            input.metadata,
-            now,
-        ],
-    )?;
-
-    for (key, value) in fields {
-        let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
-        let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-            .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
-
-        let field_type = classify_field_type(key);
-        let field_id = uuid::Uuid::new_v4().to_string();
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
 
         tx.execute(
-            "INSERT INTO credential_fields
-             (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+            "INSERT INTO persona_credentials
+             (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
             params![
-                field_id,
                 id,
-                key,
-                enc_val,
-                field_iv,
-                field_type,
-                is_sensitive as i32,
+                input.name,
+                input.service_type,
+                input.encrypted_data,
+                input.iv,
+                input.metadata,
                 now,
             ],
         )?;
-    }
 
-    tx.commit().map_err(AppError::Database)?;
-    get_by_id(pool, &id)
+        for (key, value) in fields {
+            let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+            let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+                .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
+
+            let field_type = classify_field_type(key);
+            let field_id = uuid::Uuid::new_v4().to_string();
+
+            tx.execute(
+                "INSERT INTO credential_fields
+                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                params![
+                    field_id,
+                    id,
+                    key,
+                    enc_val,
+                    field_iv,
+                    field_type,
+                    is_sensitive as i32,
+                    now,
+                ],
+            )?;
+        }
+
+        tx.commit().map_err(AppError::Database)?;
+        get_by_id(pool, &id)
+
+    })
 }
 
 pub fn update(
@@ -144,51 +153,54 @@ pub fn update(
     id: &str,
     input: UpdateCredentialInput,
 ) -> Result<PersonaCredential, AppError> {
-    // Verify exists
-    get_by_id(pool, id)?;
+    timed_query!("persona_credentials", "persona_credentials::update", {
+        // Verify exists
+        get_by_id(pool, id)?;
 
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut param_idx = 2u32;
 
-    push_field!(input.name, "name", sets, param_idx);
-    push_field!(input.service_type, "service_type", sets, param_idx);
-    push_field!(input.encrypted_data, "encrypted_data", sets, param_idx);
-    push_field!(input.iv, "iv", sets, param_idx);
-    push_field!(input.metadata, "metadata", sets, param_idx);
+        push_field!(input.name, "name", sets, param_idx);
+        push_field!(input.service_type, "service_type", sets, param_idx);
+        push_field!(input.encrypted_data, "encrypted_data", sets, param_idx);
+        push_field!(input.iv, "iv", sets, param_idx);
+        push_field!(input.metadata, "metadata", sets, param_idx);
 
-    let sql = format!(
-        "UPDATE persona_credentials SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE persona_credentials SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-    if let Some(ref v) = input.name {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.service_type {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.encrypted_data {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.iv {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.metadata {
-        param_values.push(Box::new(v.clone()));
-    }
-    param_values.push(Box::new(id.to_string()));
+        if let Some(ref v) = input.name {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.service_type {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.encrypted_data {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.iv {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.metadata {
+            param_values.push(Box::new(v.clone()));
+        }
+        param_values.push(Box::new(id.to_string()));
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
 
-    get_by_id(pool, id)
+        get_by_id(pool, id)
+
+    })
 }
 
 /// Update credential metadata and save fields in a single SQLite transaction.
@@ -199,199 +211,211 @@ pub fn update_with_fields(
     input: UpdateCredentialInput,
     fields: Option<&HashMap<String, String>>,
 ) -> Result<PersonaCredential, AppError> {
-    // Verify exists
-    get_by_id(pool, id)?;
+    timed_query!("persona_credentials", "persona_credentials::update_with_fields", {
+        // Verify exists
+        get_by_id(pool, id)?;
 
-    let now = chrono::Utc::now().to_rfc3339();
-    let mut conn = pool.get()?;
-    let tx = conn.transaction().map_err(AppError::Database)?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
 
-    // -- 1. Update credential metadata --
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
+        // -- 1. Update credential metadata --
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut param_idx = 2u32;
 
-    push_field!(input.name, "name", sets, param_idx);
-    push_field!(input.service_type, "service_type", sets, param_idx);
-    push_field!(input.encrypted_data, "encrypted_data", sets, param_idx);
-    push_field!(input.iv, "iv", sets, param_idx);
-    push_field!(input.metadata, "metadata", sets, param_idx);
+        push_field!(input.name, "name", sets, param_idx);
+        push_field!(input.service_type, "service_type", sets, param_idx);
+        push_field!(input.encrypted_data, "encrypted_data", sets, param_idx);
+        push_field!(input.iv, "iv", sets, param_idx);
+        push_field!(input.metadata, "metadata", sets, param_idx);
 
-    let sql = format!(
-        "UPDATE persona_credentials SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE persona_credentials SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now.clone())];
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now.clone())];
 
-    if let Some(ref v) = input.name {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.service_type {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.encrypted_data {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.iv {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.metadata {
-        param_values.push(Box::new(v.clone()));
-    }
-    param_values.push(Box::new(id.to_string()));
+        if let Some(ref v) = input.name {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.service_type {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.encrypted_data {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.iv {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.metadata {
+            param_values.push(Box::new(v.clone()));
+        }
+        param_values.push(Box::new(id.to_string()));
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    tx.execute(&sql, params_ref.as_slice())?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        tx.execute(&sql, params_ref.as_slice())?;
 
-    // -- 2. Save fields if provided --
-    if let Some(field_map) = fields {
-        if !field_map.is_empty() {
-            // Delete existing fields and re-insert within the same transaction
-            tx.execute(
-                "DELETE FROM credential_fields WHERE credential_id = ?1",
-                params![id],
-            )?;
-
-            for (key, value) in field_map {
-                let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
-                let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-                    .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
-
-                let field_type = classify_field_type(key);
-                let field_id = uuid::Uuid::new_v4().to_string();
-
+        // -- 2. Save fields if provided --
+        if let Some(field_map) = fields {
+            if !field_map.is_empty() {
+                // Delete existing fields and re-insert within the same transaction
                 tx.execute(
-                    "INSERT INTO credential_fields
-                     (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-                    params![
-                        field_id, id, key, enc_val, field_iv,
-                        field_type, is_sensitive as i32, now,
-                    ],
+                    "DELETE FROM credential_fields WHERE credential_id = ?1",
+                    params![id],
                 )?;
+
+                for (key, value) in field_map {
+                    let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+                    let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+                        .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
+
+                    let field_type = classify_field_type(key);
+                    let field_id = uuid::Uuid::new_v4().to_string();
+
+                    tx.execute(
+                        "INSERT INTO credential_fields
+                         (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                        params![
+                            field_id, id, key, enc_val, field_iv,
+                            field_type, is_sensitive as i32, now,
+                        ],
+                    )?;
+                }
             }
         }
-    }
 
-    tx.commit().map_err(AppError::Database)?;
-    get_by_id(pool, id)
+        tx.commit().map_err(AppError::Database)?;
+        get_by_id(pool, id)
+
+    })
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let mut conn = pool.get()?;
-    let tx = conn.transaction().map_err(AppError::Database)?;
+    timed_query!("persona_credentials", "persona_credentials::delete", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
 
-    // Explicitly clean up dependent rows to guarantee no orphans even if
-    // PRAGMA foreign_keys is not active on this connection.
-    // All deletes are wrapped in a single transaction so a crash mid-sequence
-    // won't leave orphaned rows in dependent tables.
-    tx.execute("DELETE FROM credential_fields WHERE credential_id = ?1", params![id])?;
-    tx.execute("DELETE FROM credential_rotation_history WHERE credential_id = ?1", params![id])?;
-    tx.execute("DELETE FROM credential_rotation_policies WHERE credential_id = ?1", params![id])?;
-    tx.execute("DELETE FROM credential_events WHERE credential_id = ?1", params![id])?;
-    let rows = tx.execute("DELETE FROM persona_credentials WHERE id = ?1", params![id])?;
+        // Explicitly clean up dependent rows to guarantee no orphans even if
+        // PRAGMA foreign_keys is not active on this connection.
+        // All deletes are wrapped in a single transaction so a crash mid-sequence
+        // won't leave orphaned rows in dependent tables.
+        tx.execute("DELETE FROM credential_fields WHERE credential_id = ?1", params![id])?;
+        tx.execute("DELETE FROM credential_rotation_history WHERE credential_id = ?1", params![id])?;
+        tx.execute("DELETE FROM credential_rotation_policies WHERE credential_id = ?1", params![id])?;
+        tx.execute("DELETE FROM credential_events WHERE credential_id = ?1", params![id])?;
+        let rows = tx.execute("DELETE FROM persona_credentials WHERE id = ?1", params![id])?;
 
-    tx.commit().map_err(AppError::Database)?;
-    Ok(rows > 0)
+        tx.commit().map_err(AppError::Database)?;
+        Ok(rows > 0)
+
+    })
 }
 
 /// Returns a summary of resources affected by deleting this credential.
 pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
-    let conn = pool.get()?;
-    let mut impacts: Vec<(String, String)> = Vec::new();
+    timed_query!("persona_credentials", "persona_credentials::blast_radius", {
+        let conn = pool.get()?;
+        let mut impacts: Vec<(String, String)> = Vec::new();
 
-    // Event triggers that will be removed
-    let event_count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM credential_events WHERE credential_id = ?1",
-            params![id],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
-    if event_count > 0 {
-        impacts.push(("event".into(), format!("{event_count} event trigger(s) will be removed")));
-    }
-
-    // Rotation policies
-    let rotation_count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM credential_rotation_policies WHERE credential_id = ?1",
-            params![id],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
-    if rotation_count > 0 {
-        impacts.push(("rotation".into(), format!("{rotation_count} rotation policy/policies will be removed")));
-    }
-
-    // Dependent personas (structural: personas whose tools use connectors matching this credential)
-    let service_type: Option<String> = conn
-        .query_row(
-            "SELECT service_type FROM persona_credentials WHERE id = ?1",
-            params![id],
-            |r| r.get(0),
-        )
-        .ok();
-
-    if let Some(ref svc) = service_type {
-        let mut stmt = conn.prepare(
-            "SELECT DISTINCT p.name FROM personas p
-             INNER JOIN persona_tools pt ON pt.persona_id = p.id
-             INNER JOIN persona_tool_definitions ptd ON ptd.id = pt.tool_id
-             INNER JOIN connector_definitions cd ON cd.name = ?1
-             WHERE cd.services LIKE '%' || ptd.name || '%'",
-        )?;
-        let names: Vec<String> = stmt
-            .query_map(params![svc], |row| row.get::<_, String>(0))?
-            .filter_map(|r| r.ok())
-            .collect();
-        if !names.is_empty() {
-            impacts.push((
-                "persona".into(),
-                format!(
-                    "Agent(s) {} may lose {} access",
-                    names.join(", "),
-                    svc
-                ),
-            ));
+        // Event triggers that will be removed
+        let event_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM credential_events WHERE credential_id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        if event_count > 0 {
+            impacts.push(("event".into(), format!("{event_count} event trigger(s) will be removed")));
         }
-    }
 
-    // Active automations using this credential
-    let auto_count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM persona_automations WHERE platform_credential_id = ?1 AND deployment_status = 'active'",
-            params![id],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
-    if auto_count > 0 {
-        impacts.push(("automation".into(), format!("{auto_count} active automation(s) will lose their credential")));
-    }
+        // Rotation policies
+        let rotation_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM credential_rotation_policies WHERE credential_id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        if rotation_count > 0 {
+            impacts.push(("rotation".into(), format!("{rotation_count} rotation policy/policies will be removed")));
+        }
 
-    Ok(impacts)
+        // Dependent personas (structural: personas whose tools use connectors matching this credential)
+        let service_type: Option<String> = conn
+            .query_row(
+                "SELECT service_type FROM persona_credentials WHERE id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .ok();
+
+        if let Some(ref svc) = service_type {
+            let mut stmt = conn.prepare(
+                "SELECT DISTINCT p.name FROM personas p
+                 INNER JOIN persona_tools pt ON pt.persona_id = p.id
+                 INNER JOIN persona_tool_definitions ptd ON ptd.id = pt.tool_id
+                 INNER JOIN connector_definitions cd ON cd.name = ?1
+                 WHERE cd.services LIKE '%' || ptd.name || '%'",
+            )?;
+            let names: Vec<String> = stmt
+                .query_map(params![svc], |row| row.get::<_, String>(0))?
+                .filter_map(|r| r.ok())
+                .collect();
+            if !names.is_empty() {
+                impacts.push((
+                    "persona".into(),
+                    format!(
+                        "Agent(s) {} may lose {} access",
+                        names.join(", "),
+                        svc
+                    ),
+                ));
+            }
+        }
+
+        // Active automations using this credential
+        let auto_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_automations WHERE platform_credential_id = ?1 AND deployment_status = 'active'",
+                params![id],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        if auto_count > 0 {
+            impacts.push(("automation".into(), format!("{auto_count} active automation(s) will lose their credential")));
+        }
+
+        Ok(impacts)
+
+    })
 }
 
 /// Update only the metadata column for a credential.
 /// Used by the anomaly scoring engine to persist healthcheck ring buffer data
 /// without touching encrypted fields.
 pub fn update_metadata(pool: &DbPool, id: &str, metadata: Option<&str>) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+    timed_query!("persona_credentials", "persona_credentials::update_metadata", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    // Sanitize metadata to prevent leaking secrets in plaintext column
-    let sanitized_metadata = metadata.map(sanitize_secrets);
+        // Sanitize metadata to prevent leaking secrets in plaintext column
+        let sanitized_metadata = metadata.map(sanitize_secrets);
 
-    let rows = conn.execute(
-        "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
-        params![sanitized_metadata, now, id],
-    )?;
-    if rows == 0 {
-        return Err(AppError::NotFound(format!("Credential {id}")));
-    }
-    Ok(())
+        let rows = conn.execute(
+            "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
+            params![sanitized_metadata, now, id],
+        )?;
+        if rows == 0 {
+            return Err(AppError::NotFound(format!("Credential {id}")));
+        }
+        Ok(())
+
+    })
 }
 
 /// Atomically merge a metadata patch into the current credential metadata.
@@ -406,61 +430,64 @@ pub fn patch_metadata_atomic(
     id: &str,
     patch: serde_json::Map<String, serde_json::Value>,
 ) -> Result<PersonaCredential, AppError> {
-    let mut conn = pool.get()?;
-    let tx = conn.transaction()?;
+    timed_query!("persona_credentials", "persona_credentials::patch_metadata_atomic", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
 
-    let current_raw: Option<String> = tx
-        .query_row(
-            "SELECT metadata FROM persona_credentials WHERE id = ?1",
-            params![id],
-            |row| row.get::<_, Option<String>>(0),
-        )
-        .optional()?
-        .flatten();
-
-    // Ensure credential exists before applying patch
-    if current_raw.is_none() {
-        let exists: Option<String> = tx
+        let current_raw: Option<String> = tx
             .query_row(
-                "SELECT id FROM persona_credentials WHERE id = ?1",
+                "SELECT metadata FROM persona_credentials WHERE id = ?1",
                 params![id],
-                |row| row.get(0),
+                |row| row.get::<_, Option<String>>(0),
             )
-            .optional()?;
-        if exists.is_none() {
+            .optional()?
+            .flatten();
+
+        // Ensure credential exists before applying patch
+        if current_raw.is_none() {
+            let exists: Option<String> = tx
+                .query_row(
+                    "SELECT id FROM persona_credentials WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            if exists.is_none() {
+                return Err(AppError::NotFound(format!("Credential {id}")));
+            }
+        }
+
+        let mut base_obj = current_raw
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .and_then(|v| v.as_object().cloned())
+            .unwrap_or_default();
+
+        for (key, value) in patch {
+            if value.is_null() {
+                base_obj.remove(&key);
+            } else {
+                base_obj.insert(key, value);
+            }
+        }
+
+        let next_meta_json = serde_json::Value::Object(base_obj);
+        let next_meta_str = serde_json::to_string(&next_meta_json)?;
+        let sanitized_meta = sanitize_secrets(&next_meta_str);
+        let now = chrono::Utc::now().to_rfc3339();
+
+        let updated_rows = tx.execute(
+            "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
+            params![sanitized_meta, now, id],
+        )?;
+        if updated_rows == 0 {
             return Err(AppError::NotFound(format!("Credential {id}")));
         }
-    }
 
-    let mut base_obj = current_raw
-        .as_deref()
-        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-        .and_then(|v| v.as_object().cloned())
-        .unwrap_or_default();
+        tx.commit()?;
+        get_by_id(pool, id)
 
-    for (key, value) in patch {
-        if value.is_null() {
-            base_obj.remove(&key);
-        } else {
-            base_obj.insert(key, value);
-        }
-    }
-
-    let next_meta_json = serde_json::Value::Object(base_obj);
-    let next_meta_str = serde_json::to_string(&next_meta_json)?;
-    let sanitized_meta = sanitize_secrets(&next_meta_str);
-    let now = chrono::Utc::now().to_rfc3339();
-
-    let updated_rows = tx.execute(
-        "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
-        params![sanitized_meta, now, id],
-    )?;
-    if updated_rows == 0 {
-        return Err(AppError::NotFound(format!("Credential {id}")));
-    }
-
-    tx.commit()?;
-    get_by_id(pool, id)
+    })
 }
 
 /// Atomically append a healthcheck entry to the metadata ring buffer.
@@ -473,106 +500,115 @@ pub fn append_healthcheck_metadata(
     success: bool,
     message: &str,
 ) -> Result<(), AppError> {
-    let mut conn = pool.get()?;
-    let tx = conn.transaction()?;
+    timed_query!("persona_credentials", "persona_credentials::append_healthcheck_metadata", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
 
-    let current_raw: Option<String> = tx
-        .query_row(
-            "SELECT metadata FROM persona_credentials WHERE id = ?1",
-            params![credential_id],
-            |row| row.get::<_, Option<String>>(0),
-        )
-        .optional()?
-        .flatten();
+        let current_raw: Option<String> = tx
+            .query_row(
+                "SELECT metadata FROM persona_credentials WHERE id = ?1",
+                params![credential_id],
+                |row| row.get::<_, Option<String>>(0),
+            )
+            .optional()?
+            .flatten();
 
-    let metadata: serde_json::Value = current_raw
-        .as_deref()
-        .and_then(|s| serde_json::from_str(s).ok())
-        .unwrap_or(serde_json::Value::Null);
+        let metadata: serde_json::Value = current_raw
+            .as_deref()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .unwrap_or(serde_json::Value::Null);
 
-    let existing = crate::engine::rotation::parse_healthcheck_entries(&metadata);
-    let updated = crate::engine::rotation::append_healthcheck_entry(&existing, success, message);
+        let existing = crate::engine::rotation::parse_healthcheck_entries(&metadata).entries_or_empty();
+        let updated = crate::engine::rotation::append_healthcheck_entry(&existing, success, message);
 
-    let mut meta_obj = metadata.as_object().cloned().unwrap_or_default();
-    meta_obj.insert(
-        "healthcheck_results".to_string(),
-        serde_json::to_value(&updated).unwrap_or_default(),
-    );
-    meta_obj.insert(
-        "healthcheck_last_success".to_string(),
-        serde_json::Value::Bool(success),
-    );
-    if success {
+        let mut meta_obj = metadata.as_object().cloned().unwrap_or_default();
         meta_obj.insert(
-            "healthcheck_last_success_at".to_string(),
-            serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
+            "healthcheck_results".to_string(),
+            serde_json::to_value(&updated).unwrap_or_default(),
         );
-    }
+        meta_obj.insert(
+            "healthcheck_last_success".to_string(),
+            serde_json::Value::Bool(success),
+        );
+        if success {
+            meta_obj.insert(
+                "healthcheck_last_success_at".to_string(),
+                serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
+            );
+        }
 
-    let next_meta = serde_json::to_string(&serde_json::Value::Object(meta_obj))?;
-    let sanitized = sanitize_secrets(&next_meta);
-    let now = chrono::Utc::now().to_rfc3339();
+        let next_meta = serde_json::to_string(&serde_json::Value::Object(meta_obj))?;
+        let sanitized = sanitize_secrets(&next_meta);
+        let now = chrono::Utc::now().to_rfc3339();
 
-    tx.execute(
-        "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
-        params![sanitized, now, credential_id],
-    )?;
+        tx.execute(
+            "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
+            params![sanitized, now, credential_id],
+        )?;
 
-    tx.commit()?;
-    Ok(())
+        tx.commit()?;
+        Ok(())
+
+    })
 }
 
 /// Record a usage event for a credential: increment usage_count and set last_used_at.
 pub fn record_usage(pool: &DbPool, credential_id: &str) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+    timed_query!("persona_credentials", "persona_credentials::record_usage", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    // Update last_used_at on the credential row
-    conn.execute(
-        "UPDATE persona_credentials SET last_used_at = ?1, updated_at = ?1 WHERE id = ?2",
-        params![now, credential_id],
-    )?;
+        // Update last_used_at on the credential row
+        conn.execute(
+            "UPDATE persona_credentials SET last_used_at = ?1, updated_at = ?1 WHERE id = ?2",
+            params![now, credential_id],
+        )?;
 
-    // Increment usage_count in metadata JSON
-    let row: Option<String> = conn
-        .query_row(
-            "SELECT metadata FROM persona_credentials WHERE id = ?1",
-            params![credential_id],
-            |r| r.get(0),
-        )
-        .optional()?;
+        // Increment usage_count in metadata JSON
+        let row: Option<String> = conn
+            .query_row(
+                "SELECT metadata FROM persona_credentials WHERE id = ?1",
+                params![credential_id],
+                |r| r.get(0),
+            )
+            .optional()?;
 
-    let mut meta: serde_json::Value = row
-        .as_deref()
-        .and_then(|s| serde_json::from_str(s).ok())
-        .unwrap_or(serde_json::json!({}));
+        let mut meta: serde_json::Value = row
+            .as_deref()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .unwrap_or(serde_json::json!({}));
 
-    let count = meta.get("usage_count").and_then(|v| v.as_u64()).unwrap_or(0);
-    if let Some(obj) = meta.as_object_mut() {
-        obj.insert("usage_count".to_string(), serde_json::json!(count + 1));
-        obj.insert("last_used_at".to_string(), serde_json::json!(now));
-    }
+        let count = meta.get("usage_count").and_then(|v| v.as_u64()).unwrap_or(0);
+        if let Some(obj) = meta.as_object_mut() {
+            obj.insert("usage_count".to_string(), serde_json::json!(count + 1));
+            obj.insert("last_used_at".to_string(), serde_json::json!(now));
+        }
 
-    let meta_str = serde_json::to_string(&meta).ok();
-    conn.execute(
-        "UPDATE persona_credentials SET metadata = ?1 WHERE id = ?2",
-        params![meta_str, credential_id],
-    )?;
+        let meta_str = serde_json::to_string(&meta).ok();
+        conn.execute(
+            "UPDATE persona_credentials SET metadata = ?1 WHERE id = ?2",
+            params![meta_str, credential_id],
+        )?;
 
-    Ok(())
+        Ok(())
+
+    })
 }
 
 pub fn mark_used(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "UPDATE persona_credentials SET last_used_at = ?1 WHERE id = ?2",
-        params![now, id],
-    )?;
-    if rows == 0 {
-        return Err(AppError::NotFound(format!("Credential {id}")));
-    }
-    Ok(())
+    timed_query!("persona_credentials", "persona_credentials::mark_used", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "UPDATE persona_credentials SET last_used_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
+        if rows == 0 {
+            return Err(AppError::NotFound(format!("Credential {id}")));
+        }
+        Ok(())
+
+    })
 }
 
 // ============================================================================
@@ -583,72 +619,87 @@ pub fn get_events_by_credential(
     pool: &DbPool,
     credential_id: &str,
 ) -> Result<Vec<CredentialEvent>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM credential_events WHERE credential_id = ?1 ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map(params![credential_id], row_to_credential_event)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("persona_credentials", "persona_credentials::get_events_by_credential", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM credential_events WHERE credential_id = ?1 ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map(params![credential_id], row_to_credential_event)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 pub fn get_all_events(pool: &DbPool) -> Result<Vec<CredentialEvent>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM credential_events ORDER BY credential_id, created_at DESC",
-    )?;
-    let rows = stmt.query_map([], row_to_credential_event)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("persona_credentials", "persona_credentials::get_all_events", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM credential_events ORDER BY credential_id, created_at DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_credential_event)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 pub fn get_event_by_id(pool: &DbPool, id: &str) -> Result<CredentialEvent, AppError> {
-    let conn = pool.get()?;
-    conn.query_row(
-        "SELECT * FROM credential_events WHERE id = ?1",
-        params![id],
-        row_to_credential_event,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("CredentialEvent {id}"))
-        }
-        other => AppError::Database(other),
+    timed_query!("persona_credentials", "persona_credentials::get_event_by_id", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT * FROM credential_events WHERE id = ?1",
+            params![id],
+            row_to_credential_event,
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("CredentialEvent {id}"))
+            }
+            other => AppError::Database(other),
+        })
+
     })
 }
 
 pub fn get_enabled_events(pool: &DbPool) -> Result<Vec<CredentialEvent>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM credential_events WHERE enabled = 1 ORDER BY created_at DESC",
-    )?;
-    let rows = stmt.query_map([], row_to_credential_event)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("persona_credentials", "persona_credentials::get_enabled_events", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM credential_events WHERE enabled = 1 ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_credential_event)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 pub fn create_event(
     pool: &DbPool,
     input: CreateCredentialEventInput,
 ) -> Result<CredentialEvent, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let enabled = input.enabled.unwrap_or(true) as i32;
+    timed_query!("persona_credentials", "persona_credentials::create_event", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let enabled = input.enabled.unwrap_or(true) as i32;
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO credential_events
-         (id, credential_id, event_template_id, name, config, enabled, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-        params![
-            id,
-            input.credential_id,
-            input.event_template_id,
-            input.name,
-            input.config,
-            enabled,
-            now,
-        ],
-    )?;
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO credential_events
+             (id, credential_id, event_template_id, name, config, enabled, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+            params![
+                id,
+                input.credential_id,
+                input.event_template_id,
+                input.name,
+                input.config,
+                enabled,
+                now,
+            ],
+        )?;
 
-    get_event_by_id(pool, &id)
+        get_event_by_id(pool, &id)
+
+    })
 }
 
 pub fn update_event(
@@ -656,62 +707,71 @@ pub fn update_event(
     id: &str,
     input: UpdateCredentialEventInput,
 ) -> Result<CredentialEvent, AppError> {
-    // Verify exists
-    get_event_by_id(pool, id)?;
+    timed_query!("persona_credentials", "persona_credentials::update_event", {
+        // Verify exists
+        get_event_by_id(pool, id)?;
 
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut param_idx = 2u32;
 
-    push_field!(input.name, "name", sets, param_idx);
-    push_field!(input.config, "config", sets, param_idx);
-    push_field!(input.enabled, "enabled", sets, param_idx);
-    push_field!(input.last_polled_at, "last_polled_at", sets, param_idx);
+        push_field!(input.name, "name", sets, param_idx);
+        push_field!(input.config, "config", sets, param_idx);
+        push_field!(input.enabled, "enabled", sets, param_idx);
+        push_field!(input.last_polled_at, "last_polled_at", sets, param_idx);
 
-    let sql = format!(
-        "UPDATE credential_events SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE credential_events SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-    if let Some(ref v) = input.name {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(ref v) = input.config {
-        param_values.push(Box::new(v.clone()));
-    }
-    if let Some(v) = input.enabled {
-        param_values.push(Box::new(v as i32));
-    }
-    if let Some(ref v) = input.last_polled_at {
-        param_values.push(Box::new(v.clone()));
-    }
-    param_values.push(Box::new(id.to_string()));
+        if let Some(ref v) = input.name {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(ref v) = input.config {
+            param_values.push(Box::new(v.clone()));
+        }
+        if let Some(v) = input.enabled {
+            param_values.push(Box::new(v as i32));
+        }
+        if let Some(ref v) = input.last_polled_at {
+            param_values.push(Box::new(v.clone()));
+        }
+        param_values.push(Box::new(id.to_string()));
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
 
-    get_event_by_id(pool, id)
+        get_event_by_id(pool, id)
+
+    })
 }
 
 pub fn delete_event(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM credential_events WHERE id = ?1", params![id])?;
-    Ok(rows > 0)
+    timed_query!("persona_credentials", "persona_credentials::delete_event", {
+        let conn = pool.get()?;
+        let rows = conn.execute("DELETE FROM credential_events WHERE id = ?1", params![id])?;
+        Ok(rows > 0)
+
+    })
 }
 
 pub fn delete_events_by_credential(pool: &DbPool, credential_id: &str) -> Result<i64, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "DELETE FROM credential_events WHERE credential_id = ?1",
-        params![credential_id],
-    )?;
-    Ok(rows as i64)
+    timed_query!("persona_credentials", "persona_credentials::delete_events_by_credential", {
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "DELETE FROM credential_events WHERE credential_id = ?1",
+            params![credential_id],
+        )?;
+        Ok(rows as i64)
+
+    })
 }
 
 // ============================================================================
@@ -725,12 +785,15 @@ row_mapper!(row_to_credential_field -> CredentialField {
 
 /// Get all field rows for a credential.
 pub fn get_fields(pool: &DbPool, credential_id: &str) -> Result<Vec<CredentialField>, AppError> {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM credential_fields WHERE credential_id = ?1 ORDER BY field_key"
-    )?;
-    let rows = stmt.query_map(params![credential_id], row_to_credential_field)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("persona_credentials", "persona_credentials::get_fields", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM credential_fields WHERE credential_id = ?1 ORDER BY field_key"
+        )?;
+        let rows = stmt.query_map(params![credential_id], row_to_credential_field)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+
+    })
 }
 
 /// Save (upsert) all fields for a credential from a `HashMap<String, String>`.
@@ -742,46 +805,49 @@ pub fn save_fields(
     credential_id: &str,
     fields: &HashMap<String, String>,
 ) -> Result<usize, AppError> {
-    let mut conn = pool.get()?;
-    let tx = conn.transaction().map_err(AppError::Database)?;
+    timed_query!("persona_credentials", "persona_credentials::save_fields", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
 
-    // Remove existing field rows and re-insert atomically
-    tx.execute(
-        "DELETE FROM credential_fields WHERE credential_id = ?1",
-        params![credential_id],
-    )?;
-
-    let now = chrono::Utc::now().to_rfc3339();
-    let mut count = 0usize;
-
-    for (key, value) in fields {
-        let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
-        let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-            .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
-
-        let field_type = classify_field_type(key);
-        let field_id = uuid::Uuid::new_v4().to_string();
-
+        // Remove existing field rows and re-insert atomically
         tx.execute(
-            "INSERT INTO credential_fields
-             (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-            params![
-                field_id,
-                credential_id,
-                key,
-                enc_val,
-                field_iv,
-                field_type,
-                is_sensitive as i32,
-                now,
-            ],
+            "DELETE FROM credential_fields WHERE credential_id = ?1",
+            params![credential_id],
         )?;
-        count += 1;
-    }
 
-    tx.commit().map_err(AppError::Database)?;
-    Ok(count)
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut count = 0usize;
+
+        for (key, value) in fields {
+            let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+            let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+                .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
+
+            let field_type = classify_field_type(key);
+            let field_id = uuid::Uuid::new_v4().to_string();
+
+            tx.execute(
+                "INSERT INTO credential_fields
+                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                params![
+                    field_id,
+                    credential_id,
+                    key,
+                    enc_val,
+                    field_iv,
+                    field_type,
+                    is_sensitive as i32,
+                    now,
+                ],
+            )?;
+            count += 1;
+        }
+
+        tx.commit().map_err(AppError::Database)?;
+        Ok(count)
+
+    })
 }
 
 /// Update a single credential field. If the field doesn't exist, inserts it.
@@ -792,41 +858,47 @@ pub fn upsert_field(
     field_value: &str,
     is_sensitive: bool,
 ) -> Result<(), AppError> {
-    let (enc_val, field_iv) = crypto::encrypt_field(field_value, is_sensitive)
-        .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
+    timed_query!("persona_credentials", "persona_credentials::upsert_field", {
+        let (enc_val, field_iv) = crypto::encrypt_field(field_value, is_sensitive)
+            .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
 
-    let now = chrono::Utc::now().to_rfc3339();
-    let field_type = classify_field_type(field_key);
-    let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let field_type = classify_field_type(field_key);
+        let conn = pool.get()?;
 
-    // Try UPDATE first
-    let rows = conn.execute(
-        "UPDATE credential_fields SET encrypted_value = ?1, iv = ?2, field_type = ?3,
-         is_sensitive = ?4, updated_at = ?5 WHERE credential_id = ?6 AND field_key = ?7",
-        params![enc_val, field_iv, field_type, is_sensitive as i32, now, credential_id, field_key],
-    )?;
-
-    if rows == 0 {
-        let field_id = uuid::Uuid::new_v4().to_string();
-        conn.execute(
-            "INSERT INTO credential_fields
-             (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-            params![field_id, credential_id, field_key, enc_val, field_iv, field_type, is_sensitive as i32, now],
+        // Try UPDATE first
+        let rows = conn.execute(
+            "UPDATE credential_fields SET encrypted_value = ?1, iv = ?2, field_type = ?3,
+             is_sensitive = ?4, updated_at = ?5 WHERE credential_id = ?6 AND field_key = ?7",
+            params![enc_val, field_iv, field_type, is_sensitive as i32, now, credential_id, field_key],
         )?;
-    }
 
-    Ok(())
+        if rows == 0 {
+            let field_id = uuid::Uuid::new_v4().to_string();
+            conn.execute(
+                "INSERT INTO credential_fields
+                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                params![field_id, credential_id, field_key, enc_val, field_iv, field_type, is_sensitive as i32, now],
+            )?;
+        }
+
+        Ok(())
+
+    })
 }
 
 /// Delete all field rows for a credential.
 pub fn delete_fields(pool: &DbPool, credential_id: &str) -> Result<usize, AppError> {
-    let conn = pool.get()?;
-    let rows = conn.execute(
-        "DELETE FROM credential_fields WHERE credential_id = ?1",
-        params![credential_id],
-    )?;
-    Ok(rows)
+    timed_query!("persona_credentials", "persona_credentials::delete_fields", {
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "DELETE FROM credential_fields WHERE credential_id = ?1",
+            params![credential_id],
+        )?;
+        Ok(rows)
+
+    })
 }
 
 // ============================================================================

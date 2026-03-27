@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FileText, Trash2, Upload, FolderOpen, Type, RefreshCw, AlertCircle } from 'lucide-react';
+import { FileText, Trash2, Upload, FolderOpen, Type, RefreshCw, AlertCircle, FileSearch } from 'lucide-react';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('vector-kb-documents');
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import type { KnowledgeBase, KbDocument } from '@/api/vault/database/vectorKb';
-import { kbListDocuments, kbDeleteDocument } from '@/api/vault/database/vectorKb';
+import { kbListDocuments, kbDeleteDocument, kbPickFiles, kbIngestFiles } from '@/api/vault/database/vectorKb';
 import { IngestDropZone } from '../ingest/IngestDropZone';
 import { IngestTextModal } from '../ingest/IngestTextModal';
 import { IngestDirectoryPicker } from '../ingest/IngestDirectoryPicker';
@@ -57,6 +57,17 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
     }
   }, [onRefresh]);
 
+  const handleBrowseFiles = useCallback(async () => {
+    try {
+      const paths = await kbPickFiles();
+      if (paths.length === 0) return;
+      const jobId = await kbIngestFiles(kb.id, paths);
+      setActiveJobId(jobId);
+    } catch (err) {
+      logger.error('Browse files ingestion failed', { error: String(err) });
+    }
+  }, [kb.id]);
+
   const handleIngestStarted = useCallback((jobId: string) => {
     setActiveJobId(jobId);
   }, []);
@@ -87,6 +98,13 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
         >
           <Type className="w-3 h-3" />
           Paste Text
+        </button>
+        <button
+          onClick={() => void handleBrowseFiles()}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-secondary/40 hover:bg-secondary/60 text-foreground/80 transition-colors"
+        >
+          <FileSearch className="w-3 h-3" />
+          Browse Files
         </button>
         <button
           onClick={() => setShowDirPicker(true)}

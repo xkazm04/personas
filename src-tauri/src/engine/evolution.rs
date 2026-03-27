@@ -369,9 +369,9 @@ async fn evaluate_persona_on_scenarios(
         match execute_scenario(persona, tools, scenario, model).await {
             Ok(output) => {
                 let scores = score_result(&output, scenario, persona).await;
-                let composite = (scores.tool_accuracy as f64 * 0.3
-                    + scores.output_quality as f64 * 0.4
-                    + scores.protocol_compliance as f64 * 0.3)
+                let composite = (scores.tool_accuracy.unwrap_or(0) as f64 * 0.3
+                    + scores.output_quality.unwrap_or(0) as f64 * 0.4
+                    + scores.protocol_compliance.unwrap_or(0) as f64 * 0.3)
                     / 100.0;
                 total_score += composite;
                 count += 1;

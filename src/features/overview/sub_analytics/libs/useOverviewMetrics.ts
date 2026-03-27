@@ -83,7 +83,7 @@ export function useOverviewMetrics() {
   const summary = observabilityMetrics?.summary;
   const successRate = resolveMetricPercent(
     SUCCESS_RATE_IDENTITIES.analyticsSummary,
-    { numerator: summary?.successful_executions ?? 0, denominator: summary?.total_executions ?? 0 },
+    { numerator: summary?.successfulExecutions ?? 0, denominator: summary?.totalExecutions ?? 0 },
   ).toFixed(1);
 
   const costAnomalies = executionDashboard?.cost_anomalies ?? [];

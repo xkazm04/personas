@@ -78,7 +78,7 @@ export function ToolSearchFilter({
             onClick={() => { onCategoryChange(category); onSearchChange(''); }}
             className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all ${
               selectedCategory === category
-                ? 'text-foreground shadow-lg shadow-primary/20'
+                ? 'text-foreground shadow-elevation-3 shadow-primary/20'
                 : 'bg-secondary/40 text-muted-foreground/80 hover:bg-secondary/60 hover:text-foreground/95 border border-primary/20'
             }`}
           >

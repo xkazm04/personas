@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('gallery-query');
@@ -108,6 +108,14 @@ export function useGalleryQuery(
   const [recommendedTemplates, setRecommendedTemplates] = useState<PersonaDesignReview[]>([]);
   const [unfilteredTotal, setUnfilteredTotal] = useState(0);
 
+  // Stabilize coverageServiceTypes by content so a new array reference with
+  // identical elements doesn't re-trigger the heavy mount effect (6+ API calls).
+  const stableCoverageServiceTypes = useMemo(
+    () => coverageServiceTypes,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [coverageServiceTypes?.join('\0')],
+  );
+
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchIdRef = useRef(0);
   const currentPageRef = useRef(0);
@@ -144,6 +152,7 @@ export function useGalleryQuery(
       const effectiveSortDir = sortBy === 'readiness' ? 'desc' : sortDir;
       // Coverage filtering is applied client-side (in useGalleryActions) so it uses
       // the same category-level readiness logic as the filter counts.
+      const hasFilters = !!(debouncedSearch || connectorFilter.length > 0 || categoryFilter.length > 0);
       const result: PaginatedReviewsResult = await listDesignReviewsPaginated({
         search: debouncedSearch || undefined,
         connectorFilter: connectorFilter.length > 0 ? connectorFilter : undefined,
@@ -155,6 +164,11 @@ export function useGalleryQuery(
       });
       if (id !== fetchIdRef.current) return;
       setTotal(result.total);
+      // When fetching page 0 with no filters, the total is the unfiltered count —
+      // reuse it instead of making a separate request.
+      if (pageNum === 0 && !hasFilters) {
+        setUnfilteredTotal(result.total);
+      }
       setItems(prev => append ? [...prev, ...result.items] : result.items);
     } catch (err) {
       logger.error('Failed to fetch paginated reviews', { err });
@@ -225,19 +239,17 @@ export function useGalleryQuery(
       .then((data) => { if (!cancelled) setTrendingTemplates(data); })
       .catch(silentCatch("galleryQuery:getTrending"));
 
-    // Fetch unfiltered total so "All" count stays stable across coverage filter changes
-    listDesignReviewsPaginated({ page: 0, perPage: 1 })
-      .then((r) => { if (!cancelled) setUnfilteredTotal(r.total); })
-      .catch(silentCatch("galleryQuery:unfilteredTotal"));
+    // unfilteredTotal is now derived from the initial fetchPage(0) call which runs
+    // on mount with no filters active — no separate request needed here.
 
-    if (coverageServiceTypes && coverageServiceTypes.length > 0) {
+    if (stableCoverageServiceTypes && stableCoverageServiceTypes.length > 0) {
       listDesignReviewsPaginated({
         sortBy: 'trending',
         sortDir: 'desc',
         page: 0,
         perPage: 6,
         coverageFilter: 'full',
-        coverageServiceTypes,
+        coverageServiceTypes: stableCoverageServiceTypes,
       })
         .then((r) => { if (!cancelled) setReadyTemplates(r.items); })
         .catch(silentCatch("galleryQuery:readyTemplates"));
@@ -248,11 +260,11 @@ export function useGalleryQuery(
         page: 0,
         perPage: 30,
         coverageFilter: 'partial',
-        coverageServiceTypes,
+        coverageServiceTypes: stableCoverageServiceTypes,
       })
         .then((r) => {
           if (!cancelled) {
-            const scored = scoreRecommendations(r.items, coverageServiceTypes);
+            const scored = scoreRecommendations(r.items, stableCoverageServiceTypes);
             setRecommendedTemplates(scored);
           }
         })
@@ -260,7 +272,7 @@ export function useGalleryQuery(
     }
 
     return () => { cancelled = true; };
-  }, [coverageServiceTypes]);
+  }, [stableCoverageServiceTypes]);
 
   const refresh = useCallback(() => {
     if (aiSearchActive) return;
@@ -275,10 +287,15 @@ export function useGalleryQuery(
     getTrendingTemplates(5)
       .then(setTrendingTemplates)
       .catch(silentCatch("galleryQuery:refreshTrending"));
-    listDesignReviewsPaginated({ page: 0, perPage: 1 })
-      .then((r) => setUnfilteredTotal(r.total))
-      .catch(silentCatch("galleryQuery:refreshUnfilteredTotal"));
-  }, [fetchPage, aiSearchActive]);
+    // fetchPage already sets unfilteredTotal when no filters are active.
+    // Only make a separate call when filters are applied so the "All" count stays fresh.
+    const hasFilters = !!(debouncedSearch || connectorFilter.length > 0 || categoryFilter.length > 0);
+    if (hasFilters) {
+      listDesignReviewsPaginated({ page: 0, perPage: 1 })
+        .then((r) => setUnfilteredTotal(r.total))
+        .catch(silentCatch("galleryQuery:refreshUnfilteredTotal"));
+    }
+  }, [fetchPage, aiSearchActive, debouncedSearch, connectorFilter, categoryFilter]);
 
   return {
     items,

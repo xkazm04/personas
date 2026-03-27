@@ -21,7 +21,7 @@ const driftDetectionMiddleware: PipelineMiddleware<'frontend_complete'> = async 
   payload,
   _trace,
 ) => {
-  const { executionId, finalStatus, personaId, durationMs, costUsd, errorMessage } = payload;
+  const { executionId, finalStatus, personaId, durationMs, costUsd, errorMessage, recentExecutions } = payload;
   if (!personaId || !executionId || !finalStatus) return payload;
 
   try {
@@ -31,12 +31,11 @@ const driftDetectionMiddleware: PipelineMiddleware<'frontend_complete'> = async 
     const persona = state.personas.find((p) => p.id === personaId);
     if (!persona) return payload;
 
-    // Count recent consecutive failures from the current executions list.
-    // Prepend the just-finished status for the current execution.
+    // Count recent consecutive failures.
+    // Use the pre-captured snapshot from the payload (captured before state
+    // reset in finishExecution) so we don't read stale or wrong-persona data.
     const recentStatuses: string[] = [finalStatus];
-    const existingExecs = state.executions
-      .filter((e) => e.persona_id === personaId)
-      .slice(0, 4); // 4 + 1 current = 5 total window
+    const existingExecs = recentExecutions ?? [];
     for (const e of existingExecs) {
       recentStatuses.push(e.status);
     }

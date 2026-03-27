@@ -48,19 +48,8 @@ const TRIP_COUNT_WINDOW: Duration = Duration::from_secs(3600);
 
 use super::error_taxonomy::{self, ErrorCategory};
 
-/// Legacy alias — use [`ErrorCategory`] directly in new code.
-#[allow(dead_code)]
-pub type FailoverReason = ErrorCategory;
-
 /// Counter for errors that did not match any known failover pattern.
 static FAILOVER_UNCLASSIFIED_ERRORS: AtomicU64 = AtomicU64::new(0);
-
-/// Returns the cumulative count of errors that `classify_error` could not
-/// classify. Useful for diagnostics and deciding when to add new patterns.
-#[allow(dead_code)]
-pub fn unclassified_error_count() -> u64 {
-    FAILOVER_UNCLASSIFIED_ERRORS.load(Ordering::Relaxed)
-}
 
 /// Check if an error message indicates a retryable failure that should trigger failover.
 ///
@@ -157,8 +146,7 @@ pub struct CircuitBreakerStatus {
 /// Per-provider + global circuit breaker.
 ///
 /// Thread-safe: all state is behind a single Mutex so `try_acquire` can
-/// atomically check availability and reserve a slot, eliminating the TOCTOU
-/// race between `is_available()` and the caller's use of the result.
+/// atomically check availability and reserve a slot.
 ///
 /// The global failure counter tracks total failures across ALL providers
 /// within a rolling window. When the threshold is reached, all failover
@@ -220,8 +208,7 @@ impl ProviderCircuitBreaker {
     /// **This method mutates state**: when a per-provider or global cooldown has
     /// elapsed, it resets `opened_at`, `consecutive_failures`, and `paused_at`.
     /// Calling it twice for the same provider may yield different results (first
-    /// call resets, second sees clean state). Use `is_available()` for a pure
-    /// read-only check that does not reset circuit state.
+    /// call resets, second sees clean state).
     ///
     /// Returns `true` if the provider can be used (circuit closed or cooldown
     /// elapsed AND global breaker not tripped). Returns `false` if the circuit
@@ -279,33 +266,6 @@ impl ProviderCircuitBreaker {
                     false
                 }
             }
-        }
-    }
-
-    /// Pure read-only check: is the provider currently available?
-    ///
-    /// Unlike `try_acquire_and_probe()`, this does NOT reset circuit state when
-    /// cooldowns expire. Use this for monitoring/display; use
-    /// `try_acquire_and_probe()` when you intend to actually send a request.
-    #[allow(dead_code)]
-    pub fn is_available(&self, kind: EngineKind) -> bool {
-        let guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
-        let (ref states, ref global, _) = *guard;
-
-        // Global pause check
-        if let Some(paused_at) = global.paused_at {
-            if paused_at.elapsed() < CIRCUIT_COOLDOWN {
-                return false;
-            }
-        }
-
-        // Per-provider check
-        match states.get(&kind) {
-            None => true,
-            Some(state) => match state.opened_at {
-                None => true,
-                Some(opened) => opened.elapsed() >= CIRCUIT_COOLDOWN,
-            },
         }
     }
 
@@ -632,6 +592,12 @@ pub fn build_failover_chain_with_policy(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Returns the cumulative count of errors that `classify_error` could not
+    /// classify. Useful for test diagnostics.
+    fn unclassified_error_count() -> u64 {
+        FAILOVER_UNCLASSIFIED_ERRORS.load(Ordering::Relaxed)
+    }
 
     #[test]
     fn test_classify_error_not_found() {

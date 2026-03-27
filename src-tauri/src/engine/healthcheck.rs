@@ -860,7 +860,7 @@ pub(crate) fn validate_healthcheck_url(url: &str) -> Result<(), AppError> {
 }
 
 /// Check if an IP address is in a private, loopback, or link-local range.
-fn is_private_ip(ip: &IpAddr) -> bool {
+pub(crate) fn is_private_ip(ip: &IpAddr) -> bool {
     match ip {
         IpAddr::V4(v4) => {
             v4.is_loopback()             // 127.0.0.0/8

@@ -34,7 +34,7 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
     <div ref={containerRef} className="relative">
       {children({ requestConfirm: () => setOpen(true) })}
       {open && (
-        <div className="absolute right-0 bottom-full mb-1 z-50 rounded-lg border border-border bg-background shadow-lg p-2.5 min-w-[180px]">
+        <div className="absolute right-0 bottom-full mb-1 z-50 rounded-lg border border-border bg-background shadow-elevation-3 p-2.5 min-w-[180px]">
           <p className="text-xs text-foreground mb-2">{message}</p>
           <div className="flex gap-1.5 justify-end">
             <button

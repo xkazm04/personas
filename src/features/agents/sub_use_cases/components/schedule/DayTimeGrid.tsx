@@ -133,7 +133,7 @@ export function DayTimeGrid({
               onClick={() => onHourChange(h)}
               className={`flex-1 h-5 rounded-sm transition-all ${
                 h === hour
-                  ? 'bg-amber-400 shadow-sm shadow-amber-400/30'
+                  ? 'bg-amber-400 shadow-elevation-1 shadow-amber-400/30'
                   : h >= 9 && h <= 17
                     ? 'bg-amber-500/10 hover:bg-amber-500/20'
                     : 'bg-secondary/30 hover:bg-secondary/50'

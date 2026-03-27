@@ -95,7 +95,7 @@ export function TemplatePreviewModal({
       onClose={onClose}
       titleId="template-preview-title"
       maxWidthClass="max-w-5xl"
-      panelClassName={`max-h-[85vh] bg-background border ${BORDER_DEFAULT} rounded-2xl shadow-2xl flex flex-col overflow-hidden`}
+      panelClassName={`max-h-[85vh] bg-background border ${BORDER_DEFAULT} rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden`}
     >
         {/* Header */}
         <div className={`px-6 py-4 border-b ${BORDER_SUBTLE} flex items-center justify-between gap-4 flex-shrink-0`}>

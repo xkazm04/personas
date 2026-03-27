@@ -24,7 +24,7 @@ export default function PersonaPickerModal({ open, onClose, onSelect }: PersonaP
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-md bg-background border border-primary/15 rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-md bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

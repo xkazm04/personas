@@ -169,7 +169,7 @@ export function PipelineStageIndicator({
 
             {/* Hover tooltip */}
             <div className="absolute z-30 bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <div className="bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-lg backdrop-blur-sm whitespace-nowrap">
+              <div className="bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap">
                 <p className={`typo-heading${state === 'error' ? 'text-red-400' : colors.text}`}>
                   {meta.label}
                 </p>

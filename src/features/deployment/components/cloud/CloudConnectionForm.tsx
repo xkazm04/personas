@@ -2,6 +2,7 @@ import { Wifi, Stethoscope, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { FormField } from '@/features/shared/components/forms/FormField';
+import { useFieldValidation } from '@/features/shared/components/forms/useFieldValidation';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { CloudDiagnostics } from '@/api/system/cloud';
 
@@ -34,6 +35,21 @@ export function CloudConnectionForm({
   isDiagnosing,
   onDiagnose,
 }: CloudConnectionFormProps) {
+  const urlValidation = useFieldValidation({
+    validate: (value) => {
+      try {
+        const u = new URL(value);
+        if (!['http:', 'https:'].includes(u.protocol)) return 'URL must use http or https';
+        if (!u.hostname) return 'URL must include a hostname';
+        return null;
+      } catch {
+        return 'Enter a valid orchestrator URL';
+      }
+    },
+    debounceMs: 300,
+    minLength: 8,
+  });
+
   if (isConnected) {
     return (
       <div className={DEPLOYMENT_TOKENS.panelSpacing}>
@@ -59,13 +75,20 @@ export function CloudConnectionForm({
 
   return (
     <div className={`max-w-md ${DEPLOYMENT_TOKENS.panelSpacing}`}>
-      <FormField label="Orchestrator URL">
+      <FormField
+        label="Orchestrator URL"
+        validationState={urlValidation.validationState}
+        error={urlValidation.error}
+      >
         {(inputProps) => (
           <input
             {...inputProps}
             type="text"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              urlValidation.onChange(e.target.value);
+            }}
             placeholder="https://your-orchestrator.example.com"
             className={`${INPUT_FIELD} ${isConnecting ? 'border-indigo-500/35 bg-indigo-500/5' : ''}`}
           />

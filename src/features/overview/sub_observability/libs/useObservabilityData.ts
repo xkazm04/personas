@@ -54,8 +54,8 @@ export function useObservabilityData() {
     return Promise.all([
       fetchObservabilityMetrics(effectiveDays, selectedPersonaId || undefined),
       fetchHealingIssues(),
-      fetchAlertRules(),
-      fetchAlertHistory(),
+      fetchAlertRules(true),
+      fetchAlertHistory(true),
     ]);
   }, [effectiveDays, selectedPersonaId, fetchObservabilityMetrics, fetchHealingIssues, fetchAlertRules, fetchAlertHistory]);
 
@@ -81,6 +81,7 @@ export function useObservabilityData() {
   const summary = observabilityMetrics?.summary;
   const backendChartData = observabilityMetrics?.chartData;
   const chartData = useMemo(() => backendChartData?.chart_points ?? [], [backendChartData?.chart_points]);
+  const chartAnomalies = useMemo(() => backendChartData?.anomalies ?? [], [backendChartData?.anomalies]);
 
   const pieData: PieDataPoint[] = useMemo(() =>
     (backendChartData?.persona_breakdown ?? []).map((b) => ({
@@ -90,8 +91,8 @@ export function useObservabilityData() {
     })),
   [backendChartData?.persona_breakdown, personas]);
 
-  const successRate = summary && summary.total_executions > 0
-    ? ((summary.successful_executions / summary.total_executions) * 100).toFixed(1)
+  const successRate = summary && summary.totalExecutions > 0
+    ? ((summary.successfulExecutions / summary.totalExecutions) * 100).toFixed(1)
     : '0';
 
   const trends = useMemo(() => {
@@ -131,7 +132,7 @@ export function useObservabilityData() {
     // Refresh
     autoRefresh, setAutoRefresh, refreshAll,
     // Metrics
-    observabilityError, summary, chartData, pieData, successRate, trends, chartAnnotations,
+    observabilityError, summary, chartData, pieData, chartAnomalies, successRate, trends, chartAnnotations,
     setFailureDrilldownDate, setOverviewTab,
     // Healing (data only — UI state lives in the dashboard)
     healingIssues, healingRunning, triggerHealing,

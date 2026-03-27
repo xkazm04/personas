@@ -5,11 +5,11 @@
 
 use std::collections::HashMap;
 use std::net::UdpSocket;
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
 use axum::{
-    extract::{Path, State as AxumState},
+    extract::Path,
     http::{header, StatusCode},
     response::IntoResponse,
     routing::get,

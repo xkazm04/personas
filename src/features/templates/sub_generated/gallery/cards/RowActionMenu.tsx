@@ -45,7 +45,7 @@ export function RowActionMenu({
         <MoreVertical className="w-4.5 h-4.5 text-muted-foreground/90" />
       </button>
       {open && createPortal(
-        <div ref={menuRef} className="fixed z-[9999] min-w-[180px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-2xl backdrop-blur-sm" style={{ top: pos.top, left: pos.left, transform: 'translateY(-100%)' }}>
+        <div ref={menuRef} className="fixed z-[9999] min-w-[180px] py-1.5 bg-background border border-primary/20 rounded-lg shadow-elevation-4 backdrop-blur-sm" style={{ top: pos.top, left: pos.left, transform: 'translateY(-100%)' }}>
           <button
             onClick={(e) => {
               e.stopPropagation();

@@ -308,12 +308,7 @@ fn parse_codex_item(value: &serde_json::Value) -> (StreamLineType, Option<String
     (StreamLineType::Unknown, None)
 }
 
-fn truncate(s: &str, max: usize) -> String {
-    match s.char_indices().nth(max) {
-        Some((byte_offset, _)) => format!("{}...", &s[..byte_offset]),
-        None => s.to_string(),
-    }
-}
+use crate::engine::str_utils::truncate_owned as truncate;
 
 #[cfg(test)]
 mod tests {

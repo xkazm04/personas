@@ -4,7 +4,7 @@ import {
   List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, CalendarClock, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
-  Radio, Gauge, Unplug, Webhook, Puzzle, Store,
+  Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -73,16 +73,19 @@ export const credentialItems: SubNavItem[] = [
   { id: 'from-template', label: 'Catalog', icon: LayoutTemplate, minTier: TIERS.TEAM },
   { id: 'graph', label: 'Dependencies', icon: Network },
   { id: 'add-new', label: 'Add new', icon: Plus },
+  { id: 'autopilot', label: 'API Autopilot', icon: Zap },
 ];
 
 export const eventBusItems: SubNavItem[] = [
   { id: 'canvas', label: 'Canvas', icon: Network },
+  { id: 'studio', label: 'Chain Studio', icon: GitBranch },
   { id: 'shared', label: 'Marketplace', icon: Store },
   { id: 'live-stream', label: 'Live Stream', icon: Activity },
   { id: 'rate-limits', label: 'Speed Limits', icon: Gauge },
   { id: 'test', label: 'Test', icon: Zap },
   { id: 'smee-relay', label: 'Local Relay', icon: Unplug },
   { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook },
+  { id: 'dead-letter', label: 'Dead Letter Queue', icon: Archive },
 ];
 
 export const templateItems: SubNavItem[] = [
@@ -114,6 +117,7 @@ export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[
     { id: 'byom', label: 'Custom Models', icon: Network, devOnly: true },
     { id: 'portability', label: 'Data', icon: HardDriveDownload, minTier: TIERS.TEAM },
     { id: 'network', label: 'Network', icon: Share2, devOnly: true },
+    { id: 'config', label: 'Config Resolution', icon: Layers, devOnly: true },
     { id: 'admin', label: 'Admin', icon: Shield, devOnly: true },
   ].filter((item) => {
     if (item.devOnly && !isDev) return false;

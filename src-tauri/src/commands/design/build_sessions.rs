@@ -16,7 +16,21 @@ use crate::db::repos::resources::connectors as connector_repo;
 use crate::engine::build_session as build_session_engine;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
+use crate::db::models::ConnectorDefinition;
 use crate::AppState;
+
+/// Match a tool name against known connector names to infer its credential type.
+fn infer_credential_type(tool_name: &str, connectors: &[ConnectorDefinition]) -> Option<String> {
+    let lower = tool_name.to_lowercase();
+    connectors.iter().find_map(|c| {
+        let cn = c.name.to_lowercase();
+        if lower.contains(&cn) || cn.contains(&lower) {
+            Some(c.name.clone())
+        } else {
+            None
+        }
+    })
+}
 
 /// Start a new build session for a persona. Returns the session ID.
 /// Events are streamed back via the Channel parameter.
@@ -345,6 +359,7 @@ pub async fn promote_build_draft_inner(
     // Step 2: Create tools with schema inference
     // ================================================================
     let mut tool_names: Vec<String> = Vec::new();
+    let all_connectors = connector_repo::get_all(&state.db).unwrap_or_default();
 
     if let Some(tools) = agent_ir.get("tools").or_else(|| agent_ir.get("suggested_tools")).and_then(|v| v.as_array()) {
         for tool_json in tools {
@@ -401,18 +416,7 @@ pub async fn promote_build_draft_inner(
                 )
             } else {
                 // String-only tool — create minimal definition, infer credential type from name
-                let inferred_cred = {
-                    let lower = normalized.to_lowercase();
-                    let connectors = connector_repo::get_all(&state.db).unwrap_or_default();
-                    connectors.iter().find_map(|c| {
-                        let cn = c.name.to_lowercase();
-                        if lower.contains(&cn) || cn.contains(&lower) {
-                            Some(c.name.clone())
-                        } else {
-                            None
-                        }
-                    })
-                };
+                let inferred_cred = infer_credential_type(&normalized, &all_connectors);
                 (
                     "api".to_string(),
                     format!("Auto-created from build: {}", name),
@@ -424,18 +428,7 @@ pub async fn promote_build_draft_inner(
 
             // Infer requires_credential_type from tool name if not set by the LLM.
             // Match against known connector names so credential resolution works at runtime.
-            let effective_req_cred = req_cred.or_else(|| {
-                let lower = normalized.to_lowercase();
-                let connectors = connector_repo::get_all(&state.db).unwrap_or_default();
-                connectors.iter().find_map(|c| {
-                    let cn = c.name.to_lowercase();
-                    if lower.contains(&cn) || cn.contains(&lower) {
-                        Some(c.name.clone())
-                    } else {
-                        None
-                    }
-                })
-            });
+            let effective_req_cred = req_cred.or_else(|| infer_credential_type(&normalized, &all_connectors));
 
             let input = CreateToolDefinitionInput {
                 name: normalized.clone(),

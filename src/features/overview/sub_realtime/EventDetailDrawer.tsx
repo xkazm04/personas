@@ -41,7 +41,7 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
 
   return (
     <div
-      className="animate-fade-slide-in absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-primary/20 rounded-t-2xl shadow-2xl z-10 max-h-[50%] overflow-hidden flex flex-col"
+      className="animate-fade-slide-in absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-primary/20 rounded-t-2xl shadow-elevation-4 z-10 max-h-[50%] overflow-hidden flex flex-col"
     >
       {/* Handle bar */}
       <div className="flex justify-center pt-2 pb-1">

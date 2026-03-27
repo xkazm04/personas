@@ -12,6 +12,7 @@ import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaS
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { GlobalExecution } from '@/lib/types/types';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -202,11 +203,11 @@ export default function GlobalExecutionList() {
                   {virtualizer.getVirtualItems().map((virtualRow) => {
                     const exec = filteredExecutions[virtualRow.index]!;
                     const status = getStatusEntry(exec.status);
-                    const hoverAccent =
-                      exec.status === 'running' || exec.status === 'pending' ? 'hover:border-l-blue-400'
-                      : exec.status === 'completed' ? 'hover:border-l-emerald-400'
-                      : exec.status === 'failed' ? 'hover:border-l-red-400'
-                      : 'hover:border-l-amber-400';
+                    const borderAccent =
+                      exec.status === 'running' || exec.status === 'pending' ? 'border-l-blue-400'
+                      : exec.status === 'completed' ? 'border-l-emerald-400'
+                      : exec.status === 'failed' ? 'border-l-red-400'
+                      : 'border-l-amber-400';
                     return IS_MOBILE ? (
                       <div
                         key={exec.id} role="row" tabIndex={0}
@@ -216,7 +217,7 @@ export default function GlobalExecutionList() {
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: (exec.persona_color || '#6366f1') + '15' }}>
+                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(exec.persona_color || '#6366f1', 0.08) }}>
                               {exec.persona_icon || '?'}
                             </div>
                             <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
@@ -237,10 +238,10 @@ export default function GlobalExecutionList() {
                         onClick={() => setSelectedExec(exec)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedExec(exec); } }}
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px` }}
-                        className={`flex items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 border-l-transparent hover:bg-white/[0.05] ${hoverAccent} ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+                        className={`flex items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                       >
                         <div className="flex items-center gap-2 px-4 w-[25%] min-w-0">
-                          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: (exec.persona_color || '#6366f1') + '15' }}>
+                          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(exec.persona_color || '#6366f1', 0.08) }}>
                             {exec.persona_icon || '?'}
                           </div>
                           <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Key, Wrench, Zap, Pencil, BarChart3, RotateCw, Tag, X, Plus, Copy, Check, Timer, Shield } from 'lucide-react';
+import { Key, Wrench, Zap, Pencil, BarChart3, RotateCw, Tag, X, Plus, Timer, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { CopyButton } from '@/features/shared/components/buttons';
 import { CredentialEventConfig } from '@/features/vault/sub_features/CredentialEventConfig';
 import { CredentialIntelligence } from '@/features/vault/sub_features/CredentialIntelligence';
 import { CredentialRotationSection } from '@/features/vault/sub_features/CredentialRotationSection';
@@ -123,7 +124,7 @@ export function CredentialCardDetails({
               className="w-20 text-sm px-1.5 py-0.5 rounded border border-primary/20 bg-background/50 text-foreground/80 placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
             />
             {showSuggestions && filteredSuggestions.length > 0 && (
-              <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-lg shadow-lg py-1 min-w-[100px]">
+              <div className="absolute top-full mt-1 left-0 z-20 bg-background border border-primary/15 rounded-lg shadow-elevation-3 py-1 min-w-[100px]">
                 {filteredSuggestions.map((s) => (
                   <Button
                     key={s}
@@ -148,26 +149,13 @@ export function CredentialCardDetails({
             className="text-muted-foreground/40 hover:text-muted-foreground/70 p-0"
           />
         )}
-        <Button
-          variant="ghost"
-          size="xs"
-          onClick={copyCredentialId}
-          title="Copy credential ID"
-          className="border border-primary/10 bg-secondary/20 text-muted-foreground/70 hover:text-foreground/80"
-        >
-          <span className="font-mono">id</span>
-          {copiedCredentialId ? (
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
-            </motion.div>
-          ) : (
-            <Copy className="w-3.5 h-3.5" />
-          )}
-        </Button>
+        <CopyButton
+          copied={copiedCredentialId}
+          onCopy={copyCredentialId}
+          label="id"
+          tooltip="Copy credential ID"
+          className="border border-primary/10 bg-secondary/20 text-muted-foreground/70 hover:text-foreground/80 px-2 py-0.5 text-xs font-mono"
+        />
       </div>
 
       {/* Secondary actions -- segmented tab bar */}

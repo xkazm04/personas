@@ -36,12 +36,12 @@ describe("api/pipeline/triggers", () => {
 
   it("createTrigger calls create_trigger", async () => {
     mockInvoke("create_trigger", { id: "t-new" });
-    expect(await createTrigger({ type: "cron" } as any)).toEqual({ id: "t-new" });
+    expect(await createTrigger({ type: "cron" } as unknown)).toEqual({ id: "t-new" });
   });
 
   it("updateTrigger calls update_trigger", async () => {
     mockInvoke("update_trigger", { id: "t-1" });
-    expect(await updateTrigger("t-1", "p-1", {} as any)).toEqual({ id: "t-1" });
+    expect(await updateTrigger("t-1", "p-1", {} as unknown)).toEqual({ id: "t-1" });
   });
 
   it("deleteTrigger returns boolean", async () => {

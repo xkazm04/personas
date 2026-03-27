@@ -118,17 +118,31 @@ export function usePersonaExecution() {
 
     recoveryAttemptedRef.current = true;
 
-    // Replay log lines that were missed during reload
+    // Replay log lines that were missed during reload, deduplicating against
+    // lines already delivered by the real-time event bus stream.
     getExecutionLogLines(execId, personaId)
       .then((lines) => {
+        const current = useAgentStore.getState().executionOutput;
+        // Build a counted set so legitimately repeated identical lines are
+        // handled correctly -- each existing occurrence "claims" one recovery
+        // line, and only truly new lines are appended.
+        const seen = new Map<string, number>();
+        for (const existing of current) {
+          seen.set(existing, (seen.get(existing) ?? 0) + 1);
+        }
+
         const sink = useAgentStore.getState().appendExecutionOutput;
         for (const line of lines) {
-          sink(line);
+          const count = seen.get(line) ?? 0;
+          if (count > 0) {
+            seen.set(line, count - 1);
+          } else {
+            sink(line);
+          }
         }
       })
       .catch(() => {
         // Recovery failed -- execution may have completed during reload
-        // Check if still running by trying to get status
       });
   }, []);
 

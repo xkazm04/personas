@@ -125,10 +125,10 @@ export default function IpcPerformancePanel() {
       {expanded && (
         <div className="border-t border-primary/10">
           <div className="flex items-center gap-1 px-4 py-2 border-b border-primary/5">
-            <button onClick={() => setTab('commands')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'commands' ? 'bg-background text-foreground shadow-sm border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
+            <button onClick={() => setTab('commands')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'commands' ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
               <Gauge className="w-3 h-3" /> By Command
             </button>
-            <button onClick={() => setTab('slowest')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'slowest' ? 'bg-background text-foreground shadow-sm border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
+            <button onClick={() => setTab('slowest')} className={`flex items-center gap-1.5 px-3 py-1 rounded-lg typo-heading transition-all focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none ${tab === 'slowest' ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20' : 'text-muted-foreground/80 hover:text-muted-foreground'}`}>
               <Timer className="w-3 h-3" /> Slowest Calls
             </button>
           </div>

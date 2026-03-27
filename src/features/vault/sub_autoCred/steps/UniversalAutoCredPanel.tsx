@@ -307,7 +307,7 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
           <button
             onClick={handleStart}
             disabled={!isValidUrl || !modeChecked}
-            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-indigo-600/20"
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-indigo-600/20"
           >
             <Sparkles className="w-4 h-4" />
             Discover Credentials

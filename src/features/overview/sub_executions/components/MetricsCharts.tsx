@@ -4,7 +4,7 @@ import {
   ResponsiveContainer, ReferenceLine, ComposedChart,
 } from 'recharts';
 import { ArrowUpRight } from 'lucide-react';
-import { CHART_COLORS, GRID_STROKE, AXIS_TICK_FILL } from '@/features/overview/sub_usage/libs/chartConstants';
+import { CHART_COLORS, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { fmtCost, fmtMs } from '../libs/executionMetricsHelpers';
 import { ChartTooltipContent } from './MetricsCards';
@@ -33,9 +33,9 @@ export function MetricsCharts({
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={personaCostData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
+                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: 10 }} />
+                <YAxis tick={{ fill: getAxisTickFill(), fontSize: 10 }} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
                 {personaNames.map((name, i) => (
@@ -57,9 +57,9 @@ export function MetricsCharts({
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={comparedChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: 10 }} />
+                <YAxis tick={{ fill: getAxisTickFill(), fontSize: 10 }} />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
                 <Bar dataKey="completed" name="Completed" stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} />
@@ -79,13 +79,13 @@ export function MetricsCharts({
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={comparedChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-                <YAxis domain={[0, 100]} tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} />
+                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: 10 }} />
+                <YAxis domain={[0, 100]} tick={{ fill: getAxisTickFill(), fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} />
                 <Tooltip content={<ChartTooltipContent />} />
                 {compareEnabled && <Line type="monotone" dataKey="prev_successRate" name="Prev Success %" stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
                 <Line type="monotone" dataKey="successRate" name="Success %" stroke="#10b981" strokeWidth={2} dot={false} />
-                <ReferenceLine y={90} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.3} label={{ value: '90%', fill: AXIS_TICK_FILL, fontSize: 9 }} />
+                <ReferenceLine y={90} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.3} label={{ value: '90%', fill: getAxisTickFill(), fontSize: 9 }} />
               </LineChart>
             </ResponsiveContainer>
           </ChartErrorBoundary>
@@ -99,9 +99,9 @@ export function MetricsCharts({
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={comparedChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} tickFormatter={(v: number) => fmtMs(v)} />
+                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: 10 }} />
+                <YAxis tick={{ fill: getAxisTickFill(), fontSize: 10 }} tickFormatter={(v: number) => fmtMs(v)} />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
                 {compareEnabled && <Line type="monotone" dataKey="prev_p50" name="Prev p50" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}

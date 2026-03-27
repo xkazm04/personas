@@ -61,7 +61,6 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
       };
     });
     return distributeOnRing(raw, TOOL_RING_R);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events.length]);
 
   const personaNodes = useMemo(() => {

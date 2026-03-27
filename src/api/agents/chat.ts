@@ -1,5 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { ChatMessage } from "@/lib/bindings/ChatMessage";
+import type { ChatRole } from "@/lib/bindings/ChatRole";
 import type { ChatSession } from "@/lib/bindings/ChatSession";
 import type { ChatSessionContext } from "@/lib/bindings/ChatSessionContext";
 
@@ -23,7 +24,7 @@ export const getChatMessages = (
 export const createChatMessage = (input: {
   personaId: string;
   sessionId: string;
-  role: "user" | "assistant";
+  role: ChatRole;
   content: string;
   executionId?: string;
   metadata?: string;

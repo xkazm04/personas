@@ -56,7 +56,7 @@ export function ConnectionTestSection({
                 <Info className="w-3.5 h-3.5" />
               </button>
               {showTestHint && (
-                <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-xl bg-background border border-primary/20 shadow-xl text-sm text-foreground/85 z-20">
+                <div className="absolute left-8 top-1/2 -translate-y-1/2 w-72 px-3 py-2 rounded-xl bg-background border border-primary/20 shadow-elevation-3 text-sm text-foreground/85 z-20">
                   {testHint}
                 </div>
               )}

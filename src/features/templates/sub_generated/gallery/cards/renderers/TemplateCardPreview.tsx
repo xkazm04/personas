@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CircleDot, CheckCircle2, XCircle, FileText } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { TRANSITION_NORMAL } from '@/features/templates/animationPresets';
+import { CARD_PADDING } from '@/lib/utils/designTokens';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
@@ -38,9 +39,9 @@ export function TemplateCardPreview({
           animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0, scale: 1 }}
           exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 8, scale: 0.98 }}
           transition={TRANSITION_NORMAL}
-          className="absolute top-0 left-full ml-2 z-40 w-[320px] max-h-[400px] overflow-y-auto rounded-xl border border-primary/15 bg-background/95 backdrop-blur-sm shadow-2xl hidden md:block"
+          className="absolute top-0 left-full ml-2 z-40 w-[320px] max-h-[400px] overflow-y-auto rounded-xl border border-primary/15 bg-background/95 backdrop-blur-sm shadow-elevation-4 hidden md:block"
         >
-          <div className="p-4 space-y-4">
+          <div className={`${CARD_PADDING.standard} space-y-4`}>
             {/* Full Description */}
             <div>
               <h4 className="text-sm font-semibold text-foreground/90 mb-1.5">

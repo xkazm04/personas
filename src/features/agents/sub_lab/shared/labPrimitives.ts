@@ -11,19 +11,8 @@ export const TAG_STYLES: Record<string, { bg: string; text: string; icon: typeof
 
 // -- Helpers --
 
-export function formatRelative(dateStr: string): string {
-  const d = new Date(dateStr);
-  const now = Date.now();
-  const diff = now - d.getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
-  return d.toLocaleDateString();
-}
+import { formatRelativeTime } from '@/lib/utils/formatters';
+export const formatRelative = (dateStr: string) => formatRelativeTime(dateStr, '-', { dateFallbackDays: 7 });
 
 // getSectionSummary is re-exported from the canonical StructuredPrompt module
 export { getSectionSummary };

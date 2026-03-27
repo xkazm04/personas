@@ -22,3 +22,4 @@ pub mod auth_detect;
 pub mod credential_recipes;
 pub mod nl_query;
 pub mod vector_kb;
+pub mod openapi_autopilot;

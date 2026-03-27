@@ -378,7 +378,7 @@ pub fn mutate(genome: &mut PersonaGenome, mutation_rate: f64) {
         // Adjust timeout by ±20%
         let factor = rng.gen_range(0.8..1.2);
         genome.model.timeout_ms = ((genome.model.timeout_ms as f64) * factor) as i32;
-        genome.model.timeout_ms = genome.model.timeout_ms.max(5_000); // floor at 5s
+        genome.model.timeout_ms = genome.model.timeout_ms.max(5_000).min(super::ENGINE_MAX_EXECUTION_MS); // floor 5s, ceiling engine max
     }
 
     // Mutate max_concurrent

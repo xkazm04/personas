@@ -4,6 +4,7 @@ import {
   RefreshCw, RotateCcw, Terminal, Trash2, CheckCircle2, XCircle,
   Clock,
 } from 'lucide-react';
+import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { WebhookRequestLog } from '@/lib/bindings/WebhookRequestLog';
 import {
@@ -134,18 +135,15 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
                   {isReplaying ? <LoadingSpinner size="xs" /> : <RotateCcw className="w-3 h-3" />}
                   {isReplaying ? 'Replaying...' : 'Replay'}
                 </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onCopyCurl(); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border transition-colors ${
-                    copiedCurl
-                      ? 'text-emerald-400 border-emerald-500/15 bg-emerald-500/10'
-                      : 'text-muted-foreground/80 hover:text-foreground border-primary/10 hover:bg-secondary/20'
-                  }`}
-                  title="Copy as cURL command"
-                >
-                  {copiedCurl ? <CheckCircle2 className="w-3 h-3" /> : <Terminal className="w-3 h-3" />}
-                  {copiedCurl ? 'Copied!' : 'Copy as cURL'}
-                </button>
+                <CopyButton
+                  copied={copiedCurl}
+                  onCopy={() => { onCopyCurl(); }}
+                  label="Copy as cURL"
+                  copiedLabel="Copied!"
+                  iconSize="w-3 h-3"
+                  icon={<Terminal className="w-3 h-3" />}
+                  className="px-2.5 py-1 text-xs rounded-lg border border-primary/10 text-muted-foreground/80 hover:text-foreground hover:bg-secondary/20"
+                />
                 {replayResult && (
                   <span className={`flex items-center gap-1 text-xs ${replayResult.success ? 'text-emerald-400' : 'text-red-400'}`}>
                     {replayResult.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}

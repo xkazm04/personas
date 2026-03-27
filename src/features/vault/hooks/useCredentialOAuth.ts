@@ -14,6 +14,8 @@ interface UseCredentialOAuthOptions {
 export interface CredentialOAuthState {
   isAuthorizing: boolean;
   completedAt: string | null;
+  /** Status message from the OAuth polling flow */
+  message: { success: boolean; message: string } | null;
   startConsent: (connectorName: string, values: Record<string, string>) => void;
   reset: () => void;
 }
@@ -75,6 +77,7 @@ export function useCredentialOAuth({ onSuccess, onError }: UseCredentialOAuthOpt
   return {
     isAuthorizing: googleOAuth.isAuthorizing,
     completedAt: googleOAuth.completedAt,
+    message: googleOAuth.message,
     startConsent,
     reset,
   };

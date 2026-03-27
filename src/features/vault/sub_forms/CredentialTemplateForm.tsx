@@ -27,6 +27,7 @@ export interface CredentialTemplateFormProps {
   oauthCompletedAt: string | null;
   oauthValues?: Record<string, string>;
   oauthConsentLabel?: string;
+  oauthPollingMessage?: { success: boolean; message: string } | null;
   onCreateCredential: (values: Record<string, string>) => void;
   onOAuthConsent: (values: Record<string, string>) => void;
   onCancel: () => void;
@@ -51,6 +52,7 @@ export function CredentialTemplateForm({
   oauthCompletedAt,
   oauthValues,
   oauthConsentLabel,
+  oauthPollingMessage,
   onCreateCredential,
   onOAuthConsent,
   onCancel,
@@ -186,6 +188,8 @@ export function CredentialTemplateForm({
               ? `Authorizing with ${selectedConnector.label}...`
               : (oauthConsentLabel ?? `Authorize with ${selectedConnector.label}`)}
             oauthConsentDisabled={isAuthorizingOAuth}
+            isAuthorizingOAuth={isAuthorizingOAuth}
+            oauthPollingMessage={oauthPollingMessage}
             oauthConsentHint={isAnyOAuth
               ? `Opens ${selectedConnector.label} in your browser. Grant access, then return here.`
               : undefined}

@@ -3,7 +3,8 @@
 use std::sync::Arc;
 
 use rusqlite::params;
-use tauri::{Emitter, State};
+use tauri::{AppHandle, Emitter, State};
+use tauri_plugin_dialog::DialogExt;
 
 use crate::db::models::{
     KbDocument, KbSearchQuery, KnowledgeBase, VectorSearchResult,
@@ -102,9 +103,7 @@ pub async fn create_knowledge_base(
 
     let kb = kb_ingest::get_kb(&state.user_db, &id)?;
 
-    if let Err(e) = audit_log::insert(&state.db, &credential_id, &name, "kb_create", None, None, Some(&format!("model={model_name}, dims={dims}"))) {
-        tracing::warn!(kb_id = %id, error = %e, "Failed to write audit log for KB create");
-    }
+    audit_log::insert_warn(&state.db, &credential_id, &name, "kb_create", Some(&format!("model={model_name}, dims={dims}")));
 
     Ok(kb)
 }
@@ -191,38 +190,192 @@ pub async fn delete_knowledge_base(
         )?;
     }
 
-    if let Err(e) = audit_log::insert(&state.db, &kb.credential_id, &kb.name, "kb_delete", None, None, None) {
-        tracing::warn!(kb_id = %kb_id, error = %e, "Failed to write audit log for KB delete");
+    audit_log::insert_warn(&state.db, &kb.credential_id, &kb.name, "kb_delete", None);
+
+    Ok(())
+}
+
+// ============================================================================
+// Path Security
+// ============================================================================
+
+/// Directories and path components that must never be ingested.
+/// Blocks credential files, SSH keys, system config, and other sensitive data.
+const SENSITIVE_PATH_COMPONENTS: &[&str] = &[
+    ".ssh",
+    ".gnupg",
+    ".gpg",
+    ".aws",
+    ".azure",
+    ".kube",
+    ".docker",
+    ".config/gcloud",
+    ".password-store",
+];
+
+/// Exact sensitive file names (case-insensitive) that should be blocked.
+const SENSITIVE_FILE_NAMES: &[&str] = &[
+    ".env",
+    ".env.local",
+    ".env.production",
+    ".netrc",
+    ".npmrc",
+    "credentials.json",
+    "service-account.json",
+    "id_rsa",
+    "id_ed25519",
+    "id_ecdsa",
+    "id_dsa",
+    "known_hosts",
+];
+
+#[cfg(target_os = "windows")]
+const SENSITIVE_PREFIXES: &[&str] = &[
+    "C:\\Windows\\",
+    "C:\\ProgramData\\",
+];
+
+#[cfg(not(target_os = "windows"))]
+const SENSITIVE_PREFIXES: &[&str] = &[
+    "/etc/",
+    "/var/",
+    "/private/etc/",
+];
+
+/// Reject paths that point to known sensitive files or system directories.
+fn validate_path_safety(path: &str) -> Result<(), AppError> {
+    let normalized = path.replace('\\', "/");
+    let lower = normalized.to_lowercase();
+
+    // Block system directories
+    for prefix in SENSITIVE_PREFIXES {
+        let check = prefix.replace('\\', "/").to_lowercase();
+        if lower.starts_with(&check) {
+            return Err(AppError::Forbidden(format!(
+                "Ingesting files from system directory is not allowed: {path}"
+            )));
+        }
+    }
+
+    // Block paths containing sensitive directory components
+    for component in SENSITIVE_PATH_COMPONENTS {
+        let pattern = format!("/{component}/");
+        let pattern_end = format!("/{component}");
+        if lower.contains(&pattern) || lower.ends_with(&pattern_end) {
+            return Err(AppError::Forbidden(format!(
+                "Path contains sensitive directory '{component}': {path}"
+            )));
+        }
+        // Also check backslash variant for Windows
+        let win_pattern = format!("\\{component}\\").to_lowercase();
+        let win_end = format!("\\{component}").to_lowercase();
+        if lower.contains(&win_pattern) || lower.ends_with(&win_end) {
+            return Err(AppError::Forbidden(format!(
+                "Path contains sensitive directory '{component}': {path}"
+            )));
+        }
+    }
+
+    // Block sensitive file names
+    if let Some(file_name) = std::path::Path::new(path).file_name().and_then(|f| f.to_str()) {
+        let file_lower = file_name.to_lowercase();
+        for sensitive in SENSITIVE_FILE_NAMES {
+            if file_lower == sensitive.to_lowercase() {
+                return Err(AppError::Forbidden(format!(
+                    "Ingesting sensitive file is not allowed: {file_name}"
+                )));
+            }
+        }
     }
 
     Ok(())
 }
 
 // ============================================================================
+// Native File/Directory Pickers
+// ============================================================================
+
+/// Open the native OS file picker and return selected file paths.
+/// This ensures paths are user-chosen via the OS dialog, not programmatically injected.
+#[tauri::command]
+#[tracing::instrument(skip(app, state))]
+pub async fn kb_pick_files(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<String>, AppError> {
+    require_auth(&state).await?;
+    let app_clone = app.clone();
+    let paths = tokio::task::spawn_blocking(move || {
+        app_clone
+            .dialog()
+            .file()
+            .set_title("Select files to ingest")
+            .add_filter("Supported Files", &[
+                "txt", "md", "html", "htm", "csv", "json", "yaml", "yml",
+                "toml", "log", "rs", "py", "js", "ts", "tsx", "jsx",
+            ])
+            .blocking_pick_files()
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Dialog task failed: {e}")))?;
+
+    match paths {
+        Some(file_paths) => {
+            let result: Vec<String> = file_paths
+                .into_iter()
+                .filter_map(|fp| fp.into_path().ok())
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
+            Ok(result)
+        }
+        None => Ok(Vec::new()), // User cancelled
+    }
+}
+
+/// Open the native OS directory picker and return the selected path.
+#[tauri::command]
+#[tracing::instrument(skip(app, state))]
+pub async fn kb_pick_directory(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+) -> Result<Option<String>, AppError> {
+    require_auth(&state).await?;
+    let app_clone = app.clone();
+    let path = tokio::task::spawn_blocking(move || {
+        app_clone
+            .dialog()
+            .file()
+            .set_title("Select directory to scan")
+            .blocking_pick_folder()
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Dialog task failed: {e}")))?;
+
+    match path {
+        Some(fp) => {
+            let p = fp
+                .into_path()
+                .map_err(|e| AppError::Internal(format!("Invalid path: {e}")))?;
+            Ok(Some(p.to_string_lossy().to_string()))
+        }
+        None => Ok(None), // User cancelled
+    }
+}
+
+// ============================================================================
 // Document Ingestion
 // ============================================================================
 
-#[tauri::command]
-#[tracing::instrument(skip(app, state))]
-pub async fn kb_ingest_files(
-    app: tauri::AppHandle,
-    state: State<'_, Arc<AppState>>,
-    kb_id: String,
+/// Shared helper that resolves embedder/vector_store from AppState, creates a
+/// background ingestion job, and handles audit logging + error emission
+/// consistently for both file and directory ingestion paths.
+fn spawn_ingest_job(
+    app: &tauri::AppHandle,
+    state: &AppState,
+    kb: KnowledgeBase,
     file_paths: Vec<String>,
+    audit_action: &str,
 ) -> Result<String, AppError> {
-    require_auth(&state).await?;
-
-    // Canonicalize all paths to prevent traversal
-    let canonical_paths: Vec<String> = file_paths
-        .iter()
-        .map(|p| {
-            std::fs::canonicalize(p)
-                .map(|c| c.to_string_lossy().to_string())
-                .map_err(|_| AppError::Validation(format!("Invalid file path: {p}")))
-        })
-        .collect::<Result<_, _>>()?;
-
-    let kb = kb_ingest::get_kb(&state.user_db, &kb_id)?;
     let embedder = state
         .embedding_manager
         .as_ref()
@@ -234,7 +387,7 @@ pub async fn kb_ingest_files(
         .ok_or_else(|| AppError::Internal("Vector store not initialized".into()))?
         .clone();
 
-    let file_count = canonical_paths.len();
+    let file_count = file_paths.len();
     let job_id = uuid::Uuid::new_v4().to_string();
     let user_db = state.user_db.clone();
     let cancel = tokio_util::sync::CancellationToken::new();
@@ -242,12 +395,16 @@ pub async fn kb_ingest_files(
     let audit_pool = state.db.clone();
     let kb_cred_id = kb.credential_id.clone();
     let kb_name = kb.name.clone();
+    let app = app.clone();
 
-    if let Err(e) = audit_log::insert(&state.db, &kb_cred_id, &kb_name, "kb_ingest_files", None, None, Some(&format!("{file_count} file(s)"))) {
-        tracing::warn!(kb_id = %kb_id, error = %e, "Failed to write audit log for KB file ingestion");
-    }
+    audit_log::insert_warn(
+        &audit_pool,
+        &kb_cred_id,
+        &kb_name,
+        audit_action,
+        Some(&format!("{file_count} file(s)")),
+    );
 
-    // Run ingestion in background
     tokio::spawn(async move {
         let result = kb_ingest::ingest_files(
             app.clone(),
@@ -255,7 +412,7 @@ pub async fn kb_ingest_files(
             embedder,
             vector_store,
             kb,
-            canonical_paths,
+            file_paths,
             job_id_clone.clone(),
             cancel,
         )
@@ -263,22 +420,63 @@ pub async fn kb_ingest_files(
 
         match &result {
             Ok(_) => {
-                if let Err(e) = audit_log::insert(&audit_pool, &kb_cred_id, &kb_name, "kb_ingest_complete", None, None, Some(&format!("{file_count} file(s) ingested"))) {
-                    tracing::warn!(error = %e, "Failed to write audit log for KB ingest completion");
-                }
+                audit_log::insert_warn(
+                    &audit_pool,
+                    &kb_cred_id,
+                    &kb_name,
+                    "kb_ingest_complete",
+                    Some(&format!("{file_count} file(s) ingested")),
+                );
             }
             Err(e) => {
-                tracing::error!(error = %e, "File ingestion failed");
-                let _ = audit_log::insert(&audit_pool, &kb_cred_id, &kb_name, "kb_ingest_failed", None, None, Some(&e.to_string()));
-                let _ = app.emit(event_name::KB_INGEST_ERROR, serde_json::json!({
-                    "jobId": job_id_clone,
-                    "error": e.to_string()
-                }));
+                tracing::error!(error = %e, "Ingestion failed");
+                let _ = audit_log::insert(
+                    &audit_pool,
+                    &kb_cred_id,
+                    &kb_name,
+                    "kb_ingest_failed",
+                    None,
+                    None,
+                    Some(&e.to_string()),
+                );
+                let _ = app.emit(
+                    event_name::KB_INGEST_ERROR,
+                    serde_json::json!({
+                        "jobId": job_id_clone,
+                        "error": e.to_string()
+                    }),
+                );
             }
         }
     });
 
     Ok(job_id)
+}
+
+#[tauri::command]
+#[tracing::instrument(skip(app, state))]
+pub async fn kb_ingest_files(
+    app: tauri::AppHandle,
+    state: State<'_, Arc<AppState>>,
+    kb_id: String,
+    file_paths: Vec<String>,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    // Canonicalize all paths to prevent traversal, then validate safety
+    let canonical_paths: Vec<String> = file_paths
+        .iter()
+        .map(|p| {
+            let canonical = std::fs::canonicalize(p)
+                .map(|c| c.to_string_lossy().to_string())
+                .map_err(|_| AppError::Validation(format!("Invalid file path: {p}")))?;
+            validate_path_safety(&canonical)?;
+            Ok(canonical)
+        })
+        .collect::<Result<_, AppError>>()?;
+
+    let kb = kb_ingest::get_kb(&state.user_db, &kb_id)?;
+    spawn_ingest_job(&app, &state, kb, canonical_paths, "kb_ingest_files")
 }
 
 #[tauri::command]
@@ -314,7 +512,7 @@ pub async fn kb_ingest_directory(
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
-    // Canonicalize directory path to prevent traversal
+    // Canonicalize directory path to prevent traversal, then validate safety
     let canonical_dir = std::fs::canonicalize(&dir_path)
         .map_err(|_| AppError::Validation(format!("Invalid directory path: {dir_path}")))?;
     if !canonical_dir.is_dir() {
@@ -322,6 +520,7 @@ pub async fn kb_ingest_directory(
             "Not a directory: {dir_path}"
         )));
     }
+    validate_path_safety(&canonical_dir.to_string_lossy())?;
 
     let allowed_exts: Vec<String> = if patterns.is_empty() {
         vec![
@@ -347,47 +546,8 @@ pub async fn kb_ingest_directory(
         ));
     }
 
-    // Delegate to kb_ingest_files logic
     let kb = kb_ingest::get_kb(&state.user_db, &kb_id)?;
-    let embedder = state
-        .embedding_manager
-        .as_ref()
-        .ok_or_else(|| AppError::Internal("Embedding manager not initialized".into()))?
-        .clone();
-    let vector_store = state
-        .vector_store
-        .as_ref()
-        .ok_or_else(|| AppError::Internal("Vector store not initialized".into()))?
-        .clone();
-
-    let job_id = uuid::Uuid::new_v4().to_string();
-    let user_db = state.user_db.clone();
-    let cancel = tokio_util::sync::CancellationToken::new();
-    let job_id_clone = job_id.clone();
-
-    tokio::spawn(async move {
-        let result = kb_ingest::ingest_files(
-            app.clone(),
-            user_db,
-            embedder,
-            vector_store,
-            kb,
-            file_paths,
-            job_id_clone.clone(),
-            cancel,
-        )
-        .await;
-
-        if let Err(e) = result {
-            tracing::error!(error = %e, "Directory ingestion failed");
-            let _ = app.emit(event_name::KB_INGEST_ERROR, serde_json::json!({
-                "jobId": job_id_clone,
-                "error": e.to_string()
-            }));
-        }
-    });
-
-    Ok(job_id)
+    spawn_ingest_job(&app, &state, kb, file_paths, "kb_ingest_directory")
 }
 
 fn collect_files_recursive(
@@ -458,13 +618,7 @@ pub async fn kb_search(
     let top_k = query.top_k.unwrap_or(10).min(MAX_TOP_K);
 
     // Audit log the search (log query length, not raw text)
-    if let Err(e) = audit_log::insert(
-        &state.db, &format!("kb:{}", query.kb_id), &query.kb_id,
-        "kb_search", None, None,
-        Some(&format!("query_len={}, top_k={top_k}", query.query.len())),
-    ) {
-        tracing::warn!(kb_id = %query.kb_id, error = %e, "Failed to write audit log for KB search");
-    }
+    audit_log::insert_warn(&state.db, &format!("kb:{}", query.kb_id), &query.kb_id, "kb_search", Some(&format!("query_len={}, top_k={top_k}", query.query.len())));
 
     // Embed the query
     let query_vec = embedder.embed_query(&query.query).await?;
@@ -632,13 +786,7 @@ pub async fn kb_delete_document(
 
     tx.commit()?;
 
-    if let Err(e) = audit_log::insert(
-        &state.db, &format!("kb:{kb_id}"), &kb_id,
-        "kb_doc_delete", None, None,
-        Some(&format!("doc={document_id}, chunks={}", chunk_ids.len())),
-    ) {
-        tracing::warn!(document_id = %document_id, error = %e, "Failed to write audit log for KB document delete");
-    }
+    audit_log::insert_warn(&state.db, &format!("kb:{kb_id}"), &kb_id, "kb_doc_delete", Some(&format!("doc={document_id}, chunks={}", chunk_ids.len())));
 
     Ok(())
 }

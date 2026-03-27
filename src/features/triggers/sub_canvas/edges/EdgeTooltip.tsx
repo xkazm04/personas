@@ -31,7 +31,7 @@ export function EdgeTooltip({ x, y, currentType, eventType, onChangeType, onDele
   return (
     <div
       ref={ref}
-      className="fixed z-[100] w-[220px] rounded-xl bg-card border border-primary/15 shadow-2xl overflow-hidden"
+      className="fixed z-[100] w-[220px] rounded-xl bg-card border border-primary/15 shadow-elevation-4 overflow-hidden"
       style={{ left: clampedX, top: clampedY }}
     >
       {/* Header */}

@@ -25,7 +25,7 @@ export default function ScanOverlay({
     <div
       className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
     >
-      <div className="bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+      <div className="bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-lg shadow-elevation-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">

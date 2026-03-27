@@ -57,7 +57,7 @@ function ConnectorPopup({
   return (
     <div
       ref={popupRef}
-      className="absolute left-0 right-0 top-full mt-1 z-[60] rounded-xl border border-primary/15 bg-background shadow-lg p-3.5 space-y-3"
+      className="absolute left-0 right-0 top-full mt-1 z-[60] rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-3.5 space-y-3"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between">
@@ -174,7 +174,7 @@ function DatabaseRow({
           {showTablePicker && (
             <div
               ref={pickerRef}
-              className="absolute left-0 right-0 top-full mt-1 z-[60] rounded-xl border border-primary/15 bg-background shadow-lg p-3.5 space-y-3"
+              className="absolute left-0 right-0 top-full mt-1 z-[60] rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-3.5 space-y-3"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">

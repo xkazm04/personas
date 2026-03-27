@@ -12,4 +12,4 @@ export const DASHBOARD_GRID_SPAN_MAJOR = 'md:col-span-1 xl:col-span-2';
 
 /** Shared chrome token for all widget card containers.
  *  Ensures consistent border, background, and shadow across the dashboard. */
-export const CARD_CONTAINER = 'rounded-xl border border-primary/10 bg-secondary/20 shadow-sm';
+export const CARD_CONTAINER = 'rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1';

@@ -23,7 +23,7 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
 
   return (
     <div
-      className={`animate-fade-slide-in pointer-events-auto w-80 rounded-xl border ${style.border} ${style.bg} backdrop-blur-sm shadow-lg p-3`}
+      className={`animate-fade-slide-in pointer-events-auto w-80 rounded-xl border ${style.border} ${style.bg} backdrop-blur-sm shadow-elevation-3 p-3`}
     >
       <div className="flex items-start gap-2.5">
         <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.iconColor}`} />

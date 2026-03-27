@@ -33,7 +33,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
       isOpen={isOpen}
       onClose={onClose}
       titleId="activity-diagram-title"
-      panelClassName="bg-background/95 border border-primary/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col w-[90vw] h-[85vh]"
+      panelClassName="bg-background/95 border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col w-[90vw] h-[85vh]"
       maxWidthClass="max-w-7xl"
     >
       {/* Header */}

@@ -3,6 +3,7 @@ import {
   TrendingUp, TrendingDown, Minus, RefreshCw, AlertTriangle,
   CheckCircle2, AlertCircle, XCircle, Circle,
 } from 'lucide-react';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useStatusPageData } from '../libs/useStatusPageData';
 import type { CompositeHealthEntry, DayStatus } from '../libs/compositeHealthScore';
 import type { HealthGrade } from '@/stores/slices/overview/personaHealthSlice';
@@ -62,13 +63,11 @@ export function StatusPageView() {
     <div className="space-y-5">
       {/* Error banner */}
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 flex items-center gap-3">
-          <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
-          <p className="text-sm text-red-400/80 flex-1">{error}</p>
-          <button onClick={() => void refresh()} className="flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-xl bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors">
-            <RefreshCw className="w-3 h-3" /> Retry
-          </button>
-        </div>
+        <InlineErrorBanner
+          severity="error"
+          message={error}
+          onRetry={() => void refresh()}
+        />
       )}
 
       {/* Global status header */}

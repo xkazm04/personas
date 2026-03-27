@@ -10,7 +10,7 @@ import {
   ChannelsSection,
   EventsSection,
 } from './ReviewSections';
-import { BORDER_DEFAULT, DIVIDE_SUBTLE } from '@/lib/utils/designTokens';
+import { BORDER_DEFAULT, DIVIDE_SUBTLE, CARD_PADDING } from '@/lib/utils/designTokens';
 
 interface TemplateReviewStepProps {
   designResult: AgentIR;
@@ -156,7 +156,7 @@ export function TemplateReviewStep({
 
       {/* Connector Readiness */}
       {readinessStatuses.length > 0 && (
-        <div className={`rounded-xl border ${BORDER_DEFAULT} bg-secondary/20 p-4`}>
+        <div className={`rounded-xl border ${BORDER_DEFAULT} bg-secondary/20 ${CARD_PADDING.standard}`}>
           <ConnectorReadiness statuses={readinessStatuses} compact={false} />
         </div>
       )}

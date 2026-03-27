@@ -1,4 +1,4 @@
-import { RotateCw, Lock } from 'lucide-react';
+import { RotateCw, Lock, DatabaseZap } from 'lucide-react';
 import { RotationInsightBadge } from '@/features/vault/sub_card/badges/RotationInsightBadge';
 import { OAuthActivityBadge } from '@/features/vault/sub_card/badges/OAuthActivityBadge';
 import type { CredentialMetadata, ConnectorDefinition, ConnectorAuthMethod } from '@/lib/types/types';
@@ -38,6 +38,23 @@ export function BadgeRow({
   rotationCountdown,
 }: BadgeRowProps) {
   const badges: BadgeEntry[] = [];
+
+  // Priority 0: corrupted healthcheck metadata
+  if (rotationStatus?.healthcheck_corrupted) {
+    badges.push({
+      key: 'hc-corrupted',
+      label: 'Healthcheck Data Corrupted',
+      node: (
+        <span
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border flex-shrink-0 bg-orange-500/10 border-orange-500/20 text-orange-400"
+          title="Healthcheck ring buffer metadata is corrupted. Anomaly scores are unavailable until the next successful healthcheck overwrites the bad data."
+        >
+          <DatabaseZap className="w-2.5 h-2.5" />
+          <span className="text-sm font-medium">Corrupted</span>
+        </span>
+      ),
+    });
+  }
 
   // Priority 1: anomaly
   if (rotationStatus?.anomaly_score && rotationStatus.anomaly_score.remediation !== 'healthy') {

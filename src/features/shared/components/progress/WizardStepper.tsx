@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
+const RAIL_SPRING = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
 export interface WizardStep {
   key: string;
   label: string;

@@ -2,4 +2,4 @@
 import type { AnomalyScore } from "./AnomalyScore";
 import type { RotationHistoryEntry } from "./RotationHistoryEntry";
 
-export type RotationStatus = { has_policy: boolean, policy_enabled: boolean, rotation_interval_days: number | null, next_rotation_at: string | null, last_rotated_at: string | null, last_status: string | null, policy_type: string | null, anomaly_detected: boolean, consecutive_failures: number, recent_history: RotationHistoryEntry[], anomaly_score: AnomalyScore | null, anomaly_tolerance: number, };
+export type RotationStatus = { has_policy: boolean, policy_enabled: boolean, rotation_interval_days: number | null, next_rotation_at: string | null, last_rotated_at: string | null, last_status: string | null, policy_type: string | null, anomaly_detected: boolean, consecutive_failures: number, recent_history: RotationHistoryEntry[], anomaly_score: AnomalyScore | null, anomaly_tolerance: number, healthcheck_corrupted: boolean, };

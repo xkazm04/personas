@@ -72,7 +72,6 @@ export function useDeploymentHealth(
     })();
 
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stableKey]);
 
   return { healthMap, isLoading };

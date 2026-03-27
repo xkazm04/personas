@@ -1,5 +1,5 @@
-import { AlertTriangle, X, RefreshCw, ChevronLeft } from 'lucide-react';
-import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
+import { AlertTriangle, RefreshCw, ChevronLeft } from 'lucide-react';
+import { InlineErrorBanner } from './InlineErrorBanner';
 
 interface ErrorBannerProps {
   message: string;
@@ -54,37 +54,13 @@ export function ErrorBanner({
     );
   }
 
-  const isInline = variant === 'inline';
-  const sizeClass = isInline ? 'px-3 py-2' : 'px-4 py-3';
-
   return (
-    <div
-      role="alert"
-      aria-live="assertive"
-      className={`flex items-start gap-2.5 ${sizeClass} ${SEVERITY_STYLES.error.border} ${SEVERITY_STYLES.error.bg} rounded-xl typo-body ${SEVERITY_STYLES.error.text}`}
-    >
-      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-      <span className="flex-1">{message}</span>
-      {onRetry && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="flex items-center gap-1 text-red-400/80 hover:text-red-300 typo-heading shrink-0 transition-colors cursor-pointer"
-        >
-          <RefreshCw className="w-3 h-3" />
-          Retry
-        </button>
-      )}
-      {onDismiss && (
-        <button
-          type="button"
-          onClick={onDismiss}
-          aria-label="Dismiss error"
-          className="text-red-400/60 hover:text-red-300 transition-colors cursor-pointer shrink-0"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )}
-    </div>
+    <InlineErrorBanner
+      severity="error"
+      message={message}
+      onDismiss={onDismiss}
+      onRetry={onRetry}
+      compact={variant === 'inline'}
+    />
   );
 }

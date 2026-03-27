@@ -11,10 +11,6 @@ use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 use crate::engine::compilation_pipeline::{CompilationPipeline, PipelineOutcome};
 use crate::engine::design;
 
-// Re-export the shared stage enum so existing `use crate::engine::compiler::CompilationStage`
-// continues to work without changing every import site.
-pub use crate::engine::compilation_pipeline::CompilationStage;
-
 // ============================================================================
 // Compilation Input
 // ============================================================================

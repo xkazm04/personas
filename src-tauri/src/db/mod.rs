@@ -6,6 +6,7 @@ pub mod migrations;
 pub mod models;
 #[allow(dead_code)]
 pub mod repos;
+pub mod perf;
 pub mod settings_keys;
 mod builtin_connectors;
 

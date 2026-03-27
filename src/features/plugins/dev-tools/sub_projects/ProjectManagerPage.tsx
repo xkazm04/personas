@@ -213,7 +213,7 @@ function ProjectModal({
         onClick={handleClose}
       >
         <div
-          className="animate-fade-slide-in bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+          className="animate-fade-slide-in bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-md shadow-elevation-4"
           onClick={(e) => e.stopPropagation()}
         >
           {step === 'create' ? (

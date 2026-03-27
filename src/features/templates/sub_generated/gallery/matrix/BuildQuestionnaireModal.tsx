@@ -100,7 +100,7 @@ export function BuildQuestionnaireModal({
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
       if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
-      if (e.key === 'Enter') { e.preventDefault(); isLast ? onSubmit() : goNext(); }
+      if (e.key === 'Enter') { e.preventDefault(); if (isLast) { onSubmit(); } else { goNext(); } }
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
@@ -128,7 +128,7 @@ export function BuildQuestionnaireModal({
       titleId="build-questionnaire-title"
       containerClassName="fixed inset-0 z-[200] flex items-center justify-center p-4"
       size="lg"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden w-full max-w-2xl"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden w-full max-w-2xl"
     >
       {/* Header */}
       <div
@@ -279,7 +279,7 @@ export function BuildQuestionnaireModal({
                           onClick={() => onAnswerUpdated(q.id, opt)}
                           className={`flex-1 py-3.5 text-sm font-medium rounded-xl border transition-all flex items-center justify-center gap-2 ${
                             isSelected
-                              ? `${tone.selectBg} shadow-sm`
+                              ? `${tone.selectBg} shadow-elevation-1`
                               : 'text-foreground/60 border-primary/10 hover:bg-secondary/40 hover:border-primary/15'
                           }`}
                         >
@@ -359,7 +359,7 @@ export function BuildQuestionnaireModal({
           className={`inline-flex items-center gap-2 rounded-xl text-sm font-medium transition-all ${
             isLast
               ? allAnswered
-                ? 'px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
+                ? 'px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-1'
                 : 'px-6 py-2.5 bg-primary/50 text-primary-foreground/70 cursor-not-allowed'
               : 'px-5 py-2 bg-primary/10 text-primary hover:bg-primary/20'
           }`}

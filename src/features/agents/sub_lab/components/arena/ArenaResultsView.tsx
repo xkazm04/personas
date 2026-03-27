@@ -159,11 +159,12 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
             return (
               <div
                 key={agg.modelId}
-                className={`rounded-xl border overflow-hidden transition-all ${
+                className={`rounded-xl border overflow-hidden transition-all animate-fade-slide-in ${
                   isWinner
-                    ? 'border-primary/25 shadow-lg shadow-primary/5'
+                    ? 'border-primary/25 shadow-elevation-3 shadow-primary/5'
                     : 'border-primary/10'
                 }`}
+                style={{ animationDelay: `${idx * 60}ms`, animationDuration: '300ms' }}
               >
                 {/* Card header gradient */}
                 <div className={`px-4 py-3 bg-gradient-to-r ${isWinner ? 'from-primary/15 via-primary/10 to-accent/10' : 'from-secondary/40 to-secondary/20'}`}>
@@ -307,7 +308,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                           onClick={() => setSelectedCell(isSelected ? null : { scenario, model: mid })}
                           className={`w-full flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 transition-all ${
                             isSelected
-                              ? 'bg-primary/10 ring-1 ring-primary/25 shadow-sm'
+                              ? 'bg-primary/10 ring-1 ring-primary/25 shadow-elevation-1'
                               : 'hover:bg-secondary/40'
                           }`}
                         >

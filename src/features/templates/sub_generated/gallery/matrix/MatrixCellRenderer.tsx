@@ -142,7 +142,7 @@ export function MatrixCellRenderer({
   const baseSize = compact ? 'p-2.5 min-h-[80px]' : 'p-4 min-h-[200px]';
   const outerClasses = stateClasses
     ? [
-        `relative rounded-xl border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow,min-height,padding] duration-300 shadow-md`,
+        `relative rounded-xl border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow,min-height,padding] duration-300 shadow-elevation-2`,
         stateClasses.bg,
         stateClasses.border,
         stateClasses.opacity,
@@ -151,12 +151,12 @@ export function MatrixCellRenderer({
         useEditRender ? 'ring-1 ring-inset ring-primary/10' : '',
       ].filter(Boolean).join(' ')
     : [
-        `relative rounded-xl border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow,min-height,padding] duration-300 shadow-md`,
+        `relative rounded-xl border ${baseSize} transition-[opacity,transform,border-color,background-color,box-shadow,min-height,padding] duration-300 shadow-elevation-2`,
         useEditRender
           ? 'bg-card-bg ring-1 ring-inset ring-primary/10'
           : 'bg-card-bg',
         filledGlow
-          ? 'border-primary/20 shadow-lg shadow-primary/[0.03]'
+          ? 'border-primary/20 shadow-elevation-3 shadow-primary/[0.03]'
           : 'border-card-border',
       ].join(' ');
 

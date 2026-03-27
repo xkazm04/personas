@@ -4,7 +4,9 @@ import type { PersonaToolDefinition } from "@/lib/bindings/PersonaToolDefinition
 import type { CreateToolDefinitionInput } from "@/lib/bindings/CreateToolDefinitionInput";
 import type { UpdateToolDefinitionInput } from "@/lib/bindings/UpdateToolDefinitionInput";
 import type { PersonaTool } from "@/lib/bindings/PersonaTool";
-import type { ToolUsageSummary, ToolUsageOverTime, PersonaUsageSummary } from "@/lib/types/types";
+import type { ToolUsageSummary } from "@/lib/bindings/ToolUsageSummary";
+import type { ToolUsageOverTime } from "@/lib/bindings/ToolUsageOverTime";
+import type { PersonaUsageSummary } from "@/lib/bindings/PersonaUsageSummary";
 
 // ============================================================================
 // Tool Definitions & Assignments

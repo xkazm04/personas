@@ -13,6 +13,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { GitLabPersonaVersion } from '@/api/system/gitlab';
@@ -236,7 +237,7 @@ interface VersionRowProps {
 }
 
 function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRollback }: VersionRowProps) {
-  const timeAgo = version.createdAt ? formatRelativeTime(version.createdAt) : null;
+  const timeAgo = version.createdAt ? formatRelativeTime(version.createdAt, '-', { dateFallbackDays: 30 }) : null;
 
   return (
     <div
@@ -336,25 +337,3 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
   );
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatRelativeTime(iso: string): string {
-  try {
-    const date = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMin = Math.floor(diffMs / 60_000);
-
-    if (diffMin < 1) return 'just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h ago`;
-    const diffDays = Math.floor(diffHr / 24);
-    if (diffDays < 30) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  } catch {
-    return '';
-  }
-}

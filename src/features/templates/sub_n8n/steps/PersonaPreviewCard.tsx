@@ -71,7 +71,7 @@ export function PersonaPreviewCard({
 
       <div className="flex items-center gap-4 mb-4">
         <div
-          className="animate-fade-scale-in w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-lg"
+          className="animate-fade-scale-in w-14 h-14 rounded-xl flex items-center justify-center text-xl border shadow-elevation-3"
           style={{
             backgroundColor: `${color ?? '#8b5cf6'}18`,
             borderColor: `${color ?? '#8b5cf6'}30`,

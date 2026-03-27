@@ -53,7 +53,7 @@ export function SubSpanBar({
         />
         {hovered && (
           <div
-            className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-lg backdrop-blur-sm whitespace-nowrap pointer-events-none"
+            className="absolute z-20 bottom-full mb-1 bg-background/95 border border-primary/20 rounded-xl px-3 py-2 shadow-elevation-3 backdrop-blur-sm whitespace-nowrap pointer-events-none"
             style={{ left: `${Math.min(leftPct, 70)}%` }}
           >
             <p className="typo-heading text-cyan-400 mb-1">{step.tool_name}</p>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Zap, ChevronRight, LayoutTemplate } from 'lucide-react';
+import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { PipelineTemplate } from './pipelineTemplateTypes';
 import { EDGE_COLORS, NODE_ROLE_FILLS } from './pipelineTemplateTypes';
 import { PIPELINE_TEMPLATES } from './pipelineTemplateData';
@@ -124,8 +125,8 @@ export default function PipelineTemplateGallery({ onAdopt }: PipelineTemplateGal
                           }}
                           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all"
                           style={{
-                            backgroundColor: tpl.color + '18',
-                            borderColor: tpl.color + '30',
+                            backgroundColor: colorWithAlpha(tpl.color, 0.09),
+                            borderColor: colorWithAlpha(tpl.color, 0.19),
                             color: tpl.color,
                             border: '1px solid',
                           }}

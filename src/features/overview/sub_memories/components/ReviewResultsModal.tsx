@@ -12,7 +12,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
   if (!reviewResult && !reviewError) return null;
 
   return (
-    <BaseModal isOpen onClose={onClose} titleId="review-results-title" size="lg" panelClassName="bg-background border border-primary/20 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+    <BaseModal isOpen onClose={onClose} titleId="review-results-title" size="lg" panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[80vh]">
         {/* Header */}
         <div className="flex items-start justify-between p-4 border-b border-primary/10 flex-shrink-0">
           <div className="flex-1 min-w-0 pr-4">

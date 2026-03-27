@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+// eslint-disable-next-line no-restricted-imports
 import { invoke } from "@tauri-apps/api/core";
 import { vi } from "vitest";
 import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
@@ -10,8 +11,6 @@ import {
   getCredentialBlastRadius,
   listCredentialEvents,
   listAllCredentialEvents,
-  createCredentialEvent,
-  deleteCredentialEvent,
   getSessionPublicKey,
   healthcheckCredential,
   vaultStatus,
@@ -39,14 +38,14 @@ describe("api/vault/credentials", () => {
   it("createCredential calls create_credential", async () => {
     const cred = { id: "c-1", name: "test" };
     mockInvoke("create_credential", cred);
-    const result = await createCredential({ name: "test" } as any);
+    const result = await createCredential({ name: "test" } as unknown);
     expect(result).toEqual(cred);
   });
 
   it("updateCredential calls update_credential", async () => {
     const cred = { id: "c-1", name: "updated" };
     mockInvoke("update_credential", cred);
-    const result = await updateCredential("c-1", { name: "updated" } as any);
+    const result = await updateCredential("c-1", { name: "updated" } as unknown);
     expect(result).toEqual(cred);
   });
 

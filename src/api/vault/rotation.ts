@@ -26,7 +26,7 @@ export const updateRotationPolicy = (id: string, input: UpdateRotationPolicyInpu
   invoke<RotationPolicy>("update_rotation_policy", { id, input });
 
 export const deleteRotationPolicy = (id: string) =>
-  invoke<boolean>("delete_rotation_policy", { id });
+  invoke<string>("delete_rotation_policy", { id });
 
 export const getRotationHistory = (credentialId: string, limit?: number) =>
   invoke<RotationHistoryEntry[]>("get_rotation_history", { credentialId, limit: limit });

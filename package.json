@@ -8,8 +8,9 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "predev": "node scripts/generate-command-names.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/generate-template-checksums.mjs",
+    "prebuild": "node scripts/generate-command-names.mjs && node scripts/generate-template-checksums.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "check": "tsc --noEmit && eslint src/",

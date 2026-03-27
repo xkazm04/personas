@@ -63,7 +63,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
       onClose={onClose}
       titleId="vector-kb-title"
       size="6xl"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-2xl flex flex-col overflow-hidden h-[90vh]"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]"
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20 shrink-0">

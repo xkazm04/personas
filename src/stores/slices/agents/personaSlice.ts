@@ -43,6 +43,7 @@ export interface PersonaSlice {
 }
 
 let fetchDetailSeq = 0;
+let fetchSummariesSeq = 0;
 
 export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> = (set, get) => ({
   personas: [],
@@ -80,8 +81,10 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   },
 
   fetchPersonaSummaries: async () => {
+    const seq = ++fetchSummariesSeq;
     try {
       const summaries = await getPersonaSummaries();
+      if (seq !== fetchSummariesSeq) return; // superseded by a newer request
       const triggerCounts: Record<string, number> = {};
       const lastRun: Record<string, string | null> = {};
       const healthMap: Record<string, PersonaHealth> = {};
@@ -99,6 +102,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           ? get().degradationError : null,
       });
     } catch (err) {
+      if (seq !== fetchSummariesSeq) return; // superseded by a newer request
       const failures = get().summaryConsecutiveFailures + 1;
       const category = classifyUnknownError(err);
       logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), attempt: failures, error: String(err) });
@@ -168,6 +172,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         notification_channels: null,
       });
       set((state) => ({ personas: [persona, ...state.personas] }));
+      get().fetchPersonaSummaries();
       return persona;
     } catch (err) {
       reportError(err, "Failed to create persona", set);
@@ -180,6 +185,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     try {
       const newPersona = await duplicatePersona(id);
       set((state) => ({ personas: [newPersona, ...state.personas] }));
+      get().fetchPersonaSummaries();
       return newPersona;
     } catch (err) {
       reportError(err, "Failed to duplicate persona", set);
@@ -198,6 +204,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
             ? { ...state.selectedPersona, ...persona }
             : state.selectedPersona,
       }));
+      get().fetchPersonaSummaries();
     } catch (err) {
       reportError(err, "Failed to update persona", set);
       throw err;
@@ -221,6 +228,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         selectedPersonaId: state.selectedPersonaId === id ? null : state.selectedPersonaId,
         selectedPersona: state.selectedPersona?.id === id ? null : state.selectedPersona,
       }));
+      get().fetchPersonaSummaries();
     } catch (err) {
       reportError(err, "Failed to delete persona", set);
     }

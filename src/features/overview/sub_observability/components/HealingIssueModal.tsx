@@ -48,7 +48,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
       onClose={onClose}
       titleId="healing-issue-title"
       maxWidthClass="max-w-lg"
-      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-2xl overflow-hidden"
+      panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden"
     >
       {resolved ? (
           <ResolvedAnimation />

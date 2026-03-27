@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { FolderKanban, ChevronDown, AlertCircle } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
+import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 
 const ProjectManagerPage = lazy(() => import('./sub_projects/ProjectManagerPage'));
 const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
@@ -109,7 +110,7 @@ export default function DevToolsPage() {
           key={devToolsTab}
           className="animate-fade-slide-in flex-1 min-h-0"
         >
-          <Suspense fallback={null}>
+          <Suspense fallback={<SuspenseFallback />}>
             {devToolsTab === 'projects' && <ProjectManagerPage />}
             {devToolsTab === 'context-map' && <ContextMapPage />}
             {devToolsTab === 'idea-scanner' && <IdeaScannerPage />}

@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::Instant;
 
+use crate::db::models::ChainConditionType;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
@@ -455,11 +456,8 @@ fn resolve_persona_names(pool: &DbPool, ids: &[String]) -> Vec<String> {
 
 /// Evaluate a conditional predicate against execution results.
 ///
-/// Predicate types:
-/// - `success`: Only fire if execution succeeded
-/// - `failure`: Only fire if execution failed
-/// - `any`: Always fire (default if no condition specified)
-/// - `jsonpath`: Fire if a JSONPath expression on the output matches expected value
+/// Uses [`ChainConditionType`] to determine matching behaviour. See that enum's
+/// doc comments for the full mapping between condition types and execution statuses.
 fn evaluate_predicate(
     condition: Option<&serde_json::Value>,
     execution_status: &str,
@@ -470,16 +468,28 @@ fn evaluate_predicate(
         None => return true, // No condition = always fire
     };
 
-    let pred_type = condition
+    let pred_type_str = condition
         .get("type")
         .and_then(|t| t.as_str())
         .unwrap_or("any");
 
+    let pred_type = match pred_type_str.parse::<ChainConditionType>() {
+        Ok(t) => t,
+        Err(_) => {
+            tracing::warn!(
+                "Unknown chain condition type \"{}\". Valid values: {}. Treating as non-matching.",
+                pred_type_str,
+                ChainConditionType::VALID_VALUES.join(", ")
+            );
+            return false;
+        }
+    };
+
     match pred_type {
-        "success" => execution_status == "completed",
-        "failure" => execution_status == "failed",
-        "any" => true,
-        "jsonpath" => {
+        ChainConditionType::Success => execution_status == "completed",
+        ChainConditionType::Failure => execution_status == "failed",
+        ChainConditionType::Any => true,
+        ChainConditionType::Jsonpath => {
             let path = match condition.get("jsonpath").and_then(|p| p.as_str()) {
                 Some(p) => p,
                 None => return false,
@@ -496,10 +506,6 @@ fn evaluate_predicate(
                     None => !found.is_null(), // Just check it exists and isn't null
                 })
                 .unwrap_or(false)
-        }
-        _ => {
-            tracing::warn!("Unknown predicate type: {}", pred_type);
-            false
         }
     }
 }
@@ -566,6 +572,14 @@ mod tests {
     fn test_predicate_none_means_always() {
         assert!(evaluate_predicate(None, "completed", None));
         assert!(evaluate_predicate(None, "failed", None));
+    }
+
+    #[test]
+    fn test_predicate_unknown_type_rejects() {
+        // Typo like "succcess" should not match anything
+        let cond = json!({"type": "succcess"});
+        assert!(!evaluate_predicate(Some(&cond), "completed", None));
+        assert!(!evaluate_predicate(Some(&cond), "failed", None));
     }
 
     #[test]

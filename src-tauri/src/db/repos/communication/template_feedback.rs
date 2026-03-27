@@ -12,6 +12,7 @@ row_mapper!(row_to_feedback -> TemplateFeedback {
 /// Create a new template feedback entry.
 /// Validates that both review_id and persona_id reference existing records before inserting.
 pub fn create(pool: &DbPool, input: CreateTemplateFeedbackInput) -> Result<TemplateFeedback, AppError> {
+    timed_query!("template_feedback", "template_feedback::create", {
     let conn = pool.get()?;
 
     // Validate review_id exists in persona_design_reviews
@@ -56,22 +57,26 @@ pub fn create(pool: &DbPool, input: CreateTemplateFeedbackInput) -> Result<Templ
         row_to_feedback,
     )?;
     Ok(row)
+    })
 }
 
 /// List feedback for a specific template (design review).
 pub fn list_for_review(pool: &DbPool, review_id: &str, limit: Option<i64>) -> Result<Vec<TemplateFeedback>, AppError> {
-    let conn = pool.get()?;
-    let limit = limit.unwrap_or(50);
-    let mut stmt = conn.prepare(
-        "SELECT * FROM template_feedback WHERE review_id = ?1 ORDER BY created_at DESC LIMIT ?2",
-    )?;
-    let rows = stmt.query_map(params![review_id, limit], row_to_feedback)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    timed_query!("template_feedback", "template_feedback::list_for_review", {
+        let conn = pool.get()?;
+        let limit = limit.unwrap_or(50);
+        let mut stmt = conn.prepare(
+            "SELECT * FROM template_feedback WHERE review_id = ?1 ORDER BY created_at DESC LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![review_id, limit], row_to_feedback)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
 }
 
 /// Get aggregated performance metrics for a template.
 /// Returns NotFound if the review_id does not reference an existing design review.
 pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerformance, AppError> {
+    timed_query!("template_feedback", "template_feedback::get_performance", {
     let conn = pool.get()?;
 
     // Verify the review exists before aggregating metrics
@@ -232,5 +237,6 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         top_negative_labels: top_negative.into_iter().take(5).map(|(l, _)| l).collect(),
         derived_quality_score,
         data_available,
+    })
     })
 }

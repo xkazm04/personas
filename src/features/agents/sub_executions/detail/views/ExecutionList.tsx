@@ -1,5 +1,5 @@
 import { Rocket, Play } from 'lucide-react';
-import { ExecutionComparison } from '../comparison/ExecutionComparison';
+import { ExecutionComparison } from '../../components/list/ExecutionComparison';
 import { ExecutionListHeader } from './ExecutionListHeader';
 import { ExecutionRow } from './ExecutionRow';
 import { useExecutionListState } from './useExecutionListState';

@@ -67,6 +67,15 @@ pub enum TaskComplexity {
     Critical,
 }
 
+impl TaskComplexity {
+    /// The default complexity used when callers do not specify one.
+    ///
+    /// `Standard` is chosen because it represents the middle tier — safe for
+    /// cost routing (not as cheap as Simple, not as expensive as Critical) and
+    /// appropriate for the majority of unclassified tasks.
+    pub const DEFAULT: Self = Self::Standard;
+}
+
 /// A compliance rule that restricts providers for specific workflow tags.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -166,13 +175,13 @@ impl ByomPolicy {
         let allowed_set: Vec<EngineKind> = self
             .allowed_providers
             .iter()
-            .filter_map(|s| parse_engine_kind(s))
+            .filter_map(|s| s.parse().ok())
             .collect();
 
         let blocked_set: Vec<EngineKind> = self
             .blocked_providers
             .iter()
-            .filter_map(|s| parse_engine_kind(s))
+            .filter_map(|s| s.parse().ok())
             .collect();
 
         // Check compliance rules
@@ -181,7 +190,7 @@ impl ByomPolicy {
                 continue;
             }
             for provider_str in &rule.allowed_providers {
-                if let Some(kind) = parse_engine_kind(provider_str) {
+                if let Some(kind) = provider_str.parse().ok() {
                     if blocked_set.contains(&kind) {
                         warnings.push(format!(
                             "Compliance rule '{}' allows provider '{}' which is explicitly blocked — \
@@ -209,7 +218,7 @@ impl ByomPolicy {
             if !rule.enabled {
                 continue;
             }
-            if let Some(kind) = parse_engine_kind(&rule.provider) {
+            if let Some(kind) = rule.provider.parse().ok() {
                 if blocked_set.contains(&kind) {
                     warnings.push(format!(
                         "Routing rule '{}' targets provider '{}' which is explicitly blocked",
@@ -242,7 +251,8 @@ impl ByomPolicy {
     /// 4. `routing_rules` — select a preferred provider/model (must still be allowed).
     ///
     /// - `persona_tags`: tags/categories associated with the persona (for compliance matching).
-    /// - `complexity`: the task complexity level (for cost routing).
+    /// - `complexity`: the task complexity level (for cost routing). When `None`, defaults
+    ///   to [`TaskComplexity::DEFAULT`] (`Standard`) so that routing rules still apply.
     pub fn evaluate(
         &self,
         persona_tags: &[String],
@@ -262,7 +272,7 @@ impl ByomPolicy {
         let mut blocked: Vec<EngineKind> = self
             .blocked_providers
             .iter()
-            .filter_map(|s| parse_engine_kind(s))
+            .filter_map(|s| s.parse().ok())
             .collect();
 
         // 2. If allowed_providers is non-empty, block everything not in the allowed list
@@ -270,9 +280,9 @@ impl ByomPolicy {
             let allowed_set: Vec<EngineKind> = self
                 .allowed_providers
                 .iter()
-                .filter_map(|s| parse_engine_kind(s))
+                .filter_map(|s| s.parse().ok())
                 .collect();
-            for kind in all_engine_kinds() {
+            for kind in EngineKind::ALL {
                 if !allowed_set.contains(&kind) && !blocked.contains(&kind) {
                     blocked.push(kind);
                 }
@@ -288,16 +298,16 @@ impl ByomPolicy {
             let matches = persona_tags.iter().any(|tag| {
                 rule.workflow_tags
                     .iter()
-                    .any(|wt| tag.to_lowercase().contains(&wt.to_lowercase()))
+                    .any(|wt| tag.eq_ignore_ascii_case(wt))
             });
             if matches {
                 // This compliance rule applies: only its allowed providers are permitted
                 let compliance_allowed: Vec<EngineKind> = rule
                     .allowed_providers
                     .iter()
-                    .filter_map(|s| parse_engine_kind(s))
+                    .filter_map(|s| s.parse().ok())
                     .collect();
-                for kind in all_engine_kinds() {
+                for kind in EngineKind::ALL {
                     if !compliance_allowed.contains(&kind) && !blocked.contains(&kind) {
                         blocked.push(kind);
                     }
@@ -307,21 +317,22 @@ impl ByomPolicy {
             }
         }
 
-        // 4. Evaluate routing rules (first matching complexity wins)
+        // 4. Evaluate routing rules (first matching complexity wins).
+        //    When no complexity is provided, default to Standard so that
+        //    routing rules still apply rather than silently producing no match.
+        let effective_complexity = complexity.unwrap_or(TaskComplexity::DEFAULT);
         let mut preferred_provider = None;
         let mut preferred_model = None;
         let mut routing_rule_name = None;
-        if let Some(complexity) = complexity {
-            for rule in &self.routing_rules {
-                if !rule.enabled {
-                    continue;
-                }
-                if rule.task_complexity == complexity {
-                    preferred_provider = parse_engine_kind(&rule.provider);
-                    preferred_model = rule.model.clone();
-                    routing_rule_name = Some(rule.name.clone());
-                    break;
-                }
+        for rule in &self.routing_rules {
+            if !rule.enabled {
+                continue;
+            }
+            if rule.task_complexity == effective_complexity {
+                preferred_provider = rule.provider.parse().ok();
+                preferred_model = rule.model.clone();
+                routing_rule_name = Some(rule.name.clone());
+                break;
             }
         }
 
@@ -339,22 +350,6 @@ impl ByomPolicy {
 // Helpers
 // =============================================================================
 
-/// Parse a settings string into an EngineKind.
-fn parse_engine_kind(s: &str) -> Option<EngineKind> {
-    match s {
-        "claude_code" => Some(EngineKind::ClaudeCode),
-        "codex_cli" => Some(EngineKind::CodexCli),
-        _ => None,
-    }
-}
-
-/// Return all known engine kinds.
-fn all_engine_kinds() -> Vec<EngineKind> {
-    vec![
-        EngineKind::ClaudeCode,
-        EngineKind::CodexCli,
-    ]
-}
 
 #[cfg(test)]
 mod tests {
@@ -443,10 +438,84 @@ mod tests {
             }],
             ..Default::default()
         };
-        let decision = policy.evaluate(&["hipaa-workflow".into()], None);
+        let decision = policy.evaluate(&["hipaa".into()], None);
         assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
         assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
         assert_eq!(decision.compliance_rule_name.as_deref(), Some("HIPAA"));
+    }
+
+    #[test]
+    fn test_compliance_rule_case_insensitive_exact_match() {
+        let policy = ByomPolicy {
+            enabled: true,
+            compliance_rules: vec![ComplianceRule {
+                name: "HIPAA".into(),
+                workflow_tags: vec!["hipaa".into()],
+                allowed_providers: vec!["claude_code".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+
+        // Exact match with different casing should match
+        let decision = policy.evaluate(&["HIPAA".into()], None);
+        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
+        assert_eq!(decision.compliance_rule_name.as_deref(), Some("HIPAA"));
+
+        let decision = policy.evaluate(&["Hipaa".into()], None);
+        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
+        assert_eq!(decision.compliance_rule_name.as_deref(), Some("HIPAA"));
+    }
+
+    #[test]
+    fn test_compliance_rule_rejects_substring_false_positives() {
+        let policy = ByomPolicy {
+            enabled: true,
+            compliance_rules: vec![ComplianceRule {
+                name: "HIPAA".into(),
+                workflow_tags: vec!["hipaa".into()],
+                allowed_providers: vec!["claude_code".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+
+        // Substring matches must NOT trigger the rule
+        let decision = policy.evaluate(&["hipaa-workflows".into()], None);
+        assert!(decision.blocked_providers.is_empty());
+        assert!(decision.compliance_rule_name.is_none());
+
+        let decision = policy.evaluate(&["non-hipaa".into()], None);
+        assert!(decision.blocked_providers.is_empty());
+        assert!(decision.compliance_rule_name.is_none());
+    }
+
+    #[test]
+    fn test_compliance_rule_rejects_generic_substring() {
+        let policy = ByomPolicy {
+            enabled: true,
+            compliance_rules: vec![ComplianceRule {
+                name: "Test restriction".into(),
+                workflow_tags: vec!["test".into()],
+                allowed_providers: vec!["claude_code".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+
+        // "test" should NOT match "attest" or "internal-testing"
+        let decision = policy.evaluate(&["attest".into()], None);
+        assert!(decision.blocked_providers.is_empty());
+        assert!(decision.compliance_rule_name.is_none());
+
+        let decision = policy.evaluate(&["internal-testing".into()], None);
+        assert!(decision.blocked_providers.is_empty());
+        assert!(decision.compliance_rule_name.is_none());
+
+        // But exact "test" should match
+        let decision = policy.evaluate(&["test".into()], None);
+        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
+        assert_eq!(decision.compliance_rule_name.as_deref(), Some("Test restriction"));
     }
 
     #[test]
@@ -530,5 +599,112 @@ mod tests {
         };
         let warnings = policy.validate();
         assert!(warnings.is_empty());
+    }
+
+    // =========================================================================
+    // None-complexity edge cases
+    // =========================================================================
+
+    #[test]
+    fn test_none_complexity_defaults_to_standard() {
+        let policy = ByomPolicy {
+            enabled: true,
+            routing_rules: vec![
+                RoutingRule {
+                    name: "Haiku for simple".into(),
+                    task_complexity: TaskComplexity::Simple,
+                    provider: "claude_code".into(),
+                    model: Some("claude-haiku-4-5-20251001".into()),
+                    enabled: true,
+                },
+                RoutingRule {
+                    name: "Sonnet for standard".into(),
+                    task_complexity: TaskComplexity::Standard,
+                    provider: "claude_code".into(),
+                    model: Some("claude-sonnet-4-20250514".into()),
+                    enabled: true,
+                },
+                RoutingRule {
+                    name: "Opus for critical".into(),
+                    task_complexity: TaskComplexity::Critical,
+                    provider: "claude_code".into(),
+                    model: Some("claude-opus-4-20250514".into()),
+                    enabled: true,
+                },
+            ],
+            ..Default::default()
+        };
+        // None complexity should match the Standard rule
+        let decision = policy.evaluate(&[], None);
+        assert_eq!(decision.preferred_provider, Some(EngineKind::ClaudeCode));
+        assert_eq!(decision.preferred_model.as_deref(), Some("claude-sonnet-4-20250514"));
+        assert_eq!(decision.routing_rule_name.as_deref(), Some("Sonnet for standard"));
+    }
+
+    #[test]
+    fn test_none_complexity_no_standard_rule_returns_no_preferred() {
+        let policy = ByomPolicy {
+            enabled: true,
+            routing_rules: vec![
+                RoutingRule {
+                    name: "Haiku for simple".into(),
+                    task_complexity: TaskComplexity::Simple,
+                    provider: "claude_code".into(),
+                    model: Some("claude-haiku-4-5-20251001".into()),
+                    enabled: true,
+                },
+                RoutingRule {
+                    name: "Opus for critical".into(),
+                    task_complexity: TaskComplexity::Critical,
+                    provider: "claude_code".into(),
+                    model: Some("claude-opus-4-20250514".into()),
+                    enabled: true,
+                },
+            ],
+            ..Default::default()
+        };
+        // No Standard rule exists — preferred_provider should be None
+        let decision = policy.evaluate(&[], None);
+        assert!(decision.preferred_provider.is_none());
+        assert!(decision.preferred_model.is_none());
+        assert!(decision.routing_rule_name.is_none());
+    }
+
+    #[test]
+    fn test_none_complexity_with_no_routing_rules() {
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            ..Default::default()
+        };
+        // No routing rules at all — should still produce a valid decision
+        let decision = policy.evaluate(&[], None);
+        assert!(decision.preferred_provider.is_none());
+        assert!(decision.blocked_providers.contains(&EngineKind::CodexCli));
+    }
+
+    #[test]
+    fn test_none_complexity_same_as_explicit_standard() {
+        let policy = ByomPolicy {
+            enabled: true,
+            routing_rules: vec![RoutingRule {
+                name: "Standard route".into(),
+                task_complexity: TaskComplexity::Standard,
+                provider: "codex_cli".into(),
+                model: None,
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let none_decision = policy.evaluate(&[], None);
+        let explicit_decision = policy.evaluate(&[], Some(TaskComplexity::Standard));
+        assert_eq!(none_decision.preferred_provider, explicit_decision.preferred_provider);
+        assert_eq!(none_decision.preferred_model, explicit_decision.preferred_model);
+        assert_eq!(none_decision.routing_rule_name, explicit_decision.routing_rule_name);
+    }
+
+    #[test]
+    fn test_default_complexity_constant_is_standard() {
+        assert_eq!(TaskComplexity::DEFAULT, TaskComplexity::Standard);
     }
 }

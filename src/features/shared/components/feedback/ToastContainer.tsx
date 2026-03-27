@@ -107,6 +107,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
         <span className="typo-caption opacity-50 tabular-nums flex-shrink-0">{elapsedLabel}</span>
         <button
           onClick={() => onDismiss(toast.id)}
+          aria-label="Dismiss notification"
           className="ml-1 opacity-60 hover:opacity-100 transition-opacity flex-shrink-0"
         >
           <X className="w-3.5 h-3.5" />
@@ -170,6 +171,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
           <span className="typo-caption text-muted-foreground/50 tabular-nums flex-shrink-0">{elapsedLabel}</span>
           <button
             onClick={() => onDismiss(toast.id)}
+            aria-label="Dismiss notification"
             className="text-muted-foreground/80 hover:text-foreground/95 transition-colors flex-shrink-0"
           >
             <X className="w-3.5 h-3.5" />
