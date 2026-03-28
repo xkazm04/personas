@@ -148,59 +148,17 @@ pub fn create_with_fields(
     })
 }
 
-pub fn update(
-    pool: &DbPool,
-    id: &str,
+crud_update! {
+    model: PersonaCredential,
+    table: "persona_credentials",
     input: UpdateCredentialInput,
-) -> Result<PersonaCredential, AppError> {
-    timed_query!("persona_credentials", "persona_credentials::update", {
-        // Verify exists
-        get_by_id(pool, id)?;
-
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-
-        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-        let mut param_idx = 2u32;
-
-        push_field!(input.name, "name", sets, param_idx);
-        push_field!(input.service_type, "service_type", sets, param_idx);
-        push_field!(input.encrypted_data, "encrypted_data", sets, param_idx);
-        push_field!(input.iv, "iv", sets, param_idx);
-        push_field!(input.metadata, "metadata", sets, param_idx);
-
-        let sql = format!(
-            "UPDATE persona_credentials SET {} WHERE id = ?{}",
-            sets.join(", "),
-            param_idx
-        );
-
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-
-        if let Some(ref v) = input.name {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.service_type {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.encrypted_data {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.iv {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.metadata {
-            param_values.push(Box::new(v.clone()));
-        }
-        param_values.push(Box::new(id.to_string()));
-
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
-        conn.execute(&sql, params_ref.as_slice())?;
-
-        get_by_id(pool, id)
-
-    })
+    fields: {
+        name: clone,
+        service_type: clone,
+        encrypted_data: clone,
+        iv: clone,
+        metadata: clone,
+    }
 }
 
 /// Update credential metadata and save fields in a single SQLite transaction.
@@ -222,37 +180,20 @@ pub fn update_with_fields(
         // -- 1. Update credential metadata --
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now.clone())];
 
-        push_field!(input.name, "name", sets, param_idx);
-        push_field!(input.service_type, "service_type", sets, param_idx);
-        push_field!(input.encrypted_data, "encrypted_data", sets, param_idx);
-        push_field!(input.iv, "iv", sets, param_idx);
-        push_field!(input.metadata, "metadata", sets, param_idx);
+        push_field_param!(input.name, "name", sets, param_idx, param_values, clone);
+        push_field_param!(input.service_type, "service_type", sets, param_idx, param_values, clone);
+        push_field_param!(input.encrypted_data, "encrypted_data", sets, param_idx, param_values, clone);
+        push_field_param!(input.iv, "iv", sets, param_idx, param_values, clone);
+        push_field_param!(input.metadata, "metadata", sets, param_idx, param_values, clone);
+        param_values.push(Box::new(id.to_string()));
 
         let sql = format!(
             "UPDATE persona_credentials SET {} WHERE id = ?{}",
             sets.join(", "),
             param_idx
         );
-
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now.clone())];
-
-        if let Some(ref v) = input.name {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.service_type {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.encrypted_data {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.iv {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.metadata {
-            param_values.push(Box::new(v.clone()));
-        }
-        param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
             param_values.iter().map(|p| p.as_ref()).collect();
@@ -490,6 +431,81 @@ pub fn patch_metadata_atomic(
     })
 }
 
+/// Atomically read the current `oauth_refresh_fail_count`, increment it,
+/// compute the backoff-until timestamp, and write both back — all inside a
+/// single SQLite transaction.  Returns `(new_fail_count, backoff_secs)`.
+pub fn increment_refresh_backoff_atomic(
+    pool: &DbPool,
+    id: &str,
+    backoff_steps: &[i64],
+) -> Result<(u64, i64), AppError> {
+    timed_query!("persona_credentials", "persona_credentials::increment_refresh_backoff_atomic", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
+
+        let current_raw: Option<String> = tx
+            .query_row(
+                "SELECT metadata FROM persona_credentials WHERE id = ?1",
+                params![id],
+                |row| row.get::<_, Option<String>>(0),
+            )
+            .optional()?
+            .flatten();
+
+        if current_raw.is_none() {
+            let exists: Option<String> = tx
+                .query_row(
+                    "SELECT id FROM persona_credentials WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            if exists.is_none() {
+                return Err(AppError::NotFound(format!("Credential {id}")));
+            }
+        }
+
+        let mut base_obj = current_raw
+            .as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .and_then(|v| v.as_object().cloned())
+            .unwrap_or_default();
+
+        let fail_count = base_obj
+            .get("oauth_refresh_fail_count")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+
+        let new_fail_count = fail_count + 1;
+        let step_idx = (fail_count as usize).min(backoff_steps.len() - 1);
+        let backoff_secs = backoff_steps[step_idx];
+        let backoff_until =
+            (chrono::Utc::now() + chrono::Duration::seconds(backoff_secs)).to_rfc3339();
+
+        base_obj.insert(
+            "oauth_refresh_fail_count".to_string(),
+            serde_json::json!(new_fail_count),
+        );
+        base_obj.insert(
+            "oauth_refresh_backoff_until".to_string(),
+            serde_json::json!(backoff_until),
+        );
+
+        let next_meta_json = serde_json::Value::Object(base_obj);
+        let next_meta_str = serde_json::to_string(&next_meta_json)?;
+        let sanitized_meta = sanitize_secrets(&next_meta_str);
+        let now = chrono::Utc::now().to_rfc3339();
+
+        tx.execute(
+            "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
+            params![sanitized_meta, now, id],
+        )?;
+
+        tx.commit()?;
+        Ok((new_fail_count, backoff_secs))
+    })
+}
+
 /// Atomically append a healthcheck entry to the metadata ring buffer.
 ///
 /// Performs the read-modify-write inside a single SQLite transaction to prevent
@@ -716,33 +732,19 @@ pub fn update_event(
 
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-        push_field!(input.name, "name", sets, param_idx);
-        push_field!(input.config, "config", sets, param_idx);
-        push_field!(input.enabled, "enabled", sets, param_idx);
-        push_field!(input.last_polled_at, "last_polled_at", sets, param_idx);
+        push_field_param!(input.name, "name", sets, param_idx, param_values, clone);
+        push_field_param!(input.config, "config", sets, param_idx, param_values, clone);
+        push_field_param!(input.enabled, "enabled", sets, param_idx, param_values, bool);
+        push_field_param!(input.last_polled_at, "last_polled_at", sets, param_idx, param_values, clone);
+        param_values.push(Box::new(id.to_string()));
 
         let sql = format!(
             "UPDATE credential_events SET {} WHERE id = ?{}",
             sets.join(", "),
             param_idx
         );
-
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-
-        if let Some(ref v) = input.name {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.config {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(v) = input.enabled {
-            param_values.push(Box::new(v as i32));
-        }
-        if let Some(ref v) = input.last_polled_at {
-            param_values.push(Box::new(v.clone()));
-        }
-        param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
             param_values.iter().map(|p| p.as_ref()).collect();
@@ -925,9 +927,26 @@ pub fn get_decrypted_fields(
                 "Failed to decrypt field '{}' of credential '{}': {}",
                 field.field_key, credential.name, e
             )))?;
-        result.insert(field.field_key.clone(), value);
+        let key = normalize_field_key(&field.field_key);
+        result.insert(key, value);
     }
     Ok(result)
+}
+
+/// Normalize legacy camelCase credential field keys to canonical snake_case.
+///
+/// This runs on every read so that any camelCase fields missed by the DB
+/// migration (e.g. created between migration and app restart) are
+/// transparently mapped.
+fn normalize_field_key(key: &str) -> String {
+    match key {
+        "refreshToken" => "refresh_token".to_string(),
+        "accessToken" => "access_token".to_string(),
+        "clientId" => "client_id".to_string(),
+        "clientSecret" => "client_secret".to_string(),
+        "tokenType" => "token_type".to_string(),
+        _ => key.to_string(),
+    }
 }
 
 /// Classify a credential field key into a type hint.

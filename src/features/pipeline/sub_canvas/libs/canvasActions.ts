@@ -40,6 +40,7 @@ export interface CanvasState {
   // Pipeline execution
   pipelineRunning: boolean;
   pipelineNodeStatuses: PipelineNodeStatus[];
+  pipelineCycleNodeIds: Set<string>;
 
   // Dry-run
   dryRunActive: boolean;
@@ -77,6 +78,7 @@ export type CanvasAction =
   | { type: 'SET_GHOST_NODE'; node: Node | null }
   | { type: 'SET_PIPELINE_RUNNING'; running: boolean }
   | { type: 'SET_PIPELINE_NODE_STATUSES'; statuses: PipelineNodeStatus[] }
+  | { type: 'SET_PIPELINE_CYCLE_NODE_IDS'; ids: Set<string> }
   | { type: 'SET_DRY_RUN_ACTIVE'; active: boolean }
   | { type: 'SET_DRY_RUN_STATE'; state: DryRunState | null }
   | { type: 'SET_ALIGNMENT_LINES'; lines: AlignmentLine[] }
@@ -105,6 +107,7 @@ export const initialCanvasState: CanvasState = {
   ghostNode: null,
   pipelineRunning: false,
   pipelineNodeStatuses: [],
+  pipelineCycleNodeIds: new Set(),
   dryRunActive: false,
   dryRunState: null,
   alignmentLines: [],
@@ -143,6 +146,8 @@ export function canvasReducer(state: CanvasState, action: CanvasAction): CanvasS
       return { ...state, pipelineRunning: action.running };
     case 'SET_PIPELINE_NODE_STATUSES':
       return { ...state, pipelineNodeStatuses: action.statuses };
+    case 'SET_PIPELINE_CYCLE_NODE_IDS':
+      return { ...state, pipelineCycleNodeIds: action.ids };
     case 'SET_DRY_RUN_ACTIVE':
       return { ...state, dryRunActive: action.active };
     case 'SET_DRY_RUN_STATE':
@@ -191,6 +196,7 @@ export function canvasReducer(state: CanvasState, action: CanvasAction): CanvasS
         ...state,
         pipelineRunning: false,
         pipelineNodeStatuses: [],
+        pipelineCycleNodeIds: new Set(),
         dryRunActive: false,
         dryRunState: null,
         dismissedSuggestionIds: new Set(),

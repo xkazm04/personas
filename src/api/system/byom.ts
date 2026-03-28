@@ -8,7 +8,9 @@ import type { ProviderAuditEntry } from "@/lib/bindings/ProviderAuditEntry";
 import type { ProviderUsageStats } from "@/lib/bindings/ProviderUsageStats";
 import type { ProviderUsageTimeseries } from "@/lib/bindings/ProviderUsageTimeseries";
 import type { ProviderConnectionResult } from "@/lib/bindings/ProviderConnectionResult";
-export type { TaskComplexity, RoutingRule, ComplianceRule, ByomPolicy, ProviderAuditEntry, ProviderUsageStats, ProviderUsageTimeseries, ProviderConnectionResult };
+import type { PolicyWarning as RustPolicyWarning } from "@/lib/bindings/PolicyWarning";
+import type { PolicyWarningSeverity } from "@/lib/bindings/PolicyWarningSeverity";
+export type { TaskComplexity, RoutingRule, ComplianceRule, ByomPolicy, ProviderAuditEntry, ProviderUsageStats, ProviderUsageTimeseries, ProviderConnectionResult, RustPolicyWarning, PolicyWarningSeverity };
 
 // ============================================================================
 // BYOM Policy API
@@ -21,7 +23,7 @@ export const setByomPolicy = (policy: ByomPolicy) =>
   invoke<void>("set_byom_policy", { policy });
 
 export const validateByomPolicy = (policy: ByomPolicy) =>
-  invoke<string[]>("validate_byom_policy", { policy });
+  invoke<RustPolicyWarning[]>("validate_byom_policy", { policy });
 
 export const deleteByomPolicy = () =>
   invoke<void>("delete_byom_policy");

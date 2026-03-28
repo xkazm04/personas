@@ -7,6 +7,22 @@ use ts_rs::TS;
 
 use crate::error::AppError;
 
+/// Validate that an n8n workflow ID is safe to interpolate into URL paths.
+/// n8n IDs are alphanumeric (typically numeric, but cloud instances may use
+/// short alphanumeric strings). Reject anything containing path separators,
+/// query strings, or other characters that could alter the target endpoint.
+fn validate_workflow_id(id: &str) -> Result<(), AppError> {
+    if id.is_empty() {
+        return Err(AppError::Validation("Workflow ID must not be empty".into()));
+    }
+    if !id.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err(AppError::Validation(format!(
+            "Invalid workflow ID '{id}': must be alphanumeric"
+        )));
+    }
+    Ok(())
+}
+
 /// Lightweight n8n API client for managing workflows.
 pub struct N8nClient {
     base_url: String,
@@ -115,6 +131,7 @@ impl N8nClient {
     /// Get a single workflow by ID.
     #[allow(dead_code)]
     pub async fn get_workflow(&self, id: &str) -> Result<Value, AppError> {
+        validate_workflow_id(id)?;
         let url = format!("{}/api/v1/workflows/{}", self.base_url, id);
         let resp = self
             .http
@@ -187,13 +204,26 @@ impl N8nClient {
 
         let resp = Self::check_response(resp, "n8n webhook").await?;
 
-        resp.json::<Value>()
+        let raw = resp
+            .text()
             .await
-            .or_else(|_| Ok(Value::Null))
+            .map_err(|e| AppError::Execution(format!("Failed to read webhook response body: {e}")))?;
+
+        if raw.is_empty() {
+            return Ok(Value::Null);
+        }
+
+        serde_json::from_str::<Value>(&raw).map_err(|e| {
+            let preview: String = raw.chars().take(200).collect();
+            AppError::Execution(format!(
+                "Webhook returned non-JSON response: {e}. Body preview: {preview}"
+            ))
+        })
     }
 
     /// Internal helper to PATCH workflow active state.
     async fn set_workflow_active(&self, id: &str, active: bool) -> Result<N8nActivateResult, AppError> {
+        validate_workflow_id(id)?;
         let url = format!("{}/api/v1/workflows/{}", self.base_url, id);
         let resp = self
             .http

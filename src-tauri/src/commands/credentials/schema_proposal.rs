@@ -57,6 +57,7 @@ pub async fn start_schema_proposal(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     proposal_id: String,
+    credential_id: String,
     template_name: String,
     template_context: String,
     existing_tables: Vec<String>,
@@ -82,6 +83,7 @@ pub async fn start_schema_proposal(
             pool,
             user_db,
             proposal_id,
+            credential_id,
             template_name,
             template_context,
             existing_tables,
@@ -194,6 +196,7 @@ struct RunParams {
     pool: crate::db::DbPool,
     user_db: crate::db::UserDbPool,
     proposal_id: String,
+    credential_id: String,
     template_name: String,
     template_context: String,
     existing_tables: Vec<String>,
@@ -207,6 +210,7 @@ async fn run_schema_proposal(params: RunParams) {
         pool,
         user_db,
         proposal_id,
+        credential_id,
         template_name,
         template_context,
         existing_tables,
@@ -217,7 +221,7 @@ async fn run_schema_proposal(params: RunParams) {
     emit_line(&app, &proposal_id, "> Starting schema proposal...");
 
     // Build schema context from existing tables
-    let schema_context = ai_helpers::build_schema_context(&pool, "personas_database", Some(&user_db)).await;
+    let schema_context = ai_helpers::build_schema_context(&pool, &credential_id, Some(&user_db)).await;
 
     if cancel_token.is_cancelled() {
         emit_line(&app, &proposal_id, "> Cancelled.");

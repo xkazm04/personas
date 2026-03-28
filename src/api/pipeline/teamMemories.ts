@@ -52,11 +52,12 @@ export const updateTeamMemoryImportance = (id: string, importance: number) =>
 export const batchDeleteTeamMemories = (ids: string[]) =>
   invoke<number>("batch_delete_team_memories", { ids });
 
-export const getTeamMemoryCount = (teamId: string, runId?: string, category?: string) =>
+export const getTeamMemoryCount = (teamId: string, runId?: string, category?: string, search?: string) =>
   invoke<number>("get_team_memory_count", {
     teamId,
     runId: runId,
     category: category,
+    search: search,
   });
 
 export const getTeamMemoryStats = (teamId: string, category?: string, search?: string) =>
@@ -68,3 +69,6 @@ export const getTeamMemoryStats = (teamId: string, category?: string, search?: s
 
 export const listTeamMemoriesByRun = (runId: string) =>
   invoke<TeamMemory[]>("list_team_memories_by_run", { runId });
+
+export const evictTeamMemories = (teamId: string, maxMemories?: number) =>
+  invoke<number>("evict_team_memories", { teamId, maxMemories });

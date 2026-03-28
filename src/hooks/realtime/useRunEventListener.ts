@@ -55,7 +55,6 @@ export interface RunEventBinding<T extends RunStatusPayload = RunStatusPayload> 
  */
 export function useRunEventListener<T extends RunStatusPayload = RunStatusPayload>(
   bindings: RunEventBinding<T>[],
-  deps: unknown[] = [],
 ) {
   const unlistenRef = useRef<UnlistenFn[]>([]);
 
@@ -97,5 +96,9 @@ export function useRunEventListener<T extends RunStatusPayload = RunStatusPayloa
       unlistenRef.current.forEach((fn) => fn());
       unlistenRef.current = [];
     };
-  }, deps);
+    // bindings should be memoized by callers (e.g. via useMemo) to avoid
+    // listener churn. We use bindings directly so the effect re-subscribes
+    // only when the memoized array changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bindings]);
 }

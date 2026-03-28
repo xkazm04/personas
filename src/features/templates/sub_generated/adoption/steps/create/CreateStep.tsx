@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Wrench, Workflow } from 'lucide-react';
 import { extractProtocolCapabilities } from '@/features/templates/sub_n8n/edit/protocolParser';
 import { useAdoptionWizard } from '../../AdoptionWizardContext';
@@ -30,6 +30,14 @@ export function CreateStep() {
 
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
+  const mountedRef = useRef(true);
+  const [resetting, setResetting] = useState(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   const {
     draft,
     created,
@@ -43,7 +51,20 @@ export function CreateStep() {
   } = state;
 
   const onToggleEditInline = wizard.toggleEditInline;
-  const onReset = async () => { await cleanupAll(); wizard.reset(); };
+  const onReset = useCallback(async () => {
+    if (resetting) return;
+    setResetting(true);
+    try {
+      await cleanupAll();
+      if (mountedRef.current) {
+        wizard.reset();
+      }
+    } finally {
+      if (mountedRef.current) {
+        setResetting(false);
+      }
+    }
+  }, [resetting, cleanupAll, wizard]);
   const onDraftUpdated = wizard.draftUpdated;
   const onJsonEdited = wizard.draftJsonEdited;
   const onAdjustmentChange = wizard.setAdjustment;

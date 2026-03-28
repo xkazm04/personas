@@ -337,35 +337,128 @@ pub fn create_version(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn accept_version(
+    pool: &DbPool,
+    recipe_id: &str,
+    prompt_template: &str,
+    input_schema: Option<&str>,
+    sample_inputs: Option<&str>,
+    description: Option<&str>,
+    changes_summary: Option<&str>,
+) -> Result<RecipeDefinition, AppError> {
+    timed_query!("recipes", "recipes::accept_version", {
+        let conn = pool.get()?;
+        let tx = conn.unchecked_transaction()?;
+
+        // 1. Get latest version number
+        let latest: i64 = tx.query_row(
+            "SELECT COALESCE(MAX(version_number), 0) FROM recipe_versions WHERE recipe_id = ?1",
+            [recipe_id],
+            |row| row.get(0),
+        )?;
+
+        // 2. If no versions exist yet, snapshot the current recipe as v1
+        if latest == 0 {
+            let current = tx.query_row(
+                "SELECT * FROM recipe_definitions WHERE id = ?1",
+                params![recipe_id],
+                row_to_recipe,
+            ).map_err(|_| AppError::NotFound(format!("Recipe {recipe_id} not found")))?;
+
+            let snapshot_id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            tx.execute(
+                "INSERT INTO recipe_versions (id, recipe_id, version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                rusqlite::params![
+                    snapshot_id, recipe_id, 1,
+                    current.prompt_template, current.input_schema,
+                    current.sample_inputs, current.description,
+                    "Initial version (snapshot before first edit)", now,
+                ],
+            )?;
+        }
+
+        let new_version_number = if latest == 0 { 2 } else { latest + 1 };
+
+        // 3. Create the new version record
+        let version_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        tx.execute(
+            "INSERT INTO recipe_versions (id, recipe_id, version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            rusqlite::params![version_id, recipe_id, new_version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, now],
+        )?;
+
+        // 4. Update the recipe definition with the new data
+        let now = chrono::Utc::now().to_rfc3339();
+        tx.execute(
+            "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, updated_at = ?4 WHERE id = ?5",
+            rusqlite::params![prompt_template, input_schema, sample_inputs, now, recipe_id],
+        )?;
+
+        tx.commit()?;
+
+        get_by_id(pool, recipe_id)
+
+    })
+}
+
 pub fn revert_to_version(pool: &DbPool, recipe_id: &str, version_id: &str) -> Result<RecipeDefinition, AppError> {
     timed_query!("recipes", "recipes::revert_to_version", {
         let conn = pool.get()?;
-        let version = conn.query_row(
+        let tx = conn.unchecked_transaction()?;
+
+        // 1. Read the target version
+        let version = tx.query_row(
             "SELECT * FROM recipe_versions WHERE id = ?1 AND recipe_id = ?2",
             rusqlite::params![version_id, recipe_id],
             row_to_version,
         ).map_err(|_| AppError::NotFound(format!("Version {version_id} not found")))?;
 
-        // Snapshot the current recipe state before overwriting so the user can recover it
-        let current = get_by_id(pool, recipe_id)?;
-        let latest = get_latest_version_number(pool, recipe_id)?;
+        // 2. Read the current recipe state
+        let current = tx.query_row(
+            "SELECT * FROM recipe_definitions WHERE id = ?1",
+            params![recipe_id],
+            row_to_recipe,
+        ).map_err(|_| AppError::NotFound(format!("Recipe {recipe_id} not found")))?;
+
+        // 3. Get latest version number
+        let latest: i64 = tx.query_row(
+            "SELECT COALESCE(MAX(version_number), 0) FROM recipe_versions WHERE recipe_id = ?1",
+            [recipe_id],
+            |row| row.get(0),
+        )?;
         let snapshot_version = if latest == 0 { 1 } else { latest + 1 };
-        create_version(
-            pool,
-            recipe_id,
-            snapshot_version,
-            &current.prompt_template,
-            current.input_schema.as_deref(),
-            current.sample_inputs.as_deref(),
-            current.description.as_deref(),
-            Some(&format!("Snapshot before revert to v{}", version.version_number)),
+
+        // 4. Snapshot the current recipe state before overwriting so the user can recover it
+        let snapshot_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        tx.execute(
+            "INSERT INTO recipe_versions (id, recipe_id, version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            rusqlite::params![
+                snapshot_id,
+                recipe_id,
+                snapshot_version,
+                current.prompt_template,
+                current.input_schema,
+                current.sample_inputs,
+                current.description,
+                format!("Snapshot before revert to v{}", version.version_number),
+                now,
+            ],
         )?;
 
+        // 5. Update the recipe definition to the target version
         let now = chrono::Utc::now().to_rfc3339();
-        conn.execute(
+        tx.execute(
             "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, updated_at = ?4 WHERE id = ?5",
             rusqlite::params![version.prompt_template, version.input_schema, version.sample_inputs, now, recipe_id],
         )?;
+
+        tx.commit()?;
 
         get_by_id(pool, recipe_id)
 

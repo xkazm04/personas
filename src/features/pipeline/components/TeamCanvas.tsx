@@ -50,6 +50,7 @@ export default function TeamCanvas() {
     analytics: cs.analytics,
     dismissedSuggestionIds: cs.dismissedSuggestionIds,
     dryRunState: cs.dryRunState,
+    pipelineCycleNodeIds: cs.pipelineCycleNodeIds,
     snapToGrid,
   });
 

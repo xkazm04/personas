@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Users, Zap } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { usePipelineStore } from "@/stores/pipelineStore";
-import { getTeamCounts, updateTeam } from "@/api/pipeline/teams";
+import { updateTeam } from "@/api/pipeline/teams";
 
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { serializeTeamConfig } from '@/lib/types/teamConfigTypes';
@@ -25,7 +25,6 @@ export default function TeamList() {
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
-  const [teamCounts, setTeamCounts] = useState<Record<string, { members: number; connections: number }>>({});
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showAutoTeam, setShowAutoTeam] = useState(false);
 
@@ -36,21 +35,7 @@ export default function TeamList() {
     return () => clearTimeout(timer);
   }, [confirmDeleteId]);
 
-  const fetchCounts = useCallback(async () => {
-    try {
-      const counts = await getTeamCounts();
-      const map: Record<string, { members: number; connections: number }> = {};
-      for (const c of counts) {
-        map[c.team_id] = { members: c.member_count, connections: c.connection_count };
-      }
-      setTeamCounts(map);
-    } catch {
-      // intentional: non-critical
-    }
-  }, []);
-
   useEffect(() => { fetchTeams(); }, [fetchTeams]);
-  useEffect(() => { if (teams.length > 0) fetchCounts(); }, [teams, fetchCounts]);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -143,7 +128,6 @@ export default function TeamList() {
               key={team.id}
               team={team}
               parentTeamName={team.parent_team_id ? (teams.find(t => t.id === team.parent_team_id)?.name ?? null) : null}
-              teamCounts={teamCounts}
               confirmDeleteId={confirmDeleteId}
               onSelect={selectTeam}
               onClone={cloneTeam}

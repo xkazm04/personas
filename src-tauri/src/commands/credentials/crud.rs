@@ -157,10 +157,15 @@ pub fn delete_credential(
     id: String,
 ) -> Result<bool, AppError> {
     require_privileged_sync(&state, "delete_credential")?;
-    // Capture name before deletion for audit trail
-    let name = repo::get_by_id(&state.db, &id)
-        .map(|c| c.name)
-        .unwrap_or_else(|_| id.clone());
+    // Capture name before deletion for audit trail.
+    // NotFound means the credential is already gone — skip silently.
+    // Any other DB error (locked, pool exhausted) must propagate so we
+    // never record a raw UUID in the audit log.
+    let name = match repo::get_by_id(&state.db, &id) {
+        Ok(c) => c.name,
+        Err(AppError::NotFound(_)) => return Ok(false),
+        Err(e) => return Err(e),
+    };
     let result = repo::delete(&state.db, &id)?;
     if result {
         audit_log::insert_warn(&state.db, &id, &name, "delete", None);

@@ -5,6 +5,8 @@ use std::path::PathBuf;
 pub struct ExecutionLogger {
     writer: Option<BufWriter<std::fs::File>>,
     path: PathBuf,
+    /// Set to `true` after the first I/O error so callers know the log may be incomplete.
+    write_failed: bool,
 }
 
 impl ExecutionLogger {
@@ -18,13 +20,19 @@ impl ExecutionLogger {
         Ok(Self {
             writer: Some(BufWriter::new(file)),
             path,
+            write_failed: false,
         })
     }
 
     pub fn log(&mut self, msg: &str) {
         if let Some(ref mut w) = self.writer {
             let timestamp = chrono::Utc::now().to_rfc3339();
-            let _ = writeln!(w, "[{timestamp}] {msg}");
+            if let Err(e) = writeln!(w, "[{timestamp}] {msg}") {
+                if !self.write_failed {
+                    self.write_failed = true;
+                    eprintln!("[ExecutionLogger] write error (log may be truncated): {e}");
+                }
+            }
         }
     }
 
@@ -32,9 +40,29 @@ impl ExecutionLogger {
         &self.path
     }
 
+    /// Returns `true` if any write or flush error occurred during the logger's lifetime.
+    pub fn had_write_errors(&self) -> bool {
+        self.write_failed
+    }
+
     pub fn close(&mut self) {
         if let Some(w) = self.writer.take() {
-            let _ = w.into_inner().map(|mut f| f.flush());
+            match w.into_inner() {
+                Ok(mut f) => {
+                    if let Err(e) = f.flush() {
+                        if !self.write_failed {
+                            self.write_failed = true;
+                            eprintln!("[ExecutionLogger] flush error on close: {e}");
+                        }
+                    }
+                }
+                Err(e) => {
+                    if !self.write_failed {
+                        self.write_failed = true;
+                        eprintln!("[ExecutionLogger] buffer flush error on close: {e}");
+                    }
+                }
+            }
         }
     }
 }

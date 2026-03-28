@@ -482,12 +482,13 @@ fn detect_chart_anomalies(points: &[MetricsChartPoint]) -> Vec<MetricAnomaly> {
 #[allow(clippy::type_complexity)]
 fn detect_anomalies(
     daily_points: &[PromptPerformancePoint],
-    worst_exec_by_date: &HashMap<String, (String, f64)>,
+    worst_cost_by_date: &HashMap<String, (String, f64)>,
+    worst_duration_by_date: &HashMap<String, (String, f64)>,
 ) -> Vec<MetricAnomaly> {
     let mut anomalies = Vec::new();
     let window = 5;
 
-    // Check cost and error_rate
+    // Check cost, error_rate, and latency
     let metrics: Vec<(&str, Box<dyn Fn(&PromptPerformancePoint) -> f64>)> = vec![
         ("cost", Box::new(|p: &PromptPerformancePoint| p.avg_cost_usd)),
         ("error_rate", Box::new(|p: &PromptPerformancePoint| p.error_rate)),
@@ -495,6 +496,13 @@ fn detect_anomalies(
     ];
 
     for (metric_name, extract) in &metrics {
+        // Pick the appropriate worst-exec map for this metric
+        let worst_map = match *metric_name {
+            "latency" => worst_duration_by_date,
+            // cost and error_rate both link to the most expensive execution
+            _ => worst_cost_by_date,
+        };
+
         for i in 0..daily_points.len() {
             let value = extract(&daily_points[i]);
             if value == 0.0 {
@@ -516,7 +524,7 @@ fn detect_anomalies(
 
             // Flag if deviation > 100% (2x baseline)
             if deviation_pct > 100.0 {
-                let exec_id = worst_exec_by_date
+                let exec_id = worst_map
                     .get(&daily_points[i].date)
                     .map(|(id, _)| id.clone());
 
@@ -590,14 +598,22 @@ pub fn get_prompt_performance(
             .push(row);
     }
 
-    // Track the worst (most expensive) execution per date for anomaly linking
-    let mut worst_exec_by_date: HashMap<String, (String, f64)> = HashMap::new();
+    // Track worst execution per date per metric for accurate anomaly linking
+    let mut worst_cost_by_date: HashMap<String, (String, f64)> = HashMap::new();
+    let mut worst_duration_by_date: HashMap<String, (String, f64)> = HashMap::new();
     for row in &rows {
-        let entry = worst_exec_by_date
+        let cost_entry = worst_cost_by_date
             .entry(row.date.clone())
             .or_insert_with(|| (row.id.clone(), row.cost_usd));
-        if row.cost_usd > entry.1 || row.duration_ms > entry.1 {
-            *entry = (row.id.clone(), row.cost_usd.max(row.duration_ms));
+        if row.cost_usd > cost_entry.1 {
+            *cost_entry = (row.id.clone(), row.cost_usd);
+        }
+
+        let dur_entry = worst_duration_by_date
+            .entry(row.date.clone())
+            .or_insert_with(|| (row.id.clone(), row.duration_ms));
+        if row.duration_ms > dur_entry.1 {
+            *dur_entry = (row.id.clone(), row.duration_ms);
         }
     }
 
@@ -659,7 +675,7 @@ pub fn get_prompt_performance(
         .collect();
 
     // 5) Detect anomalies
-    let anomalies = detect_anomalies(&daily_points, &worst_exec_by_date);
+    let anomalies = detect_anomalies(&daily_points, &worst_cost_by_date, &worst_duration_by_date);
 
     info!(
         duration_ms = start.elapsed().as_millis() as u64,

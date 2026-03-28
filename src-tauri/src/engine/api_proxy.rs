@@ -9,13 +9,14 @@
 //! rates) via an in-memory ring buffer, exposed through
 //! [`get_all_proxy_metrics`].
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::LazyLock;
 use std::time::Instant;
 
 use tokio::sync::Mutex;
 use ts_rs::TS;
 
+use crate::db::models::ConnectorDefinition;
 use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as cred_repo;
@@ -24,6 +25,43 @@ use crate::error::AppError;
 
 use super::connector_strategy;
 use super::healthcheck::{validate_field_values, validate_healthcheck_url};
+
+// ---------------------------------------------------------------------------
+// Connector list cache (avoids hitting DB on every proxied request)
+// ---------------------------------------------------------------------------
+
+/// TTL for the cached connector list (seconds).
+const CONNECTOR_CACHE_TTL_SECS: f64 = 30.0;
+
+struct ConnectorCache {
+    connectors: Vec<ConnectorDefinition>,
+    fetched_at: Instant,
+}
+
+static CONNECTOR_CACHE: LazyLock<std::sync::Mutex<Option<ConnectorCache>>> =
+    LazyLock::new(|| std::sync::Mutex::new(None));
+
+/// Return the full connector list, reusing a cached copy when fresh.
+fn get_all_connectors_cached(pool: &DbPool) -> Result<Vec<ConnectorDefinition>, AppError> {
+    let mut cache = CONNECTOR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(ref entry) = *cache {
+        if entry.fetched_at.elapsed().as_secs_f64() < CONNECTOR_CACHE_TTL_SECS {
+            return Ok(entry.connectors.clone());
+        }
+    }
+    let connectors = connector_repo::get_all(pool)?;
+    *cache = Some(ConnectorCache {
+        connectors: connectors.clone(),
+        fetched_at: Instant::now(),
+    });
+    Ok(connectors)
+}
+
+/// Invalidate the connector cache (call after connector CRUD operations).
+pub fn invalidate_connector_cache() {
+    let mut cache = CONNECTOR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+    *cache = None;
+}
 
 // ---------------------------------------------------------------------------
 // Per-credential token-bucket rate limiter
@@ -189,23 +227,23 @@ struct MetricsEntry {
 
 /// Per-credential ring buffer of recent request outcomes.
 struct CredentialMetricsBuffer {
-    entries: Vec<MetricsEntry>,
+    entries: VecDeque<MetricsEntry>,
     service_type: String,
 }
 
 impl CredentialMetricsBuffer {
     fn new(service_type: String) -> Self {
         Self {
-            entries: Vec::with_capacity(METRICS_RING_BUFFER_SIZE),
+            entries: VecDeque::with_capacity(METRICS_RING_BUFFER_SIZE),
             service_type,
         }
     }
 
     fn push(&mut self, entry: MetricsEntry) {
         if self.entries.len() >= METRICS_RING_BUFFER_SIZE {
-            self.entries.remove(0);
+            self.entries.pop_front();
         }
-        self.entries.push(entry);
+        self.entries.push_back(entry);
     }
 }
 
@@ -503,8 +541,8 @@ pub async fn execute_api_request(
     validate_field_values(&fields)?;
     validate_healthcheck_url(&full_url)?;
 
-    // Resolve auth via connector strategy
-    let connectors = connector_repo::get_all(pool)?;
+    // Resolve auth via connector strategy (uses short-lived cache to avoid DB hit per request)
+    let connectors = get_all_connectors_cached(pool)?;
     let connector = connectors
         .iter()
         .find(|c| c.name == credential.service_type);
@@ -617,14 +655,7 @@ pub async fn execute_api_request(
         body_buf.extend_from_slice(&chunk);
     }
 
-    let body = if truncated {
-        format!(
-            "[Response truncated: exceeded {} byte limit]",
-            MAX_RESPONSE_BODY_BYTES
-        )
-    } else {
-        String::from_utf8_lossy(&body_buf).to_string()
-    };
+    let body = String::from_utf8_lossy(&body_buf).to_string();
 
     // Record aggregate metrics for this credential
     record_metric(credential_id, &credential.service_type, status, duration_ms).await;
@@ -635,7 +666,7 @@ pub async fn execute_api_request(
         headers: resp_headers,
         body,
         duration_ms,
-        content_type: if truncated { Some("text/plain".to_string()) } else { content_type },
+        content_type,
         truncated,
     })
 }

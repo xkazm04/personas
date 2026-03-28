@@ -9,6 +9,9 @@ import { useToastStore } from '@/stores/toastStore';
  * Listens for Tauri `healing-event` events and dispatches healing toasts
  * into the unified toast store, which renders them in the consolidated
  * ToastContainer (bottom-right).
+ *
+ * Also listens for `healing-issue-updated` events to selectively re-fetch
+ * the affected issue instead of polling the full list.
  */
 
 interface HealingEventPayload {
@@ -30,7 +33,24 @@ interface HealingEventPayload {
 
 export function HealingToast() {
   const fetchHealingIssues = useOverviewStore((s) => s.fetchHealingIssues);
+  const subscribeHealingEvents = useOverviewStore((s) => s.subscribeHealingEvents);
 
+  // Subscribe to healing-issue-updated for selective re-fetch
+  useEffect(() => {
+    let unlistenFn: (() => void) | null = null;
+    let cancelled = false;
+
+    subscribeHealingEvents().then((fn) => {
+      if (cancelled) { fn(); } else { unlistenFn = fn; }
+    });
+
+    return () => {
+      cancelled = true;
+      unlistenFn?.();
+    };
+  }, [subscribeHealingEvents]);
+
+  // Subscribe to healing-event for toast notifications
   useEffect(() => {
     let cancelled = false;
     let unlistenFn: (() => void) | null = null;

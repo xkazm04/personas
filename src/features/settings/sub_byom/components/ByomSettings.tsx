@@ -64,8 +64,12 @@ export default function ByomSettings() {
             </button>
             <button
               onClick={bm.handleSave}
+              disabled={bm.hasBlockingErrors}
+              title={bm.hasBlockingErrors ? 'Fix all errors before saving' : undefined}
               className={`px-3 py-1.5 text-sm rounded-xl border transition-colors ${
-                bm.isDirty
+                bm.hasBlockingErrors
+                  ? 'bg-red-500/15 text-red-400/60 border-red-500/30 cursor-not-allowed'
+                  : bm.isDirty
                   ? 'bg-primary/25 text-primary border-primary/40 hover:bg-primary/35'
                   : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'
               }`}

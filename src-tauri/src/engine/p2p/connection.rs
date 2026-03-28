@@ -142,7 +142,16 @@ impl ConnectionManager {
     }
 
     /// Connect to a peer by peer_id (looks up address from discovered_peers).
-    pub async fn connect_to_peer(&self, peer_id: &str) -> Result<(), AppError> {
+    ///
+    /// After the QUIC handshake completes, spawns an inbound dispatch loop so
+    /// the remote peer can send Pings, ManifestRequests, and AgentMessages
+    /// back through this connection (QUIC connections are bidirectional).
+    pub async fn connect_to_peer(
+        &self,
+        peer_id: &str,
+        manifest_sync: Arc<ManifestSync>,
+        messages: Arc<MessageRouter>,
+    ) -> Result<(), AppError> {
         // Don't connect to ourselves
         if peer_id == self.local_peer_id {
             return Err(AppError::Validation("Cannot connect to self".into()));
@@ -174,7 +183,9 @@ impl ConnectionManager {
             }
         }
 
-        let result = self.connect_to_peer_inner(peer_id).await;
+        let result = self
+            .connect_to_peer_inner(peer_id, manifest_sync, messages)
+            .await;
 
         // Always remove from connecting set
         self.connecting.lock().await.remove(peer_id);
@@ -183,7 +194,12 @@ impl ConnectionManager {
     }
 
     /// Inner connection logic, separated so `connect_to_peer` can manage the connecting guard.
-    async fn connect_to_peer_inner(&self, peer_id: &str) -> Result<(), AppError> {
+    async fn connect_to_peer_inner(
+        &self,
+        peer_id: &str,
+        manifest_sync: Arc<ManifestSync>,
+        messages: Arc<MessageRouter>,
+    ) -> Result<(), AppError> {
         self.metrics.connection_attempts.fetch_add(1, Ordering::Relaxed);
         let connect_start = std::time::Instant::now();
 
@@ -250,6 +266,9 @@ impl ConnectionManager {
             )));
         }
 
+        // Clone the connection handle for the dispatch loop before moving into storage.
+        let dispatch_conn = quinn_conn.clone();
+
         // Store the connection
         let conn = PeerConnection {
             info: PeerConnectionInfo {
@@ -281,6 +300,11 @@ impl ConnectionManager {
         self.update_connection_status(peer_id, true)?;
 
         tracing::info!(peer_id = %peer_id, connect_duration_ms = connect_duration_ms, "Connected to peer");
+
+        // Spawn inbound dispatch loop so the remote peer can send Pings,
+        // ManifestRequests, and AgentMessages back through this connection.
+        Self::spawn_inbound_dispatch(dispatch_conn, peer_id.to_string(), manifest_sync, messages);
+
         Ok(())
     }
 

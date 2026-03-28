@@ -240,16 +240,31 @@ impl GitLabClient {
         self.send_ok(req).await
     }
 
-    /// Create or update a CI/CD variable (upsert). Tries create first; on conflict, updates.
+    /// Create or update a CI/CD variable (upsert). Tries create first; on 409 conflict, updates.
+    /// Non-conflict errors (network, auth, rate limit) are returned immediately.
     pub async fn upsert_variable(
         &self,
         project_id: i64,
         variable: &GitLabVariable,
     ) -> Result<(), AppError> {
-        match self.create_variable(project_id, variable).await {
-            Ok(()) => Ok(()),
-            Err(_) => self.update_variable(project_id, variable).await,
+        let path = format!("/projects/{project_id}/variables");
+        let req = self.authed(reqwest::Method::POST, &path).json(variable);
+        let resp = req.send().await.map_err(gitlab_err)?;
+        let status = resp.status();
+
+        if status.is_success() {
+            return Ok(());
         }
+
+        // Only fall back to update on 409 Conflict (variable already exists)
+        if status == reqwest::StatusCode::CONFLICT {
+            return self.update_variable(project_id, variable).await;
+        }
+
+        let body = resp.text().await.unwrap_or_default();
+        Err(AppError::GitLab(format!(
+            "GitLab API error ({status}): {body}"
+        )))
     }
 
     /// `DELETE /api/v4/projects/:id/variables/:key` -- remove a CI/CD variable.

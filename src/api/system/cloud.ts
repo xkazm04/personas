@@ -71,6 +71,9 @@ export const cloudOAuthDisconnect = () =>
 export const cloudDeployPersona = (personaId: string, maxMonthlyBudgetUsd?: number) =>
   invoke<CloudDeployment>("cloud_deploy_persona", { personaId, maxMonthlyBudgetUsd: maxMonthlyBudgetUsd });
 
+export const cloudSyncPersona = (personaId: string) =>
+  invoke<void>("cloud_sync_persona", { personaId });
+
 export const cloudListDeployments = () =>
   invoke<CloudDeployment[]>("cloud_list_deployments");
 
@@ -171,19 +174,8 @@ export const cloudWebhookRelayStatus = () =>
   invoke<CloudWebhookRelayStatus>("cloud_webhook_relay_status");
 
 // ============================================================================
-// Smee.io Webhook Relay
+// Smee Relay Management
 // ============================================================================
-
-export const smeeGetChannelUrl = () =>
-  invoke<string | null>("smee_get_channel_url");
-
-export const smeeSetChannelUrl = (url: string) =>
-  invoke<void>("smee_set_channel_url", { url });
-
-export const smeeDisconnect = () =>
-  invoke<void>("smee_disconnect");
-
-// -- Smee Relay Management --------------------------------------------------
 
 export interface SmeeRelay {
   id: string;

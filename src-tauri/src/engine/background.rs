@@ -353,6 +353,7 @@ pub fn start_loops(
     rate_limiter: Arc<super::rate_limiter::RateLimiter>,
     tier_config: Arc<std::sync::Mutex<super::tier::TierConfig>>,
     cloud_client: Arc<tokio::sync::Mutex<Option<Arc<crate::cloud::client::CloudClient>>>>,
+    cloud_webhook_relay_state: Arc<tokio::sync::Mutex<super::cloud_webhook_relay::CloudWebhookRelayState>>,
     #[cfg(feature = "desktop")]
     ambient_ctx: super::ambient_context::AmbientContextHandle,
     #[cfg(feature = "desktop")]
@@ -409,9 +410,7 @@ pub fn start_loops(
             cloud_client,
             pool: pool.clone(),
             app: app.clone(),
-            state: Arc::new(tokio::sync::Mutex::new(
-                super::cloud_webhook_relay::CloudWebhookRelayState::load_from_db(&pool),
-            )),
+            state: cloud_webhook_relay_state,
         }),
     ];
 
@@ -984,6 +983,16 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         Ok(n) if n > 0 => tracing::info!("Cleaned up {} old credential audit log entries (retention=90d)", n),
         Ok(_) => {}
         Err(e) => tracing::error!("Credential audit log cleanup error: {}", e),
+    }
+
+    // Stale automation runs: reap runs stuck in 'running' beyond 2× timeout
+    {
+        use crate::db::repos::resources::automations as auto_repo;
+        match auto_repo::reap_stale_runs(pool) {
+            Ok(n) if n > 0 => tracing::warn!("Reaped {} stale automation run(s) stuck in running", n),
+            Ok(_) => {}
+            Err(e) => tracing::error!("Stale automation run reaper error: {}", e),
+        }
     }
 
     // Execution log: configurable retention (default 60 days / 2 months), keep at least 50 per persona

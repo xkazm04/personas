@@ -7,8 +7,8 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
-  PanelLeft, PanelLeftClose, RotateCcw, Trash2, Zap, Play,
-  Link2, X, LayoutGrid, StickyNote, Sparkles, FlaskConical,
+  Trash2, Zap, Play,
+  Link2, X,
 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { listAllTriggers, createTrigger, deleteTrigger, updateTrigger } from '@/api/pipeline/triggers';
@@ -21,8 +21,8 @@ import { PersonaConsumerNode } from './nodes/PersonaConsumerNode';
 import { StickyNoteNode, type StickyNoteCategory } from './nodes/StickyNoteNode';
 import { EventEdge, type EventEdgeData } from './edges/EventEdge';
 import { EdgeTooltip } from './edges/EdgeTooltip';
-import { SystemEventsToolbar } from './palettes/EventSourcePalette';
 import { PersonaPalette } from './palettes/PersonaPalette';
+import { EventCanvasToolbar } from './EventCanvasToolbar';
 import { useEventCanvasState } from './hooks/useEventCanvasState';
 import { useEventDryRun } from './hooks/useEventDryRun';
 import { EventDryRunBar } from './debugger/EventDryRunBar';
@@ -256,42 +256,20 @@ function EventCanvasInner({ allTriggers: initialTriggers }: Props) {
       )}
 
       <div className="flex-1 relative z-10">
-        {/* Toolbar with labels */}
-        <div className="absolute top-2 left-2 z-30 flex items-center gap-1 flex-wrap">
-          <button onClick={() => dispatch({ type: 'TOGGLE_PALETTE' })} className="p-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors" title={cs.paletteCollapsed ? 'Show sidebar' : 'Hide sidebar'}>
-            {cs.paletteCollapsed ? <PanelLeft className="w-3.5 h-3.5 text-muted-foreground" /> : <PanelLeftClose className="w-3.5 h-3.5 text-muted-foreground" />}
-          </button>
-
-          <button onClick={() => void loadCanvas()} className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground" title="Refresh">
-            <RotateCcw className="w-3.5 h-3.5" /><span className="text-[10px]">Refresh</span>
-          </button>
-
-          <button onClick={handleAutoLayout} className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors text-muted-foreground" title="Auto Layout">
-            <LayoutGrid className="w-3.5 h-3.5" /><span className="text-[10px]">Layout</span>
-          </button>
-
-          <button onClick={handleAddNote} className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-card border border-primary/10 hover:bg-secondary/60 transition-colors" title="Add Sticky Note">
-            <StickyNote className="w-3.5 h-3.5 text-amber-400" /><span className="text-[10px] text-muted-foreground">Note</span>
-          </button>
-
-          <button
-            onClick={() => cs.dryRunState ? dryRun.stop() : dryRun.start(dryRun.availableEventTypes[0] || '')}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-md border transition-colors ${cs.dryRunState ? 'bg-amber-500/15 border-amber-500/30 text-amber-400' : 'bg-card border-primary/10 hover:bg-secondary/60 text-muted-foreground'}`}
-            title={cs.dryRunState ? 'Stop Dry Run' : 'Start Dry Run'}
-          >
-            <FlaskConical className="w-3.5 h-3.5" /><span className="text-[10px]">Dry Run</span>
-          </button>
-
-          <button
-            onClick={() => dispatch({ type: 'SET_ASSISTANT_OPEN', open: !cs.assistantOpen })}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-md border transition-colors ${cs.assistantOpen ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400' : 'bg-card border-primary/10 hover:bg-secondary/60 text-muted-foreground'}`}
-            title="Canvas Assistant"
-          >
-            <Sparkles className="w-3.5 h-3.5" /><span className="text-[10px]">Assistant</span>
-          </button>
-
-          <SystemEventsToolbar onCanvasEventTypes={onCanvasEventTypes} onStartPointerDrag={variantB.startDrag} />
-        </div>
+        {/* Grouped toolbar with responsive overflow */}
+        <EventCanvasToolbar
+          paletteCollapsed={cs.paletteCollapsed}
+          dryRunActive={!!cs.dryRunState}
+          assistantOpen={cs.assistantOpen}
+          onCanvasEventTypes={onCanvasEventTypes}
+          onTogglePalette={() => dispatch({ type: 'TOGGLE_PALETTE' })}
+          onRefresh={() => void loadCanvas()}
+          onAutoLayout={handleAutoLayout}
+          onAddNote={handleAddNote}
+          onToggleDryRun={() => cs.dryRunState ? dryRun.stop() : dryRun.start(dryRun.availableEventTypes[0] || '')}
+          onToggleAssistant={() => dispatch({ type: 'SET_ASSISTANT_OPEN', open: !cs.assistantOpen })}
+          onStartPointerDrag={variantB.startDrag}
+        />
 
         {/* Banner — only for click-to-place, not during pointer drag */}
         {showBanner && (

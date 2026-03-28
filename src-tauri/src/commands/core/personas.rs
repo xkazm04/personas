@@ -16,6 +16,7 @@ use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::engine::config_merge::{self, EffectiveModelConfig};
 use crate::engine::types::ExecutionState;
+use crate::engine;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -48,11 +49,65 @@ pub fn update_persona(
     input: UpdatePersonaInput,
 ) -> Result<Persona, AppError> {
     require_auth_sync(&state)?;
-    // Invalidate cached session — persona config changed
+    let result = repo::update(&state.db, &id, input)?;
+    // Invalidate cached session AFTER successful DB update
     let pool = state.session_pool.clone();
     let pid = id.clone();
     tokio::spawn(async move { pool.invalidate(&pid).await; });
-    repo::update(&state.db, &id, input)
+
+    // Auto-sync to cloud if connected (fire-and-forget)
+    let cloud_client = state.cloud_client.clone();
+    let db = state.db.clone();
+    let sync_id = id.clone();
+    tokio::spawn(async move {
+        let client = match cloud_client.lock().await.clone() {
+            Some(c) => c,
+            None => return, // not connected to cloud — nothing to sync
+        };
+        // Check if there is an active deployment for this persona
+        let deployments = match client.list_deployments().await {
+            Ok(d) => d,
+            Err(_) => return,
+        };
+        let has_deployment = deployments.iter().any(|d| d.persona_id == sync_id);
+        if !has_deployment {
+            return;
+        }
+        // Re-read persona + tools and upsert to cloud
+        let persona = match crate::db::repos::core::personas::get_by_id(&db, &sync_id) {
+            Ok(p) => p,
+            Err(_) => return,
+        };
+        let tools_list = match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
+            Ok(t) => t,
+            Err(_) => return,
+        };
+        let prompt = engine::prompt::assemble_prompt(&persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
+        let body = serde_json::json!({
+            "id": persona.id,
+            "name": persona.name,
+            "description": persona.description,
+            "systemPrompt": prompt,
+            "structuredPrompt": persona.structured_prompt,
+            "icon": persona.icon,
+            "color": persona.color,
+            "enabled": true,
+            "maxConcurrent": persona.max_concurrent,
+            "timeoutMs": persona.timeout_ms,
+            "modelProfile": persona.model_profile,
+            "maxBudgetUsd": persona.max_budget_usd,
+            "maxTurns": persona.max_turns,
+            "designContext": persona.design_context,
+            "groupId": persona.group_id,
+        });
+        if let Err(e) = client.upsert_persona(&body).await {
+            tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed");
+        } else {
+            tracing::info!(persona_id = %sync_id, "Persona auto-synced to cloud after update");
+        }
+    });
+
+    Ok(result)
 }
 
 /// Lightweight parameter-only update — no rebuild required.
@@ -164,6 +219,23 @@ pub fn get_persona_detail(
     })
 }
 
+/// Result of a persona deletion, reporting what happened to running executions.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DeletePersonaResult {
+    /// True if the persona was successfully deleted from the database.
+    pub deleted: bool,
+    /// Number of executions that were cleanly cancelled via the engine.
+    pub executions_cancelled: usize,
+    /// Number of executions that had to be force-marked as cancelled in DB.
+    pub executions_force_cancelled: usize,
+    /// True if the drain timeout was reached before all engine slots cleared.
+    pub timeout_reached: bool,
+    /// IDs of executions that could not be cancelled or force-marked.
+    pub cancel_failures: Vec<String>,
+}
+
 /// Pre-delete impact summary for a persona.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
@@ -192,7 +264,7 @@ const DELETION_DRAIN_TIMEOUT: std::time::Duration = std::time::Duration::from_se
 const DELETION_DRAIN_POLL: std::time::Duration = std::time::Duration::from_millis(250);
 
 #[tauri::command]
-pub async fn delete_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
+pub async fn delete_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<DeletePersonaResult, AppError> {
     require_auth(&state).await?;
 
     // ── Phase 1: Mark persona as "deleting" to block new executions ──
@@ -213,7 +285,7 @@ pub async fn delete_persona(state: State<'_, Arc<AppState>>, id: String) -> Resu
 async fn delete_persona_inner(
     state: &Arc<AppState>,
     id: &str,
-) -> Result<bool, AppError> {
+) -> Result<DeletePersonaResult, AppError> {
     // ── Phase 1b: Cancel all running/queued executions for this persona ──
     let running = match exec_repo::get_running(&state.db) {
         Ok(r) => r,
@@ -229,6 +301,7 @@ async fn delete_persona_inner(
         }
     };
 
+    let mut cleanly_cancelled: usize = 0;
     let mut force_cancelled: Vec<String> = Vec::new();
     let mut cancel_failures: Vec<String> = Vec::new();
 
@@ -238,7 +311,9 @@ async fn delete_persona_inner(
                 .engine
                 .cancel_execution(&exec.id, &state.db, Some(id))
                 .await;
-            if !cancelled {
+            if cancelled {
+                cleanly_cancelled += 1;
+            } else {
                 tracing::warn!(
                     persona_id = %id,
                     execution_id = %exec.id,
@@ -286,6 +361,7 @@ async fn delete_persona_inner(
     }
 
     // ── Phase 2: Wait for engine tracker to confirm all slots are cleared ──
+    let mut timeout_reached = false;
     let deadline = tokio::time::Instant::now() + DELETION_DRAIN_TIMEOUT;
     loop {
         if state.engine.all_slots_cleared(id).await {
@@ -296,13 +372,22 @@ async fn delete_persona_inner(
                 persona_id = %id,
                 "Timed out waiting for engine slots to clear; proceeding with deletion"
             );
+            timeout_reached = true;
             break;
         }
         tokio::time::sleep(DELETION_DRAIN_POLL).await;
     }
 
     // ── Phase 2b: Finalize the delete ──
-    repo::delete(&state.db, id)
+    let deleted = repo::delete(&state.db, id)?;
+
+    Ok(DeletePersonaResult {
+        deleted,
+        executions_cancelled: cleanly_cancelled,
+        executions_force_cancelled: force_cancelled.len(),
+        timeout_reached,
+        cancel_failures,
+    })
 }
 
 /// Resolve the effective model configuration for a persona, showing the

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serde_json::json;
 use tauri::{Emitter, State};
 
-use crate::commands::credentials::ai_artifact_flow::{AiArtifactParams, run_ai_artifact_task};
+use crate::commands::credentials::ai_artifact_flow::{AiArtifactParams, spawn_ai_artifact_task};
 use crate::commands::credentials::shared::build_credential_task_cli_args;
 use crate::engine::event_registry::event_name;
 use crate::db::models::{
@@ -178,26 +178,18 @@ pub async fn start_recipe_execution(
     let execution_id = uuid::Uuid::new_v4().to_string();
 
     let registry = state.process_registry.clone();
-    registry.set_id("credential_design", execution_id.clone());
+    registry.set_id("recipe_execution", execution_id.clone());
 
-    let exec_id = execution_id.clone();
-    let log_exec_id = execution_id.clone();
-
-    tokio::spawn(async move {
-        tracing::info!(execution_id = %log_exec_id, "Recipe execution task started");
-        run_ai_artifact_task(AiArtifactParams {
-            app,
-            task_id: exec_id,
-            prompt_text: rendered,
-            cli_args,
-            registry,
-            domain: "credential_design".into(),
-            track_pid: false,
-            messages: recipe_execution::RECIPE_EXECUTION_MESSAGES,
-            extractor: recipe_execution::extract_recipe_execution_result,
-        })
-        .await;
-        tracing::info!(execution_id = %log_exec_id, "Recipe execution task completed");
+    spawn_ai_artifact_task(AiArtifactParams {
+        app,
+        task_id: execution_id.clone(),
+        prompt_text: rendered,
+        cli_args,
+        registry,
+        domain: "recipe_execution".into(),
+        track_pid: false,
+        messages: recipe_execution::RECIPE_EXECUTION_MESSAGES,
+        extractor: recipe_execution::extract_recipe_execution_result,
     });
 
     Ok(json!({ "execution_id": execution_id }))
@@ -209,7 +201,7 @@ pub async fn cancel_recipe_execution(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    let cancelled_id = state.process_registry.take_id("credential_design");
+    let cancelled_id = state.process_registry.take_id("recipe_execution");
     let was_running = cancelled_id.is_some();
 
     if let Some(ref id) = cancelled_id {
@@ -256,28 +248,19 @@ pub async fn start_recipe_generation(
     let cli_args = build_credential_task_cli_args();
     let generation_id = uuid::Uuid::new_v4().to_string();
 
-    // Reuse the credential_design domain (one credential op at a time)
     let registry = state.process_registry.clone();
-    registry.set_id("credential_design", generation_id.clone());
+    registry.set_id("recipe_generation", generation_id.clone());
 
-    let gen_id = generation_id.clone();
-    let log_gen_id = generation_id.clone();
-
-    tokio::spawn(async move {
-        tracing::info!(generation_id = %log_gen_id, "Recipe generation task started");
-        run_ai_artifact_task(AiArtifactParams {
-            app,
-            task_id: gen_id,
-            prompt_text: prompt,
-            cli_args,
-            registry,
-            domain: "credential_design".into(),
-            track_pid: false,
-            messages: recipe_generation::RECIPE_GENERATION_MESSAGES,
-            extractor: recipe_generation::extract_recipe_generation_result,
-        })
-        .await;
-        tracing::info!(generation_id = %log_gen_id, "Recipe generation task completed");
+    spawn_ai_artifact_task(AiArtifactParams {
+        app,
+        task_id: generation_id.clone(),
+        prompt_text: prompt,
+        cli_args,
+        registry,
+        domain: "recipe_generation".into(),
+        track_pid: false,
+        messages: recipe_generation::RECIPE_GENERATION_MESSAGES,
+        extractor: recipe_generation::extract_recipe_generation_result,
     });
 
     Ok(json!({ "generation_id": generation_id }))
@@ -289,7 +272,7 @@ pub async fn cancel_recipe_generation(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    let cancelled_id = state.process_registry.take_id("credential_design");
+    let cancelled_id = state.process_registry.take_id("recipe_generation");
     let was_running = cancelled_id.is_some();
 
     if let Some(ref id) = cancelled_id {
@@ -389,26 +372,18 @@ pub async fn start_recipe_versioning(
     let versioning_id = uuid::Uuid::new_v4().to_string();
 
     let registry = state.process_registry.clone();
-    registry.set_id("credential_design", versioning_id.clone());
+    registry.set_id("recipe_versioning", versioning_id.clone());
 
-    let ver_id = versioning_id.clone();
-    let log_ver_id = versioning_id.clone();
-
-    tokio::spawn(async move {
-        tracing::info!(versioning_id = %log_ver_id, "Recipe versioning task started");
-        run_ai_artifact_task(AiArtifactParams {
-            app,
-            task_id: ver_id,
-            prompt_text: prompt,
-            cli_args,
-            registry,
-            domain: "credential_design".into(),
-            track_pid: false,
-            messages: recipe_versioning::RECIPE_VERSIONING_MESSAGES,
-            extractor: recipe_versioning::extract_recipe_versioning_result,
-        })
-        .await;
-        tracing::info!(versioning_id = %log_ver_id, "Recipe versioning task completed");
+    spawn_ai_artifact_task(AiArtifactParams {
+        app,
+        task_id: versioning_id.clone(),
+        prompt_text: prompt,
+        cli_args,
+        registry,
+        domain: "recipe_versioning".into(),
+        track_pid: false,
+        messages: recipe_versioning::RECIPE_VERSIONING_MESSAGES,
+        extractor: recipe_versioning::extract_recipe_versioning_result,
     });
 
     Ok(json!({ "versioning_id": versioning_id }))
@@ -420,7 +395,7 @@ pub async fn cancel_recipe_versioning(
     app: tauri::AppHandle,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    let cancelled_id = state.process_registry.take_id("credential_design");
+    let cancelled_id = state.process_registry.take_id("recipe_versioning");
     let was_running = cancelled_id.is_some();
 
     if let Some(ref id) = cancelled_id {
@@ -449,46 +424,15 @@ pub fn accept_recipe_version(
     changes_summary: Option<String>,
 ) -> Result<RecipeDefinition, AppError> {
     require_auth_sync(&state)?;
-    let latest = repo::get_latest_version_number(&state.db, &recipe_id)?;
-
-    // If no versions exist yet, snapshot the current recipe as v1
-    if latest == 0 {
-        let current = repo::get_by_id(&state.db, &recipe_id)?;
-        repo::create_version(
-            &state.db,
-            &recipe_id,
-            1,
-            &current.prompt_template,
-            current.input_schema.as_deref(),
-            current.sample_inputs.as_deref(),
-            current.description.as_deref(),
-            Some("Initial version (snapshot before first edit)"),
-        )?;
-    }
-
-    let new_version_number = if latest == 0 { 2 } else { latest + 1 };
-
-    // Create the new version record
-    repo::create_version(
+    repo::accept_version(
         &state.db,
         &recipe_id,
-        new_version_number,
         &prompt_template,
         input_schema.as_deref(),
         sample_inputs.as_deref(),
         description.as_deref(),
         changes_summary.as_deref(),
-    )?;
-
-    // Update the recipe definition with the new data
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = state.db.get()?;
-    conn.execute(
-        "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, updated_at = ?4 WHERE id = ?5",
-        rusqlite::params![prompt_template, input_schema, sample_inputs, now, recipe_id],
-    )?;
-
-    repo::get_by_id(&state.db, &recipe_id)
+    )
 }
 
 #[tauri::command]

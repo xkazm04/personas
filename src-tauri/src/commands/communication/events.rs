@@ -1,4 +1,6 @@
 use std::sync::Arc;
+
+use chrono::DateTime;
 use tauri::{AppHandle, State};
 
 use crate::db::models::{
@@ -31,6 +33,12 @@ pub fn list_events_in_range(
     limit: Option<i64>,
 ) -> Result<PaginatedEvents, AppError> {
     require_auth_sync(&state)?;
+    DateTime::parse_from_rfc3339(&since).map_err(|e| {
+        AppError::Validation(format!("'since' is not a valid RFC3339 date: {e}"))
+    })?;
+    DateTime::parse_from_rfc3339(&until).map_err(|e| {
+        AppError::Validation(format!("'until' is not a valid RFC3339 date: {e}"))
+    })?;
     let (events, has_more) = repo::get_in_range(&state.db, &since, &until, limit)?;
     Ok(PaginatedEvents { events, has_more })
 }

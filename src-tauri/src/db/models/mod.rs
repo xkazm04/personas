@@ -46,6 +46,7 @@ mod signing;
 mod ocr;
 mod shared_event;
 mod tool_audit;
+mod sla;
 
 pub use persona::*;
 pub use tool::*;
@@ -94,3 +95,4 @@ pub use signing::*;
 pub use ocr::*;
 pub use shared_event::*;
 pub use tool_audit::*;
+pub use sla::*;

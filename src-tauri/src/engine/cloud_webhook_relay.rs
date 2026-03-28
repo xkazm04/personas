@@ -13,12 +13,15 @@ use ts_rs::TS;
 
 use super::event_registry::{emit_event_bus, event_name};
 use chrono::DateTime;
+use rusqlite::params;
 
 use crate::cloud::client::{CloudClient, CloudTrigger};
-use crate::db::models::CreatePersonaEventInput;
+use crate::db::models::{CreatePersonaEventInput, PersonaEvent};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::cloud_webhook_watermarks as watermark_repo;
 use crate::db::DbPool;
+use crate::engine::crypto;
+use crate::error::AppError;
 
 // ---------------------------------------------------------------------------
 // State
@@ -193,6 +196,10 @@ pub async fn cloud_webhook_relay_tick(
     let mut total_new = 0u32;
     let mut s = state.lock().await;
 
+    // Track the highest fired_at per trigger so the watermark always
+    // advances to the newest timestamp regardless of API sort order.
+    let mut max_fired_at: HashMap<String, String> = HashMap::new();
+
     for (trigger_idx, dep_idx, result) in &firing_results {
         let deployment = &webhook_deployments[*dep_idx];
         let (_, trigger) = &webhook_triggers_with_deployment[*trigger_idx];
@@ -256,11 +263,32 @@ pub async fn cloud_webhook_relay_tick(
                 use_case_id: trigger.use_case_id.clone(),
             };
 
-            match event_repo::publish(pool, input) {
+            // Compute the watermark to persist: the max of the current
+            // fired_at and any previously committed watermark for this trigger.
+            let watermark = match max_fired_at.get(&trigger.id) {
+                Some(prev) => {
+                    let is_newer = match (
+                        DateTime::parse_from_rfc3339(&fired_at),
+                        DateTime::parse_from_rfc3339(prev),
+                    ) {
+                        (Ok(f), Ok(p)) => f > p,
+                        _ => fired_at > *prev,
+                    };
+                    if is_newer { fired_at.clone() } else { prev.clone() }
+                }
+                None => fired_at.clone(),
+            };
+
+            // Atomically publish the event AND upsert the watermark in a
+            // single SQLite transaction so they cannot diverge.
+            match publish_and_upsert_watermark(pool, input, &trigger.id, &watermark) {
                 Ok(event) => {
                     emit_event_bus(app, &event);
                     total_new += 1;
                     s.total_relayed += 1;
+                    // Update in-memory state only after the transaction commits
+                    max_fired_at.insert(trigger.id.clone(), watermark.clone());
+                    s.last_seen.insert(trigger.id.clone(), watermark);
                 }
                 Err(e) => {
                     tracing::debug!(
@@ -269,12 +297,6 @@ pub async fn cloud_webhook_relay_tick(
                         "Failed to publish relayed webhook event"
                     );
                 }
-            }
-
-            // Update last_seen watermark (in-memory + DB)
-            s.last_seen.insert(trigger.id.clone(), fired_at.clone());
-            if let Err(e) = watermark_repo::upsert(pool, &trigger.id, &fired_at) {
-                tracing::debug!(trigger_id = %trigger.id, error = %e, "Failed to persist webhook watermark");
             }
         }
     }
@@ -297,6 +319,73 @@ pub async fn cloud_webhook_relay_tick(
             "Cloud webhook relay: published new events"
         );
     }
+}
+
+// ---------------------------------------------------------------------------
+// Atomic publish + watermark (single SQLite transaction)
+// ---------------------------------------------------------------------------
+
+/// Publish a PersonaEvent and upsert the cloud webhook watermark atomically.
+/// If either operation fails the transaction is rolled back, preventing the
+/// scenario where an event is persisted but the watermark is not (which would
+/// cause duplicate events after an app restart).
+fn publish_and_upsert_watermark(
+    pool: &DbPool,
+    input: CreatePersonaEventInput,
+    trigger_id: &str,
+    fired_at: &str,
+) -> Result<PersonaEvent, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let project_id = input.project_id.unwrap_or_else(|| "default".into());
+
+    // Encrypt payload at rest if present
+    let (stored_payload, payload_iv) = match &input.payload {
+        Some(plaintext) if !plaintext.is_empty() => {
+            match crypto::encrypt_for_db(plaintext) {
+                Ok((ct, iv)) => (Some(ct), Some(iv)),
+                Err(e) => {
+                    tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
+                    (Some(plaintext.clone()), None)
+                }
+            }
+        }
+        other => (other.clone(), None),
+    };
+
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
+    tx.execute(
+        "INSERT INTO persona_events
+         (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
+        params![
+            id,
+            project_id,
+            input.event_type,
+            input.source_type,
+            input.source_id,
+            input.target_persona_id,
+            stored_payload,
+            payload_iv,
+            input.use_case_id,
+            now,
+        ],
+    ).map_err(AppError::Database)?;
+
+    tx.execute(
+        "INSERT INTO cloud_webhook_watermarks (trigger_id, last_seen_ts, updated_at)
+         VALUES (?1, ?2, ?3)
+         ON CONFLICT(trigger_id) DO UPDATE SET last_seen_ts = ?2, updated_at = ?3",
+        params![trigger_id, fired_at, now],
+    ).map_err(AppError::Database)?;
+
+    tx.commit().map_err(AppError::Database)?;
+
+    // Read the event back after commit so decryption and row mapping use the
+    // standard code path.
+    event_repo::get_by_id(pool, &id)
 }
 
 fn emit_status(app: &AppHandle, state: &CloudWebhookRelayState, connected: bool) {

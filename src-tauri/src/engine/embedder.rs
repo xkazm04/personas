@@ -4,6 +4,7 @@
 //! automatic unloading after an idle timeout to reclaim memory.
 
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -20,6 +21,8 @@ pub struct EmbeddingManager {
     model: Arc<RwLock<Option<TextEmbedding>>>,
     last_used: Arc<RwLock<Instant>>,
     cache_dir: PathBuf,
+    /// True while an idle-unloader task is running. Prevents duplicate spawns.
+    unloader_active: Arc<AtomicBool>,
 }
 
 impl EmbeddingManager {
@@ -29,6 +32,7 @@ impl EmbeddingManager {
             model: Arc::new(RwLock::new(None)),
             last_used: Arc::new(RwLock::new(Instant::now())),
             cache_dir,
+            unloader_active: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -137,9 +141,16 @@ impl EmbeddingManager {
     }
 
     /// Spawn a background task that unloads the model after idle timeout.
+    /// No-op if an unloader task is already running.
     fn start_idle_unloader(&self) {
+        // Bail out if an unloader is already active
+        if self.unloader_active.swap(true, Ordering::SeqCst) {
+            return;
+        }
+
         let model = Arc::clone(&self.model);
         let last_used = Arc::clone(&self.last_used);
+        let active_flag = Arc::clone(&self.unloader_active);
 
         tokio::spawn(async move {
             loop {
@@ -171,6 +182,8 @@ impl EmbeddingManager {
                     break;
                 }
             }
+            // Allow a new unloader to be spawned on next load
+            active_flag.store(false, Ordering::SeqCst);
         });
     }
 }

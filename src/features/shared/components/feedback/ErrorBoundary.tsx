@@ -2,7 +2,6 @@ import { Component, type ReactNode } from 'react';
 import { RefreshCw, ChevronDown, ChevronRight, Copy, Check, Home, LifeBuoy } from 'lucide-react';
 import { useState } from 'react';
 import { persistCrash } from '@/lib/utils/crashPersistence';
-import { useSystemStore } from "@/stores/systemStore";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("error-boundary");
@@ -80,11 +79,18 @@ function ErrorFallback({
 }) {
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const handleGoHome = () => {
-    setSidebarSection('home');
-    onReset();
+    try {
+      // Try store-based navigation first for seamless UX
+      const { useSystemStore } = require("@/stores/systemStore");
+      useSystemStore.getState().setSidebarSection('home');
+      onReset();
+    } catch {
+      // Store is corrupt — fall back to a hard navigation
+      window.location.hash = '#/';
+      window.location.reload();
+    }
   };
 
   const handleReport = () => {

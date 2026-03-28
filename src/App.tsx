@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
 import { ToastContainer } from "@/features/shared/components/feedback/ToastContainer";
@@ -10,6 +10,20 @@ import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
 import TitleBar from "@/features/shared/components/layout/TitleBar";
 import { useTranslation } from '@/i18n/useTranslation';
+
+/**
+ * Silent error boundary for invisible components (renders null on error).
+ * Logs the failure but doesn't show UI — used for BackgroundServices which
+ * normally renders nothing.
+ */
+class SilentErrorBoundary extends Component<{ name: string; children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error) {
+    console.error(`[${this.props.name}] silently failed:`, error);
+  }
+  render() { return this.state.hasError ? null : this.props.children; }
+}
 
 // Lazy-load overlays and background services — none needed for first paint.
 // BackgroundServices hosts hooks that import domain stores (~300 KB deferred).
@@ -84,8 +98,12 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden">
             <PersonasPage />
           </div>
+          <SilentErrorBoundary name="BackgroundServices">
+            <Suspense fallback={null}>
+              <BackgroundServices />
+            </Suspense>
+          </SilentErrorBoundary>
           <Suspense fallback={null}>
-            <BackgroundServices />
             <HealingToast />
             <AlertToastContainer />
             <OnboardingOverlay />

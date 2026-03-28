@@ -88,13 +88,32 @@ where
     match accept_result {
         Ok(Ok((mut socket, _addr))) => {
             let mut buffer = [0_u8; 32768]; // 32KB to handle long OAuth callbacks (enterprise Azure AD, etc.)
-            let read_n = socket.read(&mut buffer).await.unwrap_or(0);
-            if read_n == buffer.len() {
-                return OAuthCallbackOutcome::Error(
-                    "OAuth callback URL exceeded maximum buffer size (32KB). This may indicate an unusually long authorization response.".into(),
-                );
+            let mut total_read = 0_usize;
+
+            // Read in a loop until we find the HTTP header terminator (\r\n\r\n)
+            // or the buffer is full. A single read() is not guaranteed to return
+            // the complete HTTP request because TCP is a stream protocol.
+            loop {
+                if total_read >= buffer.len() {
+                    return OAuthCallbackOutcome::Error(
+                        "OAuth callback URL exceeded maximum buffer size (32KB). This may indicate an unusually long authorization response.".into(),
+                    );
+                }
+                let n = socket.read(&mut buffer[total_read..]).await.unwrap_or(0);
+                if n == 0 {
+                    break; // connection closed
+                }
+                total_read += n;
+
+                // Check for end-of-headers marker in the data read so far.
+                // Only need to scan from where the new data could complete the pattern.
+                let search_start = total_read.saturating_sub(n + 3);
+                if buffer[search_start..total_read].windows(4).any(|w| w == b"\r\n\r\n") {
+                    break;
+                }
             }
-            let request_text = String::from_utf8_lossy(&buffer[..read_n]).to_string();
+
+            let request_text = String::from_utf8_lossy(&buffer[..total_read]).to_string();
             let first_line = request_text.lines().next().unwrap_or("");
             let path_part = first_line.split_whitespace().nth(1).unwrap_or("/");
 
@@ -1061,11 +1080,6 @@ struct OAuthSession {
     extra: Option<serde_json::Value>,
     error: Option<String>,
     created_at: u64,
-    token_url: String,
-    client_id: String,
-    client_secret: Option<SecureString>,
-    code_verifier: Option<SecureString>,
-    redirect_uri: String,
 }
 
 static OAUTH_SESSIONS: OnceLock<Mutex<HashMap<String, OAuthSession>>> = OnceLock::new();
@@ -1253,11 +1267,6 @@ pub async fn start_oauth(
             extra: None,
             error: None,
             created_at: now_unix_secs(),
-            token_url: resolved_token_url.clone(),
-            client_id: client_id.clone(),
-            client_secret: client_secret.as_ref().map(|s| s.duplicate()),
-            code_verifier: code_verifier.as_ref().map(|s| s.duplicate()),
-            redirect_uri: redirect_uri.clone(),
         });
     }
 
@@ -1272,6 +1281,7 @@ pub async fn start_oauth(
     let tok_url = resolved_token_url;
     let cid = client_id.clone();
     let csec = client_secret.as_ref().map(|s| s.duplicate());
+    drop(client_secret); // zeroize original immediately; only csec enters the task
     let cv = code_verifier;
     let db_pool = state.db.clone();
     let auth_detect_cache = state.auth_detect_cache.clone();

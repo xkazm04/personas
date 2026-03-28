@@ -83,17 +83,20 @@ pub fn get_usage_stats(
 ) -> Result<CredentialUsageStats, AppError> {
     timed_query!("audit_log", "audit_log::get_usage_stats", {
         let conn = pool.get()?;
+        let now = chrono::Utc::now();
+        let cutoff_24h = (now - chrono::Duration::days(1)).to_rfc3339();
+        let cutoff_7d = (now - chrono::Duration::days(7)).to_rfc3339();
         let row = conn.query_row(
             "SELECT
                 COUNT(*) AS total_accesses,
                 COUNT(DISTINCT persona_id) AS distinct_personas,
                 MAX(created_at) AS last_accessed_at,
                 MIN(created_at) AS first_accessed_at,
-                SUM(CASE WHEN created_at >= datetime('now', '-1 day') THEN 1 ELSE 0 END) AS accesses_24h,
-                SUM(CASE WHEN created_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) AS accesses_7d
+                SUM(CASE WHEN created_at >= ?2 THEN 1 ELSE 0 END) AS accesses_24h,
+                SUM(CASE WHEN created_at >= ?3 THEN 1 ELSE 0 END) AS accesses_7d
              FROM credential_audit_log
              WHERE credential_id = ?1",
-            params![credential_id],
+            params![credential_id, cutoff_24h, cutoff_7d],
             |row| {
                 Ok(CredentialUsageStats {
                     credential_id: credential_id.to_string(),
@@ -153,9 +156,10 @@ pub fn log_decrypt(
 pub fn cleanup_old_entries(pool: &DbPool, retention_days: i64) -> Result<usize, AppError> {
     timed_query!("audit_log", "audit_log::cleanup_old_entries", {
         let conn = pool.get()?;
+        let cutoff = (chrono::Utc::now() - chrono::Duration::days(retention_days)).to_rfc3339();
         let deleted = conn.execute(
-            "DELETE FROM credential_audit_log WHERE created_at < datetime('now', ?1)",
-            params![format!("-{retention_days} days")],
+            "DELETE FROM credential_audit_log WHERE created_at < ?1",
+            params![cutoff],
         )?;
         Ok(deleted)
 

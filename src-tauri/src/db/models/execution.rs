@@ -40,6 +40,9 @@ pub struct PersonaExecution {
     pub created_at: String,
     /// Frozen ExecutionConfig JSON snapshot assembled at execution start.
     pub execution_config: Option<String>,
+    /// `true` when the execution log file may be incomplete due to I/O errors.
+    #[serde(default)]
+    pub log_truncated: bool,
 }
 
 /// Execution row with persona metadata included via SQL JOIN.
@@ -74,6 +77,9 @@ pub struct GlobalExecutionRow {
     pub completed_at: Option<String>,
     pub created_at: String,
     pub execution_config: Option<String>,
+    /// `true` when the execution log file may be incomplete due to I/O errors.
+    #[serde(default)]
+    pub log_truncated: bool,
     // Persona metadata from JOIN
     pub persona_name: Option<String>,
     pub persona_icon: Option<String>,
@@ -113,6 +119,8 @@ pub struct UpdateExecutionStatus {
     pub tool_steps: Option<String>,
     pub claude_session_id: Option<String>,
     pub execution_config: Option<String>,
+    /// When `true`, the execution log file may be incomplete due to I/O errors.
+    pub log_truncated: bool,
 }
 
 impl Default for UpdateExecutionStatus {
@@ -130,6 +138,7 @@ impl Default for UpdateExecutionStatus {
             tool_steps: None,
             claude_session_id: None,
             execution_config: None,
+            log_truncated: false,
         }
     }
 }

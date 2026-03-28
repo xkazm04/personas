@@ -135,38 +135,35 @@ async fn resolve_auth_headers(
     };
 
     // Load credential record, then decrypt fields.
-    // Fall back to empty headers if credential is missing (e.g., public webhooks with stale ref).
-    let credential = match cred_repo::get_by_id(pool, cred_id) {
-        Ok(c) => c,
-        Err(e) => {
-            tracing::warn!(
-                automation = %automation.name,
-                credential_id = %cred_id,
-                error = %e,
-                "Credential not found, proceeding without auth headers"
-            );
-            warnings.push(format!(
-                "Auth fallback: credential '{cred_id}' not found — request sent without authentication. Error: {e}"
-            ));
-            return Ok(AuthResolution { headers, warnings });
-        }
-    };
-    let fields = match cred_repo::get_decrypted_fields(pool, &credential) {
-        Ok(f) => f,
-        Err(e) => {
-            tracing::warn!(
-                automation = %automation.name,
-                credential_id = %cred_id,
-                error = %e,
-                "Failed to decrypt credential, proceeding without auth headers"
-            );
-            warnings.push(format!(
-                "Auth fallback: failed to decrypt credential '{}' ({cred_id}) — request sent without authentication. Error: {e}",
-                credential.name
-            ));
-            return Ok(AuthResolution { headers, warnings });
-        }
-    };
+    // If the automation explicitly references a credential, it MUST resolve —
+    // proceeding without auth would send unauthenticated requests and produce
+    // misleading 401 errors that hide the real cause (missing/corrupt credential).
+    let credential = cred_repo::get_by_id(pool, cred_id).map_err(|e| {
+        tracing::error!(
+            automation = %automation.name,
+            credential_id = %cred_id,
+            error = %e,
+            "Credential not found — aborting automation to prevent unauthenticated request"
+        );
+        AppError::Validation(format!(
+            "Automation '{}' references credential '{cred_id}' which could not be found. \
+             Remove the credential reference or restore the credential. Error: {e}",
+            automation.name
+        ))
+    })?;
+    let fields = cred_repo::get_decrypted_fields(pool, &credential).map_err(|e| {
+        tracing::error!(
+            automation = %automation.name,
+            credential_id = %cred_id,
+            error = %e,
+            "Failed to decrypt credential — aborting automation to prevent unauthenticated request"
+        );
+        AppError::Validation(format!(
+            "Automation '{}' failed to decrypt credential '{}' ({cred_id}). \
+             The credential may be corrupted — try re-saving it. Error: {e}",
+            automation.name, credential.name
+        ))
+    })?;
 
     let _ = audit_log::log_decrypt(
         pool, cred_id, &credential.name,
@@ -285,7 +282,7 @@ async fn invoke_webhook(
         .timeout(std::time::Duration::from_millis(timeout_ms.max(1000) as u64));
 
     // Set content-type for body methods
-    if method != "GET" {
+    if upper != "GET" {
         req = req.header("Content-Type", "application/json").body(body.to_string());
     }
 
@@ -305,9 +302,23 @@ async fn invoke_webhook(
     })?;
 
     let status = resp.status().as_u16();
-    let body = resp.text().await.map_err(|e| {
-        AppError::Execution(format!("Failed to read webhook response: {e}"))
-    })?;
+
+    // Limit response body to 10 MB to prevent OOM from oversized responses.
+    const MAX_RESPONSE_BODY_BYTES: usize = 10 * 1024 * 1024;
+    let mut body_buf = Vec::new();
+    while let Some(chunk) = resp
+        .chunk()
+        .await
+        .map_err(|e| AppError::Execution(format!("Failed to read webhook response: {e}")))?
+    {
+        if body_buf.len() + chunk.len() > MAX_RESPONSE_BODY_BYTES {
+            return Err(AppError::Execution(format!(
+                "Webhook response exceeded {MAX_RESPONSE_BODY_BYTES} byte limit: {url}"
+            )));
+        }
+        body_buf.extend_from_slice(&chunk);
+    }
+    let body = String::from_utf8_lossy(&body_buf).to_string();
 
     if status >= 400 {
         return Err(AppError::Execution(format!(
@@ -415,12 +426,13 @@ async fn invoke_github_dispatch(
         ))
     })?;
 
-    // Create run record
+    // Resolve credential BEFORE creating the run record to prevent
+    // orphaned runs stuck in running status when credential resolution fails.
+    let client = crate::engine::platforms::github::build_client_from_credential(pool, cred_id)?;
+
+    // Create run record (only after credential succeeds)
     let run = repo::create_run(pool, &automation.id, execution_id, input_json)?;
     let start = Instant::now();
-
-    // Build client and dispatch
-    let client = crate::engine::platforms::github::build_client_from_credential(pool, cred_id)?;
     let payload: serde_json::Value = input_json
         .and_then(|s| serde_json::from_str(s).ok())
         .unwrap_or(serde_json::json!({}));

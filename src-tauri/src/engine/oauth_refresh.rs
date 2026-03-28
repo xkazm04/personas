@@ -121,7 +121,7 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
                     );
                 }
                 // Set backoff so periodic tick doesn't immediately re-attempt a doomed refresh
-                set_refresh_backoff(pool, &cred.id, &meta);
+                set_refresh_backoff(pool, &cred.id);
             }
         }
     }
@@ -217,7 +217,7 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
                     );
                 }
                 // Set exponential backoff so we don't retry a doomed refresh every tick
-                set_refresh_backoff(pool, &cred.id, &meta);
+                set_refresh_backoff(pool, &cred.id);
             }
         }
     }
@@ -250,8 +250,7 @@ pub async fn refresh_single_credential(
     let _ = audit_log::log_decrypt(pool, &cred.id, &cred.name, "oauth_refresh", None, None);
 
     // Must have a refresh_token to refresh
-    let has_refresh = fields.contains_key("refresh_token") || fields.contains_key("refreshToken");
-    if !has_refresh {
+    if !fields.contains_key("refresh_token") {
         return Err(AppError::Validation("No refresh_token found".into()));
     }
 
@@ -314,17 +313,18 @@ pub async fn refresh_single_credential(
     // Persist the fresh access_token
     cred_repo::upsert_field(pool, &cred.id, "access_token", &resolved.token, true)?;
 
+    // Persist oauth_token_expires_at alongside the access_token in decrypted fields.
+    // This allows resolve_oauth_token to detect expired tokens even when callers hold
+    // stale field snapshots loaded before a background refresh updated the DB.
+    let expiry_secs_for_field = resolved.expires_in_secs.unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
+    let expires_at_rfc3339 = (chrono::Utc::now() + chrono::Duration::seconds(expiry_secs_for_field)).to_rfc3339();
+    cred_repo::upsert_field(pool, &cred.id, "oauth_token_expires_at", &expires_at_rfc3339, false)?;
+
     // Persist rotated refresh_token if the provider returned one (RFC 6749 §6).
     // This prevents credential death when providers enforce refresh token rotation
     // and ensures exfiltrated old tokens are invalidated server-side.
     if let Some(ref new_refresh_token) = resolved.refresh_token {
-        // Determine the field key used by this credential (refresh_token vs refreshToken)
-        let refresh_key = if fields.contains_key("refreshToken") {
-            "refreshToken"
-        } else {
-            "refresh_token"
-        };
-        cred_repo::upsert_field(pool, &cred.id, refresh_key, new_refresh_token, true)?;
+        cred_repo::upsert_field(pool, &cred.id, "refresh_token", new_refresh_token, true)?;
         tracing::info!(
             credential_id = %cred.id,
             service_type = %cred.service_type,
@@ -459,31 +459,21 @@ pub async fn refresh_single_credential(
 }
 
 /// Set an exponential backoff timestamp on a credential after a failed OAuth refresh.
-/// Reads the current failure count from metadata to determine the backoff step.
-fn set_refresh_backoff(pool: &DbPool, credential_id: &str, meta: &Option<serde_json::Value>) {
-    let fail_count = meta
-        .as_ref()
-        .and_then(|m| m.get("oauth_refresh_fail_count"))
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0);
-
-    let step_idx = (fail_count as usize).min(REFRESH_BACKOFF_STEPS.len() - 1);
-    let backoff_secs = REFRESH_BACKOFF_STEPS[step_idx];
-    let backoff_until = (chrono::Utc::now() + chrono::Duration::seconds(backoff_secs)).to_rfc3339();
-
-    let mut patch = serde_json::Map::new();
-    patch.insert("oauth_refresh_backoff_until".to_string(), serde_json::json!(backoff_until));
-    patch.insert("oauth_refresh_fail_count".to_string(), serde_json::json!(fail_count + 1));
-
-    if let Err(e) = cred_repo::patch_metadata_atomic(pool, credential_id, patch) {
-        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to set OAuth refresh backoff");
-    } else {
-        tracing::info!(
-            credential_id = %credential_id,
-            backoff_secs,
-            fail_count = fail_count + 1,
-            "Set OAuth refresh backoff"
-        );
+/// Uses an atomic read-increment-write to prevent concurrent callers from clobbering
+/// each other's fail_count (e.g. startup sweep vs periodic tick overlap).
+fn set_refresh_backoff(pool: &DbPool, credential_id: &str) {
+    match cred_repo::increment_refresh_backoff_atomic(pool, credential_id, REFRESH_BACKOFF_STEPS) {
+        Ok((new_fail_count, backoff_secs)) => {
+            tracing::info!(
+                credential_id = %credential_id,
+                backoff_secs,
+                fail_count = new_fail_count,
+                "Set OAuth refresh backoff"
+            );
+        }
+        Err(e) => {
+            tracing::warn!(credential_id = %credential_id, error = %e, "Failed to set OAuth refresh backoff");
+        }
     }
 }
 

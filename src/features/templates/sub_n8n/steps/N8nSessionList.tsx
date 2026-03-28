@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Clock, Trash2, ChevronRight, RefreshCw, RotateCcw } from 'lucide-react';
 import { listN8nSessionSummaries, deleteN8nSession, getN8nSession } from '@/api/templates/n8nTransform';
 import type { N8nSessionSummary } from '@/lib/bindings/N8nSessionSummary';
@@ -17,7 +17,13 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   const [sessions, setSessions] = useState<N8nSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Tracks session IDs with in-flight operations to prevent concurrent load+delete
+  const lockedIdsRef = useRef(new Set<string>());
+  // Tracks AbortControllers for in-flight loads so delete can cancel them
+  const loadAbortRef = useRef(new Map<string, AbortController>());
 
   const fetchSessions = async () => {
     try {
@@ -37,8 +43,17 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     void fetchSessions();
   }, []);
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDelete = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    // If session is currently loading, abort the load first
+    const loadController = loadAbortRef.current.get(id);
+    if (loadController) {
+      loadController.abort();
+      loadAbortRef.current.delete(id);
+    }
+    // If a delete is already in-flight for this session, skip
+    if (lockedIdsRef.current.has(id)) return;
+    lockedIdsRef.current.add(id);
     setDeletingId(id);
     try {
       await deleteN8nSession(id);
@@ -48,14 +63,27 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       // User-facing: error is displayed inline via error state
       setError('Failed to delete session. Please retry.');
     } finally {
+      lockedIdsRef.current.delete(id);
       setDeletingId(null);
     }
-  };
+  }, []);
 
-  const handleLoad = async (session: N8nSessionSummary) => {
+  const handleLoad = useCallback(async (session: N8nSessionSummary) => {
+    const id = session.id;
+    // Skip if this session is being deleted or already loading
+    if (lockedIdsRef.current.has(id)) return;
+    lockedIdsRef.current.add(id);
+    setLoadingId(id);
+
+    const abortController = new AbortController();
+    loadAbortRef.current.set(id, abortController);
+
     try {
       setError(null);
       const full = await getN8nSession(session.id);
+
+      // If aborted (deleted while loading), discard the result
+      if (abortController.signal.aborted) return;
       const parseErrors: string[] = [];
 
       const parseJsonField = <T,>(raw: string | null, label: string): T | null => {
@@ -137,10 +165,16 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
           : null,
       });
     } catch {
-      // User-facing: error is displayed inline via error state
-      setError('Failed to load session. Please retry.');
+      // Suppress errors if the load was intentionally aborted by a delete
+      if (!abortController.signal.aborted) {
+        setError('Failed to load session. Please retry.');
+      }
+    } finally {
+      lockedIdsRef.current.delete(id);
+      loadAbortRef.current.delete(id);
+      setLoadingId(null);
     }
-  };
+  }, [onLoadSession]);
 
   if (loading) {
     return (
@@ -188,14 +222,16 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
           const interrupted = session.status === 'interrupted';
           const statusKey = session.status;
           const style = SESSION_STATUS_STYLES[statusKey] ?? SESSION_STATUS_STYLES.draft!;
+          const isBusy = deletingId === session.id || loadingId === session.id;
           return (
             <div
               key={session.id}
               role="button"
-              tabIndex={0}
-              onClick={() => void handleLoad(session)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleLoad(session); } }}
-              className="animate-fade-slide-in w-full flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 transition-colors text-left group cursor-pointer"
+              tabIndex={isBusy ? -1 : 0}
+              aria-disabled={isBusy}
+              onClick={() => { if (!isBusy) void handleLoad(session); }}
+              onKeyDown={(e) => { if (!isBusy && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); void handleLoad(session); } }}
+              className={`animate-fade-slide-in w-full flex items-center gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 transition-colors text-left group ${isBusy ? 'opacity-50 pointer-events-none' : 'hover:bg-secondary/40 cursor-pointer'}`}
               data-testid={`n8n-session-card-${session.id}`}
             >
               <div className="w-10 h-10 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center flex-shrink-0">
@@ -221,8 +257,8 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
               <div className="flex items-center gap-1 flex-shrink-0">
                 <button
                   onClick={(e) => void handleDelete(e, session.id)}
-                  disabled={deletingId === session.id}
-                  className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                  disabled={isBusy}
+                  className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
                   title="Delete session"
                   data-testid={`n8n-session-delete-${session.id}`}
                 >

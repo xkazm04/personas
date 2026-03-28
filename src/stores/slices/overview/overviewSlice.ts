@@ -54,9 +54,13 @@ export interface OverviewSlice {
   // State -- per-source pipeline errors (set when individual dashboard fetches fail)
   pipelineErrors: Record<string, string>;
 
+  // State -- per-source last-successful-fetch timestamps (epoch ms)
+  pipelineFetchedAt: Record<string, number>;
+
   // Actions
   setOverviewTab: (tab: OverviewTab) => void;
   setPipelineError: (source: string, error: string | null) => void;
+  setPipelineFetchedAt: (source: string) => void;
   clearPipelineErrors: () => void;
   fetchGlobalExecutions: (reset?: boolean, status?: string, personaId?: string) => Promise<void>;
   fetchManualReviews: (status?: string) => Promise<void>;
@@ -119,6 +123,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   executionDashboardLoading: false,
   executionDashboardError: null,
   pipelineErrors: {},
+  pipelineFetchedAt: {},
 
   setOverviewTab: (tab) => set({ overviewTab: tab }),
   setPipelineError: (source, error) => set((prev) => {
@@ -127,6 +132,9 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     else delete next[source];
     return { pipelineErrors: next };
   }),
+  setPipelineFetchedAt: (source) => set((prev) => ({
+    pipelineFetchedAt: { ...prev.pipelineFetchedAt, [source]: Date.now() },
+  })),
   clearPipelineErrors: () => set({ pipelineErrors: {} }),
 
   fetchGlobalExecutions: async (reset = false, status?: string, personaId?: string) => {

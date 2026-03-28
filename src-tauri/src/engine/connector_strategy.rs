@@ -45,9 +45,9 @@ impl ResolvedToken {
 #[async_trait]
 pub trait ConnectorStrategy: Send + Sync {
     /// Whether this credential uses OAuth token refresh for rotation.
-    /// Default: checks for `refresh_token` or `refreshToken` keys in fields.
+    /// Default: checks for `refresh_token` key in fields.
     fn is_oauth(&self, fields: &HashMap<String, String>) -> bool {
-        fields.contains_key("refresh_token") || fields.contains_key("refreshToken")
+        fields.contains_key("refresh_token")
     }
 
     /// Resolve the auth token to use for healthcheck / API requests.
@@ -495,19 +495,36 @@ async fn exchange_oauth_refresh_token(
 }
 
 /// Shared resolve_auth_token logic for OAuth strategies: return existing
-/// access_token if present, otherwise exchange refresh_token via the
-/// provider's token endpoint.
+/// access_token if present **and not expired**, otherwise exchange
+/// refresh_token via the provider's token endpoint.
 async fn resolve_oauth_token(
     provider: &str,
     token_url: &str,
     resolve_credentials: fn() -> Result<(String, String), AppError>,
     fields: &HashMap<String, String>,
 ) -> Result<Option<ResolvedToken>, AppError> {
-    if let Some(token) = find_nonempty(fields, &["access_token", "accessToken"]) {
-        return Ok(Some(ResolvedToken::plain(token)));
+    if let Some(token) = find_nonempty(fields, &["access_token"]) {
+        // Check oauth_token_expires_at (stored alongside access_token during refresh).
+        // If the token is expired, skip returning it so we fall through to the
+        // refresh path — prevents using stale tokens after a background refresh
+        // updated the DB while the caller held old decrypted fields.
+        let expired = fields
+            .get("oauth_token_expires_at")
+            .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+            .map(|expires_at| chrono::Utc::now() >= expires_at)
+            .unwrap_or(false);
+
+        if !expired {
+            return Ok(Some(ResolvedToken::plain(token)));
+        }
+
+        tracing::debug!(
+            provider,
+            "Stored access_token is expired — falling through to refresh"
+        );
     }
 
-    let refresh_token = find_nonempty(fields, &["refresh_token", "refreshToken"])
+    let refresh_token = find_nonempty(fields, &["refresh_token"])
         .ok_or_else(|| AppError::Validation(format!("{provider} credential is missing refresh_token")))?;
 
     let (client_id, client_secret) = resolve_credentials()?;

@@ -1,5 +1,6 @@
 import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, Bell, Activity } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { useState, useMemo, useCallback } from 'react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
@@ -23,6 +24,10 @@ export default function ObservabilityDashboard() {
   const d = useObservabilityData();
   const [showAlerts, setShowAlerts] = useState(false);
   const activeAlertCount = useOverviewStore(selectActiveAlertCount);
+  const { pipelineErrors, pipelineFetchedAt } = useOverviewStore((s) => ({
+    pipelineErrors: s.pipelineErrors,
+    pipelineFetchedAt: s.pipelineFetchedAt,
+  }));
 
   const drilldown = useAnomalyDrilldown();
 
@@ -112,6 +117,13 @@ export default function ObservabilityDashboard() {
           title="Metrics unavailable -- data shown may be stale"
           message={d.observabilityError}
           onRetry={d.refreshAll}
+          actions={
+            <StalenessIndicator
+              fetchedAt={pipelineFetchedAt.observabilityMetrics}
+              hasError
+              label="Observability metrics"
+            />
+          }
         />
       )}
 
@@ -131,9 +143,15 @@ export default function ObservabilityDashboard() {
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
+                <div className="flex items-center justify-end mb-2">
+                  <StalenessIndicator fetchedAt={pipelineFetchedAt.alertRules} hasError={!!pipelineErrors.alertRules} label="Alert rules" />
+                </div>
                 <AlertRulesPanel />
               </div>
               <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
+                <div className="flex items-center justify-end mb-2">
+                  <StalenessIndicator fetchedAt={pipelineFetchedAt.alertHistory} hasError={!!pipelineErrors.alertHistory} label="Alert history" />
+                </div>
                 <AlertHistoryPanel />
               </div>
             </div>

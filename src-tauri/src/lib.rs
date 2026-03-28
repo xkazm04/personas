@@ -184,6 +184,12 @@ impl ActiveProcessRegistry {
         }
     }
 
+    /// Check whether a run is currently registered (i.e. its background task is still active).
+    pub fn is_run_registered(&self, domain: &str, run_id: &str) -> bool {
+        let key = Self::run_key(domain, run_id);
+        self.runs.get(&key).is_some()
+    }
+
     /// Remove a run's entry (cleanup after completion).
     pub fn unregister_run(&self, domain: &str, run_id: &str) {
         let key = Self::run_key(domain, run_id);
@@ -301,6 +307,12 @@ pub struct AppState {
     pub embedding_manager: Option<Arc<engine::embedder::EmbeddingManager>>,
     /// SQLite-vec vector store for knowledge bases.
     pub vector_store: Option<Arc<engine::vector_store::SqliteVectorStore>>,
+    /// Active KB ingestion jobs: maps kb_id → CancellationToken so that
+    /// `delete_knowledge_base` can cancel in-flight ingestion before dropping tables.
+    pub kb_ingest_jobs: Arc<tokio::sync::Mutex<HashMap<String, tokio_util::sync::CancellationToken>>>,
+    /// Cloud webhook relay state — shared with the background subscription so
+    /// that the `cloud_webhook_relay_status` command can read live counters.
+    pub cloud_webhook_relay_state: Arc<tokio::sync::Mutex<engine::cloud_webhook_relay::CloudWebhookRelayState>>,
     /// Build session manager for multi-turn agent builder sessions.
     pub build_session_manager: Arc<engine::build_session::BuildSessionManager>,
     /// Session reuse pool — caches Claude session IDs for warm persona re-execution.
@@ -613,6 +625,10 @@ pub fn run() {
                 network: network_service.clone(),
                 embedding_manager: Some(embedding_manager),
                 vector_store: Some(vector_store),
+                kb_ingest_jobs: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
+                cloud_webhook_relay_state: Arc::new(tokio::sync::Mutex::new(
+                    engine::cloud_webhook_relay::CloudWebhookRelayState::load_from_db(&pool),
+                )),
                 build_session_manager: Arc::new(engine::build_session::BuildSessionManager::new()),
                 session_pool: Arc::new(engine::session_pool::SessionPool::new()),
                 binary_probe_cache: Arc::new(
@@ -713,6 +729,7 @@ pub fn run() {
             let restore_handle = app.handle().clone();
             let restore_state = state_arc.clone();
             let startup_cloud_client = state_arc.cloud_client.clone();
+            let startup_relay_state = state_arc.cloud_webhook_relay_state.clone();
             let startup_rate_limiter = state_arc.rate_limiter.clone();
             let startup_tier_config = state_arc.tier_config.clone();
             #[cfg(feature = "desktop")]
@@ -729,6 +746,7 @@ pub fn run() {
                     startup_rate_limiter,
                     startup_tier_config,
                     startup_cloud_client,
+                    startup_relay_state,
                     #[cfg(feature = "desktop")]
                     startup_ambient_ctx,
                     #[cfg(feature = "desktop")]
@@ -1254,32 +1272,29 @@ pub fn run() {
             commands::communication::messages::get_messages_by_thread,
             commands::communication::messages::get_thread_summaries,
             commands::communication::messages::get_thread_count,
-            // Communication -- Observability
-            commands::communication::observability::get_metrics_summary,
-            commands::communication::observability::get_metrics_chart_data,
-            commands::communication::observability::get_prompt_versions,
-            commands::communication::observability::get_all_monthly_spend,
-            // Communication -- Prompt Performance Dashboard
-            commands::communication::observability::get_prompt_performance,
-            // Communication -- Execution Metrics Dashboard
-            commands::communication::observability::get_execution_dashboard,
-            // Communication -- Anomaly Drill-Down
-            commands::communication::observability::get_anomaly_drilldown,
-            // Communication -- Prompt Lab
-            commands::communication::observability::tag_prompt_version,
-            commands::communication::observability::rollback_prompt_version,
-            commands::communication::observability::get_prompt_error_rate,
-            commands::communication::observability::run_prompt_ab_test,
-            // Communication -- Alert Rules (backend-persisted)
-            commands::communication::observability::list_alert_rules,
-            commands::communication::observability::create_alert_rule,
-            commands::communication::observability::update_alert_rule,
-            commands::communication::observability::delete_alert_rule,
-            commands::communication::observability::toggle_alert_rule,
-            commands::communication::observability::list_fired_alerts,
-            commands::communication::observability::create_fired_alert,
-            commands::communication::observability::dismiss_fired_alert,
-            commands::communication::observability::clear_fired_alerts,
+            // Communication -- Observability: Metrics
+            commands::communication::observability::metrics::get_metrics_summary,
+            commands::communication::observability::metrics::get_metrics_chart_data,
+            commands::communication::observability::metrics::get_all_monthly_spend,
+            commands::communication::observability::metrics::get_prompt_performance,
+            commands::communication::observability::metrics::get_execution_dashboard,
+            commands::communication::observability::metrics::get_anomaly_drilldown,
+            // Communication -- Observability: Prompt Lab
+            commands::communication::observability::prompt_lab::get_prompt_versions,
+            commands::communication::observability::prompt_lab::tag_prompt_version,
+            commands::communication::observability::prompt_lab::rollback_prompt_version,
+            commands::communication::observability::prompt_lab::get_prompt_error_rate,
+            commands::communication::observability::prompt_lab::run_prompt_ab_test,
+            // Communication -- Observability: Alerts
+            commands::communication::observability::alerts::list_alert_rules,
+            commands::communication::observability::alerts::create_alert_rule,
+            commands::communication::observability::alerts::update_alert_rule,
+            commands::communication::observability::alerts::delete_alert_rule,
+            commands::communication::observability::alerts::toggle_alert_rule,
+            commands::communication::observability::alerts::list_fired_alerts,
+            commands::communication::observability::alerts::create_fired_alert,
+            commands::communication::observability::alerts::dismiss_fired_alert,
+            commands::communication::observability::alerts::clear_fired_alerts,
             // Communication -- SLA Dashboard
             commands::communication::sla::get_sla_dashboard,
             // Teams
@@ -1316,6 +1331,7 @@ pub fn run() {
             commands::teams::team_memories::get_team_memory_count,
             commands::teams::team_memories::get_team_memory_stats,
             commands::teams::team_memories::list_team_memories_by_run,
+            commands::teams::team_memories::evict_team_memories,
             // Tools
             commands::tools::tools::list_tool_definitions,
             commands::tools::tools::get_tool_definition,
@@ -1448,6 +1464,7 @@ pub fn run() {
             commands::infrastructure::cloud::cloud_oauth_refresh,
             commands::infrastructure::cloud::cloud_oauth_disconnect,
             commands::infrastructure::cloud::cloud_deploy_persona,
+            commands::infrastructure::cloud::cloud_sync_persona,
             commands::infrastructure::cloud::cloud_list_deployments,
             commands::infrastructure::cloud::cloud_pause_deployment,
             commands::infrastructure::cloud::cloud_resume_deployment,
@@ -1464,9 +1481,6 @@ pub fn run() {
             commands::infrastructure::cloud::cloud_delete_trigger,
             commands::infrastructure::cloud::cloud_list_trigger_firings,
             commands::infrastructure::cloud::cloud_webhook_relay_status,
-            commands::infrastructure::cloud::smee_get_channel_url,
-            commands::infrastructure::cloud::smee_set_channel_url,
-            commands::infrastructure::cloud::smee_disconnect,
             commands::infrastructure::cloud::smee_relay_list,
             commands::infrastructure::cloud::smee_relay_create,
             commands::infrastructure::cloud::smee_relay_update,

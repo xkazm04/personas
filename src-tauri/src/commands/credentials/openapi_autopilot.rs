@@ -7,6 +7,7 @@ use ts_rs::TS;
 
 use crate::db::models::CreateConnectorDefinitionInput;
 use crate::db::repos::resources::connectors as connector_repo;
+use crate::engine::api_proxy::invalidate_connector_cache;
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
@@ -638,6 +639,7 @@ pub fn openapi_generate_connector(
     };
 
     let connector = connector_repo::create(&state.db, input)?;
+    invalidate_connector_cache();
 
     Ok(GeneratedConnectorResult {
         connector_id: connector.id,

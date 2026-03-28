@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Check, AlertTriangle, Sparkles, CircleDot } from 'lucide-react';
+import { Check, AlertTriangle, Sparkles, CircleDot, RefreshCw, Ban } from 'lucide-react';
 import { ROLE_COLORS, PersonaAvatar } from '../../libs/teamConstants';
 
 interface PersonaNodeData {
@@ -10,7 +10,7 @@ interface PersonaNodeData {
   role: string;
   memberId: string;
   personaId: string;
-  pipelineStatus?: 'idle' | 'queued' | 'running' | 'completed' | 'failed';
+  pipelineStatus?: 'idle' | 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped';
   edgeCount?: number;
   [key: string]: unknown;
 }
@@ -25,6 +25,9 @@ function getPipelineStyles(status?: string, selected?: boolean): string {
       return 'border-emerald-500/50 shadow-[0_0_16px_rgba(16,185,129,0.4)]';
     case 'failed':
       return 'border-red-500/50 border-dashed shadow-[0_0_16px_rgba(239,68,68,0.3)]';
+    case 'cancelled':
+    case 'skipped':
+      return 'border-zinc-500/40 opacity-60';
     default:
       return selected
         ? 'border-indigo-500/50 shadow-[0_0_16px_rgba(99,102,241,0.15)]'
@@ -42,6 +45,7 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
   const dryRunStatus = d.dryRunStatus as string | undefined;
   const hasBreakpoint = d.hasBreakpoint as boolean | undefined;
   const hasOptimizerSuggestion = d.hasOptimizerSuggestion as boolean | undefined;
+  const isCycleNode = d.isCycleNode as boolean | undefined;
   const isGhost = d.isGhost as boolean | undefined;
   const defaultRole = { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/25' };
   const roleDef = ROLE_COLORS[role] ?? defaultRole;
@@ -80,6 +84,13 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
         </div>
       )}
 
+      {/* Cancelled / skipped indicator */}
+      {(effectiveStatus === 'cancelled' || effectiveStatus === 'skipped') && (
+        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-zinc-500 flex items-center justify-center z-10">
+          <Ban className="w-3 h-3 text-foreground" strokeWidth={3} />
+        </div>
+      )}
+
       {/* Breakpoint indicator */}
       {hasBreakpoint && (
         <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-red-600 flex items-center justify-center z-10">
@@ -91,6 +102,16 @@ function PersonaNodeComponent({ data, selected }: NodeProps) {
       {hasOptimizerSuggestion && !effectiveStatus && (
         <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-indigo-500/90 flex items-center justify-center z-10 animate-pulse">
           <Sparkles className="w-2.5 h-2.5 text-foreground" strokeWidth={2.5} />
+        </div>
+      )}
+
+      {/* Cycle warning indicator */}
+      {isCycleNode && (
+        <div
+          className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500/90 flex items-center justify-center z-10"
+          title="Part of a cycle — execution order is heuristically determined. Consider removing circular connections or marking them as feedback edges."
+        >
+          <RefreshCw className="w-2.5 h-2.5 text-foreground" strokeWidth={2.5} />
         </div>
       )}
 

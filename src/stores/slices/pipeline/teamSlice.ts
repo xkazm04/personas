@@ -7,7 +7,7 @@ import type { TeamMemory } from "@/lib/bindings/TeamMemory";
 import type { TeamMemoryStats } from "@/lib/bindings/TeamMemoryStats";
 import type { CreateTeamMemoryInput } from "@/lib/bindings/CreateTeamMemoryInput";
 import { batchDeleteTeamMemories, createTeamMemory, deleteTeamMemory, getTeamMemoryCount, getTeamMemoryStats, listTeamMemories, updateTeamMemory, updateTeamMemoryImportance } from "@/api/pipeline/teamMemories";
-import { addTeamMember, cloneTeam, createTeam, createTeamConnection, deleteTeam, deleteTeamConnection, listTeamConnections, listTeamMembers, listTeams, removeTeamMember, updateTeamConnection } from "@/api/pipeline/teams";
+import { addTeamMember, cloneTeam, createTeam, createTeamConnection, deleteTeam, deleteTeamConnection, getTeamCounts, listTeamConnections, listTeamMembers, listTeams, removeTeamMember, updateTeamConnection } from "@/api/pipeline/teams";
 
 import { storeBus } from "@/lib/storeBus";
 import { reportError } from "../../storeTypes";
@@ -15,6 +15,7 @@ import { reportError } from "../../storeTypes";
 export interface TeamSlice {
   // State
   teams: PersonaTeam[];
+  teamCounts: Record<string, { members: number; connections: number }>;
   selectedTeamId: string | null;
   teamMembers: PersonaTeamMember[];
   teamConnections: PersonaTeamConnection[];
@@ -50,6 +51,7 @@ export interface TeamSlice {
 
 export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (set, get) => ({
   teams: [],
+  teamCounts: {},
   selectedTeamId: null,
   teamMembers: [],
   teamConnections: [],
@@ -62,8 +64,12 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
 
   fetchTeams: async () => {
     try {
-      const teams = await listTeams();
-      set({ teams });
+      const [teams, counts] = await Promise.all([listTeams(), getTeamCounts()]);
+      const countsMap: Record<string, { members: number; connections: number }> = {};
+      for (const c of counts) {
+        countsMap[c.team_id] = { members: c.member_count, connections: c.connection_count };
+      }
+      set({ teams, teamCounts: countsMap });
     } catch (err) {
       reportError(err, "Failed to load teams", set);
     }
@@ -267,7 +273,7 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
     try {
       const [memories, total, stats] = await Promise.all([
         listTeamMemories(teamId, runId, category, search, 100),
-        getTeamMemoryCount(teamId, runId, category),
+        getTeamMemoryCount(teamId, runId, category, search),
         getTeamMemoryStats(teamId, category, search),
       ]);
       // Staleness guard: user may have switched teams while we were fetching

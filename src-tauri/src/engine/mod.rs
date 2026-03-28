@@ -29,6 +29,7 @@ pub mod failover;
 pub mod google_oauth;
 pub mod oauth_refresh;
 pub mod healing;
+pub mod healing_timeline;
 pub mod ai_healing;
 pub mod ai_helpers;
 pub mod healthcheck;
@@ -106,9 +107,11 @@ pub mod desktop_runtime;
 pub mod desktop_security;
 
 use std::collections::{HashMap, HashSet};
+use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use futures_util::FutureExt;
 use tauri::{AppHandle, Manager};
 use tokio::sync::Mutex;
 use tokio::sync::oneshot;
@@ -124,7 +127,7 @@ use crate::db::DbPool;
 use crate::engine::background::SchedulerState;
 use crate::error::AppError;
 
-use self::event_registry::event_name;
+use self::event_registry::{emit_event, event_name};
 use self::types::{ExecutionResult, ExecutionState, HealingEventPayload, QueueStatusEvent};
 
 use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
@@ -457,6 +460,9 @@ pub struct ExecutionEngine {
     /// Oneshot senders awaiting execution completion, keyed by execution ID.
     /// Fired when the spawned task finishes (regardless of success/failure).
     completion_waiters: Arc<Mutex<HashMap<String, Vec<oneshot::Sender<()>>>>>,
+    /// Persona IDs currently undergoing AI healing.
+    /// Prevents concurrent healing sessions from overwriting each other's fixes.
+    healing_personas: Arc<Mutex<HashSet<String>>>,
 }
 
 impl ExecutionEngine {
@@ -472,6 +478,7 @@ impl ExecutionEngine {
             scheduler,
             deleting_personas: Arc::new(Mutex::new(HashSet::new())),
             completion_waiters: Arc::new(Mutex::new(HashMap::new())),
+            healing_personas: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -505,6 +512,14 @@ impl ExecutionEngine {
     /// Check if a persona is currently marked for deletion.
     pub async fn is_deleting(&self, persona_id: &str) -> bool {
         self.deleting_personas
+            .lock()
+            .await
+            .contains(persona_id)
+    }
+
+    /// Check if a healing session is already active for a persona.
+    pub async fn is_healing(&self, persona_id: &str) -> bool {
+        self.healing_personas
             .lock()
             .await
             .contains(persona_id)
@@ -771,6 +786,7 @@ impl ExecutionEngine {
         let queued_contexts = self.queued_contexts.clone();
         let scheduler_for_task = self.scheduler.clone();
         let completion_waiters = self.completion_waiters.clone();
+        let healing_personas = self.healing_personas.clone();
 
         // Clone log_dir for potential healing retries (log_dir is moved into run_execution)
         let log_dir_for_retry = log_dir.clone();
@@ -782,75 +798,112 @@ impl ExecutionEngine {
             .and_then(|t| t.as_str())
             .map(String::from);
 
-        // Spawn background task
+        // Spawn background task.
+        // The inner work is wrapped in catch_unwind so that a panic inside
+        // run_execution (credential failure, spawn failure, etc.) does NOT
+        // skip the cleanup block.  Without this guard a panic would
+        // permanently leak a ConcurrencyTracker slot, making the persona
+        // appear at capacity and blocking all future executions until restart.
         let handle = tokio::spawn(async move {
-            let result = run_execution_with_ceiling(
-                app,
-                pool_clone.clone(),
-                exec_id.clone(),
-                persona,
-                tools,
-                input_data,
-                log_dir,
-                child_pids.clone(),
-                cancelled.clone(),
-                continuation,
-                chain_trace_id,
-                circuit_breaker.clone(),
-            )
-            .await;
+            let pool_for_cleanup = pool_clone.clone();
+            let exec_id_cleanup = exec_id.clone();
+            let persona_id_cleanup = persona_id.clone();
 
-            if cancelled.load(Ordering::Acquire) {
-                // Use conditional write: only update if status is still
-                // running or was set to cancelled by the safety-net (so we
-                // can enrich it with metrics). Won't overwrite if another
-                // code path already wrote a different terminal status.
+            let work = AssertUnwindSafe(async {
+                let result = run_execution_with_ceiling(
+                    app,
+                    pool_clone.clone(),
+                    exec_id.clone(),
+                    persona,
+                    tools,
+                    input_data,
+                    log_dir,
+                    child_pids.clone(),
+                    cancelled.clone(),
+                    continuation,
+                    chain_trace_id,
+                    circuit_breaker.clone(),
+                )
+                .await;
+
+                if cancelled.load(Ordering::Acquire) {
+                    persist_status_if_not_final(
+                        &pool_clone,
+                        Some(&app_for_healing),
+                        &exec_id,
+                        UpdateExecutionStatus {
+                            status: ExecutionState::Cancelled,
+                            error_message: Some("Cancelled by user".into()),
+                            duration_ms: Some(result.duration_ms as i64),
+                            log_file_path: result.log_file_path.clone(),
+                            input_tokens: Some(result.input_tokens as i64),
+                            output_tokens: Some(result.output_tokens as i64),
+                            cost_usd: Some(result.cost_usd),
+                            tool_steps: result.tool_steps.clone(),
+                            execution_config: result.execution_config.clone(),
+                            log_truncated: result.log_truncated,
+                            ..Default::default()
+                        },
+                    )
+                    .await;
+                } else {
+                    handle_execution_result(
+                        &pool_clone,
+                        &app_for_healing,
+                        &exec_id,
+                        &persona_id,
+                        persona_timeout_ms,
+                        &result,
+                        tracker.clone(),
+                        child_pids.clone(),
+                        cancelled_flags.clone(),
+                        log_dir_for_retry.clone(),
+                        circuit_breaker,
+                        Some(scheduler_for_task.clone()),
+                        healing_personas.clone(),
+                    )
+                    .await;
+                }
+            });
+
+            if let Err(panic_info) = work.catch_unwind().await {
+                let panic_msg = match panic_info.downcast_ref::<&str>() {
+                    Some(s) => s.to_string(),
+                    None => match panic_info.downcast_ref::<String>() {
+                        Some(s) => s.clone(),
+                        None => "unknown panic".to_string(),
+                    },
+                };
+                tracing::error!(
+                    execution_id = %exec_id_cleanup,
+                    persona_id = %persona_id_cleanup,
+                    panic = %panic_msg,
+                    "Execution task panicked — releasing concurrency slot",
+                );
+                // Persist failure so the execution doesn't stay stuck in Running
                 persist_status_if_not_final(
-                    &pool_clone,
-                    Some(&app_for_healing),
-                    &exec_id,
+                    &pool_for_cleanup,
+                    Some(&app_for_drain),
+                    &exec_id_cleanup,
                     UpdateExecutionStatus {
-                        status: ExecutionState::Cancelled,
-                        error_message: Some("Cancelled by user".into()),
-                        duration_ms: Some(result.duration_ms as i64),
-                        log_file_path: result.log_file_path.clone(),
-                        input_tokens: Some(result.input_tokens as i64),
-                        output_tokens: Some(result.output_tokens as i64),
-                        cost_usd: Some(result.cost_usd),
-                        tool_steps: result.tool_steps.clone(),
-                        execution_config: result.execution_config.clone(),
+                        status: ExecutionState::Failed,
+                        error_message: Some(format!("Internal error (panic): {panic_msg}")),
                         ..Default::default()
                     },
                 )
                 .await;
-            } else {
-                handle_execution_result(
-                    &pool_clone,
-                    &app_for_healing,
-                    &exec_id,
-                    &persona_id,
-                    persona_timeout_ms,
-                    &result,
-                    tracker.clone(),
-                    child_pids.clone(),
-                    cancelled_flags.clone(),
-                    log_dir_for_retry.clone(),
-                    circuit_breaker,
-                    Some(scheduler_for_task.clone()),
-                )
-                .await;
             }
 
-            // Clean up tracker and task handle (always, regardless of cancellation)
+            // Clean up tracker and task handle (always, regardless of panic/cancellation)
             tracker
                 .lock()
                 .await
-                .remove_running(&persona_id, &exec_id);
-            tasks.lock().await.remove(&exec_id);
-            cancelled_flags.lock().await.remove(&exec_id);
+                .remove_running(&persona_id_cleanup, &exec_id_cleanup);
+            tasks.lock().await.remove(&exec_id_cleanup);
+            cancelled_flags.lock().await.remove(&exec_id_cleanup);
 
             // Notify any callers waiting for this execution to complete
-            if let Some(waiters) = completion_waiters.lock().await.remove(&exec_id) {
+            if let Some(waiters) = completion_waiters.lock().await.remove(&exec_id_cleanup) {
                 for tx in waiters {
                     let _ = tx.send(());
                 }
@@ -863,11 +916,12 @@ impl ExecutionEngine {
                 queued_contexts,
                 cancelled_flags,
                 child_pids,
-                persona_id,
+                persona_id_cleanup,
                 persona_max_concurrent,
                 app_for_drain,
                 pool_for_drain,
                 circuit_breaker_for_drain,
+                healing_personas,
             )
             .await;
         });
@@ -1163,6 +1217,7 @@ impl ExecutionEngine {
             self.cancelled_flags.clone(),
             self.log_dir.clone(),
             self.circuit_breaker.clone(),
+            self.healing_personas.clone(),
         );
     }
 }
@@ -1209,6 +1264,7 @@ fn drain_and_start_next(
     app: AppHandle,
     pool: DbPool,
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
+    healing_personas: Arc<Mutex<HashSet<String>>>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
     Box::pin(async move {
     let persona_id = persona_id.as_str();
@@ -1302,67 +1358,103 @@ fn drain_and_start_next(
             let child_pids_clone = child_pids.clone();
             let circuit_breaker = circuit_breaker.clone();
             let circuit_breaker_for_drain = circuit_breaker.clone();
+            let healing_personas = healing_personas.clone();
+
+            let pool_for_cleanup = pool_clone.clone();
+            let exec_id_cleanup = exec_id.clone();
+            let persona_id_cleanup = persona_id_owned.clone();
 
             let handle = tokio::spawn(async move {
-                let result = run_execution_with_ceiling(
-                    app_handle,
-                    pool_clone.clone(),
-                    exec_id.clone(),
-                    persona,
-                    ctx.tools,
-                    ctx.input_data,
-                    log_dir,
-                    child_pids.clone(),
-                    cancelled.clone(),
-                    ctx.continuation,
-                    chain_trace_id,
-                    circuit_breaker.clone(),
-                )
-                .await;
+                let work = AssertUnwindSafe(async {
+                    let result = run_execution_with_ceiling(
+                        app_handle,
+                        pool_clone.clone(),
+                        exec_id.clone(),
+                        persona,
+                        ctx.tools,
+                        ctx.input_data,
+                        log_dir,
+                        child_pids.clone(),
+                        cancelled.clone(),
+                        ctx.continuation,
+                        chain_trace_id,
+                        circuit_breaker.clone(),
+                    )
+                    .await;
 
-                if cancelled.load(Ordering::Acquire) {
+                    if cancelled.load(Ordering::Acquire) {
+                        persist_status_if_not_final(
+                            &pool_clone,
+                            Some(&app_for_healing),
+                            &exec_id,
+                            UpdateExecutionStatus {
+                                status: ExecutionState::Cancelled,
+                                error_message: Some("Cancelled by user".into()),
+                                duration_ms: Some(result.duration_ms as i64),
+                                log_file_path: result.log_file_path.clone(),
+                                input_tokens: Some(result.input_tokens as i64),
+                                output_tokens: Some(result.output_tokens as i64),
+                                cost_usd: Some(result.cost_usd),
+                                tool_steps: result.tool_steps.clone(),
+                                log_truncated: result.log_truncated,
+                                ..Default::default()
+                            },
+                        )
+                        .await;
+                    } else {
+                        handle_execution_result(
+                            &pool_clone,
+                            &app_for_healing,
+                            &exec_id,
+                            &persona_id_owned,
+                            persona_timeout_ms,
+                            &result,
+                            tracker_clone.clone(),
+                            child_pids.clone(),
+                            cancelled_flags.clone(),
+                            log_dir_for_retry.clone(),
+                            circuit_breaker,
+                            None,
+                            healing_personas.clone(),
+                        )
+                        .await;
+                    }
+                });
+
+                if let Err(panic_info) = work.catch_unwind().await {
+                    let panic_msg = match panic_info.downcast_ref::<&str>() {
+                        Some(s) => s.to_string(),
+                        None => match panic_info.downcast_ref::<String>() {
+                            Some(s) => s.clone(),
+                            None => "unknown panic".to_string(),
+                        },
+                    };
+                    tracing::error!(
+                        execution_id = %exec_id_cleanup,
+                        persona_id = %persona_id_cleanup,
+                        panic = %panic_msg,
+                        "Queued execution task panicked — releasing concurrency slot",
+                    );
                     persist_status_if_not_final(
-                        &pool_clone,
-                        Some(&app_for_healing),
-                        &exec_id,
+                        &pool_for_cleanup,
+                        Some(&app_for_drain),
+                        &exec_id_cleanup,
                         UpdateExecutionStatus {
-                            status: ExecutionState::Cancelled,
-                            error_message: Some("Cancelled by user".into()),
-                            duration_ms: Some(result.duration_ms as i64),
-                            log_file_path: result.log_file_path.clone(),
-                            input_tokens: Some(result.input_tokens as i64),
-                            output_tokens: Some(result.output_tokens as i64),
-                            cost_usd: Some(result.cost_usd),
-                            tool_steps: result.tool_steps.clone(),
+                            status: ExecutionState::Failed,
+                            error_message: Some(format!("Internal error (panic): {panic_msg}")),
                             ..Default::default()
                         },
                     )
                     .await;
-                } else {
-                    handle_execution_result(
-                        &pool_clone,
-                        &app_for_healing,
-                        &exec_id,
-                        &persona_id_owned,
-                        persona_timeout_ms,
-                        &result,
-                        tracker_clone.clone(),
-                        child_pids.clone(),
-                        cancelled_flags.clone(),
-                        log_dir_for_retry.clone(),
-                        circuit_breaker,
-                        None,
-                    )
-                    .await;
                 }
 
-                // Clean up
+                // Clean up (always, regardless of panic)
                 tracker_clone
                     .lock()
                     .await
-                    .remove_running(&persona_id_owned, &exec_id);
-                tasks_clone.lock().await.remove(&exec_id);
-                cancelled_flags.lock().await.remove(&exec_id);
+                    .remove_running(&persona_id_cleanup, &exec_id_cleanup);
+                tasks_clone.lock().await.remove(&exec_id_cleanup);
+                cancelled_flags.lock().await.remove(&exec_id_cleanup);
 
                 // Recursively drain next (owned types for Send safety)
                 drain_and_start_next(
@@ -1371,11 +1463,12 @@ fn drain_and_start_next(
                     queued_contexts_clone,
                     cancelled_flags_clone,
                     child_pids_clone,
-                    persona_id_owned,
+                    persona_id_cleanup,
                     persona_max_concurrent_inner,
                     app_for_drain,
                     pool_for_drain,
                     circuit_breaker_for_drain,
+                    healing_personas,
                 )
                 .await;
             });
@@ -1409,6 +1502,7 @@ async fn handle_execution_result(
     log_dir: PathBuf,
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
     scheduler: Option<Arc<SchedulerState>>,
+    healing_personas: Arc<Mutex<HashSet<String>>>,
 ) {
     let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
 
@@ -1431,6 +1525,7 @@ async fn handle_execution_result(
             tool_steps: result.tool_steps.clone(),
             claude_session_id: result.claude_session_id.clone(),
             execution_config: result.execution_config.clone(),
+            log_truncated: result.log_truncated,
         },
     )
     .await;
@@ -1553,6 +1648,7 @@ async fn handle_execution_result(
             cancelled_flags,
             log_dir,
             circuit_breaker,
+            healing_personas,
         );
     }
 
@@ -1647,6 +1743,7 @@ fn evaluate_healing_and_retry(
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     log_dir: PathBuf,
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
+    healing_personas: Arc<Mutex<HashSet<String>>>,
 ) {
     let consecutive = exec_repo::get_recent_failures(pool, persona_id, 5)
         .unwrap_or_default()
@@ -1799,6 +1896,7 @@ fn evaluate_healing_and_retry(
                     cancelled_flags,
                     log_dir,
                     circuit_breaker,
+                    healing_personas,
                 );
             } else {
                 tracing::info!(
@@ -1967,8 +2065,19 @@ fn spawn_healing_chain(
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     log_dir: PathBuf,
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
+    healing_personas: Arc<Mutex<HashSet<String>>>,
 ) {
     tokio::spawn(async move {
+        // Per-persona concurrency guard: prevent overlapping healing sessions.
+        // If another session is already in progress, skip silently.
+        if !healing_personas.lock().await.insert(persona_id.clone()) {
+            tracing::info!(
+                persona_id = %persona_id,
+                "AI healing: session already in progress, skipping",
+            );
+            return;
+        }
+
         // Brief delay to let the original execution finalize
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
@@ -1983,12 +2092,14 @@ fn spawn_healing_chain(
             Ok(p) => p,
             Err(e) => {
                 tracing::error!("AI healing: failed to load persona: {}", e);
+                healing_personas.lock().await.remove(&persona_id);
                 return;
             }
         };
 
         if !persona.enabled {
             tracing::warn!("AI healing: persona disabled, skipping");
+            healing_personas.lock().await.remove(&persona_id);
             return;
         }
 
@@ -2011,6 +2122,7 @@ fn spawn_healing_chain(
             Ok(e) => e,
             Err(e) => {
                 tracing::error!("AI healing: failed to create execution record: {}", e);
+                healing_personas.lock().await.remove(&persona_id);
                 return;
             }
         };
@@ -2041,6 +2153,7 @@ fn spawn_healing_chain(
                         "phase": "failed",
                     }),
                 );
+                healing_personas.lock().await.remove(&persona_id);
                 return;
             }
         }
@@ -2079,142 +2192,179 @@ fn spawn_healing_chain(
             }),
         );
 
-        // 9. Run the execution, resuming the original session
-        let result = run_execution_with_ceiling(
-            app.clone(),
-            pool.clone(),
-            exec_id.clone(),
-            persona,
-            tools,
-            Some(healing_input), // healing instructions as input_data
-            log_dir,
-            child_pids.clone(),
-            cancelled.clone(),
-            Some(types::Continuation::SessionResume(session_id)),
-            None, // no chain_trace_id
-            circuit_breaker,
-        )
-        .await;
+        // Clones for cleanup (catch_unwind guard)
+        let pool_for_cleanup = pool.clone();
+        let app_for_cleanup = app.clone();
+        let exec_id_cleanup = exec_id.clone();
+        let persona_id_cleanup = persona_id.clone();
 
-        // 10. Write final status (conditional to avoid cancel race)
-        let status = if cancelled.load(Ordering::Acquire) {
-            ExecutionState::Cancelled
-        } else if result.success {
-            ExecutionState::Completed
-        } else {
-            ExecutionState::Failed
-        };
+        let work = AssertUnwindSafe(async {
+            // 9. Run the execution, resuming the original session
+            let result = run_execution_with_ceiling(
+                app.clone(),
+                pool.clone(),
+                exec_id.clone(),
+                persona,
+                tools,
+                Some(healing_input), // healing instructions as input_data
+                log_dir,
+                child_pids.clone(),
+                cancelled.clone(),
+                Some(types::Continuation::SessionResume(session_id)),
+                None, // no chain_trace_id
+                circuit_breaker,
+            )
+            .await;
 
-        persist_status_if_not_final(
-            &pool,
-            Some(&app),
-            &exec_id,
-            UpdateExecutionStatus {
-                status,
-                output_data: result.output.clone(),
-                error_message: result.error.clone(),
-                duration_ms: Some(result.duration_ms as i64),
-                log_file_path: result.log_file_path.clone(),
-                execution_flows: result.execution_flows.clone(),
-                input_tokens: Some(result.input_tokens as i64),
-                output_tokens: Some(result.output_tokens as i64),
-                cost_usd: Some(result.cost_usd),
-                tool_steps: result.tool_steps.clone(),
-                claude_session_id: result.claude_session_id.clone(),
-                execution_config: None,
-            },
-        )
-        .await;
+            // 10. Write final status (conditional to avoid cancel race)
+            let status = if cancelled.load(Ordering::Acquire) {
+                ExecutionState::Cancelled
+            } else if result.success {
+                ExecutionState::Completed
+            } else {
+                ExecutionState::Failed
+            };
 
-        let _ = app.emit(
-            event_name::EXECUTION_STATUS,
-            types::ExecutionStatusEvent {
-                execution_id: exec_id.clone(),
-                status,
-                error: result.error.clone(),
-                duration_ms: Some(result.duration_ms),
-                cost_usd: Some(result.cost_usd),
-            },
-        );
+            persist_status_if_not_final(
+                &pool,
+                Some(&app),
+                &exec_id,
+                UpdateExecutionStatus {
+                    status,
+                    output_data: result.output.clone(),
+                    error_message: result.error.clone(),
+                    duration_ms: Some(result.duration_ms as i64),
+                    log_file_path: result.log_file_path.clone(),
+                    execution_flows: result.execution_flows.clone(),
+                    input_tokens: Some(result.input_tokens as i64),
+                    output_tokens: Some(result.output_tokens as i64),
+                    cost_usd: Some(result.cost_usd),
+                    tool_steps: result.tool_steps.clone(),
+                    claude_session_id: result.claude_session_id.clone(),
+                    execution_config: None,
+                    log_truncated: result.log_truncated,
+                },
+            )
+            .await;
 
-        // 11. Process healing output: parse fixes and apply to DB
-        let _ = app.emit(
-            event_name::AI_HEALING_STATUS,
-            serde_json::json!({
-                "execution_id": original_exec_id,
-                "persona_id": persona_id,
-                "phase": "applying",
-                "healing_execution_id": exec_id,
-            }),
-        );
+            let _ = app.emit(
+                event_name::EXECUTION_STATUS,
+                types::ExecutionStatusEvent {
+                    execution_id: exec_id.clone(),
+                    status,
+                    error: result.error.clone(),
+                    duration_ms: Some(result.duration_ms),
+                    cost_usd: Some(result.cost_usd),
+                },
+            );
 
-        match ai_healing::process_healing_result(&pool, &persona_id, &result).await {
-            Ok(heal_result) => {
-                tracing::info!(
-                    "AI healing completed for {}: {} fixes, retry={}",
-                    original_exec_id,
-                    heal_result.fixes_applied.len(),
-                    heal_result.should_retry,
-                );
+            // 11. Process healing output: parse fixes and apply to DB
+            let _ = app.emit(
+                event_name::AI_HEALING_STATUS,
+                serde_json::json!({
+                    "execution_id": original_exec_id,
+                    "persona_id": persona_id,
+                    "phase": "applying",
+                    "healing_execution_id": exec_id,
+                }),
+            );
 
-                let _ = app.emit(
-                    event_name::AI_HEALING_STATUS,
-                    serde_json::json!({
-                        "execution_id": original_exec_id,
-                        "persona_id": persona_id,
-                        "phase": "completed",
-                        "healing_execution_id": exec_id,
-                        "diagnosis": heal_result.diagnosis,
-                        "fixes_applied": heal_result.fixes_applied.iter()
-                            .map(|f| f.description.clone())
-                            .collect::<Vec<_>>(),
-                        "should_retry": heal_result.should_retry,
-                    }),
-                );
-
-                // If fixes were applied and retry is recommended, schedule
-                // a fresh retry of the original task (not another heal)
-                if heal_result.should_retry && !heal_result.fixes_applied.is_empty() {
+            match ai_healing::process_healing_result(&pool, &persona_id, &result).await {
+                Ok(heal_result) => {
                     tracing::info!(
-                        "AI healing: scheduling retry after {} fixes applied",
+                        "AI healing completed for {}: {} fixes, retry={}",
+                        original_exec_id,
                         heal_result.fixes_applied.len(),
+                        heal_result.should_retry,
                     );
-                    spawn_delayed_retry(
-                        2, // short delay after AI fixes
-                        None,
-                        pool.clone(),
-                        app.clone(),
-                        persona_id.clone(),
-                        original_exec_id.clone(),
-                        retry_count + 1,
-                        tracker.clone(),
-                        child_pids.clone(),
-                        cancelled_flags.clone(),
-                        // log_dir was moved into runner, use a fresh path
-                        std::env::temp_dir().join("personas-logs"),
-                        // circuit_breaker was moved, create a fresh ref
-                        Arc::new(failover::ProviderCircuitBreaker::new()),
+
+                    let _ = app.emit(
+                        event_name::AI_HEALING_STATUS,
+                        serde_json::json!({
+                            "execution_id": original_exec_id,
+                            "persona_id": persona_id,
+                            "phase": "completed",
+                            "healing_execution_id": exec_id,
+                            "diagnosis": heal_result.diagnosis,
+                            "fixes_applied": heal_result.fixes_applied.iter()
+                                .map(|f| f.description.clone())
+                                .collect::<Vec<_>>(),
+                            "should_retry": heal_result.should_retry,
+                        }),
+                    );
+
+                    // If fixes were applied and retry is recommended, schedule
+                    // a fresh retry of the original task (not another heal)
+                    if heal_result.should_retry && !heal_result.fixes_applied.is_empty() {
+                        tracing::info!(
+                            "AI healing: scheduling retry after {} fixes applied",
+                            heal_result.fixes_applied.len(),
+                        );
+                        spawn_delayed_retry(
+                            2, // short delay after AI fixes
+                            None,
+                            pool.clone(),
+                            app.clone(),
+                            persona_id.clone(),
+                            original_exec_id.clone(),
+                            retry_count + 1,
+                            tracker.clone(),
+                            child_pids.clone(),
+                            cancelled_flags.clone(),
+                            // log_dir was moved into runner, use a fresh path
+                            std::env::temp_dir().join("personas-logs"),
+                            // circuit_breaker was moved, create a fresh ref
+                            Arc::new(failover::ProviderCircuitBreaker::new()),
+                        );
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("AI healing: failed to process result: {}", e);
+                    let _ = app.emit(
+                        event_name::AI_HEALING_STATUS,
+                        serde_json::json!({
+                            "execution_id": original_exec_id,
+                            "persona_id": persona_id,
+                            "phase": "failed",
+                        }),
                     );
                 }
             }
-            Err(e) => {
-                tracing::warn!("AI healing: failed to process result: {}", e);
-                let _ = app.emit(
-                    event_name::AI_HEALING_STATUS,
-                    serde_json::json!({
-                        "execution_id": original_exec_id,
-                        "persona_id": persona_id,
-                        "phase": "failed",
-                    }),
-                );
-            }
+        });
+
+        if let Err(panic_info) = work.catch_unwind().await {
+            let panic_msg = match panic_info.downcast_ref::<&str>() {
+                Some(s) => s.to_string(),
+                None => match panic_info.downcast_ref::<String>() {
+                    Some(s) => s.clone(),
+                    None => "unknown panic".to_string(),
+                },
+            };
+            tracing::error!(
+                execution_id = %exec_id_cleanup,
+                persona_id = %persona_id_cleanup,
+                panic = %panic_msg,
+                "Healing execution panicked — releasing concurrency slot",
+            );
+            persist_status_if_not_final(
+                &pool_for_cleanup,
+                Some(&app_for_cleanup),
+                &exec_id_cleanup,
+                UpdateExecutionStatus {
+                    status: ExecutionState::Failed,
+                    error_message: Some(format!("Internal error (panic): {panic_msg}")),
+                    ..Default::default()
+                },
+            )
+            .await;
         }
 
-        // 12. Cleanup
-        tracker.lock().await.remove_running(&persona_id, &exec_id);
-        cancelled_flags.lock().await.remove(&exec_id);
+        // 12. Cleanup (always, regardless of panic)
+        tracker.lock().await.remove_running(&persona_id_cleanup, &exec_id_cleanup);
+        cancelled_flags.lock().await.remove(&exec_id_cleanup);
+        healing_personas.lock().await.remove(&persona_id_cleanup);
         #[cfg(feature = "desktop")]
-        crate::tray::refresh_tray(&app);
+        crate::tray::refresh_tray(&app_for_cleanup);
     });
 }
 
@@ -2389,6 +2539,7 @@ fn spawn_delayed_retry(
                     output_tokens: Some(result.output_tokens as i64),
                     cost_usd: Some(result.cost_usd),
                     tool_steps: result.tool_steps.clone(),
+                    log_truncated: result.log_truncated,
                     ..Default::default()
                 },
             )
@@ -2412,6 +2563,7 @@ fn spawn_delayed_retry(
                     tool_steps: result.tool_steps.clone(),
                     claude_session_id: result.claude_session_id.clone(),
                     execution_config: None,
+                    log_truncated: result.log_truncated,
                 },
             )
             .await;
@@ -2450,10 +2602,23 @@ fn spawn_delayed_retry(
                 .unwrap_or_default();
             for hi in &pending_issues {
                 if hi.status == "auto_fix_pending" {
-                    if result.success {
+                    let (transition, new_status) = if result.success {
                         let _ = healing_repo::confirm_auto_fix(&pool, &hi.id);
+                        ("auto_fix_confirmed", "resolved")
                     } else {
                         let _ = healing_repo::revert_auto_fix_pending(&pool, &hi.id);
+                        ("auto_fix_reverted", "open")
+                    };
+                    let event_payload = types::HealingIssueUpdatedEvent {
+                        issue_id: hi.id.clone(),
+                        persona_id: hi.persona_id.clone(),
+                        execution_id: hi.execution_id.clone(),
+                        new_status: new_status.to_string(),
+                        transition: transition.to_string(),
+                    };
+                    emit_event(&app, event_name::HEALING_ISSUE_UPDATED, &event_payload);
+                    if result.success {
+                        emit_event(&app, event_name::AUTO_FIX_COMPLETED, &event_payload);
                     }
                 }
             }

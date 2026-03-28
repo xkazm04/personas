@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
 import type { DeployAutomationResult } from '@/api/agents/automations';
@@ -41,15 +41,26 @@ export function AutomationReviewStep({
   }
 
   if (phase === 'success' && deployResult) {
+    const hasWarning = !!deployResult.activationWarning;
     return (
       <div key="success" className="animate-fade-slide-in flex flex-col items-center justify-center py-12 space-y-4">
-        <div className="w-12 h-12 rounded-full bg-brand-emerald/10 border border-brand-emerald/20 flex items-center justify-center">
-          <CheckCircle2 className="w-5 h-5 text-brand-emerald" />
+        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${hasWarning ? 'bg-brand-amber/10 border border-brand-amber/20' : 'bg-brand-emerald/10 border border-brand-emerald/20'}`}>
+          {hasWarning
+            ? <AlertTriangle className="w-5 h-5 text-brand-amber" />
+            : <CheckCircle2 className="w-5 h-5 text-brand-emerald" />}
         </div>
         <div className="text-center max-w-md">
-          <p className="text-sm font-medium text-foreground/90">Automation deployed successfully</p>
+          <p className="text-sm font-medium text-foreground/90">
+            {hasWarning ? 'Automation deployed with warning' : 'Automation deployed successfully'}
+          </p>
           <p className="text-sm text-muted-foreground mt-1">{deployResult.deploymentMessage}</p>
         </div>
+        {hasWarning && (
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-brand-amber/5 border border-brand-amber/15 max-w-md">
+            <AlertTriangle className="w-4 h-4 text-brand-amber/70 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-brand-amber/80">{deployResult.activationWarning}</p>
+          </div>
+        )}
         {sanitizeExternalUrl(deployResult.platformUrl) && (
           <a
             href={sanitizeExternalUrl(deployResult.platformUrl)!}

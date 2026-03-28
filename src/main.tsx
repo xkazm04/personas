@@ -11,9 +11,64 @@ import "./styles/globals.css";
 
 const globalErrorLogger = createLogger("global-error");
 
-// -- Render React immediately (sync) -------------------------------------
+// -- Global error handlers (sync, before React) ------------------------------
+// Registered immediately so no early crash is silently lost.
+// Sentry capture is deferred until initSentry() completes in the async phase;
+// a flag flips once Sentry is ready.
+
+let sentryReady = false;
+
+/** Collect active persona + route so crash logs carry runtime context. */
+function getErrorContext(): Record<string, unknown> {
+  const ctx: Record<string, unknown> = { route: window.location.hash || window.location.pathname };
+  try {
+    const stored = localStorage.getItem("persona-ui-agents");
+    if (stored) {
+      const parsed = JSON.parse(stored) as { state?: { selectedPersonaId?: string | null } };
+      if (parsed?.state?.selectedPersonaId) {
+        ctx.personaId = parsed.state.selectedPersonaId;
+      }
+    }
+  } catch { /* intentional: store may not exist yet */ }
+  return ctx;
+}
+
+window.onerror = (_message, _source, _lineno, _colno, error) => {
+  const ctx = getErrorContext();
+  const err = error ?? new Error(String(_message));
+  globalErrorLogger.error("Uncaught synchronous error", {
+    message: err instanceof Error ? err.message : String(err),
+    source: _source ?? undefined,
+    line: _lineno ?? undefined,
+    col: _colno ?? undefined,
+    ...ctx,
+  });
+  if (sentryReady) {
+    try { Sentry.captureException(err); } catch { /* intentional no-op */ }
+  }
+  persistCrash("window.onerror", err);
+};
+
+window.addEventListener("unhandledrejection", (event) => {
+  const ctx = getErrorContext();
+  const reason = event.reason;
+  globalErrorLogger.error("Unhandled promise rejection", {
+    message: reason instanceof Error ? reason.message : String(reason),
+    ...ctx,
+  });
+  if (sentryReady) {
+    try {
+      Sentry.captureException(
+        reason instanceof Error ? reason : new Error(String(reason)),
+      );
+    } catch { /* intentional no-op */ }
+  }
+  persistCrash("unhandledrejection", reason);
+});
+
+// -- Render React immediately (sync) -----------------------------------------
 // On Android WebView, async bootstrap can hang if Tauri IPC promises never
-// resolve. Render first, then set up Sentry/error handlers asynchronously.
+// resolve. Render first, then set up Sentry asynchronously.
 
 const root = document.getElementById("root");
 if (root) {
@@ -83,8 +138,9 @@ if (root) {
   console.error("[main] #root element not found");
 }
 
-// -- Async setup (Sentry, error handlers) --------------------------------
-// Runs after React is already mounted so the app is visible immediately.
+// -- Async setup (Sentry, analytics) -----------------------------------------
+// Runs after React is already mounted and error handlers are active.
+// Only Sentry enrichment and analytics are deferred here.
 
 (async () => {
   let appVersion = "dev";
@@ -96,6 +152,7 @@ if (root) {
 
   try {
     initSentry(appVersion);
+    sentryReady = true;
   } catch (e) {
     console.warn("[main] Sentry init failed:", e);
   }
@@ -107,49 +164,4 @@ if (root) {
   } catch (e) {
     console.warn("[main] Analytics init failed:", e);
   }
-
-  /** Collect active persona + route so crash logs carry runtime context. */
-  function getErrorContext(): Record<string, unknown> {
-    const ctx: Record<string, unknown> = { route: window.location.hash || window.location.pathname };
-    try {
-      // Lazy import — agentStore may not be initialised yet during early startup
-      const stored = localStorage.getItem("persona-ui-agents");
-      if (stored) {
-        const parsed = JSON.parse(stored) as { state?: { selectedPersonaId?: string | null } };
-        if (parsed?.state?.selectedPersonaId) {
-          ctx.personaId = parsed.state.selectedPersonaId;
-        }
-      }
-    } catch { /* intentional: store may not exist yet */ }
-    return ctx;
-  }
-
-  window.onerror = (_message, _source, _lineno, _colno, error) => {
-    const ctx = getErrorContext();
-    const err = error ?? new Error(String(_message));
-    globalErrorLogger.error("Uncaught synchronous error", {
-      message: err instanceof Error ? err.message : String(err),
-      source: _source ?? undefined,
-      line: _lineno ?? undefined,
-      col: _colno ?? undefined,
-      ...ctx,
-    });
-    try { Sentry.captureException(err); } catch { /* intentional no-op */ }
-    persistCrash("window.onerror", err);
-  };
-
-  window.addEventListener("unhandledrejection", (event) => {
-    const ctx = getErrorContext();
-    const reason = event.reason;
-    globalErrorLogger.error("Unhandled promise rejection", {
-      message: reason instanceof Error ? reason.message : String(reason),
-      ...ctx,
-    });
-    try {
-      Sentry.captureException(
-        reason instanceof Error ? reason : new Error(String(reason)),
-      );
-    } catch { /* intentional no-op */ }
-    persistCrash("unhandledrejection", reason);
-  });
 })();

@@ -323,18 +323,30 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         if ids.is_empty() {
             return Ok(0);
         }
+
+        // SQLite has a default SQLITE_MAX_VARIABLE_NUMBER of 999.
+        // Chunk deletes into batches of 500 to stay well under the limit.
+        const CHUNK_SIZE: usize = 500;
         let conn = pool.get()?;
-        let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("?{i}")).collect();
-        let sql = format!(
-            "DELETE FROM team_memories WHERE id IN ({})",
-            placeholders.join(", ")
-        );
-        let params: Vec<&dyn rusqlite::types::ToSql> = ids
-            .iter()
-            .map(|id| id as &dyn rusqlite::types::ToSql)
-            .collect();
-        let rows = conn.execute(&sql, params.as_slice())?;
-        Ok(rows as i64)
+        let tx = conn.unchecked_transaction()?;
+        let mut total_deleted: i64 = 0;
+
+        for chunk in ids.chunks(CHUNK_SIZE) {
+            let placeholders: Vec<String> = (1..=chunk.len()).map(|i| format!("?{i}")).collect();
+            let sql = format!(
+                "DELETE FROM team_memories WHERE id IN ({})",
+                placeholders.join(", ")
+            );
+            let params: Vec<&dyn rusqlite::types::ToSql> = chunk
+                .iter()
+                .map(|id| id as &dyn rusqlite::types::ToSql)
+                .collect();
+            let rows = tx.execute(&sql, params.as_slice())?;
+            total_deleted += rows as i64;
+        }
+
+        tx.commit()?;
+        Ok(total_deleted)
 
     })
 }
@@ -344,6 +356,7 @@ pub fn get_total_count(
     team_id: &str,
     run_id: Option<&str>,
     category: Option<&str>,
+    search: Option<&str>,
 ) -> Result<i64, AppError> {
     timed_query!("team_memories", "team_memories::get_total_count", {
         let conn = pool.get()?;
@@ -365,6 +378,13 @@ pub fn get_total_count(
             conditions.push(format!("category = ?{param_idx}"));
             param_values.push(Box::new(cat.to_string()));
             param_idx += 1;
+        }
+        if let Some(s) = search {
+            let pattern = format!("%{}%", escape_like(s));
+            conditions.push(format!("(title LIKE ?{param_idx} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')", param_idx + 1));
+            param_values.push(Box::new(pattern.clone()));
+            param_values.push(Box::new(pattern));
+            param_idx += 2;
         }
         let _ = param_idx; // suppress unused-assignment warning; keep idx correct for future filters
 
@@ -419,13 +439,15 @@ pub fn get_stats(
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
             param_values.iter().map(|p| p.as_ref()).collect();
 
-        // Total + avg importance
+        // Total + avg importance + auto-generated count
         let sql_agg = format!(
-            "SELECT COUNT(*), COALESCE(AVG(importance), 0) FROM team_memories {where_clause}"
+            "SELECT COUNT(*), COALESCE(AVG(importance), 0),
+                    SUM(CASE WHEN run_id IS NOT NULL THEN 1 ELSE 0 END)
+             FROM team_memories {where_clause}"
         );
-        let (total, avg_importance): (i64, f64) =
+        let (total, avg_importance, auto_generated): (i64, f64, i64) =
             conn.query_row(&sql_agg, params_ref.as_slice(), |row| {
-                Ok((row.get(0)?, row.get(1)?))
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?))
             })?;
 
         // Category breakdown
@@ -450,10 +472,71 @@ pub fn get_stats(
 
         Ok(TeamMemoryStats {
             total,
+            auto_generated,
+            max_memories: DEFAULT_MAX_MEMORIES_PER_TEAM,
             avg_importance,
             category_counts,
             run_counts,
         })
 
+    })
+}
+
+/// Default cap on the number of memories stored per team.
+pub const DEFAULT_MAX_MEMORIES_PER_TEAM: i64 = 200;
+
+/// Evict lowest-importance, oldest auto-generated memories when the total
+/// memory count for a team exceeds `max_memories`. Only memories with a
+/// non-NULL `run_id` (i.e. auto-created by pipeline runs) are eligible for
+/// eviction — manually curated memories are never removed.
+///
+/// Returns the number of rows deleted.
+pub fn evict_excess(
+    pool: &DbPool,
+    team_id: &str,
+    max_memories: Option<i64>,
+) -> Result<i64, AppError> {
+    timed_query!("team_memories", "team_memories::evict_excess", {
+        let cap = max_memories.unwrap_or(DEFAULT_MAX_MEMORIES_PER_TEAM);
+        if cap <= 0 {
+            return Ok(0);
+        }
+
+        let conn = pool.get()?;
+
+        let total: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM team_memories WHERE team_id = ?1",
+            params![team_id],
+            |row| row.get(0),
+        )?;
+
+        if total <= cap {
+            return Ok(0);
+        }
+
+        let excess = total - cap;
+
+        // Delete the `excess` lowest-value auto-generated memories.
+        // Eviction order: lowest importance first, then oldest first.
+        let deleted = conn.execute(
+            "DELETE FROM team_memories WHERE id IN (
+                SELECT id FROM team_memories
+                WHERE team_id = ?1 AND run_id IS NOT NULL
+                ORDER BY importance ASC, created_at ASC
+                LIMIT ?2
+            )",
+            params![team_id, excess],
+        )?;
+
+        if deleted > 0 {
+            tracing::info!(
+                team_id = %team_id,
+                evicted = deleted,
+                cap = cap,
+                "Evicted excess auto-generated team memories"
+            );
+        }
+
+        Ok(deleted as i64)
     })
 }

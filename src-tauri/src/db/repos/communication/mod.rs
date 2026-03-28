@@ -7,3 +7,4 @@ pub mod template_feedback;
 pub mod chat;
 pub mod smee_relays;
 pub mod shared_events;
+pub mod sla;

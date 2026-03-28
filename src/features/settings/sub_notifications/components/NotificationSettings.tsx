@@ -61,7 +61,7 @@ function WeeklyDigestToggle() {
     digestSetting.setValue(enabled ? 'false' : 'true');
   }, [enabled, digestSetting]);
 
-  // Auto-save
+  // Auto-save (debounced to prevent race conditions from rapid toggles)
   const digestLoadedOnce = useRef(false);
   useEffect(() => {
     if (!digestSetting.loaded) return;
@@ -69,7 +69,8 @@ function WeeklyDigestToggle() {
       digestLoadedOnce.current = true;
       return;
     }
-    digestSetting.save();
+    const timer = setTimeout(() => digestSetting.save(), 300);
+    return () => clearTimeout(timer);
   }, [digestSetting.value]);
 
   if (!digestSetting.loaded) return null;
@@ -103,14 +104,15 @@ export default function NotificationSettings() {
   });
   const hasLoadedOnce = useRef(false);
 
-  // Auto-save whenever value changes (skip the initial load)
+  // Auto-save whenever value changes (debounced to prevent race conditions from rapid toggles)
   useEffect(() => {
     if (!setting.loaded) return;
     if (!hasLoadedOnce.current) {
       hasLoadedOnce.current = true;
       return;
     }
-    setting.save();
+    const timer = setTimeout(() => setting.save(), 300);
+    return () => clearTimeout(timer);
   }, [setting.value]); // intentionally not including setting.save
 
   const prefs = useMemo<NotificationPrefs>(() => {

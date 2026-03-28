@@ -97,6 +97,14 @@ export function useByomSettings() {
   }, [activeSection]);
 
   const handleSave = useCallback(async () => {
+    const errors = validateByomPolicy(policy).filter((w) => w.severity === 'error');
+    if (errors.length > 0) {
+      useToastStore.getState().addToast(
+        `Cannot save: ${errors.length} blocking error${errors.length > 1 ? 's' : ''} in policy`,
+        'error',
+      );
+      return;
+    }
     await setByomPolicy(policy);
     savedSnapshotRef.current = policy;
     useToastStore.getState().addToast('Policy saved', 'success');
@@ -179,6 +187,7 @@ export function useByomSettings() {
   }, []);
 
   const policyWarnings = useMemo(() => validateByomPolicy(policy), [policy]);
+  const hasBlockingErrors = useMemo(() => policyWarnings.some((w) => w.severity === 'error'), [policyWarnings]);
 
   const routingWarnings = useMemo(() => {
     const map = new Map<number, PolicyWarning[]>();
@@ -225,6 +234,7 @@ export function useByomSettings() {
     updateComplianceRule,
     removeComplianceRule,
     policyWarnings,
+    hasBlockingErrors,
     routingWarnings,
     complianceWarnings,
   };

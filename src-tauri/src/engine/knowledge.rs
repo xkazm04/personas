@@ -209,7 +209,7 @@ fn normalize_error_pattern(error: &str) -> String {
     while let Some(c) = chars.next() {
         if c.is_ascii_digit() {
             // Skip consecutive digits
-            while chars.peek().is_some_and(|ch| ch.is_ascii_digit() || *ch == '-') {
+            while chars.peek().is_some_and(|ch| ch.is_ascii_digit()) {
                 chars.next();
             }
             result.push('#');

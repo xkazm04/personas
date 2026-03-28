@@ -71,6 +71,21 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
     return () => { cancelled = true; unlistenFn?.(); };
   }, [selectedTeamId, fetchAnalytics, fetchTeamMemories, dispatch]);
 
+  // -- Pipeline cycle warning listener ---------------------------------
+  useEffect(() => {
+    let cancelled = false;
+    let unlistenFn: (() => void) | null = null;
+    listen<{ team_id: string; pipeline_id: string; cycle_member_ids: string[] }>(
+      EventName.PIPELINE_CYCLE_WARNING, (event) => {
+        if (cancelled) return;
+        if (event.payload.team_id === selectedTeamId) {
+          dispatch({ type: 'SET_PIPELINE_CYCLE_NODE_IDS', ids: new Set(event.payload.cycle_member_ids) });
+        }
+      },
+    ).then((fn) => { if (cancelled) { fn(); } else { unlistenFn = fn; } });
+    return () => { cancelled = true; unlistenFn?.(); };
+  }, [selectedTeamId, dispatch]);
+
   // -- Pipeline execution ---------------------------------------------
   const handleExecuteTeam = useCallback(async () => {
     if (!selectedTeamId || cs.pipelineRunning) return;

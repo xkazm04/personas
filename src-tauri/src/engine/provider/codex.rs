@@ -6,6 +6,11 @@ use super::{CliProvider, PromptDelivery};
 /// Codex CLI provider (OpenAI's coding agent).
 pub struct CodexProvider;
 
+/// Sentinel value inserted as the prompt placeholder in `build_execution_args`.
+/// Callers must use `build_execution_args_with_prompt` to replace this with
+/// the real prompt before spawning the process.
+pub const PROMPT_PLACEHOLDER: &str = "__CODEX_PROMPT_PLACEHOLDER__";
+
 /// Platform-specific command and initial args for invoking the Codex CLI.
 fn base_cli_setup() -> (String, Vec<String>) {
     if cfg!(windows) {
@@ -53,7 +58,7 @@ impl CliProvider for CodexProvider {
         // Codex uses: codex exec "<prompt>" --json --full-auto
         args.extend([
             "exec".to_string(),
-            String::new(), // placeholder -- prompt injected by build_execution_args_with_prompt
+            PROMPT_PLACEHOLDER.to_string(), // sentinel -- must be replaced via build_execution_args_with_prompt
             "--json".to_string(),
             "--full-auto".to_string(),
         ]);
@@ -91,16 +96,33 @@ impl CliProvider for CodexProvider {
         model_profile: Option<&ModelProfile>,
         prompt_text: &str,
     ) -> CliArgs {
+        assert!(
+            !prompt_text.is_empty(),
+            "Codex CLI requires a non-empty prompt"
+        );
+
         let mut args = self.build_execution_args(persona, model_profile);
-        // Replace the empty placeholder with actual prompt text
-        // The placeholder is at index 1 (after "exec") on Unix, or index 3 (after "/C", "codex.cmd", "exec") on Windows
-        let exec_idx = args.args.iter().position(|a| a == "exec");
-        if let Some(idx) = exec_idx {
-            // The prompt slot is right after "exec"
-            if idx + 1 < args.args.len() {
-                args.args[idx + 1] = prompt_text.to_string();
-            }
+        // Replace the sentinel placeholder with actual prompt text.
+        // The sentinel is at index 1 (after "exec") on Unix, or index 3
+        // (after "/C", "codex.cmd", "exec") on Windows.
+        let replaced = args
+            .args
+            .iter_mut()
+            .any(|a| {
+                if a == PROMPT_PLACEHOLDER {
+                    *a = prompt_text.to_string();
+                    true
+                } else {
+                    false
+                }
+            });
+
+        if !replaced {
+            tracing::error!(
+                "Codex prompt placeholder not found in args — prompt was not injected"
+            );
         }
+
         args
     }
 
@@ -427,5 +449,30 @@ mod tests {
         let args = provider.build_execution_args_with_prompt(None, None, "Do the thing");
         assert!(args.args.contains(&"exec".to_string()));
         assert!(args.args.contains(&"Do the thing".to_string()));
+        // Sentinel must not survive into final args
+        assert!(!args.args.contains(&PROMPT_PLACEHOLDER.to_string()));
+    }
+
+    #[test]
+    fn test_build_execution_args_has_sentinel() {
+        let provider = CodexProvider;
+        let args = provider.build_execution_args(None, None);
+        // Base args must contain the sentinel, not an empty string
+        assert!(
+            args.args.contains(&PROMPT_PLACEHOLDER.to_string()),
+            "Expected sentinel placeholder in base args, got: {:?}",
+            args.args
+        );
+        assert!(
+            !args.args.contains(&String::new()),
+            "Empty string should not appear in args"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "non-empty prompt")]
+    fn test_build_execution_args_with_empty_prompt_panics() {
+        let provider = CodexProvider;
+        provider.build_execution_args_with_prompt(None, None, "");
     }
 }

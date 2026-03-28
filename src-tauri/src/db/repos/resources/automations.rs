@@ -322,6 +322,36 @@ pub fn get_runs_by_automation(
     })
 }
 
+/// Mark automation runs stuck in 'running' as 'failed' when they exceed
+/// 2× their automation's configured timeout_ms without completion.
+///
+/// Returns the number of runs reaped.
+pub fn reap_stale_runs(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("automation_runs", "automation_runs::reap_stale_runs", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        // Find runs stuck in 'running' whose elapsed time exceeds 2× the
+        // automation's timeout_ms (converted from ms to seconds for SQLite).
+        // Falls back to 60s (2×30s default) when the automation is missing.
+        let changed = conn.execute(
+            "UPDATE automation_runs
+             SET status = 'failed',
+                 error_message = 'Reaped: exceeded maximum expected duration without completion',
+                 completed_at = ?1
+             WHERE status = 'running'
+               AND (julianday(?1) - julianday(started_at)) * 86400.0
+                   > COALESCE(
+                       (SELECT 2.0 * pa.timeout_ms / 1000.0
+                        FROM persona_automations pa
+                        WHERE pa.id = automation_runs.automation_id),
+                       60.0
+                     )",
+            params![now],
+        )?;
+        Ok(changed)
+    })
+}
+
 pub fn get_runs_by_execution(
     pool: &DbPool,
     execution_id: &str,

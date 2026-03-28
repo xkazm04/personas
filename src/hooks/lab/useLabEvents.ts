@@ -57,5 +57,5 @@ export function useLabEvents() {
     }));
   }, [setLabProgress, finishLabRun]);
 
-  useRunEventListener(bindings, [bindings]);
+  useRunEventListener(bindings);
 }

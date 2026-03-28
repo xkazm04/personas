@@ -180,22 +180,6 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           </div>
         </div>
 
-        {/* Legacy mode deprecation notice */}
-        {globalStatus.legacy_active && (
-          <div className="flex items-start gap-3 px-4 py-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
-            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-amber-400/90">
-                Legacy Smee relay mode is deprecated
-              </p>
-              <p className="text-xs text-muted-foreground/60 mt-1">
-                Events from the legacy single-URL relay broadcast to <span className="font-semibold text-amber-400/70">all personas</span> without
-                targeting. Create a managed relay below to route events to specific agents and apply event filters.
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Header + Add button */}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-mono text-muted-foreground/90 uppercase tracking-wider">

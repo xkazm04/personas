@@ -24,6 +24,7 @@ export interface GlobalExecutionRow {
   completed_at: string | null;
   created_at: string;
   execution_config: string | null;
+  log_truncated: boolean;
   persona_name: string | null;
   persona_icon: string | null;
   persona_color: string | null;

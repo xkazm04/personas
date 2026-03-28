@@ -23,5 +23,5 @@ export function usePersonaTests() {
     },
   }], [setTestRunProgress, finishTestRun]);
 
-  useRunEventListener(bindings, [bindings]);
+  useRunEventListener(bindings);
 }

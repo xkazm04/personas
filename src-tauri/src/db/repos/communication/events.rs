@@ -945,11 +945,51 @@ pub fn update_subscription(
 
 pub fn delete_subscription(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("event_subscriptions", "event_subscriptions::delete_subscription", {
-        let conn = pool.get()?;
-        let rows = conn.execute(
+        let mut conn = pool.get()?;
+
+        // Read the subscription first so we can find the paired trigger
+        let sub = conn.query_row(
+            "SELECT persona_id, event_type, source_filter, use_case_id
+             FROM persona_event_subscriptions WHERE id = ?1",
+            params![id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                    row.get::<_, Option<String>>(3)?,
+                ))
+            },
+        );
+
+        let sub = match sub {
+            Ok(s) => s,
+            Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(false),
+            Err(e) => return Err(AppError::Database(e)),
+        };
+
+        let (persona_id, _event_type, _source_filter, use_case_id) = sub;
+
+        let tx = conn.transaction().map_err(AppError::Database)?;
+
+        // Delete the paired event_listener trigger created alongside this subscription.
+        // Match on persona_id, trigger_type, and use_case_id to find the paired trigger.
+        tx.execute(
+            "DELETE FROM persona_triggers
+             WHERE persona_id = ?1
+               AND trigger_type = 'event_listener'
+               AND COALESCE(use_case_id, '') = COALESCE(?2, '')",
+            params![persona_id, use_case_id],
+        )?;
+
+        // Delete the subscription itself
+        let rows = tx.execute(
             "DELETE FROM persona_event_subscriptions WHERE id = ?1",
             params![id],
         )?;
+
+        tx.commit().map_err(AppError::Database)?;
+
         Ok(rows > 0)
     })
 }

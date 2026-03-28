@@ -4,6 +4,7 @@ import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
 import type { PipelineAnalytics } from '@/lib/bindings/PipelineAnalytics';
 import type { DryRunState } from './debuggerTypes';
+import { buildTeamGraph } from './teamGraph';
 
 export interface PipelineNodeStatus {
   member_id: string;
@@ -38,6 +39,7 @@ export function useDerivedCanvasState({
   analytics,
   dismissedSuggestionIds,
   dryRunState,
+  pipelineCycleNodeIds,
   snapToGrid,
 }: {
   selectedTeamId: string | null;
@@ -48,6 +50,7 @@ export function useDerivedCanvasState({
   analytics: PipelineAnalytics | null;
   dismissedSuggestionIds: Set<string>;
   dryRunState: DryRunState | null;
+  pipelineCycleNodeIds: Set<string>;
   snapToGrid: (v: number) => number;
 }) {
   return useMemo(() => {
@@ -68,6 +71,16 @@ export function useDerivedCanvasState({
     const activeSuggestions = (analytics?.suggestions ?? []).filter(
       (s) => !dismissedSuggestionIds.has(s.id),
     );
+
+    // Compute cycle nodes from graph topology (immediate feedback, skip feedback edges)
+    const SKIP_FEEDBACK = new Set(['feedback']);
+    const graph = buildTeamGraph(
+      teamMembers.map((m) => m.id),
+      teamConnections,
+      SKIP_FEEDBACK,
+    );
+    // Merge graph-derived cycle nodes with any backend-confirmed cycle nodes
+    const cycleNodeIds = new Set([...graph.cycleNodes, ...pipelineCycleNodeIds]);
 
     // ---- NODES: single-pass derivation ----
     const nodes: Node[] = teamMembers.map((m, i) => {
@@ -103,6 +116,9 @@ export function useDerivedCanvasState({
         data.dryRunStatus = nodeState?.status ?? undefined;
         data.hasBreakpoint = dryRunState.breakpoints.has(m.id);
       }
+
+      // Cycle detection
+      data.isCycleNode = cycleNodeIds.has(m.id);
 
       return {
         id: m.id,
@@ -181,6 +197,7 @@ export function useDerivedCanvasState({
     analytics,
     dismissedSuggestionIds,
     dryRunState,
+    pipelineCycleNodeIds,
     snapToGrid,
   ]);
 }

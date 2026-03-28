@@ -218,7 +218,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   deletePersona: async (id) => {
     set({ error: null });
     try {
-      await deletePersona(id);
+      const result = await deletePersona(id);
       removeRecentAgent(id);
       // Invalidate any in-flight fetchDetail for this persona so it can't
       // resurrect the deleted persona in state after the delete completes.
@@ -229,6 +229,27 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         selectedPersona: state.selectedPersona?.id === id ? null : state.selectedPersona,
       }));
       get().fetchPersonaSummaries();
+
+      // Show a summary toast when executions were affected during deletion
+      const stopped = result.executionsCancelled + result.executionsForceCancelled;
+      if (stopped > 0 || result.cancelFailures.length > 0) {
+        const parts: string[] = ["Deleted."];
+        if (stopped > 0) {
+          parts.push(`${stopped} running execution${stopped !== 1 ? "s were" : " was"} force-stopped.`);
+        }
+        if (result.cancelFailures.length > 0) {
+          parts.push(`${result.cancelFailures.length} execution${result.cancelFailures.length !== 1 ? "s" : ""} could not be cancelled.`);
+        }
+        if (result.timeoutReached) {
+          parts.push("Drain timeout was reached.");
+        }
+        const hasFailures = result.cancelFailures.length > 0;
+        storeBus.emit('toast', {
+          message: parts.join(" "),
+          type: hasFailures ? "error" : "success",
+          duration: hasFailures ? 8000 : 5000,
+        });
+      }
     } catch (err) {
       reportError(err, "Failed to delete persona", set);
     }

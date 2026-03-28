@@ -1286,7 +1286,7 @@ fn is_oauth_credential(pool: &DbPool, cred: &crate::db::models::PersonaCredentia
     // Fall back to checking credential fields for refresh_token
     match cred_repo::get_fields(pool, &cred.id) {
         Ok(fields) => fields.iter().any(|f| {
-            f.field_key == "refresh_token" || f.field_key == "refreshToken"
+            f.field_key == "refresh_token"
         }),
         Err(_) => false,
     }

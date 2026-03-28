@@ -295,8 +295,12 @@ Memories to review:
 
     // Write prompt to stdin
     if let Some(mut stdin) = child.stdin.take() {
-        let _ = stdin.write_all(prompt.as_bytes()).await;
-        let _ = stdin.shutdown().await;
+        stdin.write_all(prompt.as_bytes()).await.map_err(|e| {
+            AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}"))
+        })?;
+        stdin.shutdown().await.map_err(|e| {
+            AppError::Internal(format!("Failed to close CLI stdin: {e}"))
+        })?;
     }
 
     // Read stdout
@@ -467,8 +471,23 @@ pub fn seed_mock_memory(
 fn extract_json_array(text: &str) -> Option<String> {
     let start = text.find('[')?;
     let mut depth = 0i32;
+    let mut in_string = false;
+    let mut escape_next = false;
     for (i, ch) in text[start..].char_indices() {
+        if escape_next {
+            escape_next = false;
+            continue;
+        }
+        if in_string {
+            match ch {
+                '\\' => escape_next = true,
+                '"' => in_string = false,
+                _ => {}
+            }
+            continue;
+        }
         match ch {
+            '"' => in_string = true,
             '[' => depth += 1,
             ']' => {
                 depth -= 1;
@@ -480,4 +499,43 @@ fn extract_json_array(text: &str) -> Option<String> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_json_array_simple() {
+        let input = r#"Here is the result: [1, 2, 3] done"#;
+        assert_eq!(extract_json_array(input), Some("[1, 2, 3]".to_string()));
+    }
+
+    #[test]
+    fn extract_json_array_brackets_in_strings() {
+        let input = r#"[{"title": "[API] Rate limit", "note": "has [brackets]"}]"#;
+        assert_eq!(extract_json_array(input), Some(input.to_string()));
+    }
+
+    #[test]
+    fn extract_json_array_escaped_quotes() {
+        let input = r#"[{"val": "a\"]\"]b"}]"#;
+        assert_eq!(extract_json_array(input), Some(input.to_string()));
+    }
+
+    #[test]
+    fn extract_json_array_nested() {
+        let input = r#"text [[1, 2], [3]] end"#;
+        assert_eq!(extract_json_array(input), Some("[[1, 2], [3]]".to_string()));
+    }
+
+    #[test]
+    fn extract_json_array_no_array() {
+        assert_eq!(extract_json_array("no array here"), None);
+    }
+
+    #[test]
+    fn extract_json_array_unclosed() {
+        assert_eq!(extract_json_array("[1, 2"), None);
+    }
 }

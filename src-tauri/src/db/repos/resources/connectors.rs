@@ -123,37 +123,25 @@ pub fn update(
 
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-        push_field!(input.name, "name", sets, param_idx);
-        push_field!(input.label, "label", sets, param_idx);
-        push_field!(input.icon_url, "icon_url", sets, param_idx);
-        push_field!(input.color, "color", sets, param_idx);
-        push_field!(input.category, "category", sets, param_idx);
-        push_field!(input.fields, "fields", sets, param_idx);
-        push_field!(input.healthcheck_config, "healthcheck_config", sets, param_idx);
-        push_field!(input.services, "services", sets, param_idx);
-        push_field!(input.events, "events", sets, param_idx);
-        push_field!(input.metadata, "metadata", sets, param_idx);
+        push_field_param!(input.name, "name", sets, param_idx, param_values, clone);
+        push_field_param!(input.label, "label", sets, param_idx, param_values, clone);
+        push_field_param!(input.icon_url, "icon_url", sets, param_idx, param_values, clone);
+        push_field_param!(input.color, "color", sets, param_idx, param_values, clone);
+        push_field_param!(input.category, "category", sets, param_idx, param_values, clone);
+        push_field_param!(input.fields, "fields", sets, param_idx, param_values, clone);
+        push_field_param!(input.healthcheck_config, "healthcheck_config", sets, param_idx, param_values, clone);
+        push_field_param!(input.services, "services", sets, param_idx, param_values, clone);
+        push_field_param!(input.events, "events", sets, param_idx, param_values, clone);
+        push_field_param!(input.metadata, "metadata", sets, param_idx, param_values, clone);
+        param_values.push(Box::new(id.to_string()));
 
         let sql = format!(
             "UPDATE connector_definitions SET {} WHERE id = ?{}",
             sets.join(", "),
             param_idx
         );
-
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-
-        if let Some(ref v) = input.name { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.label { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.icon_url { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.category { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.fields { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.healthcheck_config { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.services { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.events { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.metadata { param_values.push(Box::new(v.clone())); }
-        param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
             param_values.iter().map(|p| p.as_ref()).collect();

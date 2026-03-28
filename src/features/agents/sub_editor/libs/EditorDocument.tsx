@@ -37,6 +37,8 @@ export interface UndoEntry {
   operation: PersonaOperation;
   /** Restore the state that existed before this operation was applied. */
   restore: () => Promise<void>;
+  /** Re-apply the forward operation (used by redo). */
+  reapply: () => Promise<void>;
 }
 
 const MAX_UNDO_DEPTH = 50;
@@ -243,7 +245,7 @@ function createDirtyStore(): DirtyStore {
       const entry = redoStack.pop();
       if (!entry) return false;
       try {
-        await entry.restore();
+        await entry.reapply();
         undoStack.push(entry);
       } catch (err) {
         logger.error('Redo failed', { error: err });

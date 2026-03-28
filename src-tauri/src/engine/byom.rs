@@ -19,6 +19,34 @@ use super::provider::EngineKind;
 pub const BYOM_POLICY_KEY: &str = "byom_policy";
 
 // =============================================================================
+// Policy validation types
+// =============================================================================
+
+/// Severity level for a policy validation warning.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum PolicyWarningSeverity {
+    /// Critical misconfiguration that will be blocked from saving.
+    Error,
+    /// Non-critical issue shown as a dismissible alert.
+    Warning,
+    /// Informational note shown as a tooltip.
+    Info,
+}
+
+/// A structured policy validation warning with severity.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PolicyWarning {
+    /// Severity of this warning.
+    pub severity: PolicyWarningSeverity,
+    /// Human-readable message describing the issue.
+    pub message: String,
+}
+
+// =============================================================================
 // Policy types
 // =============================================================================
 
@@ -144,19 +172,41 @@ impl ByomPolicy {
 
     /// Save the BYOM policy to the settings DB.
     ///
-    /// Runs validation before saving. Warnings are logged but do not prevent
-    /// the save — callers can use `validate()` to surface warnings in the UI.
+    /// Runs validation before saving. Error-level warnings block the save.
+    /// Warning and Info level issues are logged but do not prevent saving.
     pub fn save(&self, pool: &crate::db::DbPool) -> Result<(), crate::error::AppError> {
         let warnings = self.validate();
+        let mut error_messages = Vec::new();
         for w in &warnings {
-            tracing::warn!(warning = %w, "BYOM policy validation warning");
+            match w.severity {
+                PolicyWarningSeverity::Error => {
+                    tracing::error!(warning = %w.message, "BYOM policy validation error");
+                    error_messages.push(w.message.clone());
+                }
+                PolicyWarningSeverity::Warning => {
+                    tracing::warn!(warning = %w.message, "BYOM policy validation warning");
+                }
+                PolicyWarningSeverity::Info => {
+                    tracing::info!(warning = %w.message, "BYOM policy validation info");
+                }
+            }
+        }
+        if !error_messages.is_empty() {
+            return Err(crate::error::AppError::Validation(
+                format!("Policy has blocking errors: {}", error_messages.join("; ")),
+            ));
         }
         let json = serde_json::to_string(self)
             .map_err(|e| crate::error::AppError::Internal(format!("Failed to serialize BYOM policy: {}", e)))?;
         crate::db::repos::core::settings::set(pool, BYOM_POLICY_KEY, &json)
     }
 
-    /// Validate policy consistency and return warnings.
+    /// Validate policy consistency and return structured warnings with severity.
+    ///
+    /// **Severity assignment:**
+    /// - `Error`: Provider is explicitly blocked — contradictory config that will never work.
+    /// - `Warning`: Provider is not in the allowed list — the rule has no effect currently.
+    /// - `Info`: References an unknown provider — may be a typo or future provider.
     ///
     /// **Precedence rule**: `allowed_providers` is the ceiling — compliance rules
     /// can only *narrow* within it, never expand beyond it. If a compliance rule
@@ -166,7 +216,7 @@ impl ByomPolicy {
     ///
     /// Similarly, routing rules that target a blocked/non-allowed provider will
     /// never take effect.
-    pub fn validate(&self) -> Vec<String> {
+    pub fn validate(&self) -> Vec<PolicyWarning> {
         let mut warnings = Vec::new();
         if !self.enabled {
             return warnings;
@@ -192,23 +242,32 @@ impl ByomPolicy {
             for provider_str in &rule.allowed_providers {
                 if let Some(kind) = provider_str.parse().ok() {
                     if blocked_set.contains(&kind) {
-                        warnings.push(format!(
-                            "Compliance rule '{}' allows provider '{}' which is explicitly blocked — \
-                             the block takes precedence and this provider will never be available",
-                            rule.name, provider_str,
-                        ));
+                        warnings.push(PolicyWarning {
+                            severity: PolicyWarningSeverity::Error,
+                            message: format!(
+                                "Compliance rule '{}' allows provider '{}' which is explicitly blocked — \
+                                 the block takes precedence and this provider will never be available",
+                                rule.name, provider_str,
+                            ),
+                        });
                     } else if !allowed_set.is_empty() && !allowed_set.contains(&kind) {
-                        warnings.push(format!(
-                            "Compliance rule '{}' allows provider '{}' which is not in the top-level \
-                             allowed_providers list — this provider will be blocked regardless",
-                            rule.name, provider_str,
-                        ));
+                        warnings.push(PolicyWarning {
+                            severity: PolicyWarningSeverity::Warning,
+                            message: format!(
+                                "Compliance rule '{}' allows provider '{}' which is not in the top-level \
+                                 allowed_providers list — this provider will be blocked regardless",
+                                rule.name, provider_str,
+                            ),
+                        });
                     }
                 } else {
-                    warnings.push(format!(
-                        "Compliance rule '{}' references unknown provider '{}'",
-                        rule.name, provider_str,
-                    ));
+                    warnings.push(PolicyWarning {
+                        severity: PolicyWarningSeverity::Info,
+                        message: format!(
+                            "Compliance rule '{}' references unknown provider '{}'",
+                            rule.name, provider_str,
+                        ),
+                    });
                 }
             }
         }
@@ -220,26 +279,40 @@ impl ByomPolicy {
             }
             if let Some(kind) = rule.provider.parse().ok() {
                 if blocked_set.contains(&kind) {
-                    warnings.push(format!(
-                        "Routing rule '{}' targets provider '{}' which is explicitly blocked",
-                        rule.name, rule.provider,
-                    ));
+                    warnings.push(PolicyWarning {
+                        severity: PolicyWarningSeverity::Error,
+                        message: format!(
+                            "Routing rule '{}' targets provider '{}' which is explicitly blocked",
+                            rule.name, rule.provider,
+                        ),
+                    });
                 } else if !allowed_set.is_empty() && !allowed_set.contains(&kind) {
-                    warnings.push(format!(
-                        "Routing rule '{}' targets provider '{}' which is not in the top-level \
-                         allowed_providers list",
-                        rule.name, rule.provider,
-                    ));
+                    warnings.push(PolicyWarning {
+                        severity: PolicyWarningSeverity::Warning,
+                        message: format!(
+                            "Routing rule '{}' targets provider '{}' which is not in the top-level \
+                             allowed_providers list",
+                            rule.name, rule.provider,
+                        ),
+                    });
                 }
             } else {
-                warnings.push(format!(
-                    "Routing rule '{}' references unknown provider '{}'",
-                    rule.name, rule.provider,
-                ));
+                warnings.push(PolicyWarning {
+                    severity: PolicyWarningSeverity::Info,
+                    message: format!(
+                        "Routing rule '{}' references unknown provider '{}'",
+                        rule.name, rule.provider,
+                    ),
+                });
             }
         }
 
         warnings
+    }
+
+    /// Returns true if the policy has any Error-level validation warnings.
+    pub fn has_blocking_errors(&self) -> bool {
+        self.validate().iter().any(|w| w.severity == PolicyWarningSeverity::Error)
     }
 
     /// Evaluate the policy for a given execution context.
@@ -534,9 +607,10 @@ mod tests {
         };
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].contains("HIPAA"));
-        assert!(warnings[0].contains("codex_cli"));
-        assert!(warnings[0].contains("not in the top-level"));
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Warning);
+        assert!(warnings[0].message.contains("HIPAA"));
+        assert!(warnings[0].message.contains("codex_cli"));
+        assert!(warnings[0].message.contains("not in the top-level"));
     }
 
     #[test]
@@ -554,7 +628,8 @@ mod tests {
         };
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].contains("explicitly blocked"));
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Error);
+        assert!(warnings[0].message.contains("explicitly blocked"));
     }
 
     #[test]
@@ -573,8 +648,53 @@ mod tests {
         };
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].contains("Routing rule"));
-        assert!(warnings[0].contains("codex_cli"));
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Warning);
+        assert!(warnings[0].message.contains("Routing rule"));
+        assert!(warnings[0].message.contains("codex_cli"));
+    }
+
+    #[test]
+    fn test_validate_routing_rule_blocked_provider_is_error() {
+        let policy = ByomPolicy {
+            enabled: true,
+            blocked_providers: vec!["codex_cli".into()],
+            routing_rules: vec![RoutingRule {
+                name: "Blocked route".into(),
+                task_complexity: TaskComplexity::Simple,
+                provider: "codex_cli".into(),
+                model: None,
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Error);
+        assert!(warnings[0].message.contains("explicitly blocked"));
+    }
+
+    #[test]
+    fn test_validate_unknown_provider_is_info() {
+        let policy = ByomPolicy {
+            enabled: true,
+            routing_rules: vec![RoutingRule {
+                name: "Unknown route".into(),
+                task_complexity: TaskComplexity::Simple,
+                provider: "nonexistent_provider".into(),
+                model: None,
+                enabled: true,
+            }],
+            compliance_rules: vec![ComplianceRule {
+                name: "Unknown compliance".into(),
+                workflow_tags: vec!["test".into()],
+                allowed_providers: vec!["also_unknown".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 2);
+        assert!(warnings.iter().all(|w| w.severity == PolicyWarningSeverity::Info));
     }
 
     #[test]
@@ -599,6 +719,29 @@ mod tests {
         };
         let warnings = policy.validate();
         assert!(warnings.is_empty());
+    }
+
+    #[test]
+    fn test_has_blocking_errors() {
+        let policy = ByomPolicy {
+            enabled: true,
+            blocked_providers: vec!["codex_cli".into()],
+            compliance_rules: vec![ComplianceRule {
+                name: "Bad".into(),
+                workflow_tags: vec!["test".into()],
+                allowed_providers: vec!["codex_cli".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        assert!(policy.has_blocking_errors());
+
+        let clean_policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            ..Default::default()
+        };
+        assert!(!clean_policy.has_blocking_errors());
     }
 
     // =========================================================================

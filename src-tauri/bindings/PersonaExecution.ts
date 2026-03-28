@@ -12,4 +12,4 @@ retry_count: number, started_at: string | null, completed_at: string | null, cre
 /**
  * Frozen ExecutionConfig JSON snapshot assembled at execution start.
  */
-execution_config: string | null, };
+execution_config: string | null, log_truncated: boolean, };

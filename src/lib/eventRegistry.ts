@@ -44,6 +44,8 @@ export const EventName = {
 
   // Healing
   HEALING_EVENT: 'healing-event',
+  HEALING_ISSUE_UPDATED: 'healing-issue-updated',
+  AUTO_FIX_COMPLETED: 'auto-fix-completed',
   AI_HEALING_STATUS: 'ai-healing-status',
   AI_HEALING_OUTPUT: 'ai-healing-output',
 
@@ -154,6 +156,7 @@ export const EventName = {
 
   // Pipeline
   PIPELINE_STATUS: 'pipeline-status',
+  PIPELINE_CYCLE_WARNING: 'pipeline-cycle-warning',
 
   // P2P
   P2P_MANIFEST_SYNC_PROGRESS: 'p2p:manifest-sync-progress',
@@ -237,6 +240,15 @@ export interface HealingEventPayload {
   backoff_seconds?: number;
   retry_number?: number;
   max_retries?: number;
+}
+
+/** Healing issue status transition (auto-fix confirmed or reverted). */
+export interface HealingIssueUpdatedPayload {
+  issueId: string;
+  personaId: string;
+  executionId: string | null;
+  newStatus: string;
+  transition: string;
 }
 
 /** Design status (BackgroundJob pattern). */
@@ -378,12 +390,10 @@ export interface CloudWebhookRelayStatusPayload {
 
 /** Smee relay status (engine/smee_relay.rs, camelCase). */
 export interface SmeeRelayStatusPayload {
-  channelUrl?: string;
   connected: boolean;
   eventsRelayed: number;
   lastEventAt?: string;
   error?: string;
-  legacyActive: boolean;
 }
 
 /** Context rule match (engine/context_rules.rs ContextRuleMatch, camelCase). */
@@ -428,6 +438,13 @@ export interface PipelineStatusPayload {
   status: string;
   node_statuses: PipelineNodeStatus[];
   memories_created?: number;
+}
+
+/** Pipeline cycle warning (commands/teams/teams.rs). */
+export interface PipelineCycleWarningPayload {
+  team_id: string;
+  pipeline_id: string;
+  cycle_member_ids: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -480,6 +497,8 @@ export interface EventPayloadMap {
 
   // Healing
   [EventName.HEALING_EVENT]: HealingEventPayload;
+  [EventName.HEALING_ISSUE_UPDATED]: HealingIssueUpdatedPayload;
+  [EventName.AUTO_FIX_COMPLETED]: HealingIssueUpdatedPayload;
   [EventName.AI_HEALING_STATUS]: {
     execution_id: string;
     persona_id: string;
@@ -620,6 +639,7 @@ export interface EventPayloadMap {
 
   // Pipeline
   [EventName.PIPELINE_STATUS]: PipelineStatusPayload;
+  [EventName.PIPELINE_CYCLE_WARNING]: PipelineCycleWarningPayload;
 
   // P2P
   [EventName.P2P_MANIFEST_SYNC_PROGRESS]: {

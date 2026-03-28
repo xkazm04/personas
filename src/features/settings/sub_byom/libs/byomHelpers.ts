@@ -23,7 +23,11 @@ export const ENGINE_LABELS: Record<string, string> = {
 // Inline policy validation (mirrors ByomPolicy::validate() in byom.rs)
 // =============================================================================
 
+export type PolicyWarningSeverity = 'error' | 'warning' | 'info';
+
 export interface PolicyWarning {
+  /** Severity of this warning */
+  severity: PolicyWarningSeverity;
   /** 'routing' or 'compliance' */
   ruleType: 'routing' | 'compliance';
   /** Index of the rule within its array */
@@ -50,18 +54,21 @@ export function validateByomPolicy(policy: ByomPolicy): PolicyWarning[] {
     for (const provider of rule.allowed_providers) {
       if (!KNOWN_PROVIDERS.has(provider)) {
         warnings.push({
+          severity: 'info',
           ruleType: 'compliance',
           ruleIndex: i,
           message: `References unknown provider "${provider}"`,
         });
       } else if (blockedSet.has(provider)) {
         warnings.push({
+          severity: 'error',
           ruleType: 'compliance',
           ruleIndex: i,
           message: `Allows "${ENGINE_LABELS[provider] ?? provider}" which is explicitly blocked — the block takes precedence`,
         });
       } else if (allowedSet.size > 0 && !allowedSet.has(provider)) {
         warnings.push({
+          severity: 'warning',
           ruleType: 'compliance',
           ruleIndex: i,
           message: `Allows "${ENGINE_LABELS[provider] ?? provider}" which is not in the top-level allowed list — this provider will be blocked`,
@@ -76,18 +83,21 @@ export function validateByomPolicy(policy: ByomPolicy): PolicyWarning[] {
     const provider = rule.provider;
     if (!KNOWN_PROVIDERS.has(provider)) {
       warnings.push({
+        severity: 'info',
         ruleType: 'routing',
         ruleIndex: i,
         message: `Targets unknown provider "${provider}"`,
       });
     } else if (blockedSet.has(provider)) {
       warnings.push({
+        severity: 'error',
         ruleType: 'routing',
         ruleIndex: i,
         message: `Targets "${ENGINE_LABELS[provider] ?? provider}" which is explicitly blocked`,
       });
     } else if (allowedSet.size > 0 && !allowedSet.has(provider)) {
       warnings.push({
+        severity: 'warning',
         ruleType: 'routing',
         ruleIndex: i,
         message: `Targets "${ENGINE_LABELS[provider] ?? provider}" which is not in the top-level allowed list`,

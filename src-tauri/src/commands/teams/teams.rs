@@ -254,6 +254,16 @@ pub async fn execute_team(
             cycle_nodes = ?sort_result.cycle_nodes,
             "Pipeline contains a non-feedback cycle -- cyclic nodes will be appended after acyclic ones",
         );
+
+        // Emit cycle warning to frontend with affected member IDs
+        let _ = app.emit(
+            event_name::PIPELINE_CYCLE_WARNING,
+            serde_json::json!({
+                "team_id": team_id,
+                "pipeline_id": run_id,
+                "cycle_member_ids": sort_result.cycle_nodes,
+            }),
+        );
     }
 
     // Acyclic nodes in order, then any remaining cycle nodes appended at the end
@@ -573,6 +583,25 @@ pub async fn execute_team(
             }
         }
 
+        // Mark any remaining idle nodes so the UI doesn't show them as pending
+        // after the pipeline is terminal.
+        let skip_label = if cancelled.load(std::sync::atomic::Ordering::Relaxed) {
+            "cancelled"
+        } else if has_failure {
+            "skipped"
+        } else {
+            "" // all nodes completed — nothing to patch
+        };
+        if !skip_label.is_empty() {
+            for ns in final_statuses.iter_mut() {
+                if ns.get("status").and_then(|v| v.as_str()) == Some("idle") {
+                    if let Some(obj) = ns.as_object_mut() {
+                        obj.insert("status".into(), serde_json::json!(skip_label));
+                    }
+                }
+            }
+        }
+
         // Finalize
         let final_status = if cancelled.load(std::sync::atomic::Ordering::Relaxed) {
             "cancelled"
@@ -599,6 +628,13 @@ pub async fn execute_team(
                 "memories_created": memories_created,
             }),
         );
+
+        // Evict excess auto-generated memories if over the cap
+        if memories_created > 0 {
+            if let Err(e) = team_memories_repo::evict_excess(&db, &team_id, None) {
+                tracing::warn!(team_id = %team_id, error = %e, "Failed to evict excess team memories");
+            }
+        }
 
         // Guard handles unregister_run on drop.
     });

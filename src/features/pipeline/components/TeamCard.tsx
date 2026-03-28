@@ -1,11 +1,11 @@
 import { Users, Trash2, ChevronRight, GitBranch, GitFork } from 'lucide-react';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { usePipelineStore } from "@/stores/pipelineStore";
 
 interface TeamCardProps {
   team: PersonaTeam;
   parentTeamName: string | null;
-  teamCounts: Record<string, { members: number; connections: number }>;
   confirmDeleteId: string | null;
   onSelect: (id: string) => void;
   onClone: (id: string) => void;
@@ -16,13 +16,13 @@ interface TeamCardProps {
 export function TeamCard({
   team,
   parentTeamName,
-  teamCounts,
   confirmDeleteId,
   onSelect,
   onClone,
   onDelete,
   onConfirmDelete,
 }: TeamCardProps) {
+  const teamCounts = usePipelineStore((s) => s.teamCounts);
   return (
     <div
       key={team.id}

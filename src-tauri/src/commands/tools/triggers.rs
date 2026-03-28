@@ -298,20 +298,25 @@ pub async fn validate_trigger(
                     });
                 }
             }
-            // Validate endpoint reachability
-            if let Some(endpoint) = config.get("endpoint").and_then(|v| v.as_str()) {
+            // Validate polling URL reachability.
+            // The engine reads `url` from TriggerConfig::Polling; fall back to
+            // `endpoint` for backward compatibility with older configs.
+            let polling_url = config.get("url")
+                .or_else(|| config.get("endpoint"))
+                .and_then(|v| v.as_str());
+            if let Some(endpoint) = polling_url {
                 if endpoint.is_empty() {
                     checks.push(TriggerValidationCheck {
-                        label: "Endpoint".into(),
+                        label: "Polling URL".into(),
                         passed: false,
-                        message: "Endpoint URL is empty".into(),
+                        message: "Polling URL is empty".into(),
                     });
                 } else {
                     // SSRF protection: block private/internal IPs before making any request
                     match crate::engine::url_safety::validate_url_safety(endpoint) {
                         Err(reason) => {
                             checks.push(TriggerValidationCheck {
-                                label: "Endpoint".into(),
+                                label: "Polling URL".into(),
                                 passed: false,
                                 message: format!("Blocked: {reason}"),
                             });
@@ -331,7 +336,7 @@ pub async fn validate_trigger(
                                         let status = resp.status().as_u16();
                                         if status == 405 {
                                             checks.push(TriggerValidationCheck {
-                                                label: "Endpoint".into(),
+                                                label: "Polling URL".into(),
                                                 passed: true,
                                                 message: "Reachable (HEAD not allowed, but server responded)".into(),
                                             });
@@ -341,13 +346,13 @@ pub async fn validate_trigger(
                                                 .and_then(|v| v.to_str().ok())
                                                 .unwrap_or("unknown");
                                             checks.push(TriggerValidationCheck {
-                                                label: "Endpoint".into(),
+                                                label: "Polling URL".into(),
                                                 passed: true,
                                                 message: format!("Reachable (HTTP {status} redirect to {location})"),
                                             });
                                         } else {
                                             checks.push(TriggerValidationCheck {
-                                                label: "Endpoint".into(),
+                                                label: "Polling URL".into(),
                                                 passed: true,
                                                 message: format!("Reachable (HTTP {status})"),
                                             });
@@ -355,7 +360,7 @@ pub async fn validate_trigger(
                                     }
                                     Err(e) => {
                                         checks.push(TriggerValidationCheck {
-                                            label: "Endpoint".into(),
+                                            label: "Polling URL".into(),
                                             passed: false,
                                             message: format!("Unreachable: {e}"),
                                         });
@@ -364,7 +369,7 @@ pub async fn validate_trigger(
                             }
                             Err(_) => {
                                 checks.push(TriggerValidationCheck {
-                                    label: "Endpoint".into(),
+                                    label: "Polling URL".into(),
                                     passed: false,
                                     message: format!("Invalid URL: {endpoint}"),
                                 });

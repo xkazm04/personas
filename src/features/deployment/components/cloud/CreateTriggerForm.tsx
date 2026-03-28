@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import {
   cloudCreateTrigger,
 } from '@/api/system/cloud';
+import { useToastStore } from '@/stores/toastStore';
 import { CRON_PRESETS } from './cloudSchedulesHelpers';
 import type { Persona } from '@/lib/types/types';
 
@@ -18,6 +19,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
   const [createType, setCreateType] = useState<'schedule' | 'webhook'>('schedule');
   const [createCron, setCreateCron] = useState('0 * * * *');
   const [isCreating, setIsCreating] = useState(false);
+  const addToast = useToastStore((s) => s.addToast);
 
   const handleCreate = async () => {
     if (!createPersonaId || isCreating) return;
@@ -28,6 +30,11 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
         : JSON.stringify({ event_type: 'webhook' });
       await cloudCreateTrigger(createPersonaId, createType, config, true);
       onCreated();
+    } catch (err) {
+      addToast(
+        `Failed to create trigger: ${err instanceof Error ? err.message : String(err)}`,
+        'error',
+      );
     } finally {
       setIsCreating(false);
     }

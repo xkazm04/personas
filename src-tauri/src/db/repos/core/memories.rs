@@ -10,18 +10,23 @@ use crate::error::AppError;
 /// This is a defence-in-depth measure: persona memory content is AI-generated
 /// and could contain injected HTML payloads. We strip tags before persisting
 /// to SQLite so that the data is safe regardless of how the frontend renders it.
+///
+/// Uses the `ammonia` crate to properly distinguish real HTML tags from
+/// legitimate text containing `<` / `>` (e.g. math expressions, code snippets).
+/// After stripping, HTML entities are decoded back so stored content remains
+/// human-readable (the frontend renders as plain text, not raw HTML).
 fn strip_html_tags(input: &str) -> String {
-    let mut out = String::with_capacity(input.len());
-    let mut inside_tag = false;
-    for ch in input.chars() {
-        match ch {
-            '<' => inside_tag = true,
-            '>' if inside_tag => inside_tag = false,
-            _ if !inside_tag => out.push(ch),
-            _ => {} // skip characters inside tags
-        }
-    }
-    out
+    let cleaned = ammonia::Builder::new()
+        .tags(std::collections::HashSet::new())
+        .clean(input)
+        .to_string();
+    // Decode entities that ammonia introduced for non-tag angle brackets.
+    // Order matters: &amp; must be last so we don't double-decode.
+    cleaned
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&amp;", "&")
 }
 
 /// Normalize tags to a canonical JSON array string.
@@ -475,16 +480,29 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         return Ok(0);
     }
     timed_query!("persona_memories", "persona_memories::batch_delete", {
+        // SQLite has a default SQLITE_MAX_VARIABLE_NUMBER of 999.
+        // Chunk deletes into batches of 500 to stay well under the limit.
+        const CHUNK_SIZE: usize = 500;
         let conn = pool.get()?;
-        let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("?{i}")).collect();
-        let sql = format!(
-            "DELETE FROM persona_memories WHERE id IN ({})",
-            placeholders.join(", ")
-        );
-        let params: Vec<&dyn rusqlite::types::ToSql> =
-            ids.iter().map(|id| id as &dyn rusqlite::types::ToSql).collect();
-        let rows = conn.execute(&sql, params.as_slice())?;
-        Ok(rows as i64)
+        let tx = conn.unchecked_transaction()?;
+        let mut total_deleted: i64 = 0;
+
+        for chunk in ids.chunks(CHUNK_SIZE) {
+            let placeholders: Vec<String> = (1..=chunk.len()).map(|i| format!("?{i}")).collect();
+            let sql = format!(
+                "DELETE FROM persona_memories WHERE id IN ({})",
+                placeholders.join(", ")
+            );
+            let params: Vec<&dyn rusqlite::types::ToSql> = chunk
+                .iter()
+                .map(|id| id as &dyn rusqlite::types::ToSql)
+                .collect();
+            let rows = tx.execute(&sql, params.as_slice())?;
+            total_deleted += rows as i64;
+        }
+
+        tx.commit()?;
+        Ok(total_deleted)
     })
 }
 
@@ -630,19 +648,29 @@ mod tests {
 
     #[test]
     fn test_strip_html_tags() {
+        // Plain text passes through unchanged
         assert_eq!(strip_html_tags("hello world"), "hello world");
+        assert_eq!(strip_html_tags(""), "");
+
+        // Actual HTML tags are stripped
         assert_eq!(strip_html_tags("<b>bold</b>"), "bold");
-        assert_eq!(
-            strip_html_tags("<img src=x onerror=alert(1)>payload"),
-            "payload"
-        );
+        assert_eq!(strip_html_tags("<img src=x onerror=alert(1)>payload"), "payload");
         assert_eq!(
             strip_html_tags("<script>alert('xss')</script>safe text"),
-            "alert('xss')safe text"
+            "safe text"
         );
-        assert_eq!(strip_html_tags("no < tags > here"), "no  here");
-        assert_eq!(strip_html_tags(""), "");
-        assert_eq!(strip_html_tags("a < b and c > d"), "a  d");
+
+        // Comparison operators and math expressions are preserved
+        assert_eq!(strip_html_tags("a < b and c > d"), "a < b and c > d");
+        assert_eq!(strip_html_tags("no < tags > here"), "no < tags > here");
+        assert_eq!(strip_html_tags("if x < 10"), "if x < 10");
+        assert_eq!(strip_html_tags("latency > 500ms"), "latency > 500ms");
+
+        // Valid-looking HTML tags are still stripped (e.g. Vec<String> looks like a tag)
+        assert_eq!(strip_html_tags("Vec<String>"), "Vec");
+
+        // Ampersands preserved
+        assert_eq!(strip_html_tags("a & b"), "a & b");
     }
 
     #[test]

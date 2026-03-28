@@ -13,6 +13,7 @@ export type { SchemaProposalSnapshot, SchemaValidationResult };
  */
 export const startSchemaProposal = (
   proposalId: string,
+  credentialId: string,
   templateName: string,
   templateContext: string,
   existingTables: string[],
@@ -20,6 +21,7 @@ export const startSchemaProposal = (
 ) =>
   invoke<void>("start_schema_proposal", {
     proposalId,
+    credentialId,
     templateName,
     templateContext,
     existingTables,

@@ -11,6 +11,8 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Mutex;
 
+use tokio_util::sync::CancellationToken;
+
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -144,6 +146,7 @@ struct BufferedPeer {
 pub struct MdnsService {
     pool: DbPool,
     daemon: Mutex<Option<mdns_sd::ServiceDaemon>>,
+    browse_daemon: Mutex<Option<mdns_sd::ServiceDaemon>>,
     service_fullname: Mutex<Option<String>>,
     /// Buffer of validated peers keyed by peer_id, flushed periodically.
     pending_peers: Mutex<HashMap<String, BufferedPeer>>,
@@ -154,6 +157,7 @@ impl MdnsService {
         Self {
             pool,
             daemon: Mutex::new(None),
+            browse_daemon: Mutex::new(None),
             service_fullname: Mutex::new(None),
             pending_peers: Mutex::new(HashMap::new()),
         }
@@ -206,7 +210,7 @@ impl MdnsService {
         Ok(())
     }
 
-    /// Unregister from mDNS.
+    /// Unregister from mDNS and shut down both registration and browse daemons.
     pub fn unregister(&self) {
         let daemon = self.daemon.lock().unwrap().take();
         let fullname = self.service_fullname.lock().unwrap().take();
@@ -214,7 +218,12 @@ impl MdnsService {
         if let (Some(daemon), Some(fullname)) = (daemon, fullname) {
             let _ = daemon.unregister(&fullname);
             let _ = daemon.shutdown();
-            tracing::info!("mDNS service unregistered");
+            tracing::info!("mDNS registration daemon shut down");
+        }
+
+        if let Some(browse_daemon) = self.browse_daemon.lock().unwrap().take() {
+            let _ = browse_daemon.shutdown();
+            tracing::info!("mDNS browse daemon shut down");
         }
     }
 
@@ -222,7 +231,10 @@ impl MdnsService {
     ///
     /// Discovered peers are buffered in memory and flushed to the DB
     /// in a single transaction every 3 seconds, avoiding per-event DB writes.
-    pub async fn browse_loop(&self, pool: DbPool) {
+    ///
+    /// The loop exits when the `cancel` token is triggered or the browse
+    /// channel closes, whichever comes first.
+    pub async fn browse_loop(&self, pool: DbPool, cancel: CancellationToken) {
         // Create a separate daemon for browsing
         let daemon = match mdns_sd::ServiceDaemon::new() {
             Ok(d) => d,
@@ -240,6 +252,9 @@ impl MdnsService {
             }
         };
 
+        // Store the browse daemon so it can be shut down in unregister()
+        *self.browse_daemon.lock().unwrap() = Some(daemon);
+
         tracing::info!("mDNS browsing started for {}", SERVICE_TYPE);
 
         let mut flush_interval = tokio::time::interval(std::time::Duration::from_secs(3));
@@ -248,6 +263,11 @@ impl MdnsService {
 
         loop {
             tokio::select! {
+                _ = cancel.cancelled() => {
+                    tracing::info!("mDNS browse_loop shutting down (cancellation received)");
+                    self.flush_pending_peers(&pool);
+                    break;
+                }
                 event = receiver.recv_async() => {
                     match event {
                         Ok(ev) => self.buffer_mdns_event(&pool, ev),

@@ -105,6 +105,43 @@ fn emit_task_status(
     }));
 }
 
+// -- Panic-safe spawn wrapper -------------------------------------
+
+/// Spawn an AI artifact task in a background tokio task with panic protection.
+///
+/// If the spawned future panics, the process registry is cleaned up and a
+/// failure status event is emitted so the UI never gets stuck in a loading
+/// state.
+pub fn spawn_ai_artifact_task(params: AiArtifactParams) {
+    let status_event = params.messages.status_event;
+    let id_field = params.messages.id_field;
+    let task_id = params.task_id.clone();
+    let domain = params.domain.clone();
+    let registry = params.registry.clone();
+    let app = params.app.clone();
+
+    tokio::spawn(async move {
+        let result = std::panic::AssertUnwindSafe(run_ai_artifact_task(params));
+        if futures_util::FutureExt::catch_unwind(result).await.is_err() {
+            tracing::error!(
+                task_id = %task_id,
+                domain = %domain,
+                "AI artifact task panicked — cleaning up registry and emitting failure event"
+            );
+            registry.clear_id_if(&domain, &task_id);
+            emit_task_status(
+                &app,
+                status_event,
+                id_field,
+                &task_id,
+                "failed",
+                None,
+                Some("Internal error: task crashed unexpectedly. Please try again.".into()),
+            );
+        }
+    });
+}
+
 // -- Generic task runner ------------------------------------------
 
 /// Run a complete AI artifact generation task.

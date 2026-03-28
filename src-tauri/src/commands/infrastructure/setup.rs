@@ -8,6 +8,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 // Re-use the PATH probe helpers from system.rs
@@ -487,6 +488,8 @@ pub async fn start_setup_install(
     app: tauri::AppHandle,
     target: String,
 ) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+
     let scope = match target.as_str() {
         "node" => InstallScope::NodeOnly,
         "claude_cli" => InstallScope::ClaudeCliOnly,
@@ -511,6 +514,7 @@ pub async fn start_setup_install(
 
 #[tauri::command]
 pub fn cancel_setup_install(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
     state.process_registry.cancel_run("setup", "current");
     Ok(())
 }

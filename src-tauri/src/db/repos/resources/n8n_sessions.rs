@@ -1,6 +1,6 @@
 use rusqlite::{named_params, params};
 
-use crate::db::models::{CreateN8nSessionInput, N8nSessionSummary, N8nTransformSession, UpdateN8nSessionInput};
+use crate::db::models::{CreateN8nSessionInput, N8nSessionSummary, N8nTransformSession, SessionStatus, UpdateN8nSessionInput};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -172,11 +172,16 @@ pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<Vec<String>, AppErr
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "UPDATE n8n_transform_sessions
-             SET status = 'failed',
+             SET status = ?1,
                  error = 'App closed during transform -- click Retry to resume',
-                 updated_at = ?1
-             WHERE status IN ('transforming', 'analyzing')",
-            params![now],
+                 updated_at = ?2
+             WHERE status IN (?3, ?4)",
+            params![
+                SessionStatus::Failed,
+                now,
+                SessionStatus::Transforming,
+                SessionStatus::Analyzing,
+            ],
         )?;
         Ok(transform_ids)
 
@@ -212,12 +217,12 @@ mod tests {
                 workflow_name: "Email Manager".into(),
                 raw_workflow_json: r#"{"nodes":[]}"#.into(),
                 step: "upload".into(),
-                status: SessionStatus::Draft.as_str().into(),
+                status: SessionStatus::Draft,
             },
         )
         .unwrap();
         assert_eq!(session.workflow_name, "Email Manager");
-        assert_eq!(session.status, SessionStatus::Draft.as_str());
+        assert_eq!(session.status, SessionStatus::Draft);
         assert_eq!(session.step, "upload");
 
         // Get
@@ -233,14 +238,14 @@ mod tests {
             &pool,
             &session.id,
             &UpdateN8nSessionInput {
-                status: Some(SessionStatus::Analyzing.as_str().into()),
+                status: Some(SessionStatus::Analyzing),
                 step: Some("analyze".into()),
                 parser_result: Some(Some(r#"{"tools":[]}"#.into())),
                 ..Default::default()
             },
         )
         .unwrap();
-        assert_eq!(updated.status, SessionStatus::Analyzing.as_str());
+        assert_eq!(updated.status, SessionStatus::Analyzing);
         assert_eq!(updated.step, "analyze");
         assert!(updated.parser_result.is_some());
 

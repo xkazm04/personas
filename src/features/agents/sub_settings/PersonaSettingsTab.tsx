@@ -102,10 +102,10 @@ export function PersonaSettingsTab({
               <input
                 type="number"
                 value={draft.maxConcurrent}
-                onChange={(e) => patch({ maxConcurrent: parseInt(e.target.value, 10) || 1 })}
+                onChange={(e) => patch({ maxConcurrent: Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1)) })}
                 placeholder="Parallel runs — e.g. 3"
                 min={1}
-                max={10}
+                max={50}
                 className={INPUT_FIELD}
               />
             </div>

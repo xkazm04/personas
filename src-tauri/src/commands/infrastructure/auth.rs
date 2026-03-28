@@ -328,6 +328,17 @@ pub async fn login_with_google(
     use rand::Rng;
     use tauri::WebviewWindowBuilder;
 
+    // Reject if an OAuth flow is already in progress (e.g. double-click)
+    // to avoid overwriting the CSRF nonce that the first flow's callback needs.
+    {
+        let auth = state.auth.lock().await;
+        if auth.pending_oauth_state.is_some() {
+            return Err(AppError::Auth(
+                "An OAuth sign-in is already in progress".into(),
+            ));
+        }
+    }
+
     // Generate 32-byte cryptographic random state nonce
     let mut buf = [0u8; 32];
     rand::thread_rng().fill(&mut buf);

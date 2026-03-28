@@ -36,7 +36,10 @@ pub async fn connect_to_peer(
     let net = state.network.as_ref().ok_or_else(|| {
         AppError::Internal("Network service not initialized".into())
     })?;
-    let result = net.connections.connect_to_peer(&peer_id).await;
+    let result = net
+        .connections
+        .connect_to_peer(&peer_id, net.manifest_sync.clone(), net.messages.clone())
+        .await;
     // Push updated snapshot for instant UI feedback
     net.emit_snapshot().await;
     result

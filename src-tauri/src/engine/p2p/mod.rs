@@ -38,7 +38,7 @@ pub struct NetworkService {
     pub messages: Arc<MessageRouter>,
     config: Arc<RwLock<NetworkConfig>>,
     running: Arc<RwLock<bool>>,
-    cancel: CancellationToken,
+    cancel: Arc<RwLock<CancellationToken>>,
     pool: DbPool,
     app_handle: Arc<RwLock<Option<tauri::AppHandle>>>,
 }
@@ -75,7 +75,7 @@ impl NetworkService {
             messages,
             config,
             running: Arc::new(RwLock::new(false)),
-            cancel: CancellationToken::new(),
+            cancel: Arc::new(RwLock::new(CancellationToken::new())),
             pool,
             app_handle: Arc::new(RwLock::new(None)),
         })
@@ -99,6 +99,10 @@ impl NetworkService {
             *self.app_handle.write().await = Some(app);
         }
 
+        // Mint a fresh CancellationToken so restarts work after a previous stop().
+        let token = CancellationToken::new();
+        *self.cancel.write().await = token.clone();
+
         let config = self.config.read().await;
         let port = config.port;
         drop(config);
@@ -111,7 +115,7 @@ impl NetworkService {
         let connections = self.connections.clone();
         let manifest_sync = self.manifest_sync.clone();
         let messages = self.messages.clone();
-        let cancel = self.cancel.clone();
+        let cancel = token.clone();
         tokio::spawn(async move {
             Self::accept_loop(transport, connections, manifest_sync, messages, cancel).await;
         });
@@ -120,14 +124,15 @@ impl NetworkService {
         self.mdns.register(&peer_id, &display_name, port)?;
         let mdns = self.mdns.clone();
         let pool_browse = pool.clone();
+        let cancel_browse = token.clone();
         tokio::spawn(async move {
-            mdns.browse_loop(pool_browse).await;
+            mdns.browse_loop(pool_browse, cancel_browse).await;
         });
 
         // Start health check loop via PeriodicTask with live config
         let connections_health = self.connections.clone();
         let config_health = self.config.clone();
-        let cancel = self.cancel.clone();
+        let cancel = token.clone();
         tokio::spawn(async move {
             PeriodicTask::with_dynamic_interval(
                 "p2p_health_check",
@@ -149,7 +154,7 @@ impl NetworkService {
         // Start periodic manifest sync via PeriodicTask with live config
         let manifest_sync = self.manifest_sync.clone();
         let config_manifest = self.config.clone();
-        let cancel = self.cancel.clone();
+        let cancel = token.clone();
         tokio::spawn(async move {
             PeriodicTask::with_dynamic_interval(
                 "p2p_manifest_sync",
@@ -171,7 +176,7 @@ impl NetworkService {
         // Start periodic mDNS peer pruning via PeriodicTask with live config
         let mdns_prune = self.mdns.clone();
         let config_prune = self.config.clone();
-        let cancel = self.cancel.clone();
+        let cancel = token.clone();
         tokio::spawn(async move {
             PeriodicTask::with_dynamic_interval(
                 "p2p_mdns_prune",
@@ -208,7 +213,7 @@ impl NetworkService {
             let msgs_snap = self.messages.clone();
             let ms_snap = self.manifest_sync.clone();
             let config_snap = self.config.clone();
-            let cancel = self.cancel.clone();
+            let cancel = token.clone();
             tokio::spawn(async move {
                 PeriodicTask::with_dynamic_interval(
                     "p2p_snapshot_emitter",
@@ -256,7 +261,7 @@ impl NetworkService {
             return Ok(());
         }
         // Signal all PeriodicTask loops to shut down
-        self.cancel.cancel();
+        self.cancel.read().await.cancel();
         self.mdns.unregister();
         self.connections.disconnect_all().await;
         *running = false;

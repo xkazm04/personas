@@ -336,7 +336,7 @@ fn handle_transform_result(
         Err(err) => {
             let msg = err.to_string();
             tracing::error!(transform_id = %transform_id, error = %msg, "n8n transform failed");
-            set_n8n_transform_status(app, transform_id, SessionStatus::Failed.as_str(), Some(msg.clone()));
+            set_n8n_transform_status(app, transform_id, "failed", Some(msg.clone()));
             crate::notifications::notify_n8n_transform_completed(app, workflow_name, false);
             if let Some(sid) = session_id {
                 let state = app.state::<Arc<AppState>>();
@@ -397,7 +397,7 @@ async fn run_unified_transform_turn1(
     if let Some(questions) = extract_questions_output(&output_text) {
         tracing::info!(transform_id = %transform_id, "Turn 1 produced questions");
         set_n8n_transform_questions(transform_id, questions.clone());
-        set_n8n_transform_status(app, transform_id, SessionStatus::AwaitingAnswers.as_str(), None);
+        set_n8n_transform_status(app, transform_id, "awaiting_answers", None);
         emit_n8n_transform_line(
             app,
             transform_id,

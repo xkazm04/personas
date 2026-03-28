@@ -3,7 +3,7 @@ use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
 
-use crate::engine::byom::{ByomPolicy, ProviderAuditEntry};
+use crate::engine::byom::{ByomPolicy, PolicyWarning, ProviderAuditEntry};
 use crate::engine::provider::{resolve_provider, EngineKind};
 use crate::db::repos::execution::provider_audit;
 use crate::error::AppError;
@@ -40,12 +40,12 @@ pub fn delete_byom_policy(state: State<'_, Arc<AppState>>) -> Result<(), AppErro
     Ok(())
 }
 
-/// Validate a BYOM policy without saving it. Returns a list of warning strings.
+/// Validate a BYOM policy without saving it. Returns structured warnings with severity.
 #[tauri::command]
 pub fn validate_byom_policy(
     state: State<'_, Arc<AppState>>,
     policy: ByomPolicy,
-) -> Result<Vec<String>, AppError> {
+) -> Result<Vec<PolicyWarning>, AppError> {
     require_auth_sync(&state)?;
     Ok(policy.validate())
 }

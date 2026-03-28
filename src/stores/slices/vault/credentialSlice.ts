@@ -73,7 +73,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
     try {
       // Encrypt the sensitive data payload before sending over IPC
       const session_encrypted_data = await encryptWithSessionKey(JSON.stringify(input.data));
-      
+
       const created = await createCredential({
         name: input.name,
         service_type: input.service_type,
@@ -82,8 +82,12 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         metadata: null,
         session_encrypted_data,
       });
-      await get().fetchCredentials();
-      set({ error: null });
+      // Optimistic: append the returned credential instead of re-fetching the full list
+      const credMeta = toCredMeta(created);
+      set((state) => ({
+        credentials: [...state.credentials, credMeta],
+        error: null,
+      }));
       return created.id;
     } catch (err) {
       reportError(err, "Failed to create credential", set);
@@ -98,7 +102,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         session_encrypted_data = await encryptWithSessionKey(JSON.stringify(input.data));
       }
 
-      await updateCredential(id, {
+      const updated = await updateCredential(id, {
         name: input.name ?? null,
         service_type: input.service_type ?? null,
         encrypted_data: null,
@@ -106,8 +110,12 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         metadata: null,
         session_encrypted_data: session_encrypted_data ?? null,
       });
-      await get().fetchCredentials();
-      set({ error: null });
+      // Optimistic: replace the updated credential in-place instead of re-fetching
+      const credMeta = toCredMeta(updated);
+      set((state) => ({
+        credentials: state.credentials.map((c) => (c.id === id ? credMeta : c)),
+        error: null,
+      }));
     } catch (err) {
       reportError(err, "Failed to update credential", set);
     }
@@ -145,8 +153,15 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
     try {
       const sessionEncryptedValue = await encryptWithSessionKey(value);
       await updateCredentialField(id, key, isSensitive, sessionEncryptedValue);
-      await get().fetchCredentials();
-      set({ error: null });
+      // Optimistic: bump updated_at locally instead of re-fetching the full list.
+      // Field updates don't change credential-level metadata, only the timestamp.
+      const now = new Date().toISOString();
+      set((state) => ({
+        credentials: state.credentials.map((c) =>
+          c.id === id ? { ...c, updated_at: now } : c,
+        ),
+        error: null,
+      }));
     } catch (err) {
       reportError(err, "Failed to update credential field", set);
     }

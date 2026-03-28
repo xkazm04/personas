@@ -167,10 +167,18 @@ fn encrypt_update_profile(profile: &Option<Option<String>>) -> Result<Option<Opt
 
 // -- Shared validation helpers ------------------------------------------------
 
+const MAX_NAME_CHARS: usize = 200;
+
 fn validate_name(name: &str) -> Result<(), AppError> {
     if name.trim().is_empty() {
         return Err(AppError::Validation("Name cannot be empty".into()));
     }
+    if name.chars().count() > MAX_NAME_CHARS {
+        return Err(AppError::Validation(format!(
+            "Name exceeds maximum length of {MAX_NAME_CHARS} characters"
+        )));
+    }
+    reject_dangerous_content(name, "Name")?;
     Ok(())
 }
 
@@ -228,8 +236,8 @@ fn reject_dangerous_content(text: &str, field_name: &str) -> Result<(), AppError
 }
 
 fn validate_max_concurrent(v: i32) -> Result<(), AppError> {
-    if v < 1 {
-        return Err(AppError::Validation("max_concurrent must be >= 1".into()));
+    if v < 1 || v > 50 {
+        return Err(AppError::Validation("max_concurrent must be between 1 and 50".into()));
     }
     Ok(())
 }
@@ -641,29 +649,30 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
-        // Build dynamic SET clause
+        // Build dynamic SET clause and params in a single pass
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-        push_field!(input.name, "name", sets, param_idx);
-        push_field!(input.description, "description", sets, param_idx);
-        push_field!(input.system_prompt, "system_prompt", sets, param_idx);
-        push_field!(input.structured_prompt, "structured_prompt", sets, param_idx);
-        push_field!(input.icon, "icon", sets, param_idx);
-        push_field!(input.color, "color", sets, param_idx);
-        push_field!(input.enabled, "enabled", sets, param_idx);
-        push_field!(input.sensitive, "sensitive", sets, param_idx);
-        push_field!(input.headless, "headless", sets, param_idx);
-        push_field!(input.max_concurrent, "max_concurrent", sets, param_idx);
-        push_field!(input.timeout_ms, "timeout_ms", sets, param_idx);
-        push_field!(encrypted_channels, "notification_channels", sets, param_idx);
-        push_field!(input.last_design_result, "last_design_result", sets, param_idx);
-        push_field!(encrypted_profile, "model_profile", sets, param_idx);
-        push_field!(input.max_budget_usd, "max_budget_usd", sets, param_idx);
-        push_field!(input.max_turns, "max_turns", sets, param_idx);
-        push_field!(input.design_context, "design_context", sets, param_idx);
-        push_field!(input.group_id, "group_id", sets, param_idx);
-        push_field!(input.parameters, "parameters", sets, param_idx);
+        push_field_param!(input.name, "name", sets, param_idx, param_values, clone);
+        push_field_param!(input.description, "description", sets, param_idx, param_values, clone);
+        push_field_param!(input.system_prompt, "system_prompt", sets, param_idx, param_values, clone);
+        push_field_param!(input.structured_prompt, "structured_prompt", sets, param_idx, param_values, clone);
+        push_field_param!(input.icon, "icon", sets, param_idx, param_values, clone);
+        push_field_param!(input.color, "color", sets, param_idx, param_values, clone);
+        push_field_param!(input.enabled, "enabled", sets, param_idx, param_values, bool);
+        push_field_param!(input.sensitive, "sensitive", sets, param_idx, param_values, bool);
+        push_field_param!(input.headless, "headless", sets, param_idx, param_values, bool);
+        push_field_param!(input.max_concurrent, "max_concurrent", sets, param_idx, param_values, copy);
+        push_field_param!(input.timeout_ms, "timeout_ms", sets, param_idx, param_values, copy);
+        push_field_param!(encrypted_channels, "notification_channels", sets, param_idx, param_values, clone);
+        push_field_param!(input.last_design_result, "last_design_result", sets, param_idx, param_values, clone);
+        push_field_param!(encrypted_profile, "model_profile", sets, param_idx, param_values, clone);
+        push_field_param!(input.max_budget_usd, "max_budget_usd", sets, param_idx, param_values, copy);
+        push_field_param!(input.max_turns, "max_turns", sets, param_idx, param_values, copy);
+        push_field_param!(input.design_context, "design_context", sets, param_idx, param_values, clone);
+        push_field_param!(input.group_id, "group_id", sets, param_idx, param_values, clone);
+        push_field_param!(input.parameters, "parameters", sets, param_idx, param_values, clone);
 
         let sql = format!(
             "UPDATE personas SET {} WHERE id = ?{}",
@@ -671,28 +680,6 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
             param_idx
         );
 
-        // Use a boxed params approach to handle dynamic binding
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-
-        if let Some(ref v) = input.name { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.description { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.system_prompt { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.structured_prompt { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.icon { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.color { param_values.push(Box::new(v.clone())); }
-        if let Some(v) = input.enabled { param_values.push(Box::new(v as i32)); }
-        if let Some(v) = input.sensitive { param_values.push(Box::new(v as i32)); }
-        if let Some(v) = input.headless { param_values.push(Box::new(v as i32)); }
-        if let Some(v) = input.max_concurrent { param_values.push(Box::new(v)); }
-        if let Some(v) = input.timeout_ms { param_values.push(Box::new(v)); }
-        if let Some(ref v) = encrypted_channels { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.last_design_result { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = encrypted_profile { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.max_budget_usd { param_values.push(Box::new(*v)); }
-        if let Some(ref v) = input.max_turns { param_values.push(Box::new(*v)); }
-        if let Some(ref v) = input.design_context { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.group_id { param_values.push(Box::new(v.clone())); }
-        if let Some(ref v) = input.parameters { param_values.push(Box::new(v.clone())); }
         param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();

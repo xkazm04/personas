@@ -49,6 +49,12 @@ pub async fn create_n8n_session(
         ));
     }
 
+    if serde_json::from_str::<serde_json::Value>(&raw_workflow_json).is_err() {
+        return Err(AppError::Validation(
+            "Workflow input is not valid JSON. Please export a valid n8n workflow file.".into(),
+        ));
+    }
+
     repo::create(
         &state.db,
         &CreateN8nSessionInput {

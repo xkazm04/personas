@@ -137,6 +137,64 @@ fn finalize_result(
     }
 }
 
+/// Extract the first SQL/command keyword from a query string, stripping
+/// leading comments (block `/* ... */` and line `-- ...`).
+///
+/// Returns `None` if the query is empty or consists entirely of comments.
+/// Returns `Some("__UNCLOSED_COMMENT__")` for an unclosed block comment so
+/// callers can apply a fail-safe policy.
+fn extract_first_keyword(query_text: &str) -> Option<String> {
+    let mut s = query_text.trim();
+    loop {
+        s = s.trim_start();
+        if s.starts_with("--") {
+            if let Some(pos) = s.find('\n') {
+                s = &s[pos + 1..];
+            } else {
+                return None; // entire query is a comment
+            }
+        } else if s.starts_with("/*") {
+            if let Some(pos) = s.find("*/") {
+                s = &s[pos + 2..];
+            } else {
+                return Some("__UNCLOSED_COMMENT__".to_string());
+            }
+        } else {
+            break;
+        }
+    }
+
+    let kw: String = s
+        .chars()
+        .take_while(|c| c.is_ascii_alphabetic())
+        .collect::<String>()
+        .to_ascii_uppercase();
+
+    if kw.is_empty() { None } else { Some(kw) }
+}
+
+/// Returns `true` when the query is a read-only statement **in SQLite**.
+///
+/// Only keywords that are valid SQLite read statements are recognised:
+/// `SELECT`, `PRAGMA`, `EXPLAIN`, `WITH`, `VALUES`, `ANALYZE`.
+///
+/// Note: `ANALYZE` updates internal `sqlite_stat*` tables as a side-effect
+/// but is considered read-only for user-facing classification because it
+/// never modifies user data.
+///
+/// `SHOW` and `DESCRIBE` are **not** valid in SQLite and are intentionally
+/// excluded — they would fail at the engine level anyway.
+pub fn is_sqlite_read(query_text: &str) -> bool {
+    match extract_first_keyword(query_text) {
+        None => true, // empty / comment-only — not a mutation
+        Some(ref kw) if kw == "__UNCLOSED_COMMENT__" => false,
+        Some(kw) => matches!(
+            kw.as_str(),
+            "SELECT" | "PRAGMA" | "EXPLAIN" | "WITH" | "VALUES" | "ANALYZE"
+        ),
+    }
+}
+
 /// Classifies a SQL/Redis/Convex statement as read-only or mutating.
 ///
 /// Returns `true` if the statement is a mutation (INSERT, UPDATE, DELETE,
@@ -144,50 +202,26 @@ fn finalize_result(
 /// Returns `false` for read-only statements (SELECT, SHOW, DESCRIBE, EXPLAIN, WITH, etc.).
 ///
 /// For Redis commands, checks against known write commands (SET, DEL, HSET, LPUSH, etc.).
+///
+/// **For local SQLite queries, prefer [`is_sqlite_read`] which uses an
+/// SQLite-specific keyword list.**
 pub fn is_mutation(query_text: &str) -> bool {
-    let trimmed = query_text.trim();
-
-    // Strip leading block/line comments to reach the actual keyword
-    let mut s = trimmed;
-    loop {
-        s = s.trim_start();
-        if s.starts_with("--") {
-            // Line comment -- skip to next line
-            if let Some(pos) = s.find('\n') {
-                s = &s[pos + 1..];
-            } else {
-                return false; // entire query is a comment
-            }
-        } else if s.starts_with("/*") {
-            // Block comment -- skip to closing */
-            if let Some(pos) = s.find("*/") {
-                s = &s[pos + 2..];
-            } else {
-                return true; // unclosed comment — treat as mutation (fail-safe)
-            }
-        } else {
-            break;
-        }
+    match extract_first_keyword(query_text) {
+        None => false,  // comment-only — not a mutation
+        Some(ref kw) if kw == "__UNCLOSED_COMMENT__" => true, // fail-safe
+        Some(kw) => !matches!(
+            kw.as_str(),
+            // SQL read-only keywords (covers MySQL SHOW/DESCRIBE, Postgres, etc.)
+            "SELECT" | "SHOW" | "DESCRIBE" | "DESC" | "EXPLAIN" | "WITH"
+            | "PRAGMA" | "ANALYZE" | "VALUES"
+            // Redis read commands
+            | "GET" | "MGET" | "HGET" | "HGETALL" | "HMGET" | "HKEYS" | "HVALS" | "HLEN"
+            | "LRANGE" | "LLEN" | "LINDEX" | "SCARD" | "SMEMBERS" | "SISMEMBER"
+            | "ZRANGE" | "ZRANGEBYSCORE" | "ZSCORE" | "ZCARD" | "ZCOUNT" | "ZRANK"
+            | "EXISTS" | "TYPE" | "TTL" | "PTTL" | "KEYS" | "SCAN" | "DBSIZE" | "INFO"
+            | "PING" | "ECHO" | "TIME" | "RANDOMKEY" | "STRLEN" | "GETRANGE"
+        ),
     }
-
-    // Extract the first keyword (letters only, case-insensitive)
-    let first_keyword: String = s.chars()
-        .take_while(|c| c.is_ascii_alphabetic())
-        .collect::<String>()
-        .to_ascii_uppercase();
-
-    // Read-only keywords -- anything not in this list is treated as a mutation
-    matches!(
-        first_keyword.as_str(),
-        "SELECT" | "SHOW" | "DESCRIBE" | "DESC" | "EXPLAIN" | "WITH"
-        | "PRAGMA" | "ANALYZE" | "VALUES"
-        // Redis read commands
-        | "GET" | "MGET" | "HGET" | "HGETALL" | "HMGET" | "HKEYS" | "HVALS" | "HLEN"
-        | "LRANGE" | "LLEN" | "LINDEX" | "SCARD" | "SMEMBERS" | "SISMEMBER"
-        | "ZRANGE" | "ZRANGEBYSCORE" | "ZSCORE" | "ZCARD" | "ZCOUNT" | "ZRANK"
-        | "EXISTS" | "TYPE" | "TTL" | "PTTL" | "KEYS" | "SCAN" | "DBSIZE" | "INFO"
-        | "PING" | "ECHO" | "TIME" | "RANDOMKEY" | "STRLEN" | "GETRANGE"
-    ) == false
 }
 
 /// Execute a query against the database credential's service.
@@ -1845,14 +1879,7 @@ pub fn execute_local_sqlite(
 
     let trimmed = query_text.trim();
 
-    // Detect if this is a SELECT/PRAGMA/EXPLAIN (returns rows) or a write statement
-    let upper = trimmed.to_uppercase();
-    let is_read = upper.starts_with("SELECT")
-        || upper.starts_with("PRAGMA")
-        || upper.starts_with("EXPLAIN")
-        || upper.starts_with("WITH");
-
-    if is_read {
+    if is_sqlite_read(trimmed) {
         let mut stmt = conn.prepare(trimmed).map_err(|e| {
             AppError::Internal(format!("SQL prepare error: {e}"))
         })?;

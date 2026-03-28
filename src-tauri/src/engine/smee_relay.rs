@@ -19,10 +19,7 @@ use super::event_registry::{emit_event_bus, event_name};
 use super::ssrf_safe_dns;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
-use crate::db::repos::core::settings;
 use crate::db::DbPool;
-
-pub const SETTINGS_KEY: &str = "smee_channel_url";
 
 /// Maximum SSE buffer size (1 MB). If the buffer exceeds this without producing
 /// a complete SSE message, the connection is dropped to prevent memory exhaustion.
@@ -61,15 +58,13 @@ struct RelayInstanceStatus {
 }
 
 pub struct SmeeRelayState {
-    pub channel_url: Option<String>,
-    /// Per-relay status keyed by relay ID (or "__legacy__" for the single-URL mode).
+    /// Per-relay status keyed by relay ID.
     relays: HashMap<String, RelayInstanceStatus>,
 }
 
 impl SmeeRelayState {
     pub fn new() -> Self {
         Self {
-            channel_url: None,
             relays: HashMap::new(),
         }
     }
@@ -83,13 +78,10 @@ impl SmeeRelayState {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SmeeRelayStatus {
-    pub channel_url: Option<String>,
     pub connected: bool,
     pub events_relayed: u64,
     pub last_event_at: Option<String>,
     pub error: Option<String>,
-    /// True when the legacy single-URL mode is active (deprecated).
-    pub legacy_active: bool,
 }
 
 fn emit_status(app: &AppHandle, state: &SmeeRelayState) {
@@ -112,43 +104,48 @@ fn emit_status(app: &AppHandle, state: &SmeeRelayState) {
             .last()
     };
 
-    let legacy_active = state.relays.contains_key("__legacy__");
-
     let status = SmeeRelayStatus {
-        channel_url: state.channel_url.clone(),
         connected: any_connected,
         events_relayed: total_events,
         last_event_at: latest_event,
         error: aggregate_error,
-        legacy_active,
     };
     let _ = app.emit(event_name::SMEE_RELAY_STATUS, status);
 }
 
 // ---------------------------------------------------------------------------
-// SSE relay loop
+// SSE relay core
 // ---------------------------------------------------------------------------
 
-/// Connect to a smee.io channel and relay payloads into the local event bus.
-///
-/// This function blocks on the SSE stream. On disconnect, it returns so the
-/// caller can implement retry logic.
-async fn relay_sse_stream(
-    channel_url: &str,
+/// Parameters for a managed relay connection.
+struct RelayParams {
+    relay_key: String,
+    channel_url: String,
+    source_id: Option<String>,
+    target_persona_id: Option<String>,
+    event_filter: Option<Vec<String>>,
+}
+
+/// SSE relay loop: connects to a smee.io channel, streams SSE events,
+/// and publishes parsed payloads to the local event bus.
+async fn relay_sse_core(
+    params: &RelayParams,
     pool: &DbPool,
     app: &AppHandle,
     state: &Arc<tokio::sync::Mutex<SmeeRelayState>>,
 ) -> Result<(), String> {
+    use crate::db::repos::communication::smee_relays as smee_relay_repo;
+
     // Use SSRF-safe DNS resolver to prevent connections to internal services
     // even if a validated smee.io URL somehow resolves to a private IP (DNS rebinding).
     let http = reqwest::Client::builder()
-        .no_proxy() // SSE to smee.io — skip any local proxy config
+        .no_proxy()
         .dns_resolver(std::sync::Arc::new(ssrf_safe_dns::SsrfSafeDnsResolver))
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 
     let resp = http
-        .get(channel_url)
+        .get(&params.channel_url)
         .header("Accept", "text/event-stream")
         .send()
         .await
@@ -158,21 +155,25 @@ async fn relay_sse_stream(
         return Err(format!("HTTP {}", resp.status()));
     }
 
-    // Mark connected
+    // Mark connected (preserve previous event counts across reconnects)
     {
         let mut s = state.lock().await;
-        s.relays.insert("__legacy__".to_string(), RelayInstanceStatus {
+        let prev_events = s.relays.get(&params.relay_key).map_or(0, |r| r.events_relayed);
+        let prev_last_event = s.relays.get(&params.relay_key).and_then(|r| r.last_event_at.clone());
+        s.relays.insert(params.relay_key.clone(), RelayInstanceStatus {
             connected: true,
             error: None,
-            events_relayed: 0,
-            last_event_at: None,
+            events_relayed: prev_events,
+            last_event_at: prev_last_event,
         });
         emit_status(app, &s);
     }
 
-    tracing::info!(url = %channel_url, "Smee relay connected");
+    let _ = smee_relay_repo::set_status_quiet(pool, &params.relay_key, "active");
 
-    // Stream SSE lines
+    tracing::info!(relay_key = %params.relay_key, url = %params.channel_url, "Smee relay connected");
+
+    // Stream SSE
     let mut stream = resp.bytes_stream();
     let mut buffer = String::new();
 
@@ -225,21 +226,21 @@ async fn relay_sse_stream(
                 .map(|s| format!("github_{s}"))
                 .unwrap_or_else(|| "smee_webhook".to_string());
 
-            let body = payload_json.get("body").cloned().unwrap_or(payload_json.clone());
+            // Apply event filter if configured
+            if let Some(ref filter) = params.event_filter {
+                if !filter.is_empty() && !filter.contains(&event_type) {
+                    continue;
+                }
+            }
 
-            tracing::warn!(
-                url = %channel_url,
-                event_type = %event_type,
-                "Legacy Smee relay publishing untargeted event (broadcasts to all personas). \
-                 Migrate to managed relays for per-persona routing."
-            );
+            let body = payload_json.get("body").cloned().unwrap_or(payload_json.clone());
 
             let input = CreatePersonaEventInput {
                 event_type,
                 source_type: "smee_relay".to_string(),
                 project_id: None,
-                source_id: None,
-                target_persona_id: None,
+                source_id: params.source_id.clone(),
+                target_persona_id: params.target_persona_id.clone(),
                 payload: Some(body.to_string()),
                 use_case_id: None,
             };
@@ -247,13 +248,13 @@ async fn relay_sse_stream(
             match event_repo::publish(pool, input) {
                 Ok(event) => {
                     emit_event_bus(app, &event);
+                    let _ = smee_relay_repo::record_event(pool, &params.relay_key);
                     let mut s = state.lock().await;
-                    if let Some(r) = s.relays.get_mut("__legacy__") {
+                    if let Some(r) = s.relays.get_mut(&params.relay_key) {
                         r.events_relayed += 1;
                         r.last_event_at = Some(chrono::Utc::now().to_rfc3339());
                     }
                     emit_status(app, &s);
-
                     tracing::debug!(event_id = %event.id, "Smee relay: published event");
                 }
                 Err(e) => {
@@ -269,153 +270,6 @@ async fn relay_sse_stream(
 // ---------------------------------------------------------------------------
 // Background task
 // ---------------------------------------------------------------------------
-
-/// SSE relay for a specific managed relay (records per-relay stats).
-async fn relay_sse_stream_for_relay(
-    channel_url: &str,
-    relay_id: &str,
-    pool: &DbPool,
-    app: &AppHandle,
-    state: &Arc<tokio::sync::Mutex<SmeeRelayState>>,
-) -> Result<(), String> {
-    use crate::db::repos::communication::smee_relays as smee_relay_repo;
-
-    // Use SSRF-safe DNS resolver to prevent connections to internal services
-    // even if a validated smee.io URL somehow resolves to a private IP (DNS rebinding).
-    let http = reqwest::Client::builder()
-        .no_proxy()
-        .dns_resolver(std::sync::Arc::new(ssrf_safe_dns::SsrfSafeDnsResolver))
-        .build()
-        .map_err(|e| format!("HTTP client error: {e}"))?;
-
-    let resp = http
-        .get(channel_url)
-        .header("Accept", "text/event-stream")
-        .send()
-        .await
-        .map_err(|e| format!("Connection failed: {e}"))?;
-
-    if !resp.status().is_success() {
-        return Err(format!("HTTP {}", resp.status()));
-    }
-
-    {
-        let mut s = state.lock().await;
-        let prev_events = s.relays.get(relay_id).map_or(0, |r| r.events_relayed);
-        let prev_last_event = s.relays.get(relay_id).and_then(|r| r.last_event_at.clone());
-        s.relays.insert(relay_id.to_string(), RelayInstanceStatus {
-            connected: true,
-            error: None,
-            events_relayed: prev_events,
-            last_event_at: prev_last_event,
-        });
-        emit_status(app, &s);
-    }
-
-    // Clear error on successful connect (fire-and-forget, no read-back needed)
-    let _ = smee_relay_repo::set_status_quiet(pool, relay_id, "active");
-
-    tracing::info!(relay_id = %relay_id, url = %channel_url, "Smee relay connected");
-
-    let mut stream = resp.bytes_stream();
-    let mut buffer = String::new();
-
-    // Load relay config for event filtering
-    let _relay_target: Option<String> = {
-        let conn = pool.get().ok();
-        conn.and_then(|c| {
-            c.query_row(
-                "SELECT target_persona_id FROM smee_relays WHERE id = ?1",
-                rusqlite::params![relay_id],
-                |row| row.get::<_, Option<String>>(0),
-            ).ok()
-        }).flatten()
-    };
-    let event_filter: Option<Vec<String>> = {
-        let conn = pool.get().ok();
-        conn.and_then(|c| {
-            c.query_row(
-                "SELECT event_filter FROM smee_relays WHERE id = ?1",
-                rusqlite::params![relay_id],
-                |row| row.get::<_, Option<String>>(0),
-            ).ok()
-        }).flatten().and_then(|f| serde_json::from_str(&f).ok())
-    };
-
-    while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| format!("Stream error: {e}"))?;
-        let text = String::from_utf8_lossy(&chunk);
-        buffer.push_str(&normalize_line_endings(&text));
-
-        // Guard against unbounded buffer growth from a misbehaving endpoint
-        if buffer.len() > MAX_SSE_BUFFER_BYTES {
-            return Err("SSE buffer exceeded 1 MB without a complete message — disconnecting".into());
-        }
-
-        while let Some((pos, delim_len)) = find_sse_boundary(&buffer) {
-            let message = buffer[..pos].to_string();
-            buffer = buffer[pos + delim_len..].to_string();
-
-            let data_lines: Vec<&str> = message
-                .lines()
-                .filter(|l| l.starts_with("data: ") || l.starts_with("data:"))
-                .map(|l| l.strip_prefix("data: ").or_else(|| l.strip_prefix("data:")).unwrap_or(""))
-                .collect();
-
-            if data_lines.is_empty() { continue; }
-            let data = data_lines.join("");
-            if data.is_empty() || data == "{}" { continue; }
-
-            let payload_json: serde_json::Value = match safe_json::from_str(&data) {
-                Ok(v) => v,
-                Err(_) => serde_json::json!({ "raw": data }),
-            };
-
-            let event_type = payload_json
-                .get("x-github-event")
-                .and_then(|v| v.as_str())
-                .map(|s| format!("github_{s}"))
-                .unwrap_or_else(|| "smee_webhook".to_string());
-
-            // Apply event filter if configured
-            if let Some(ref filter) = event_filter {
-                if !filter.is_empty() && !filter.contains(&event_type) {
-                    continue;
-                }
-            }
-
-            let body = payload_json.get("body").cloned().unwrap_or(payload_json.clone());
-
-            let input = CreatePersonaEventInput {
-                event_type,
-                source_type: "smee_relay".to_string(),
-                project_id: None,
-                source_id: Some(relay_id.to_string()),
-                target_persona_id: _relay_target.clone(),
-                payload: Some(body.to_string()),
-                use_case_id: None,
-            };
-
-            match event_repo::publish(pool, input) {
-                Ok(event) => {
-                    emit_event_bus(app, &event);
-                    let _ = smee_relay_repo::record_event(pool, relay_id);
-                    let mut s = state.lock().await;
-                    if let Some(r) = s.relays.get_mut(relay_id) {
-                        r.events_relayed += 1;
-                        r.last_event_at = Some(chrono::Utc::now().to_rfc3339());
-                    }
-                    emit_status(app, &s);
-                }
-                Err(e) => {
-                    tracing::debug!(error = %e, "Smee relay: failed to publish event");
-                }
-            }
-        }
-    }
-
-    Ok(())
-}
 
 /// Long-lived background task that manages all active Smee relay connections.
 ///
@@ -435,9 +289,6 @@ pub async fn run_smee_relay(
         Arc::new(tokio::sync::Mutex::new(HashMap::new()));
 
     loop {
-        // Also check legacy single-URL setting for backward compat
-        let legacy_url = settings::get(&pool, SETTINGS_KEY).ok().flatten();
-
         // Read active relays from database
         let active_relays = smee_relay_repo::list_active_urls(&pool).unwrap_or_default();
 
@@ -475,8 +326,36 @@ pub async fn run_smee_relay(
                 let mut backoff = Duration::from_secs(1);
                 let max_backoff = Duration::from_secs(30);
                 loop {
+                    // Re-query config each iteration so changes take effect on reconnect
+                    let target_persona_id: Option<String> = {
+                        let conn = pool2.get().ok();
+                        conn.and_then(|c| {
+                            c.query_row(
+                                "SELECT target_persona_id FROM smee_relays WHERE id = ?1",
+                                rusqlite::params![relay_id2],
+                                |row| row.get::<_, Option<String>>(0),
+                            ).ok()
+                        }).flatten()
+                    };
+                    let event_filter: Option<Vec<String>> = {
+                        let conn = pool2.get().ok();
+                        conn.and_then(|c| {
+                            c.query_row(
+                                "SELECT event_filter FROM smee_relays WHERE id = ?1",
+                                rusqlite::params![relay_id2],
+                                |row| row.get::<_, Option<String>>(0),
+                            ).ok()
+                        }).flatten().and_then(|f| serde_json::from_str(&f).ok())
+                    };
+                    let params = RelayParams {
+                        relay_key: relay_id2.clone(),
+                        channel_url: url2.clone(),
+                        source_id: Some(relay_id2.clone()),
+                        target_persona_id,
+                        event_filter,
+                    };
                     let connected_at = Instant::now();
-                    match relay_sse_stream_for_relay(&url2, &relay_id2, &pool2, &app2, &state2).await {
+                    match relay_sse_core(&params, &pool2, &app2, &state2).await {
                         Ok(()) => {
                             // Only reset backoff if the connection was stable long enough.
                             // A short-lived Ok(()) likely means the server accepted then
@@ -520,64 +399,9 @@ pub async fn run_smee_relay(
             tracing::info!(relay_id = %relay_id, url = %channel_url, "Started Smee relay task");
         }
 
-        // Handle legacy single-URL mode (backward compat)
-        if let Some(url) = legacy_url {
-            if !url.is_empty() && url.starts_with("https://smee.io/") && !tasks.contains_key("__legacy__") {
-                let pool2 = pool.clone();
-                let app2 = app.clone();
-                let state2 = state.clone();
-                let handle = tokio::spawn(async move {
-                    let mut backoff = Duration::from_secs(1);
-                    let max_backoff = Duration::from_secs(30);
-                    loop {
-                        {
-                            let mut s = state2.lock().await;
-                            s.channel_url = Some(url.clone());
-                            emit_status(&app2, &s);
-                        }
-                        let connected_at = Instant::now();
-                        match relay_sse_stream(&url, &pool2, &app2, &state2).await {
-                            Ok(()) => {
-                                if connected_at.elapsed().as_secs() >= MIN_STABLE_CONNECTION_SECS {
-                                    backoff = Duration::from_secs(1);
-                                }
-                            }
-                            Err(e) => {
-                                let mut s = state2.lock().await;
-                                if let Some(r) = s.relays.get_mut("__legacy__") {
-                                    r.connected = false;
-                                    r.error = Some(e);
-                                }
-                                emit_status(&app2, &s);
-                            }
-                        }
-                        tokio::time::sleep(backoff).await;
-                        backoff = (backoff * 2).min(max_backoff);
-
-                        // Check if legacy URL still exists
-                        if let Ok(u) = settings::get(&pool2, SETTINGS_KEY) {
-                            if u.is_none() || u.as_deref() == Some("") {
-                                return;
-                            }
-                        }
-                    }
-                });
-                tasks.insert("__legacy__".to_string(), handle);
-            }
-        } else if tasks.contains_key("__legacy__") {
-            if let Some(handle) = tasks.remove("__legacy__") {
-                handle.abort();
-                let mut s = state.lock().await;
-                s.relays.remove("__legacy__");
-            }
-        }
-
-        // Emit aggregate status (derived from per-relay map)
+        // Emit aggregate status
         {
-            let mut s = state.lock().await;
-            if s.relays.is_empty() {
-                s.channel_url = None;
-            }
+            let s = state.lock().await;
             emit_status(&app, &s);
         }
 

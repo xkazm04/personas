@@ -7,6 +7,7 @@ import type { PersonaTrigger } from "@/lib/bindings/PersonaTrigger";
 import type { PersonaEventSubscription } from "@/lib/bindings/PersonaEventSubscription";
 import type { PersonaAutomation } from "@/lib/bindings/PersonaAutomation";
 import type { CreatePersonaInput } from "@/lib/bindings/CreatePersonaInput";
+import type { DeletePersonaResult } from "@/lib/bindings/DeletePersonaResult";
 import type { EffectiveModelConfig } from "@/lib/bindings/EffectiveModelConfig";
 import type { UpdatePersonaInput } from "@/lib/bindings/UpdatePersonaInput";
 
@@ -40,7 +41,7 @@ export const duplicatePersona = (sourceId: string) =>
   invoke<Persona>("duplicate_persona", { sourceId });
 
 export const deletePersona = (id: string) =>
-  invoke<boolean>("delete_persona", { id });
+  invoke<DeletePersonaResult>("delete_persona", { id });
 
 export interface BlastRadiusItem {
   category: string;

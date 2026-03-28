@@ -5,6 +5,7 @@ use crate::db::models::{
     ConnectorDefinition, CreateConnectorDefinitionInput, UpdateConnectorDefinitionInput,
 };
 use crate::db::repos::resources::connectors as repo;
+use crate::engine::api_proxy::invalidate_connector_cache;
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
@@ -32,7 +33,9 @@ pub fn create_connector(
     input: CreateConnectorDefinitionInput,
 ) -> Result<ConnectorDefinition, AppError> {
     require_privileged_sync(&state, "create_connector")?;
-    repo::create(&state.db, input)
+    let result = repo::create(&state.db, input)?;
+    invalidate_connector_cache();
+    Ok(result)
 }
 
 #[tauri::command]
@@ -42,7 +45,9 @@ pub fn update_connector(
     input: UpdateConnectorDefinitionInput,
 ) -> Result<ConnectorDefinition, AppError> {
     require_privileged_sync(&state, "update_connector")?;
-    repo::update(&state.db, &id, input)
+    let result = repo::update(&state.db, &id, input)?;
+    invalidate_connector_cache();
+    Ok(result)
 }
 
 #[tauri::command]
@@ -51,5 +56,7 @@ pub fn delete_connector(
     id: String,
 ) -> Result<bool, AppError> {
     require_privileged_sync(&state, "delete_connector")?;
-    repo::delete(&state.db, &id)
+    let result = repo::delete(&state.db, &id)?;
+    invalidate_connector_cache();
+    Ok(result)
 }

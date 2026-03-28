@@ -4,7 +4,10 @@ import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { HealingTimelineEvent } from "@/lib/bindings/HealingTimelineEvent";
-import { getHealingTimeline, getRetryChain, listHealingIssues, runHealingAnalysis, updateHealingStatus } from "@/api/overview/healing";
+import { getHealingIssue, getHealingTimeline, getRetryChain, listHealingIssues, runHealingAnalysis, updateHealingStatus } from "@/api/overview/healing";
+import { typedListen } from "@/lib/eventRegistry";
+import { EventName } from "@/lib/eventRegistry";
+import type { UnlistenFn } from "@tauri-apps/api/event";
 
 import { reportError } from "../../storeTypes";
 
@@ -22,6 +25,7 @@ export interface HealingSlice {
   resolveHealingIssue: (id: string, personaId?: string) => Promise<void>;
   fetchRetryChain: (executionId: string, personaId?: string) => Promise<void>;
   fetchHealingTimeline: (personaId: string) => Promise<void>;
+  subscribeHealingEvents: () => Promise<UnlistenFn>;
 }
 
 export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlice> = (set, get) => ({
@@ -85,5 +89,27 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
     } catch (err) {
       reportError(err, "Failed to fetch healing timeline", set, { stateUpdates: { healingTimeline: [], healingTimelineLoading: false } });
     }
+  },
+
+  subscribeHealingEvents: async () => {
+    const unlisten = await typedListen(EventName.HEALING_ISSUE_UPDATED, async (payload) => {
+      const { issueId, personaId } = payload;
+
+      // Selectively re-fetch just the affected issue
+      try {
+        const updated = await getHealingIssue(issueId, personaId);
+        set((state) => ({
+          healingIssues: state.healingIssues.map((i) =>
+            i.id === issueId ? updated : i,
+          ),
+        }));
+      } catch {
+        // Issue may have been deleted or is no longer accessible — remove it
+        set((state) => ({
+          healingIssues: state.healingIssues.filter((i) => i.id !== issueId),
+        }));
+      }
+    });
+    return unlisten;
   },
 });

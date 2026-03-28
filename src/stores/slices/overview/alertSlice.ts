@@ -5,6 +5,7 @@ import type { FiredAlert } from "@/lib/bindings/FiredAlert";
 import type { AlertMetric } from "@/lib/bindings/AlertMetric";
 import type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
 import * as api from "@/api/overview/observability";
+import { useToastStore } from "@/stores/toastStore";
 
 // -- Alert metric / severity display helpers (sourced from backend enums) -----
 
@@ -114,6 +115,9 @@ export interface AlertSlice {
   activeToasts: FiredAlert[];
   alertEvalHealth: AlertEvalHealth;
 
+  /** Alert IDs that were shown in the UI but failed to persist to the backend. */
+  pendingSyncAlertIds: Set<string>;
+
   // Backend CRUD (pass force=true to bypass TTL guard)
   fetchAlertRules: (force?: boolean) => Promise<void>;
   fetchAlertHistory: (force?: boolean) => Promise<void>;
@@ -146,6 +150,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
   _alertHistoryFetchedAt: 0,
   alertFiredCooldowns: {},
   activeToasts: [],
+  pendingSyncAlertIds: new Set<string>(),
   alertEvalHealth: {
     lastEvalAt: null,
     lastEvalDurationMs: null,
@@ -189,8 +194,9 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         enabled: rule.enabled,
       });
       set((state) => ({ alertRules: [created, ...state.alertRules] }));
-    } catch {
-      // Silently fail; user can retry
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      useToastStore.getState().addToast(`Failed to create alert rule: ${msg}`, 'error');
     }
   },
 
@@ -210,8 +216,9 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         const { [id]: _, ...rest } = state.alertFiredCooldowns;
         return { alertRules: rules, alertFiredCooldowns: rest };
       });
-    } catch {
-      // Silently fail
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      useToastStore.getState().addToast(`Failed to update alert rule: ${msg}`, 'error');
     }
   },
 
@@ -223,8 +230,9 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         const { [id]: _, ...rest } = state.alertFiredCooldowns;
         return { alertRules: rules, alertFiredCooldowns: rest };
       });
-    } catch {
-      // Silently fail
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      useToastStore.getState().addToast(`Failed to delete alert rule: ${msg}`, 'error');
     }
   },
 
@@ -239,8 +247,9 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         }
         return { alertRules: rules };
       });
-    } catch {
-      // Silently fail
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      useToastStore.getState().addToast(`Failed to toggle alert rule: ${msg}`, 'error');
     }
   },
 
@@ -250,17 +259,19 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       set((state) => ({
         alertHistory: state.alertHistory.map(a => a.id === alertId ? { ...a, dismissed: true } : a),
       }));
-    } catch {
-      // Silently fail
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      useToastStore.getState().addToast(`Failed to dismiss alert: ${msg}`, 'error');
     }
   },
 
   clearAlertHistory: async () => {
     try {
       await api.clearFiredAlerts();
-      set({ alertHistory: [] });
-    } catch {
-      // Silently fail
+      set({ alertHistory: [], pendingSyncAlertIds: new Set<string>() });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      useToastStore.getState().addToast(`Failed to clear alert history: ${msg}`, 'error');
     }
   },
 
@@ -272,6 +283,25 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
     const startMs = performance.now();
     let rulesEvaluated = 0;
     let rulesTriggered = 0;
+
+    // Retry any alerts that failed to persist on a previous cycle
+    {
+      const { pendingSyncAlertIds, alertHistory } = get();
+      if (pendingSyncAlertIds.size > 0) {
+        const pendingAlerts = alertHistory.filter(a => pendingSyncAlertIds.has(a.id));
+        for (const alert of pendingAlerts) {
+          api.createFiredAlert(alert).then(() => {
+            set((state) => {
+              const pending = new Set(state.pendingSyncAlertIds);
+              pending.delete(alert.id);
+              return { pendingSyncAlertIds: pending };
+            });
+          }).catch(() => {
+            // Will retry again on the next eval cycle
+          });
+        }
+      }
+    }
 
     try {
       const state = get();
@@ -338,17 +368,16 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       const durationMs = Math.round(performance.now() - startMs);
 
       if (newAlerts.length > 0) {
-        // Persist each fired alert to backend (fire-and-forget)
-        for (const alert of newAlerts) {
-          api.createFiredAlert(alert).catch(() => {});
-        }
-
+        // Optimistically update UI, then persist to backend
         set((state) => {
           const history = [...newAlerts, ...state.alertHistory].slice(0, MAX_ALERT_HISTORY);
+          const pending = new Set(state.pendingSyncAlertIds);
+          for (const a of newAlerts) pending.add(a.id);
           return {
             alertHistory: history,
             alertFiredCooldowns: cooldowns,
             activeToasts: [...state.activeToasts, ...newAlerts],
+            pendingSyncAlertIds: pending,
             alertEvalHealth: {
               lastEvalAt: new Date().toISOString(),
               lastEvalDurationMs: durationMs,
@@ -359,6 +388,21 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
             },
           };
         });
+
+        // Persist each fired alert — remove from pending on success
+        for (const alert of newAlerts) {
+          api.createFiredAlert(alert).then(() => {
+            set((state) => {
+              const pending = new Set(state.pendingSyncAlertIds);
+              pending.delete(alert.id);
+              return { pendingSyncAlertIds: pending };
+            });
+          }).catch((err) => {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.warn(`[alerts] Failed to persist fired alert ${alert.id}: ${msg}`);
+            // Alert stays in pendingSyncAlertIds for retry on next eval cycle
+          });
+        }
       } else {
         set((state) => ({
           alertFiredCooldowns: cooldowns,

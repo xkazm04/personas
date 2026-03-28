@@ -39,7 +39,6 @@ export interface WorkspaceConnectState {
 
 export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConnectState {
   const createCredential = useVaultStore((s) => s.createCredential);
-  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
 
   const [selectedServices, setSelectedServices] = useState<WorkspaceService[]>(
     () => [...provider.services],
@@ -93,13 +92,12 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
         setProvisionStates([...states]);
       }
 
-      await fetchCredentials();
       setIsProvisioning(false);
 
       const anyFailed = states.some((s) => s.status === 'failed');
       setPhase(anyFailed ? 'error' : 'done');
     },
-    [createCredential, fetchCredentials, provider.id],
+    [createCredential, provider.id],
   );
 
   const provisionRef = useRef(provisionCredentials);

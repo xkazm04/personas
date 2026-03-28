@@ -166,6 +166,17 @@ pub async fn delete_knowledge_base(
     // Get KB to find credential_id
     let kb = kb_ingest::get_kb(&state.user_db, &kb_id)?;
 
+    // Cancel any active ingestion job for this KB before dropping tables.
+    {
+        let mut jobs = state.kb_ingest_jobs.lock().await;
+        if let Some(token) = jobs.remove(&kb_id) {
+            tracing::info!(kb_id = %kb_id, "Cancelling active ingestion job before KB deletion");
+            token.cancel();
+        }
+    }
+    // Brief yield to let the cancelled task observe the token and stop writing.
+    tokio::task::yield_now().await;
+
     // Drop vector index
     if let Some(vs) = &state.vector_store {
         vs.drop_index(&kb_id)?;
@@ -395,7 +406,15 @@ fn spawn_ingest_job(
     let audit_pool = state.db.clone();
     let kb_cred_id = kb.credential_id.clone();
     let kb_name = kb.name.clone();
+    let kb_id = kb.id.clone();
     let app = app.clone();
+    let ingest_jobs = state.kb_ingest_jobs.clone();
+
+    // Register the cancellation token so delete_knowledge_base can cancel us.
+    {
+        let mut jobs = ingest_jobs.blocking_lock();
+        jobs.insert(kb_id.clone(), cancel.clone());
+    }
 
     audit_log::insert_warn(
         &audit_pool,
@@ -417,6 +436,12 @@ fn spawn_ingest_job(
             cancel,
         )
         .await;
+
+        // Unregister the job now that ingestion is done.
+        {
+            let mut jobs = ingest_jobs.lock().await;
+            jobs.remove(&kb_id);
+        }
 
         match &result {
             Ok(_) => {

@@ -132,7 +132,27 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
 
 function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss: (id: string) => void }) {
   const styles = SEVERITY_STYLES[toast.severity] ?? SEVERITY_STYLES.medium!;
+  const [paused, setPaused] = useState(false);
   const [elapsedLabel, setElapsedLabel] = useState('');
+  const elapsedRef = useRef(0);
+  const lastTickRef = useRef(Date.now());
+
+  useEffect(() => {
+    if (paused) return;
+
+    lastTickRef.current = Date.now();
+    const interval = setInterval(() => {
+      const now = Date.now();
+      elapsedRef.current += now - lastTickRef.current;
+      lastTickRef.current = now;
+
+      if (elapsedRef.current >= toast.duration) {
+        onDismiss(toast.id);
+      }
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [paused, toast.duration, toast.id, onDismiss]);
 
   useEffect(() => {
     const update = () => setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
@@ -147,8 +167,16 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
     onDismiss(toast.id);
   }, [toast.issueId, toast.id, onDismiss]);
 
+  const remaining = Math.max(0, toast.duration - elapsedRef.current);
+  const progressFraction = remaining / toast.duration;
+
   return (
     <div
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => {
+        lastTickRef.current = Date.now();
+        setPaused(false);
+      }}
       className={`animate-fade-slide-in pointer-events-auto rounded-xl border ${styles.border} bg-background/95 backdrop-blur-md shadow-elevation-3 overflow-hidden`}
     >
       <div className="px-3.5 py-3 space-y-2">
@@ -201,6 +229,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
       <div className="h-0.5 bg-secondary/30">
         <div
           className={`animate-fade-in h-full ${styles.progress}`}
+          style={{ width: paused ? `${progressFraction * 100}%` : '0%' }}
         />
       </div>
     </div>
@@ -219,20 +248,6 @@ export function ToastContainer() {
     (id: string) => dismiss(id),
     [dismiss],
   );
-
-  // Auto-dismiss expired toasts
-  useEffect(() => {
-    if (toasts.length === 0) return;
-    const interval = setInterval(() => {
-      const now = Date.now();
-      for (const t of toasts) {
-        if (now - t.timestamp >= t.duration) {
-          dismiss(t.id);
-        }
-      }
-    }, 500);
-    return () => clearInterval(interval);
-  }, [toasts, dismiss]);
 
   // Sort by priority descending (highest priority on top), then by timestamp (newest first)
   const sorted = useMemo(

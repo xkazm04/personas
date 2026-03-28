@@ -11,7 +11,7 @@ const VALID_TRIGGER_TYPES: &[&str] = &[
 ];
 const MIN_INTERVAL_SECONDS: i64 = 60;
 
-fn validate_trigger_type(trigger_type: &str) -> Result<(), AppError> {
+pub(crate) fn validate_trigger_type(trigger_type: &str) -> Result<(), AppError> {
     if !VALID_TRIGGER_TYPES.contains(&trigger_type) {
         return Err(AppError::Validation(format!(
             "Invalid trigger_type '{}'. Must be one of: {}",
@@ -22,7 +22,7 @@ fn validate_trigger_type(trigger_type: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-fn validate_config(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
+pub(crate) fn validate_config(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
     if let Some(config_str) = config {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(config_str) {
             if let Some(interval) = parsed.get("interval_seconds") {
@@ -65,7 +65,7 @@ fn validate_config(trigger_type: &str, config: Option<&str>) -> Result<(), AppEr
 
 /// Encrypt sensitive fields in a trigger config JSON string before writing to DB.
 /// Returns the original string if encryption fails (best-effort -- logged, not fatal).
-fn encrypt_config(config: &str) -> String {
+pub(crate) fn encrypt_config(config: &str) -> String {
     match crypto::encrypt_trigger_config(config) {
         Ok(encrypted) => encrypted,
         Err(e) => {

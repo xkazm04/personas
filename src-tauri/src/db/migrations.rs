@@ -184,6 +184,16 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
     // -- Composite trigger suppression persistence ----------------------------
     ensure_composite_fires_table(conn)?;
 
+    // -- Normalize camelCase credential field keys to snake_case ---------------
+    // Existing credentials may store "refreshToken" instead of "refresh_token".
+    // This one-time migration renames them so all code can use a single key.
+    normalize_credential_field_keys(conn)?;
+
+    // -- Track whether execution log files may be incomplete ------------------
+    let _ = conn.execute_batch(
+        "ALTER TABLE persona_executions ADD COLUMN log_truncated INTEGER NOT NULL DEFAULT 0;"
+    ); // ignore "duplicate column" error on re-run
+
     tracing::info!("Database migrations complete");
     Ok(())
 }
@@ -3342,6 +3352,40 @@ fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<(), AppError>
             rows.len(),
             total_fields
         );
+    }
+
+    Ok(())
+}
+
+/// Normalize legacy camelCase credential field keys to snake_case.
+///
+/// Some credentials were stored with `refreshToken` instead of `refresh_token`.
+/// This migration renames them so all code paths can use the canonical snake_case
+/// key without dual-convention checks.
+fn normalize_credential_field_keys(conn: &Connection) -> Result<(), AppError> {
+    // Map of camelCase → snake_case field keys to normalize.
+    let renames: &[(&str, &str)] = &[
+        ("refreshToken", "refresh_token"),
+        ("accessToken", "access_token"),
+        ("clientId", "client_id"),
+        ("clientSecret", "client_secret"),
+        ("tokenType", "token_type"),
+    ];
+
+    for &(old_key, new_key) in renames {
+        // Only rename if there isn't already a row with the canonical key for
+        // the same credential (avoid unique-constraint violations).
+        let updated = conn.execute(
+            "UPDATE credential_fields SET field_key = ?1
+             WHERE field_key = ?2
+               AND credential_id NOT IN (
+                   SELECT credential_id FROM credential_fields WHERE field_key = ?1
+               )",
+            rusqlite::params![new_key, old_key],
+        )?;
+        if updated > 0 {
+            tracing::info!("Normalized {updated} credential field(s): {old_key} → {new_key}");
+        }
     }
 
     Ok(())

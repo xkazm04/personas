@@ -32,6 +32,9 @@ pub struct DeployAutomationResult {
     pub platform_url: Option<String>,
     pub webhook_url: Option<String>,
     pub deployment_message: String,
+    /// Non-fatal warning when the workflow was created but activation failed on the platform.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub activation_warning: Option<String>,
 }
 
 // -- Design result shape (from LLM) ----------------------------
@@ -122,8 +125,11 @@ async fn deploy_n8n(
         ));
     }
 
-    // Activate the workflow
-    let _ = client.activate_workflow(&workflow_id).await;
+    // Activate the workflow — capture failure instead of discarding it
+    let activation_error = match client.activate_workflow(&workflow_id).await {
+        Ok(_) => None,
+        Err(e) => Some(format!("Workflow created but activation failed: {e}")),
+    };
 
     // Resolve the base URL from credential to build platform URL
     let cred = crate::db::repos::resources::credentials::get_by_id(pool, &input.credential_id)?;
@@ -141,33 +147,64 @@ async fn deploy_n8n(
     // Extract webhook URL from the created workflow's nodes
     let webhook_url = extract_n8n_webhook_url(&created, &base_url);
 
-    // Save to local DB
-    let automation = create_and_activate(
-        pool,
-        &input.persona_id,
-        &design.name,
-        &design.description,
-        "n8n",
-        Some(&workflow_id),
-        platform_url.as_deref(),
-        webhook_url.as_deref(),
-        Some(&input.credential_id),
-        None,
-        design.input_schema.as_deref(),
-        design.output_schema.as_deref(),
-        design.timeout_secs,
-        &design.fallback_mode,
-        input.use_case_id.as_deref(),
-    )?;
+    // Save to local DB — use Error status if activation failed
+    let automation = if let Some(ref warn) = activation_error {
+        create_with_error(
+            pool,
+            &input.persona_id,
+            &design.name,
+            &design.description,
+            "n8n",
+            Some(&workflow_id),
+            platform_url.as_deref(),
+            webhook_url.as_deref(),
+            Some(&input.credential_id),
+            None,
+            design.input_schema.as_deref(),
+            design.output_schema.as_deref(),
+            design.timeout_secs,
+            &design.fallback_mode,
+            input.use_case_id.as_deref(),
+            warn,
+        )?
+    } else {
+        create_and_activate(
+            pool,
+            &input.persona_id,
+            &design.name,
+            &design.description,
+            "n8n",
+            Some(&workflow_id),
+            platform_url.as_deref(),
+            webhook_url.as_deref(),
+            Some(&input.credential_id),
+            None,
+            design.input_schema.as_deref(),
+            design.output_schema.as_deref(),
+            design.timeout_secs,
+            &design.fallback_mode,
+            input.use_case_id.as_deref(),
+        )?
+    };
+
+    let deployment_message = if activation_error.is_some() {
+        format!(
+            "Workflow '{}' was created on your n8n instance but could not be activated. Check the workflow configuration on n8n and activate it manually.",
+            design.name
+        )
+    } else {
+        format!(
+            "Workflow '{}' created and activated on your n8n instance.",
+            design.name
+        )
+    };
 
     Ok(DeployAutomationResult {
         automation,
         platform_url,
         webhook_url,
-        deployment_message: format!(
-            "Workflow '{}' created and activated on your n8n instance.",
-            design.name
-        ),
+        deployment_message,
+        activation_warning: activation_error,
     })
 }
 
@@ -295,6 +332,7 @@ async fn deploy_github(
         deployment_message: format!(
             "GitHub Actions integration configured for {repo_full}. Dispatch event type: '{event_type}'. Local webhook endpoint ready at port 9420.",
         ),
+        activation_warning: None,
     })
 }
 
@@ -364,6 +402,7 @@ async fn deploy_zapier(
             "Zapier automation '{}' connected and validated.",
             design.name
         ),
+        activation_warning: None,
     })
 }
 
@@ -401,6 +440,7 @@ async fn deploy_custom(
         platform_url: None,
         webhook_url: design.webhook_url.clone(),
         deployment_message: "Custom automation saved as draft. Complete the setup manually.".into(),
+        activation_warning: None,
     })
 }
 
@@ -464,6 +504,71 @@ fn create_and_activate(
         retry_count: None,
         fallback_mode: None,
         error_message: None,
+    };
+
+    automation_repo::update(pool, &auto.id, update_input)
+}
+
+/// Create an automation and mark it with Error status + error message
+/// (used when the workflow was created on the platform but activation failed).
+#[allow(clippy::too_many_arguments)]
+fn create_with_error(
+    pool: &DbPool,
+    persona_id: &str,
+    name: &str,
+    description: &str,
+    platform: &str,
+    platform_workflow_id: Option<&str>,
+    platform_url: Option<&str>,
+    webhook_url: Option<&str>,
+    credential_id: Option<&str>,
+    credential_mapping: Option<&str>,
+    input_schema: Option<&str>,
+    output_schema: Option<&str>,
+    timeout_secs: i64,
+    fallback_mode: &str,
+    use_case_id: Option<&str>,
+    error_msg: &str,
+) -> Result<PersonaAutomation, AppError> {
+    let create_input = CreateAutomationInput {
+        persona_id: persona_id.into(),
+        use_case_id: use_case_id.map(|s| s.into()),
+        name: name.into(),
+        description: Some(description.into()),
+        platform: platform.into(),
+        platform_workflow_id: platform_workflow_id.map(|s| s.into()),
+        platform_url: platform_url.map(|s| s.into()),
+        webhook_url: webhook_url.map(|s| s.into()),
+        webhook_method: None,
+        platform_credential_id: credential_id.map(|s| s.into()),
+        credential_mapping: credential_mapping.map(|s| s.into()),
+        input_schema: input_schema.map(|s| s.into()),
+        output_schema: output_schema.map(|s| s.into()),
+        timeout_ms: Some(timeout_secs_to_ms(timeout_secs)),
+        retry_count: None,
+        fallback_mode: Some(fallback_mode.into()),
+    };
+
+    let auto = automation_repo::create(pool, create_input)?;
+
+    // Mark as Error with the activation failure message
+    let update_input = UpdateAutomationInput {
+        deployment_status: Some(crate::engine::lifecycle::AutomationDeployStatus::Error),
+        name: None,
+        description: None,
+        use_case_id: None,
+        platform_workflow_id: None,
+        platform_url: None,
+        webhook_url: None,
+        webhook_method: None,
+        platform_credential_id: None,
+        credential_mapping: None,
+        input_schema: None,
+        output_schema: None,
+        timeout_ms: None,
+        retry_count: None,
+        fallback_mode: None,
+        error_message: Some(Some(error_msg.into())),
     };
 
     automation_repo::update(pool, &auto.id, update_input)

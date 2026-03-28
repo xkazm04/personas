@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { CredentialCardHeader } from '@/features/vault/sub_card/CredentialCardHeader';
+import { CredentialCardDetails } from '@/features/vault/sub_card/CredentialCardDetails';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { useRotationTicker, formatCountdown } from '@/features/vault/hooks/useRotationTicker';
@@ -9,7 +10,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 interface CredentialCardProps {
   credential: CredentialMetadata;
   connector: ConnectorDefinition | undefined;
-  onSelect: () => void;
+  onSelect?: () => void;
   onDelete: (id: string) => void;
 }
 
@@ -19,11 +20,12 @@ export function CredentialCard({
   onSelect,
   onDelete,
 }: CredentialCardProps) {
+  const [expanded, setExpanded] = useState(false);
   const rotationStatus = useVaultStore((s) => s.rotationStatuses[credential.id] ?? null);
   const storeFetchRotationStatus = useVaultStore((s) => s.fetchRotationStatus);
   const isPendingDelete = useVaultStore((s) => s.pendingDeleteCredentialIds.has(credential.id));
 
-  const { result: healthcheckResult } = useCredentialHealth(credential.id);
+  const { result: healthcheckResult, isHealthchecking, checkStored, checkPreview } = useCredentialHealth(credential.id);
 
   useRotationTicker();
   const rotationCountdown = formatCountdown(rotationStatus?.next_rotation_at);
@@ -49,6 +51,17 @@ export function CredentialCard({
           }
     ), [healthcheckResult, credential.healthcheck_last_success, credential.healthcheck_last_message]);
 
+  const handleToggle = useCallback(() => {
+    setExpanded((prev) => !prev);
+    onSelect?.();
+  }, [onSelect]);
+
+  const health = useMemo(() => ({
+    checkStored,
+    checkPreview: (serviceType: string, values: Record<string, string>) =>
+      checkPreview(serviceType, values),
+  }), [checkStored, checkPreview]);
+
   if (isPendingDelete) {
     return (
       <div
@@ -72,9 +85,40 @@ export function CredentialCard({
         effectiveHealthcheckResult={effectiveHealthcheckResult}
         rotationStatus={rotationStatus}
         rotationCountdown={rotationCountdown}
-        onSelect={onSelect}
+        onSelect={handleToggle}
         onDelete={onDelete}
       />
+      <div
+        className="grid transition-[grid-template-rows] duration-200 ease-out"
+        style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+          {connector && (
+            <div className="px-3 pb-3 border-t border-primary/10">
+              <div className="pt-3">
+                <CredentialCardDetails
+                  credential={credential}
+                  connector={connector}
+                  effectiveHealthcheckResult={effectiveHealthcheckResult}
+                  isHealthchecking={isHealthchecking}
+                  health={health}
+                  rotationStatus={rotationStatus}
+                  rotationCountdown={rotationCountdown}
+                  fetchRotationStatus={fetchRotationStatus}
+                  onStartEditing={() => {}}
+                />
+              </div>
+            </div>
+          )}
+          {!connector && (
+            <div className="px-3 pb-3 border-t border-primary/10">
+              <div className="text-sm text-muted-foreground/80 py-3">
+                No connector definition available for this credential type.
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -597,6 +597,20 @@ pub async fn run_execution(
                 );
             }
 
+            // Guard: reject args that still contain the Codex prompt sentinel.
+            // This catches any execution path that forgot to call
+            // build_execution_args_with_prompt() for a PositionalArg provider.
+            if cli_args.args.iter().any(|a| a == crate::engine::provider::codex::PROMPT_PLACEHOLDER) {
+                let error_msg = format!(
+                    "{}: prompt placeholder was not replaced — aborting to avoid an empty-prompt CLI invocation",
+                    cli_provider.engine_name()
+                );
+                tracing::error!("{}", error_msg);
+                logger.log(&format!("[FAILOVER] {} failed: {}", candidate.label, error_msg));
+                last_spawn_error = Some(error_msg);
+                continue;
+            }
+
             // Spawn CLI process via CliProcessDriver
             match CliProcessDriver::spawn(&cli_args, exec_dir.clone()) {
                 Ok(driver) => {
@@ -901,17 +915,31 @@ pub async fn run_execution(
                                     let pool_ref = pool_for_stream.clone();
                                     let exec_id_ref = exec_id_for_stream.clone();
                                     let sid_clone = sid.clone();
-                                    // Fire-and-forget DB update
+                                    // Persist session_id with retry — losing this silently
+                                    // breaks warm session reuse (cost optimization).
                                     tokio::spawn(async move {
-                                        let _ = exec_repo::update_status(
+                                        let update = || exec_repo::update_status(
                                             &pool_ref,
                                             &exec_id_ref,
                                             UpdateExecutionStatus {
                                                 status: ExecutionState::Running,
-                                                claude_session_id: Some(sid_clone),
+                                                claude_session_id: Some(sid_clone.clone()),
                                                 ..Default::default()
                                             },
                                         );
+                                        if let Err(e) = update() {
+                                            tracing::warn!(
+                                                execution_id = %exec_id_ref,
+                                                "session_id DB persist failed, retrying once: {e}"
+                                            );
+                                            if let Err(e2) = update() {
+                                                tracing::error!(
+                                                    execution_id = %exec_id_ref,
+                                                    "session_id DB persist failed after retry — \
+                                                     warm session reuse will be unavailable: {e2}"
+                                                );
+                                            }
+                                        }
                                     });
                                 }
                             }
@@ -1302,6 +1330,7 @@ pub async fn run_execution(
     };
 
     logger.close();
+    let log_truncated = logger.had_write_errors();
 
     // Stable per-persona workspace dirs are NOT cleaned up (they persist
     // across executions for Claude Code memory and workspace files).
@@ -1482,6 +1511,7 @@ pub async fn run_execution(
         tool_steps: tool_steps_json,
         trace_id: Some(final_trace.trace_id.clone()),
         execution_config: execution_config_json,
+        log_truncated,
     }
 }
 
@@ -1529,6 +1559,7 @@ fn default_result() -> ExecutionResult {
         tool_steps: None,
         trace_id: None,
         execution_config: None,
+        log_truncated: false,
     }
 }
 

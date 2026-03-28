@@ -30,6 +30,7 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         completed_at: row.get("completed_at")?,
         created_at: row.get("created_at")?,
         execution_config: row.get("execution_config").unwrap_or(None),
+        log_truncated: row.get::<_, Option<bool>>("log_truncated")?.unwrap_or(false),
     })
 }
 
@@ -117,6 +118,7 @@ pub fn get_all_global(
             completed_at: row.get("completed_at")?,
             created_at: row.get("created_at")?,
             execution_config: row.get("execution_config").unwrap_or(None),
+            log_truncated: row.get::<_, Option<bool>>("log_truncated")?.unwrap_or(false),
             persona_name: row.get("persona_name")?,
             persona_icon: row.get("persona_icon")?,
             persona_color: row.get("persona_color")?,
@@ -291,7 +293,8 @@ pub fn update_status(
                 completed_at = COALESCE(?11, completed_at),
                 tool_steps = COALESCE(?13, tool_steps),
                 claude_session_id = COALESCE(?14, claude_session_id),
-                execution_config = COALESCE(?15, execution_config)
+                execution_config = COALESCE(?15, execution_config),
+                log_truncated = ?16
              WHERE id = ?12",
             params![
                 status_str,
@@ -309,6 +312,7 @@ pub fn update_status(
                 input.tool_steps,
                 input.claude_session_id,
                 input.execution_config,
+                input.log_truncated,
             ],
         )?;
 
@@ -360,7 +364,8 @@ pub fn update_status_if_running(
                 completed_at = COALESCE(?11, completed_at),
                 tool_steps = COALESCE(?13, tool_steps),
                 claude_session_id = COALESCE(?14, claude_session_id),
-                execution_config = COALESCE(?15, execution_config)
+                execution_config = COALESCE(?15, execution_config),
+                log_truncated = ?16
              WHERE id = ?12 AND status = 'running'",
             params![
                 status_str,
@@ -378,6 +383,7 @@ pub fn update_status_if_running(
                 input.tool_steps,
                 input.claude_session_id,
                 input.execution_config,
+                input.log_truncated,
             ],
         )?;
 
@@ -431,7 +437,8 @@ pub fn update_status_if_not_final(
                 completed_at = COALESCE(?11, completed_at),
                 tool_steps = COALESCE(?13, tool_steps),
                 claude_session_id = COALESCE(?14, claude_session_id),
-                execution_config = COALESCE(?15, execution_config)
+                execution_config = COALESCE(?15, execution_config),
+                log_truncated = ?16
              WHERE id = ?12 AND status IN ('running', 'cancelled')",
             params![
                 status_str,
@@ -449,6 +456,7 @@ pub fn update_status_if_not_final(
                 input.tool_steps,
                 input.claude_session_id,
                 input.execution_config,
+                input.log_truncated,
             ],
         )?;
 

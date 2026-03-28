@@ -44,6 +44,7 @@ function settleAndReport(fetches: NamedFetch[], tag: string) {
       } else {
         // Clear any previous error for this source on success
         store.setPipelineError(name, null);
+        store.setPipelineFetchedAt(name);
       }
     }
   });

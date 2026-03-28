@@ -12,4 +12,8 @@ retry_count: number, started_at: string | null, completed_at: string | null, cre
 /**
  * Frozen ExecutionConfig JSON snapshot assembled at execution start.
  */
-execution_config: string | null, };
+execution_config: string | null,
+/**
+ * `true` when the execution log file may be incomplete due to I/O errors.
+ */
+log_truncated: boolean, };

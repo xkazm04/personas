@@ -30,13 +30,20 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
   const settingsDirty = draftChanged(draft, baseline, SETTINGS_KEYS);
   const modelDirty = draftChanged(draft, baseline, MODEL_KEYS);
 
-  /** Build an undo entry that restores draft+baseline to `prev` for the given keys. */
+  /** Build an undo entry that restores draft+baseline to `prev` for the given keys,
+   *  and can re-apply the forward state (`next`) on redo. */
   const makeUndoEntry = useCallback(
-    (op: PersonaOperation, prev: PersonaDraft, keys: readonly (keyof PersonaDraft)[]): UndoEntry => ({
+    (op: PersonaOperation, prev: PersonaDraft, next: PersonaDraft, keys: readonly (keyof PersonaDraft)[]): UndoEntry => ({
       operation: op,
       restore: async () => {
         const patch: Partial<PersonaDraft> = {};
         for (const k of keys) (patch as Record<string, unknown>)[k] = prev[k];
+        setDraft((d) => ({ ...d, ...patch }));
+        setBaseline((b) => ({ ...b, ...patch }));
+      },
+      reapply: async () => {
+        const patch: Partial<PersonaDraft> = {};
+        for (const k of keys) (patch as Record<string, unknown>)[k] = next[k];
         setDraft((d) => ({ ...d, ...patch }));
         setBaseline((b) => ({ ...b, ...patch }));
       },
@@ -60,7 +67,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     };
     await applyPersonaOp(selectedPersona.id, op);
     setBaseline((prev) => ({ ...prev, name: d.name, description: d.description, icon: d.icon, color: d.color, maxConcurrent: d.maxConcurrent, timeout: d.timeout, enabled: d.enabled, sensitive: d.sensitive }));
-    pushUndo(makeUndoEntry(op, prevBaseline, SETTINGS_KEYS));
+    pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, SETTINGS_KEYS));
   }, [selectedPersona, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
   const performModelSave = useCallback(async (d: PersonaDraft) => {
@@ -101,7 +108,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     };
     await applyPersonaOp(selectedPersona.id, op);
     setBaseline((prev) => ({ ...prev, selectedModel: d.selectedModel, selectedProvider: d.selectedProvider, baseUrl: d.baseUrl, authToken: d.authToken, customModelName: d.customModelName, maxBudget: d.maxBudget, maxTurns: d.maxTurns, promptCachePolicy: d.promptCachePolicy }));
-    pushUndo(makeUndoEntry(op, prevBaseline, MODEL_KEYS));
+    pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, MODEL_KEYS));
   }, [selectedPersona, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
   const handleSaveSettings = useDebouncedSaveGroup({

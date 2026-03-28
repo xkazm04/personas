@@ -167,43 +167,45 @@ pub fn parse_llm_topology_response(
         .map(|p| (p.id.as_str(), p.name.as_str()))
         .collect();
 
-    // Build members, resolving persona names
-    let mut members: Vec<BlueprintMember> = response
-        .members
-        .iter()
-        .filter(|m| persona_map.contains_key(m.persona_id.as_str()))
-        .map(|m| {
-            let name = persona_map
-                .get(m.persona_id.as_str())
-                .copied()
-                .unwrap_or("Unknown Agent");
-            BlueprintMember {
+    // Build members, resolving persona names.
+    // Track old-index -> new-index so connections are remapped after filtering.
+    let mut index_remap: HashMap<usize, usize> = HashMap::new();
+    let mut members: Vec<BlueprintMember> = Vec::new();
+
+    for (old_idx, m) in response.members.iter().enumerate() {
+        if let Some(&name) = persona_map.get(m.persona_id.as_str()) {
+            let new_idx = members.len();
+            index_remap.insert(old_idx, new_idx);
+            members.push(BlueprintMember {
                 persona_id: m.persona_id.clone(),
                 persona_name: name.to_string(),
                 role: m.role.clone(),
                 position_x: 0.0,
                 position_y: 0.0,
-            }
-        })
-        .collect();
+            });
+        }
+    }
 
     if members.is_empty() {
         return None;
     }
 
-    // Validate connection indices and filter invalid ones
+    // Remap connection indices from the original LLM array positions to the
+    // filtered array positions, dropping connections that reference removed members.
     let connections: Vec<BlueprintConnection> = response
         .connections
         .into_iter()
-        .filter(|c| {
-            c.source_index < members.len()
-                && c.target_index < members.len()
-                && c.source_index != c.target_index
-        })
-        .map(|c| BlueprintConnection {
-            source_index: c.source_index,
-            target_index: c.target_index,
-            connection_type: c.connection_type,
+        .filter_map(|c| {
+            let src = *index_remap.get(&c.source_index)?;
+            let tgt = *index_remap.get(&c.target_index)?;
+            if src == tgt {
+                return None;
+            }
+            Some(BlueprintConnection {
+                source_index: src,
+                target_index: tgt,
+                connection_type: c.connection_type,
+            })
         })
         .collect();
 

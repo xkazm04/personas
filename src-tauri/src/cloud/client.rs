@@ -13,6 +13,24 @@ fn cloud_err(e: impl std::fmt::Display) -> AppError {
     AppError::Cloud(e.to_string())
 }
 
+/// Validate that a value is safe to interpolate as a single URL path segment.
+/// Rejects path separators, traversal sequences, and other unsafe characters.
+fn validate_path_segment(value: &str, name: &str) -> Result<(), AppError> {
+    if value.is_empty() {
+        return Err(AppError::Cloud(format!("{name} must not be empty")));
+    }
+    if value.contains('/')
+        || value.contains('\\')
+        || value.contains("..")
+        || value.contains('\0')
+    {
+        return Err(AppError::Cloud(format!(
+            "{name} contains invalid characters"
+        )));
+    }
+    Ok(())
+}
+
 // ============================================================================
 // Response / request types
 // ============================================================================
@@ -469,12 +487,14 @@ impl CloudClient {
         execution_id: &str,
         offset: u32,
     ) -> Result<CloudExecutionPoll, AppError> {
+        validate_path_segment(execution_id, "execution_id")?;
         let path = format!("/api/executions/{execution_id}?offset={offset}");
         self.send_json(self.authed(reqwest::Method::GET, &path).await).await
     }
 
     /// `POST /api/executions/{id}/cancel` -- cancel a running execution.
     pub async fn cancel_execution(&self, execution_id: &str) -> Result<(), AppError> {
+        validate_path_segment(execution_id, "execution_id")?;
         let path = format!("/api/executions/{execution_id}/cancel");
         self.send_ok(self.authed(reqwest::Method::POST, &path).await).await
     }
@@ -551,24 +571,28 @@ impl CloudClient {
 
     /// `GET /api/deployments/{id}` -- get a single deployment.
     pub async fn get_deployment(&self, id: &str) -> Result<CloudDeployment, AppError> {
+        validate_path_segment(id, "deployment_id")?;
         let path = format!("/api/deployments/{}", id);
         self.send_json(self.authed(reqwest::Method::GET, &path).await).await
     }
 
     /// `POST /api/deployments/{id}/pause` -- pause a deployment.
     pub async fn pause_deployment(&self, id: &str) -> Result<CloudDeployment, AppError> {
+        validate_path_segment(id, "deployment_id")?;
         let path = format!("/api/deployments/{}/pause", id);
         self.send_json(self.authed(reqwest::Method::POST, &path).await).await
     }
 
     /// `POST /api/deployments/{id}/resume` -- resume a paused deployment.
     pub async fn resume_deployment(&self, id: &str) -> Result<CloudDeployment, AppError> {
+        validate_path_segment(id, "deployment_id")?;
         let path = format!("/api/deployments/{}/resume", id);
         self.send_json(self.authed(reqwest::Method::POST, &path).await).await
     }
 
     /// `DELETE /api/deployments/{id}` -- undeploy (remove) a deployment.
     pub async fn delete_deployment(&self, id: &str) -> Result<(), AppError> {
+        validate_path_segment(id, "deployment_id")?;
         let path = format!("/api/deployments/{}", id);
         self.send_ok(self.authed(reqwest::Method::DELETE, &path).await).await
     }
@@ -590,6 +614,8 @@ impl CloudClient {
         decision: &str,
         message: &str,
     ) -> Result<serde_json::Value, AppError> {
+        validate_path_segment(execution_id, "execution_id")?;
+        validate_path_segment(review_id, "review_id")?;
         let path = format!("/api/executions/{}/reviews/{}/respond", execution_id, review_id);
         let req = self
             .authed(reqwest::Method::POST, &path).await
@@ -637,6 +663,7 @@ impl CloudClient {
 
     /// `GET /api/personas/{id}/triggers` -- list triggers for a persona.
     pub async fn list_persona_triggers(&self, persona_id: &str) -> Result<Vec<CloudTrigger>, AppError> {
+        validate_path_segment(persona_id, "persona_id")?;
         let path = format!("/api/personas/{}/triggers", persona_id);
         self.send_json(self.authed(reqwest::Method::GET, &path).await).await
     }
@@ -649,6 +676,7 @@ impl CloudClient {
 
     /// `PUT /api/triggers/{id}` -- update an existing trigger.
     pub async fn update_trigger(&self, id: &str, body: &UpdateCloudTriggerBody) -> Result<CloudTrigger, AppError> {
+        validate_path_segment(id, "trigger_id")?;
         let path = format!("/api/triggers/{}", id);
         let req = self.authed(reqwest::Method::PUT, &path).await.json(body);
         self.send_json(req).await
@@ -656,12 +684,14 @@ impl CloudClient {
 
     /// `DELETE /api/triggers/{id}` -- delete a trigger.
     pub async fn delete_trigger(&self, id: &str) -> Result<(), AppError> {
+        validate_path_segment(id, "trigger_id")?;
         let path = format!("/api/triggers/{}", id);
         self.send_ok(self.authed(reqwest::Method::DELETE, &path).await).await
     }
 
     /// `GET /api/triggers/{id}/firings` -- list recent firings for a trigger.
     pub async fn list_trigger_firings(&self, trigger_id: &str, limit: Option<u32>) -> Result<Vec<CloudTriggerFiring>, AppError> {
+        validate_path_segment(trigger_id, "trigger_id")?;
         let path = format!("/api/triggers/{}/firings", trigger_id);
         let mut params: Vec<(&str, String)> = Vec::new();
         if let Some(l) = limit { params.push(("limit", l.to_string())); }
@@ -671,6 +701,7 @@ impl CloudClient {
 
     /// `GET /api/triggers/{id}/stats` -- trigger firing statistics.
     pub async fn trigger_stats(&self, trigger_id: &str) -> Result<serde_json::Value, AppError> {
+        validate_path_segment(trigger_id, "trigger_id")?;
         let path = format!("/api/triggers/{}/stats", trigger_id);
         self.send_json(self.authed(reqwest::Method::GET, &path).await).await
     }
@@ -732,6 +763,7 @@ impl CloudClient {
         since: Option<&str>,
         limit: Option<u32>,
     ) -> Result<Vec<SharedEventFiring>, AppError> {
+        validate_path_segment(slug, "slug")?;
         let path = format!("/api/shared-events/feed/{slug}");
         let mut params: Vec<(&str, String)> = Vec::new();
         if let Some(s) = since {

@@ -53,6 +53,8 @@ event_names! {
 
     // Healing
     HEALING_EVENT              => "healing-event",
+    HEALING_ISSUE_UPDATED      => "healing-issue-updated",
+    AUTO_FIX_COMPLETED         => "auto-fix-completed",
     AI_HEALING_STATUS          => "ai-healing-status",
     AI_HEALING_OUTPUT          => "ai-healing-output",
 
@@ -163,6 +165,7 @@ event_names! {
 
     // Pipeline
     PIPELINE_STATUS            => "pipeline-status",
+    PIPELINE_CYCLE_WARNING     => "pipeline-cycle-warning",
 
     // P2P
     P2P_MANIFEST_SYNC_PROGRESS => "p2p:manifest-sync-progress",
@@ -224,7 +227,7 @@ pub fn try_emit_event<P: Serialize + Clone>(
 pub use super::types::{
     ExecutionOutputEvent, ExecutionStatusEvent, QueueStatusEvent,
     HeartbeatEvent, StructuredExecutionEvent, HealingEventPayload,
-    AiHealingStatusEvent,
+    HealingIssueUpdatedEvent, AiHealingStatusEvent,
 };
 #[allow(unused_imports)]
 pub use super::failover::{CircuitTransitionEvent, CircuitBreakerStatus};

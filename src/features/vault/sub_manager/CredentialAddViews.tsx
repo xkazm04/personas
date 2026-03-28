@@ -6,7 +6,6 @@ import { DesktopDiscoveryPanel } from '@/features/vault/sub_desktop/DesktopDisco
 import { DatabaseListView } from '@/features/vault/sub_databases/DatabaseListView';
 import { ProvisioningWizard } from '@/features/vault/sub_wizard/ProvisioningWizard';
 import { AutopilotPanel } from '@/features/vault/sub_autopilot/AutopilotPanel';
-import { silentCatch } from "@/lib/silentCatch";
 import { WorkspaceConnectPanel } from '@/features/vault/sub_workspace/WorkspaceConnectPanel';
 import type { useCredentialManagerState } from './useCredentialManagerState';
 
@@ -55,7 +54,6 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
 
       {viewState.view === 'add-wizard' && (
         <ProvisioningWizard onClose={() => {
-          void fetchCredentials();
           fetchConnectorDefinitions();
           dispatch({ type: 'GO_LIST' });
         }} />
@@ -76,7 +74,6 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
         <WorkspaceConnectPanel
           onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
           onComplete={() => {
-            void fetchCredentials();
             fetchConnectorDefinitions();
             dispatch({ type: 'GO_LIST' });
             setCredentialSearch('');
@@ -94,7 +91,6 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
             embedded
             onClose={() => dispatch({ type: 'GO_ADD_NEW' })}
             onComplete={() => {
-              void fetchCredentials().catch(silentCatch("CredentialAddViews:fetchCredentialsOnDesignComplete"));
               fetchConnectorDefinitions();
               dispatch({ type: 'GO_LIST' });
             }}

@@ -146,8 +146,8 @@ pub async fn gitlab_get_config(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Option<GitLabConfig>, AppError> {
     require_cloud_auth(&state, "gitlab_get_config").await?;
-    let guard = state.gitlab_client.lock().await;
-    match &*guard {
+    let maybe_client = state.gitlab_client.lock().await.clone();
+    match maybe_client {
         Some(client) => {
             let base_url = client.base_url().to_string();
             match client.validate_token().await {
@@ -309,7 +309,7 @@ pub async fn gitlab_deploy_persona(
     };
 
     // Record deployment in history
-    let _ = deployment_history::insert(
+    if let Err(e) = deployment_history::insert(
         &state.db,
         &persona_id,
         &persona.name,
@@ -321,7 +321,13 @@ pub async fn gitlab_deploy_persona(
         result.web_url.as_deref(),
         Some(&persona.system_prompt),
         None,
-    );
+    ) {
+        tracing::warn!(
+            persona_id = %persona_id,
+            project_id = project_id,
+            "Failed to record deployment in history: {e}"
+        );
+    }
 
     Ok(result)
 }
@@ -651,7 +657,7 @@ pub async fn gitlab_deploy_persona_versioned(
     }
 
     // Record versioned deployment in history
-    let _ = deployment_history::insert(
+    if let Err(e) = deployment_history::insert(
         &state.db,
         &persona_id,
         &persona.name,
@@ -663,7 +669,13 @@ pub async fn gitlab_deploy_persona_versioned(
         deploy_result.web_url.as_deref(),
         Some(&persona.system_prompt),
         None,
-    );
+    ) {
+        tracing::warn!(
+            persona_id = %persona_id,
+            project_id = project_id,
+            "Failed to record versioned deployment in history: {e}"
+        );
+    }
 
     Ok(deploy_result)
 }
@@ -788,7 +800,7 @@ pub async fn gitlab_rollback_persona(
     };
 
     // Record rollback in deployment history
-    let _ = deployment_history::insert(
+    if let Err(e) = deployment_history::insert(
         &state.db,
         &persona.id,
         &persona.name,
@@ -800,7 +812,14 @@ pub async fn gitlab_rollback_persona(
         deploy_result.web_url.as_deref(),
         Some(&persona.system_prompt),
         Some(&target_tag),
-    );
+    ) {
+        tracing::warn!(
+            persona_id = %persona.id,
+            project_id = project_id,
+            target_tag = %target_tag,
+            "Failed to record rollback in deployment history: {e}"
+        );
+    }
 
     Ok(GitLabRollbackResult {
         rolled_back_to: target_tag,
@@ -980,7 +999,7 @@ pub async fn gitlab_rollback_from_history(
     };
 
     // Record the rollback in history
-    let _ = deployment_history::insert(
+    if let Err(e) = deployment_history::insert(
         &state.db,
         &persona.id,
         &persona.name,
@@ -992,7 +1011,14 @@ pub async fn gitlab_rollback_from_history(
         deploy_result.web_url.as_deref(),
         Some(&persona.system_prompt),
         Some(&deployment_id),
-    );
+    ) {
+        tracing::warn!(
+            persona_id = %persona.id,
+            project_id = project_id,
+            deployment_id = %deployment_id,
+            "Failed to record rollback-from-history in deployment history: {e}"
+        );
+    }
 
     tracing::info!(
         project_id = project_id,

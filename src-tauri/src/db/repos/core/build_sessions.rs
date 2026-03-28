@@ -11,7 +11,13 @@ fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
     Ok(BuildSession {
         id: row.get("id")?,
         persona_id: row.get("persona_id")?,
-        phase: BuildPhase::from_str_value(&phase_str),
+        phase: BuildPhase::from_str_value(&phase_str).ok_or_else(|| {
+            rusqlite::Error::FromSqlConversionFailure(
+                0,
+                rusqlite::types::Type::Text,
+                format!("Unknown build phase: '{}'", phase_str).into(),
+            )
+        })?,
         resolved_cells: row.get("resolved_cells")?,
         pending_question: row.get("pending_question")?,
         agent_ir: row.get("agent_ir")?,

@@ -92,9 +92,10 @@ pub fn get_team_memory_count(
     team_id: String,
     run_id: Option<String>,
     category: Option<String>,
+    search: Option<String>,
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
-    repo::get_total_count(&state.db, &team_id, run_id.as_deref(), category.as_deref())
+    repo::get_total_count(&state.db, &team_id, run_id.as_deref(), category.as_deref(), search.as_deref())
 }
 
 #[tauri::command]
@@ -115,4 +116,14 @@ pub fn list_team_memories_by_run(
 ) -> Result<Vec<TeamMemory>, AppError> {
     require_auth_sync(&state)?;
     repo::get_by_run(&state.db, &run_id)
+}
+
+#[tauri::command]
+pub fn evict_team_memories(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+    max_memories: Option<i64>,
+) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
+    repo::evict_excess(&state.db, &team_id, max_memories)
 }

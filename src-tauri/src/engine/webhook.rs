@@ -428,7 +428,27 @@ async fn process_webhook(
     // 5. Extract event_type from typed config or default
     let event_type = cfg_event_type.unwrap_or_else(|| "webhook_received".to_string());
 
-    // 6. Publish event to the event bus
+    // 6. Mark trigger as fired BEFORE publishing the event.
+    //    This prevents duplicate events when mark_triggered fails: the caller
+    //    sees accepted:false, retries, but no orphan event sits in the bus.
+    if let Err(e) = trigger_repo::mark_triggered(&state.pool, trigger_id, None, trigger.next_trigger_at.as_deref()) {
+        tracing::error!(
+            trigger_id = %trigger_id,
+            "Failed to mark trigger as fired, aborting event publish: {}",
+            e,
+        );
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            no_headers(),
+            WebhookResponse {
+                accepted: false,
+                event_id: None,
+                error: Some("Failed to advance trigger schedule".into()),
+            },
+        );
+    }
+
+    // 7. Publish event to the event bus (trigger already advanced)
     match event_repo::publish(
         &state.pool,
         CreatePersonaEventInput {
@@ -442,25 +462,6 @@ async fn process_webhook(
         },
     ) {
         Ok(event) => {
-            // 7. Mark trigger as fired — propagate error to prevent duplicate events
-            if let Err(e) = trigger_repo::mark_triggered(&state.pool, trigger_id, None, trigger.next_trigger_at.as_deref()) {
-                tracing::error!(
-                    trigger_id = %trigger_id,
-                    event_id = %event.id,
-                    "Failed to mark trigger as fired, risk of duplicate events: {}",
-                    e,
-                );
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    no_headers(),
-                    WebhookResponse {
-                        accepted: false,
-                        event_id: Some(event.id),
-                        error: Some("Webhook event published but trigger schedule not advanced".into()),
-                    },
-                );
-            }
-
             tracing::info!(
                 trigger_id = %trigger_id,
                 persona_id = %trigger.persona_id,

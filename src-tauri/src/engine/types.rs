@@ -254,6 +254,9 @@ pub struct ExecutionResult {
     pub trace_id: Option<String>,
     /// Frozen config snapshot assembled at the validate stage.
     pub execution_config: Option<String>,
+    /// `true` when the execution logger encountered I/O errors, meaning the
+    /// log file may be incomplete / truncated.
+    pub log_truncated: bool,
 }
 
 // =============================================================================
@@ -598,6 +601,19 @@ pub struct HealingEventPayload {
     /// Maximum retry attempts allowed.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_retries: Option<i64>,
+}
+
+/// Emitted when a healing issue transitions status (auto-fix confirmed/reverted).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HealingIssueUpdatedEvent {
+    pub issue_id: String,
+    pub persona_id: String,
+    pub execution_id: Option<String>,
+    /// New status after transition: "resolved" or "open"
+    pub new_status: String,
+    /// What triggered the transition: "auto_fix_confirmed" | "auto_fix_reverted"
+    pub transition: String,
 }
 
 /// AI healing output line emitted to frontend (streamed per line).

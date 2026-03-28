@@ -50,6 +50,7 @@ export function DataStep() {
   }, [designResult]);
 
   const proposal = useSchemaProposal({
+    credentialId: BUILTIN_DB_CREDENTIAL,
     templateName: state.templateName,
     templateContext,
     existingTables: existingTables.map((t) => t.table_name),

@@ -1,5 +1,6 @@
 import { LayoutDashboard } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -31,7 +32,7 @@ export default function DashboardHome() {
   const {
     globalExecutions, globalExecutionsTotal, pendingReviewCount,
     unreadMessageCount, memoryActions, executionDashboard, pipelineErrors,
-    setOverviewTab, dismissMemoryAction, setPipelineError,
+    pipelineFetchedAt, setOverviewTab, dismissMemoryAction, setPipelineError,
     activeAlertCount,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
@@ -41,6 +42,7 @@ export default function DashboardHome() {
     memoryActions: s.memoryActions,
     executionDashboard: s.executionDashboard,
     pipelineErrors: s.pipelineErrors,
+    pipelineFetchedAt: s.pipelineFetchedAt,
     setOverviewTab: s.setOverviewTab,
     dismissMemoryAction: s.dismissMemoryAction,
     setPipelineError: s.setPipelineError,
@@ -140,6 +142,13 @@ export default function DashboardHome() {
                   title={`${source} failed to load`}
                   message={msg}
                   onDismiss={() => setPipelineError(source, null)}
+                  actions={
+                    <StalenessIndicator
+                      fetchedAt={pipelineFetchedAt[source]}
+                      hasError
+                      label={source}
+                    />
+                  }
                 />
               ))}
             </div>
@@ -153,10 +162,16 @@ export default function DashboardHome() {
             <DashboardEmptyState />
           ) : (
             <div className={DASHBOARD_GRID}>
-              <RecentActivityList recentExecs={stats.recentExecs} onViewAll={() => setOverviewTab('executions')} />
+              <div className="relative">
+                <StalenessIndicator fetchedAt={pipelineFetchedAt.globalExecutions} hasError={!!pipelineErrors.globalExecutions} label="Recent activity" />
+                <RecentActivityList recentExecs={stats.recentExecs} onViewAll={() => setOverviewTab('executions')} />
+              </div>
 
               <div className="space-y-5">
-                <TrafficErrorsChart chartData={chartData} totalTraffic={chartTotals.totalTraffic} totalErrors={chartTotals.totalErrors} />
+                <div className="relative">
+                  <StalenessIndicator fetchedAt={pipelineFetchedAt.executionDashboard} hasError={!!pipelineErrors.executionDashboard} label="Traffic & errors" />
+                  <TrafficErrorsChart chartData={chartData} totalTraffic={chartTotals.totalTraffic} totalErrors={chartTotals.totalErrors} />
+                </div>
                 <HealthDigestPanel />
                 <DeployFirstAutomationCard />
               </div>

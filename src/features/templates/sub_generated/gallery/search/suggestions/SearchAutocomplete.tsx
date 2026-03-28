@@ -84,9 +84,12 @@ export function SearchAutocomplete({
     setFocusIndex(-1);
   }, [suggestions.length]);
 
-  // Keyboard navigation
+  // Keyboard navigation – scoped to events originating within the parent search wrapper
   const handleKey = useCallback(
     (e: KeyboardEvent) => {
+      const wrapper = containerRef.current?.parentElement;
+      if (!wrapper || !wrapper.contains(e.target as Node)) return;
+
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setFocusIndex((i) => Math.min(i + 1, suggestions.length - 1));
@@ -98,7 +101,6 @@ export function SearchAutocomplete({
         const suggestion = suggestions[focusIndex];
         if (suggestion) onSelect(suggestion.chip);
       } else if (e.key === 'Escape') {
-        e.preventDefault();
         onDismiss();
       }
     },

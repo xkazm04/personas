@@ -189,15 +189,65 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
             }
         }
 
-        // 4. Clone team memories
-        tx.execute(
-            "INSERT INTO team_memories (id, team_id, run_id, member_id, persona_id, title, content, category, importance, tags, created_at, updated_at)
-             SELECT
-                lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6))),
-                ?1, run_id, member_id, persona_id, title, content, category, importance, tags, ?2, ?2
-             FROM team_memories WHERE team_id = ?3",
-            params![new_team_id, now, source_team_id],
-        )?;
+        // 4. Clone team memories (remap member_id through member_id_map)
+        {
+            let mut mem_stmt = tx.prepare(
+                "SELECT run_id, member_id, persona_id, title, content, category, importance, tags
+                 FROM team_memories WHERE team_id = ?1",
+            )?;
+            let mem_rows: Vec<(
+                Option<String>,
+                Option<String>,
+                Option<String>,
+                String,
+                String,
+                String,
+                i32,
+                Option<String>,
+            )> = mem_stmt
+                .query_map(params![source_team_id], |row| {
+                    Ok((
+                        row.get(0)?,
+                        row.get(1)?,
+                        row.get(2)?,
+                        row.get(3)?,
+                        row.get(4)?,
+                        row.get(5)?,
+                        row.get(6)?,
+                        row.get(7)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
+            drop(mem_stmt);
+
+            for (run_id, old_member_id, persona_id, title, content, category, importance, tags) in
+                &mem_rows
+            {
+                let new_mem_id = uuid::Uuid::new_v4().to_string();
+                let remapped_member_id = old_member_id
+                    .as_ref()
+                    .and_then(|old| member_id_map.get(old).cloned())
+                    .or_else(|| old_member_id.clone());
+                tx.execute(
+                    "INSERT INTO team_memories (id, team_id, run_id, member_id, persona_id, title, content, category, importance, tags, created_at, updated_at)
+                     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
+                    params![
+                        new_mem_id,
+                        new_team_id,
+                        run_id,
+                        remapped_member_id,
+                        persona_id,
+                        title,
+                        content,
+                        category,
+                        importance,
+                        tags,
+                        now,
+                    ],
+                )?;
+            }
+        }
 
         tx.commit().map_err(AppError::Database)?;
 
@@ -209,8 +259,9 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("teams", "teams::delete", {
         let conn = pool.get()?;
-        // Clean up pipeline_runs which have no FK CASCADE on team_id
+        // Clean up related rows which have no FK CASCADE on team_id
         conn.execute("DELETE FROM pipeline_runs WHERE team_id = ?1", params![id])?;
+        conn.execute("DELETE FROM team_memories WHERE team_id = ?1", params![id])?;
         let rows = conn.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
         Ok(rows > 0)
 
@@ -457,6 +508,53 @@ pub fn update_connection_type(
 ) -> Result<(), AppError> {
     timed_query!("teams", "teams::update_connection_type", {
         let conn = pool.get()?;
+
+        // Fetch the existing connection so we can validate the type change.
+        let existing: PersonaTeamConnection = conn
+            .query_row(
+                "SELECT * FROM persona_team_connections WHERE id = ?1",
+                params![id],
+                row_to_connection,
+            )
+            .map_err(|_| {
+                AppError::Validation(format!("Connection '{}' not found", id))
+            })?;
+
+        // If changing to a non-feedback type, run cycle detection to prevent
+        // silently introducing a cycle (e.g. feedback → sequential).
+        if connection_type != "feedback" && existing.connection_type == "feedback" {
+            let all_connections = get_connections(pool, &existing.team_id)?;
+
+            let mut member_set = std::collections::HashSet::new();
+            for e in &all_connections {
+                member_set.insert(e.source_member_id.clone());
+                member_set.insert(e.target_member_id.clone());
+            }
+            let member_ids: Vec<String> = member_set.into_iter().collect();
+
+            // Build edge list: include all non-feedback edges PLUS this connection
+            // (which is currently feedback but would become non-feedback).
+            let edges: Vec<(&str, &str)> = all_connections
+                .iter()
+                .filter(|e| {
+                    if e.id == existing.id {
+                        true // include this edge as if it were already non-feedback
+                    } else {
+                        e.connection_type != "feedback"
+                    }
+                })
+                .map(|e| (e.source_member_id.as_str(), e.target_member_id.as_str()))
+                .collect();
+
+            let graph =
+                crate::engine::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
+            if graph.has_cycle() {
+                return Err(AppError::Validation(
+                    "Changing this connection type would create a cycle. Keep it as \"feedback\" for intentional back-edges.".into(),
+                ));
+            }
+        }
+
         conn.execute(
             "UPDATE persona_team_connections SET connection_type = ?1 WHERE id = ?2",
             params![connection_type, id],

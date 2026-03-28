@@ -3,21 +3,17 @@ import { EventName } from '@/lib/eventRegistry';
 import { createSingletonListener } from './createSingletonListener';
 
 export interface SmeeRelayStatus {
-  channel_url: string | null;
   connected: boolean;
   events_relayed: number;
   last_event_at: string | null;
   error: string | null;
-  legacy_active: boolean;
 }
 
 const DEFAULT_STATUS: SmeeRelayStatus = {
-  channel_url: null,
   connected: false,
   events_relayed: 0,
   last_event_at: null,
   error: null,
-  legacy_active: false,
 };
 
 const useSmeeRelayListener = createSingletonListener<SmeeRelayStatus>(

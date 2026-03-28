@@ -40,6 +40,8 @@ pub struct CreateTeamMemoryInput {
 #[ts(export)]
 pub struct TeamMemoryStats {
     pub total: i64,
+    pub auto_generated: i64,
+    pub max_memories: i64,
     pub avg_importance: f64,
     pub category_counts: Vec<(String, i64)>,
     pub run_counts: Vec<(String, i64)>,

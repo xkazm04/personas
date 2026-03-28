@@ -3,13 +3,14 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use serde::Serialize;
-use tauri::State;
+use tauri::{Emitter, State};
+use crate::engine::event_registry::event_name;
+use crate::engine::background::ZombieExecutionEvent;
 use ts_rs::TS;
 use url::Url;
 
 use crate::cloud;
 use crate::cloud::client::CloudClient;
-use crate::db::repos::core::settings;
 use crate::db::models::{UpdateExecutionStatus, CreateSmeeRelayInput, UpdateSmeeRelayInput, SmeeRelay};
 use crate::db::repos::core::personas;
 use crate::db::repos::execution::executions;
@@ -590,6 +591,7 @@ pub async fn cloud_execute_persona(
     let client_clone = client.clone();
     let cancelled_clone = cancelled.clone();
     let app_clone = app.clone();
+    let app_for_emit = app.clone();
     let exec_ids_map = state.cloud_exec_ids.clone();
 
     let handle = tokio::spawn(async move {
@@ -612,20 +614,48 @@ pub async fn cloud_execute_persona(
                 ..Default::default()
             };
 
-            if let Err(e) = executions::update_status(&pool, &exec_id, update.clone()) {
+            // Exponential backoff: up to 3 retries (1s, 2s, 4s) before giving up.
+            let mut persisted = false;
+            let backoff_secs = [0u64, 1, 2, 4]; // first attempt is immediate
+            for (attempt, &delay) in backoff_secs.iter().enumerate() {
+                if delay > 0 {
+                    tokio::time::sleep(std::time::Duration::from_secs(delay)).await;
+                }
+                match executions::update_status(&pool, &exec_id, update.clone()) {
+                    Ok(_) => {
+                        if attempt > 0 {
+                            tracing::info!(
+                                execution_id = %exec_id,
+                                attempt,
+                                "Cloud execution DB status update succeeded on retry",
+                            );
+                        }
+                        persisted = true;
+                        break;
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            execution_id = %exec_id,
+                            attempt,
+                            error = %e,
+                            "Cloud execution DB status update failed",
+                        );
+                    }
+                }
+            }
+
+            if !persisted {
                 tracing::error!(
                     execution_id = %exec_id,
-                    error = %e,
-                    "Cloud execution DB status update failed, retrying in 1s",
+                    "Cloud execution DB update exhausted all retries — execution stuck as running. \
+                     Zombie sweep will recover it.",
                 );
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                if let Err(e2) = executions::update_status(&pool, &exec_id, update) {
-                    tracing::error!(
-                        execution_id = %exec_id,
-                        error = %e2,
-                        "Cloud execution DB status update failed on retry -- execution stuck as running",
-                    );
-                }
+                // Notify frontend immediately so user doesn't wait for the
+                // periodic zombie sweep (up to 30 min) to discover the issue.
+                let _ = app_for_emit.emit(event_name::ZOMBIE_EXECUTIONS_DETECTED, ZombieExecutionEvent {
+                    zombie_ids: vec![exec_id.clone()],
+                    count: 1,
+                });
             }
 
             tracing::info!(
@@ -804,6 +834,45 @@ pub async fn cloud_deploy_persona(
     );
 
     Ok(deployment)
+}
+
+/// Sync a persona's current local state to the cloud orchestrator.
+/// This re-upserts the persona so that any active deployment reflects local edits
+/// (system prompt, tools, timeout, model profile, etc.).
+#[tauri::command]
+pub async fn cloud_sync_persona(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<(), AppError> {
+    require_cloud_auth(&state, "cloud_sync_persona").await?;
+    let client = get_cloud_client(&state).await?;
+
+    let persona = personas::get_by_id(&state.db, &persona_id)?;
+    let tools_list = tools::get_tools_for_persona(&state.db, &persona_id)?;
+    let prompt = engine::prompt::assemble_prompt(&persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
+
+    let persona_body = serde_json::json!({
+        "id": persona.id,
+        "name": persona.name,
+        "description": persona.description,
+        "systemPrompt": prompt,
+        "structuredPrompt": persona.structured_prompt,
+        "icon": persona.icon,
+        "color": persona.color,
+        "enabled": true,
+        "maxConcurrent": persona.max_concurrent,
+        "timeoutMs": persona.timeout_ms,
+        "modelProfile": persona.model_profile,
+        "maxBudgetUsd": persona.max_budget_usd,
+        "maxTurns": persona.max_turns,
+        "designContext": persona.design_context,
+        "groupId": persona.group_id,
+    });
+
+    client.upsert_persona(&persona_body).await?;
+
+    tracing::info!(persona_id = %persona_id, "Persona synced to cloud");
+    Ok(())
 }
 
 /// List all cloud deployments.
@@ -1017,12 +1086,15 @@ pub async fn cloud_webhook_relay_status(
 ) -> Result<engine::cloud_webhook_relay::CloudWebhookRelayStatus, AppError> {
     require_cloud_auth(&state, "cloud_webhook_relay_status").await?;
     let connected = state.cloud_client.lock().await.is_some();
+    let relay = state.cloud_webhook_relay_state.lock().await;
     Ok(engine::cloud_webhook_relay::CloudWebhookRelayStatus {
         connected,
-        last_poll_at: None,
-        active_webhook_triggers: 0,
-        total_relayed: 0,
-        error: if connected { None } else { Some("Not connected to cloud orchestrator".into()) },
+        last_poll_at: relay.last_poll_at.clone(),
+        active_webhook_triggers: relay.active_webhook_triggers,
+        total_relayed: relay.total_relayed,
+        error: relay.last_error.clone().or_else(|| {
+            if !connected { Some("Not connected to cloud orchestrator".into()) } else { None }
+        }),
     })
 }
 
@@ -1036,48 +1108,6 @@ pub async fn cloud_list_trigger_firings(
     require_cloud_auth(&state, "cloud_list_trigger_firings").await?;
     let client = get_cloud_client(&state).await?;
     client.list_trigger_firings(&trigger_id, limit).await
-}
-
-// ---------------------------------------------------------------------------
-// Smee.io Webhook Relay
-// ---------------------------------------------------------------------------
-
-/// Get the currently configured Smee channel URL.
-#[tauri::command]
-pub async fn smee_get_channel_url(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Option<String>, AppError> {
-    require_cloud_auth(&state, "smee_get_channel_url").await?;
-    settings::get(&state.db, engine::smee_relay::SETTINGS_KEY)
-}
-
-/// Set the Smee channel URL and trigger reconnection.
-#[tauri::command]
-pub async fn smee_set_channel_url(
-    state: State<'_, Arc<AppState>>,
-    url: String,
-) -> Result<(), AppError> {
-    require_cloud_auth(&state, "smee_set_channel_url").await?;
-    // Validate host is exactly smee.io (not a subdomain spoof like smee.io.evil.com)
-    let stripped = url.strip_prefix("https://smee.io/")
-        .ok_or_else(|| AppError::Validation("Smee URL must be https://smee.io/<channel>".into()))?;
-    if stripped.is_empty() || stripped.contains('/') {
-        return Err(AppError::Validation("Smee URL must be https://smee.io/<channel>".into()));
-    }
-    settings::set(&state.db, engine::smee_relay::SETTINGS_KEY, &url)?;
-    tracing::info!(url = %url, "Smee channel URL configured");
-    Ok(())
-}
-
-/// Disconnect from Smee relay by clearing the channel URL.
-#[tauri::command]
-pub async fn smee_disconnect(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
-    require_cloud_auth(&state, "smee_disconnect").await?;
-    settings::delete(&state.db, engine::smee_relay::SETTINGS_KEY)?;
-    tracing::info!("Smee relay disconnected");
-    Ok(())
 }
 
 // ---------------------------------------------------------------------------

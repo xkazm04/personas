@@ -1,7 +1,13 @@
-import { Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import type { ComplianceRule } from '@/api/system/byom';
-import { PROVIDER_OPTIONS, type PolicyWarning } from '../libs/byomHelpers';
+import { PROVIDER_OPTIONS, type PolicyWarning, type PolicyWarningSeverity } from '../libs/byomHelpers';
+
+const SEVERITY_STYLES: Record<PolicyWarningSeverity, { border: string; text: string; icon: typeof AlertTriangle }> = {
+  error:   { border: 'border-red-500/30',   text: 'text-red-400/90',   icon: AlertCircle },
+  warning: { border: 'border-amber-500/30', text: 'text-amber-400/90', icon: AlertTriangle },
+  info:    { border: 'border-blue-500/30',  text: 'text-blue-400/90',  icon: Info },
+};
 
 interface ByomComplianceRulesProps {
   rules: ComplianceRule[];
@@ -39,13 +45,22 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
           <div className="space-y-3">
             {rules.map((rule, idx) => {
               const ruleWarnings = warnings.get(idx);
-              // Build set of provider ids with warnings for this rule
-              const warnedProviders = new Set<string>();
+              const worstSeverity = ruleWarnings?.length
+                ? (ruleWarnings.some((w) => w.severity === 'error') ? 'error'
+                  : ruleWarnings.some((w) => w.severity === 'warning') ? 'warning' : 'info') as PolicyWarningSeverity
+                : null;
+              const WorstIcon = worstSeverity ? SEVERITY_STYLES[worstSeverity].icon : null;
+              // Build set of provider ids with warnings for this rule, keyed by worst severity
+              const warnedProviders = new Map<string, PolicyWarningSeverity>();
               if (ruleWarnings) {
                 for (const w of ruleWarnings) {
-                  // Extract provider name from message to highlight the specific pill
                   for (const prov of PROVIDER_OPTIONS) {
-                    if (w.message.includes(`"${prov.label}"`)) warnedProviders.add(prov.id);
+                    if (w.message.includes(`"${prov.label}"`)) {
+                      const existing = warnedProviders.get(prov.id);
+                      if (!existing || w.severity === 'error' || (w.severity === 'warning' && existing === 'info')) {
+                        warnedProviders.set(prov.id, w.severity);
+                      }
+                    }
                   }
                 }
               }
@@ -53,13 +68,13 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                 <div
                   key={idx}
                   className={`p-4 rounded-lg border bg-secondary/20 space-y-3 ${
-                    ruleWarnings?.length ? 'border-amber-500/30' : 'border-primary/10'
+                    worstSeverity ? SEVERITY_STYLES[worstSeverity].border : 'border-primary/10'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      {ruleWarnings?.length ? (
-                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                      {WorstIcon ? (
+                        <WorstIcon className={`w-4 h-4 ${SEVERITY_STYLES[worstSeverity!].text} shrink-0`} />
                       ) : null}
                       <input
                         value={rule.name}
@@ -110,7 +125,7 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                       <div className="flex flex-wrap gap-1.5">
                         {PROVIDER_OPTIONS.map((prov) => {
                           const isSelected = rule.allowed_providers.includes(prov.id);
-                          const isWarned = warnedProviders.has(prov.id);
+                          const provSeverity = warnedProviders.get(prov.id);
                           return (
                             <button
                               key={prov.id}
@@ -121,8 +136,12 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                                 onUpdate(idx, { allowed_providers: updated });
                               }}
                               className={`px-2 py-1 text-xs rounded-lg border transition-colors ${
-                                isSelected && isWarned
+                                isSelected && provSeverity === 'error'
+                                  ? 'border-red-500/40 bg-red-500/15 text-red-400'
+                                  : isSelected && provSeverity === 'warning'
                                   ? 'border-amber-500/40 bg-amber-500/15 text-amber-400'
+                                  : isSelected && provSeverity === 'info'
+                                  ? 'border-blue-500/40 bg-blue-500/15 text-blue-400'
                                   : isSelected
                                   ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-400'
                                   : 'border-primary/10 text-muted-foreground/50 hover:text-foreground'
@@ -138,12 +157,18 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
 
                   {ruleWarnings?.length ? (
                     <div className="space-y-1">
-                      {ruleWarnings.map((w, wi) => (
-                        <div key={wi} className="flex items-start gap-1.5 text-xs text-amber-400/90">
-                          <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
-                          <span>{w.message}</span>
-                        </div>
-                      ))}
+                      {ruleWarnings.map((w, wi) => {
+                        const style = SEVERITY_STYLES[w.severity];
+                        const WarnIcon = style.icon;
+                        return (
+                          <div key={wi} className={`flex items-start gap-1.5 text-xs ${style.text}`}
+                            title={w.severity === 'info' ? w.message : undefined}
+                          >
+                            <WarnIcon className="w-3 h-3 mt-0.5 shrink-0" />
+                            <span>{w.message}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : null}
                 </div>

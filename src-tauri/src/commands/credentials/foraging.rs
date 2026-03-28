@@ -669,6 +669,186 @@ fn is_safe_path_component(s: &str) -> bool {
 /// The only dotenv source labels the scanner produces.
 const ALLOWED_DOTENV_SOURCES: &[&str] = &[".env (cwd)", "~/.env"];
 
+// -- Trait-based resolution dispatch ------------------------------------
+
+/// Read a file relative to the user's home directory.
+fn read_home_file(relative: &[&str]) -> Result<String, String> {
+    let home = home_dir().ok_or("Cannot determine home directory")?;
+    let path = relative.iter().fold(home, |p, seg| p.join(seg));
+    std::fs::read_to_string(&path)
+        .map_err(|e| format!("Cannot read {}: {e}", path.display()))
+}
+
+/// Trait for resolving real (unmasked) credential values from a foraged source.
+trait ForageSourceResolver {
+    /// Resolve credential fields from the original source.
+    /// `parts` contains the foraged ID segments after the source prefix.
+    fn resolve(&self, parts: &[&str]) -> Result<HashMap<String, String>, String>;
+}
+
+struct EnvResolver;
+struct AwsProfileResolver;
+struct DotenvResolver;
+struct GitHubCliResolver;
+struct NpmrcResolver;
+
+impl ForageSourceResolver for EnvResolver {
+    fn resolve(&self, parts: &[&str]) -> Result<HashMap<String, String>, String> {
+        let svc = parts.first().unwrap_or(&"");
+        if !is_safe_path_component(svc) {
+            return Err("Invalid service type in foraged ID".to_string());
+        }
+        let mut fields = HashMap::new();
+        for &(env_key, service_type, field_key) in ENV_PATTERNS {
+            if service_type == *svc {
+                if let Ok(value) = std::env::var(env_key) {
+                    if !value.is_empty() {
+                        fields.insert(field_key.to_string(), value);
+                    }
+                }
+            }
+        }
+        Ok(fields)
+    }
+}
+
+impl ForageSourceResolver for AwsProfileResolver {
+    fn resolve(&self, parts: &[&str]) -> Result<HashMap<String, String>, String> {
+        let profile = parts.get(1).unwrap_or(&"default");
+        if !is_safe_path_component(profile) {
+            return Err("Invalid AWS profile name in foraged ID".to_string());
+        }
+        let content = read_home_file(&[".aws", "credentials"])?;
+
+        let mut in_profile = false;
+        let mut fields = HashMap::new();
+
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with('[') && trimmed.ends_with(']') {
+                let section = &trimmed[1..trimmed.len() - 1];
+                in_profile = section == *profile;
+                if !in_profile && !fields.is_empty() {
+                    break;
+                }
+            } else if in_profile {
+                if let Some(eq_pos) = trimmed.find('=') {
+                    let key = trimmed[..eq_pos].trim();
+                    let val = trimmed[eq_pos + 1..].trim();
+                    if !val.is_empty() {
+                        let field_key = match key {
+                            "aws_access_key_id" => "access_key_id",
+                            "aws_secret_access_key" => "secret_access_key",
+                            "aws_session_token" => "session_token",
+                            "region" => "region",
+                            other => other,
+                        };
+                        fields.insert(field_key.to_string(), val.to_string());
+                    }
+                }
+            }
+        }
+
+        Ok(fields)
+    }
+}
+
+impl ForageSourceResolver for DotenvResolver {
+    fn resolve(&self, parts: &[&str]) -> Result<HashMap<String, String>, String> {
+        let source = parts.first().unwrap_or(&"");
+        let key = parts.get(1).unwrap_or(&"");
+        if !ALLOWED_DOTENV_SOURCES.contains(source) {
+            return Err("Invalid dotenv source in foraged ID".to_string());
+        }
+        let key_known = ENV_PATTERNS.iter().any(|&(env_key, _, _)| env_key == *key);
+        if !key_known {
+            return Err("Unknown key in foraged ID".to_string());
+        }
+
+        let path = if source.starts_with('~') {
+            let home = home_dir().ok_or("Cannot determine home directory")?;
+            home.join(source.trim_start_matches("~/"))
+        } else {
+            PathBuf::from(".env")
+        };
+
+        let content = std::fs::read_to_string(&path)
+            .map_err(|e| format!("Cannot read {source}: {e}"))?;
+
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+            let Some(eq_pos) = trimmed.find('=') else { continue };
+            let k = trimmed[..eq_pos].trim();
+            let val = trimmed[eq_pos + 1..].trim().trim_matches('"').trim_matches('\'');
+            if k == *key && !val.is_empty() {
+                for &(env_key, _svc, field_key) in ENV_PATTERNS {
+                    if env_key == *key {
+                        let mut fields = HashMap::new();
+                        fields.insert(field_key.to_string(), val.to_string());
+                        return Ok(fields);
+                    }
+                }
+            }
+        }
+
+        Err(format!("Key {key} not found in {source}"))
+    }
+}
+
+impl ForageSourceResolver for GitHubCliResolver {
+    fn resolve(&self, parts: &[&str]) -> Result<HashMap<String, String>, String> {
+        let host = parts.first().unwrap_or(&"github.com");
+        if !is_safe_path_component(host) {
+            return Err("Invalid host in foraged ID".to_string());
+        }
+
+        let content = read_home_file(&[".config", "gh", "hosts.yml"])
+            .or_else(|_| read_home_file(&["AppData", "Roaming", "GitHub CLI", "hosts.yml"]))?;
+
+        let mut current_host: Option<String> = None;
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if !line.starts_with(' ') && !line.starts_with('\t') && trimmed.ends_with(':') {
+                current_host = Some(trimmed.trim_end_matches(':').to_string());
+            } else if trimmed.starts_with("oauth_token:") {
+                let token = trimmed.trim_start_matches("oauth_token:").trim();
+                if let Some(ref h) = current_host {
+                    if h == *host && !token.is_empty() {
+                        let mut fields = HashMap::new();
+                        fields.insert("api_key".to_string(), token.to_string());
+                        return Ok(fields);
+                    }
+                }
+            }
+        }
+
+        Err(format!("No token found for host {host}"))
+    }
+}
+
+impl ForageSourceResolver for NpmrcResolver {
+    fn resolve(&self, _parts: &[&str]) -> Result<HashMap<String, String>, String> {
+        let content = read_home_file(&[".npmrc"])?;
+
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if let Some(pos) = trimmed.find("_authToken=") {
+                let token = &trimmed[pos + 11..];
+                if !token.is_empty() {
+                    let mut fields = HashMap::new();
+                    fields.insert("token".to_string(), token.to_string());
+                    return Ok(fields);
+                }
+            }
+        }
+
+        Err("No auth token found in ~/.npmrc".to_string())
+    }
+}
+
 /// Re-read the actual (unmasked) credential values from the original source.
 fn resolve_real_values(
     foraged_id: &str,
@@ -679,180 +859,14 @@ fn resolve_real_values(
         return Err("Invalid foraged ID format".to_string());
     }
 
-    match parts[0] {
-        "env" => {
-            // Re-read env vars for this service
-            let svc = parts.get(1).unwrap_or(&"");
-            if !is_safe_path_component(svc) {
-                return Err("Invalid service type in foraged ID".to_string());
-            }
-            let mut fields = HashMap::new();
-            for &(env_key, service_type, field_key) in ENV_PATTERNS {
-                if service_type == *svc {
-                    if let Ok(value) = std::env::var(env_key) {
-                        if !value.is_empty() {
-                            fields.insert(field_key.to_string(), value);
-                        }
-                    }
-                }
-            }
-            Ok(fields)
-        }
-        "aws" => {
-            // Re-read ~/.aws/credentials for the specific profile
-            let profile = parts.get(2).unwrap_or(&"default");
-            if !is_safe_path_component(profile) {
-                return Err("Invalid AWS profile name in foraged ID".to_string());
-            }
-            resolve_aws_profile(profile)
-        }
-        "dotenv" => {
-            // Re-read from .env file — source MUST match a known scanner label
-            let source = parts.get(1).unwrap_or(&"");
-            let key = parts.get(2).unwrap_or(&"");
-            if !ALLOWED_DOTENV_SOURCES.contains(source) {
-                return Err("Invalid dotenv source in foraged ID".to_string());
-            }
-            // key must be a known env pattern name
-            let key_known = ENV_PATTERNS.iter().any(|&(env_key, _, _)| env_key == *key);
-            if !key_known {
-                return Err("Unknown key in foraged ID".to_string());
-            }
-            resolve_dotenv_value(source, key)
-        }
-        "ghcli" => {
-            let host = parts.get(1).unwrap_or(&"github.com");
-            if !is_safe_path_component(host) {
-                return Err("Invalid host in foraged ID".to_string());
-            }
-            resolve_github_cli_token(host)
-        }
-        "npmrc" => {
-            resolve_npmrc_token()
-        }
-        _ => Err(format!("Import not supported for source type: {}", parts[0])),
-    }
-}
-
-fn resolve_aws_profile(profile: &str) -> Result<HashMap<String, String>, String> {
-    let home = home_dir().ok_or("Cannot determine home directory")?;
-    let path = home.join(".aws").join("credentials");
-    let content = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Cannot read ~/.aws/credentials: {e}"))?;
-
-    let mut in_profile = false;
-    let mut fields = HashMap::new();
-
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with('[') && trimmed.ends_with(']') {
-            let section = &trimmed[1..trimmed.len() - 1];
-            in_profile = section == profile;
-            if !in_profile && !fields.is_empty() {
-                break;
-            }
-        } else if in_profile {
-            if let Some(eq_pos) = trimmed.find('=') {
-                let key = trimmed[..eq_pos].trim();
-                let val = trimmed[eq_pos + 1..].trim();
-                if !val.is_empty() {
-                    // Map AWS credential keys to standard field names
-                    let field_key = match key {
-                        "aws_access_key_id" => "access_key_id",
-                        "aws_secret_access_key" => "secret_access_key",
-                        "aws_session_token" => "session_token",
-                        "region" => "region",
-                        other => other,
-                    };
-                    fields.insert(field_key.to_string(), val.to_string());
-                }
-            }
-        }
-    }
-
-    Ok(fields)
-}
-
-fn resolve_dotenv_value(source: &str, key: &str) -> Result<HashMap<String, String>, String> {
-    let path = if source.starts_with('~') {
-        let home = home_dir().ok_or("Cannot determine home directory")?;
-        home.join(source.trim_start_matches("~/"))
-    } else {
-        PathBuf::from(".env")
+    let resolver: &dyn ForageSourceResolver = match parts[0] {
+        "env" => &EnvResolver,
+        "aws" => &AwsProfileResolver,
+        "dotenv" => &DotenvResolver,
+        "ghcli" => &GitHubCliResolver,
+        "npmrc" => &NpmrcResolver,
+        other => return Err(format!("Import not supported for source type: {other}")),
     };
 
-    let content = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Cannot read {source}: {e}"))?;
-
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        let Some(eq_pos) = trimmed.find('=') else { continue };
-        let k = trimmed[..eq_pos].trim();
-        let val = trimmed[eq_pos + 1..].trim().trim_matches('"').trim_matches('\'');
-        if k == key && !val.is_empty() {
-            // Find the matching service/field
-            for &(env_key, _svc, field_key) in ENV_PATTERNS {
-                if env_key == key {
-                    let mut fields = HashMap::new();
-                    fields.insert(field_key.to_string(), val.to_string());
-                    return Ok(fields);
-                }
-            }
-        }
-    }
-
-    Err(format!("Key {key} not found in {source}"))
-}
-
-fn resolve_github_cli_token(host: &str) -> Result<HashMap<String, String>, String> {
-    let home = home_dir().ok_or("Cannot determine home directory")?;
-    let path = home.join(".config").join("gh").join("hosts.yml");
-    let win_path = home.join("AppData").join("Roaming").join("GitHub CLI").join("hosts.yml");
-
-    let content = std::fs::read_to_string(&path)
-        .or_else(|_| std::fs::read_to_string(&win_path))
-        .map_err(|e| format!("Cannot read GitHub CLI config: {e}"))?;
-
-    let mut current_host: Option<String> = None;
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if !line.starts_with(' ') && !line.starts_with('\t') && trimmed.ends_with(':') {
-            current_host = Some(trimmed.trim_end_matches(':').to_string());
-        } else if trimmed.starts_with("oauth_token:") {
-            let token = trimmed.trim_start_matches("oauth_token:").trim();
-            if let Some(ref h) = current_host {
-                if h == host && !token.is_empty() {
-                    let mut fields = HashMap::new();
-                    fields.insert("api_key".to_string(), token.to_string());
-                    return Ok(fields);
-                }
-            }
-        }
-    }
-
-    Err(format!("No token found for host {host}"))
-}
-
-fn resolve_npmrc_token() -> Result<HashMap<String, String>, String> {
-    let home = home_dir().ok_or("Cannot determine home directory")?;
-    let path = home.join(".npmrc");
-    let content = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Cannot read ~/.npmrc: {e}"))?;
-
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if let Some(pos) = trimmed.find("_authToken=") {
-            let token = &trimmed[pos + 11..];
-            if !token.is_empty() {
-                let mut fields = HashMap::new();
-                fields.insert("token".to_string(), token.to_string());
-                return Ok(fields);
-            }
-        }
-    }
-
-    Err("No auth token found in ~/.npmrc".to_string())
+    resolver.resolve(&parts[1..])
 }

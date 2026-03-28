@@ -111,11 +111,26 @@ pub fn get_test_results(
 }
 
 #[tauri::command]
-pub fn delete_test_run(
+pub async fn delete_test_run(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
-    require_auth_sync(&state)?;
+    require_auth(&state).await?;
+
+    // If the run is still active, cancel it and wait briefly for the background task to wind down.
+    if state.process_registry.is_run_registered("test", &id) {
+        state.process_registry.cancel_run("test", &id);
+        // Give the background task up to 500ms to notice cancellation and unregister.
+        for _ in 0..10 {
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            if !state.process_registry.is_run_registered("test", &id) {
+                break;
+            }
+        }
+        // Force-unregister if it didn't stop in time — the task will no-op on next DB write.
+        state.process_registry.unregister_run("test", &id);
+    }
+
     repo::delete_run(&state.db, &id)
 }
 
@@ -401,56 +416,63 @@ pub async fn test_n8n_draft(
         })
         .await;
 
-        // Wait for process exit
-        let _ = tokio::time::timeout(
-            tokio::time::Duration::from_secs(5),
-            driver.wait(),
-        )
-        .await;
-
-        // Clean up temp dir
-        driver.cleanup_dir();
-
         // Emit final status -- enhanced validation with confusion detection
         let (status, passed, error) = if read_result.is_err() {
+            // Timeout: kill process first, then cleanup
             driver.kill().await;
+            let _ = tokio::time::timeout(
+                tokio::time::Duration::from_secs(5),
+                driver.wait(),
+            )
+            .await;
+            driver.cleanup_dir();
             ("failed".to_string(), Some(false), Some("Test timed out after 60 seconds".to_string()))
-        } else if !saw_init {
-            let err = if !error_text.is_empty() {
-                error_text
-            } else {
-                "Claude CLI failed to initialize. Check your API key and network connection.".to_string()
-            };
-            ("failed".to_string(), Some(false), Some(err))
-        } else if !saw_text {
-            let err = if !error_text.is_empty() {
-                error_text
-            } else {
-                "Persona started but produced no output. The prompt may be invalid.".to_string()
-            };
-            ("failed".to_string(), Some(false), Some(err))
         } else {
-            // saw_init && saw_text -- apply confusion detection via eval framework
-            let actual_tools_empty: Vec<String> = Vec::new();
-            let actual_tools: &[String] = if saw_tool_use { &["_tool_used".to_string()] } else { &actual_tools_empty };
-            let eval_input = eval::EvalInput {
-                output: &assistant_full_text,
-                expected_behavior: None,
-                expected_tools: None,
-                actual_tools: Some(actual_tools),
-                expected_protocols: None,
-                has_tools,
-            };
-            let confusion_result = eval::eval_confusion_detect(&eval_input);
+            // Normal exit: wait for process, then cleanup
+            let _ = tokio::time::timeout(
+                tokio::time::Duration::from_secs(5),
+                driver.wait(),
+            )
+            .await;
+            driver.cleanup_dir();
 
-            if confusion_result.passed == Some(false) {
-                (
-                    "failed".to_string(),
-                    Some(false),
-                    Some(confusion_result.explanation),
-                )
+            if !saw_init {
+                let err = if !error_text.is_empty() {
+                    error_text
+                } else {
+                    "Claude CLI failed to initialize. Check your API key and network connection.".to_string()
+                };
+                ("failed".to_string(), Some(false), Some(err))
+            } else if !saw_text {
+                let err = if !error_text.is_empty() {
+                    error_text
+                } else {
+                    "Persona started but produced no output. The prompt may be invalid.".to_string()
+                };
+                ("failed".to_string(), Some(false), Some(err))
             } else {
-                ("completed".to_string(), Some(true), None)
+                // saw_init && saw_text -- apply confusion detection via eval framework
+                let actual_tools_empty: Vec<String> = Vec::new();
+                let actual_tools: &[String] = if saw_tool_use { &["_tool_used".to_string()] } else { &actual_tools_empty };
+                let eval_input = eval::EvalInput {
+                    output: &assistant_full_text,
+                    expected_behavior: None,
+                    expected_tools: None,
+                    actual_tools: Some(actual_tools),
+                    expected_protocols: None,
+                    has_tools,
+                };
+                let confusion_result = eval::eval_confusion_detect(&eval_input);
+
+                if confusion_result.passed == Some(false) {
+                    (
+                        "failed".to_string(),
+                        Some(false),
+                        Some(confusion_result.explanation),
+                    )
+                } else {
+                    ("completed".to_string(), Some(true), None)
+                }
             }
         };
 

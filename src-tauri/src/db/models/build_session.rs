@@ -44,20 +44,50 @@ impl BuildPhase {
     }
 
     /// Parse a phase string (as stored in SQLite) back into a `BuildPhase`.
-    pub fn from_str_value(s: &str) -> Self {
+    /// Returns `None` for unknown values instead of silently mapping to `Failed`.
+    pub fn from_str_value(s: &str) -> Option<Self> {
         match s {
-            "initializing" => Self::Initializing,
-            "analyzing" => Self::Analyzing,
-            "awaiting_input" => Self::AwaitingInput,
-            "resolving" => Self::Resolving,
-            "draft_ready" => Self::DraftReady,
-            "completed" => Self::Completed,
-            "failed" => Self::Failed,
-            "cancelled" => Self::Cancelled,
-            "testing" => Self::Testing,
-            "test_complete" => Self::TestComplete,
-            "promoted" => Self::Promoted,
-            _ => Self::Failed, // unknown phases treated as failed
+            "initializing" => Some(Self::Initializing),
+            "analyzing" => Some(Self::Analyzing),
+            "awaiting_input" => Some(Self::AwaitingInput),
+            "resolving" => Some(Self::Resolving),
+            "draft_ready" => Some(Self::DraftReady),
+            "completed" => Some(Self::Completed),
+            "failed" => Some(Self::Failed),
+            "cancelled" => Some(Self::Cancelled),
+            "testing" => Some(Self::Testing),
+            "test_complete" => Some(Self::TestComplete),
+            "promoted" => Some(Self::Promoted),
+            _ => None,
+        }
+    }
+
+    /// Validate a phase transition. Returns `Ok(())` if the transition is allowed.
+    pub fn validate_transition(&self, next: BuildPhase) -> Result<(), String> {
+        // Any phase can transition to Failed or Cancelled
+        if matches!(next, Self::Failed | Self::Cancelled) {
+            return Ok(());
+        }
+
+        let allowed = match self {
+            Self::Initializing => matches!(next, Self::Analyzing),
+            Self::Analyzing => matches!(next, Self::Resolving | Self::AwaitingInput | Self::DraftReady),
+            Self::AwaitingInput => matches!(next, Self::Resolving),
+            Self::Resolving => matches!(next, Self::AwaitingInput | Self::DraftReady),
+            Self::DraftReady => matches!(next, Self::Testing | Self::Resolving | Self::Promoted),
+            Self::Testing => matches!(next, Self::TestComplete),
+            Self::TestComplete => matches!(next, Self::Testing | Self::Promoted),
+            Self::Completed | Self::Failed | Self::Cancelled | Self::Promoted => false,
+        };
+
+        if allowed {
+            Ok(())
+        } else {
+            Err(format!(
+                "Invalid phase transition: {} -> {}",
+                self.as_str(),
+                next.as_str()
+            ))
         }
     }
 }

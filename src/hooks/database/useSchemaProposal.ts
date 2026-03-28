@@ -19,6 +19,7 @@ export type SchemaPhase =
   | 'failed';
 
 interface UseSchemaProposalOptions {
+  credentialId: string;
   templateName: string;
   templateContext: string;
   existingTables: string[];
@@ -48,6 +49,7 @@ interface UseSchemaProposalReturn {
 // -- Hook -------------------------------------------------------------
 
 export function useSchemaProposal({
+  credentialId,
   templateName,
   templateContext,
   existingTables,
@@ -134,6 +136,7 @@ export function useSchemaProposal({
     try {
       await startSchemaProposal(
         proposalId,
+        credentialId,
         templateName,
         templateContext,
         existingTables,
@@ -144,7 +147,7 @@ export function useSchemaProposal({
       setPhase('failed');
       setError(err instanceof Error ? err.message : 'Failed to start schema proposal.');
     }
-  }, [templateName, templateContext, existingTables, startPolling]);
+  }, [credentialId, templateName, templateContext, existingTables, startPolling]);
 
   const executeSchema = useCallback(async (credentialId: string, sql: string): Promise<boolean> => {
     setPhase('executing');
