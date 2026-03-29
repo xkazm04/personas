@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "pat...",
-      "helpText": "Generate at airtable.com/create/tokens"
+      "helpText": "Generate at airtable.com/create/tokens",
+      "sensitive": true
     },
     {
       "key": "base_id",
@@ -20,7 +21,8 @@
       "type": "text",
       "required": false,
       "placeholder": "appXXXXXXXXXXXXXX",
-      "helpText": "Optional: restrict to a specific base"
+      "helpText": "Optional: restrict to a specific base",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

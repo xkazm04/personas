@@ -66,7 +66,7 @@ export interface CreateAutomationInput {
   outputSchema?: string | null;
   timeoutMs?: number | null;
   retryCount?: number | null;
-  fallbackMode?: string | null;
+  fallbackMode?: AutomationFallbackMode | null;
 }
 
 /** Mirrors UpdateAutomationInput */
@@ -84,7 +84,7 @@ export interface UpdateAutomationInput {
   outputSchema?: string | null;
   timeoutMs?: number | null;
   retryCount?: number | null;
-  fallbackMode?: string | null;
+  fallbackMode?: AutomationFallbackMode | null;
   deploymentStatus?: AutomationDeploymentStatus | null;
   errorMessage?: string | null;
 }

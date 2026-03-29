@@ -7,14 +7,26 @@ use ts_rs::TS;
 use crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect;
 use crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching;
 use crate::db::repos::communication::reviews as repo;
+use crate::db::repos::core::settings;
+use crate::db::settings_keys;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
-/// Model for smart search -- cheap and fast, this is a ranking task.
-const SMART_SEARCH_MODEL: &str = "claude-haiku-4-5-20251001";
+/// Default model for smart search -- cheap and fast, this is a ranking task.
+/// Can be overridden via the `smart_search_model` app setting.
+const DEFAULT_SMART_SEARCH_MODEL: &str = "claude-haiku-4-5-20251001";
 const SMART_SEARCH_TIMEOUT_SECS: u64 = 60;
+
+/// Maximum templates sent to the LLM in a single prompt.
+/// Each summary is ~400 chars (~100 tokens). At 100 templates that's ~10K tokens,
+/// well within Haiku's context window while keeping cost and latency low.
+const MAX_LLM_TEMPLATES: usize = 100;
+
+/// Maximum prompt character length (summaries JSON portion).
+/// Acts as a safety net even if individual summaries are unusually large.
+const MAX_PROMPT_CHARS: usize = 120_000;
 
 // ============================================================================
 // Types
@@ -40,6 +52,10 @@ pub struct SmartSearchResult {
     pub rationale: String,
     /// CLI log lines captured during the search (for debugging UI).
     pub cli_log: Vec<String>,
+    /// Total templates in the gallery (so the UI can indicate partial coverage).
+    pub total_templates: i64,
+    /// How many templates were actually sent to the LLM for ranking.
+    pub templates_searched: usize,
 }
 
 /// Raw shape Claude outputs (snake_case) -- used only for deserialization.
@@ -81,6 +97,16 @@ fn sanitize_query(raw: &str) -> String {
     } else {
         collapsed
     }
+}
+
+/// Extract keyword tokens from a search query for SQL pre-filtering.
+/// Splits on whitespace, lowercases, and drops very short tokens.
+fn extract_keywords(query: &str) -> Vec<String> {
+    query
+        .split_whitespace()
+        .map(|w| w.to_lowercase())
+        .filter(|w| w.len() >= 2)
+        .collect()
 }
 
 // ============================================================================
@@ -144,18 +170,27 @@ pub async fn smart_search_templates(
         ));
     }
 
-    // Load all templates (compact query -- we only need summary fields)
-    let reviews = repo::get_reviews(&state.db, None, Some(500))?;
-    if reviews.is_empty() {
+    // Pre-filter: extract keywords and use SQL LIKE to narrow candidates.
+    // This avoids loading all templates into the LLM context.
+    let keywords = extract_keywords(&query);
+    let (rows, total_templates) = repo::search_reviews_compact(
+        &state.db,
+        &keywords,
+        MAX_LLM_TEMPLATES as i64,
+    )?;
+
+    if rows.is_empty() {
         return Ok(SmartSearchResult {
             ranked_ids: vec![],
             rationale: "No templates available in the gallery.".into(),
             cli_log: vec![],
+            total_templates,
+            templates_searched: 0,
         });
     }
 
     // Build compact summaries for the prompt
-    let summaries: Vec<TemplateSummary> = reviews
+    let summaries: Vec<TemplateSummary> = rows
         .iter()
         .map(|r| {
             let instruction_snippet = if r.instruction.chars().count() > 200 {
@@ -178,7 +213,7 @@ pub async fn smart_search_templates(
                 .unwrap_or_default();
             TemplateSummary {
                 id: r.id.clone(),
-                name: r.test_case_name.clone(),
+                name: r.name.clone(),
                 instruction_snippet,
                 category: r.category.clone(),
                 connectors,
@@ -187,14 +222,31 @@ pub async fn smart_search_templates(
         })
         .collect();
 
-    let summaries_json =
+    let templates_searched = summaries.len();
+
+    // Serialize summaries and enforce prompt size cap
+    let mut summaries_json =
         serde_json::to_string_pretty(&summaries).unwrap_or_else(|_| "[]".into());
+
+    if summaries_json.len() > MAX_PROMPT_CHARS {
+        // Truncate to fit: re-serialize with fewer templates
+        let safe_count = summaries.len() * MAX_PROMPT_CHARS / summaries_json.len();
+        let trimmed = &summaries[..safe_count.max(1)];
+        summaries_json =
+            serde_json::to_string_pretty(trimmed).unwrap_or_else(|_| "[]".into());
+    }
+
     let prompt_text = build_smart_search_prompt(&query, &summaries_json);
 
-    // Build CLI args with haiku model
+    // Resolve model: check app setting, fall back to default
+    let model = settings::get(&state.db, settings_keys::SMART_SEARCH_MODEL)?
+        .filter(|m| !m.trim().is_empty())
+        .unwrap_or_else(|| DEFAULT_SMART_SEARCH_MODEL.to_string());
+
+    // Build CLI args with resolved model
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
-    cli_args.args.push(SMART_SEARCH_MODEL.to_string());
+    cli_args.args.push(model);
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
@@ -248,5 +300,7 @@ pub async fn smart_search_templates(
         ranked_ids: raw.ranked_ids,
         rationale: raw.rationale,
         cli_log: log_lines,
+        total_templates,
+        templates_searched,
     })
 }

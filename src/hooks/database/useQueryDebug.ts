@@ -30,7 +30,7 @@ export function useQueryDebug() {
   });
 
   const start = useCallback(
-    async (credentialId: string, queryText: string, errorContext: string | null, serviceType: string) => {
+    async (credentialId: string, queryText: string, errorContext: string | null, serviceType: string, allowMutations = false) => {
       const debugId = crypto.randomUUID();
       debugIdRef.current = debugId;
       serviceTypeRef.current = serviceType;
@@ -39,7 +39,7 @@ export function useQueryDebug() {
 
       // Set up listeners before invoking backend
       await stream.start(debugId);
-      await startQueryDebug(credentialId, queryText, errorContext, serviceType, debugId);
+      await startQueryDebug(credentialId, queryText, errorContext, serviceType, debugId, allowMutations);
     },
     [stream.start],
   );

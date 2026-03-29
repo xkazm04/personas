@@ -12,7 +12,8 @@
       "type": "text",
       "required": false,
       "placeholder": "code",
-      "helpText": "Path to VS Code binary. Auto-detected if left blank."
+      "helpText": "Path to VS Code binary. Auto-detected if left blank.",
+      "sensitive": true
     }
   ],
   "healthcheck_config": null,

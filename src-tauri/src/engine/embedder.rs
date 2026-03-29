@@ -18,7 +18,9 @@ const IDLE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 
 /// Manages a lazily-loaded embedding model with automatic idle unloading.
 pub struct EmbeddingManager {
-    model: Arc<RwLock<Option<TextEmbedding>>>,
+    /// Wrapped in an inner `Arc` so in-flight inference keeps the model alive
+    /// even after the idle unloader sets the slot to `None`.
+    model: Arc<RwLock<Option<Arc<TextEmbedding>>>>,
     last_used: Arc<RwLock<Instant>>,
     cache_dir: PathBuf,
     /// True while an idle-unloader task is running. Prevents duplicate spawns.
@@ -63,23 +65,28 @@ impl EmbeddingManager {
 
         self.ensure_loaded().await?;
 
+        // Acquire a strong reference to the model while holding the read lock.
+        // This ensures the model stays alive for the duration of inference even
+        // if the idle-unloader fires and sets the slot to `None` concurrently.
+        let model_ref = {
+            let guard = self.model.read().await;
+            Arc::clone(guard.as_ref().ok_or_else(|| {
+                AppError::Internal("Model not loaded after ensure_loaded".into())
+            })?)
+        };
+
         // Update last-used timestamp
         {
             let mut ts = self.last_used.write().await;
             *ts = Instant::now();
         }
 
-        // Clone model Arc for use in blocking thread — avoids holding RwLock across CPU-bound work
-        let model_arc = Arc::clone(&self.model);
         let texts_owned = texts.to_vec();
 
-        // Run CPU-bound ONNX inference on a blocking thread to avoid starving the tokio runtime
+        // Run CPU-bound ONNX inference on a blocking thread to avoid starving the tokio runtime.
+        // `model_ref` is an owned Arc — no lock is held across the spawn boundary.
         tokio::task::spawn_blocking(move || {
-            let guard = model_arc.blocking_read();
-            let model = guard
-                .as_ref()
-                .ok_or_else(|| AppError::Internal("Model not loaded".into()))?;
-            model
+            model_ref
                 .embed(texts_owned, None)
                 .map_err(|e| AppError::Internal(format!("Embedding failed: {e}")))
         })
@@ -123,7 +130,7 @@ impl EmbeddingManager {
         .map_err(|e| AppError::Internal(format!("Failed to load embedding model: {e}")))?;
 
         tracing::info!("Embedding model loaded successfully");
-        *guard = Some(model);
+        *guard = Some(Arc::new(model));
 
         // Start idle unloader
         self.start_idle_unloader();

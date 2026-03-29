@@ -295,46 +295,56 @@ pub async fn continue_template_adopt(
     require_auth(&state).await?;
     validate_json_field("user_answers_json", &user_answers_json)?;
 
-    // Validate that answers match the stored questions from Turn 1
+    // Validate that answers match the stored questions from Turn 1.
+    // If the adopt job was evicted (10-min TTL or 50-entry cap), stored_questions
+    // will be None — we MUST reject rather than skip validation, otherwise
+    // unvalidated user input flows into the LLM prompt.
     let stored_questions = ADOPT_JOBS
         .read_extra(&adopt_id, |extra| extra.questions.clone())
         .flatten();
-    if let Some(questions_val) = &stored_questions {
-        if let Some(questions_arr) = questions_val.as_array() {
-            let answers: serde_json::Value = serde_json::from_str(&user_answers_json)
-                .map_err(|e| AppError::Validation(format!("user_answers_json parse error: {e}")))?;
-            if let Some(answers_obj) = answers.as_object() {
-                // Check that every required question has a non-empty answer
-                let mut missing = Vec::new();
-                for q in questions_arr {
-                    if let Some(id) = q.get("id").and_then(|v| v.as_str()) {
-                        match answers_obj.get(id).and_then(|v| v.as_str()) {
-                            Some(a) if !a.trim().is_empty() => {}
-                            _ => missing.push(id.to_string()),
-                        }
+    let questions_val = stored_questions.ok_or_else(|| {
+        tracing::warn!(
+            adopt_id = %adopt_id,
+            "Adoption session expired or evicted — cannot validate answers"
+        );
+        AppError::NotFound(
+            "Adoption session has expired. Please restart the template adoption.".into(),
+        )
+    })?;
+    if let Some(questions_arr) = questions_val.as_array() {
+        let answers: serde_json::Value = serde_json::from_str(&user_answers_json)
+            .map_err(|e| AppError::Validation(format!("user_answers_json parse error: {e}")))?;
+        if let Some(answers_obj) = answers.as_object() {
+            // Check that every required question has a non-empty answer
+            let mut missing = Vec::new();
+            for q in questions_arr {
+                if let Some(id) = q.get("id").and_then(|v| v.as_str()) {
+                    match answers_obj.get(id).and_then(|v| v.as_str()) {
+                        Some(a) if !a.trim().is_empty() => {}
+                        _ => missing.push(id.to_string()),
                     }
                 }
-                if !missing.is_empty() {
-                    return Err(AppError::Validation(format!(
-                        "Missing answers for questions: {}",
-                        missing.join(", ")
-                    )));
-                }
-                // Check for unknown answer keys
-                let valid_ids: std::collections::HashSet<&str> = questions_arr
-                    .iter()
-                    .filter_map(|q| q.get("id").and_then(|v| v.as_str()))
-                    .collect();
-                let unknown: Vec<&String> = answers_obj
-                    .keys()
-                    .filter(|k| !valid_ids.contains(k.as_str()))
-                    .collect();
-                if !unknown.is_empty() {
-                    return Err(AppError::Validation(format!(
-                        "Unknown question IDs in answers: {}",
-                        unknown.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
-                    )));
-                }
+            }
+            if !missing.is_empty() {
+                return Err(AppError::Validation(format!(
+                    "Missing answers for questions: {}",
+                    missing.join(", ")
+                )));
+            }
+            // Check for unknown answer keys
+            let valid_ids: std::collections::HashSet<&str> = questions_arr
+                .iter()
+                .filter_map(|q| q.get("id").and_then(|v| v.as_str()))
+                .collect();
+            let unknown: Vec<&String> = answers_obj
+                .keys()
+                .filter(|k| !valid_ids.contains(k.as_str()))
+                .collect();
+            if !unknown.is_empty() {
+                return Err(AppError::Validation(format!(
+                    "Unknown question IDs in answers: {}",
+                    unknown.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+                )));
             }
         }
     }
@@ -544,6 +554,26 @@ pub fn instant_adopt_template_inner(
     let notification_channels = design.get("suggested_notification_channels")
         .map(|v| serde_json::to_string(v).unwrap_or_default());
 
+    // Build proper DesignContextData-format design_context instead of raw design_result
+    let use_cases = design
+        .get("use_case_flows")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let design_context_summary = design
+        .get("summary")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| format!("Adopted from template: {}", template_name));
+    let design_context_obj = serde_json::json!({
+        "useCases": use_cases,
+        "summary": design_context_summary,
+        "builderMeta": {
+            "creationMethod": "template_adopt"
+        }
+    });
+    let design_context_str = serde_json::to_string(&design_context_obj).unwrap_or_else(|_| "{}".to_string());
+
     // Build the N8nPersonaOutput draft
     let draft = N8nPersonaOutput {
         name: Some(persona_name),
@@ -555,7 +585,7 @@ pub fn instant_adopt_template_inner(
         model_profile,
         max_budget_usd: None,
         max_turns: None,
-        design_context: Some(design_result_json.clone()),
+        design_context: Some(design_context_str),
         notification_channels,
         triggers,
         tools,

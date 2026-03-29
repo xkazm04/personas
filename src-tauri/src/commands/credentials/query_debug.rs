@@ -151,6 +151,7 @@ pub async fn start_query_debug(
     error_context: Option<String>,
     service_type: String,
     debug_id: String,
+    allow_mutations: Option<bool>,
 ) -> Result<(), AppError> {
     require_privileged(&state, "start_query_debug").await?;
     QUERY_DEBUG_JOBS.ensure_not_running(&debug_id)?;
@@ -164,6 +165,7 @@ pub async fn start_query_debug(
 
     let pool = state.db.clone();
     let cred_id = credential_id.clone();
+    let allow_mutations = allow_mutations.unwrap_or(false);
 
     tokio::spawn(async move {
         run_query_debug(RunParams {
@@ -176,6 +178,7 @@ pub async fn start_query_debug(
             debug_id,
             schema_context,
             cancel_token,
+            allow_mutations,
         })
         .await;
     });
@@ -205,6 +208,7 @@ struct RunParams {
     debug_id: String,
     schema_context: String,
     cancel_token: CancellationToken,
+    allow_mutations: bool,
 }
 
 async fn run_query_debug(params: RunParams) {
@@ -218,6 +222,7 @@ async fn run_query_debug(params: RunParams) {
         debug_id,
         schema_context,
         cancel_token,
+        allow_mutations,
     } = params;
 
     let language = match service_type.as_str() {
@@ -309,8 +314,20 @@ async fn run_query_debug(params: RunParams) {
         let mutation_label = if is_mutation { "mutation" } else { "read" };
         audit_log::insert_warn(&pool, &credential_id, &credential_id, "db_query_execute", Some(&format!("{mutation_label}, {query_fingerprint}")));
 
+        // Block mutations unless the user explicitly opted in
+        if is_mutation && !allow_mutations {
+            emit_line(&app, &debug_id, "[ERROR] AI suggested a mutation query (INSERT/UPDATE/DELETE/DROP) but mutations are not allowed. Enable 'Allow mutations' to permit this.");
+            QUERY_DEBUG_JOBS.set_status(
+                &app,
+                &debug_id,
+                "failed",
+                Some("Mutation blocked: enable allow_mutations to permit write queries".into()),
+            );
+            return;
+        }
+
         // Execute the extracted query
-        match db_query::execute_query(&pool, &credential_id, &query_to_run, None, true).await {
+        match db_query::execute_query(&pool, &credential_id, &query_to_run, None, allow_mutations).await {
             Ok(result) => {
                 let summary = format!(
                     "> Query succeeded: {} row{} in {}ms",

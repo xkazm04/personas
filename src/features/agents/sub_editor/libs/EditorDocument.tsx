@@ -20,10 +20,12 @@ const logger = createLogger("editor-document");
 /** Error thrown by saveAll when one or more tabs fail to save. */
 export class TabSaveError extends Error {
   readonly failedTabs: string[];
-  constructor(failedTabs: string[]) {
+  readonly savedTabs: string[];
+  constructor(failedTabs: string[], savedTabs: string[] = []) {
     super(`Failed to save: ${failedTabs.join(', ')}`);
     this.name = 'TabSaveError';
     this.failedTabs = failedTabs;
+    this.savedTabs = savedTabs;
   }
 }
 
@@ -55,10 +57,11 @@ interface DirtyStore {
   /** Unregister a tab completely (on unmount). */
   unregister: (tab: string) => void;
   /**
-   * Atomically save all dirty tabs.
-   * Snapshots dirty state before saving; on partial failure rolls back
-   * all tabs to their pre-save dirty state so the persona is never
-   * left half-saved.
+   * Save all dirty tabs sequentially.
+   * Stops on first failure to minimise cross-tab inconsistency.
+   * Tabs that succeeded before the failure are marked clean (they are
+   * already persisted). The thrown TabSaveError lists both failed and
+   * saved tabs so the UI can report the exact state to the user.
    */
   saveAll: () => Promise<void>;
   /** Cancel all pending debounced saves across all tabs. */
@@ -135,52 +138,39 @@ function createDirtyStore(): DirtyStore {
     },
 
     async saveAll() {
-      // 1. Snapshot current dirty state before attempting saves
-      const snapshot = new Map(dirtyMap);
-      const tabsToSave = [...snapshot.entries()].filter(([, dirty]) => dirty);
+      // 1. Collect dirty tabs
+      const tabsToSave = [...dirtyMap.entries()].filter(([, dirty]) => dirty);
       if (tabsToSave.length === 0) {
         notify();
         return;
       }
 
-      // 2. Attempt parallel saves for all dirty tabs
-      const results = await Promise.allSettled(
-        tabsToSave.map(async ([tab]) => {
-          const save = saveMap.get(tab);
-          if (!save) return;
+      // 2. Save sequentially -- stop on first failure to prevent cross-tab inconsistency
+      const savedTabs: string[] = [];
+      for (const [tab] of tabsToSave) {
+        const save = saveMap.get(tab);
+        if (!save) {
+          savedTabs.push(tab);
+          dirtyMap.set(tab, false);
+          continue;
+        }
+        try {
           await save();
-          return tab;
-        }),
-      );
-
-      // 3. Classify results
-      const failedTabs: string[] = [];
-      const succeededTabs: string[] = [];
-      for (let i = 0; i < results.length; i++) {
-        const result = results[i]!;
-        const tab = tabsToSave[i]![0];
-        if (result.status === 'fulfilled') {
-          succeededTabs.push(tab);
-        } else {
-          logger.error(`Failed to save tab`, { tab, reason: result.reason });
-          failedTabs.push(tab);
+          savedTabs.push(tab);
+          dirtyMap.set(tab, false);
+        } catch (err) {
+          logger.error(`Failed to save tab`, { tab, reason: err });
+          // Tabs that succeeded are already persisted -- mark them clean.
+          // Only remaining (unsaved) tabs stay dirty.
+          notify();
+          const failedTabs = tabsToSave
+            .filter(([t]) => !savedTabs.includes(t))
+            .map(([t]) => t);
+          throw new TabSaveError(failedTabs, savedTabs);
         }
       }
 
-      if (failedTabs.length > 0) {
-        // 4a. Partial failure -- rollback ALL tabs to pre-save dirty state
-        // so the persona is never in a half-saved state from the UI's perspective.
-        for (const [tab, wasDirty] of snapshot) {
-          dirtyMap.set(tab, wasDirty);
-        }
-        notify();
-        throw new TabSaveError(failedTabs);
-      }
-
-      // 4b. Full success -- mark all saved tabs as clean
-      for (const tab of succeededTabs) {
-        dirtyMap.set(tab, false);
-      }
+      // 3. Full success -- all tabs clean
       notify();
     },
 

@@ -35,9 +35,9 @@ function getModelsTested(runId: string, mode: string): string[] {
     matrix: store.matrixRuns,
   };
   const runs = runMaps[mode] ?? [];
-  const run = runs.find((r) => (r as { id: string }).id === runId) as { modelsTested?: string } | undefined;
+  const run = runs.find((r) => (r as { id: string }).id === runId) as { modelsTested?: string[] } | undefined;
   if (!run?.modelsTested) return [];
-  try { return JSON.parse(run.modelsTested); } catch { return []; }
+  return Array.isArray(run.modelsTested) ? run.modelsTested : [];
 }
 
 /**

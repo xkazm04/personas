@@ -66,6 +66,13 @@ export function useTemplateGallery(coverageServiceTypes?: string[], perPage?: nu
     }
   }, [ai.aiSearchMode, ai.clearAiSearch]);
 
+  // When clearing AI search, also reset the search text so the subsequent
+  // refetch doesn't use the stale AI query as a keyword filter.
+  const clearAiSearch = useCallback(() => {
+    ai.clearAiSearch();
+    queryRef.current.setSearch('');
+  }, [ai.clearAiSearch]);
+
   return {
     allItems: query.items,
     total: query.total,
@@ -99,7 +106,7 @@ export function useTemplateGallery(coverageServiceTypes?: string[], perPage?: nu
     aiSearchRationale: ai.aiSearchRationale,
     aiSearchActive: ai.aiSearchActive,
     triggerAiSearch: ai.triggerAiSearch,
-    clearAiSearch: ai.clearAiSearch,
+    clearAiSearch,
     aiCliLog: ai.aiCliLog,
   };
 }

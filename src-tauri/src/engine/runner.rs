@@ -233,6 +233,26 @@ pub async fn run_execution(
         input_data = Some(serde_json::Value::Object(obj));
     }
 
+    // -- Capability contract pre-check ------------------------------------
+    // Surface unmet dependency contracts (missing credentials, personas, etc.)
+    // as a trace warning *before* the hard credential resolution gate.
+    // This gives the UI and healing system richer diagnostics.
+    {
+        let contract_report = super::capability_contract::validate_persona_contracts(&pool, &persona.id);
+        if let Ok(ref report) = contract_report {
+            if !report.all_satisfied {
+                let issues: Vec<String> = report.unmet.iter().map(|u| u.reason.clone()).collect();
+                let msg = format!(
+                    "Capability contract pre-check: {} unmet requirement(s): {}",
+                    issues.len(),
+                    issues.join("; ")
+                );
+                tracing::warn!(persona_id = %persona.id, "{}", msg);
+                logger.log(&format!("[WARN] {msg}"));
+            }
+        }
+    }
+
     // Inject decrypted service credentials as env vars (with OAuth token refresh)
     let cred_span = trace.start_span(
         SpanType::CredentialResolution,
@@ -474,8 +494,27 @@ pub async fn run_execution(
     // =========================================================================
     let primary_engine = provider::load_engine_kind_notified(&pool, &app);
 
-    // Evaluate BYOM policy if configured
-    let byom_policy = super::byom::ByomPolicy::load(&pool);
+    // Evaluate BYOM policy if configured.
+    // IMPORTANT: If the stored policy JSON is corrupt we must NOT silently
+    // fall back to open-access — that would disable compliance restrictions.
+    // Instead, abort the execution so the user is forced to fix the policy.
+    let byom_policy = match super::byom::ByomPolicy::load(&pool) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::error!(error = %e, "BYOM policy is corrupt — blocking execution");
+            logger.log(&format!("BYOM policy is corrupt — execution blocked: {e}"));
+            return ExecutionResult {
+                success: false,
+                error: Some(format!(
+                    "BYOM policy is corrupt and cannot be loaded. \
+                     Please reset or fix the policy in Settings → BYOM before running executions."
+                )),
+                log_file_path: Some(log_file_path),
+                duration_ms: start_time.elapsed().as_millis() as u64,
+                ..default_result()
+            };
+        }
+    };
     let policy_decision = byom_policy
         .as_ref()
         .map(|p| p.evaluate(&[], None))
@@ -1269,7 +1308,9 @@ pub async fn run_execution(
 
     // Post-mortem: extract execution flows and any protocol messages that were
     // missed during streaming (e.g. because they spanned multiple streaming deltas).
-    let execution_flows = parser::extract_execution_flows(&assistant_text);
+    let execution_flows = parser::extract_execution_flows(&assistant_text)
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .map(crate::db::models::Json);
 
     // Post-mortem protocol extraction: catch emit_event and agent_memory messages
     // that were missed during streaming (e.g. because they spanned multiple deltas).
@@ -1316,17 +1357,20 @@ pub async fn run_execution(
         }
     }
 
-    // Record tool usage
-    let tool_counts = parser::count_tool_usage(&tool_use_lines);
-    for (tool_name, count) in &tool_counts {
-        let _ = usage_repo::record(&pool, &execution_id, &persona.id, tool_name, *count as i32);
+    // Record tool usage (skip if persona deletion is in progress — rows will be CASCADE-deleted)
+    let persona_being_deleted = cancelled.load(std::sync::atomic::Ordering::Acquire);
+    if !persona_being_deleted {
+        let tool_counts = parser::count_tool_usage(&tool_use_lines);
+        for (tool_name, count) in &tool_counts {
+            let _ = usage_repo::record(&pool, &execution_id, &persona.id, tool_name, *count as i32);
+        }
     }
 
-    // Serialize tool steps for inspector
+    // Wrap tool steps for typed DB storage
     let tool_steps_json = if tool_steps.is_empty() {
         None
     } else {
-        serde_json::to_string(&tool_steps).ok()
+        Some(crate::db::models::Json(tool_steps))
     };
 
     logger.close();
@@ -1465,7 +1509,8 @@ pub async fn run_execution(
     );
 
     // Deliver message to persona_messages if execution produced output
-    if success && !assistant_text.is_empty() {
+    // (skip if cancelled/deleting — the persona row may be about to be CASCADE-deleted)
+    if success && !assistant_text.is_empty() && !cancelled.load(std::sync::atomic::Ordering::Acquire) {
         // Generate a descriptive title: use the first heading, first sentence,
         // or persona name + date range as fallback instead of generic "Execution output"
         let title = {

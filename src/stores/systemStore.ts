@@ -25,6 +25,7 @@ export const useSystemStore = create<SystemStore>()(
   persist(
     (...a) => ({
       errorKind: null,
+      sliceErrors: {},
       ...createUiSlice(...a),
       ...createCloudSlice(...a),
       ...createGitLabSlice(...a),

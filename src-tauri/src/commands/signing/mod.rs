@@ -52,7 +52,7 @@ pub fn sign_document(
     // Read file bytes and sign
     let file_bytes = std::fs::read(&path)
         .map_err(|e| AppError::Internal(format!("Cannot read file for signing: {e}")))?;
-    let signature_b64 = identity::sign_message(&file_bytes)?;
+    let signature_b64 = identity::sign_message(&state.db, &file_bytes)?;
 
     let now = Utc::now().to_rfc3339();
     let id = uuid::Uuid::new_v4().to_string();

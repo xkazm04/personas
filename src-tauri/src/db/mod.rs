@@ -7,6 +7,7 @@ pub mod models;
 #[allow(dead_code)]
 pub mod repos;
 pub mod perf;
+pub mod query_builder;
 pub mod settings_keys;
 mod builtin_connectors;
 
@@ -23,6 +24,41 @@ pub type DbPool = Pool<SqliteConnectionManager>;
 /// This is completely isolated from the internal app database to prevent
 /// user queries from corrupting app state.
 pub type UserDbPool = Pool<SqliteConnectionManager>;
+
+/// RAII guard that disables foreign-key checks on creation and **always** re-enables
+/// them when dropped — even if the caller returns early or panics.  This prevents a
+/// pooled connection from leaking back into the pool with FK checks turned off.
+///
+/// # Usage
+/// ```ignore
+/// let conn = pool.get()?;
+/// let result = {
+///     let _guard = FkDisabledGuard::new(&conn)?;
+///     conn.execute("INSERT …", params![…])
+/// };
+/// // FK checks are restored here, before `result?` propagates any error
+/// result?;
+/// ```
+pub struct FkDisabledGuard<'a> {
+    conn: &'a rusqlite::Connection,
+}
+
+impl<'a> FkDisabledGuard<'a> {
+    /// Disable foreign-key checks on `conn` and return a guard that will
+    /// re-enable them on drop.
+    pub fn new(conn: &'a rusqlite::Connection) -> Result<Self, rusqlite::Error> {
+        conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
+        Ok(Self { conn })
+    }
+}
+
+impl<'a> Drop for FkDisabledGuard<'a> {
+    fn drop(&mut self) {
+        if let Err(e) = self.conn.execute_batch("PRAGMA foreign_keys = ON;") {
+            tracing::error!("Failed to restore foreign_keys = ON: {e}");
+        }
+    }
+}
 
 /// Connection customizer that sets per-connection SQLite pragmas.
 #[derive(Debug)]

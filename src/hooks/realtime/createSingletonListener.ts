@@ -35,8 +35,8 @@ export function createSingletonListener<T>(eventName: string) {
     }
   }
 
-  function ensureListener() {
-    if (setupPromise) return;
+  function ensureListener(): Promise<void> {
+    if (setupPromise) return setupPromise;
     setupInFlight = true;
     setupPromise = (async () => {
       const unlisten = await listen<T>(eventName, (tauriEvent) => {
@@ -63,6 +63,7 @@ export function createSingletonListener<T>(eventName: string) {
         singletonUnlisten = unlisten;
       }
     })();
+    return setupPromise;
   }
 
   function teardownIfEmpty() {
@@ -88,12 +89,12 @@ export function createSingletonListener<T>(eventName: string) {
       let cancelled = false;
       const subscriber: Subscriber = (payload) => callbackRef.current(payload);
       subscribers.add(subscriber);
-      ensureListener();
+      const currentSetup = ensureListener();
 
       // Flush any events that arrived before this subscriber registered
       flushBuffer();
 
-      setupPromise?.then(() => {
+      currentSetup.then(() => {
         if (!cancelled) setAttached(true);
       });
 

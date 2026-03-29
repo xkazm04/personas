@@ -68,7 +68,79 @@ impl std::error::Error for InvalidTransition {}
 /// ```
 #[macro_export]
 macro_rules! declare_lifecycle {
+    // ── Arm WITH aliases ────────────────────────────────────────────────
     (
+        $(#[$meta:meta])*
+        pub enum $Name:ident, entity = $entity:literal {
+            $(
+                $(#[$var_meta:meta])*
+                $Variant:ident ( $str:literal ) => [ $( $Target:ident ),* $(,)? ]
+            ),+ $(,)?
+        }
+        aliases {
+            $( $alias:literal => $AliasTarget:ident ),+ $(,)?
+        }
+    ) => {
+        $crate::declare_lifecycle! {
+            @inner
+            $(#[$meta])*
+            pub enum $Name, entity = $entity {
+                $(
+                    $(#[$var_meta])*
+                    $Variant ( $str ) => [ $( $Target ),* ]
+                ),+
+            }
+        }
+
+        impl std::str::FromStr for $Name {
+            type Err = String;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                match s {
+                    $( $str => Ok($Name::$Variant), )+
+                    $( $alias => Ok($Name::$AliasTarget), )+
+                    other => Err(format!("Unknown {} status: '{}'", $entity, other)),
+                }
+            }
+        }
+    };
+
+    // ── Arm WITHOUT aliases (existing API) ──────────────────────────────
+    (
+        $(#[$meta:meta])*
+        pub enum $Name:ident, entity = $entity:literal {
+            $(
+                $(#[$var_meta:meta])*
+                $Variant:ident ( $str:literal ) => [ $( $Target:ident ),* $(,)? ]
+            ),+ $(,)?
+        }
+    ) => {
+        $crate::declare_lifecycle! {
+            @inner
+            $(#[$meta])*
+            pub enum $Name, entity = $entity {
+                $(
+                    $(#[$var_meta])*
+                    $Variant ( $str ) => [ $( $Target ),* ]
+                ),+
+            }
+        }
+
+        impl std::str::FromStr for $Name {
+            type Err = String;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                match s {
+                    $( $str => Ok($Name::$Variant), )+
+                    other => Err(format!("Unknown {} status: '{}'", $entity, other)),
+                }
+            }
+        }
+    };
+
+    // ── Internal arm: shared enum + impl generation ─────────────────────
+    (
+        @inner
         $(#[$meta:meta])*
         pub enum $Name:ident, entity = $entity:literal {
             $(
@@ -97,12 +169,12 @@ macro_rules! declare_lifecycle {
 
             /// Check whether transitioning from `self` to `target` is valid.
             pub fn can_transition_to(&self, target: $Name) -> bool {
-                matches!(
-                    (self, target),
-                    $(
-                        $( ($Name::$Variant, $Name::$Target) )|*
-                    )|+
-                )
+                #[allow(unused_variables)]
+                let pair = (self, target);
+                false
+                $(
+                    $( || matches!(pair, ($Name::$Variant, $Name::$Target)) )*
+                )+
             }
 
             /// Attempt a state transition, returning the new state or an error.
@@ -132,17 +204,6 @@ macro_rules! declare_lifecycle {
         impl std::fmt::Display for $Name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.write_str(self.as_str())
-            }
-        }
-
-        impl std::str::FromStr for $Name {
-            type Err = String;
-
-            fn from_str(s: &str) -> Result<Self, Self::Err> {
-                match s {
-                    $( $str => Ok($Name::$Variant), )+
-                    other => Err(format!("Unknown {} status: '{}'", $entity, other)),
-                }
             }
         }
     };

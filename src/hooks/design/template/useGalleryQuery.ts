@@ -127,9 +127,15 @@ export function useGalleryQuery(
   const setSearch = useCallback((value: string) => {
     setSearchRaw(value);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(value);
-    }, DEBOUNCE_MS);
+    // When clearing, update debouncedSearch synchronously so downstream
+    // effects (e.g. post-AI-search refetch) don't see stale query text.
+    if (!value) {
+      setDebouncedSearch('');
+    } else {
+      debounceTimer.current = setTimeout(() => {
+        setDebouncedSearch(value);
+      }, DEBOUNCE_MS);
+    }
   }, []);
 
   // Consume tour search prefill (reactive: tour sets value, gallery picks it up once)

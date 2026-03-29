@@ -182,6 +182,9 @@ event_names! {
 
     // Engine fallback (unrecognized engine setting)
     ENGINE_FALLBACK            => "engine-fallback",
+
+    // Persona health (push-based summary refresh signal)
+    PERSONA_HEALTH_CHANGED     => "persona-health-changed",
 }
 
 // ---------------------------------------------------------------------------

@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::db::models::Persona;
+#[cfg(test)]
+use crate::db::models::{PersonaTrustLevel, PersonaTrustOrigin};
 use crate::db::repos::execution::knowledge as knowledge_repo;
 use crate::db::DbPool;
 
@@ -571,8 +573,8 @@ mod tests {
             design_context: None,
             group_id: None,
             source_review_id: None,
-            trust_level: "verified".into(),
-            trust_origin: "system".into(),
+            trust_level: PersonaTrustLevel::Verified,
+            trust_origin: PersonaTrustOrigin::System,
             trust_verified_at: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),

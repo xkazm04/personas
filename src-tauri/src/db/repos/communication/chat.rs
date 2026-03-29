@@ -7,6 +7,8 @@ use crate::db::models::{
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
+use crate::validation::chat as cv;
+use crate::validation::contract::check as validate_check;
 
 fn row_to_chat_message(row: &Row) -> rusqlite::Result<ChatMessage> {
     Ok(ChatMessage {
@@ -77,6 +79,19 @@ pub fn list_sessions(
 
 pub fn create(pool: &DbPool, input: CreateChatMessageInput) -> Result<ChatMessage, AppError> {
     timed_query!("chat_messages", "chat_messages::create", {
+        // Validate content: non-empty and within length limit
+        let mut errors = cv::validate_content(&input.content);
+
+        // Validate metadata length if present
+        if let Some(ref meta) = input.metadata {
+            errors.extend(cv::validate_metadata(meta));
+        }
+
+        validate_check(errors)?;
+
+        // Strip HTML tags from content for defence-in-depth against XSS
+        let content = crate::validation::strip_html_tags(&input.content);
+
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
@@ -90,7 +105,7 @@ pub fn create(pool: &DbPool, input: CreateChatMessageInput) -> Result<ChatMessag
                 input.persona_id,
                 input.session_id,
                 input.role,
-                input.content,
+                content,
                 input.execution_id,
                 input.metadata,
                 now,

@@ -10,8 +10,8 @@ export function mergeMemories(a: PersonaMemory, b: PersonaMemory): {
   tags: string[];
 } {
   // Keep higher importance, merge content, combine tags
-  const tagsA: string[] = a.tags ? (() => { try { return JSON.parse(a.tags); } catch { return []; } })() : [];
-  const tagsB: string[] = b.tags ? (() => { try { return JSON.parse(b.tags); } catch { return []; } })() : [];
+  const tagsA: string[] = a.tags ?? [];
+  const tagsB: string[] = b.tags ?? [];
   const mergedTags = [...new Set([...tagsA, ...tagsB])];
 
   // Use the newer memory's persona as the owner

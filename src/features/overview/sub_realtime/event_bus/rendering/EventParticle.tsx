@@ -1,8 +1,9 @@
 import { memo, useMemo, useCallback } from 'react';
-import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
+import type { RealtimeEvent, AnimationPhase } from '@/hooks/realtime/useRealtimeEvents';
 
 interface Props {
   event: RealtimeEvent;
+  phase: AnimationPhase;
   sourcePos: { x: number; y: number };
   busY: number;
   targetPos: { x: number; y: number } | null;
@@ -14,10 +15,10 @@ const PARTICLE_R = 5;
 const HIT_AREA_R = 12;
 const TRAIL_COUNT = 2;
 
-function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onClick }: Props) {
+function EventParticleComponent({ event, phase, sourcePos, busY, targetPos, color, onClick }: Props) {
   // Compute position based on animation phase
   const position = useMemo(() => {
-    switch (event._phase) {
+    switch (phase) {
       case 'entering':
         return { cx: sourcePos.x, cy: busY };
       case 'on-bus':
@@ -28,16 +29,16 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
       default:
         return { cx: targetPos?.x ?? sourcePos.x, cy: targetPos?.y ?? busY };
     }
-  }, [event._phase, sourcePos, busY, targetPos]);
+  }, [phase, sourcePos, busY, targetPos]);
 
   const isFailed = event.status === 'failed';
   const isCompleted = event.status === 'completed';
   const particleColor = isFailed ? '#ef4444' : color;
 
   // Burst effect on completion/failure
-  const showBurst = event._phase === 'delivering' && (isCompleted || isFailed);
-  const isDelivering = event._phase === 'delivering';
-  const isDone = event._phase === 'done';
+  const showBurst = phase === 'delivering' && (isCompleted || isFailed);
+  const isDelivering = phase === 'delivering';
+  const isDone = phase === 'done';
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -68,7 +69,7 @@ function EventParticleComponent({ event, sourcePos, busY, targetPos, color, onCl
       />
 
       {/* Trail particles */}
-      {TRAIL_COUNT > 0 && event._phase !== 'done' && (
+      {TRAIL_COUNT > 0 && phase !== 'done' && (
         <>
           {Array.from({ length: TRAIL_COUNT }).map((_, i) => (
             <circle className="animate-fade-in"

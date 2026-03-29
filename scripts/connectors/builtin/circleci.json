@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "CCIPAT_...",
-      "helpText": "From CircleCI -> User Settings -> Personal API Tokens"
+      "helpText": "From CircleCI -> User Settings -> Personal API Tokens",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

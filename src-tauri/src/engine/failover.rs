@@ -8,6 +8,7 @@
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -18,6 +19,8 @@ use ts_rs::TS;
 use super::byom::PolicyDecision;
 use super::provider::EngineKind;
 use super::types::ModelProfile;
+use crate::db::DbPool;
+use crate::db::repos::execution::circuit_breaker as cb_repo;
 
 // =============================================================================
 // Constants
@@ -41,6 +44,10 @@ const TRANSITION_HISTORY_CAPACITY: usize = 50;
 
 /// Rolling window for trip count tracking (1 hour).
 const TRIP_COUNT_WINDOW: Duration = Duration::from_secs(3600);
+
+/// TTL for persisted circuit breaker state (15 minutes).
+/// States older than this are ignored on restore and periodically purged.
+const PERSIST_TTL_MINUTES: i64 = 15;
 
 // =============================================================================
 // Error classification (delegated to unified error_taxonomy)
@@ -78,7 +85,7 @@ pub fn classify_error(error: &str) -> Option<ErrorCategory> {
 // Circuit breaker state
 // =============================================================================
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 struct CircuitState {
     /// Number of consecutive failures.
     consecutive_failures: u32,
@@ -154,6 +161,8 @@ pub struct CircuitBreakerStatus {
 /// chain from amplifying load on already-stressed services.
 pub struct ProviderCircuitBreaker {
     states: Mutex<(HashMap<EngineKind, CircuitState>, GlobalState, TransitionHistory)>,
+    /// Optional DB pool for persisting state across restarts.
+    pool: Option<Arc<DbPool>>,
 }
 
 /// Internal history buffer for transition events.
@@ -169,6 +178,103 @@ impl ProviderCircuitBreaker {
     pub fn new() -> Self {
         Self {
             states: Mutex::new((HashMap::new(), GlobalState::default(), TransitionHistory::default())),
+            pool: None,
+        }
+    }
+
+    /// Create a circuit breaker with DB persistence and restore any non-expired state.
+    pub fn with_persistence(pool: Arc<DbPool>) -> Self {
+        let mut states = HashMap::new();
+
+        // Restore persisted state (ignore errors -- worst case we start fresh)
+        match cb_repo::load_active(&pool, PERSIST_TTL_MINUTES) {
+            Ok(rows) => {
+                for row in rows {
+                    let kind = match EngineKind::from_str_exact(&row.provider) {
+                        Some(k) => k,
+                        None => continue,
+                    };
+                    let opened_at = if row.is_open {
+                        // Reconstruct approximate Instant from the persisted ISO timestamp.
+                        // We compute how long ago the circuit was opened and subtract from now.
+                        row.opened_at_iso
+                            .as_deref()
+                            .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                            .map(|dt| {
+                                let elapsed = Utc::now()
+                                    .signed_duration_since(dt.with_timezone(&Utc))
+                                    .to_std()
+                                    .unwrap_or(Duration::ZERO);
+                                Instant::now().checked_sub(elapsed).unwrap_or_else(Instant::now)
+                            })
+                    } else {
+                        None
+                    };
+
+                    states.insert(kind, CircuitState {
+                        consecutive_failures: row.consecutive_failures,
+                        opened_at,
+                    });
+
+                    tracing::info!(
+                        event = "circuit_breaker.restored",
+                        provider = %row.provider,
+                        consecutive_failures = row.consecutive_failures,
+                        is_open = row.is_open,
+                        "Restored circuit breaker state from DB",
+                    );
+                }
+            }
+            Err(e) => {
+                tracing::warn!(
+                    event = "circuit_breaker.restore_failed",
+                    error = %e,
+                    "Failed to restore circuit breaker state, starting fresh",
+                );
+            }
+        }
+
+        // Purge expired rows in the background (best-effort)
+        let _ = cb_repo::purge_expired(&pool, PERSIST_TTL_MINUTES);
+
+        Self {
+            states: Mutex::new((states, GlobalState::default(), TransitionHistory::default())),
+            pool: Some(pool),
+        }
+    }
+
+    /// Persist all per-provider circuit states to DB (best-effort, non-blocking).
+    fn persist_all(&self, states: &HashMap<EngineKind, CircuitState>) {
+        let pool = match &self.pool {
+            Some(p) => p,
+            None => return,
+        };
+        for (&kind, state) in states {
+            let is_open = state.opened_at.is_some();
+            let opened_at_iso = if is_open {
+                // Approximate: convert Instant to wall-clock by computing elapsed
+                state.opened_at.map(|opened| {
+                    let elapsed = opened.elapsed();
+                    let wall = Utc::now() - chrono::Duration::from_std(elapsed).unwrap_or_default();
+                    wall.to_rfc3339()
+                })
+            } else {
+                None
+            };
+            if let Err(e) = cb_repo::upsert(
+                pool,
+                kind.as_setting(),
+                state.consecutive_failures,
+                is_open,
+                opened_at_iso.as_deref(),
+            ) {
+                tracing::warn!(
+                    event = "circuit_breaker.persist_failed",
+                    provider = kind.as_setting(),
+                    error = %e,
+                    "Failed to persist circuit breaker state",
+                );
+            }
         }
     }
 
@@ -352,37 +458,42 @@ impl ProviderCircuitBreaker {
     /// history, which could mask systemic failures across other providers and
     /// stop the global breaker from ever tripping.
     pub fn record_success(&self, kind: EngineKind) {
-        let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
-        let (ref mut states, ref mut global, ref mut history) = *guard;
-        let state = states.entry(kind).or_default();
-        let was_open = state.opened_at.is_some();
-        state.consecutive_failures = 0;
-        state.opened_at = None;
+        let snapshot = {
+            let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
+            let (ref mut states, ref mut global, ref mut history) = *guard;
+            let state = states.entry(kind).or_default();
+            let was_open = state.opened_at.is_some();
+            state.consecutive_failures = 0;
+            state.opened_at = None;
 
-        if was_open {
-            tracing::info!(
-                event = "circuit_breaker.provider.closed",
-                provider = ?kind,
-                transition = "half_open -> closed",
-                "Circuit breaker closed for {:?} after successful probe",
-                kind,
-            );
-            Self::push_transition(history, CircuitTransitionEvent {
-                provider: kind.as_setting().to_string(),
-                from_state: "half_open".into(),
-                to_state: "closed".into(),
-                timestamp: Self::now_iso(),
-                failure_count: 0,
-            });
-        }
+            if was_open {
+                tracing::info!(
+                    event = "circuit_breaker.provider.closed",
+                    provider = ?kind,
+                    transition = "half_open -> closed",
+                    "Circuit breaker closed for {:?} after successful probe",
+                    kind,
+                );
+                Self::push_transition(history, CircuitTransitionEvent {
+                    provider: kind.as_setting().to_string(),
+                    from_state: "half_open".into(),
+                    to_state: "closed".into(),
+                    timestamp: Self::now_iso(),
+                    failure_count: 0,
+                });
+            }
 
-        // Remove at most one failure entry for this provider (the most recent).
-        // A single success offsets one failure rather than purging all, so that
-        // intermittent successes on one provider cannot mask cascading failures
-        // across the fleet.
-        if let Some(pos) = global.failure_times.iter().rposition(|(_, k)| *k == kind) {
-            global.failure_times.remove(pos);
-        }
+            // Remove at most one failure entry for this provider (the most recent).
+            // A single success offsets one failure rather than purging all, so that
+            // intermittent successes on one provider cannot mask cascading failures
+            // across the fleet.
+            if let Some(pos) = global.failure_times.iter().rposition(|(_, k)| *k == kind) {
+                global.failure_times.remove(pos);
+            }
+
+            states.clone()
+        };
+        self.persist_all(&snapshot);
     }
 
     /// Record a failure. Opens the per-provider circuit if its threshold is
@@ -393,68 +504,73 @@ impl ProviderCircuitBreaker {
     /// a per-provider open + a global pause). Callers with access to an
     /// `AppHandle` should emit these as Tauri events.
     pub fn record_failure(&self, kind: EngineKind) -> Vec<CircuitTransitionEvent> {
-        let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
-        let (ref mut states, ref mut global, ref mut history) = *guard;
-        let mut transitions = Vec::new();
+        let (transitions, snapshot) = {
+            let mut guard = self.states.lock().unwrap_or_else(|e| e.into_inner());
+            let (ref mut states, ref mut global, ref mut history) = *guard;
+            let mut transitions = Vec::new();
 
-        // Per-provider tracking
-        let state = states.entry(kind).or_default();
-        state.consecutive_failures += 1;
-        if state.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD && state.opened_at.is_none() {
-            tracing::warn!(
-                event = "circuit_breaker.provider.opened",
-                provider = ?kind,
-                failures = state.consecutive_failures,
-                transition = "closed -> open",
-                cooldown_secs = CIRCUIT_COOLDOWN.as_secs(),
-                "Circuit breaker opened for {:?} after {} consecutive failures",
-                kind,
-                state.consecutive_failures,
-            );
-            state.opened_at = Some(Instant::now());
-            let event = CircuitTransitionEvent {
-                provider: kind.as_setting().to_string(),
-                from_state: "closed".into(),
-                to_state: "open".into(),
-                timestamp: Self::now_iso(),
-                failure_count: state.consecutive_failures,
-            };
-            Self::push_transition(history, event.clone());
-            transitions.push(event);
-        }
+            // Per-provider tracking
+            let state = states.entry(kind).or_default();
+            state.consecutive_failures += 1;
+            if state.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD && state.opened_at.is_none() {
+                tracing::warn!(
+                    event = "circuit_breaker.provider.opened",
+                    provider = ?kind,
+                    failures = state.consecutive_failures,
+                    transition = "closed -> open",
+                    cooldown_secs = CIRCUIT_COOLDOWN.as_secs(),
+                    "Circuit breaker opened for {:?} after {} consecutive failures",
+                    kind,
+                    state.consecutive_failures,
+                );
+                state.opened_at = Some(Instant::now());
+                let event = CircuitTransitionEvent {
+                    provider: kind.as_setting().to_string(),
+                    from_state: "closed".into(),
+                    to_state: "open".into(),
+                    timestamp: Self::now_iso(),
+                    failure_count: state.consecutive_failures,
+                };
+                Self::push_transition(history, event.clone());
+                transitions.push(event);
+            }
 
-        // Global tracking: add timestamp and prune old entries outside the window
-        let now = Instant::now();
-        global.failure_times.push((now, kind));
-        global
-            .failure_times
-            .retain(|(t, _)| now.duration_since(*t) < GLOBAL_FAILURE_WINDOW);
+            // Global tracking: add timestamp and prune old entries outside the window
+            let now = Instant::now();
+            global.failure_times.push((now, kind));
+            global
+                .failure_times
+                .retain(|(t, _)| now.duration_since(*t) < GLOBAL_FAILURE_WINDOW);
 
-        if global.failure_times.len() as u32 >= GLOBAL_FAILURE_THRESHOLD
-            && global.paused_at.is_none()
-        {
-            tracing::warn!(
-                event = "circuit_breaker.global.opened",
-                transition = "closed -> paused",
-                total_failures = global.failure_times.len(),
-                window_secs = GLOBAL_FAILURE_WINDOW.as_secs(),
-                cooldown_secs = CIRCUIT_COOLDOWN.as_secs(),
-                "Global circuit breaker tripped: {} failures across all providers in {}s -- \
-                 pausing all failover attempts",
-                global.failure_times.len(),
-                GLOBAL_FAILURE_WINDOW.as_secs(),
-            );
-            global.paused_at = Some(now);
-            let event = CircuitTransitionEvent {
-                provider: "global".into(),
-                from_state: "closed".into(),
-                to_state: "paused".into(),
-                timestamp: Self::now_iso(),
-                failure_count: global.failure_times.len() as u32,
-            };
-            Self::push_transition(history, event.clone());
-            transitions.push(event);
-        }
+            if global.failure_times.len() as u32 >= GLOBAL_FAILURE_THRESHOLD
+                && global.paused_at.is_none()
+            {
+                tracing::warn!(
+                    event = "circuit_breaker.global.opened",
+                    transition = "closed -> paused",
+                    total_failures = global.failure_times.len(),
+                    window_secs = GLOBAL_FAILURE_WINDOW.as_secs(),
+                    cooldown_secs = CIRCUIT_COOLDOWN.as_secs(),
+                    "Global circuit breaker tripped: {} failures across all providers in {}s -- \
+                     pausing all failover attempts",
+                    global.failure_times.len(),
+                    GLOBAL_FAILURE_WINDOW.as_secs(),
+                );
+                global.paused_at = Some(now);
+                let event = CircuitTransitionEvent {
+                    provider: "global".into(),
+                    from_state: "closed".into(),
+                    to_state: "paused".into(),
+                    timestamp: Self::now_iso(),
+                    failure_count: global.failure_times.len() as u32,
+                };
+                Self::push_transition(history, event.clone());
+                transitions.push(event);
+            }
+
+            (transitions, states.clone())
+        };
+        self.persist_all(&snapshot);
 
         transitions
     }

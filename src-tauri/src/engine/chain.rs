@@ -6,6 +6,7 @@ use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
+use crate::engine::lifecycle::TriggerStatus;
 use crate::error::AppError;
 
 /// Maximum chain depth before we refuse to fire further chain triggers.
@@ -27,6 +28,8 @@ pub struct CascadeMetrics {
     pub cycles_detected: u32,
     /// Number of triggers that failed to mark as triggered (and were disabled).
     pub mark_failures: u32,
+    /// Number of triggers moved to errored state (mark + disable both failed).
+    pub broken_triggers: u32,
     /// Wall-clock duration of this hop in milliseconds.
     pub duration_ms: u64,
     /// The chain depth at which this evaluation ran.
@@ -197,7 +200,116 @@ pub fn evaluate_chain_triggers(
             .unwrap_or("chain_triggered")
             .to_string();
 
-        // Publish event targeting the chain trigger's persona
+        // Mark trigger as fired BEFORE publishing the event — critical ordering to
+        // prevent duplicate executions. If we published first and then crashed or
+        // mark_triggered failed, the trigger would remain unmarked and re-fire on
+        // next startup, causing a duplicate downstream execution.
+        // Retry once on failure; if both attempts fail, disable the trigger and
+        // skip publishing to prevent cascade re-fire loops.
+        let mark_result = trigger_repo::mark_triggered(
+            pool,
+            &trigger.id,
+            None,
+            trigger.trigger_version,
+        );
+        let mark_ok = match mark_result {
+            Ok(_) => true,
+            Err(first_err) => {
+                tracing::warn!(
+                    trigger_id = %trigger.id,
+                    error = %first_err,
+                    "Chain trigger mark_triggered failed, retrying once"
+                );
+                // Retry once
+                match trigger_repo::mark_triggered(
+                    pool,
+                    &trigger.id,
+                    None,
+                    trigger.trigger_version,
+                ) {
+                    Ok(_) => true,
+                    Err(retry_err) => {
+                        metrics.mark_failures += 1;
+                        let error_ctx = format!(
+                            "mark_triggered failed twice: first={first_err}, retry={retry_err}"
+                        );
+                        tracing::error!(
+                            trigger_id = %trigger.id,
+                            source_persona_id = %source_persona_id,
+                            target_persona_id = %trigger.persona_id,
+                            chain_depth,
+                            first_error = %first_err,
+                            retry_error = %retry_err,
+                            "Chain trigger mark_triggered failed after retry — \
+                             moving trigger to errored state and event to dead letter queue"
+                        );
+
+                        // Try set_status(Errored) first (writes both status + enabled columns),
+                        // fall back to set_enabled(false) if the status column is unavailable.
+                        let quarantined = trigger_repo::set_status(
+                            pool,
+                            &trigger.id,
+                            TriggerStatus::Errored,
+                        )
+                        .or_else(|_| trigger_repo::set_enabled(pool, &trigger.id, false));
+
+                        if let Err(quarantine_err) = quarantined {
+                            // Both disable paths failed — record the event in the dead
+                            // letter queue so the cascade cannot re-process it.
+                            metrics.broken_triggers += 1;
+                            tracing::error!(
+                                trigger_id = %trigger.id,
+                                error = %quarantine_err,
+                                "Failed to quarantine trigger after mark_triggered failure — \
+                                 sending event to dead letter queue to prevent cascade loop"
+                            );
+                        }
+
+                        // Always publish to the dead letter queue so there is a
+                        // persistent record regardless of whether the trigger was
+                        // successfully quarantined.
+                        let dlq_error = format!(
+                            "Chain trigger {trigger_id} could not be marked as triggered \
+                             and was moved to errored state. {error_ctx}",
+                            trigger_id = trigger.id,
+                        );
+                        if let Err(dlq_err) = event_repo::publish_dead_letter(
+                            pool,
+                            CreatePersonaEventInput {
+                                event_type: event_type.clone(),
+                                source_type: "chain".into(),
+                                source_id: Some(trigger.id.clone()),
+                                target_persona_id: Some(trigger.persona_id.clone()),
+                                project_id: None,
+                                payload: payload.clone(),
+                                use_case_id: trigger.use_case_id.clone(),
+                            },
+                            dlq_error,
+                        ) {
+                            tracing::error!(
+                                trigger_id = %trigger.id,
+                                error = %dlq_err,
+                                "Failed to publish dead letter event for broken chain trigger"
+                            );
+                        }
+
+                        false
+                    }
+                }
+            }
+        };
+
+        // Only publish the event if mark_triggered succeeded — this ensures we
+        // never have an event in flight for a trigger that hasn't been marked.
+        if !mark_ok {
+            tracing::warn!(
+                trigger_id = %trigger.id,
+                "Skipping event publish because mark_triggered failed"
+            );
+            metrics.events_failed += 1;
+            continue;
+        }
+
         match event_repo::publish(
             pool,
             CreatePersonaEventInput {
@@ -221,58 +333,6 @@ pub fn evaluate_chain_triggers(
                     trigger.persona_id,
                 );
                 metrics.events_published += 1;
-
-                // Mark trigger as fired — critical to prevent re-fire loops in cascades.
-                // Retry once on failure; if both attempts fail, disable the trigger to
-                // prevent exponential duplicate executions.
-                let mark_result = trigger_repo::mark_triggered(
-                    pool,
-                    &trigger.id,
-                    None,
-                    trigger.next_trigger_at.as_deref(),
-                );
-                match mark_result {
-                    Ok(_) => {}
-                    Err(first_err) => {
-                        tracing::warn!(
-                            trigger_id = %trigger.id,
-                            error = %first_err,
-                            "Chain trigger mark_triggered failed, retrying once"
-                        );
-                        // Retry once
-                        if let Err(retry_err) = trigger_repo::mark_triggered(
-                            pool,
-                            &trigger.id,
-                            None,
-                            trigger.next_trigger_at.as_deref(),
-                        ) {
-                            metrics.mark_failures += 1;
-                            tracing::error!(
-                                trigger_id = %trigger.id,
-                                source_persona_id = %source_persona_id,
-                                target_persona_id = %trigger.persona_id,
-                                chain_depth,
-                                first_error = %first_err,
-                                retry_error = %retry_err,
-                                "Chain trigger mark_triggered failed after retry — \
-                                 disabling trigger to prevent cascade re-fire loop"
-                            );
-                            // Disable the trigger to prevent infinite re-fire
-                            if let Err(disable_err) = trigger_repo::set_enabled(
-                                pool,
-                                &trigger.id,
-                                false,
-                            ) {
-                                tracing::error!(
-                                    trigger_id = %trigger.id,
-                                    error = %disable_err,
-                                    "Failed to disable trigger after mark_triggered failure — \
-                                     manual intervention required to prevent cascade loops"
-                                );
-                            }
-                        }
-                    }
-                }
             }
             Err(e) => {
                 tracing::error!(
@@ -296,6 +356,7 @@ pub fn evaluate_chain_triggers(
         events_failed = metrics.events_failed,
         cycles_detected = metrics.cycles_detected,
         mark_failures = metrics.mark_failures,
+        broken_triggers = metrics.broken_triggers,
         duration_ms = metrics.duration_ms,
         "Chain cascade hop completed"
     );

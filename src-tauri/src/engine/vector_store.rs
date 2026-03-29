@@ -66,7 +66,14 @@ impl SqliteVectorStore {
         Ok(())
     }
 
+    /// Maximum vectors inserted per transaction to bound memory and DB lock time.
+    const VECTOR_INSERT_BATCH: usize = 500;
+
     /// Insert a batch of (chunk_id, embedding) pairs.
+    ///
+    /// Entries are inserted in transaction batches of [`Self::VECTOR_INSERT_BATCH`]
+    /// to prevent OOM on large ingests and avoid holding the SQLite write lock
+    /// for extended periods.
     pub fn insert_vectors(
         &self,
         kb_id: &str,
@@ -76,21 +83,27 @@ impl SqliteVectorStore {
             return Ok(0);
         }
 
-        let conn = self.pool.get()?;
+        let mut conn = self.pool.get()?;
         let table_name = vec_table_name(kb_id)?;
         let sql = format!(
             "INSERT INTO [{table_name}] (chunk_id, embedding) VALUES (?1, ?2)"
         );
-        let mut stmt = conn.prepare(&sql)?;
 
-        let mut count = 0;
-        for (chunk_id, embedding) in entries {
-            let blob = vec_f32_to_blob(embedding);
-            stmt.execute(params![chunk_id, blob])?;
-            count += 1;
+        let mut total = 0;
+        for batch in entries.chunks(Self::VECTOR_INSERT_BATCH) {
+            let tx = conn.transaction()?;
+            {
+                let mut stmt = tx.prepare_cached(&sql)?;
+                for (chunk_id, embedding) in batch {
+                    let blob = vec_f32_to_blob(embedding);
+                    stmt.execute(params![chunk_id, blob])?;
+                    total += 1;
+                }
+            }
+            tx.commit()?;
         }
 
-        Ok(count)
+        Ok(total)
     }
 
     /// K-nearest-neighbor similarity search.

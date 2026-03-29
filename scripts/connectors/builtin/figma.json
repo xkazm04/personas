@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "figd_...",
-      "helpText": "From Figma -> Settings -> Personal Access Tokens -> Generate"
+      "helpText": "From Figma -> Settings -> Personal Access Tokens -> Generate",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

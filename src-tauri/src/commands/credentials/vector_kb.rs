@@ -655,27 +655,25 @@ pub async fn kb_search(
         return Ok(Vec::new());
     }
 
-    // Hydrate results with chunk and document metadata in a single batch query
+    // Hydrate results with chunk and document metadata in a single batch query.
+    // Uses json_each() with a single JSON array parameter so the query shape is
+    // stable regardless of result count, allowing SQLite to cache the query plan.
     let conn = state.user_db.get()?;
 
-    let placeholders: Vec<String> = (1..=matches.len()).map(|i| format!("?{i}")).collect();
-    let sql = format!(
+    let chunk_ids_json = serde_json::to_string(
+        &matches.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+    )
+    .map_err(|e| AppError::Internal(format!("Failed to serialize chunk IDs: {e}")))?;
+
+    let mut stmt = conn.prepare_cached(
         "SELECT c.id, c.document_id, c.content, c.metadata_json,
                 d.title, d.source_path
          FROM kb_chunks c
          JOIN kb_documents d ON d.id = c.document_id
-         WHERE c.id IN ({})",
-        placeholders.join(", ")
-    );
+         WHERE c.id IN (SELECT value FROM json_each(?1))",
+    )?;
 
-    let mut stmt = conn.prepare(&sql)?;
-    let chunk_ids: Vec<&str> = matches.iter().map(|(id, _)| id.as_str()).collect();
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = chunk_ids
-        .iter()
-        .map(|id| id as &dyn rusqlite::types::ToSql)
-        .collect();
-
-    let rows = stmt.query_map(param_refs.as_slice(), |row| {
+    let rows = stmt.query_map(params![chunk_ids_json], |row| {
         Ok((
             row.get::<_, String>(0)?,
             row.get::<_, String>(1)?,

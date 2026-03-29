@@ -12,7 +12,8 @@
       "type": "text",
       "required": false,
       "placeholder": "bash",
-      "helpText": "Preferred shell (bash, zsh, powershell). Auto-detected if left blank."
+      "helpText": "Preferred shell (bash, zsh, powershell). Auto-detected if left blank.",
+      "sensitive": true
     }
   ],
   "healthcheck_config": null,

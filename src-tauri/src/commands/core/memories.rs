@@ -354,17 +354,28 @@ Memories to review:
 
     for review in &reviews {
         let id = review.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        let score = review.get("score").and_then(|v| v.as_i64()).unwrap_or(5) as i32;
+
+        if id.is_empty() {
+            continue;
+        }
+
+        // Only act on IDs that exist in the fetched batch — reject hallucinated IDs
+        let title = match title_map.get(id) {
+            Some(t) => t.to_string(),
+            None => continue,
+        };
+
+        // Reject reviews with missing scores instead of defaulting to a low value
+        let score = match review.get("score").and_then(|v| v.as_i64()) {
+            Some(s) => s as i32,
+            None => continue,
+        };
+
         let reason = review
             .get("reason")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
-        let title = title_map.get(id).unwrap_or(&"Unknown").to_string();
-
-        if id.is_empty() {
-            continue;
-        }
 
         if score < threshold {
             let _ = repo::delete(&db, id);
@@ -457,7 +468,7 @@ pub fn seed_mock_memory(
             category: Some(MOCK_CATEGORIES[t % MOCK_CATEGORIES.len()].to_string()),
             source_execution_id: None,
             importance: Some(((t % 5) + 1) as i32),
-            tags: Some(MOCK_TAGS[t % MOCK_TAGS.len()].to_string()),
+            tags: Some(crate::db::models::Json(vec![MOCK_TAGS[t % MOCK_TAGS.len()].to_string()])),
         };
 
         return repo::create(&_state.db, input);

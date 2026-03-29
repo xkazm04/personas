@@ -27,6 +27,7 @@ use crate::error::AppError;
 
 struct CachedPreview {
     bytes: Vec<u8>,
+    bundle_hash: String,
     created_at: Instant,
 }
 
@@ -36,26 +37,24 @@ static PREVIEW_CACHE: std::sync::LazyLock<Mutex<HashMap<String, CachedPreview>>>
 /// Max age for cached previews (5 minutes).
 const PREVIEW_TTL_SECS: u64 = 300;
 
-fn cache_preview(preview_id: &str, bytes: Vec<u8>) {
+fn cache_preview(preview_id: &str, bytes: Vec<u8>, bundle_hash: String) {
     let mut cache = PREVIEW_CACHE.lock().unwrap();
     // Evict expired entries opportunistically
     cache.retain(|_, v| v.created_at.elapsed().as_secs() < PREVIEW_TTL_SECS);
     cache.insert(preview_id.to_string(), CachedPreview {
         bytes,
+        bundle_hash,
         created_at: Instant::now(),
     });
 }
 
-/// Consume cached preview bytes for use during import (TOCTOU mitigation).
-pub fn take_cached_preview_bytes(preview_id: &str) -> Option<Vec<u8>> {
-    take_cached_preview(preview_id)
-}
-
-fn take_cached_preview(preview_id: &str) -> Option<Vec<u8>> {
+/// Consume cached preview bytes and their hash for use during import (TOCTOU mitigation).
+/// Returns `(bytes, bundle_hash)` if the cache entry exists and hasn't expired.
+pub fn take_cached_preview_bytes(preview_id: &str) -> Option<(Vec<u8>, String)> {
     let mut cache = PREVIEW_CACHE.lock().unwrap();
     if let Some(entry) = cache.remove(preview_id) {
         if entry.created_at.elapsed().as_secs() < PREVIEW_TTL_SECS {
-            return Some(entry.bytes);
+            return Some((entry.bytes, entry.bundle_hash));
         }
     }
     None
@@ -157,6 +156,9 @@ pub struct BundleImportOptions {
     pub rename_prefix: Option<String>,
     /// When set, apply uses the cached preview bytes instead of re-reading the file.
     pub preview_id: Option<String>,
+    /// SHA-256 hash from the preview step. When set, the apply step verifies
+    /// the bundle bytes match this hash before importing (TOCTOU mitigation).
+    pub expected_bundle_hash: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -243,7 +245,7 @@ pub fn export_bundle(
 
     // Sign the manifest
     let manifest_json = serde_json::to_string_pretty(&manifest)?;
-    let signature_b64 = identity::sign_message(manifest_json.as_bytes())?;
+    let signature_b64 = identity::sign_message(pool, manifest_json.as_bytes())?;
 
     let sig = BundleSignature {
         signer_peer_id: local_identity.peer_id.clone(),
@@ -358,7 +360,7 @@ pub fn preview_bundle(
 
     // Cache the bundle bytes keyed by preview_id so apply_import can use
     // the exact same data the user previewed (TOCTOU mitigation).
-    cache_preview(&preview_id, bundle_bytes.to_vec());
+    cache_preview(&preview_id, bundle_bytes.to_vec(), bundle_hash.clone());
 
     Ok(BundleImportPreview {
         preview_id,

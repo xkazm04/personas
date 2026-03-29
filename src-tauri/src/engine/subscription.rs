@@ -144,6 +144,7 @@ pub struct ContextRuleSubscription {
 /// Composite trigger subscription: evaluate composite conditions against event stream.
 pub struct CompositeSubscription {
     pub pool: DbPool,
+    pub composite_state: super::composite::CompositeState,
 }
 
 /// Auto-rollback subscription: periodically checks personas with auto-rollback
@@ -161,6 +162,14 @@ pub struct OAuthRefreshSubscription {
 
 /// Periodic sweep for zombie executions stuck in 'running' state.
 pub struct ZombieExecutionSubscription {
+    pub pool: DbPool,
+    pub app: AppHandle,
+}
+
+/// Performance digest subscription: periodically generates and delivers
+/// a performance digest summarizing agent success rates, cost trends,
+/// top failures, credential health, and anomalies.
+pub struct DigestSubscription {
     pub pool: DbPool,
     pub app: AppHandle,
 }
@@ -457,7 +466,7 @@ impl ReactiveSubscription for CompositeSubscription {
     }
 
     async fn tick(&self) {
-        super::composite::composite_tick(&self.pool);
+        super::composite::composite_tick(&self.pool, &self.composite_state);
     }
 }
 
@@ -517,6 +526,27 @@ impl ReactiveSubscription for ZombieExecutionSubscription {
 
     async fn tick(&self) {
         super::background::zombie_execution_tick(&self.pool, &self.app);
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for DigestSubscription {
+    fn name(&self) -> &'static str {
+        "performance_digest"
+    }
+
+    fn interval(&self) -> Duration {
+        // Check every 30 minutes whether a digest is due
+        Duration::from_secs(1800)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        // Wait 2 minutes after startup before first check
+        Duration::from_secs(120)
+    }
+
+    async fn tick(&self) {
+        super::digest::digest_tick(&self.pool, &self.app);
     }
 }
 

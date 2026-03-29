@@ -6,16 +6,9 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import type { ToolCallStep } from '@/lib/bindings/ToolCallStep';
 
-export interface ToolCallStep {
-  step_index: number;
-  tool_name: string;
-  input_preview: string;
-  output_preview: string;
-  started_at_ms: number;
-  ended_at_ms?: number;
-  duration_ms?: number;
-}
+export type { ToolCallStep };
 
 export interface TimelineLogLine {
   index: number;
@@ -74,15 +67,9 @@ export interface ReplayActions {
   setForkPoint: (stepIndex: number | null) => void;
 }
 
-function parseToolSteps(raw: string | null): ToolCallStep[] {
+function parseToolSteps(raw: ToolCallStep[] | null): ToolCallStep[] {
   if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    // intentional: non-critical -- malformed JSON returns empty array
-    return [];
-  }
+  return Array.isArray(raw) ? raw : [];
 }
 
 function buildTimelineLines(logContent: string | null, totalMs: number): TimelineLogLine[] {
@@ -98,7 +85,7 @@ function buildTimelineLines(logContent: string | null, totalMs: number): Timelin
 }
 
 export function useReplayTimeline(
-  toolStepsJson: string | null,
+  toolStepsJson: ToolCallStep[] | null,
   logContent: string | null,
   durationMs: number | null,
   totalCost: number,

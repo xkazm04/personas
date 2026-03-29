@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use std::time::Instant;
 
-use crate::db::models::{AutomationRun, PersonaAutomation};
+use crate::db::models::{
+    AutomationFallbackMode, AutomationPlatform, AutomationRun, AutomationRunStatus,
+    PersonaAutomation,
+};
 use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::automations as repo;
 use crate::db::repos::resources::credentials as cred_repo;
@@ -20,7 +23,7 @@ pub async fn invoke_automation(
     execution_id: Option<&str>,
 ) -> Result<AutomationRun, AppError> {
     // GitHub Actions uses repository dispatch instead of webhook
-    if automation.platform == "github_actions" {
+    if automation.platform == AutomationPlatform::GithubActions {
         return invoke_github_dispatch(pool, automation, input_json, execution_id).await;
     }
 
@@ -49,12 +52,38 @@ pub async fn invoke_automation(
 
     let start = Instant::now();
 
-    // Execute the webhook (auth_headers already resolved above)
+    // Execute the webhook with retries for transient failures
     let method = automation.webhook_method.as_str();
     let body = input_json.unwrap_or("{}");
     let timeout_ms = automation.timeout_ms;
+    let max_attempts = (automation.retry_count.max(1)) as u32;
 
-    let result = invoke_webhook(webhook_url, method, body, &auth_resolution.headers, timeout_ms).await;
+    let mut result = invoke_webhook(webhook_url, method, body, &auth_resolution.headers, timeout_ms).await;
+
+    // Retry on transient errors with exponential backoff
+    if max_attempts > 1 {
+        let mut attempt = 1u32;
+        while attempt < max_attempts && is_retryable_error(&result) {
+            let backoff = std::time::Duration::from_millis(1000 * 2u64.pow(attempt - 1));
+            tracing::info!(
+                automation = %automation.name,
+                attempt = attempt + 1,
+                max_attempts = max_attempts,
+                backoff_ms = backoff.as_millis() as u64,
+                "Retrying webhook after transient failure"
+            );
+            tokio::time::sleep(backoff).await;
+            result = invoke_webhook(webhook_url, method, body, &auth_resolution.headers, timeout_ms).await;
+            attempt += 1;
+        }
+        if attempt > 1 {
+            if result.is_ok() {
+                warnings.push(format!("Succeeded on attempt {attempt}/{max_attempts}"));
+            } else {
+                warnings.push(format!("Failed after {attempt}/{max_attempts} attempts"));
+            }
+        }
+    }
 
     let duration_ms = start.elapsed().as_millis() as i64;
 
@@ -75,7 +104,7 @@ pub async fn invoke_automation(
     )?;
 
     // Structured audit logging (best-effort)
-    let (status, err_msg) = if completed_run.status == "completed" {
+    let (status, err_msg) = if completed_run.status == AutomationRunStatus::Completed {
         ("success", None)
     } else {
         ("error", completed_run.error_message.as_deref())
@@ -220,7 +249,7 @@ fn finalize_run(
             let completed = repo::complete_run(
                 pool,
                 run_id,
-                "completed",
+                AutomationRunStatus::Completed,
                 Some(&output),
                 Some(duration_ms),
                 None,
@@ -235,7 +264,7 @@ fn finalize_run(
             let completed = repo::complete_run(
                 pool,
                 run_id,
-                "failed",
+                AutomationRunStatus::Failed,
                 None,
                 Some(duration_ms),
                 None,
@@ -246,6 +275,22 @@ fn finalize_run(
             let _ = repo::record_trigger_result(pool, automation_id, "failed", Some(&error_msg));
             Ok(completed)
         }
+    }
+}
+
+/// Check if a webhook error is transient and worth retrying.
+///
+/// Retryable: timeouts, connection failures, 5xx server errors.
+/// Non-retryable: 4xx client errors, response too large, validation errors.
+fn is_retryable_error(result: &Result<(String, u16, Vec<String>), AppError>) -> bool {
+    match result {
+        Ok(_) => false,
+        Err(AppError::Execution(msg)) => {
+            msg.contains("timed out")
+                || msg.contains("Failed to connect")
+                || msg.contains("HTTP 5")
+        }
+        _ => false,
     }
 }
 
@@ -338,19 +383,14 @@ async fn invoke_webhook(
 pub fn automation_to_virtual_tool(
     auto: &PersonaAutomation,
 ) -> crate::db::models::PersonaToolDefinition {
-    let platform_label = match auto.platform.as_str() {
-        "n8n" => "n8n",
-        "github_actions" => "GitHub Actions",
-        "zapier" => "Zapier",
-        _ => "External Workflow",
-    };
+    let platform_label = auto.platform.label();
 
     let description = format!(
         "{} [Automation -- {}. Runs instantly without using your tokens.]",
         auto.description, platform_label
     );
 
-    let fallback_note = if auto.fallback_mode == "connector" {
+    let fallback_note = if auto.fallback_mode == AutomationFallbackMode::Connector {
         "\nNote: If this automation fails, fall back to using the agent's direct connectors instead."
     } else {
         ""

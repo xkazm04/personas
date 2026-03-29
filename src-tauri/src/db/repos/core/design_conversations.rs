@@ -80,6 +80,39 @@ pub fn append_message(
     })
 }
 
+/// Append a single message to a conversation server-side using SQL json_insert.
+/// This avoids transferring the full message history over IPC -- only the new
+/// message is sent.  The 500-message cap is enforced atomically.
+pub fn append_single_message(
+    pool: &DbPool,
+    id: &str,
+    message_json: &str,
+    last_result: Option<&str>,
+    max_messages: u32,
+) -> Result<DesignConversation, AppError> {
+    timed_query!("design_conversations", "design_conversations::append_single_message", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        // Append the new message, then trim the front if over the cap.
+        let rows = conn.execute(
+            "UPDATE design_conversations
+             SET messages = CASE
+                   WHEN json_array_length(messages) >= ?5
+                   THEN json_remove(json_insert(messages, '$[#]', json(?2)), '$[0]')
+                   ELSE json_insert(messages, '$[#]', json(?2))
+                 END,
+                 last_result = COALESCE(?3, last_result),
+                 updated_at = ?4
+             WHERE id = ?1",
+            params![id, message_json, last_result, now, max_messages],
+        )?;
+        if rows == 0 {
+            return Err(AppError::NotFound(format!("Design conversation {id}")));
+        }
+        get_by_id(pool, id)
+    })
+}
+
 /// Update the status of a conversation.
 pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppError> {
     timed_query!("design_conversations", "design_conversations::update_status", {

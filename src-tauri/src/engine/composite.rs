@@ -12,7 +12,7 @@
 //!    to prevent re-firing until conditions reset.
 //! 4. Log partial-match diagnostics for near-miss evaluations.
 
-use std::sync::LazyLock;
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use chrono::{DateTime, Duration, Utc};
@@ -62,55 +62,75 @@ pub struct PartialMatchResult {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory state — backed by KeyedResourcePool
+// Instance-based state — replaces former static globals for test isolation
+// and safe concurrent access.
 // ---------------------------------------------------------------------------
 
-/// trigger_id → last time it fired (used to suppress re-firing within the window).
-/// No automatic pruning — entries are retained by time predicate in `composite_tick`.
-static LAST_FIRED: LazyLock<KeyedResourcePool<String, DateTime<Utc>>> =
-    LazyLock::new(|| KeyedResourcePool::new(0, 0));
+/// Owns the in-memory composite trigger state.  Each `CompositeState` is
+/// independent, so unit tests can create throwaway instances without
+/// cross-contamination.
+///
+/// The `tick_lock` serialises hydration + evaluation so that concurrent
+/// `composite_tick` calls (e.g. during rapid restarts) cannot interleave
+/// a half-finished hydration with a tick that reads stale suppression data.
+#[derive(Clone)]
+pub struct CompositeState {
+    /// trigger_id → last time it fired (suppresses re-firing within the window).
+    last_fired: KeyedResourcePool<String, DateTime<Utc>>,
+    /// trigger_id → latest partial match result (overwritten each tick).
+    latest_matches: KeyedResourcePool<String, PartialMatchResult>,
+    /// Whether we have already hydrated `last_fired` from the database.
+    hydrated: std::sync::Arc<AtomicBool>,
+    /// Serialises the hydrate-then-evaluate sequence within a single tick.
+    tick_lock: std::sync::Arc<Mutex<()>>,
+}
 
-/// trigger_id → latest partial match result (overwritten each tick).
-static LATEST_MATCHES: LazyLock<KeyedResourcePool<String, PartialMatchResult>> =
-    LazyLock::new(|| KeyedResourcePool::new(0, 0));
-
-/// Whether we have already hydrated LAST_FIRED from the database on this app run.
-static HYDRATED: AtomicBool = AtomicBool::new(false);
-
-/// Hydrate the in-memory LAST_FIRED cache from the persisted composite_trigger_fires table.
-/// Called once on the first composite tick after app (re)start.
-fn hydrate_from_db(pool: &DbPool) {
-    if HYDRATED.swap(true, Ordering::SeqCst) {
-        return; // already hydrated
+impl CompositeState {
+    pub fn new() -> Self {
+        Self {
+            last_fired: KeyedResourcePool::new(0, 0),
+            latest_matches: KeyedResourcePool::new(0, 0),
+            hydrated: std::sync::Arc::new(AtomicBool::new(false)),
+            tick_lock: std::sync::Arc::new(Mutex::new(())),
+        }
     }
-    match trigger_repo::load_composite_fires(pool) {
-        Ok(rows) => {
-            for (trigger_id, fired_at) in rows {
-                if let Ok(ts) = DateTime::parse_from_rfc3339(&fired_at) {
-                    // Only insert if not already present (shouldn't be on first tick, but safe)
-                    if LAST_FIRED.get(&trigger_id).is_none() {
-                        LAST_FIRED.insert(trigger_id, ts.with_timezone(&Utc));
+
+    /// Hydrate the in-memory `last_fired` cache from the persisted
+    /// `composite_trigger_fires` table.  Called once on the first composite
+    /// tick after app (re)start.  The caller must already hold `tick_lock`.
+    fn hydrate_from_db(&self, pool: &DbPool) {
+        if self.hydrated.swap(true, Ordering::SeqCst) {
+            return; // already hydrated
+        }
+        match trigger_repo::load_composite_fires(pool) {
+            Ok(rows) => {
+                for (trigger_id, fired_at) in rows {
+                    if let Ok(ts) = DateTime::parse_from_rfc3339(&fired_at) {
+                        if self.last_fired.get(&trigger_id).is_none() {
+                            self.last_fired.insert(trigger_id, ts.with_timezone(&Utc));
+                        }
                     }
                 }
+                tracing::debug!("Hydrated composite trigger suppression state from DB");
             }
-            tracing::debug!("Hydrated composite trigger suppression state from DB");
-        }
-        Err(e) => {
-            tracing::warn!("Failed to hydrate composite fires from DB: {e}");
-            // Reset so we retry next tick
-            HYDRATED.store(false, Ordering::SeqCst);
+            Err(e) => {
+                tracing::warn!("Failed to hydrate composite fires from DB: {e}");
+                // Reset so we retry next tick
+                self.hydrated.store(false, Ordering::SeqCst);
+            }
         }
     }
-}
 
-/// Returns the most recent partial-match snapshots for all evaluated composite triggers.
-pub fn get_partial_matches() -> Vec<PartialMatchResult> {
-    LATEST_MATCHES.values()
-}
+    /// Returns the most recent partial-match snapshots for all evaluated
+    /// composite triggers.
+    pub fn get_partial_matches(&self) -> Vec<PartialMatchResult> {
+        self.latest_matches.values()
+    }
 
-/// Returns the partial-match snapshot for a single trigger, if available.
-pub fn get_partial_match_for(trigger_id: &str) -> Option<PartialMatchResult> {
-    LATEST_MATCHES.get(trigger_id)
+    /// Returns the partial-match snapshot for a single trigger, if available.
+    pub fn get_partial_match_for(&self, trigger_id: &str) -> Option<PartialMatchResult> {
+        self.latest_matches.get(trigger_id)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -118,9 +138,16 @@ pub fn get_partial_match_for(trigger_id: &str) -> Option<PartialMatchResult> {
 // ---------------------------------------------------------------------------
 
 /// Tick function called by the CompositeSubscription.
-pub fn composite_tick(pool: &DbPool) {
+///
+/// The `tick_lock` inside `state` serialises hydration and evaluation so that
+/// concurrent calls cannot interleave a half-finished hydration with stale
+/// suppression reads.
+pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
+    // Acquire the tick lock to serialise hydration + evaluation.
+    let _guard = state.tick_lock.lock().unwrap_or_else(|e| e.into_inner());
+
     // Hydrate suppression state from DB on first tick after app start
-    hydrate_from_db(pool);
+    state.hydrate_from_db(pool);
 
     // Load all enabled composite triggers
     let triggers = match trigger_repo::get_all(pool) {
@@ -180,7 +207,7 @@ pub fn composite_tick(pool: &DbPool) {
             let op = operator.as_deref().unwrap_or("all");
 
             // Check if we already fired within the window (suppress re-firing)
-            let suppressed = LAST_FIRED
+            let suppressed = state.last_fired
                 .get(&trigger.id)
                 .map_or(false, |last| {
                     now.signed_duration_since(last).num_seconds() < window_secs as i64
@@ -226,7 +253,7 @@ pub fn composite_tick(pool: &DbPool) {
             };
 
             // Cache the partial match result
-            LATEST_MATCHES.insert(trigger.id.clone(), result);
+            state.latest_matches.insert(trigger.id.clone(), result);
 
             // Log partial-match diagnostics for near-misses
             if !fired && conditions_met > 0 {
@@ -245,7 +272,7 @@ pub fn composite_tick(pool: &DbPool) {
 
             if fired {
                 // Record firing in memory and persist to DB
-                LAST_FIRED.insert(trigger.id.clone(), now);
+                state.last_fired.insert(trigger.id.clone(), now);
                 if let Err(e) = trigger_repo::upsert_composite_fire(pool, &trigger.id, &now.to_rfc3339()) {
                     tracing::warn!(trigger_id = %trigger.id, "Failed to persist composite fire: {e}");
                 }
@@ -291,14 +318,14 @@ pub fn composite_tick(pool: &DbPool) {
     // that a trigger still needs. Previously used a hardcoded 3600s which raced
     // with triggers whose window_seconds == 3600.
     let cutoff = now - Duration::seconds(max_window as i64);
-    LAST_FIRED.retain(|_, v| *v > cutoff);
+    state.last_fired.retain(|_, v| *v > cutoff);
     // Persist the same cutoff to the DB table
     if let Err(e) = trigger_repo::cleanup_composite_fires(pool, &cutoff.to_rfc3339()) {
         tracing::warn!("Failed to cleanup composite fires in DB: {e}");
     }
     // Also clean up stale match results (keep for 2x the max window)
     let match_cutoff = now - Duration::seconds(max_window as i64 * 2);
-    LATEST_MATCHES.retain(|_, v| {
+    state.latest_matches.retain(|_, v| {
         if let Ok(ts) = DateTime::parse_from_rfc3339(&v.evaluated_at) {
             ts.with_timezone(&Utc) > match_cutoff
         } else {

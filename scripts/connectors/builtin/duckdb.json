@@ -12,7 +12,8 @@
       "type": "text",
       "required": true,
       "placeholder": "/path/to/data.duckdb",
-      "helpText": "File path to the DuckDB database (or :memory: for in-memory)"
+      "helpText": "File path to the DuckDB database (or :memory: for in-memory)",
+      "sensitive": true
     },
     {
       "key": "motherduck_token",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": false,
       "placeholder": "eyJ...",
-      "helpText": "Optional: MotherDuck service token for cloud-hosted DuckDB"
+      "helpText": "Optional: MotherDuck service token for cloud-hosted DuckDB",
+      "sensitive": true
     }
   ],
   "healthcheck_config": null,

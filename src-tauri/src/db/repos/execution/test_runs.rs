@@ -1,16 +1,25 @@
 use rusqlite::params;
 
-use crate::db::models::{CreateTestResultInput, PersonaTestResult, PersonaTestRun};
+use crate::db::models::{CreateTestResultInput, LabRunStatus, PersonaTestResult, PersonaTestRun};
 use crate::db::DbPool;
 use crate::error::AppError;
 
 // -- Row mappers ------------------------------------------------
 
-row_mapper!(row_to_run -> PersonaTestRun {
-    id, persona_id, status, models_tested,
-    scenarios_count, summary, error,
-    created_at, completed_at,
-});
+// row_to_run uses LabRunStatus::from_db() -- keep manual
+fn row_to_run(row: &rusqlite::Row) -> rusqlite::Result<PersonaTestRun> {
+    Ok(PersonaTestRun {
+        id: row.get("id")?,
+        persona_id: row.get("persona_id")?,
+        status: LabRunStatus::from_db(&row.get::<_, String>("status")?),
+        models_tested: row.get("models_tested")?,
+        scenarios_count: row.get("scenarios_count")?,
+        summary: row.get("summary")?,
+        error: row.get("error")?,
+        created_at: row.get("created_at")?,
+        completed_at: row.get("completed_at")?,
+    })
+}
 
 // row_to_result uses custom logic (unwrap_or for tokens/cost/duration) -- keep manual
 fn row_to_result(row: &rusqlite::Row) -> rusqlite::Result<PersonaTestResult> {
@@ -93,7 +102,7 @@ pub fn get_runs_by_persona(
 pub fn update_run_status(
     pool: &DbPool,
     id: &str,
-    status: &str,
+    status: LabRunStatus,
     scenarios_count: Option<i32>,
     summary: Option<&str>,
     error: Option<&str>,
@@ -101,6 +110,21 @@ pub fn update_run_status(
 ) -> Result<(), AppError> {
     timed_query!("test_runs", "test_runs::update_run_status", {
         let conn = pool.get()?;
+        // Validate state transition
+        let current: String = conn
+            .query_row(
+                "SELECT status FROM persona_test_runs WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("TestRun {id}")),
+                other => AppError::Database(other),
+            })?;
+        let current_status = LabRunStatus::from_db(&current);
+        current_status
+            .validate_transition(status)
+            .map_err(AppError::Validation)?;
         conn.execute(
             "UPDATE persona_test_runs SET
                 status = ?1,
@@ -109,7 +133,7 @@ pub fn update_run_status(
                 error = COALESCE(?4, error),
                 completed_at = COALESCE(?5, completed_at)
              WHERE id = ?6",
-            params![status, scenarios_count, summary, error, completed_at, id],
+            params![status.as_str(), scenarios_count, summary, error, completed_at, id],
         )?;
         Ok(())
     })
@@ -238,17 +262,18 @@ mod tests {
 
         // Create
         let run = create_run(&pool, &persona_id, r#"["haiku","sonnet"]"#).unwrap();
-        assert_eq!(run.status, "generating");
+        assert_eq!(run.status, LabRunStatus::Generating);
         assert_eq!(run.persona_id, persona_id);
 
         // Get by id
         let fetched = get_run_by_id(&pool, &run.id).unwrap();
         assert_eq!(fetched.id, run.id);
 
-        // Update
-        update_run_status(&pool, &run.id, "completed", Some(3), None, None, None).unwrap();
+        // Update: generating -> running -> completed
+        update_run_status(&pool, &run.id, LabRunStatus::Running, Some(3), None, None, None).unwrap();
+        update_run_status(&pool, &run.id, LabRunStatus::Completed, None, None, None, None).unwrap();
         let updated = get_run_by_id(&pool, &run.id).unwrap();
-        assert_eq!(updated.status, "completed");
+        assert_eq!(updated.status, LabRunStatus::Completed);
         assert_eq!(updated.scenarios_count, 3);
 
         // List

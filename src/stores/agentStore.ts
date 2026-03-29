@@ -23,6 +23,7 @@ export const useAgentStore = create<AgentStore>()(
       error: null,
       errorKind: null,
       isLoading: false,
+      sliceErrors: {},
       ...createPersonaSlice(...a),
       ...createToolSlice(...a),
       ...createExecutionSlice(...a),

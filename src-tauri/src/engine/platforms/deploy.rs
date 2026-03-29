@@ -2,7 +2,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use ts_rs::TS;
 
-use crate::db::models::{CreateAutomationInput, PersonaAutomation, UpdateAutomationInput};
+use crate::db::models::{
+    AutomationFallbackMode, AutomationPlatform, CreateAutomationInput, PersonaAutomation,
+    UpdateAutomationInput,
+};
 use crate::db::repos::resources::automations as automation_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -44,7 +47,7 @@ struct DesignResult {
     name: String,
     #[serde(default)]
     description: String,
-    platform: String,
+    platform: AutomationPlatform,
     #[serde(default)]
     webhook_url: Option<String>,
     #[serde(default)]
@@ -56,13 +59,13 @@ struct DesignResult {
     #[serde(default = "default_timeout")]
     timeout_secs: i64,
     #[serde(default = "default_fallback")]
-    fallback_mode: String,
+    fallback_mode: AutomationFallbackMode,
     #[serde(default)]
     workflow_definition: Option<Value>,
 }
 
 fn default_timeout() -> i64 { 30 }
-fn default_fallback() -> String { "connector".into() }
+fn default_fallback() -> AutomationFallbackMode { AutomationFallbackMode::Connector }
 
 /// Convert seconds (from AI design output / frontend) to milliseconds (DB storage).
 /// Clamps to a sane range: minimum 1 second, maximum 1 hour.
@@ -80,12 +83,11 @@ pub async fn deploy_automation(
         AppError::Validation(format!("Invalid design result: {e}"))
     })?;
 
-    match design.platform.as_str() {
-        "n8n" => deploy_n8n(pool, &input, &design).await,
-        "github_actions" => deploy_github(pool, &input, &design).await,
-        "zapier" => deploy_zapier(pool, &input, &design).await,
-        "custom" => deploy_custom(pool, &input, &design).await,
-        other => Err(AppError::Validation(format!("Unknown platform: {other}"))),
+    match design.platform {
+        AutomationPlatform::N8n => deploy_n8n(pool, &input, &design).await,
+        AutomationPlatform::GithubActions => deploy_github(pool, &input, &design).await,
+        AutomationPlatform::Zapier => deploy_zapier(pool, &input, &design).await,
+        AutomationPlatform::Custom => deploy_custom(pool, &input, &design).await,
     }
 }
 
@@ -154,7 +156,7 @@ async fn deploy_n8n(
             &input.persona_id,
             &design.name,
             &design.description,
-            "n8n",
+            AutomationPlatform::N8n,
             Some(&workflow_id),
             platform_url.as_deref(),
             webhook_url.as_deref(),
@@ -163,7 +165,7 @@ async fn deploy_n8n(
             design.input_schema.as_deref(),
             design.output_schema.as_deref(),
             design.timeout_secs,
-            &design.fallback_mode,
+            design.fallback_mode,
             input.use_case_id.as_deref(),
             warn,
         )?
@@ -173,7 +175,7 @@ async fn deploy_n8n(
             &input.persona_id,
             &design.name,
             &design.description,
-            "n8n",
+            AutomationPlatform::N8n,
             Some(&workflow_id),
             platform_url.as_deref(),
             webhook_url.as_deref(),
@@ -182,7 +184,7 @@ async fn deploy_n8n(
             design.input_schema.as_deref(),
             design.output_schema.as_deref(),
             design.timeout_secs,
-            &design.fallback_mode,
+            design.fallback_mode,
             input.use_case_id.as_deref(),
         )?
     };
@@ -312,7 +314,7 @@ async fn deploy_github(
         &input.persona_id,
         &design.name,
         &design.description,
-        "github_actions",
+        AutomationPlatform::GithubActions,
         None,
         Some(&platform_url),
         Some(&webhook_url),
@@ -321,7 +323,7 @@ async fn deploy_github(
         design.input_schema.as_deref(),
         design.output_schema.as_deref(),
         design.timeout_secs,
-        &design.fallback_mode,
+        design.fallback_mode,
         input.use_case_id.as_deref(),
     )?;
 
@@ -381,7 +383,7 @@ async fn deploy_zapier(
         &input.persona_id,
         &design.name,
         &design.description,
-        "zapier",
+        AutomationPlatform::Zapier,
         None,
         None,
         Some(&hook_url),
@@ -390,7 +392,7 @@ async fn deploy_zapier(
         design.input_schema.as_deref(),
         design.output_schema.as_deref(),
         design.timeout_secs,
-        &design.fallback_mode,
+        design.fallback_mode,
         input.use_case_id.as_deref(),
     )?;
 
@@ -419,7 +421,7 @@ async fn deploy_custom(
         use_case_id: input.use_case_id.clone(),
         name: design.name.clone(),
         description: Some(design.description.clone()),
-        platform: "custom".into(),
+        platform: AutomationPlatform::Custom,
         platform_workflow_id: None,
         platform_url: None,
         webhook_url: design.webhook_url.clone(),
@@ -430,7 +432,7 @@ async fn deploy_custom(
         output_schema: design.output_schema.clone(),
         timeout_ms: Some(timeout_secs_to_ms(design.timeout_secs)),
         retry_count: None,
-        fallback_mode: Some(design.fallback_mode.clone()),
+        fallback_mode: Some(design.fallback_mode),
     };
 
     let automation = automation_repo::create(pool, create_input)?;
@@ -453,7 +455,7 @@ fn create_and_activate(
     persona_id: &str,
     name: &str,
     description: &str,
-    platform: &str,
+    platform: AutomationPlatform,
     platform_workflow_id: Option<&str>,
     platform_url: Option<&str>,
     webhook_url: Option<&str>,
@@ -462,7 +464,7 @@ fn create_and_activate(
     input_schema: Option<&str>,
     output_schema: Option<&str>,
     timeout_secs: i64,
-    fallback_mode: &str,
+    fallback_mode: AutomationFallbackMode,
     use_case_id: Option<&str>,
 ) -> Result<PersonaAutomation, AppError> {
     let create_input = CreateAutomationInput {
@@ -470,7 +472,7 @@ fn create_and_activate(
         use_case_id: use_case_id.map(|s| s.into()),
         name: name.into(),
         description: Some(description.into()),
-        platform: platform.into(),
+        platform,
         platform_workflow_id: platform_workflow_id.map(|s| s.into()),
         platform_url: platform_url.map(|s| s.into()),
         webhook_url: webhook_url.map(|s| s.into()),
@@ -481,7 +483,7 @@ fn create_and_activate(
         output_schema: output_schema.map(|s| s.into()),
         timeout_ms: Some(timeout_secs_to_ms(timeout_secs)),
         retry_count: None,
-        fallback_mode: Some(fallback_mode.into()),
+        fallback_mode: Some(fallback_mode),
     };
 
     let auto = automation_repo::create(pool, create_input)?;
@@ -517,7 +519,7 @@ fn create_with_error(
     persona_id: &str,
     name: &str,
     description: &str,
-    platform: &str,
+    platform: AutomationPlatform,
     platform_workflow_id: Option<&str>,
     platform_url: Option<&str>,
     webhook_url: Option<&str>,
@@ -526,7 +528,7 @@ fn create_with_error(
     input_schema: Option<&str>,
     output_schema: Option<&str>,
     timeout_secs: i64,
-    fallback_mode: &str,
+    fallback_mode: AutomationFallbackMode,
     use_case_id: Option<&str>,
     error_msg: &str,
 ) -> Result<PersonaAutomation, AppError> {
@@ -535,7 +537,7 @@ fn create_with_error(
         use_case_id: use_case_id.map(|s| s.into()),
         name: name.into(),
         description: Some(description.into()),
-        platform: platform.into(),
+        platform,
         platform_workflow_id: platform_workflow_id.map(|s| s.into()),
         platform_url: platform_url.map(|s| s.into()),
         webhook_url: webhook_url.map(|s| s.into()),
@@ -546,7 +548,7 @@ fn create_with_error(
         output_schema: output_schema.map(|s| s.into()),
         timeout_ms: Some(timeout_secs_to_ms(timeout_secs)),
         retry_count: None,
-        fallback_mode: Some(fallback_mode.into()),
+        fallback_mode: Some(fallback_mode),
     };
 
     let auto = automation_repo::create(pool, create_input)?;

@@ -174,6 +174,9 @@ export const EventName = {
   // Engine fallback (unrecognized engine setting)
   ENGINE_FALLBACK: 'engine-fallback',
 
+  // Persona health (push-based summary refresh signal from backend)
+  PERSONA_HEALTH_CHANGED: 'persona-health-changed',
+
   // System trace (frontend-only, emitted by systemTrace module)
   SYSTEM_TRACE_UPDATED: 'system-trace-updated',
 } as const;
@@ -682,6 +685,11 @@ export interface EventPayloadMap {
   [EventName.ENGINE_FALLBACK]: {
     requested: string;
     actual: string;
+  };
+
+  // Persona health
+  [EventName.PERSONA_HEALTH_CHANGED]: {
+    persona_id: string;
   };
 
   // System trace

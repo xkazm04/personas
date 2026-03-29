@@ -168,18 +168,42 @@ impl CliProcessDriver {
         })
     }
 
+    /// Build and spawn a CLI process using the parent process's current working
+    /// directory.  The directory is NOT cleaned up automatically.
+    ///
+    /// This is the simplest variant — suitable for design analysis, reviews,
+    /// and other callers that don't need a specific or temp directory.
+    pub fn spawn_cwd(cli_args: &CliArgs) -> Result<Self, std::io::Error> {
+        let cwd = std::env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
+        let child = Self::build_and_spawn_core(cli_args, Some(&cwd))?;
+        let pid = child.id();
+        Ok(Self {
+            child,
+            exec_dir: cwd,
+            owns_exec_dir: false,
+            pid,
+        })
+    }
+
     /// Internal: configure and spawn a `tokio::process::Command` from `CliArgs`.
     ///
     /// stderr is sent to null to prevent buffer-full deadlocks on Windows
     /// (the ~4 KB pipe buffer fills up if nobody reads stderr, causing the
     /// child process to block on its next stderr write and hang forever).
     fn build_and_spawn(cli_args: &CliArgs, exec_dir: &PathBuf) -> Result<tokio::process::Child, std::io::Error> {
+        Self::build_and_spawn_core(cli_args, Some(exec_dir))
+    }
+
+    fn build_and_spawn_core(cli_args: &CliArgs, exec_dir: Option<&PathBuf>) -> Result<tokio::process::Child, std::io::Error> {
         let mut cmd = Command::new(&cli_args.command);
         cmd.args(&cli_args.args)
-            .current_dir(exec_dir)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::null());
+
+        if let Some(dir) = exec_dir {
+            cmd.current_dir(dir);
+        }
 
         #[cfg(windows)]
         {

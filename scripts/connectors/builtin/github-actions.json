@@ -6,13 +6,33 @@
   "icon_url": "/icons/connectors/github.svg",
   "category": "automation",
   "fields": [
-    { "key": "personal_access_token", "label": "Personal Access Token", "type": "password", "required": true, "placeholder": "ghp_...", "helpText": "Generate at github.com/settings/tokens -- needs 'repo' and 'workflow' scopes" },
-    { "key": "default_repo", "label": "Default Repository", "type": "text", "required": false, "placeholder": "owner/repo", "helpText": "Optional: default repository for workflow dispatches" }
+    {
+      "key": "personal_access_token",
+      "label": "Personal Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "ghp_...",
+      "helpText": "Generate at github.com/settings/tokens -- needs 'repo' and 'workflow' scopes",
+      "sensitive": true
+    },
+    {
+      "key": "default_repo",
+      "label": "Default Repository",
+      "type": "text",
+      "required": false,
+      "placeholder": "owner/repo",
+      "helpText": "Optional: default repository for workflow dispatches",
+      "sensitive": true
+    }
   ],
   "healthcheck_config": {
     "endpoint": "https://api.github.com/user",
     "method": "GET",
-    "headers": { "Authorization": "Bearer {{personal_access_token}}", "Accept": "application/vnd.github+json", "User-Agent": "personas-desktop" },
+    "headers": {
+      "Authorization": "Bearer {{personal_access_token}}",
+      "Accept": "application/vnd.github+json",
+      "User-Agent": "personas-desktop"
+    },
     "description": "Validates PAT via GitHub user endpoint"
   },
   "services": [],
@@ -26,7 +46,12 @@
     "is_platform": true,
     "platform_type": "github_actions",
     "auth_methods": [
-      { "id": "pat", "label": "PAT", "type": "credential", "is_default": true }
+      {
+        "id": "pat",
+        "label": "PAT",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

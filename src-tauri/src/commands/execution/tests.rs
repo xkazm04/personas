@@ -5,7 +5,7 @@ use tauri::{Emitter, State};
 use tokio::io::AsyncBufReadExt;
 use ts_rs::TS;
 
-use crate::db::models::{PersonaTestResult, PersonaTestRun};
+use crate::db::models::{LabRunStatus, PersonaTestResult, PersonaTestRun};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::test_runs as repo;
 use crate::db::repos::execution::test_suites as suite_repo;
@@ -145,7 +145,7 @@ pub fn cancel_test_run(
 
     // Update DB status immediately
     let now = chrono::Utc::now().to_rfc3339();
-    repo::update_run_status(&state.db, &id, "cancelled", None, None, None, Some(&now))?;
+    repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
 
     Ok(())
 }

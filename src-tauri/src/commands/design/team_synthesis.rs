@@ -122,6 +122,40 @@ Return ONLY a JSON object in this exact format:
 }
 
 // ============================================================================
+// Design context builder
+// ============================================================================
+
+/// Build a DesignContextData-format JSON string from a parsed design_result.
+///
+/// The rest of the codebase expects design_context to follow the DesignContextData
+/// schema with `useCases`, `summary`, and optional `builderMeta` keys.
+/// This extracts use cases from the design_result's `use_case_flows` field and
+/// the summary from its `summary` field, rather than storing the raw AgentIR output.
+fn build_design_context_from_result(design: &serde_json::Value, template_name: &str) -> String {
+    let use_cases = design
+        .get("use_case_flows")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let summary = design
+        .get("summary")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| format!("Synthesized from template: {}", template_name));
+
+    let context = json!({
+        "useCases": use_cases,
+        "summary": summary,
+        "builderMeta": {
+            "creationMethod": "team_synthesis"
+        }
+    });
+
+    serde_json::to_string(&context).unwrap_or_else(|_| "{}".to_string())
+}
+
+// ============================================================================
 // Command
 // ============================================================================
 
@@ -254,6 +288,9 @@ pub async fn synthesize_team_from_templates(
             .map(|s| s.to_string())
             .unwrap_or(tmpl.test_case_name.clone());
 
+        // Build proper DesignContextData-format design_context instead of raw design_result
+        let design_context_str = build_design_context_from_result(&design, &tmpl.test_case_name);
+
         let persona = persona_repo::create(
             &state.db,
             CreatePersonaInput {
@@ -270,7 +307,7 @@ pub async fn synthesize_team_from_templates(
                 model_profile,
                 max_budget_usd: None,
                 max_turns: None,
-                design_context: Some(design_json.to_string()),
+                design_context: Some(design_context_str),
                 group_id: None,
                 notification_channels: None,
             },

@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use super::lab::LabRunStatus;
+use super::Json;
+
 // ============================================================================
 // Test Runs (Multi-LLM Sandbox Testing)
 // ============================================================================
@@ -10,8 +13,8 @@ use ts_rs::TS;
 pub struct PersonaTestRun {
     pub id: String,
     pub persona_id: String,
-    pub status: String,
-    pub models_tested: String,
+    pub status: LabRunStatus,
+    pub models_tested: Json<Vec<String>>,
     #[ts(type = "number")]
     pub scenarios_count: i32,
     pub summary: Option<String>,
@@ -30,8 +33,8 @@ pub struct PersonaTestResult {
     pub provider: String,
     pub status: String,
     pub output_preview: Option<String>,
-    pub tool_calls_expected: Option<String>,
-    pub tool_calls_actual: Option<String>,
+    pub tool_calls_expected: Option<Json<Vec<String>>>,
+    pub tool_calls_actual: Option<Json<Vec<String>>>,
     #[ts(type = "number | null")]
     pub tool_accuracy_score: Option<i32>,
     #[ts(type = "number | null")]
@@ -57,8 +60,8 @@ pub struct CreateTestResultInput {
     pub provider: String,
     pub status: String,
     pub output_preview: Option<String>,
-    pub tool_calls_expected: Option<String>,
-    pub tool_calls_actual: Option<String>,
+    pub tool_calls_expected: Option<Json<Vec<String>>>,
+    pub tool_calls_actual: Option<Json<Vec<String>>>,
     pub tool_accuracy_score: Option<i32>,
     pub output_quality_score: Option<i32>,
     pub protocol_compliance: Option<i32>,

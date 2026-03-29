@@ -4,63 +4,15 @@ use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
 use crate::db::DbPool;
 use crate::engine::{chain, crypto, scheduler};
 use crate::error::AppError;
-
-const VALID_TRIGGER_TYPES: &[&str] = &[
-    "schedule", "polling", "webhook", "manual", "chain", "event_listener",
-    "file_watcher", "clipboard", "app_focus", "composite",
-];
-const MIN_INTERVAL_SECONDS: i64 = 60;
+use crate::validation::contract::check as validate_check;
+use crate::validation::trigger as tv;
 
 pub(crate) fn validate_trigger_type(trigger_type: &str) -> Result<(), AppError> {
-    if !VALID_TRIGGER_TYPES.contains(&trigger_type) {
-        return Err(AppError::Validation(format!(
-            "Invalid trigger_type '{}'. Must be one of: {}",
-            trigger_type,
-            VALID_TRIGGER_TYPES.join(", ")
-        )));
-    }
-    Ok(())
+    validate_check(tv::validate_trigger_type(trigger_type))
 }
 
 pub(crate) fn validate_config(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
-    if let Some(config_str) = config {
-        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(config_str) {
-            if let Some(interval) = parsed.get("interval_seconds") {
-                match interval.as_i64() {
-                    Some(n) if n < MIN_INTERVAL_SECONDS => {
-                        return Err(AppError::Validation(format!(
-                            "interval_seconds must be at least {MIN_INTERVAL_SECONDS}"
-                        )));
-                    }
-                    Some(_) => {}
-                    None => {
-                        return Err(AppError::Validation(
-                            "interval_seconds must be a valid integer".into(),
-                        ));
-                    }
-                }
-            }
-
-            // Webhook triggers must have a non-empty HMAC secret to prevent
-            // unauthenticated payloads from triggering persona executions.
-            if trigger_type == "webhook" {
-                let secret = parsed
-                    .get("webhook_secret")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
-                if secret.trim().is_empty() {
-                    return Err(AppError::Validation(
-                        "Webhook triggers require a non-empty webhook_secret for HMAC authentication".into(),
-                    ));
-                }
-            }
-        }
-    } else if trigger_type == "webhook" {
-        return Err(AppError::Validation(
-            "Webhook triggers require a config with a non-empty webhook_secret".into(),
-        ));
-    }
-    Ok(())
+    validate_check(tv::validate_config(trigger_type, config))
 }
 
 /// Encrypt sensitive fields in a trigger config JSON string before writing to DB.
@@ -79,6 +31,7 @@ row_mapper!(row_to_trigger -> PersonaTrigger {
     id, persona_id, trigger_type, config,
     enabled [bool], status,
     last_triggered_at, next_trigger_at,
+    trigger_version [opt_i32],
     created_at, updated_at, use_case_id,
 });
 
@@ -497,26 +450,27 @@ pub fn get_chain_links(
     })
 }
 
-/// Atomically claim a due trigger using compare-and-swap on `next_trigger_at`.
+/// Atomically claim a due trigger using compare-and-swap on `trigger_version`.
 ///
-/// The WHERE clause checks that `next_trigger_at` still matches the value the
+/// The WHERE clause checks that `trigger_version` still matches the value the
 /// caller read from `get_due`.  If a concurrent scheduler tick already advanced
-/// the schedule, this UPDATE touches 0 rows and returns `Ok(false)`, preventing
-/// double-fire.
+/// the schedule (incrementing the version), this UPDATE touches 0 rows and
+/// returns `Ok(false)`, preventing double-fire.
 pub fn mark_triggered(
     pool: &DbPool,
     id: &str,
     next_trigger_at: Option<String>,
-    expected_next_trigger_at: Option<&str>,
+    expected_version: i32,
 ) -> Result<bool, AppError> {
     timed_query!("persona_triggers", "persona_triggers::mark_triggered", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
         let rows = conn.execute(
             "UPDATE persona_triggers
-             SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1
-             WHERE id = ?3 AND next_trigger_at IS ?4",
-            params![now, next_trigger_at, id, expected_next_trigger_at],
+             SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1,
+                 trigger_version = trigger_version + 1
+             WHERE id = ?3 AND trigger_version = ?4",
+            params![now, next_trigger_at, id, expected_version],
         )?;
         Ok(rows > 0)
 
@@ -539,7 +493,8 @@ pub fn advance_schedule(
         let conn = pool.get()?;
         conn.execute(
             "UPDATE persona_triggers
-             SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1
+             SET last_triggered_at = ?1, next_trigger_at = ?2, updated_at = ?1,
+                 trigger_version = trigger_version + 1
              WHERE id = ?3",
             params![now, next_trigger_at, id],
         )?;
@@ -575,7 +530,8 @@ pub fn mark_triggered_with_hash(
                  SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
                      last_triggered_at = ?2,
                      next_trigger_at = ?3,
-                     updated_at = ?2
+                     updated_at = ?2,
+                     trigger_version = trigger_version + 1
                  WHERE id = ?4
                    AND json_extract(config, '$.content_hash') = ?5",
                 params![new_hash, now, next_trigger_at, id, old],
@@ -585,7 +541,8 @@ pub fn mark_triggered_with_hash(
                  SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
                      last_triggered_at = ?2,
                      next_trigger_at = ?3,
-                     updated_at = ?2
+                     updated_at = ?2,
+                     trigger_version = trigger_version + 1
                  WHERE id = ?4
                    AND json_extract(config, '$.content_hash') IS NULL",
                 params![new_hash, now, next_trigger_at, id],
@@ -781,9 +738,9 @@ mod tests {
         assert_eq!(due.len(), 1);
         assert_eq!(due[0].id, trigger.id);
 
-        // Mark triggered with a future next_trigger_at (CAS: old value = past)
+        // Mark triggered with a future next_trigger_at (CAS: version = 0 for fresh trigger)
         let future = "2099-12-31T23:59:59+00:00";
-        mark_triggered(&pool, &trigger.id, Some(future.into()), Some(past)).unwrap();
+        mark_triggered(&pool, &trigger.id, Some(future.into()), 0).unwrap();
 
         // Should no longer be due (next_trigger_at is in the future)
         let due_after = get_due(&pool, &now).unwrap();
@@ -807,7 +764,7 @@ mod tests {
         let pool = init_test_db().unwrap();
 
         // mark_triggered on a nonexistent ID should return Ok(false)
-        let result = mark_triggered(&pool, "nonexistent-id", None, None).unwrap();
+        let result = mark_triggered(&pool, "nonexistent-id", None, 0).unwrap();
         assert!(!result);
     }
 

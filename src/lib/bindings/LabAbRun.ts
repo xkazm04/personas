@@ -8,7 +8,7 @@ export interface LabAbRun {
   versionBId: string;
   versionANum: number;
   versionBNum: number;
-  modelsTested: string;
+  modelsTested: string[];
   scenariosCount: number;
   useCaseFilter: string | null;
   testInput: string | null;

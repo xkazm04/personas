@@ -339,13 +339,13 @@ pub fn list_credential_fields(
 }
 
 /// Update a single credential field by key.
-/// Encrypts the value if the field is sensitive, stores plaintext otherwise.
+/// Sensitivity is derived from the connector schema — the frontend no longer
+/// dictates whether a field is sensitive.
 #[tauri::command]
 pub fn update_credential_field(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
     field_key: String,
-    is_sensitive: bool,
     session_encrypted_value: String,
 ) -> Result<bool, AppError> {
     require_privileged_sync(&state, "update_credential_field")?;
@@ -358,9 +358,13 @@ pub fn update_credential_field(
         }
     };
 
+    // Derive sensitivity from connector schema (single source of truth)
+    let cred = repo::get_by_id(&state.db, &credential_id)?;
+    let sens_map = repo::sensitivity_map_for_connector(&state.db, &cred.service_type);
+    let is_sensitive = repo::is_field_sensitive(sens_map.as_ref(), &field_key);
+
     repo::upsert_field(&state.db, &credential_id, &field_key, &field_value, is_sensitive)?;
 
-    let cred = repo::get_by_id(&state.db, &credential_id)?;
     audit_log::insert_warn(&state.db, &credential_id, &cred.name, "field_update", Some(&format!("field '{field_key}' updated")));
     Ok(true)
 }

@@ -431,7 +431,7 @@ fn is_revocation_error(response_body: &str) -> bool {
 
 /// Generic OAuth token exchange: POST form-encoded params to a token URL,
 /// extract access_token/expires_in/refresh_token from the JSON response.
-/// Replaces the previously duplicated Google- and Microsoft-specific functions.
+/// Delegates HTTP + JSON boilerplate to the shared `token_endpoint_request` helper.
 async fn exchange_oauth_refresh_token(
     provider: &str,
     token_url: &str,
@@ -439,41 +439,27 @@ async fn exchange_oauth_refresh_token(
     client_secret: &str,
     refresh_token: &str,
 ) -> Result<ResolvedToken, AppError> {
-    let response = crate::SHARED_HTTP
-        .post(token_url)
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .form(&[
-            ("client_id", client_id),
-            ("client_secret", client_secret),
-            ("refresh_token", refresh_token),
-            ("grant_type", "refresh_token"),
-        ])
-        .send()
+    let params: Vec<(&str, String)> = vec![
+        ("client_id", client_id.to_string()),
+        ("client_secret", client_secret.to_string()),
+        ("refresh_token", refresh_token.to_string()),
+        ("grant_type", "refresh_token".to_string()),
+    ];
+
+    let label = format!("{provider} token refresh");
+    let value = crate::commands::credentials::oauth::token_endpoint_request(token_url, &params, &label)
         .await
-        .map_err(|e| AppError::Internal(format!("{provider} token refresh request failed: {e}")))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
-
-        // Detect revocation-class errors from the provider's error response.
-        // These indicate the refresh token is permanently invalid and the user
-        // must re-authorize. Common across Google, Microsoft, and other providers.
-        if is_revocation_error(&body) {
-            return Err(AppError::OAuthRevoked(format!(
-                "{provider} grant revoked ({status}): {body}"
-            )));
-        }
-
-        return Err(AppError::Internal(format!(
-            "{provider} token refresh failed ({status}): {body}"
-        )));
-    }
-
-    let value = response
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| AppError::Internal(format!("Invalid {provider} token response JSON: {e}")))?;
+        .map_err(|e| {
+            // Detect revocation-class errors from the provider's error response.
+            if let Some(ref body) = e.body {
+                if is_revocation_error(body) {
+                    return AppError::OAuthRevoked(format!(
+                        "{provider} grant revoked: {}", e.message
+                    ));
+                }
+            }
+            AppError::Internal(e.message)
+        })?;
 
     let token = value
         .get("access_token")

@@ -5,7 +5,7 @@ use tauri::State;
 use serde::Deserialize;
 use ts_rs::TS;
 
-use crate::db::models::{CreateN8nSessionInput, N8nSessionSummary, N8nTransformSession, SessionStatus, UpdateN8nSessionInput};
+use crate::db::models::{CreateN8nSessionInput, N8nSessionResponse, N8nSessionSummary, SessionStatus, UpdateN8nSessionInput};
 use crate::db::repos::resources::n8n_sessions as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -41,7 +41,7 @@ pub async fn create_n8n_session(
     raw_workflow_json: String,
     step: String,
     status: SessionStatus,
-) -> Result<N8nTransformSession, AppError> {
+) -> Result<N8nSessionResponse, AppError> {
     require_auth(&state).await?;
     if raw_workflow_json.len() > MAX_WORKFLOW_JSON_BYTES {
         return Err(AppError::Validation(
@@ -64,23 +64,24 @@ pub async fn create_n8n_session(
             status,
         },
     )
+    .map(N8nSessionResponse::from)
 }
 
 #[tauri::command]
 pub async fn get_n8n_session(
     state: State<'_, Arc<AppState>>,
     id: String,
-) -> Result<N8nTransformSession, AppError> {
+) -> Result<N8nSessionResponse, AppError> {
     require_auth(&state).await?;
-    repo::get(&state.db, &id)
+    repo::get(&state.db, &id).map(N8nSessionResponse::from)
 }
 
 #[tauri::command]
 pub async fn list_n8n_sessions(
     state: State<'_, Arc<AppState>>,
-) -> Result<Vec<N8nTransformSession>, AppError> {
+) -> Result<Vec<N8nSessionResponse>, AppError> {
     require_auth(&state).await?;
-    repo::list(&state.db)
+    repo::list(&state.db).map(|v| v.into_iter().map(N8nSessionResponse::from).collect())
 }
 
 #[tauri::command]
@@ -95,7 +96,7 @@ pub async fn list_n8n_session_summaries(
 pub async fn update_n8n_session(
     state: State<'_, Arc<AppState>>,
     params: UpdateN8nSessionParams,
-) -> Result<N8nTransformSession, AppError> {
+) -> Result<N8nSessionResponse, AppError> {
     require_auth(&state).await?;
     repo::update(
         &state.db,
@@ -113,6 +114,7 @@ pub async fn update_n8n_session(
             questions_json: params.questions_json,
         },
     )
+    .map(N8nSessionResponse::from)
 }
 
 #[tauri::command]

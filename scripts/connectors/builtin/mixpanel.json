@@ -12,7 +12,8 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From Mixpanel -> Organization Settings -> Service Accounts"
+      "helpText": "From Mixpanel -> Organization Settings -> Service Accounts",
+      "sensitive": true
     },
     {
       "key": "service_account_secret",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "The secret paired with the service account username"
+      "helpText": "The secret paired with the service account username",
+      "sensitive": true
     },
     {
       "key": "project_id",
@@ -28,7 +30,8 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From Mixpanel -> Project Settings -> Project ID"
+      "helpText": "From Mixpanel -> Project Settings -> Project ID",
+      "sensitive": true
     },
     {
       "key": "project_token",
@@ -36,7 +39,8 @@
       "type": "password",
       "required": false,
       "placeholder": "",
-      "helpText": "From Mixpanel -> Project Settings -> Access Keys -> Project Token"
+      "helpText": "From Mixpanel -> Project Settings -> Access Keys -> Project Token",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

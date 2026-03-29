@@ -12,7 +12,8 @@
       "type": "text",
       "required": true,
       "placeholder": "86abc123def456",
-      "helpText": "From LinkedIn Developer Portal -> My Apps -> Auth tab"
+      "helpText": "From LinkedIn Developer Portal -> My Apps -> Auth tab",
+      "sensitive": true
     },
     {
       "key": "client_secret",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From LinkedIn Developer Portal -> My Apps -> Auth tab"
+      "helpText": "From LinkedIn Developer Portal -> My Apps -> Auth tab",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -39,12 +41,22 @@
     "auth_type": "oauth",
     "auth_type_label": "OAuth",
     "oauth_provider_id": "linkedin",
-    "oauth_scopes": ["openid", "profile", "email", "w_member_social"],
+    "oauth_scopes": [
+      "openid",
+      "profile",
+      "email",
+      "w_member_social"
+    ],
     "docs_url": "https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow",
     "setup_guide": "1. Go to linkedin.com/developers and create a new app\n2. Under Products, request access to 'Sign In with LinkedIn using OpenID Connect' and 'Share on LinkedIn'\n3. Go to Auth tab and copy Client ID and Client Secret\n4. Add http://127.0.0.1 as an Authorized Redirect URL (the port is assigned dynamically)\n5. Paste Client ID and Client Secret here, then click Authorize with LinkedIn",
     "pricing_tier": "free",
     "auth_methods": [
-      {"id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true}
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      }
     ]
   }
 }

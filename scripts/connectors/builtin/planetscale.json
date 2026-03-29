@@ -12,7 +12,8 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From PlanetScale -> Organization -> Settings -> Service Tokens"
+      "helpText": "From PlanetScale -> Organization -> Settings -> Service Tokens",
+      "sensitive": true
     },
     {
       "key": "service_token",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "The service token secret paired with the token ID"
+      "helpText": "The service token secret paired with the token ID",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

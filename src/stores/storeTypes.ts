@@ -46,6 +46,13 @@ import type { CompositionSlice } from "./slices/pipeline/compositionSlice";
 // -- Shared helpers ------------------------------------------------------
 import { isTauriError, type TauriErrorKind } from "@/lib/types/tauriError";
 
+/** A single scoped error entry keyed by action name. */
+export interface SliceError {
+  message: string;
+  kind: TauriErrorKind | null;
+  timestamp: number;
+}
+
 export function errMsg(err: unknown, fallback: string): string {
   if (err instanceof Error) return err.message;
   if (isTauriError(err)) return err.error;
@@ -82,14 +89,32 @@ export function reportError(
   options?: {
     severity?: "toast" | "state" | "both";
     stateUpdates?: Record<string, unknown>;
+    /** Scoped action name — when provided, the error is also written to sliceErrors[action]. */
+    action?: string;
   },
 ): string {
-  const { severity = "both", stateUpdates } = options ?? {};
+  const { severity = "both", stateUpdates, action } = options ?? {};
   const message = errMsg(err, fallback);
   const kind = errKind(err);
 
   if (severity !== "toast") {
-    set({ error: message, errorKind: kind ?? null, ...stateUpdates } as { error: string; errorKind?: TauriErrorKind | null });
+    if (action) {
+      // Use functional form to merge into the per-action error map without clobbering sibling entries.
+      // The runtime `set` is always a Zustand setter that supports (state) => partial.
+      (set as unknown as (fn: (state: { sliceErrors?: Record<string, SliceError> }) => Record<string, unknown>) => void)(
+        (state) => ({
+          error: message,
+          errorKind: kind ?? null,
+          sliceErrors: {
+            ...(state.sliceErrors ?? {}),
+            [action]: { message, kind: kind ?? null, timestamp: Date.now() },
+          },
+          ...stateUpdates,
+        }),
+      );
+    } else {
+      set({ error: message, errorKind: kind ?? null, ...stateUpdates } as { error: string; errorKind?: TauriErrorKind | null });
+    }
   }
   if (severity !== "state") {
     const now = Date.now();
@@ -111,6 +136,22 @@ export function reportError(
   return message;
 }
 
+/**
+ * Remove a single scoped error entry by action name.
+ * Pass the Zustand `set` from the calling slice.
+ */
+export function clearSliceError(
+  action: string,
+  set: (fn: (state: { sliceErrors?: Record<string, SliceError> }) => Record<string, unknown>) => void,
+): void {
+  set((state) => {
+    const prev = state.sliceErrors ?? {};
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { [action]: _, ...rest } = prev;
+    return { sliceErrors: rest };
+  });
+}
+
 // -- Shared state present in every domain store ----------------------------
 
 /** Common error/loading state replicated in each domain store so slices can
@@ -120,6 +161,8 @@ export interface CoreState {
   /** Structured error code from the Rust backend (`AppError::kind`). */
   errorKind: TauriErrorKind | null;
   isLoading: boolean;
+  /** Per-action scoped error map — concurrent errors are independently tracked. */
+  sliceErrors: Record<string, SliceError>;
 }
 
 // -- Domain store types --------------------------------------------------

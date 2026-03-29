@@ -2,6 +2,8 @@ use serde::Serialize;
 use ts_rs::TS;
 
 use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
+#[cfg(test)]
+use crate::db::models::{PersonaTrustLevel, PersonaTrustOrigin};
 
 // ============================================================================
 // Feasibility Result
@@ -583,8 +585,8 @@ mod tests {
             design_context: None,
             group_id: None,
             source_review_id: None,
-            trust_level: "manual".into(),
-            trust_origin: "user".into(),
+            trust_level: PersonaTrustLevel::Manual,
+            trust_origin: PersonaTrustOrigin::User,
             trust_verified_at: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),

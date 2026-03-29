@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Network, Shield, Route, ScrollText, KeyRound } from 'lucide-react';
+import { Network, Shield, Route, ScrollText, KeyRound, AlertTriangle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useByomSettings } from '../libs/useByomSettings';
@@ -82,6 +82,28 @@ export default function ByomSettings() {
 
       <ContentBody centered>
         <div className="space-y-4">
+          {/* Degraded-policy warning when stored JSON is corrupt */}
+          {bm.corruptPolicyError && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-red-300">BYOM Policy Corrupted</h3>
+                <p className="text-sm text-red-300/80 mt-1">
+                  The stored policy JSON could not be parsed. All provider restrictions are
+                  currently inactive and executions are blocked. Reset the policy to restore
+                  normal operation.
+                </p>
+                <p className="text-xs text-red-400/60 mt-2 break-all">{bm.corruptPolicyError}</p>
+              </div>
+              <button
+                onClick={bm.handleReset}
+                className="shrink-0 px-3 py-1.5 text-sm rounded-xl bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+              >
+                Reset Policy
+              </button>
+            </div>
+          )}
+
           {/* Enable toggle */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-4">
             <div className="flex items-center justify-between">

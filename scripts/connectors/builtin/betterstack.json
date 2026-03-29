@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Better Stack Dashboard -> Settings -> API tokens"
+      "helpText": "From Better Stack Dashboard -> Settings -> API tokens",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

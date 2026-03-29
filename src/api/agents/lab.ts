@@ -160,3 +160,16 @@ export const labGetRatings = (runId: string) =>
 
 export const labImprovePrompt = (personaId: string, runId: string, mode: string) =>
   invoke<PersonaPromptVersion>("lab_improve_prompt", { personaId, runId, mode });
+
+// ============================================================================
+// Active Progress -- Hydrate all active runs after page refresh
+// ============================================================================
+
+export interface ActiveLabProgress {
+  mode: string;
+  runId: string;
+  progress: Record<string, unknown>;
+}
+
+export const labGetActiveProgress = (personaId: string) =>
+  invoke<ActiveLabProgress[]>("lab_get_active_progress", { personaId });

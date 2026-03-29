@@ -1,5 +1,15 @@
 // Shared Recharts styling primitives used across dashboards
 
+// ── Shared SVG gradient IDs ─────────────────────────────────────────
+// These IDs are defined once by <ChartGradientDefs /> (mounted in App)
+// and referenced via `fill={`url(#${CHART_GRAD.cost})`}` in any chart.
+export const CHART_GRAD = {
+  cost:    'chart-grad-cost',
+  traffic: 'chart-grad-traffic',
+  error:   'chart-grad-error',
+  success: 'chart-grad-success',
+} as const;
+
 export const CHART_COLORS = [
   '#3B82F6', '#8b5cf6', '#10b981', '#f59e0b',
   '#ec4899', '#EA4335', '#4A154B', '#06b6d4',

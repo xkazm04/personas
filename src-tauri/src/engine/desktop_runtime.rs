@@ -271,6 +271,11 @@ pub struct BridgeConfig {
     pub obsidian_api_key: Option<String>,
     /// Extra environment variables for terminal execution.
     pub env_vars: HashMap<String, String>,
+    /// Allowed file path prefixes for the terminal connector.
+    /// When empty, all file operations (ReadFile, WriteFile, ListDir,
+    /// PathExists) are denied by the security manifest.
+    #[serde(default)]
+    pub terminal_allowed_paths: Vec<String>,
 }
 
 // -- Bridge dispatch --------------------------------------------------
@@ -313,7 +318,10 @@ async fn execute_bridge_action(
                 serde_json::from_value(action_json.clone())
                     .map_err(|e| AppError::Validation(format!("Invalid Terminal action: {e}")))?;
             let shell = config.terminal_shell.as_deref().unwrap_or("bash");
-            super::desktop_bridges::terminal::execute(shell, action, &config.env_vars).await
+            let mut manifest = super::desktop_security::get_manifest("desktop_terminal")
+                .expect("desktop_terminal manifest is always defined");
+            manifest.allowed_paths = config.terminal_allowed_paths.clone();
+            super::desktop_bridges::terminal::execute(shell, action, &config.env_vars, &manifest).await
         }
         "obsidian" => {
             let action: super::desktop_bridges::obsidian::ObsidianAction =

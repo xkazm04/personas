@@ -23,13 +23,77 @@ use crate::error::AppError;
 use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
-const GOOGLE_OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const CLEANUP_THROTTLE: Duration = Duration::from_secs(30);
 
 /// Hard cap on concurrent OAuth sessions per map. When exceeded, the oldest
 /// sessions are evicted to prevent unbounded memory growth from abandoned flows.
 const MAX_OAUTH_SESSIONS: usize = 50;
+
+// -- Shared token endpoint request helper -------------------------
+
+/// Error from `token_endpoint_request`, carrying enough context for callers
+/// to inspect the HTTP status and body (e.g. to detect revocation errors).
+pub(crate) struct TokenEndpointError {
+    pub message: String,
+    /// The HTTP status code, if the request reached the server.
+    pub status: Option<reqwest::StatusCode>,
+    /// The raw response body on non-2xx responses.
+    pub body: Option<String>,
+}
+
+impl std::fmt::Display for TokenEndpointError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+/// Unified helper that POSTs form-encoded params to an OAuth token endpoint,
+/// checks the HTTP status, and parses the JSON response.
+///
+/// All four token-exchange functions (Google code exchange, universal code
+/// exchange, command-level refresh, and connector-strategy refresh) delegate
+/// to this to eliminate duplicated HTTP + JSON boilerplate.
+///
+/// `label` is used in error messages (e.g. "Google", "Token refresh").
+pub(crate) async fn token_endpoint_request(
+    url: &str,
+    params: &[(&str, String)],
+    label: &str,
+) -> Result<serde_json::Value, TokenEndpointError> {
+    let response = crate::SHARED_HTTP
+        .post(url)
+        .header("Accept", "application/json")
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .form(&params)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await
+        .map_err(|e| TokenEndpointError {
+            message: format!("{label} request failed: {e}"),
+            status: None,
+            body: None,
+        })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
+        return Err(TokenEndpointError {
+            message: format!("{label} failed ({status}): {body}"),
+            status: Some(status),
+            body: Some(body),
+        });
+    }
+
+    response
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| TokenEndpointError {
+            message: format!("Invalid {label} response JSON: {e}"),
+            status: None,
+            body: None,
+        })
+}
 
 // -- Shared OAuth Callback Server ---------------------------------
 
@@ -216,21 +280,6 @@ impl Zeroize for OAuthSessionStatus {
     fn zeroize(&mut self) { *self = Self::Pending; }
 }
 
-#[derive(Clone, Zeroize, ZeroizeOnDrop)]
-struct GoogleCredentialOAuthSession {
-    status: OAuthSessionStatus,
-    refresh_token: Option<EncryptedToken>,
-    access_token: Option<EncryptedToken>,
-    scope: Option<String>,
-    error: Option<String>,
-    created_at: u64,
-}
-
-static GOOGLE_CREDENTIAL_OAUTH_SESSIONS: OnceLock<Mutex<HashMap<String, GoogleCredentialOAuthSession>>> = OnceLock::new();
-
-fn google_oauth_sessions() -> &'static Mutex<HashMap<String, GoogleCredentialOAuthSession>> {
-    GOOGLE_CREDENTIAL_OAUTH_SESSIONS.get_or_init(|| Mutex::new(HashMap::new()))
-}
 
 fn now_unix_secs() -> u64 {
     SystemTime::now()
@@ -261,27 +310,6 @@ fn evict_oldest_sessions<V>(
     tracing::info!(evicted = to_evict, remaining = sessions.len(), "Evicted oldest OAuth sessions (cap: {max_size})");
 }
 
-static GOOGLE_CLEANUP_LAST_RUN: OnceLock<Mutex<Option<Instant>>> = OnceLock::new();
-
-fn cleanup_google_oauth_sessions() {
-    let last_run = GOOGLE_CLEANUP_LAST_RUN.get_or_init(|| Mutex::new(None));
-    {
-        let guard = last_run.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(t) = *guard {
-            if t.elapsed() < CLEANUP_THROTTLE {
-                return;
-            }
-        }
-    }
-    let now = now_unix_secs();
-    let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
-    // Remove expired sessions
-    sessions.retain(|_, session| now.saturating_sub(session.created_at) <= GOOGLE_OAUTH_SESSION_TTL_SECS);
-    // Evict oldest sessions if over the hard cap
-    evict_oldest_sessions(&mut sessions, MAX_OAUTH_SESSIONS, |s| s.created_at);
-    drop(sessions);
-    *last_run.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
-}
 
 // -- Token encryption helpers ------------------------------------
 
@@ -323,7 +351,7 @@ pub async fn start_google_credential_oauth(
     let (resolved_client_id, resolved_client_secret, credential_source) =
         resolve_google_oauth_client_credentials(client_id, client_secret)?;
 
-    cleanup_google_oauth_sessions();
+    cleanup_oauth_sessions();
 
     let session_id = format!("goauth_{}_{}", now_unix_secs(), uuid::Uuid::new_v4());
 
@@ -336,14 +364,18 @@ pub async fn start_google_credential_oauth(
         .port();
 
     {
-        let mut sessions = google_oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
+        let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         sessions.insert(
             session_id.clone(),
-            GoogleCredentialOAuthSession {
+            OAuthSession {
                 status: OAuthSessionStatus::Pending,
-                refresh_token: None,
+                provider_id: "google".into(),
                 access_token: None,
+                refresh_token: None,
                 scope: None,
+                token_type: None,
+                expires_in: None,
+                extra: None,
                 error: None,
                 created_at: now_unix_secs(),
             },
@@ -396,7 +428,7 @@ pub async fn start_google_credential_oauth(
     tokio::spawn(async move {
         let outcome = run_oauth_callback_server(
             listener,
-            GOOGLE_OAUTH_SESSION_TTL_SECS,
+            OAUTH_SESSION_TTL_SECS,
             oauth_state,
             |code_value, redir_uri| async move {
                 let tokens = exchange_google_oauth_code_for_tokens(
@@ -413,57 +445,17 @@ pub async fn start_google_credential_oauth(
                     access_token: tokens.access_token,
                     refresh_token: tokens.refresh_token,
                     scope: tokens.scope,
-                    token_type: None,
-                    expires_in: None,
-                    extra: None,
+                    token_type: tokens.token_type,
+                    expires_in: tokens.expires_in,
+                    extra: tokens.extra,
                 })
             },
         )
         .await;
 
-        let is_success = matches!(outcome, OAuthCallbackOutcome::Success(_));
-
-        {
-            let mut sessions = google_oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
-            if let Some(existing) = sessions.get_mut(&session_id_clone) {
-                match outcome {
-                    OAuthCallbackOutcome::Success(tokens) => {
-                        existing.status = OAuthSessionStatus::complete();
-                        existing.refresh_token = encrypt_token(tokens.refresh_token);
-                        existing.access_token = encrypt_token(tokens.access_token);
-                        existing.scope = tokens.scope;
-                        let _ = audit_log::insert(
-                            &db_pool, &session_id_clone, &audit_connector,
-                            "oauth_completed", None, None, Some("google oauth succeeded"),
-                        );
-                    }
-                    OAuthCallbackOutcome::Error(ref e) => {
-                        existing.status = OAuthSessionStatus::fail();
-                        existing.error = Some(e.clone());
-                        let _ = audit_log::insert(
-                            &db_pool, &session_id_clone, &audit_connector,
-                            "oauth_failed", None, None, Some(e),
-                        );
-                    }
-                    OAuthCallbackOutcome::Timeout => {
-                        existing.status = OAuthSessionStatus::fail();
-                        existing.error = Some("OAuth callback timed out".into());
-                        let _ = audit_log::insert(
-                            &db_pool, &session_id_clone, &audit_connector,
-                            "oauth_failed", None, None, Some("callback timed out"),
-                        );
-                    }
-                    OAuthCallbackOutcome::AcceptFailed(ref e) => {
-                        existing.status = OAuthSessionStatus::fail();
-                        existing.error = Some(e.clone());
-                        let _ = audit_log::insert(
-                            &db_pool, &session_id_clone, &audit_connector,
-                            "oauth_failed", None, None, Some(e),
-                        );
-                    }
-                }
-            }
-        } // std::sync::MutexGuard dropped here
+        let is_success = apply_oauth_outcome(
+            &session_id_clone, outcome, &db_pool, &audit_connector,
+        );
 
         // Invalidate auth detection cache so the negotiator sees fresh results immediately
         if is_success {
@@ -485,34 +477,7 @@ pub fn get_google_credential_oauth_status(
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
     require_privileged_sync(&state, "get_google_credential_oauth_status")?;
-    cleanup_google_oauth_sessions();
-    let mut sessions = google_oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    if let Some(session) = sessions.get(&session_id) {
-        // Decrypt tokens into short-lived SecureStrings; explicitly expose for serialization
-        let decrypted_refresh = decrypt_token(&session.refresh_token);
-        let decrypted_access = decrypt_token(&session.access_token);
-        let result = json!({
-            "status": session.status,
-            "refresh_token": decrypted_refresh.as_ref().map(|s| s.expose_secret()),
-            "access_token": decrypted_access.as_ref().map(|s| s.expose_secret()),
-            "scope": session.scope,
-            "error": session.error,
-        });
-        // decrypted_refresh / decrypted_access are zeroized on drop here
-        // Remove completed sessions immediately so tokens don't linger in memory
-        if session.status.is_terminal() {
-            sessions.remove(&session_id);
-        }
-        return Ok(result);
-    }
-
-    Ok(json!({
-        "status": OAuthSessionStatus::NotFound,
-        "refresh_token": null,
-        "access_token": null,
-        "scope": null,
-        "error": "OAuth session not found or expired",
-    }))
+    Ok(get_session_status(&session_id))
 }
 
 // -- Helpers -----------------------------------------------------
@@ -595,18 +560,12 @@ fn resolve_universal_oauth_credentials(
     }
 }
 
-struct GoogleTokenExchangeResult {
-    refresh_token: Option<SecureString>,
-    access_token: Option<SecureString>,
-    scope: Option<String>,
-}
-
 async fn exchange_google_oauth_code_for_tokens(
     client_id: &str,
     client_secret: &str,
     code: &str,
     redirect_uri: &str,
-) -> Result<GoogleTokenExchangeResult, String> {
+) -> Result<OAuthTokenResult, String> {
     tracing::debug!(
         code_len = code.len(),
         redirect_uri = %redirect_uri,
@@ -615,36 +574,15 @@ async fn exchange_google_oauth_code_for_tokens(
         "Exchanging Google OAuth code for tokens"
     );
 
-    let response = crate::SHARED_HTTP
-        .post("https://oauth2.googleapis.com/token")
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .form(&[
-            ("client_id", client_id),
-            ("client_secret", client_secret),
-            ("code", code),
-            ("grant_type", "authorization_code"),
-            ("redirect_uri", redirect_uri),
-        ])
-        .send()
-        .await
-        .map_err(|e| format!("Token exchange request failed: {e}"))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
-        return Err(format!("Token exchange failed ({status}): {body}"));
-    }
-
-    let value = response
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| format!("Invalid token response JSON: {e}"))?;
-
-    Ok(GoogleTokenExchangeResult {
-        refresh_token: value.get("refresh_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),
-        access_token: value.get("access_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),
-        scope: value.get("scope").and_then(|v| v.as_str()).map(|s| s.to_string()),
-    })
+    exchange_oauth_code(
+        "https://oauth2.googleapis.com/token",
+        client_id,
+        Some(client_secret),
+        code,
+        redirect_uri,
+        None,
+    )
+    .await
 }
 
 // =====================================================================
@@ -1064,7 +1002,9 @@ fn verify_oauth_state(state: &str) -> bool {
     true
 }
 
-// -- Universal OAuth Sessions -------------------------------------
+// -- Unified OAuth Sessions ---------------------------------------
+// A single session map for all OAuth flows (Google, universal, custom).
+// The `provider_id` field distinguishes the flow origin.
 
 #[derive(Zeroize, ZeroizeOnDrop)]
 #[allow(dead_code)]
@@ -1108,6 +1048,93 @@ fn cleanup_oauth_sessions() {
     evict_oldest_sessions(&mut sessions, MAX_OAUTH_SESSIONS, |s| s.created_at);
     drop(sessions);
     *last_run.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
+}
+
+/// Apply an `OAuthCallbackOutcome` to the session map and write an audit log entry.
+/// This is the single place where callback results are recorded, eliminating the
+/// duplicated 4-arm match blocks that previously existed in both the Google and
+/// universal OAuth flows.
+fn apply_oauth_outcome(
+    session_id: &str,
+    outcome: OAuthCallbackOutcome,
+    db_pool: &crate::db::DbPool,
+    audit_subject: &str,
+) -> bool {
+    let is_success = matches!(outcome, OAuthCallbackOutcome::Success(_));
+    let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(s) = sessions.get_mut(session_id) {
+        match outcome {
+            OAuthCallbackOutcome::Success(tokens) => {
+                s.status = OAuthSessionStatus::complete();
+                s.access_token = encrypt_token(tokens.access_token);
+                s.refresh_token = encrypt_token(tokens.refresh_token);
+                s.scope = tokens.scope;
+                s.token_type = tokens.token_type;
+                s.expires_in = tokens.expires_in;
+                s.extra = tokens.extra;
+                let _ = audit_log::insert(
+                    db_pool, session_id, audit_subject,
+                    "oauth_completed", None, None, Some(&format!("oauth succeeded for {audit_subject}")),
+                );
+            }
+            OAuthCallbackOutcome::Error(ref e) => {
+                s.status = OAuthSessionStatus::fail();
+                s.error = Some(e.clone());
+                let _ = audit_log::insert(
+                    db_pool, session_id, audit_subject,
+                    "oauth_failed", None, None, Some(e),
+                );
+            }
+            OAuthCallbackOutcome::Timeout => {
+                s.status = OAuthSessionStatus::fail();
+                s.error = Some("OAuth callback timed out".into());
+                let _ = audit_log::insert(
+                    db_pool, session_id, audit_subject,
+                    "oauth_failed", None, None, Some("callback timed out"),
+                );
+            }
+            OAuthCallbackOutcome::AcceptFailed(ref e) => {
+                s.status = OAuthSessionStatus::fail();
+                s.error = Some(e.clone());
+                let _ = audit_log::insert(
+                    db_pool, session_id, audit_subject,
+                    "oauth_failed", None, None, Some(e),
+                );
+            }
+        }
+    }
+    is_success
+}
+
+/// Read session status as a JSON value. Shared implementation backing both
+/// `get_google_credential_oauth_status` and `get_oauth_status`.
+fn get_session_status(session_id: &str) -> serde_json::Value {
+    cleanup_oauth_sessions();
+    let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(s) = sessions.get(session_id) {
+        let decrypted_access = decrypt_token(&s.access_token);
+        let decrypted_refresh = decrypt_token(&s.refresh_token);
+        let result = json!({
+            "status": s.status,
+            "provider_id": s.provider_id,
+            "access_token": decrypted_access.as_ref().map(|t| t.expose_secret()),
+            "refresh_token": decrypted_refresh.as_ref().map(|t| t.expose_secret()),
+            "scope": s.scope,
+            "token_type": s.token_type,
+            "expires_in": s.expires_in,
+            "extra": s.extra,
+            "error": s.error,
+        });
+        if s.status.is_terminal() {
+            sessions.remove(session_id);
+        }
+        return result;
+    }
+
+    json!({
+        "status": OAuthSessionStatus::NotFound,
+        "error": "OAuth session not found or expired",
+    })
 }
 
 // -- Universal OAuth Commands -------------------------------------
@@ -1314,52 +1341,9 @@ pub async fn start_oauth(
         )
         .await;
 
-        let is_success = matches!(outcome, OAuthCallbackOutcome::Success(_));
-
-        {
-            let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
-            if let Some(s) = sessions.get_mut(&sid) {
-                match outcome {
-                    OAuthCallbackOutcome::Success(tokens) => {
-                        s.status = OAuthSessionStatus::complete();
-                        s.access_token = encrypt_token(tokens.access_token);
-                        s.refresh_token = encrypt_token(tokens.refresh_token);
-                        s.scope = tokens.scope;
-                        s.token_type = tokens.token_type;
-                        s.expires_in = tokens.expires_in;
-                        s.extra = tokens.extra;
-                        let _ = audit_log::insert(
-                            &db_pool, &sid, &audit_provider,
-                            "oauth_completed", None, None, Some("universal oauth succeeded"),
-                        );
-                    }
-                    OAuthCallbackOutcome::Error(ref e) => {
-                        s.status = OAuthSessionStatus::fail();
-                        s.error = Some(e.clone());
-                        let _ = audit_log::insert(
-                            &db_pool, &sid, &audit_provider,
-                            "oauth_failed", None, None, Some(e),
-                        );
-                    }
-                    OAuthCallbackOutcome::Timeout => {
-                        s.status = OAuthSessionStatus::fail();
-                        s.error = Some("OAuth callback timed out".into());
-                        let _ = audit_log::insert(
-                            &db_pool, &sid, &audit_provider,
-                            "oauth_failed", None, None, Some("callback timed out"),
-                        );
-                    }
-                    OAuthCallbackOutcome::AcceptFailed(ref e) => {
-                        s.status = OAuthSessionStatus::fail();
-                        s.error = Some(e.clone());
-                        let _ = audit_log::insert(
-                            &db_pool, &sid, &audit_provider,
-                            "oauth_failed", None, None, Some(e),
-                        );
-                    }
-                }
-            }
-        } // std::sync::MutexGuard dropped here
+        let is_success = apply_oauth_outcome(
+            &sid, outcome, &db_pool, &audit_provider,
+        );
 
         // Invalidate auth detection cache so the negotiator sees fresh results immediately
         if is_success {
@@ -1382,35 +1366,7 @@ pub fn get_oauth_status(
     session_id: String,
 ) -> Result<serde_json::Value, AppError> {
     require_privileged_sync(&state, "get_oauth_status")?;
-    cleanup_oauth_sessions();
-    let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-    if let Some(s) = sessions.get(&session_id) {
-        // Decrypt tokens into short-lived SecureStrings; explicitly expose for serialization
-        let decrypted_access = decrypt_token(&s.access_token);
-        let decrypted_refresh = decrypt_token(&s.refresh_token);
-        let result = json!({
-            "status": s.status,
-            "provider_id": s.provider_id,
-            "access_token": decrypted_access.as_ref().map(|s| s.expose_secret()),
-            "refresh_token": decrypted_refresh.as_ref().map(|s| s.expose_secret()),
-            "scope": s.scope,
-            "token_type": s.token_type,
-            "expires_in": s.expires_in,
-            "extra": s.extra,
-            "error": s.error,
-        });
-        // decrypted_access / decrypted_refresh are zeroized on drop here
-        // Remove completed sessions immediately so tokens don't linger in memory
-        if s.status.is_terminal() {
-            sessions.remove(&session_id);
-        }
-        return Ok(result);
-    }
-
-    Ok(json!({
-        "status": OAuthSessionStatus::NotFound,
-        "error": "OAuth session not found or expired",
-    }))
+    Ok(get_session_status(&session_id))
 }
 
 /// Refresh an access token using a refresh token.
@@ -1444,39 +1400,28 @@ pub async fn refresh_oauth_token(
         ));
     };
 
-    let mut form_params = vec![
-        ("client_id".to_string(), client_id),
-        ("grant_type".to_string(), "refresh_token".to_string()),
-        ("refresh_token".to_string(), refresh_token.expose_secret().to_string()),
+    let mut params: Vec<(&str, String)> = vec![
+        ("client_id", client_id),
+        ("grant_type", "refresh_token".to_string()),
+        ("refresh_token", refresh_token.expose_secret().to_string()),
     ];
     if let Some(ref secret) = client_secret {
-        form_params.push(("client_secret".to_string(), secret.expose_secret().to_string()));
+        params.push(("client_secret", secret.expose_secret().to_string()));
     }
 
-    let response = crate::SHARED_HTTP
-        .post(&resolved_token_url)
-        .header("Accept", "application/json")
-        .form(&form_params)
-        .timeout(std::time::Duration::from_secs(15))
-        .send()
-        .await
-        .map_err(|e| AppError::Internal(format!("Token refresh request failed: {e}")))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
-        let _ = audit_log::insert(
-            &state.db, &provider_id, &provider_id,
-            "token_refresh_failed", None, None,
-            Some(&format!("HTTP {status}")),
-        );
-        return Err(AppError::Internal(format!("Token refresh failed ({status}): {body}")));
-    }
-
-    let value = response
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| AppError::Internal(format!("Invalid token refresh JSON: {e}")))?;
+    let value = match token_endpoint_request(&resolved_token_url, &params, "Token refresh").await {
+        Ok(v) => v,
+        Err(e) => {
+            if let Some(status) = e.status {
+                let _ = audit_log::insert(
+                    &state.db, &provider_id, &provider_id,
+                    "token_refresh_failed", None, None,
+                    Some(&format!("HTTP {status}")),
+                );
+            }
+            return Err(AppError::Internal(e.message));
+        }
+    };
 
     let _ = audit_log::insert(
         &state.db, &provider_id, &provider_id,
@@ -1512,7 +1457,7 @@ async fn exchange_oauth_code(
     redirect_uri: &str,
     code_verifier: Option<&str>,
 ) -> Result<OAuthTokenResult, String> {
-    let mut form_params = vec![
+    let mut params: Vec<(&str, String)> = vec![
         ("client_id", client_id.to_string()),
         ("code", code.to_string()),
         ("grant_type", "authorization_code".to_string()),
@@ -1520,31 +1465,15 @@ async fn exchange_oauth_code(
     ];
 
     if let Some(secret) = client_secret {
-        form_params.push(("client_secret", secret.to_string()));
+        params.push(("client_secret", secret.to_string()));
     }
     if let Some(verifier) = code_verifier {
-        form_params.push(("code_verifier", verifier.to_string()));
+        params.push(("code_verifier", verifier.to_string()));
     }
 
-    let response = crate::SHARED_HTTP
-        .post(token_url)
-        .header("Accept", "application/json")
-        .form(&form_params)
-        .timeout(std::time::Duration::from_secs(15))
-        .send()
+    let value = token_endpoint_request(token_url, &params, "Token exchange")
         .await
-        .map_err(|e| format!("Token exchange request failed: {e}"))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_else(|_| "<no body>".into());
-        return Err(format!("Token exchange failed ({status}): {body}"));
-    }
-
-    let value = response
-        .json::<serde_json::Value>()
-        .await
-        .map_err(|e| format!("Invalid token response JSON: {e}"))?;
+        .map_err(|e| e.message)?;
 
     Ok(OAuthTokenResult {
         access_token: value.get("access_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),

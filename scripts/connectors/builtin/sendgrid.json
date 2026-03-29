@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "SG....",
-      "helpText": "From SendGrid -> Settings -> API Keys -> Create API Key"
+      "helpText": "From SendGrid -> Settings -> API Keys -> Create API Key",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

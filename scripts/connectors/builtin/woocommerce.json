@@ -12,7 +12,8 @@
       "type": "url",
       "required": true,
       "placeholder": "https://yourstore.com",
-      "helpText": "Your WooCommerce store URL (must have HTTPS enabled)"
+      "helpText": "Your WooCommerce store URL (must have HTTPS enabled)",
+      "sensitive": false
     },
     {
       "key": "consumer_key",
@@ -20,7 +21,8 @@
       "type": "text",
       "required": true,
       "placeholder": "ck_...",
-      "helpText": "From WooCommerce -> Settings -> Advanced -> REST API -> Add Key"
+      "helpText": "From WooCommerce -> Settings -> Advanced -> REST API -> Add Key",
+      "sensitive": true
     },
     {
       "key": "consumer_secret",
@@ -28,7 +30,8 @@
       "type": "password",
       "required": true,
       "placeholder": "cs_...",
-      "helpText": "From the same REST API key page"
+      "helpText": "From the same REST API key page",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

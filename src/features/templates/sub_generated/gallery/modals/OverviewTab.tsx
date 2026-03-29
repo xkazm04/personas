@@ -1,7 +1,8 @@
-import { Workflow, Lightbulb } from 'lucide-react';
+import { Workflow, Lightbulb, AlertTriangle, BarChart3, ThumbsUp, ThumbsDown, DollarSign, Activity, Users } from 'lucide-react';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import { useTemplatePerformance } from '@/hooks/design/template/useTemplatePerformance';
 
 interface OverviewTabProps {
   designResult: AgentIR | null;
@@ -18,12 +19,103 @@ export function OverviewTab({
   review,
   onViewFlows,
 }: OverviewTabProps) {
+  const { performance, loading: perfLoading, error: perfError } = useTemplatePerformance(review.id);
+
   return (
     <div className="space-y-6">
       {/* Summary */}
       {designResult?.summary && (
         <div className="bg-gradient-to-r from-violet-500/5 to-transparent border border-violet-500/10 rounded-xl px-4 py-3">
           <p className="text-sm text-foreground/90 leading-relaxed">{designResult.summary}</p>
+        </div>
+      )}
+
+      {/* Performance Metrics */}
+      {perfLoading && (
+        <div className="rounded-xl border border-primary/10 bg-secondary/20 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground/80 animate-spin" />
+            <span className="text-sm text-muted-foreground/60">Loading performance metrics...</span>
+          </div>
+        </div>
+      )}
+      {!perfLoading && perfError && (
+        <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-400/70" />
+            <span className="text-sm text-amber-400/80">Performance metrics unavailable</span>
+          </div>
+          <p className="text-sm text-muted-foreground/60 mt-1">Could not load metrics for this template.</p>
+        </div>
+      )}
+      {!perfLoading && !perfError && performance && !performance.data_available && (
+        <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-400/70" />
+            <span className="text-sm text-amber-400/80">Incomplete performance data</span>
+          </div>
+          <p className="text-sm text-muted-foreground/60 mt-1">
+            Some metric queries failed. The values below may not reflect actual usage.
+          </p>
+        </div>
+      )}
+      {!perfLoading && !perfError && performance && performance.data_available && (
+        <div>
+          <h4 className="text-sm font-medium text-muted-foreground/70 uppercase tracking-wide mb-2">
+            Performance
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-primary/10 bg-secondary/20 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Users className="w-3.5 h-3.5 text-violet-400/70" />
+                <span className="text-sm text-muted-foreground/60">Adoptions</span>
+              </div>
+              <span className="text-lg font-semibold text-foreground/90 font-mono">{performance.total_adoptions}</span>
+            </div>
+            <div className="rounded-xl border border-primary/10 bg-secondary/20 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Activity className="w-3.5 h-3.5 text-blue-400/70" />
+                <span className="text-sm text-muted-foreground/60">Executions</span>
+              </div>
+              <span className="text-lg font-semibold text-foreground/90 font-mono">{performance.total_executions}</span>
+            </div>
+            <div className="rounded-xl border border-primary/10 bg-secondary/20 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <BarChart3 className="w-3.5 h-3.5 text-emerald-400/70" />
+                <span className="text-sm text-muted-foreground/60">Success</span>
+              </div>
+              <span className="text-lg font-semibold text-foreground/90 font-mono">{Math.round(performance.success_rate * 100)}%</span>
+            </div>
+            <div className="rounded-xl border border-primary/10 bg-secondary/20 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <DollarSign className="w-3.5 h-3.5 text-amber-400/70" />
+                <span className="text-sm text-muted-foreground/60">Avg Cost</span>
+              </div>
+              <span className="text-lg font-semibold text-foreground/90 font-mono">${performance.avg_cost_usd.toFixed(3)}</span>
+            </div>
+          </div>
+          {/* Feedback summary */}
+          {(performance.positive_count > 0 || performance.negative_count > 0) && (
+            <div className="flex items-center gap-4 mt-3">
+              {performance.positive_count > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-emerald-400/80">
+                  <ThumbsUp className="w-3.5 h-3.5" />
+                  {performance.positive_count}
+                </span>
+              )}
+              {performance.negative_count > 0 && (
+                <span className="flex items-center gap-1.5 text-sm text-red-400/80">
+                  <ThumbsDown className="w-3.5 h-3.5" />
+                  {performance.negative_count}
+                </span>
+              )}
+              {performance.derived_quality_score > 0 && (
+                <span className="text-sm text-muted-foreground/50 ml-auto">
+                  Quality score: <span className="font-mono font-semibold text-foreground/70">{Math.round(performance.derived_quality_score)}</span>/100
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 

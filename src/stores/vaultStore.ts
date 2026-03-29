@@ -13,6 +13,7 @@ export const useVaultStore = create<VaultStore>()((...a) => ({
   error: null,
   errorKind: null,
   isLoading: false,
+  sliceErrors: {},
   ...createCredentialSlice(...a),
   ...createDatabaseSlice(...a),
   ...createAutomationSlice(...a),

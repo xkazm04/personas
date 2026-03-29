@@ -22,6 +22,7 @@ export const useOverviewStore = create<OverviewStore>()(
     error: null,
     errorKind: null,
     isLoading: false,
+    sliceErrors: {},
     ...createOverviewSlice(...a),
     ...createMessageSlice(...a),
     ...createEventSlice(...a),

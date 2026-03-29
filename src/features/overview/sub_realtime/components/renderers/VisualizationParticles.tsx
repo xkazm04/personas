@@ -2,9 +2,10 @@ import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import type { ReturnFlow } from '../../libs/visualizationHelpers';
 import { CX, CY } from '../../libs/visualizationHelpers';
+import type { AnimatedEvent } from '@/hooks/realtime/useAnimatedEvents';
 
 interface InboundParticlesProps {
-  activeEvents: RealtimeEvent[];
+  activeEvents: AnimatedEvent[];
   uid: string;
   getSourcePos: (evt: RealtimeEvent) => { x: number; y: number };
   getTargetPos: (evt: RealtimeEvent) => { x: number; y: number } | null;
@@ -14,13 +15,13 @@ interface InboundParticlesProps {
 export function InboundParticles({ activeEvents, uid, getSourcePos: _getSourcePos, getTargetPos, onSelectEvent }: InboundParticlesProps) {
   return (
     <>
-      {activeEvents.map((evt) => {
+      {activeEvents.map(({ event: evt, animationId, phase }) => {
         const tgt = getTargetPos(evt);
         const color = EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8';
         const pColor = evt.status === 'failed' ? '#ef4444' : color;
 
         let tx: number, ty: number;
-        switch (evt._phase) {
+        switch (phase) {
           case 'entering': case 'on-bus':
             tx = CX; ty = CY; break;
           case 'delivering': default:
@@ -28,7 +29,7 @@ export function InboundParticles({ activeEvents, uid, getSourcePos: _getSourcePo
         }
 
         return (
-          <g key={evt._animationId} onClick={() => onSelectEvent(evt)} style={{ cursor: 'pointer' }}>
+          <g key={animationId} onClick={() => onSelectEvent(evt)} style={{ cursor: 'pointer' }}>
             <circle className="animate-fade-slide-in"
               r={1.8} fill={pColor}
             />
@@ -38,7 +39,7 @@ export function InboundParticles({ activeEvents, uid, getSourcePos: _getSourcePo
             <circle className="animate-fade-slide-in"
               r={0.35} fill="white"
             />
-            {evt._phase === 'delivering' && (evt.status === 'completed' || evt.status === 'failed') && (
+            {phase === 'delivering' && (evt.status === 'completed' || evt.status === 'failed') && (
               <circle className="animate-fade-slide-in"
                 cx={tx} cy={ty} fill="none" stroke={pColor} strokeWidth={0.25}
               />

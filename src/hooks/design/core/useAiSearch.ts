@@ -71,7 +71,13 @@ export function useAiSearch(
         const ordered = reviews.filter((r): r is PersonaDesignReview => r !== null);
         onResults(ordered, ordered.length);
         setAiSearchActive(true);
-        setAiSearchRationale(result.rationale);
+
+        // Surface partial coverage info when not all templates were searched
+        let rationale = result.rationale;
+        if (result.totalTemplates > 0 && result.templatesSearched < result.totalTemplates) {
+          rationale += ` (searched ${result.templatesSearched} of ${result.totalTemplates} templates)`;
+        }
+        setAiSearchRationale(rationale);
       } catch (err: unknown) {
         if (searchId !== aiSearchIdRef.current) return;
         logger.warn('AI search failed, falling back to keyword search', { err: err instanceof Error ? err.message : String(err) });

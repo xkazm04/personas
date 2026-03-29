@@ -12,6 +12,7 @@ const DataPortabilitySettings = lazy(() => import('@/features/settings/sub_porta
 const NetworkSettings = lazy(() => import('@/features/sharing/components/ExposureManager'));
 const AdminSettings = lazy(() => import('@/features/settings/sub_admin/components/AdminSettings'));
 const ConfigResolutionSettings = lazy(() => import('@/features/settings/sub_config/components/ConfigResolutionPanel'));
+const QualityGateSettings = lazy(() => import('@/features/settings/sub_quality_gates/components/QualityGateSettings'));
 
 export default function SettingsPage() {
   const settingsTab = useSystemStore((s) => s.settingsTab);
@@ -27,6 +28,7 @@ export default function SettingsPage() {
       case 'network': return <NetworkSettings />;
       case 'config': return <ConfigResolutionSettings />;
       case 'admin': return <AdminSettings />;
+      case 'quality-gates': return <QualityGateSettings />;
       default: return <AccountSettings />;
     }
   })();

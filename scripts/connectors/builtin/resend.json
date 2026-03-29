@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "re_...",
-      "helpText": "From Resend Dashboard -> API Keys -> Create API Key"
+      "helpText": "From Resend Dashboard -> API Keys -> Create API Key",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::engine::types::ExecutionState;
+use super::Json;
+use crate::engine::types::{ExecutionState, ToolCallStep};
 
 // ============================================================================
 // Executions
@@ -19,7 +20,7 @@ pub struct PersonaExecution {
     pub output_data: Option<String>,
     pub claude_session_id: Option<String>,
     pub log_file_path: Option<String>,
-    pub execution_flows: Option<String>,
+    pub execution_flows: Option<Json<serde_json::Value>>,
     pub model_used: Option<String>,
     #[ts(type = "number")]
     pub input_tokens: i64,
@@ -29,7 +30,7 @@ pub struct PersonaExecution {
     pub error_message: Option<String>,
     #[ts(type = "number | null")]
     pub duration_ms: Option<i64>,
-    pub tool_steps: Option<String>,
+    pub tool_steps: Option<Json<Vec<ToolCallStep>>>,
     /// If this execution is a healing retry, links to the original execution.
     pub retry_of_execution_id: Option<String>,
     /// Number of retries attempted (0 = original execution).
@@ -59,7 +60,7 @@ pub struct GlobalExecutionRow {
     pub output_data: Option<String>,
     pub claude_session_id: Option<String>,
     pub log_file_path: Option<String>,
-    pub execution_flows: Option<String>,
+    pub execution_flows: Option<Json<serde_json::Value>>,
     pub model_used: Option<String>,
     #[ts(type = "number")]
     pub input_tokens: i64,
@@ -69,7 +70,7 @@ pub struct GlobalExecutionRow {
     pub error_message: Option<String>,
     #[ts(type = "number | null")]
     pub duration_ms: Option<i64>,
-    pub tool_steps: Option<String>,
+    pub tool_steps: Option<Json<Vec<ToolCallStep>>>,
     pub retry_of_execution_id: Option<String>,
     #[ts(type = "number")]
     pub retry_count: i64,
@@ -112,11 +113,11 @@ pub struct UpdateExecutionStatus {
     pub error_message: Option<String>,
     pub duration_ms: Option<i64>,
     pub log_file_path: Option<String>,
-    pub execution_flows: Option<String>,
+    pub execution_flows: Option<Json<serde_json::Value>>,
     pub input_tokens: Option<i64>,
     pub output_tokens: Option<i64>,
     pub cost_usd: Option<f64>,
-    pub tool_steps: Option<String>,
+    pub tool_steps: Option<Json<Vec<ToolCallStep>>>,
     pub claude_session_id: Option<String>,
     pub execution_config: Option<String>,
     /// When `true`, the execution log file may be incomplete due to I/O errors.

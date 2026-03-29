@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "Go to Pipedrive -> Settings -> Personal preferences -> API -> Your personal API token"
+      "helpText": "Go to Pipedrive -> Settings -> Personal preferences -> API -> Your personal API token",
+      "sensitive": true
     },
     {
       "key": "domain",
@@ -20,7 +21,8 @@
       "type": "text",
       "required": true,
       "placeholder": "yourcompany",
-      "helpText": "Your Pipedrive subdomain (e.g., 'yourcompany' from yourcompany.pipedrive.com)"
+      "helpText": "Your Pipedrive subdomain (e.g., 'yourcompany' from yourcompany.pipedrive.com)",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -40,7 +42,12 @@
     "setup_guide": "1. Log in to Pipedrive.\n2. Go to Settings -> Personal preferences -> API.\n3. Copy your personal API token.\n4. Note your company domain (from the URL: yourcompany.pipedrive.com).\n5. Paste both values here.",
     "pricing_tier": "paid",
     "auth_methods": [
-      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

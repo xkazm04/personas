@@ -1,4 +1,4 @@
-import { memo, useId } from 'react';
+import { memo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   AreaChart, Area, LineChart, Line, PieChart, Pie, Cell,
@@ -7,7 +7,7 @@ import {
 import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
 import { LazyChart } from '@/features/overview/sub_usage/components/LazyChart';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
-import { CHART_COLORS, CHART_COLORS_PURPLE, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
+import { CHART_COLORS, CHART_COLORS_PURPLE, CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { DASHBOARD_GRID } from '@/features/overview/utils/dashboardGrid';
 import { formatToolName } from '../libs/analyticsHelpers';
 import type { PieDataPoint } from '@/features/overview/sub_observability/components/MetricsCharts';
@@ -28,8 +28,6 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
   chartData, compareEnabled, areaData, allToolNames,
   pieData, latencyData, barData, handleFailureBarClick,
 }: AnalyticsChartsProps) {
-  const costGradId = useId();
-
   return (
     <>
       {/* Charts -- 2 column grid */}
@@ -44,13 +42,7 @@ export const AnalyticsCharts = memo(function AnalyticsCharts({
             {compareEnabled && (
               <Area type="monotone" dataKey="prev_cost" name="Prev Cost" stroke="#6366f1" fill="none" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />
             )}
-            <Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${costGradId})`} strokeWidth={2} />
-            <defs>
-              <linearGradient id={costGradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
-              </linearGradient>
-            </defs>
+            <Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${CHART_GRAD.cost})`} strokeWidth={2} />
           </AreaChart>
         </MetricChart>
 

@@ -441,6 +441,28 @@ fn build_persona_tag(persona_name: &str, version: u32, environment: Option<&str>
     }
 }
 
+/// Extract the system prompt from an AGENTS.md file.
+///
+/// Looks for the content between the `### System Prompt` heading's code block
+/// (``` delimiters). Returns `None` if the expected structure is not found.
+fn extract_prompt_from_agents_md(content: &str) -> Option<String> {
+    let heading_marker = "### System Prompt";
+    let heading_pos = content.find(heading_marker)?;
+    let after_heading = &content[heading_pos + heading_marker.len()..];
+    let start = after_heading.find("```")?;
+    let after_open = &after_heading[start + 3..];
+    // Skip optional language identifier on the opening fence line
+    let body_start = after_open.find('\n').map(|i| i + 1).unwrap_or(0);
+    let body = &after_open[body_start..];
+    let end = body.find("```")?;
+    let prompt = body[..end].trim().to_string();
+    if prompt.is_empty() {
+        None
+    } else {
+        Some(prompt)
+    }
+}
+
 /// List version history for a persona deployed to a GitLab project.
 /// Returns tags matching the persona/<name>/* pattern, sorted newest first.
 #[tauri::command]
@@ -705,8 +727,7 @@ pub async fn gitlab_rollback_persona(
         )));
     }
 
-    // Get persona from local DB to rebuild the agent definition
-    // Look up by name since we may be rolling back
+    // Get persona from local DB for metadata (name, description, model, tools)
     let all_personas = personas::get_all(&state.db)?;
     let persona = all_personas
         .iter()
@@ -720,8 +741,32 @@ pub async fn gitlab_rollback_persona(
 
     let persona_tools = tools::get_tools_for_persona(&state.db, &persona.id)?;
 
-    // Build agent definition without credential hints (rollback doesn't re-provision)
-    let definition = gitlab::converter::persona_to_agent(persona, &persona_tools, None);
+    // Fetch the AGENTS.md at the target tag to get the historical snapshot.
+    // This ensures we deploy the definition as it was at that version,
+    // not the current (potentially modified) persona state.
+    let historical_agents_md = client
+        .get_file_at_ref(project_id, "AGENTS.md", &target_tag)
+        .await
+        .map_err(|e| {
+            AppError::GitLab(format!(
+                "Failed to fetch AGENTS.md at tag '{}': {}. Cannot rollback without the historical snapshot.",
+                target_tag, e
+            ))
+        })?;
+
+    // Extract the system prompt from the historical AGENTS.md
+    let snapshot_prompt = extract_prompt_from_agents_md(&historical_agents_md)
+        .unwrap_or_else(|| {
+            tracing::warn!(
+                target_tag = %target_tag,
+                "Could not parse system prompt from historical AGENTS.md, using raw content"
+            );
+            historical_agents_md.clone()
+        });
+
+    // Build agent definition using the historical snapshot prompt
+    let definition =
+        gitlab::converter::persona_to_agent_with_prompt(persona, &persona_tools, snapshot_prompt);
 
     // Attempt to update the existing Duo Agent or create new
     let deploy_result = match client.create_duo_agent(project_id, &definition).await {
@@ -732,10 +777,12 @@ pub async fn gitlab_rollback_persona(
             credentials_provisioned: 0,
         },
         Err(_) => {
+            // Fallback: push the historical AGENTS.md content directly
             let project = client.get_project(project_id).await?;
             let branch = project.default_branch.as_deref().unwrap_or("main");
-            let md = gitlab::converter::persona_to_agents_md(persona, &persona_tools, None);
-            client.upsert_agents_md(project_id, branch, &md).await?;
+            client
+                .upsert_agents_md(project_id, branch, &historical_agents_md)
+                .await?;
 
             GitLabDeployResult {
                 agent_id: None,
@@ -799,7 +846,8 @@ pub async fn gitlab_rollback_persona(
         }
     };
 
-    // Record rollback in deployment history
+    // Record rollback in deployment history — store the historical snapshot,
+    // not the current persona prompt
     if let Err(e) = deployment_history::insert(
         &state.db,
         &persona.id,
@@ -810,7 +858,7 @@ pub async fn gitlab_rollback_persona(
         "success",
         deploy_result.agent_id.as_deref(),
         deploy_result.web_url.as_deref(),
-        Some(&persona.system_prompt),
+        Some(&definition.system_prompt),
         Some(&target_tag),
     ) {
         tracing::warn!(
@@ -969,8 +1017,22 @@ pub async fn gitlab_rollback_from_history(
     let persona = personas::get_by_id(&state.db, &target.persona_id)?;
     let persona_tools = tools::get_tools_for_persona(&state.db, &persona.id)?;
 
-    // Build agent definition from the current persona state
-    let definition = gitlab::converter::persona_to_agent(&persona, &persona_tools, None);
+    // Build agent definition using the stored snapshot prompt from the deployment
+    // record, NOT the current persona state. This ensures we actually restore
+    // the definition as it was when the target version was deployed.
+    let definition = if let Some(ref snapshot) = target.snapshot_prompt {
+        tracing::info!(
+            deployment_id = %deployment_id,
+            "Using stored snapshot prompt for rollback"
+        );
+        gitlab::converter::persona_to_agent_with_prompt(&persona, &persona_tools, snapshot.clone())
+    } else {
+        tracing::warn!(
+            deployment_id = %deployment_id,
+            "No snapshot prompt stored for target deployment, falling back to current persona state"
+        );
+        gitlab::converter::persona_to_agent(&persona, &persona_tools, None)
+    };
 
     // Redeploy
     let deploy_result = match client.create_duo_agent(project_id, &definition).await {
@@ -983,7 +1045,16 @@ pub async fn gitlab_rollback_from_history(
         Err(_) => {
             let project = client.get_project(project_id).await?;
             let branch = project.default_branch.as_deref().unwrap_or("main");
-            let md = gitlab::converter::persona_to_agents_md(&persona, &persona_tools, None);
+            // For the AGENTS.md fallback, rebuild with the snapshot prompt
+            let md = if let Some(ref snapshot) = target.snapshot_prompt {
+                gitlab::converter::persona_to_agents_md_with_prompt(
+                    &persona,
+                    &persona_tools,
+                    snapshot.clone(),
+                )
+            } else {
+                gitlab::converter::persona_to_agents_md(&persona, &persona_tools, None)
+            };
             client.upsert_agents_md(project_id, branch, &md).await?;
 
             GitLabDeployResult {

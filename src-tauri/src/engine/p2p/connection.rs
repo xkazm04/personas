@@ -193,6 +193,70 @@ impl ConnectionManager {
         result
     }
 
+    /// Determine whether an outgoing (local-initiated) connection should win
+    /// over an incoming (remote-initiated) one when both peers connect
+    /// simultaneously. The peer with the lexicographically smaller peer_id is
+    /// the canonical initiator — its outgoing connection wins.
+    fn outgoing_wins(&self, remote_peer_id: &str) -> bool {
+        self.local_peer_id.as_str() < remote_peer_id
+    }
+
+    /// Attempt to insert a new connection, applying a deterministic tie-breaker
+    /// when a connection to the same peer already exists (simultaneous connect).
+    ///
+    /// `is_outgoing` – true when we initiated the connection, false for incoming.
+    ///
+    /// Returns `true` if the new connection was inserted (caller should spawn
+    /// the inbound dispatch loop), `false` if the new connection lost the
+    /// tie-break and was closed.
+    async fn try_insert_connection(
+        &self,
+        peer_id: &str,
+        new_conn: PeerConnection,
+        is_outgoing: bool,
+    ) -> bool {
+        let mut conns = self.connections.write().await;
+
+        if let Some(existing) = conns.get(peer_id) {
+            // Simultaneous connect detected — apply tie-breaker.
+            let dominated = if self.outgoing_wins(peer_id) {
+                // Our outgoing connection wins. If this IS the outgoing one,
+                // replace the existing incoming. Otherwise close the new incoming.
+                !is_outgoing
+            } else {
+                // Remote's outgoing (our incoming) wins. If this IS the incoming
+                // one, replace the existing outgoing. Otherwise close the new outgoing.
+                is_outgoing
+            };
+
+            if dominated {
+                // The new connection lost — close it and keep the existing one.
+                tracing::info!(
+                    peer_id = %peer_id,
+                    is_outgoing = is_outgoing,
+                    "Simultaneous connect tie-break: closing new connection, keeping existing"
+                );
+                new_conn
+                    .quinn_conn
+                    .close(quinn::VarInt::from_u32(2), b"simultaneous connect tie-break");
+                return false;
+            }
+
+            // The new connection won — close the existing one before replacing.
+            tracing::info!(
+                peer_id = %peer_id,
+                is_outgoing = is_outgoing,
+                "Simultaneous connect tie-break: replacing existing connection with new one"
+            );
+            existing
+                .quinn_conn
+                .close(quinn::VarInt::from_u32(2), b"simultaneous connect tie-break");
+        }
+
+        conns.insert(peer_id.to_string(), new_conn);
+        true
+    }
+
     /// Inner connection logic, separated so `connect_to_peer` can manage the connecting guard.
     async fn connect_to_peer_inner(
         &self,
@@ -269,7 +333,7 @@ impl ConnectionManager {
         // Clone the connection handle for the dispatch loop before moving into storage.
         let dispatch_conn = quinn_conn.clone();
 
-        // Store the connection
+        // Build the connection entry
         let conn = PeerConnection {
             info: PeerConnectionInfo {
                 peer_id: peer_id.to_string(),
@@ -283,10 +347,12 @@ impl ConnectionManager {
             quinn_conn,
         };
 
-        self.connections
-            .write()
-            .await
-            .insert(peer_id.to_string(), conn);
+        // Insert with tie-breaker to handle simultaneous connect race
+        if !self.try_insert_connection(peer_id, conn, true).await {
+            // Lost the tie-break — the incoming connection from this peer wins.
+            tracing::debug!(peer_id = %peer_id, "Outgoing connection lost tie-break, aborting");
+            return Ok(());
+        }
 
         let connect_duration_ms = connect_start.elapsed().as_millis() as u64;
         self.metrics
@@ -383,7 +449,7 @@ impl ConnectionManager {
         // Clone the connection handle for the dispatch loop before moving into storage.
         let dispatch_conn = quinn_conn.clone();
 
-        // Store the connection
+        // Build the connection entry
         let conn = PeerConnection {
             info: PeerConnectionInfo {
                 peer_id: remote_peer_id.clone(),
@@ -397,10 +463,12 @@ impl ConnectionManager {
             quinn_conn,
         };
 
-        self.connections
-            .write()
-            .await
-            .insert(remote_peer_id.clone(), conn);
+        // Insert with tie-breaker to handle simultaneous connect race
+        if !self.try_insert_connection(&remote_peer_id, conn, false).await {
+            // Lost the tie-break — the outgoing connection to this peer wins.
+            tracing::debug!(peer_id = %remote_peer_id, "Incoming connection lost tie-break, closing");
+            return Ok(());
+        }
 
         self.metrics
             .connections_established

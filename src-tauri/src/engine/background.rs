@@ -358,6 +358,8 @@ pub fn start_loops(
     ambient_ctx: super::ambient_context::AmbientContextHandle,
     #[cfg(feature = "desktop")]
     context_rule_engine: super::context_rules::ContextRuleEngineHandle,
+    composite_state: super::composite::CompositeState,
+    smee_notifier: super::smee_relay::SmeeRelayNotifier,
 ) -> tokio::sync::watch::Sender<bool> {
     scheduler.running.store(true, Ordering::Relaxed);
     tracing::info!("Scheduler starting via unified subscription model");
@@ -393,6 +395,7 @@ pub fn start_loops(
         }),
         Box::new(CompositeSubscription {
             pool: pool.clone(),
+            composite_state,
         }),
         Box::new(subscription::AutoRollbackSubscription {
             pool: pool.clone(),
@@ -411,6 +414,10 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
             state: cloud_webhook_relay_state,
+        }),
+        Box::new(subscription::DigestSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
         }),
     ];
 
@@ -493,10 +500,11 @@ pub fn start_loops(
         }
     });
 
-    // Smee.io relay (long-lived SSE connection, not a reactive subscription)
+    // Smee.io relay (long-lived SSE connection, event-driven via notifier)
     tokio::spawn({
         let pool = pool.clone();
         let app = app.clone();
+        let notifier = smee_notifier.clone();
         async move {
             super::smee_relay::run_smee_relay(
                 pool,
@@ -504,6 +512,7 @@ pub fn start_loops(
                 Arc::new(tokio::sync::Mutex::new(
                     super::smee_relay::SmeeRelayState::new(),
                 )),
+                notifier,
             )
             .await;
         }
@@ -866,7 +875,7 @@ pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &
         if !trigger.is_within_active_window(now) {
             let cfg = trigger.parse_config();
             let next = sched_logic::compute_next_from_config(&cfg, now);
-            let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+            let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
             tracing::debug!(trigger_id = %trigger.id, "Trigger outside active window, skipping");
             continue;
         }
@@ -893,7 +902,7 @@ pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &
             if over_budget {
                 tracing::warn!(persona_id = %trigger.persona_id, "Cron agent paused due to exceeded budget");
                 let next = sched_logic::compute_next_from_config(&cfg, now);
-                let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+                let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
                 continue;
             }
         }
@@ -901,10 +910,10 @@ pub(crate) fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &
         // 3. Compute next trigger time first
         let next = sched_logic::compute_next_from_config(&cfg, now);
 
-        // 4. Atomically claim the trigger using compare-and-swap on next_trigger_at.
-        // If an overlapping tick already advanced the schedule, the CAS returns
-        // false (0 rows affected) and we skip to prevent double-fire.
-        match trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref()) {
+        // 4. Atomically claim the trigger using compare-and-swap on trigger_version.
+        // If an overlapping tick already advanced the schedule (incrementing the version),
+        // the CAS returns false (0 rows affected) and we skip to prevent double-fire.
+        match trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version) {
             Ok(true) => {}
             Ok(false) => {
                 tracing::debug!(trigger_id = %trigger.id, "Trigger already claimed by another tick, skipping");
@@ -1246,6 +1255,7 @@ mod tests {
             events_failed: 0,
             cycles_detected: 0,
             mark_failures: 0,
+            broken_triggers: 0,
             duration_ms: 42,
             chain_depth: 0,
         };

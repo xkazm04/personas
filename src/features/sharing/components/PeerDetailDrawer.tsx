@@ -287,13 +287,7 @@ export function PeerDetailDrawer({
 }
 
 function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {
-  const parsedTags: string[] = (() => {
-    try {
-      return typeof entry.tags === 'string' ? JSON.parse(entry.tags) : entry.tags;
-    } catch {
-      return [];
-    }
-  })();
+  const parsedTags: string[] = entry.tags ?? [];
 
   return (
     <div className="rounded-lg border border-border bg-secondary/10 p-2.5 flex items-center gap-2">

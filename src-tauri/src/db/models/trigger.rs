@@ -404,6 +404,9 @@ pub struct PersonaTrigger {
     pub status: String,
     pub last_triggered_at: Option<String>,
     pub next_trigger_at: Option<String>,
+    /// Monotonic version counter for race-safe CAS in `mark_triggered`.
+    #[serde(default)]
+    pub trigger_version: i32,
     pub created_at: String,
     pub updated_at: String,
     pub use_case_id: Option<String>,

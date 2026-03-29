@@ -66,6 +66,7 @@ const registry: EventRegistration[] = [
               user: payload.user,
               isAuthenticated: payload.is_authenticated,
               isOffline: payload.is_offline,
+              isOfflineAuthenticated: payload.is_offline_authenticated,
               isLoading: false,
             });
 
@@ -274,6 +275,28 @@ const registry: EventRegistration[] = [
             networkConsecutiveFailures: 0,
             networkError: null,
           });
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Persona health changed (push-based from backend) ---------------------
+  {
+    event: EventName.PERSONA_HEALTH_CHANGED,
+    setup: async () => {
+      let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const unlisten = await typedListen(
+        EventName.PERSONA_HEALTH_CHANGED,
+        () => {
+          // Debounce: multiple executions finishing in rapid succession
+          // (e.g. chain triggers) should coalesce into a single fetch.
+          if (debounceTimer !== null) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            debounceTimer = null;
+            useAgentStore.getState().fetchPersonaSummaries();
+          }, 300);
         },
       );
       return [unlisten];

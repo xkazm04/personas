@@ -128,10 +128,27 @@
   --spacing-8: 2rem;
   --spacing-12: 3rem;
   --spacing-16: 4rem;
+
+  /* Semantic spacing scale — t-shirt size aliases for the numeric scale */
+  --space-xs: 0.25rem;   /* 4px  — tight gaps, icon padding */
+  --space-sm: 0.5rem;    /* 8px  — compact list items, small gaps */
+  --space-md: 0.75rem;   /* 12px — default component padding */
+  --space-lg: 1rem;      /* 16px — card padding, section spacing */
+  --space-xl: 1.5rem;    /* 24px — large section gaps */
+  --space-2xl: 2rem;     /* 32px — page-level spacing */
+
+  /* Primitive radius scale */
   --radius-sm: 0.375rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
   --radius-pill: 9999px;
+
+  /* Semantic radius tiers — use these in components */
+  --radius-interactive: 0.375rem; /* 6px  — buttons, toggles, chips */
+  --radius-input: 0.5rem;        /* 8px  — inputs, selects, textareas */
+  --radius-card: 0.75rem;        /* 12px — cards, panels, tiles */
+  --radius-modal: 1rem;          /* 16px — modals, dialogs, sheets */
 
   /* Elevation shadow tiers — 4-level depth hierarchy */
   --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.15);
@@ -196,15 +213,29 @@
   --spacing-12: var(--spacing-12);
   --spacing-16: var(--spacing-16);
 
-  /* Border-radius tiers */
+  /* Semantic spacing aliases (usable as space-xs, space-sm, etc. in Tailwind) */
+  --spacing-space-xs: var(--space-xs);
+  --spacing-space-sm: var(--space-sm);
+  --spacing-space-md: var(--space-md);
+  --spacing-space-lg: var(--space-lg);
+  --spacing-space-xl: var(--space-xl);
+  --spacing-space-2xl: var(--space-2xl);
+
+  /* Primitive border-radius scale */
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
   --radius-pill: var(--radius-pill);
 
-  /* Backward-compat aliases */
-  --radius-container: var(--radius-lg);
-  --radius-interactive: var(--radius-md);
+  /* Semantic border-radius tiers (usable as rounded-interactive, rounded-input, etc.) */
+  --radius-interactive: var(--radius-interactive);
+  --radius-input: var(--radius-input);
+  --radius-card: var(--radius-card);
+  --radius-modal: var(--radius-modal);
+
+  /* Backward-compat alias */
+  --radius-container: var(--radius-card);
   --radius-secondary: var(--radius-sm);
 
   --font-sans: var(--font-sans);
@@ -306,9 +337,9 @@ input[type="number"] {
      btn-sm  ~=  px-2.5 py-1   rounded-lg  text-xs
      btn-md  ~=  px-3.5 py-1.5 rounded-xl  text-sm
      btn-lg  ~=  px-5   py-2.5 rounded-xl  text-sm  */
-.btn-sm { padding: 0.25rem 0.625rem; border-radius: var(--radius-sm); font-size: 0.75rem; line-height: 1rem; }
-.btn-md { padding: 0.375rem 0.875rem; border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.25rem; }
-.btn-lg { padding: 0.625rem 1.25rem; border-radius: var(--radius-md); font-size: 0.875rem; line-height: 1.25rem; }
+.btn-sm { padding: 0.25rem 0.625rem; border-radius: var(--radius-interactive); font-size: 0.75rem; line-height: 1rem; }
+.btn-md { padding: 0.375rem 0.875rem; border-radius: var(--radius-interactive); font-size: 0.875rem; line-height: 1.25rem; }
+.btn-lg { padding: 0.625rem 1.25rem; border-radius: var(--radius-interactive); font-size: 0.875rem; line-height: 1.25rem; }
 
 /* -- Animations -- */
 @keyframes float {

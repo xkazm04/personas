@@ -15,7 +15,7 @@ interface ExecutionDetailProps {
 export function ExecutionDetail({ execution }: ExecutionDetailProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>('detail');
 
-  const hasToolSteps = hasNonEmptyJson(execution.tool_steps, 'array');
+  const hasToolSteps = Array.isArray(execution.tool_steps) && execution.tool_steps.length > 0;
   const hasInputData = hasNonEmptyJson(execution.input_data, 'object');
   const hasOutputData = hasNonEmptyJson(execution.output_data, 'object');
 

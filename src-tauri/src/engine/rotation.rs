@@ -9,6 +9,10 @@
 //! classified as transient (429, 503, timeout) vs permanent (401, 403),
 //! and remediation policies vary accordingly.
 
+use std::collections::HashSet;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
+
 use ts_rs::TS;
 
 use crate::db::repos::resources::credentials as cred_repo;
@@ -23,6 +27,38 @@ use tauri::Emitter;
 use super::connector_strategy;
 use super::cron;
 use super::event_registry::event_name;
+
+use crate::utils::sanitization::sanitize_secrets;
+
+// ---------------------------------------------------------------------------
+// Concurrency guard for evaluate_due_rotations
+// ---------------------------------------------------------------------------
+
+/// Prevents concurrent executions of `evaluate_due_rotations`. If the scheduler
+/// fires a second tick before the first evaluation completes (drift or manual +
+/// scheduled overlap), the second invocation exits immediately instead of
+/// double-processing due policies (which could issue duplicate OAuth refreshes
+/// or API key rotations, invalidating the credential the first run provisioned).
+static ROTATION_EVAL_RUNNING: AtomicBool = AtomicBool::new(false);
+
+/// Per-credential lock set. Prevents concurrent rotation of the same credential
+/// from overlapping paths (e.g. manual `rotate_now` + scheduled evaluation).
+static ROTATING_CREDENTIALS: Mutex<Option<HashSet<String>>> = Mutex::new(None);
+
+/// Try to acquire a per-credential rotation lock. Returns `true` if acquired.
+fn try_lock_credential(credential_id: &str) -> bool {
+    let mut guard = ROTATING_CREDENTIALS.lock().unwrap_or_else(|e| e.into_inner());
+    let set = guard.get_or_insert_with(HashSet::new);
+    set.insert(credential_id.to_string())
+}
+
+/// Release a per-credential rotation lock.
+fn unlock_credential(credential_id: &str) {
+    let mut guard = ROTATING_CREDENTIALS.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(set) = guard.as_mut() {
+        set.remove(credential_id);
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Windowed anomaly scoring constants
@@ -323,6 +359,54 @@ pub fn resolve_tolerance(metadata: &serde_json::Value) -> f64 {
     DEFAULT_PERMANENT_FAILURE_THRESHOLD
 }
 
+/// Convert model-layer `LedgerHealthEntry` values to engine-layer `HealthcheckEntry`
+/// so they can be fed into `append_healthcheck_entry` and `compute_anomaly_score`.
+pub fn ledger_entries_to_engine(
+    entries: &[crate::db::models::LedgerHealthEntry],
+) -> Vec<HealthcheckEntry> {
+    entries
+        .iter()
+        .map(|e| HealthcheckEntry {
+            success: e.success,
+            status_code: e.status_code,
+            error_class: e.error_class.clone(),
+            message: e.message.clone(),
+            timestamp: e.timestamp.clone(),
+        })
+        .collect()
+}
+
+/// Convert engine-layer `HealthcheckEntry` values to model-layer `LedgerHealthEntry`.
+pub fn engine_entries_to_ledger(
+    entries: &[HealthcheckEntry],
+) -> Vec<crate::db::models::LedgerHealthEntry> {
+    entries
+        .iter()
+        .map(|e| crate::db::models::LedgerHealthEntry {
+            success: e.success,
+            status_code: e.status_code,
+            error_class: e.error_class.clone(),
+            message: e.message.clone(),
+            timestamp: e.timestamp.clone(),
+        })
+        .collect()
+}
+
+/// Build a `LedgerAnomalyScore` from an engine-layer `AnomalyScore`.
+fn score_to_ledger(score: &AnomalyScore) -> crate::db::models::LedgerAnomalyScore {
+    crate::db::models::LedgerAnomalyScore {
+        failure_rate_total: score.failure_rate_total,
+        failure_rate_5m: score.failure_rate_5m,
+        failure_rate_1h: score.failure_rate_1h,
+        failure_rate_24h: score.failure_rate_24h,
+        permanent_failure_rate_1h: score.permanent_failure_rate_1h,
+        transient_failure_rate_1h: score.transient_failure_rate_1h,
+        remediation: score.remediation.as_str().to_string(),
+        sample_count: score.sample_count,
+        data_stale: score.data_stale,
+    }
+}
+
 /// Append a healthcheck result to the credential's ring buffer stored in metadata.
 /// Returns the updated entries vector (capped at HEALTHCHECK_RING_BUFFER_SIZE).
 pub fn append_healthcheck_entry(
@@ -338,11 +422,15 @@ pub fn append_healthcheck_entry(
 
     let status_code = extract_http_status(message);
 
+    // Defense-in-depth: sanitize the message before storing in the ring buffer,
+    // even if callers have already sanitized, to guard against future call sites.
+    let safe_message = sanitize_secrets(message);
+
     let entry = HealthcheckEntry {
         success,
         status_code,
         error_class,
-        message: message.chars().take(200).collect(),
+        message: safe_message.chars().take(200).collect(),
         timestamp: chrono::Utc::now().to_rfc3339(),
     };
 
@@ -406,7 +494,29 @@ pub fn parse_healthcheck_entries(metadata: &serde_json::Value) -> HealthcheckPar
 
 /// Evaluate all due rotation policies and execute rotations.
 /// Called periodically from the background scheduler loop.
+///
+/// Uses an atomic guard to prevent concurrent evaluations — if a previous
+/// invocation is still in progress, this call returns immediately.
 pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
+    // Acquire the concurrency guard. If another evaluation is already running,
+    // skip this tick entirely to avoid double-processing the same due policies.
+    if ROTATION_EVAL_RUNNING
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
+        tracing::debug!("Rotation: evaluation already in progress, skipping this tick");
+        return;
+    }
+
+    // Ensure we always release the guard, even on early returns or panics.
+    struct RotationGuard;
+    impl Drop for RotationGuard {
+        fn drop(&mut self) {
+            ROTATION_EVAL_RUNNING.store(false, Ordering::SeqCst);
+        }
+    }
+    let _guard = RotationGuard;
+
     let now = chrono::Utc::now().to_rfc3339();
 
     let due_policies = match rotation_repo::get_due_policies(pool, &now) {
@@ -428,6 +538,16 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
     );
 
     for policy in &due_policies {
+        // Per-credential lock: skip if this credential is already being rotated
+        // (e.g. by a concurrent manual rotate_now call).
+        if !try_lock_credential(&policy.credential_id) {
+            tracing::debug!(
+                credential_id = %policy.credential_id,
+                "Rotation: credential already being rotated, skipping"
+            );
+            continue;
+        }
+
         let credential = match cred_repo::get_by_id(pool, &policy.credential_id) {
             Ok(c) => c,
             Err(_) => {
@@ -443,6 +563,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                     RotationEntryStatus::Skipped,
                     Some("Credential not found"),
                 );
+                unlock_credential(&policy.credential_id);
                 continue;
             }
         };
@@ -452,6 +573,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
             Ok(r) => r,
             Err(e) => {
                 tracing::error!("Connector registry unavailable for rotation: {e}");
+                unlock_credential(&policy.credential_id);
                 continue;
             }
         };
@@ -459,7 +581,8 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
         let result = strategy.rotate(pool, &credential).await;
 
         match result {
-            Ok(detail) => {
+            Ok(raw_detail) => {
+                let detail = sanitize_secrets(&raw_detail);
                 let _ = rotation_repo::record_rotation(
                     pool,
                     &policy.credential_id,
@@ -469,26 +592,18 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                 );
                 let _ = rotation_repo::mark_rotated(pool, &policy.id);
 
-                // Record success in the healthcheck ring buffer
-                let metadata: serde_json::Value = credential
-                    .metadata
-                    .as_deref()
-                    .and_then(|s| serde_json::from_str(s).ok())
-                    .unwrap_or(serde_json::Value::Null);
-                let existing = parse_healthcheck_entries(&metadata).entries_or_empty();
-                let updated = append_healthcheck_entry(&existing, true, &detail);
-                let mut meta_obj = metadata.as_object().cloned().unwrap_or_default();
-                meta_obj.insert(
-                    "healthcheck_results".to_string(),
-                    serde_json::to_value(&updated).unwrap_or_default(),
-                );
-                let score = compute_anomaly_score(&updated, None);
-                meta_obj.insert(
-                    "anomaly_score".to_string(),
-                    serde_json::to_value(&score).unwrap_or_default(),
-                );
-                let updated_meta = serde_json::to_string(&meta_obj).ok();
-                let _ = cred_repo::update_metadata(pool, &policy.credential_id, updated_meta.as_deref());
+                // Record success in the healthcheck ring buffer via typed ledger.
+                // The append is done inside update_ledger's transaction to prevent
+                // a race where a concurrent manual healthcheck overwrites or is
+                // overwritten by this write (both paths read-modify-write metadata).
+                let detail_c = detail.clone();
+                let _ = cred_repo::update_ledger(pool, &policy.credential_id, |l| {
+                    let existing = ledger_entries_to_engine(&l.healthcheck_results);
+                    let updated = append_healthcheck_entry(&existing, true, &detail_c);
+                    let score = compute_anomaly_score(&updated, None);
+                    l.healthcheck_results = engine_entries_to_ledger(&updated);
+                    l.anomaly_score = Some(score_to_ledger(&score));
+                });
 
                 tracing::info!(
                     credential_id = %policy.credential_id,
@@ -502,7 +617,7 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                 }));
             }
             Err(e) => {
-                let msg = e.to_string();
+                let msg = sanitize_secrets(&e.to_string());
                 let _ = rotation_repo::record_rotation(
                     pool,
                     &policy.credential_id,
@@ -512,30 +627,35 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                 );
 
                 // -- Windowed anomaly scoring --
-                // Append failure to the credential's healthcheck ring buffer
-                let metadata: serde_json::Value = credential
-                    .metadata
-                    .as_deref()
-                    .and_then(|s| serde_json::from_str(s).ok())
-                    .unwrap_or(serde_json::Value::Null);
-
-                let existing = parse_healthcheck_entries(&metadata).entries_or_empty();
-                let updated = append_healthcheck_entry(&existing, false, &msg);
-                let tolerance = resolve_tolerance(&metadata);
-                let score = compute_anomaly_score(&updated, Some(tolerance));
-
-                // Persist updated ring buffer back to credential metadata
-                let mut meta_obj = metadata.as_object().cloned().unwrap_or_default();
-                meta_obj.insert(
-                    "healthcheck_results".to_string(),
-                    serde_json::to_value(&updated).unwrap_or_default(),
-                );
-                meta_obj.insert(
-                    "anomaly_score".to_string(),
-                    serde_json::to_value(&score).unwrap_or_default(),
-                );
-                let updated_meta = serde_json::to_string(&meta_obj).ok();
-                let _ = cred_repo::update_metadata(pool, &policy.credential_id, updated_meta.as_deref());
+                // Append failure to the credential's healthcheck ring buffer.
+                // The append is done inside update_ledger's transaction to prevent
+                // a race where a concurrent manual healthcheck overwrites or is
+                // overwritten by this write (both paths read-modify-write metadata).
+                let mut score_out: Option<AnomalyScore> = None;
+                let mut tolerance_out: f64 = DEFAULT_PERMANENT_FAILURE_THRESHOLD;
+                let msg_c = msg.clone();
+                let _ = cred_repo::update_ledger(pool, &policy.credential_id, |l| {
+                    let existing = ledger_entries_to_engine(&l.healthcheck_results);
+                    let updated = append_healthcheck_entry(&existing, false, &msg_c);
+                    let tolerance = l.resolve_tolerance();
+                    let score = compute_anomaly_score(&updated, Some(tolerance));
+                    l.healthcheck_results = engine_entries_to_ledger(&updated);
+                    l.anomaly_score = Some(score_to_ledger(&score));
+                    tolerance_out = tolerance;
+                    score_out = Some(score);
+                });
+                let tolerance = tolerance_out;
+                let score = match score_out {
+                    Some(s) => s,
+                    None => {
+                        tracing::warn!(
+                            credential_id = %policy.credential_id,
+                            "Rotation: failed to compute anomaly score, skipping remediation"
+                        );
+                        unlock_credential(&policy.credential_id);
+                        continue;
+                    }
+                };
 
                 // Apply remediation based on windowed score
                 match score.remediation {
@@ -637,6 +757,8 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                 }));
             }
         }
+
+        unlock_credential(&policy.credential_id);
     }
 }
 
@@ -653,6 +775,7 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
     };
 
     for cred in &credentials {
+        let ledger = crate::db::models::CredentialLedger::parse(cred.metadata.as_deref());
         let metadata: serde_json::Value = cred
             .metadata
             .as_deref()
@@ -684,16 +807,9 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
         }
         let entries = parse_result.entries_or_empty();
         if entries.is_empty() {
-            // No healthcheck data -- fall back to legacy binary check
-            let last_success = metadata
-                .get("healthcheck_last_success")
-                .and_then(|v| v.as_bool());
-
-            if last_success == Some(false) {
-                let had_previous = metadata
-                    .get("healthcheck_last_success_at")
-                    .and_then(|v| v.as_str())
-                    .is_some();
+            // No healthcheck data -- fall back to legacy binary check via typed ledger
+            if ledger.healthcheck_last_success == Some(false) {
+                let had_previous = ledger.healthcheck_last_success_at.is_some();
 
                 if had_previous {
                     let history = rotation_repo::get_history(pool, &cred.id, Some(1)).unwrap_or_default();
@@ -721,17 +837,24 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
         }
 
         // -- Windowed anomaly scoring --
-        let tolerance = resolve_tolerance(&metadata);
+        let tolerance = ledger.resolve_tolerance();
         let score = compute_anomaly_score(&entries, Some(tolerance));
 
-        // Persist the computed score to metadata
-        let mut meta_obj = metadata.as_object().cloned().unwrap_or_default();
-        meta_obj.insert(
-            "anomaly_score".to_string(),
-            serde_json::to_value(&score).unwrap_or_default(),
-        );
-        let updated_meta = serde_json::to_string(&meta_obj).ok();
-        let _ = cred_repo::update_metadata(pool, &cred.id, updated_meta.as_deref());
+        // Persist the computed anomaly score via update_ledger
+        let score_clone = score.clone();
+        let _ = cred_repo::update_ledger(pool, &cred.id, |l| {
+            l.anomaly_score = Some(crate::db::models::LedgerAnomalyScore {
+                failure_rate_total: score_clone.failure_rate_total,
+                failure_rate_5m: score_clone.failure_rate_5m,
+                failure_rate_1h: score_clone.failure_rate_1h,
+                failure_rate_24h: score_clone.failure_rate_24h,
+                permanent_failure_rate_1h: score_clone.permanent_failure_rate_1h,
+                transient_failure_rate_1h: score_clone.transient_failure_rate_1h,
+                remediation: score_clone.remediation.as_str().to_string(),
+                sample_count: score_clone.sample_count,
+                data_stale: score_clone.data_stale,
+            });
+        });
 
         // Skip stale data -- windowed scores are unreliable if healthchecks are delayed
         if score.data_stale {
@@ -798,15 +921,36 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
 // ---------------------------------------------------------------------------
 
 /// Trigger an immediate rotation for a credential (manual or event-driven).
+///
+/// Uses a per-credential lock to prevent concurrent rotations of the same
+/// credential (e.g. manual trigger overlapping a scheduled evaluation).
 pub async fn rotate_now(
     pool: &DbPool,
     credential_id: &str,
     rotation_type: &str,
 ) -> Result<String, AppError> {
-    let credential = cred_repo::get_by_id(pool, credential_id)?;
+    if !try_lock_credential(credential_id) {
+        return Err(AppError::Execution(format!(
+            "Credential {credential_id} is already being rotated"
+        )));
+    }
+
+    let credential = match cred_repo::get_by_id(pool, credential_id) {
+        Ok(c) => c,
+        Err(e) => {
+            unlock_credential(credential_id);
+            return Err(e);
+        }
+    };
 
     // Dispatch rotation through the connector strategy
-    let strategy = connector_strategy::registry()?.get(&credential.service_type, None);
+    let strategy = match connector_strategy::registry() {
+        Ok(r) => r.get(&credential.service_type, None),
+        Err(e) => {
+            unlock_credential(credential_id);
+            return Err(e);
+        }
+    };
     let result = strategy.rotate(pool, &credential).await;
 
     match &result {
@@ -838,6 +982,7 @@ pub async fn rotate_now(
         }
     }
 
+    unlock_credential(credential_id);
     result
 }
 
@@ -850,6 +995,9 @@ pub fn get_rotation_status(
     let history = rotation_repo::get_history(pool, credential_id, Some(10))?;
     let credential = cred_repo::get_by_id(pool, credential_id)?;
 
+    // Single-active-policy invariant: at most one policy is enabled per credential.
+    // The query orders by created_at DESC, so .find() picks the newest enabled policy
+    // as a deterministic fallback if the invariant is transiently violated.
     let active_policy = policies.iter().find(|p| p.enabled && (p.policy_type == "scheduled" || p.policy_type == "oauth_keepalive"));
 
     let next_rotation_at = active_policy.and_then(|p| p.next_rotation_at.clone());
@@ -865,6 +1013,7 @@ pub fn get_rotation_status(
         rotation_repo::get_consecutive_rotation_failures(pool, credential_id).unwrap_or(0);
 
     // Compute windowed anomaly score from healthcheck ring buffer
+    let ledger = crate::db::models::CredentialLedger::parse(credential.metadata.as_deref());
     let metadata: serde_json::Value = credential
         .metadata
         .as_deref()
@@ -874,7 +1023,7 @@ pub fn get_rotation_status(
     let parse_result = parse_healthcheck_entries(&metadata);
     let healthcheck_corrupted = parse_result.is_corrupted();
     let entries = parse_result.entries_or_empty();
-    let tolerance = resolve_tolerance(&metadata);
+    let tolerance = ledger.resolve_tolerance();
     let anomaly_score = if entries.is_empty() {
         None
     } else {
@@ -1053,23 +1202,23 @@ fn evaluate_expiration_event(
         Err(_) => return false,
     };
 
-    let metadata: serde_json::Value = credential
-        .metadata
-        .as_deref()
-        .and_then(|s| serde_json::from_str(s).ok())
-        .unwrap_or(serde_json::Value::Null);
+    let ledger = crate::db::models::CredentialLedger::parse(credential.metadata.as_deref());
 
-    let expires_at = metadata
-        .get("expires_at")
-        .or_else(|| metadata.get("expiresAt"))
-        .and_then(|v| v.as_str())
-        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+    // Check typed oauth_token_expires_at first, then fall back to custom hints
+    let expires_at = ledger
+        .oauth_expires_at()
+        .or_else(|| {
+            // Legacy: check custom hints for expires_at / expiresAt
+            ledger.custom.get("expires_at")
+                .or_else(|| ledger.custom.get("expiresAt"))
+                .and_then(|v| v.as_str())
+                .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+        })
         .map(|dt| dt.with_timezone(&chrono::Utc));
 
     match expires_at {
         Some(exp) => {
             let threshold = *now + chrono::Duration::days(threshold_days);
-            // Fire if the credential expires within the threshold window
             exp <= threshold && exp > *now
         }
         None => false,
@@ -1087,6 +1236,7 @@ async fn evaluate_healthcheck_event(
         Err(_) => return false,
     };
 
+    let ledger = crate::db::models::CredentialLedger::parse(credential.metadata.as_deref());
     let metadata: serde_json::Value = credential
         .metadata
         .as_deref()
@@ -1096,7 +1246,6 @@ async fn evaluate_healthcheck_event(
     // If we have ring buffer data, use windowed scoring
     let parse_result = parse_healthcheck_entries(&metadata);
     if parse_result.is_corrupted() {
-        // Corrupted metadata -- can't determine health, don't trigger rotation
         tracing::warn!(
             credential_id = %credential_id,
             "should_trigger_anomaly_rotation: corrupted healthcheck ring buffer, skipping"
@@ -1105,31 +1254,21 @@ async fn evaluate_healthcheck_event(
     }
     let entries = parse_result.entries_or_empty();
     if !entries.is_empty() {
-        let tolerance = resolve_tolerance(&metadata);
+        let tolerance = ledger.resolve_tolerance();
         let score = compute_anomaly_score(&entries, Some(tolerance));
 
-        // Only trigger rotation for actionable remediations
         return matches!(
             score.remediation,
             Remediation::RotateThenAlert | Remediation::PreemptiveRotation | Remediation::Disable
         );
     }
 
-    // Legacy fallback: binary healthcheck status
-    let last_success = metadata
-        .get("healthcheck_last_success")
-        .and_then(|v| v.as_bool());
-
-    if last_success != Some(false) {
+    // Legacy fallback: binary healthcheck status via typed ledger
+    if ledger.healthcheck_last_success != Some(false) {
         return false;
     }
 
-    let had_previous_success = metadata
-        .get("healthcheck_last_success_at")
-        .and_then(|v| v.as_str())
-        .is_some();
-
-    had_previous_success
+    ledger.healthcheck_last_success_at.is_some()
 }
 
 fn parse_event_config(config: Option<&str>) -> serde_json::Value {
@@ -1235,10 +1374,21 @@ pub fn auto_provision_single(pool: &DbPool, credential_id: &str) {
         return;
     }
 
+    // Check if an oauth_keepalive policy already exists and is enabled -- skip if so.
     let policies = rotation_repo::get_policies_by_credential(pool, credential_id)
         .unwrap_or_default();
-    if !policies.is_empty() {
+    if policies.iter().any(|p| p.enabled && p.policy_type == "oauth_keepalive") {
         return;
+    }
+
+    // Disable any existing enabled policies (e.g. scheduled) before creating
+    // the OAuth keepalive policy -- enforces single-active-policy invariant.
+    if let Err(e) = rotation_repo::disable_policies_for_credential(pool, credential_id) {
+        tracing::warn!(
+            credential_id = %credential_id,
+            error = %e,
+            "OAuth auto-provision: failed to disable existing policies"
+        );
     }
 
     let input = crate::db::models::CreateRotationPolicyInput {

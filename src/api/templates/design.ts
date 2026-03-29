@@ -46,6 +46,10 @@ export const createDesignConversation = (personaId: string, title: string, messa
 export const appendDesignConversationMessage = (id: string, messages: string, lastResult?: string | null) =>
   invoke<DesignConversation>("append_design_conversation_message", { id, messages, lastResult: lastResult });
 
+/** Append a single message server-side (O(1) IPC payload). */
+export const appendSingleDesignMessage = (id: string, messageJson: string, lastResult?: string | null) =>
+  invoke<DesignConversation>("append_single_design_message", { id, messageJson, lastResult: lastResult });
+
 export const updateDesignConversationStatus = (id: string, status: string) =>
   invoke<void>("update_design_conversation_status", { id, status });
 

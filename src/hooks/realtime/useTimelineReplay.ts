@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { listEventsInRange } from '@/api/overview/events';
-import type { RealtimeEvent, AnimationPhase } from '@/hooks/realtime/useRealtimeEvents';
+import type { RealtimeEvent, AnimationMap } from '@/hooks/realtime/useRealtimeEvents';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import { useEventPhaseProgressor } from '@/hooks/realtime/useEventPhaseProgressor';
 
@@ -39,6 +39,8 @@ export interface TimelineReplayState {
 }
 
 export interface UseTimelineReplayReturn extends TimelineReplayState {
+  animationMapRef: React.RefObject<AnimationMap>;
+  animTick: number;
   enterReplay: (range: TimeRange) => Promise<void>;
   exitReplay: () => void;
   togglePlay: () => void;
@@ -67,6 +69,10 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
   const [emittedCount, setEmittedCount] = useState(0);
 
   const totalMs = rangeEnd - rangeStart || 1;
+
+  // Animation state for replay
+  const animationMapRef = useRef<AnimationMap>(new Map());
+  const [animTick, setAnimTick] = useState(0);
 
   // Refs for the animation loop
   const playingRef = useRef(false);
@@ -97,7 +103,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     return lo;
   }, []);
 
-  useEventPhaseProgressor({ active, setEvents: setReplayEvents });
+  useEventPhaseProgressor({ active, animationMapRef, onTick: setAnimTick });
 
   // -- Replay tick loop ---------------------------------------------
   const tick = useCallback(() => {
@@ -123,13 +129,17 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
       const evtTime = new Date(evt.created_at).getTime();
       if (evtTime > cursorTime) break;
 
-      // Convert to RealtimeEvent
-      const realtimeEvt: RealtimeEvent = {
-        ...evt,
-        _animationId: `replay-${evt.id}-${nextEventIdxRef.current}`,
-        _phase: 'entering' as AnimationPhase,
-        _phaseStartedAt: Date.now(),
-      };
+      // Register animation state for this event
+      const animationId = `replay-${evt.id}-${nextEventIdxRef.current}`;
+      animationMapRef.current.set(animationId, {
+        eventId: evt.id,
+        animationId,
+        phase: 'entering',
+        phaseStartedAt: Date.now(),
+      });
+
+      // Add pure data event
+      const realtimeEvt: RealtimeEvent = { ...evt };
       setReplayEvents((prev) => {
         const next = [realtimeEvt, ...prev];
         return next.length > 60 ? next.slice(0, 60) : next;
@@ -197,6 +207,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
       nextEventIdxRef.current = 0;
       setEmittedCount(0);
       setReplayEvents([]);
+      animationMapRef.current.clear();
       setActive(true);
       setPlaying(false);
     } finally {
@@ -214,6 +225,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     setEmittedCount(0);
     cursorRef.current = 0;
     nextEventIdxRef.current = 0;
+    animationMapRef.current.clear();
   }, []);
 
   const togglePlay = useCallback(() => {
@@ -224,6 +236,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
       nextEventIdxRef.current = 0;
       setEmittedCount(0);
       setReplayEvents([]);
+      animationMapRef.current.clear();
     }
     setPlaying((p) => !p);
   }, []);
@@ -253,6 +266,7 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     nextEventIdxRef.current = idx;
     setEmittedCount(idx);
     setReplayEvents([]); // clear current particles on seek
+    animationMapRef.current.clear();
 
     // Resume playback if it was active before the seek
     isSeekingRef.current = false;
@@ -276,6 +290,8 @@ export function useTimelineReplay(): UseTimelineReplayReturn {
     rangeEnd,
     totalEventCount: historicalEvents.length,
     emittedCount,
+    animationMapRef,
+    animTick,
     enterReplay,
     exitReplay,
     togglePlay,

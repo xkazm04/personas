@@ -39,3 +39,13 @@ export const getRetryChain = (executionId: string, callerPersonaId: string) =>
 
 export const getHealingTimeline = (personaId: string) =>
   invoke<HealingTimelineEvent[]>("get_healing_timeline", { personaId });
+
+// ============================================================================
+// Healing Audit Log
+// ============================================================================
+
+import type { HealingAuditEntry } from "@/lib/bindings/HealingAuditEntry";
+export type { HealingAuditEntry } from "@/lib/bindings/HealingAuditEntry";
+
+export const listHealingAuditLog = (personaId?: string, limit?: number) =>
+  invoke<HealingAuditEntry[]>("list_healing_audit_log", { personaId, limit });

@@ -6,6 +6,7 @@ import { FirstUseConsentModal, hasUserConsented } from "@/features/shared/compon
 import { useAuthStore } from "@/stores/authStore";
 import VibeThemeProvider from "@/features/shared/components/layout/VibeThemeProvider";
 import { AriaLiveProvider } from "@/features/shared/components/feedback/AriaLiveProvider";
+import { ChartGradientDefs } from "@/features/overview/sub_usage/components/ChartGradientDefs";
 import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
 import TitleBar from "@/features/shared/components/layout/TitleBar";
@@ -113,6 +114,7 @@ export default function App() {
             <NotificationCenter />
             <ShareLinkHandler />
           </Suspense>
+          <ChartGradientDefs />
           <ToastContainer />
           {import.meta.env.DEV && isMobilePreview && (
             <div className="fixed top-1 right-1 z-[999] px-2 py-1 rounded-lg bg-cyan-500/90 text-white text-xs font-bold shadow-elevation-3 pointer-events-none select-none">

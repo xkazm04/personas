@@ -23,7 +23,11 @@ const MAX_OUTPUT_LINES = 500;
 // -- Hook ------------------------------------------------------------
 
 export function useDesignAnalysis() {
-  // Design-specific state (layered on top of the generic stream)
+  // Design result preview state.  This is a transient cache of the latest
+  // stream result, used for immediate preview while the persona store catches
+  // up.  The canonical source of truth is persona.last_design_result in the DB
+  // (written by the backend on every successful analysis).  After each
+  // completion we refresh the persona store so the two stay in sync.
   const [designResult, setDesignResult] = useState<AgentIR | null>(null);
   const [designPhase, setDesignPhaseRaw] = useState<DesignPhase>('idle');
   const [question, setQuestion] = useState<DesignQuestion | null>(null);
@@ -102,6 +106,10 @@ export function useDesignAnalysis() {
       setDesignPhase('preview');
       traceSessionRef.current?.complete();
       traceSessionRef.current = null;
+      // Refresh the persona store so persona.last_design_result (the canonical
+      // source of truth, already written by the backend) is available to all
+      // consumers without relying on this transient preview state.
+      refreshPersonas().catch(silentCatch("designAnalysis:refreshAfterComplete"));
     } else if (outcome.kind === 'question') {
       setQuestion(outcome.data);
       setDesignPhase('awaiting-input');
@@ -165,7 +173,14 @@ export function useDesignAnalysis() {
 
   const refineAnalysis = useCallback(async (feedback: string) => {
     if (!personaIdRef.current) return;
-    const currentResultJson = designResult ? JSON.stringify(designResult) : null;
+    // Read from the persona store's last_design_result (the canonical source,
+    // already written by the backend on every successful analysis).  Falls back
+    // to the local preview state only if the store hasn't refreshed yet.
+    const store = useAgentStore.getState();
+    const persona = store.personas.find((p) => p.id === personaIdRef.current);
+    const canonicalResult = persona?.last_design_result ?? null;
+    const currentResultJson = canonicalResult
+      ?? (designResult ? JSON.stringify(designResult) : null);
     const clientDesignId = crypto.randomUUID();
     designIdRef.current = clientDesignId;
 

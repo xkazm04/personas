@@ -623,6 +623,58 @@ pub fn get_notification_delivery_stats() -> NotificationDeliveryStats {
 }
 
 // ---------------------------------------------------------------------------
+// Public channel delivery (used by performance digest)
+// ---------------------------------------------------------------------------
+
+/// Deliver a notification to external channels. Exposed for use by the
+/// performance digest and other system-level notifications.
+pub async fn deliver_to_external_channels(app: &AppHandle, channels_json: &str, title: &str, body: &str) {
+    let channels = parse_channels(Some(channels_json));
+    let enabled: Vec<_> = channels.into_iter().filter(|c| c.enabled).collect();
+    if enabled.is_empty() {
+        return;
+    }
+    for ch in enabled {
+        let metrics = DELIVERY_METRICS.for_channel(&ch.channel_type);
+        let start = std::time::Instant::now();
+        let result = match ch.channel_type.as_str() {
+            "slack" => deliver_slack(&ch, title, body).await,
+            "telegram" => deliver_telegram(&ch, title, body).await,
+            "email" => deliver_email(&ch, title, body).await,
+            other => {
+                tracing::debug!("Unknown channel type: {}", other);
+                Ok(())
+            }
+        };
+        let latency_ms = start.elapsed().as_millis() as u64;
+
+        let (success, error) = match &result {
+            Ok(()) => {
+                metrics.record_success(latency_ms);
+                (true, None)
+            }
+            Err(e) => {
+                metrics.record_failure();
+                tracing::warn!(
+                    channel_type = %ch.channel_type,
+                    "Failed to deliver digest to {} channel: {}", ch.channel_type, e
+                );
+                (false, Some(e.clone()))
+            }
+        };
+
+        let event = NotificationDeliveryEvent {
+            channel_type: ch.channel_type.clone(),
+            success,
+            latency_ms,
+            error,
+            consecutive_failures: metrics.consecutive_failures.load(Ordering::Relaxed),
+        };
+        emit_event(app, event_name::NOTIFICATION_DELIVERY, &event);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Low-level OS send
 // ---------------------------------------------------------------------------
 

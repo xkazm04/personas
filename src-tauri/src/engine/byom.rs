@@ -162,12 +162,27 @@ pub struct PolicyDecision {
 
 impl ByomPolicy {
     /// Load the BYOM policy from the settings DB.
-    /// Returns `None` if no policy is configured or parsing fails.
-    pub fn load(pool: &crate::db::DbPool) -> Option<Self> {
-        let json = crate::db::repos::core::settings::get(pool, BYOM_POLICY_KEY)
-            .ok()
-            .flatten()?;
-        serde_json::from_str(&json).ok()
+    ///
+    /// Returns `Ok(None)` when no policy row exists. Returns `Err` when the row
+    /// exists but the JSON is malformed or schema-incompatible — callers **must
+    /// not** silently downgrade to open-access on parse failure.
+    pub fn load(pool: &crate::db::DbPool) -> Result<Option<Self>, crate::error::AppError> {
+        let json = match crate::db::repos::core::settings::get(pool, BYOM_POLICY_KEY)? {
+            Some(v) => v,
+            None => return Ok(None),
+        };
+        let policy: Self = serde_json::from_str(&json).map_err(|e| {
+            tracing::error!(
+                key = BYOM_POLICY_KEY,
+                error = %e,
+                "BYOM policy JSON is corrupt — refusing to fall back to open-access"
+            );
+            crate::error::AppError::Validation(format!(
+                "BYOM policy is corrupt and cannot be loaded. \
+                 Reset the policy or fix the stored JSON. Parse error: {e}"
+            ))
+        })?;
+        Ok(Some(policy))
     }
 
     /// Save the BYOM policy to the settings DB.

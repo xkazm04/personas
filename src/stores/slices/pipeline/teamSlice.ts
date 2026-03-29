@@ -161,12 +161,12 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
 
     try {
       const realMember = await addTeamMember(teamId, personaId, role, posX, posY);
-      // Replace temp with real member (use fresh state to avoid overwriting concurrent changes)
-      set({ teamMembers: get().teamMembers.map((m) => (m.id === tempId ? realMember : m)) });
+      // Replace temp with real member atomically to avoid interleaving with concurrent adds
+      set((state) => ({ teamMembers: state.teamMembers.map((m) => (m.id === tempId ? realMember : m)) }));
       return realMember;
     } catch (err) {
-      // Rollback
-      set({ teamMembers: get().teamMembers.filter((m) => m.id !== tempId) });
+      // Rollback atomically — only remove our temp entry, preserve concurrent changes
+      set((state) => ({ teamMembers: state.teamMembers.filter((m) => m.id !== tempId) }));
       reportError(err, "Failed to add team member", set);
       return null;
     }
@@ -216,11 +216,11 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
 
     try {
       const realConn = await createTeamConnection(teamId, sourceMemberId, targetMemberId, connectionType, condition, label);
-      set({ teamConnections: get().teamConnections.map((c) => (c.id === tempId ? realConn : c)) });
+      set((state) => ({ teamConnections: state.teamConnections.map((c) => (c.id === tempId ? realConn : c)) }));
       return realConn;
     } catch (err) {
-      // Rollback
-      set({ teamConnections: get().teamConnections.filter((c) => c.id !== tempId) });
+      // Rollback atomically — only remove our temp entry, preserve concurrent changes
+      set((state) => ({ teamConnections: state.teamConnections.filter((c) => c.id !== tempId) }));
       reportError(err, "Failed to create team connection", set);
       return null;
     }

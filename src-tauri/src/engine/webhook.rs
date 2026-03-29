@@ -431,7 +431,7 @@ async fn process_webhook(
     // 6. Mark trigger as fired BEFORE publishing the event.
     //    This prevents duplicate events when mark_triggered fails: the caller
     //    sees accepted:false, retries, but no orphan event sits in the bus.
-    if let Err(e) = trigger_repo::mark_triggered(&state.pool, trigger_id, None, trigger.next_trigger_at.as_deref()) {
+    if let Err(e) = trigger_repo::mark_triggered(&state.pool, trigger_id, None, trigger.trigger_version) {
         tracing::error!(
             trigger_id = %trigger_id,
             "Failed to mark trigger as fired, aborting event publish: {}",

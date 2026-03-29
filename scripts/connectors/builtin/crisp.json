@@ -12,7 +12,8 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From Crisp -> Settings -> API Tokens -> Token Identifier"
+      "helpText": "From Crisp -> Settings -> API Tokens -> Token Identifier",
+      "sensitive": true
     },
     {
       "key": "token_key",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Crisp -> Settings -> API Tokens -> Token Key"
+      "helpText": "From Crisp -> Settings -> API Tokens -> Token Key",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

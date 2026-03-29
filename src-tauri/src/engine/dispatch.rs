@@ -8,6 +8,7 @@ use tauri::{AppHandle, Emitter};
 
 use super::event_registry::event_name;
 use super::protocol::{ExecutionProtocol, StatusFinalization};
+use super::quality_gate::{FilterAction, QualityGateConfig};
 use super::types::{
     ExecutionOutputEvent, HeartbeatEvent, StructuredExecutionEvent,
 };
@@ -148,49 +149,81 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             importance,
             tags,
         } => {
-            // Quality gate: reject error reports, credential failure logs, and raw dumps.
-            // Allow genuine learnings but block operational failure memories that
-            // provide no long-term value (e.g. "no credentials configured").
-            let title_lower = title.to_lowercase();
-            let content_lower = content.to_lowercase();
+            // Quality gate: load configurable patterns from DB (falls back to defaults).
+            let gate_config = super::quality_gate::load(ctx.pool);
             let cat_lower = category.as_deref().unwrap_or("").to_lowercase();
-            let combined = format!("{} {}", title_lower, content_lower);
-            let is_error_content = cat_lower == "error" || cat_lower == "failure"
-                // Stack traces and raw dumps
-                || combined.contains("traceback") || combined.contains("stack trace")
-                || combined.contains("execution blocked")
-                || combined.contains("api_key=") || combined.contains("access_token=")
-                // Credential/auth failure patterns — these provide no learning value
-                || combined.contains("no credentials") || combined.contains("credentials missing")
-                || combined.contains("no api credentials") || combined.contains("credential not found")
-                || combined.contains("not configured in the environment")
-                || combined.contains("unable to authenticate") || combined.contains("authentication failed")
-                // Empty workspace / no data patterns that just describe setup problems
-                || (combined.contains("workspace") && combined.contains("empty") && combined.contains("no "));
+            let combined = format!("{} {}", title, content);
 
-            if is_error_content {
+            // Check rejected categories first
+            let category_rejected = gate_config.memory_reject_categories
+                .iter()
+                .any(|c| c.to_lowercase() == cat_lower);
+
+            if category_rejected {
+                tracing::info!(
+                    gate = "memory",
+                    rule = "category_reject",
+                    category = %cat_lower,
+                    title = %title,
+                    "Quality gate fired: rejected memory by category"
+                );
                 ctx.logger.log(&format!(
-                    "[MEMORY] Rejected low-quality memory (error/failure content): {}",
-                    title
+                    "[MEMORY] Rejected low-quality memory (category '{}'): {}",
+                    cat_lower, title
                 ));
-            } else {
-                // Clamp importance to 1-10
-                let clamped_importance = importance.map(|v| v.clamp(1, 10));
-                match mem_repo::create(
-                    ctx.pool,
-                    CreatePersonaMemoryInput {
-                        persona_id: ctx.persona_id.to_string(),
-                        source_execution_id: Some(ctx.execution_id.to_string()),
-                        title: title.clone(),
-                        content: content.clone(),
-                        category: category.clone(),
-                        importance: clamped_importance,
-                        tags: tags.as_ref().map(|t| serde_json::json!(t).to_string()),
-                    },
-                ) {
-                    Ok(m) => ctx.logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
-                    Err(e) => ctx.logger.log(&format!("[MEMORY] Failed to store: {e}")),
+                return;
+            }
+
+            // Check pattern rules
+            if let Some((rule_label, action)) = QualityGateConfig::check_rules(&gate_config.memory_rules, &combined) {
+                tracing::info!(
+                    gate = "memory",
+                    rule = %rule_label,
+                    action = ?action,
+                    title = %title,
+                    "Quality gate fired: memory matched pattern"
+                );
+                match action {
+                    FilterAction::Reject => {
+                        ctx.logger.log(&format!(
+                            "[MEMORY] Rejected low-quality memory (rule '{}'): {}",
+                            rule_label, title
+                        ));
+                        return;
+                    }
+                    FilterAction::Tag => {
+                        ctx.logger.log(&format!(
+                            "[MEMORY] Tagged memory (rule '{}'): {}",
+                            rule_label, title
+                        ));
+                        // Fall through to store — tags handled below
+                    }
+                    FilterAction::Warn => {
+                        ctx.logger.log(&format!(
+                            "[MEMORY] Warning on memory (rule '{}'): {}",
+                            rule_label, title
+                        ));
+                        // Fall through to store
+                    }
                 }
+            }
+
+            // Clamp importance to 1-10
+            let clamped_importance = importance.map(|v| v.clamp(1, 10));
+            match mem_repo::create(
+                ctx.pool,
+                CreatePersonaMemoryInput {
+                    persona_id: ctx.persona_id.to_string(),
+                    source_execution_id: Some(ctx.execution_id.to_string()),
+                    title: title.clone(),
+                    content: content.clone(),
+                    category: category.clone(),
+                    importance: clamped_importance,
+                    tags: tags.as_ref().map(|t| crate::db::models::Json(t.clone())),
+                },
+            ) {
+                Ok(m) => ctx.logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
+                Err(e) => ctx.logger.log(&format!("[MEMORY] Failed to store: {e}")),
             }
         }
         ProtocolMessage::ManualReview {
@@ -200,31 +233,39 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             context_data,
             suggested_actions,
         } => {
-            // Quality gate: reject reviews that are operational errors, not business decisions.
-            // Manual reviews should flag situations needing human judgment (e.g. "Should we
-            // approve this invoice?"), NOT infrastructure problems ("No pages shared").
-            let title_lower = title.to_lowercase();
-            let desc_lower = description.as_deref().unwrap_or("").to_lowercase();
-            let combined = format!("{} {}", title_lower, desc_lower);
-            let is_noise = combined.contains("execution blocked")
-                || combined.contains("credential missing") || combined.contains("missing credentials")
-                || combined.contains("api error") || combined.contains("api_key")
-                || combined.contains("configuration required") || combined.contains("not configured")
-                || combined.contains("unable to connect") || combined.contains("access_token")
-                // Operational: no data, no access, connectivity issues
-                || combined.contains("no pages shared") || combined.contains("no page access")
-                || combined.contains("cannot proceed") || combined.contains("audit cannot")
-                || combined.contains("cannot be performed") || combined.contains("audit blocked")
-                || combined.contains("no data available") || combined.contains("no results found")
-                || combined.contains("workspace is empty") || combined.contains("has no")
-                || combined.contains("not shared with") || combined.contains("integration has no");
+            // Quality gate: load configurable patterns from DB (falls back to defaults).
+            let gate_config = super::quality_gate::load(ctx.pool);
+            let combined = format!("{} {}", title, description.as_deref().unwrap_or(""));
 
-            if is_noise {
-                ctx.logger.log(&format!(
-                    "[REVIEW] Rejected noise review (error/config issue, not a business decision): {}",
-                    title
-                ));
-                return; // Early return from the match arm closure
+            if let Some((rule_label, action)) = QualityGateConfig::check_rules(&gate_config.review_rules, &combined) {
+                tracing::info!(
+                    gate = "review",
+                    rule = %rule_label,
+                    action = ?action,
+                    title = %title,
+                    "Quality gate fired: review matched pattern"
+                );
+                match action {
+                    FilterAction::Reject => {
+                        ctx.logger.log(&format!(
+                            "[REVIEW] Rejected noise review (rule '{}'): {}",
+                            rule_label, title
+                        ));
+                        return;
+                    }
+                    FilterAction::Tag => {
+                        ctx.logger.log(&format!(
+                            "[REVIEW] Tagged review (rule '{}'): {}",
+                            rule_label, title
+                        ));
+                    }
+                    FilterAction::Warn => {
+                        ctx.logger.log(&format!(
+                            "[REVIEW] Warning on review (rule '{}'): {}",
+                            rule_label, title
+                        ));
+                    }
+                }
             }
 
             match review_repo::create(

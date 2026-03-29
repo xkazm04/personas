@@ -1,6 +1,7 @@
 use rusqlite::params;
 
-use crate::db::models::{HealingKnowledge, PersonaHealingIssue};
+use crate::db::models::{HealingAuditEntry, HealingKnowledge, PersonaHealingIssue};
+use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -21,37 +22,19 @@ pub fn get_all(
     timed_query!("healing_events", "healing_events::get_all", {
         let conn = pool.get()?;
 
-        let mut conditions: Vec<String> = Vec::new();
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-        let mut param_idx = 1u32;
-
+        let mut qb = QueryBuilder::new();
         if let Some(pid) = persona_id {
-            conditions.push(format!("persona_id = ?{param_idx}"));
-            param_values.push(Box::new(pid.to_string()));
-            param_idx += 1;
+            qb.where_eq("persona_id", pid.to_string());
         }
         if let Some(st) = status {
-            conditions.push(format!("status = ?{param_idx}"));
-            param_values.push(Box::new(st.to_string()));
-            #[allow(unused_assignments)]
-            { param_idx += 1; }
+            qb.where_eq("status", st.to_string());
         }
+        qb.order_by("created_at", "DESC");
 
-        let where_clause = if conditions.is_empty() {
-            String::new()
-        } else {
-            format!("WHERE {}", conditions.join(" AND "))
-        };
-
-        let sql = format!(
-            "SELECT * FROM persona_healing_issues {where_clause} ORDER BY created_at DESC"
-        );
-
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
+        let sql = qb.build_select("SELECT * FROM persona_healing_issues");
 
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_healing_issue)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_healing_issue)?;
         Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_list"))
     })
 }
@@ -334,6 +317,67 @@ pub fn get_knowledge_hint(
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(AppError::Database(e)),
         }
+    })
+}
+
+// ============================================================================
+// Healing Audit Log
+// ============================================================================
+
+row_mapper!(row_to_audit_entry -> HealingAuditEntry {
+    id, persona_id, execution_id, event_type, subsystem, message, detail, created_at,
+});
+
+/// Insert a healing audit log entry (fire-and-forget, never fails the caller).
+pub fn create_audit_entry(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+    execution_id: Option<&str>,
+    event_type: &str,
+    subsystem: &str,
+    message: &str,
+    detail: Option<&str>,
+) {
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    match pool.get() {
+        Ok(conn) => {
+            if let Err(e) = conn.execute(
+                "INSERT INTO healing_audit_log (id, persona_id, execution_id, event_type, subsystem, message, detail, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![id, persona_id, execution_id, event_type, subsystem, message, detail, now],
+            ) {
+                tracing::error!("Failed to write healing audit entry: {}", e);
+            }
+        }
+        Err(e) => tracing::error!("Failed to get DB connection for healing audit: {}", e),
+    }
+}
+
+/// List healing audit log entries, optionally filtered by persona_id.
+pub fn list_audit_log(
+    pool: &DbPool,
+    persona_id: Option<&str>,
+    limit: i64,
+) -> Result<Vec<HealingAuditEntry>, AppError> {
+    timed_query!("healing_audit", "healing_audit::list_audit_log", {
+        let conn = pool.get()?;
+        let (sql, param_values): (String, Vec<Box<dyn rusqlite::types::ToSql>>) = if let Some(pid) = persona_id {
+            (
+                "SELECT * FROM healing_audit_log WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2".into(),
+                vec![Box::new(pid.to_string()), Box::new(limit)],
+            )
+        } else {
+            (
+                "SELECT * FROM healing_audit_log ORDER BY created_at DESC LIMIT ?1".into(),
+                vec![Box::new(limit)],
+            )
+        };
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), row_to_audit_entry)?;
+        Ok(crate::db::repos::utils::collect_rows(rows, "healing_audit_log"))
     })
 }
 

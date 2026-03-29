@@ -12,7 +12,8 @@
       "type": "text",
       "required": true,
       "placeholder": "",
-      "helpText": "From Backblaze -> App Keys -> Add a New Application Key"
+      "helpText": "From Backblaze -> App Keys -> Add a New Application Key",
+      "sensitive": true
     },
     {
       "key": "application_key",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "Shown once when creating the key -- copy immediately"
+      "helpText": "Shown once when creating the key -- copy immediately",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -42,7 +44,12 @@
     "setup_guide": "1. Log in to Backblaze.\n2. Go to App Keys.\n3. Click 'Add a New Application Key'.\n4. Name it and select bucket permissions.\n5. Copy the Application Key ID and Application Key (shown only once).\n6. Paste both values here.",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "basic", "label": "Application Key", "type": "credential", "is_default": true}
+      {
+        "id": "basic",
+        "label": "Application Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

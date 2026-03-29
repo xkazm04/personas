@@ -17,6 +17,7 @@ use crate::engine::test_runner::{self, parse_model_configs};
 use crate::engine::types::EphemeralPersona;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
+use crate::validation;
 use crate::AppState;
 
 /// Cancel an active run (if registered) and wait briefly for the background task to wind down
@@ -366,28 +367,70 @@ pub fn lab_accept_matrix_draft(
     require_auth_sync(&state)?;
     let run = matrix_repo::get_run_by_id(&state.db, &run_id)?;
 
+    // Idempotency guard: if the draft was already accepted, return the
+    // current persona without re-applying or creating duplicate versions.
+    if run.draft_accepted {
+        return persona_repo::get_by_id(&state.db, &run.persona_id);
+    }
+
     let draft_json = run.draft_prompt_json.ok_or_else(|| {
         AppError::Validation("No draft prompt available for this run".into())
     })?;
 
-    // Apply draft prompt to the persona
-    let conn = state.db.get()?;
+    // Validate the LLM-generated draft against the structured prompt schema
+    // before writing it to the persona. This prevents silent corruption from
+    // malformed LLM output.
+    let draft_errors = validation::persona::validate_structured_prompt(&draft_json);
+    validation::contract::check(draft_errors)?;
+
+    // Wrap persona update + draft acceptance + version creation in a single
+    // transaction to prevent inconsistent state on partial failure.
+    let mut conn = state.db.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
     let now = chrono::Utc::now().to_rfc3339();
-    conn.execute(
+
+    // Apply draft prompt to the persona
+    tx.execute(
         "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
         rusqlite::params![draft_json, now, run.persona_id],
     )?;
 
     // Mark draft as accepted
-    matrix_repo::accept_draft(&state.db, &run_id)?;
+    tx.execute(
+        "UPDATE lab_matrix_runs SET draft_accepted = 1 WHERE id = ?1",
+        rusqlite::params![run_id],
+    )?;
 
-    // Auto-version the new prompt
-    let _ = metrics_repo::create_prompt_version_if_changed(
-        &state.db,
-        &run.persona_id,
-        Some(draft_json),
-        None,
-    );
+    // Auto-version the new prompt within the same transaction.
+    // Check if latest version already has the same prompt to avoid duplicates.
+    let latest_prompt: Option<String> = tx
+        .query_row(
+            "SELECT structured_prompt FROM persona_prompt_versions
+             WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT 1",
+            rusqlite::params![run.persona_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(AppError::Database)?
+        .flatten();
+
+    if latest_prompt.as_deref() != Some(&draft_json) {
+        let version_id = uuid::Uuid::new_v4().to_string();
+        let next_version: i32 = tx
+            .query_row(
+                "SELECT COALESCE(MAX(version_number), 0) + 1 FROM persona_prompt_versions WHERE persona_id = ?1",
+                rusqlite::params![run.persona_id],
+                |row| row.get(0),
+            )
+            .map_err(AppError::Database)?;
+        tx.execute(
+            "INSERT INTO persona_prompt_versions (id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, created_at)
+             VALUES (?1, ?2, ?3, ?4, NULL, ?5, 'experimental', ?6)",
+            rusqlite::params![version_id, run.persona_id, next_version, draft_json, "Auto-saved", now],
+        )?;
+    }
+
+    tx.commit().map_err(AppError::Database)?;
 
     persona_repo::get_by_id(&state.db, &run.persona_id)
 }
@@ -568,6 +611,22 @@ pub fn lab_rollback_version(
     require_auth_sync(&state)?;
     let version = metrics_repo::get_prompt_version_by_id(&state.db, &version_id)?;
 
+    // Validate the version snapshot's structured prompt (if present) before
+    // applying it. Old snapshots may predate schema changes.
+    if let Some(ref sp) = version.structured_prompt {
+        let sp_errors = validation::persona::validate_structured_prompt(sp);
+        validation::contract::check(sp_errors)?;
+    }
+
+    // Verify that the version snapshot has the core prompt data needed for a
+    // clean restore. COALESCE fallbacks would silently produce a hybrid state
+    // mixing old persona fields with the version's prompt — reject instead.
+    if version.structured_prompt.is_none() && version.system_prompt.as_deref().map_or(true, |s| s.trim().is_empty()) {
+        return Err(AppError::Validation(
+            "Version snapshot is incomplete: missing both structured_prompt and system_prompt. Cannot rollback safely.".into(),
+        ));
+    }
+
     let mut conn = state.db.get()?;
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -575,6 +634,11 @@ pub fn lab_rollback_version(
     // inconsistent state if the process crashes mid-rollback.
     let tx = conn.transaction().map_err(AppError::Database)?;
 
+    // Apply all versioned fields explicitly. For optional snapshot fields
+    // (design_context, last_design_result, icon, color), use COALESCE to
+    // preserve the current value when the snapshot predates those fields.
+    // The core prompt fields (structured_prompt, system_prompt) are always
+    // overwritten — validated above.
     tx.execute(
         "UPDATE personas SET
          structured_prompt = ?1, system_prompt = COALESCE(?2, ''),
@@ -730,14 +794,14 @@ fn build_results_summary_arena(results: &[LabArenaResult]) -> String {
         .iter()
         .map(|r| {
             serde_json::json!({
-                "scenario": r.scenario_name,
-                "model": r.model_id,
-                "tool_accuracy": r.tool_accuracy_score,
-                "output_quality": r.output_quality_score,
-                "protocol_compliance": r.protocol_compliance,
-                "rationale": r.rationale,
-                "suggestions": r.suggestions,
-                "status": r.status,
+                "scenario": r.base.scenario_name,
+                "model": r.base.model_id,
+                "tool_accuracy": r.base.tool_accuracy_score,
+                "output_quality": r.base.output_quality_score,
+                "protocol_compliance": r.base.protocol_compliance,
+                "rationale": r.base.rationale,
+                "suggestions": r.base.suggestions,
+                "status": r.base.status,
             })
         })
         .collect();
@@ -749,16 +813,16 @@ fn build_results_summary_ab(results: &[LabAbResult]) -> String {
         .iter()
         .map(|r| {
             serde_json::json!({
-                "scenario": r.scenario_name,
-                "model": r.model_id,
+                "scenario": r.base.scenario_name,
+                "model": r.base.model_id,
                 "version_id": r.version_id,
                 "version_number": r.version_number,
-                "tool_accuracy": r.tool_accuracy_score,
-                "output_quality": r.output_quality_score,
-                "protocol_compliance": r.protocol_compliance,
-                "rationale": r.rationale,
-                "suggestions": r.suggestions,
-                "status": r.status,
+                "tool_accuracy": r.base.tool_accuracy_score,
+                "output_quality": r.base.output_quality_score,
+                "protocol_compliance": r.base.protocol_compliance,
+                "rationale": r.base.rationale,
+                "suggestions": r.base.suggestions,
+                "status": r.base.status,
             })
         })
         .collect();
@@ -770,15 +834,15 @@ fn build_results_summary_matrix(results: &[LabMatrixResult]) -> String {
         .iter()
         .map(|r| {
             serde_json::json!({
-                "scenario": r.scenario_name,
-                "model": r.model_id,
+                "scenario": r.base.scenario_name,
+                "model": r.base.model_id,
                 "variant": r.variant,
-                "tool_accuracy": r.tool_accuracy_score,
-                "output_quality": r.output_quality_score,
-                "protocol_compliance": r.protocol_compliance,
-                "rationale": r.rationale,
-                "suggestions": r.suggestions,
-                "status": r.status,
+                "tool_accuracy": r.base.tool_accuracy_score,
+                "output_quality": r.base.output_quality_score,
+                "protocol_compliance": r.base.protocol_compliance,
+                "rationale": r.base.rationale,
+                "suggestions": r.base.suggestions,
+                "status": r.base.status,
             })
         })
         .collect();
@@ -790,16 +854,16 @@ fn build_results_summary_eval(results: &[LabEvalResult]) -> String {
         .iter()
         .map(|r| {
             serde_json::json!({
-                "scenario": r.scenario_name,
-                "model": r.model_id,
+                "scenario": r.base.scenario_name,
+                "model": r.base.model_id,
                 "version_id": r.version_id,
                 "version_number": r.version_number,
-                "tool_accuracy": r.tool_accuracy_score,
-                "output_quality": r.output_quality_score,
-                "protocol_compliance": r.protocol_compliance,
-                "rationale": r.rationale,
-                "suggestions": r.suggestions,
-                "status": r.status,
+                "tool_accuracy": r.base.tool_accuracy_score,
+                "output_quality": r.base.output_quality_score,
+                "protocol_compliance": r.base.protocol_compliance,
+                "rationale": r.base.rationale,
+                "suggestions": r.base.suggestions,
+                "status": r.base.status,
             })
         })
         .collect();
@@ -817,17 +881,17 @@ pub fn lab_get_active_progress(
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
 
-    // Single UNION ALL query across all 4 lab run tables instead of 4 serial queries
-    match lab::get_active_progress(&state.db, &persona_id)? {
-        Some((mode, run_id, progress_json)) => {
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&progress_json) {
-                Ok(serde_json::json!({ "mode": mode, "run_id": run_id, "progress": val }))
-            } else {
-                Ok(serde_json::Value::Null)
-            }
-        }
-        None => Ok(serde_json::Value::Null),
-    }
+    // Single UNION ALL query across all 4 lab run tables — returns ALL active runs
+    let active = lab::get_all_active_progress(&state.db, &persona_id)?;
+    let entries: Vec<serde_json::Value> = active
+        .into_iter()
+        .filter_map(|(mode, run_id, progress_json)| {
+            serde_json::from_str::<serde_json::Value>(&progress_json)
+                .ok()
+                .map(|val| serde_json::json!({ "mode": mode, "runId": run_id, "progress": val }))
+        })
+        .collect();
+    Ok(serde_json::Value::Array(entries))
 }
 
 // ============================================================================

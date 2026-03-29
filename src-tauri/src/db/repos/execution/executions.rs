@@ -62,7 +62,6 @@ pub fn get_all_global(
     let limit = limit.unwrap_or(200);
     let conn = pool.get()?;
 
-    // Build query dynamically based on which filters are present.
     let base = "SELECT e.*, \
                 COALESCE(p.name, 'Unknown') as persona_name, \
                 p.icon as persona_icon, \
@@ -70,27 +69,18 @@ pub fn get_all_global(
              FROM persona_executions e \
              LEFT JOIN personas p ON p.id = e.persona_id";
 
-    let mut conditions: Vec<String> = Vec::new();
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let mut qb = crate::db::query_builder::QueryBuilder::new();
 
     if let Some(s) = status {
-        param_values.push(Box::new(s.to_string()));
-        conditions.push(format!("e.status = ?{}", param_values.len()));
+        qb.where_eq("e.status", s.to_string());
     }
     if let Some(pid) = persona_id {
-        param_values.push(Box::new(pid.to_string()));
-        conditions.push(format!("e.persona_id = ?{}", param_values.len()));
+        qb.where_eq("e.persona_id", pid.to_string());
     }
+    qb.order_by("e.created_at", "DESC");
+    qb.limit(limit);
 
-    param_values.push(Box::new(limit));
-    let limit_idx = param_values.len();
-
-    let sql = if conditions.is_empty() {
-        format!("{base} ORDER BY e.created_at DESC LIMIT ?{limit_idx}")
-    } else {
-        format!("{base} WHERE {} ORDER BY e.created_at DESC LIMIT ?{limit_idx}", conditions.join(" AND "))
-    };
-
+    let sql = qb.build_select(base);
     let mut stmt = conn.prepare(&sql)?;
 
     let row_mapper = |row: &Row| -> rusqlite::Result<GlobalExecutionRow> {
@@ -125,8 +115,7 @@ pub fn get_all_global(
         })
     };
 
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|b| b.as_ref()).collect();
-    let rows = stmt.query_map(param_refs.as_slice(), row_mapper)?;
+    let rows = stmt.query_map(qb.params_ref().as_slice(), row_mapper)?;
 
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
     })

@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "postgresql://user:password@host:5432/dbname",
-      "helpText": "Full PostgreSQL connection URI including credentials"
+      "helpText": "Full PostgreSQL connection URI including credentials",
+      "sensitive": true
     },
     {
       "key": "host",
@@ -20,7 +21,8 @@
       "type": "text",
       "required": false,
       "placeholder": "localhost",
-      "helpText": "Alternative: provide host/port/db separately instead of connection string"
+      "helpText": "Alternative: provide host/port/db separately instead of connection string",
+      "sensitive": false
     },
     {
       "key": "port",
@@ -28,7 +30,8 @@
       "type": "text",
       "required": false,
       "placeholder": "5432",
-      "helpText": "PostgreSQL port (default 5432)"
+      "helpText": "PostgreSQL port (default 5432)",
+      "sensitive": false
     },
     {
       "key": "database",
@@ -36,7 +39,8 @@
       "type": "text",
       "required": false,
       "placeholder": "mydb",
-      "helpText": "Database name"
+      "helpText": "Database name",
+      "sensitive": false
     },
     {
       "key": "username",
@@ -44,7 +48,8 @@
       "type": "text",
       "required": false,
       "placeholder": "postgres",
-      "helpText": "Database user"
+      "helpText": "Database user",
+      "sensitive": true
     },
     {
       "key": "password",
@@ -52,7 +57,8 @@
       "type": "password",
       "required": false,
       "placeholder": "",
-      "helpText": "Database password"
+      "helpText": "Database password",
+      "sensitive": true
     },
     {
       "key": "ssl_mode",
@@ -60,7 +66,8 @@
       "type": "text",
       "required": false,
       "placeholder": "prefer",
-      "helpText": "SSL mode: disable, allow, prefer, require, verify-ca, verify-full"
+      "helpText": "SSL mode: disable, allow, prefer, require, verify-ca, verify-full",
+      "sensitive": true
     }
   ],
   "healthcheck_config": null,
@@ -78,13 +85,22 @@
       {
         "id": "connection_string",
         "label": "Connection String",
-        "fields": ["connection_string"],
+        "fields": [
+          "connection_string"
+        ],
         "auth_type_label": "Connection String"
       },
       {
         "id": "individual",
         "label": "Individual Fields",
-        "fields": ["host", "port", "database", "username", "password", "ssl_mode"],
+        "fields": [
+          "host",
+          "port",
+          "database",
+          "username",
+          "password",
+          "ssl_mode"
+        ],
         "auth_type_label": "Host/Port"
       }
     ]

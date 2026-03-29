@@ -155,7 +155,7 @@ pub fn seal(
 
     // Sign the manifest
     let manifest_json = serde_json::to_string_pretty(&manifest)?;
-    let signature_b64 = identity::sign_message(manifest_json.as_bytes())?;
+    let signature_b64 = identity::sign_message(pool, manifest_json.as_bytes())?;
 
     let sig = EnclaveSignature {
         signer_peer_id: local_identity.peer_id.clone(),

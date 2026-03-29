@@ -6,13 +6,31 @@
   "icon_url": "/icons/connectors/n8n.svg",
   "category": "automation",
   "fields": [
-    { "key": "base_url", "label": "Instance URL", "type": "url", "required": true, "placeholder": "https://your-instance.n8n.cloud", "helpText": "Your n8n instance URL (cloud or self-hosted)" },
-    { "key": "api_key", "label": "API Key", "type": "password", "required": true, "placeholder": "n8n_api_...", "helpText": "Generate at Settings -> API -> Create API Key" }
+    {
+      "key": "base_url",
+      "label": "Instance URL",
+      "type": "url",
+      "required": true,
+      "placeholder": "https://your-instance.n8n.cloud",
+      "helpText": "Your n8n instance URL (cloud or self-hosted)",
+      "sensitive": false
+    },
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "n8n_api_...",
+      "helpText": "Generate at Settings -> API -> Create API Key",
+      "sensitive": true
+    }
   ],
   "healthcheck_config": {
     "endpoint": "{{base_url}}/api/v1/workflows?limit=1",
     "method": "GET",
-    "headers": { "X-N8N-API-KEY": "{{api_key}}" },
+    "headers": {
+      "X-N8N-API-KEY": "{{api_key}}"
+    },
     "description": "Validates API key by listing workflows"
   },
   "services": [],
@@ -26,7 +44,12 @@
     "is_platform": true,
     "platform_type": "n8n",
     "auth_methods": [
-      { "id": "api_key", "label": "API Key", "type": "credential", "is_default": true }
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

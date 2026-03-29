@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "xoxb-...",
-      "helpText": "From Slack App -> OAuth & Permissions -> Bot User OAuth Token"
+      "helpText": "From Slack App -> OAuth & Permissions -> Bot User OAuth Token",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

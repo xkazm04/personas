@@ -8,8 +8,7 @@ import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import type { LabEvalRun } from '@/lib/bindings/LabEvalRun';
 
 function parseVersionNums(run: LabEvalRun): string {
-  try { return (JSON.parse(run.versionNumbers) as number[]).map((n) => `v${n}`).join(', '); }
-  catch { return run.versionNumbers; }
+  return run.versionNumbers.map((n) => `v${n}`).join(', ');
 }
 
 interface EvalHistoryProps {

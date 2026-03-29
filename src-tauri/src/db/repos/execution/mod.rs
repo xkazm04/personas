@@ -1,4 +1,5 @@
 pub mod assertions;
+pub mod circuit_breaker;
 pub mod executions;
 pub mod healing;
 pub mod knowledge;

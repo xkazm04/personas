@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "ntn_...",
-      "helpText": "Create an internal integration at notion.so/my-integrations"
+      "helpText": "Create an internal integration at notion.so/my-integrations",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

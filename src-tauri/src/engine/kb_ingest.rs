@@ -142,7 +142,7 @@ pub async fn ingest_text(
         )?;
     }
 
-    let chunks_created = store_chunks_and_vectors(
+    match store_chunks_and_vectors(
         user_db,
         embedder,
         vector_store,
@@ -150,20 +150,23 @@ pub async fn ingest_text(
         &doc_id,
         &chunk_result.chunks,
     )
-    .await?;
-
-    // Mark document as indexed
+    .await
     {
-        let conn = user_db.get()?;
-        conn.execute(
-            "UPDATE kb_documents SET status = 'indexed', chunk_count = ?1, indexed_at = ?2 WHERE id = ?3",
-            params![chunks_created as i32, now, doc_id],
-        )?;
+        Ok(chunks_created) => {
+            // Mark document as indexed
+            let conn = user_db.get()?;
+            conn.execute(
+                "UPDATE kb_documents SET status = 'indexed', chunk_count = ?1, indexed_at = ?2 WHERE id = ?3",
+                params![chunks_created as i32, now, doc_id],
+            )?;
+            update_kb_counters(user_db, &kb.id)?;
+            Ok(chunks_created)
+        }
+        Err(e) => {
+            mark_document_failed(user_db, &doc_id, &e.to_string())?;
+            Err(e)
+        }
     }
-
-    update_kb_counters(user_db, &kb.id)?;
-
-    Ok(chunks_created)
 }
 
 /// Ingest a single file.
@@ -210,7 +213,7 @@ async fn ingest_single_file(
         )?;
     }
 
-    let chunks_created = store_chunks_and_vectors(
+    match store_chunks_and_vectors(
         user_db,
         embedder,
         vector_store,
@@ -218,18 +221,22 @@ async fn ingest_single_file(
         &doc_id,
         &chunk_result.chunks,
     )
-    .await?;
-
-    // Mark document as indexed
+    .await
     {
-        let conn = user_db.get()?;
-        conn.execute(
-            "UPDATE kb_documents SET status = 'indexed', chunk_count = ?1, indexed_at = ?2 WHERE id = ?3",
-            params![chunks_created as i32, now, doc_id],
-        )?;
+        Ok(chunks_created) => {
+            // Mark document as indexed
+            let conn = user_db.get()?;
+            conn.execute(
+                "UPDATE kb_documents SET status = 'indexed', chunk_count = ?1, indexed_at = ?2 WHERE id = ?3",
+                params![chunks_created as i32, now, doc_id],
+            )?;
+            Ok(chunks_created)
+        }
+        Err(e) => {
+            mark_document_failed(user_db, &doc_id, &e.to_string())?;
+            Err(e)
+        }
     }
-
-    Ok(chunks_created)
 }
 
 /// Store chunks in the DB and their embeddings in the vector store.
@@ -275,6 +282,33 @@ async fn store_chunks_and_vectors(
     }
 
     // Embed in batches and insert vectors
+    let embed_result = embed_and_store_vectors(
+        embedder,
+        vector_store,
+        kb_id,
+        &chunk_ids,
+        &texts,
+    )
+    .await;
+
+    if let Err(e) = embed_result {
+        // Clean up orphaned chunks and any partial vectors on embedding failure
+        tracing::warn!(doc_id, error = %e, "Embedding failed, cleaning up orphaned chunks");
+        cleanup_orphaned_chunks(user_db, vector_store, kb_id, &chunk_ids);
+        return Err(e);
+    }
+
+    Ok(chunks.len())
+}
+
+/// Run embedding batches and store vectors. Separated so the caller can clean up on failure.
+async fn embed_and_store_vectors(
+    embedder: &EmbeddingManager,
+    vector_store: &SqliteVectorStore,
+    kb_id: &str,
+    chunk_ids: &[String],
+    texts: &[String],
+) -> Result<(), AppError> {
     for batch_start in (0..texts.len()).step_by(EMBED_BATCH_SIZE) {
         let batch_end = (batch_start + EMBED_BATCH_SIZE).min(texts.len());
         let batch_texts = &texts[batch_start..batch_end];
@@ -291,7 +325,50 @@ async fn store_chunks_and_vectors(
         vector_store.insert_vectors(kb_id, &entries)?;
     }
 
-    Ok(chunks.len())
+    Ok(())
+}
+
+/// Remove orphaned chunk rows and their vectors after an embedding failure.
+fn cleanup_orphaned_chunks(
+    user_db: &UserDbPool,
+    vector_store: &SqliteVectorStore,
+    kb_id: &str,
+    chunk_ids: &[String],
+) {
+    // Best-effort: log but don't propagate errors from cleanup
+    if let Err(e) = vector_store.delete_by_chunks(kb_id, chunk_ids) {
+        tracing::error!(error = %e, "Failed to delete orphaned vectors during cleanup");
+    }
+
+    if let Ok(conn) = user_db.get() {
+        let placeholders: Vec<String> = (1..=chunk_ids.len()).map(|i| format!("?{i}")).collect();
+        let sql = format!(
+            "DELETE FROM kb_chunks WHERE id IN ({})",
+            placeholders.join(",")
+        );
+        let params: Vec<&dyn rusqlite::types::ToSql> = chunk_ids
+            .iter()
+            .map(|id| id as &dyn rusqlite::types::ToSql)
+            .collect();
+        if let Err(e) = conn.execute(&sql, params.as_slice()) {
+            tracing::error!(error = %e, "Failed to delete orphaned chunks during cleanup");
+        }
+    }
+}
+
+/// Mark a document as failed and record the error message.
+/// This prevents zombie documents that are stuck in "indexing" status forever.
+fn mark_document_failed(
+    user_db: &UserDbPool,
+    doc_id: &str,
+    error_msg: &str,
+) -> Result<(), AppError> {
+    let conn = user_db.get()?;
+    conn.execute(
+        "UPDATE kb_documents SET status = 'failed', error_message = ?1 WHERE id = ?2",
+        params![error_msg, doc_id],
+    )?;
+    Ok(())
 }
 
 /// Check if a document with the given content hash already exists in the KB.

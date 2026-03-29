@@ -1,7 +1,8 @@
 import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, Bell, Activity } from 'lucide-react';
+import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -10,6 +11,7 @@ import { SummaryCard } from './SpendOverview';
 import IpcPerformancePanel from './IpcPerformancePanel';
 import HealingIssueModal from './HealingIssueModal';
 import { HealingIssuesPanel } from './HealingIssuesPanel';
+import { AiHealingStreamOverlay } from './AiHealingStreamOverlay';
 import { AlertRulesPanel } from './AlertRulesPanel';
 import { AlertHistoryPanel } from './AlertHistoryPanel';
 import { useObservabilityData } from '../libs/useObservabilityData';
@@ -30,6 +32,15 @@ export default function ObservabilityDashboard() {
   }));
 
   const drilldown = useAnomalyDrilldown();
+
+  // AI healing live stream
+  const aiHealing = useAiHealingStream(d.selectedPersonaId ?? '');
+  const [healingDismissed, setHealingDismissed] = useState(false);
+  // Reset dismissed state when a new healing session starts
+  const showHealingOverlay = aiHealing.phase !== 'idle' && !healingDismissed;
+  useEffect(() => {
+    if (aiHealing.phase === 'started') setHealingDismissed(false);
+  }, [aiHealing.phase]);
 
   const healing = useHealingPanelState({
     healingIssues: d.healingIssues,
@@ -180,6 +191,14 @@ export default function ObservabilityDashboard() {
         <SystemTraceViewer />
       </div>
 
+      {/* AI Healing Live Stream */}
+      {showHealingOverlay && (
+        <AiHealingStreamOverlay
+          healing={aiHealing}
+          onDismiss={() => setHealingDismissed(true)}
+        />
+      )}
+
       {/* Health Issues Section */}
       <HealingIssuesPanel
         healingIssues={d.healingIssues}
@@ -199,6 +218,7 @@ export default function ObservabilityDashboard() {
         setViewMode={healing.setHealingViewMode}
         timelineEvents={d.healingTimeline}
         timelineLoading={d.healingTimelineLoading}
+        selectedPersonaId={d.selectedPersonaId}
       />
       </div>
 

@@ -12,7 +12,8 @@
       "type": "url",
       "required": true,
       "placeholder": "https://my-cluster.example.com:6443",
-      "helpText": "Kubernetes API server URL (find with: kubectl cluster-info)"
+      "helpText": "Kubernetes API server URL (find with: kubectl cluster-info)",
+      "sensitive": true
     },
     {
       "key": "token",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "eyJhbGciOi...",
-      "helpText": "Service account token (find with: kubectl create token <sa-name>)"
+      "helpText": "Service account token (find with: kubectl create token <sa-name>)",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -42,8 +44,20 @@
     "setup_guide": "1. Run: kubectl cluster-info (to get the API server URL)\n2. Create a service account: kubectl create serviceaccount personas-sa\n3. Bind a role: kubectl create clusterrolebinding personas-binding --clusterrole=view --serviceaccount=default:personas-sa\n4. Generate a token: kubectl create token personas-sa\n5. Paste the API server URL and token",
     "pricing_tier": "free",
     "auth_methods": [
-      {"id": "pat", "label": "Bearer Token", "type": "credential", "is_default": true},
-      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "mcp-server-kubernetes", "transport": "stdio", "suggested_env": {}}
+      {
+        "id": "pat",
+        "label": "Bearer Token",
+        "type": "credential",
+        "is_default": true
+      },
+      {
+        "id": "mcp",
+        "label": "MCP",
+        "type": "mcp",
+        "package": "mcp-server-kubernetes",
+        "transport": "stdio",
+        "suggested_env": {}
+      }
     ]
   }
 }

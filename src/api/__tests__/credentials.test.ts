@@ -94,7 +94,7 @@ describe("api/vault/credentials", () => {
 
   it("updateCredentialField returns boolean", async () => {
     mockInvoke("update_credential_field", true);
-    expect(await updateCredentialField("c-1", "token", true, "encrypted-val")).toBe(true);
+    expect(await updateCredentialField("c-1", "token", "encrypted-val")).toBe(true);
   });
 
   it("getCredentialAuditLog returns entries", async () => {

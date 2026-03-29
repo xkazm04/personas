@@ -11,6 +11,7 @@ use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 
+use crate::engine::desktop_security::DesktopConnectorManifest;
 use crate::error::AppError;
 
 /// Result of a desktop bridge action.
@@ -284,6 +285,70 @@ pub mod terminal {
         PathExists { path: String },
     }
 
+    /// Environment variable names that are blocked because they can subvert
+    /// process security (library injection, PATH hijacking, config redirection).
+    /// Checked case-insensitively.
+    const BLOCKED_ENV_VARS: &[&str] = &[
+        // Linux/glibc library injection
+        "ld_preload",
+        "ld_library_path",
+        "ld_audit",
+        "ld_debug",
+        "ld_debug_output",
+        "ld_dynamic_weak",
+        "ld_origin_path",
+        "ld_profile",
+        "ld_show_auxv",
+        "ld_use_load_bias",
+        // macOS dyld injection
+        "dyld_insert_libraries",
+        "dyld_library_path",
+        "dyld_framework_path",
+        "dyld_fallback_library_path",
+        "dyld_fallback_framework_path",
+        "dyld_image_suffix",
+        "dyld_force_flat_namespace",
+        "dyld_print_libraries",
+        // PATH hijacking — can redirect command resolution to attacker-controlled dirs
+        "path",
+        // Home/config redirection — can change where apps load settings from
+        "home",
+        "userprofile",
+        "xdg_config_home",
+        "xdg_data_home",
+        "xdg_cache_home",
+        "xdg_runtime_dir",
+        "xdg_config_dirs",
+        "xdg_data_dirs",
+        // Misc dangerous
+        "ifs",                    // shell field separator — can alter arg parsing
+        "bash_env",               // sourced on non-interactive bash startup
+        "env",                    // sourced on non-interactive sh startup
+        "cdpath",                 // can cause unexpected directory changes
+        "pythonpath",             // Python module injection
+        "rubylib",                // Ruby module injection
+        "node_options",           // Node.js flag injection (e.g. --require)
+        "perl5lib",               // Perl module injection
+        "classpath",              // Java classpath injection
+        "java_tool_options",      // JVM flag injection
+        "_java_options",          // JVM flag injection (alternative)
+    ];
+
+    /// Returns an error if any env var key is on the blocklist.
+    fn validate_env_vars(env_vars: &HashMap<String, String>) -> Result<(), AppError> {
+        for key in env_vars.keys() {
+            let lower = key.to_lowercase();
+            if BLOCKED_ENV_VARS.contains(&lower.as_str()) {
+                return Err(AppError::Forbidden(format!(
+                    "Environment variable '{}' is blocked for security. \
+                     It can be used to bypass command sandboxing.",
+                    key,
+                )));
+            }
+        }
+        Ok(())
+    }
+
     /// Blocked commands that should never be executed via the terminal bridge.
     const BLOCKED_COMMANDS: &[&str] = &[
         "rm", "rmdir", "del", "format", "mkfs",
@@ -304,6 +369,7 @@ pub mod terminal {
         _shell: &str,
         action: TerminalAction,
         env_vars: &HashMap<String, String>,
+        manifest: &DesktopConnectorManifest,
     ) -> Result<BridgeActionResult, AppError> {
         let start = Instant::now();
         let action_name = format!("{:?}", &action).split_whitespace().next().unwrap_or("unknown").to_string();
@@ -313,6 +379,9 @@ pub mod terminal {
                 if command.is_empty() {
                     return Err(AppError::Validation("Command cannot be empty".into()));
                 }
+
+                // Block dangerous environment variables before anything else
+                validate_env_vars(env_vars)?;
 
                 // Check against blocked commands
                 let base_cmd = command[0].rsplit('/').next().unwrap_or(&command[0]);
@@ -383,6 +452,13 @@ pub mod terminal {
             TerminalAction::ReadFile { path } => {
                 // Validate path doesn't escape
                 validate_path_safety(&path)?;
+                // Enforce connector security manifest path allowlist
+                if !manifest.is_path_allowed(&path) {
+                    return Err(AppError::Forbidden(format!(
+                        "Path '{}' is not within the terminal connector's allowed paths",
+                        path
+                    )));
+                }
                 match tokio::fs::read_to_string(&path).await {
                     Ok(content) => {
                         // Cap at 1MB for safety
@@ -399,6 +475,13 @@ pub mod terminal {
 
             TerminalAction::WriteFile { path, content } => {
                 validate_path_safety(&path)?;
+                // Enforce connector security manifest path allowlist
+                if !manifest.is_path_allowed(&path) {
+                    return Err(AppError::Forbidden(format!(
+                        "Path '{}' is not within the terminal connector's allowed paths",
+                        path
+                    )));
+                }
                 if content.len() > 10_485_760 {
                     return Err(AppError::Validation("File content exceeds 10MB limit".into()));
                 }
@@ -408,6 +491,13 @@ pub mod terminal {
 
             TerminalAction::ListDir { path } => {
                 validate_path_safety(&path)?;
+                // Enforce connector security manifest path allowlist
+                if !manifest.is_path_allowed(&path) {
+                    return Err(AppError::Forbidden(format!(
+                        "Path '{}' is not within the terminal connector's allowed paths",
+                        path
+                    )));
+                }
                 let mut entries = tokio::fs::read_dir(&path).await.map_err(AppError::Io)?;
                 let mut listing = Vec::new();
                 while let Some(entry) = entries.next_entry().await.map_err(AppError::Io)? {
@@ -423,6 +513,13 @@ pub mod terminal {
 
             TerminalAction::PathExists { path } => {
                 validate_path_safety(&path)?;
+                // Enforce connector security manifest path allowlist
+                if !manifest.is_path_allowed(&path) {
+                    return Err(AppError::Forbidden(format!(
+                        "Path '{}' is not within the terminal connector's allowed paths",
+                        path
+                    )));
+                }
                 let exists = tokio::fs::metadata(&path).await.is_ok();
                 Ok(exists.to_string())
             }

@@ -58,6 +58,18 @@ pub fn append_design_conversation_message(
     conv_repo::append_message(&state.db, &id, &messages, last_result.as_deref())
 }
 
+/// Append a single message server-side (O(1) IPC payload instead of O(n)).
+#[tauri::command]
+pub fn append_single_design_message(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    message_json: String,
+    last_result: Option<String>,
+) -> Result<DesignConversation, AppError> {
+    require_auth_sync(&state)?;
+    conv_repo::append_single_message(&state.db, &id, &message_json, last_result.as_deref(), 500)
+}
+
 #[tauri::command]
 pub fn update_design_conversation_status(
     state: State<'_, Arc<AppState>>,

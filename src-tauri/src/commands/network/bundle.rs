@@ -1,3 +1,4 @@
+use sha2::Digest;
 use std::sync::Arc;
 use tauri::State;
 
@@ -65,12 +66,16 @@ pub fn apply_bundle_import(
     require_privileged_sync(&state, "apply_bundle_import")?;
 
     // Use cached preview bytes if a preview_id was provided (TOCTOU mitigation).
-    // Falls back to re-reading the file if the cache entry expired or is missing.
+    // Falls back to re-reading the file if the cache entry expired or is missing,
+    // but always verifies the bundle hash matches the preview hash.
     let bytes = if let Some(ref pid) = options.preview_id {
-        bundle::take_cached_preview_bytes(pid).unwrap_or_else(|| {
-            tracing::warn!(preview_id = %pid, "Preview cache miss, re-reading file");
-            std::fs::read(&file_path).unwrap_or_default()
-        })
+        match bundle::take_cached_preview_bytes(pid) {
+            Some((cached_bytes, _cached_hash)) => cached_bytes,
+            None => {
+                tracing::warn!(preview_id = %pid, "Preview cache miss, re-reading file");
+                std::fs::read(&file_path).map_err(AppError::Io)?
+            }
+        }
     } else {
         std::fs::read(&file_path)
             .map_err(AppError::Io)?
@@ -78,6 +83,23 @@ pub fn apply_bundle_import(
 
     if bytes.is_empty() {
         return Err(AppError::Validation("Bundle file is empty or unreadable".into()));
+    }
+
+    // TOCTOU mitigation: verify the bundle hash matches what was shown at preview time.
+    if let Some(ref expected_hash) = options.expected_bundle_hash {
+        let actual_hash = hex::encode(sha2::Sha256::digest(&bytes));
+        if actual_hash != *expected_hash {
+            tracing::error!(
+                expected = %expected_hash,
+                actual = %actual_hash,
+                "Bundle hash mismatch — file may have been swapped after preview"
+            );
+            return Err(AppError::Validation(
+                "Bundle integrity check failed: the file has changed since it was previewed. \
+                 Please re-preview the bundle before importing."
+                    .into(),
+            ));
+        }
     }
 
     let result = bundle::apply_import(&state.db, &bytes, options)?;
@@ -181,13 +203,16 @@ pub fn apply_bundle_from_clipboard(
 
     // Use cached preview bytes if available, otherwise decode from base64
     let bytes = if let Some(ref pid) = options.preview_id {
-        bundle::take_cached_preview_bytes(pid).unwrap_or_else(|| {
-            tracing::warn!(preview_id = %pid, "Preview cache miss, re-decoding clipboard data");
-            use base64::Engine;
-            base64::engine::general_purpose::STANDARD
-                .decode(&base64_data)
-                .unwrap_or_default()
-        })
+        match bundle::take_cached_preview_bytes(pid) {
+            Some((cached_bytes, _cached_hash)) => cached_bytes,
+            None => {
+                tracing::warn!(preview_id = %pid, "Preview cache miss, re-decoding clipboard data");
+                use base64::Engine;
+                base64::engine::general_purpose::STANDARD
+                    .decode(&base64_data)
+                    .map_err(|e| AppError::Validation(format!("Invalid clipboard data: {e}")))?
+            }
+        }
     } else {
         use base64::Engine;
         base64::engine::general_purpose::STANDARD
@@ -197,6 +222,23 @@ pub fn apply_bundle_from_clipboard(
 
     if bytes.is_empty() {
         return Err(AppError::Validation("Bundle data is empty or unreadable".into()));
+    }
+
+    // TOCTOU mitigation: verify the bundle hash matches what was shown at preview time.
+    if let Some(ref expected_hash) = options.expected_bundle_hash {
+        let actual_hash = hex::encode(sha2::Sha256::digest(&bytes));
+        if actual_hash != *expected_hash {
+            tracing::error!(
+                expected = %expected_hash,
+                actual = %actual_hash,
+                "Bundle hash mismatch — clipboard data may have been swapped after preview"
+            );
+            return Err(AppError::Validation(
+                "Bundle integrity check failed: the data has changed since it was previewed. \
+                 Please re-preview the bundle before importing."
+                    .into(),
+            ));
+        }
     }
 
     let result = bundle::apply_import(&state.db, &bytes, options)?;

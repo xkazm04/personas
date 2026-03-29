@@ -8,6 +8,7 @@ const noRawTextClasses = require("./eslint-rules/no-raw-text-classes.cjs");
 const noRawSpacingClasses = require("./eslint-rules/no-raw-spacing-classes.cjs");
 const noRawShadowClasses = require("./eslint-rules/no-raw-shadow-classes.cjs");
 const noLooseEventPayload = require("./eslint-rules/no-loose-event-payload.cjs");
+const noRawRadiusClasses = require("./eslint-rules/no-raw-radius-classes.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -26,6 +27,7 @@ export default tseslint.config(
           "no-raw-spacing-classes": noRawSpacingClasses,
           "no-raw-shadow-classes": noRawShadowClasses,
           "no-loose-event-payload": noLooseEventPayload,
+          "no-raw-radius-classes": noRawRadiusClasses,
         },
       },
     },
@@ -51,6 +53,7 @@ export default tseslint.config(
       "custom/no-raw-spacing-classes": "warn",
       "custom/no-raw-shadow-classes": "warn",
       "custom/no-loose-event-payload": "error",
+      "custom/no-raw-radius-classes": "warn",
     },
   },
   // Allow raw invoke in the wrapper itself, test mocks, and test automation bridge

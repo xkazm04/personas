@@ -7,7 +7,7 @@ export interface LabMatrixRun {
   userInstruction: string;
   draftPromptJson: string | null;
   draftChangeSummary: string | null;
-  modelsTested: string;
+  modelsTested: string[];
   scenariosCount: number;
   useCaseFilter: string | null;
   summary: string | null;

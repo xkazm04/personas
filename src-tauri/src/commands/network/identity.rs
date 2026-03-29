@@ -41,6 +41,17 @@ pub fn export_identity_card(
     identity_engine::export_identity_card(&state.db)
 }
 
+/// Re-initialize the local identity after a keyring loss.
+/// Generates a new Ed25519 keypair and updates the database.
+/// WARNING: All existing trust relationships will be invalidated.
+#[tauri::command]
+pub fn reinitialize_identity(
+    state: State<'_, Arc<AppState>>,
+) -> Result<PeerIdentity, AppError> {
+    require_auth_sync(&state)?;
+    identity_engine::reinitialize_identity(&state.db)
+}
+
 // -- Trusted Peers -------------------------------------------------------
 
 #[tauri::command]

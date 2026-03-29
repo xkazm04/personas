@@ -1,6 +1,7 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{CreateTeamMemoryInput, TeamMemory, TeamMemoryStats};
+use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -44,59 +45,29 @@ pub fn get_all(
 
         let conn = pool.get()?;
 
-        let mut conditions: Vec<String> = Vec::new();
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-        let mut param_idx = 1u32;
-
-        // team_id is always required
-        conditions.push(format!("team_id = ?{param_idx}"));
-        param_values.push(Box::new(team_id.to_string()));
-        param_idx += 1;
-
+        let mut qb = QueryBuilder::new();
+        qb.where_eq("team_id", team_id.to_string());
         if let Some(rid) = run_id {
-            conditions.push(format!("run_id = ?{param_idx}"));
-            param_values.push(Box::new(rid.to_string()));
-            param_idx += 1;
+            qb.where_eq("run_id", rid.to_string());
         }
         if let Some(cat) = category {
-            conditions.push(format!("category = ?{param_idx}"));
-            param_values.push(Box::new(cat.to_string()));
-            param_idx += 1;
+            qb.where_eq("category", cat.to_string());
         }
         if let Some(q) = search {
             let trimmed = q.trim();
             if !trimmed.is_empty() {
                 let pattern = format!("%{}%", escape_like(trimmed));
-                conditions.push(format!(
-                    "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
-                    param_idx,
-                    param_idx + 1
-                ));
-                param_values.push(Box::new(pattern.clone()));
-                param_values.push(Box::new(pattern));
-                param_idx += 2;
+                qb.where_like_escape_any(&["title", "content"], pattern);
             }
         }
+        qb.order_by_multiple(&[("importance", "DESC"), ("created_at", "DESC")]);
+        qb.limit(limit);
+        qb.offset(offset);
 
-        let where_clause = if conditions.is_empty() {
-            String::new()
-        } else {
-            format!("WHERE {}", conditions.join(" AND "))
-        };
-
-        let sql = format!(
-            "SELECT * FROM team_memories {} ORDER BY importance DESC, created_at DESC LIMIT ?{} OFFSET ?{}",
-            where_clause, param_idx, param_idx + 1
-        );
-
-        param_values.push(Box::new(limit));
-        param_values.push(Box::new(offset));
-
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
+        let sql = qb.build_select("SELECT * FROM team_memories");
 
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_team_memory)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_team_memory)?;
         let results: Vec<TeamMemory> = rows
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
@@ -361,39 +332,21 @@ pub fn get_total_count(
     timed_query!("team_memories", "team_memories::get_total_count", {
         let conn = pool.get()?;
 
-        let mut conditions: Vec<String> = Vec::new();
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-        let mut param_idx = 1u32;
-
-        conditions.push(format!("team_id = ?{param_idx}"));
-        param_values.push(Box::new(team_id.to_string()));
-        param_idx += 1;
-
+        let mut qb = QueryBuilder::new();
+        qb.where_eq("team_id", team_id.to_string());
         if let Some(rid) = run_id {
-            conditions.push(format!("run_id = ?{param_idx}"));
-            param_values.push(Box::new(rid.to_string()));
-            param_idx += 1;
+            qb.where_eq("run_id", rid.to_string());
         }
         if let Some(cat) = category {
-            conditions.push(format!("category = ?{param_idx}"));
-            param_values.push(Box::new(cat.to_string()));
-            param_idx += 1;
+            qb.where_eq("category", cat.to_string());
         }
         if let Some(s) = search {
             let pattern = format!("%{}%", escape_like(s));
-            conditions.push(format!("(title LIKE ?{param_idx} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')", param_idx + 1));
-            param_values.push(Box::new(pattern.clone()));
-            param_values.push(Box::new(pattern));
-            param_idx += 2;
+            qb.where_like_escape_any(&["title", "content"], pattern);
         }
-        let _ = param_idx; // suppress unused-assignment warning; keep idx correct for future filters
 
-        let where_clause = format!("WHERE {}", conditions.join(" AND "));
-        let sql = format!("SELECT COUNT(*) FROM team_memories {where_clause}");
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
-
-        let count: i64 = conn.query_row(&sql, params_ref.as_slice(), |row| row.get(0))?;
+        let sql = qb.build_select("SELECT COUNT(*) FROM team_memories");
+        let count: i64 = conn.query_row(&sql, qb.params_ref().as_slice(), |row| row.get(0))?;
         Ok(count)
 
     })
@@ -409,35 +362,20 @@ pub fn get_stats(
         let conn = pool.get()?;
 
         // Build shared WHERE clause for all three queries
-        let mut conditions: Vec<String> = vec!["team_id = ?1".to_string()];
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> =
-            vec![Box::new(team_id.to_string())];
-        let mut param_idx = 2u32;
-
+        let mut qb = QueryBuilder::new();
+        qb.where_eq("team_id", team_id.to_string());
         if let Some(cat) = category {
-            conditions.push(format!("category = ?{param_idx}"));
-            param_values.push(Box::new(cat.to_string()));
-            param_idx += 1;
+            qb.where_eq("category", cat.to_string());
         }
         if let Some(q) = search {
             let trimmed = q.trim();
             if !trimmed.is_empty() {
                 let pattern = format!("%{}%", escape_like(trimmed));
-                conditions.push(format!(
-                    "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
-                    param_idx,
-                    param_idx + 1
-                ));
-                param_values.push(Box::new(pattern.clone()));
-                param_values.push(Box::new(pattern));
-                param_idx += 2;
+                qb.where_like_escape_any(&["title", "content"], pattern);
             }
         }
-        let _ = param_idx;
 
-        let where_clause = format!("WHERE {}", conditions.join(" AND "));
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
+        let where_clause = qb.where_clause();
 
         // Total + avg importance + auto-generated count
         let sql_agg = format!(
@@ -446,7 +384,7 @@ pub fn get_stats(
              FROM team_memories {where_clause}"
         );
         let (total, avg_importance, auto_generated): (i64, f64, i64) =
-            conn.query_row(&sql_agg, params_ref.as_slice(), |row| {
+            conn.query_row(&sql_agg, qb.params_ref().as_slice(), |row| {
                 Ok((row.get(0)?, row.get(1)?, row.get(2)?))
             })?;
 
@@ -456,7 +394,7 @@ pub fn get_stats(
         );
         let mut cat_stmt = conn.prepare(&sql_cat)?;
         let category_counts: Vec<(String, i64)> = cat_stmt
-            .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
+            .query_map(qb.params_ref().as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
 
@@ -466,7 +404,7 @@ pub fn get_stats(
         );
         let mut run_stmt = conn.prepare(&sql_run)?;
         let run_counts: Vec<(String, i64)> = run_stmt
-            .query_map(params_ref.as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
+            .query_map(qb.params_ref().as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
 

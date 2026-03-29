@@ -81,13 +81,19 @@ pub fn rollback_prompt_version(
             )?;
         }
 
-        // Demote current production, promote this version
-        if let Ok(Some(current_prod)) = repo::get_production_version(&state.db, &version.persona_id) {
-            if current_prod.id != version_id {
-                let _ = repo::update_prompt_version_tag(&state.db, &current_prod.id, "experimental");
-            }
-        }
-        repo::update_prompt_version_tag(&state.db, &version_id, "production")?;
+        // Atomically demote ALL production versions for this persona, then
+        // promote the target.  Using a blanket WHERE avoids the race where a
+        // concurrent rollback changes the production tag between our read and
+        // write, which would leave two versions tagged "production".
+        conn.execute(
+            "UPDATE persona_prompt_versions SET tag = 'experimental' \
+             WHERE persona_id = ?1 AND tag = 'production' AND id != ?2",
+            rusqlite::params![version.persona_id, version_id],
+        )?;
+        conn.execute(
+            "UPDATE persona_prompt_versions SET tag = 'production' WHERE id = ?1",
+            rusqlite::params![version_id],
+        )?;
         Ok(())
     })();
 

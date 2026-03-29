@@ -14,8 +14,9 @@ import { ORBIT_R_OUTER, ORBIT_R_INNER } from '../renderers/EventBusTypes';
 import { EventBusSvgDefs, EventBusCoreElements } from '../renderers/EventBusSvgScene';
 import { OuterNodeGroup, InnerNodeGroup } from '../renderers/EventBusNodeRenderers';
 import { InboundCometTrails, ReturnFlowComets } from '../renderers/EventBusParticleRenderers';
+import { useAnimatedEvents } from '@/hooks/realtime/useAnimatedEvents';
 
-export default function EventBusVisualization({ events, personas, onSelectEvent }: Props) {
+export default function EventBusVisualization({ events, personas, animationMapRef, animTick, onSelectEvent }: Props) {
   const uid = useId();
 
   /* ---------- source topology ---------- */
@@ -57,11 +58,13 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
   const outerMap = useMemo(() => { const m = new Map<string, { x: number; y: number }>(); for (const n of outerNodes) m.set(n.id, { x: n.x, y: n.y }); return m; }, [outerNodes]);
   const innerMap = useMemo(() => { const m = new Map<string, { x: number; y: number }>(); for (const n of innerNodes) m.set(n.id, { x: n.x, y: n.y }); return m; }, [innerNodes]);
 
-  const { activeEvents, seenTypes, inFlightCount } = useMemo(() => {
-    const active: RealtimeEvent[] = []; const types = new Set<string>();
-    for (const e of events) { types.add(e.event_type); if (e._phase !== 'done') active.push(e); }
-    return { activeEvents: active, seenTypes: [...types], inFlightCount: active.length };
-  }, [events]);
+  const animatedEvents = useAnimatedEvents(events, animationMapRef.current, animTick);
+
+  const { seenTypes, inFlightCount } = useMemo(() => {
+    const types = new Set<string>();
+    for (const e of events) types.add(e.event_type);
+    return { seenTypes: [...types], inFlightCount: animatedEvents.length };
+  }, [events, animatedEvents.length]);
 
   const getSrc = useCallback((evt: RealtimeEvent) => {
     const key = evt.source_id || evt.source_type;
@@ -88,9 +91,9 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
   useEffect(() => () => { clearTimeouts(); }, [clearTimeouts]);
 
   useEffect(() => {
-    for (const evt of activeEvents) {
-      if (evt._phase !== 'delivering' || spawnedRef.current.has(evt._animationId)) continue;
-      spawnedRef.current.add(evt._animationId);
+    for (const { event: evt, animationId, phase } of animatedEvents) {
+      if (phase !== 'delivering' || spawnedRef.current.has(animationId)) continue;
+      spawnedRef.current.add(animationId);
       if (spawnedRef.current.size > 200) { spawnedRef.current.clear(); clearTimeouts(); }
       const color = EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8';
       const tgt = getTgt(evt); const src = getSrc(evt);
@@ -98,18 +101,17 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
       const personaId = evt.target_persona_id ?? innerNodes[evt.id.charCodeAt(0) % innerNodes.length]?.id ?? 'unknown';
       const durationMs = 1200 + Math.random() * 1800;
       setProcessingSet(prev => { const next = new Map(prev); next.set(personaId, { color, durationMs, startedAt: Date.now() }); return next; });
-      const animId = evt._animationId;
       const tid = window.setTimeout(() => {
-        timeoutRef.current.delete(animId);
+        timeoutRef.current.delete(animationId);
         setProcessingSet(prev => { const next = new Map(prev); next.delete(personaId); return next; });
         setReturnFlows(prev => {
-          const next = [...prev, { id: `ret-${animId}`, fromX: tgt.x, fromY: tgt.y, toX: src.x, toY: src.y, color, startedAt: Date.now() }];
+          const next = [...prev, { id: `ret-${animationId}`, fromX: tgt.x, fromY: tgt.y, toX: src.x, toY: src.y, color, startedAt: Date.now() }];
           return next.length > 50 ? next.slice(next.length - 50) : next;
         });
       }, durationMs);
-      timeoutRef.current.set(animId, tid);
+      timeoutRef.current.set(animationId, tid);
     }
-  }, [activeEvents, clearTimeouts, getSrc, getTgt, innerNodes]);
+  }, [animatedEvents, clearTimeouts, getSrc, getTgt, innerNodes]);
 
   // Only run the cleanup timer when there are active return flows to expire.
   const hasReturnFlows = returnFlows.length > 0;
@@ -122,7 +124,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
     return () => clearInterval(t);
   }, [hasReturnFlows]);
 
-  const hasTraffic = activeEvents.length > 0 || returnFlows.length > 0 || processingSet.size > 0;
+  const hasTraffic = animatedEvents.length > 0 || returnFlows.length > 0 || processingSet.size > 0;
 
   return (
     <div className="w-full h-full flex min-h-[280px]">
@@ -132,7 +134,7 @@ export default function EventBusVisualization({ events, personas, onSelectEvent 
           <EventBusCoreElements uid={uid} hasTraffic={hasTraffic} />
           <OuterNodeGroup nodes={outerNodes} />
           <InnerNodeGroup nodes={innerNodes} processingSet={processingSet} hasTraffic={hasTraffic} />
-          <InboundCometTrails activeEvents={activeEvents} uid={uid} getSrc={getSrc} getTgt={getTgt} onSelectEvent={onSelectEvent} />
+          <InboundCometTrails activeEvents={animatedEvents} uid={uid} getSrc={getSrc} getTgt={getTgt} onSelectEvent={onSelectEvent} />
           <ReturnFlowComets flows={returnFlows} uid={uid} />
 
           {/* Badges */}

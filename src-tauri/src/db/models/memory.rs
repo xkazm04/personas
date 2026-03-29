@@ -1,62 +1,36 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use super::Json;
+
 // ============================================================================
 // Memories
 // ============================================================================
 
-/// Valid range for memory importance scores.
-pub const IMPORTANCE_MIN: i32 = 1;
-pub const IMPORTANCE_MAX: i32 = 5;
+// -- Re-exports from the shared validation module ----------------------------
+// Business rules live in crate::validation::memory. These re-exports keep the
+// existing call sites working without changes.
+pub use crate::validation::memory::MEMORY_CATEGORIES;
 
-/// Validate that an importance score is within the allowed range (1–5).
-pub fn validate_importance(value: i32) -> Result<i32, crate::error::AppError> {
-    if (IMPORTANCE_MIN..=IMPORTANCE_MAX).contains(&value) {
-        Ok(value)
-    } else {
-        Err(crate::error::AppError::Validation(format!(
-            "Importance must be between {IMPORTANCE_MIN} and {IMPORTANCE_MAX}, got {value}"
-        )))
-    }
-}
-
-// -- Memory category taxonomy -------------------------------------------------
-
-/// The canonical set of memory categories.
-///
-/// - `fact`        — Objective knowledge about the world or the agent's domain.
-/// - `preference`  — User or stakeholder preferences that guide agent behaviour.
-/// - `instruction` — Explicit rules or directives the agent must follow.
-/// - `context`     — Background information that helps the agent reason.
-/// - `learned`     — Insights the agent derived from past executions.
-/// - `constraint`  — Hard limits (rate-limits, compliance rules, deadlines).
-pub const MEMORY_CATEGORIES: &[&str] = &[
-    "fact",
-    "preference",
-    "instruction",
-    "context",
-    "learned",
-    "constraint",
-];
+use crate::validation::contract::check as validate_check;
+use crate::validation::memory as mv;
 
 /// The default category assigned when none is provided.
 pub const DEFAULT_MEMORY_CATEGORY: &str = "fact";
 
+/// Validate that an importance score is within the allowed range (1–5).
+pub fn validate_importance(value: i32) -> Result<i32, crate::error::AppError> {
+    validate_check(mv::validate_importance(value))?;
+    Ok(value)
+}
+
 /// Validate that `value` is one of the recognised memory categories.
-/// Returns the validated string on success.
 pub fn validate_category(value: &str) -> Result<&str, crate::error::AppError> {
-    if MEMORY_CATEGORIES.contains(&value) {
-        Ok(value)
-    } else {
-        Err(crate::error::AppError::Validation(format!(
-            "Invalid memory category '{value}'. Valid categories: {}",
-            MEMORY_CATEGORIES.join(", ")
-        )))
-    }
+    validate_check(mv::validate_category(value))?;
+    Ok(value)
 }
 
 /// Return `value` if it is a recognised category, otherwise [`DEFAULT_MEMORY_CATEGORY`].
-/// Useful for importing data that may contain legacy/unknown categories.
 pub fn normalize_category(value: &str) -> &'static str {
     match MEMORY_CATEGORIES.iter().find(|&&c| c == value) {
         Some(c) => c,
@@ -104,7 +78,7 @@ pub struct PersonaMemory {
     /// - 4: High — frequently useful context
     /// - 5: Critical — essential knowledge for agent operation
     pub importance: i32,
-    pub tags: Option<String>,
+    pub tags: Option<Json<Vec<String>>>,
     /// Memory tier: "core" (always injected), "active" (selected by scoring),
     /// "archive" (never injected, searchable only).
     pub tier: String,
@@ -125,5 +99,5 @@ pub struct CreatePersonaMemoryInput {
     pub category: Option<String>,
     pub source_execution_id: Option<String>,
     pub importance: Option<i32>,
-    pub tags: Option<String>,
+    pub tags: Option<Json<Vec<String>>>,
 }

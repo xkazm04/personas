@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "sntrys_...",
-      "helpText": "Generate at sentry.io/settings/auth-tokens/"
+      "helpText": "Generate at sentry.io/settings/auth-tokens/",
+      "sensitive": true
     },
     {
       "key": "organization_slug",
@@ -20,7 +21,8 @@
       "type": "text",
       "required": true,
       "placeholder": "my-org",
-      "helpText": "Your Sentry organization slug from the URL"
+      "helpText": "Your Sentry organization slug from the URL",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

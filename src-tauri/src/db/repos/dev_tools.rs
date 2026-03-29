@@ -4,6 +4,7 @@ use crate::db::models::{
     DevContext, DevContextGroup, DevContextGroupRelationship, DevGoal, DevGoalSignal, DevIdea,
     DevProject, DevScan, DevTask, TriageRule,
 };
+use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -1018,47 +1019,25 @@ pub fn list_ideas(
 ) -> Result<Vec<DevIdea>, AppError> {
     timed_query!("dev_ideas", "dev_ideas::list_ideas", {
     let conn = pool.get()?;
-    let mut conditions: Vec<String> = Vec::new();
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    let mut idx = 1u32;
+    let mut qb = QueryBuilder::new();
 
     if let Some(v) = project_id {
-        conditions.push(format!("project_id = ?{idx}"));
-        param_values.push(Box::new(v.to_string()));
-        idx += 1;
+        qb.where_eq("project_id", v.to_string());
     }
     if let Some(v) = status {
-        conditions.push(format!("status = ?{idx}"));
-        param_values.push(Box::new(v.to_string()));
-        idx += 1;
+        qb.where_eq("status", v.to_string());
     }
     if let Some(v) = category {
-        conditions.push(format!("category = ?{idx}"));
-        param_values.push(Box::new(v.to_string()));
-        idx += 1;
+        qb.where_eq("category", v.to_string());
     }
 
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
+    qb.order_by("created_at", "DESC");
+    qb.limit(limit.unwrap_or(100));
+    qb.offset(offset.unwrap_or(0));
 
-    let limit = limit.unwrap_or(100);
-    let offset = offset.unwrap_or(0);
-
-    let sql = format!(
-        "SELECT * FROM dev_ideas {} ORDER BY created_at DESC LIMIT ?{} OFFSET ?{}",
-        where_clause, idx, idx + 1
-    );
-
-    param_values.push(Box::new(limit));
-    param_values.push(Box::new(offset));
-
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
+    let sql = qb.build_select("SELECT * FROM dev_ideas");
     let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_to_idea)?;
+    let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_idea)?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
     })
 }
@@ -1357,36 +1336,20 @@ pub fn list_tasks(
 ) -> Result<Vec<DevTask>, AppError> {
     timed_query!("dev_tasks", "dev_tasks::list_tasks", {
     let conn = pool.get()?;
-    let mut conditions: Vec<String> = Vec::new();
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    let mut idx = 1u32;
+    let mut qb = QueryBuilder::new();
 
     if let Some(v) = project_id {
-        conditions.push(format!("project_id = ?{idx}"));
-        param_values.push(Box::new(v.to_string()));
-        idx += 1;
+        qb.where_eq("project_id", v.to_string());
     }
     if let Some(v) = status {
-        conditions.push(format!("status = ?{idx}"));
-        param_values.push(Box::new(v.to_string()));
-        let _ = idx + 1;
+        qb.where_eq("status", v.to_string());
     }
 
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
+    qb.order_by("created_at", "DESC");
 
-    let sql = format!(
-        "SELECT * FROM dev_tasks {} ORDER BY created_at DESC",
-        where_clause
-    );
-
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
+    let sql = qb.build_select("SELECT * FROM dev_tasks");
     let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_to_task)?;
+    let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_task)?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
     })
 }

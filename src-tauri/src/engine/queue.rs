@@ -264,6 +264,14 @@ impl ConcurrencyTracker {
             .map_or(0, |set| set.len())
     }
 
+    /// Get all running execution IDs for a specific persona.
+    pub fn running_ids(&self, persona_id: &str) -> Vec<String> {
+        self.running
+            .get(persona_id)
+            .map(|set| set.iter().cloned().collect())
+            .unwrap_or_default()
+    }
+
     /// Count queued executions for a specific persona.
     pub fn queue_depth(&self, persona_id: &str) -> usize {
         self.queues

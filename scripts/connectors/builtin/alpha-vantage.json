@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "YOUR_API_KEY",
-      "helpText": "Claim your free API key at alphavantage.co/support/#api-key"
+      "helpText": "Claim your free API key at alphavantage.co/support/#api-key",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -32,7 +33,12 @@
     "setup_guide": "1. Go to alphavantage.co/support/#api-key\n2. Enter your email and a description\n3. Click 'Get Free API Key'\n4. Copy the API key and paste it here",
     "pricing_tier": "freemium",
     "auth_methods": [
-      { "id": "api_key", "label": "API Key", "type": "credential", "is_default": true }
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

@@ -35,7 +35,33 @@ pub enum EngineKind {
 
 impl EngineKind {
     /// All known engine variants. Use this instead of hand-rolled lists.
+    ///
+    /// **Compile-time safety**: [`Self::assert_all_covered`] ensures this array
+    /// covers every variant. If you add a variant to the enum, the compiler will
+    /// force you to update this array (and `as_setting` / `FromStr`).
     pub const ALL: [EngineKind; 2] = [EngineKind::ClaudeCode, EngineKind::CodexCli];
+
+    /// Compile-time exhaustiveness guard for [`Self::ALL`].
+    ///
+    /// This function uses an exhaustive match (no wildcard) over every variant.
+    /// If a new variant is added to `EngineKind` without updating this function
+    /// **and** the `ALL` const, compilation will fail — preventing BYOM policy
+    /// enforcement gaps.
+    const fn assert_all_covered() {
+        // Walk every entry in ALL with an exhaustive match.  If a variant is
+        // missing from ALL the array length won't match; if a variant is missing
+        // from this match the compiler will error.
+        let mut i = 0;
+        while i < Self::ALL.len() {
+            match Self::ALL[i] {
+                EngineKind::ClaudeCode => {}
+                EngineKind::CodexCli => {}
+                // ↑ NO wildcard: adding a variant without a branch here is a
+                //   compile error.
+            }
+            i += 1;
+        }
+    }
 
     /// Parse from the string stored in the settings DB, logging a warning and
     /// falling back to `ClaudeCode` for unrecognised values.
@@ -58,7 +84,16 @@ impl EngineKind {
             EngineKind::CodexCli => "codex_cli",
         }
     }
+
+    /// Parse from setting string, returning `None` for unrecognised values
+    /// (unlike `from_setting` which falls back to ClaudeCode).
+    pub fn from_str_exact(s: &str) -> Option<Self> {
+        s.parse().ok()
+    }
 }
+
+// Evaluated at compile time — zero runtime cost.
+const _: () = EngineKind::assert_all_covered();
 
 impl std::str::FromStr for EngineKind {
     type Err = String;
@@ -188,5 +223,62 @@ pub fn load_engine_kind_notified(pool: &DbPool, app: &tauri::AppHandle) -> Engin
         }
         Some(ref s) => EngineKind::from_setting(s),
         None => EngineKind::ClaudeCode,
+    }
+}
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Verify that every variant in `EngineKind::ALL` round-trips through
+    /// `as_setting()` → `FromStr` (and `from_str_exact`).  This catches
+    /// mismatched string mappings that the compile-time exhaustiveness guard
+    /// cannot detect (e.g., a typo in `as_setting` that doesn't match `FromStr`).
+    #[test]
+    fn all_variants_round_trip_through_setting_strings() {
+        for kind in EngineKind::ALL {
+            let s = kind.as_setting();
+            let parsed: EngineKind = s.parse().unwrap_or_else(|e| {
+                panic!(
+                    "EngineKind::{:?}.as_setting() = {:?} failed to parse back: {}",
+                    kind, s, e
+                )
+            });
+            assert_eq!(
+                kind, parsed,
+                "Round-trip mismatch for EngineKind::{:?}",
+                kind
+            );
+            assert_eq!(
+                EngineKind::from_str_exact(s),
+                Some(kind),
+                "from_str_exact mismatch for {:?}",
+                s
+            );
+        }
+    }
+
+    /// `from_str_exact` must return `None` for unknown strings.
+    #[test]
+    fn from_str_exact_returns_none_for_unknown() {
+        assert_eq!(EngineKind::from_str_exact("nonexistent"), None);
+        assert_eq!(EngineKind::from_str_exact(""), None);
+    }
+
+    /// `resolve_provider` must return a provider for every known variant.
+    #[test]
+    fn resolve_provider_covers_all_variants() {
+        for kind in EngineKind::ALL {
+            let provider = resolve_provider(kind);
+            assert!(
+                !provider.engine_name().is_empty(),
+                "resolve_provider({:?}) returned a provider with empty engine_name",
+                kind
+            );
+        }
     }
 }

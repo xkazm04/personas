@@ -89,6 +89,54 @@ pub struct N8nTransformSession {
     pub updated_at: String,
 }
 
+/// IPC response struct with JSON fields pre-deserialized.
+///
+/// Eliminates double-serialization: the DB stores JSON as text, this struct
+/// deserializes it once in the command layer so the frontend receives typed
+/// objects instead of raw strings that need `JSON.parse`.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct N8nSessionResponse {
+    pub id: String,
+    pub workflow_name: String,
+    pub status: SessionStatus,
+    pub raw_workflow_json: String,
+    pub parser_result: Option<serde_json::Value>,
+    pub draft_json: Option<serde_json::Value>,
+    pub user_answers: Option<serde_json::Value>,
+    pub step: String,
+    pub error: Option<String>,
+    pub persona_id: Option<String>,
+    pub transform_id: Option<String>,
+    pub questions_json: Option<serde_json::Value>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+impl From<N8nTransformSession> for N8nSessionResponse {
+    fn from(s: N8nTransformSession) -> Self {
+        fn parse_json_field(raw: Option<String>) -> Option<serde_json::Value> {
+            raw.and_then(|s| serde_json::from_str(&s).ok())
+        }
+        Self {
+            id: s.id,
+            workflow_name: s.workflow_name,
+            status: s.status,
+            raw_workflow_json: s.raw_workflow_json,
+            parser_result: parse_json_field(s.parser_result),
+            draft_json: parse_json_field(s.draft_json),
+            user_answers: parse_json_field(s.user_answers),
+            step: s.step,
+            error: s.error,
+            persona_id: s.persona_id,
+            transform_id: s.transform_id,
+            questions_json: parse_json_field(s.questions_json),
+            created_at: s.created_at,
+            updated_at: s.updated_at,
+        }
+    }
+}
+
 /// Lightweight summary for the session list — excludes heavy JSON columns.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]

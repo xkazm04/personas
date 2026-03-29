@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "aBcDeFgHiJkLmNoPqRs",
-      "helpText": "Find at ads.google.com → Tools & Settings → API Center"
+      "helpText": "Find at ads.google.com → Tools & Settings → API Center",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -38,8 +39,25 @@
     "setup_guide": "1. Open Google Cloud Console (https://console.cloud.google.com).\n2. Create/select a project and enable the Google Ads API.\n3. Apply for a developer token at ads.google.com → Tools & Settings → API Center.\n4. Configure OAuth consent screen and add authorized test users.\n5. In Personas, paste your developer token, then click Authorize with Google.\n6. Complete consent in your browser.\n7. Return to Personas; token metadata is saved automatically.",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "oauth", "label": "OAuth", "type": "oauth", "is_default": true},
-      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@googleads/google-ads-mcp", "transport": "stdio", "suggested_env": {"GOOGLE_ADS_DEVELOPER_TOKEN": "", "GOOGLE_CLIENT_ID": "", "GOOGLE_CLIENT_SECRET": "", "GOOGLE_REFRESH_TOKEN": ""}}
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      },
+      {
+        "id": "mcp",
+        "label": "MCP",
+        "type": "mcp",
+        "package": "@googleads/google-ads-mcp",
+        "transport": "stdio",
+        "suggested_env": {
+          "GOOGLE_ADS_DEVELOPER_TOKEN": "",
+          "GOOGLE_CLIENT_ID": "",
+          "GOOGLE_CLIENT_SECRET": "",
+          "GOOGLE_REFRESH_TOKEN": ""
+        }
+      }
     ]
   }
 }

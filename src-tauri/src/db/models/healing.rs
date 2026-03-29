@@ -2,6 +2,29 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 // ============================================================================
+// Healing Audit Log (silent failure surface)
+// ============================================================================
+
+/// An entry in the healing audit log that captures events where healing
+/// subsystems attempted an action but silently could not complete it.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct HealingAuditEntry {
+    pub id: String,
+    pub persona_id: Option<String>,
+    pub execution_id: Option<String>,
+    /// "knowledge_parse_error" | "knowledge_persist_error" | "ai_heal_section_missing"
+    /// | "ai_heal_unknown_target" | "ai_heal_unknown_fix_type" | "dedup_skipped"
+    pub event_type: String,
+    /// Which subsystem produced this entry (e.g. "knowledge_extraction", "ai_healing", "healing_analysis")
+    pub subsystem: String,
+    pub message: String,
+    pub detail: Option<String>,
+    pub created_at: String,
+}
+
+// ============================================================================
 // Healing Issues
 // ============================================================================
 

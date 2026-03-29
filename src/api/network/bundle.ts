@@ -44,6 +44,8 @@ export interface BundleImportOptions {
   rename_prefix?: string | null;
   /** When set, apply uses cached preview bytes instead of re-reading the file. */
   preview_id?: string | null;
+  /** SHA-256 hash from preview step. Verified before applying to prevent TOCTOU file-swap attacks. */
+  expected_bundle_hash?: string | null;
 }
 
 export interface BundleImportResult {

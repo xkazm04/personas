@@ -6,8 +6,24 @@
   "icon_url": "/icons/connectors/chrome.svg",
   "category": "desktop",
   "fields": [
-    { "key": "binary_path", "label": "Browser Path", "type": "text", "required": false, "placeholder": "chrome", "helpText": "Auto-detected. Path to Chrome or Edge binary." },
-    { "key": "cdp_port", "label": "DevTools Port", "type": "text", "required": false, "placeholder": "9222", "helpText": "Chrome DevTools Protocol port (default: 9222)" }
+    {
+      "key": "binary_path",
+      "label": "Browser Path",
+      "type": "text",
+      "required": false,
+      "placeholder": "chrome",
+      "helpText": "Auto-detected. Path to Chrome or Edge binary.",
+      "sensitive": true
+    },
+    {
+      "key": "cdp_port",
+      "label": "DevTools Port",
+      "type": "text",
+      "required": false,
+      "placeholder": "9222",
+      "helpText": "Chrome DevTools Protocol port (default: 9222)",
+      "sensitive": true
+    }
   ],
   "healthcheck_config": null,
   "services": [],
@@ -18,9 +34,17 @@
     "auth_type": "local",
     "auth_type_label": "Local App",
     "is_desktop": true,
-    "required_capabilities": ["process_spawn", "network_local"],
+    "required_capabilities": [
+      "process_spawn",
+      "network_local"
+    ],
     "auth_methods": [
-      { "id": "local", "label": "Local App", "type": "credential", "is_default": true }
+      {
+        "id": "local",
+        "label": "Local App",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

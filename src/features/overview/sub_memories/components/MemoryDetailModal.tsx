@@ -2,17 +2,15 @@ import { X, Tag, ExternalLink, Bot } from 'lucide-react';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
-import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { ImportanceBar } from './MemoryCard';
 
-function parseTags(tagsJson: string | null): string[] {
-  if (!tagsJson) return [];
-  const parsed = parseJsonOrDefault<string[]>(tagsJson, null as unknown as string[]);
-  if (Array.isArray(parsed)) return parsed;
-  return tagsJson.split(',').map((s) => s.trim()).filter(Boolean);
+function parseTags(tags: string[] | null): string[] {
+  if (!tags) return [];
+  return Array.isArray(tags) ? tags : [];
 }
 
 interface MemoryDetailModalProps {

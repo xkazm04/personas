@@ -85,14 +85,14 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
         const runs = await calls.list(personaId, RUN_HISTORY_LIMIT);
         set({ [runsKey]: runs } as Partial<AgentStore>);
       } catch (err) {
-        reportError(err, `Failed to fetch ${label} runs`, set);
+        reportError(err, `Failed to fetch ${label} runs`, set, { action: `lab.${label}.fetchRuns` });
       }
     },
     cancelRun: async (runId) => {
       try {
         await calls.cancel(runId);
       } catch (err) {
-        reportError(err, `Failed to cancel ${label} test`, set);
+        reportError(err, `Failed to cancel ${label} test`, set, { action: `lab.${label}.cancelRun` });
       } finally {
         labLifecycle.markCancelled(set);
       }
@@ -122,7 +122,7 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
           return { [resultsMapKey]: updated } as Partial<AgentStore>;
         });
       } catch (err) {
-        reportError(err, `Failed to fetch ${label} results`, set);
+        reportError(err, `Failed to fetch ${label} results`, set, { action: `lab.${label}.fetchResults` });
       }
     },
     deleteRun: async (runId) => {
@@ -138,7 +138,7 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
           } as Partial<AgentStore>;
         });
       } catch (err) {
-        reportError(err, `Failed to delete ${label} run`, set);
+        reportError(err, `Failed to delete ${label} run`, set, { action: `lab.${label}.deleteRun` });
       }
     },
     wrapStart: async (fn, ...args) => {
@@ -148,7 +148,7 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
         return run.id;
       } catch (err) {
         lc.markFailed(set);
-        reportError(err, `Failed to start ${label} test`, set);
+        reportError(err, `Failed to start ${label} test`, set, { action: `lab.${label}.startRun` });
         return null;
       }
     },
@@ -230,6 +230,9 @@ export interface LabSlice {
 
   // Prompt Improvement Engine
   improvePrompt: (personaId: string, runId: string, mode: string) => Promise<string | null>;
+
+  // Active progress hydration (restores progress after page refresh)
+  hydrateActiveProgress: (personaId: string) => Promise<void>;
 }
 
 // -- Slice Creator ------------------------------------------------
@@ -322,7 +325,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         matrix.fetchRuns(personaId);
         get().fetchVersions(personaId);
       } catch (err) {
-        reportError(err, "Failed to accept draft", set);
+        reportError(err, "Failed to accept draft", set, { action: "lab.acceptDraft" });
       }
     },
 
@@ -345,7 +348,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
           userRatings: { ...state.userRatings, [runId]: ratings },
         }));
       } catch (err) {
-        reportError(err, "Failed to fetch user ratings", set);
+        reportError(err, "Failed to fetch user ratings", set, { action: "lab.fetchUserRatings" });
       }
     },
     rateResult: async (runId, resultId, scenarioName, rating, feedback) => {
@@ -362,7 +365,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
           };
         });
       } catch (err) {
-        reportError(err, "Failed to rate result", set);
+        reportError(err, "Failed to rate result", set, { action: "lab.rateResult" });
       }
     },
 
@@ -373,7 +376,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         const versions = await api.labGetVersions(personaId);
         set({ promptVersions: versions });
       } catch (err) {
-        reportError(err, "Failed to fetch prompt versions", set);
+        reportError(err, "Failed to fetch prompt versions", set, { action: "lab.fetchVersions" });
       }
     },
     tagVersion: async (id, tag) => {
@@ -382,7 +385,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         const personaId = get().selectedPersona?.id;
         if (personaId) get().fetchVersions(personaId);
       } catch (err) {
-        reportError(err, "Failed to tag version", set);
+        reportError(err, "Failed to tag version", set, { action: "lab.tagVersion" });
       }
     },
     rollbackVersion: async (versionId) => {
@@ -394,7 +397,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
           get().selectPersona(personaId);
         }
       } catch (err) {
-        reportError(err, "Failed to rollback version", set);
+        reportError(err, "Failed to rollback version", set, { action: "lab.rollbackVersion" });
       }
     },
     healthErrorRate: null,
@@ -403,7 +406,7 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         const rate = await api.labGetErrorRate(personaId);
         set({ healthErrorRate: rate });
       } catch (err) {
-        reportError(err, "Failed to fetch error rate", set);
+        reportError(err, "Failed to fetch error rate", set, { action: "lab.fetchHealthRate" });
       }
     },
 
@@ -415,8 +418,45 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         get().fetchVersions(personaId);
         return version.id;
       } catch (err) {
-        reportError(err, "Failed to generate prompt improvement", set);
+        reportError(err, "Failed to generate prompt improvement", set, { action: "lab.improvePrompt" });
         return null;
+      }
+    },
+
+    // Active progress hydration — restores all active run progress after page refresh
+    hydrateActiveProgress: async (personaId) => {
+      try {
+        const entries = await api.labGetActiveProgress(personaId);
+        if (!entries || entries.length === 0) return;
+        // Apply each active run's progress to the store
+        for (const entry of entries) {
+          const mode = entry.mode as LabMode;
+          const progress = entry.progress as Record<string, unknown>;
+          const mapped: LabRunProgress = {
+            runId: entry.runId,
+            mode,
+            phase: (progress.phase as string) ?? "running",
+            current: progress.current as number | undefined,
+            total: progress.total as number | undefined,
+            scenariosCount: progress.scenariosCount as number | undefined,
+            modelId: progress.modelId as string | undefined,
+            scenarioName: progress.scenarioName as string | undefined,
+          };
+          // Set the shared labProgress to the most recent entry (first in array)
+          if (entry === entries[0]) {
+            set({ labProgress: mapped, isLabRunning: true });
+          }
+          // Set mode-specific running state
+          if (mode === "arena") {
+            arenaLifecycle.markStarted(set);
+            set({ arenaProgress: mapped });
+          } else if (mode === "matrix" || mode === "ab" || mode === "eval") {
+            matrixLifecycle.markStarted(set);
+            set({ matrixProgress: mapped });
+          }
+        }
+      } catch (err) {
+        reportError(err, "Failed to hydrate active lab progress", set, { action: "lab.hydrateActiveProgress" });
       }
     },
   };

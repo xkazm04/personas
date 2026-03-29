@@ -55,6 +55,23 @@ pub const AUTO_OPTIMIZE_PREFIX: &str = "auto_optimize:";
 /// When enabled, periodic health checks run and send notifications on degradation.
 pub const HEALTH_WATCH_PREFIX: &str = "health_watch:";
 
+/// Performance digest configuration (JSON-encoded DigestConfig).
+/// Controls cadence (daily/weekly), enabled state, and notification channels.
+pub const PERFORMANCE_DIGEST: &str = "performance_digest";
+
+/// ISO 8601 timestamp of the last performance digest delivery.
+pub const PERFORMANCE_DIGEST_LAST: &str = "performance_digest_last";
+
+/// Quality-gate configuration (JSON-encoded QualityGateConfig).
+/// Controls which substring patterns cause AgentMemory and ManualReview
+/// messages to be rejected, tagged, or warned during dispatch.
+pub const QUALITY_GATE_CONFIG: &str = "quality_gate_config";
+
+/// Model override for smart search template ranking.
+/// Value: model ID string (e.g., `"claude-haiku-4-5-20251001"`).
+/// Defaults to `claude-haiku-4-5-20251001` when unset.
+pub const SMART_SEARCH_MODEL: &str = "smart_search_model";
+
 /// Claude CLI fallback scheduling flag. Key: `claude_cli_fallback:<persona_id>`.
 /// Value: JSON `{"enabled":true,"cron":"..."}`.
 /// When enabled, provides a generated `claude -p` command for external cron scheduling.

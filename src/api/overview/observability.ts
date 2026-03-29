@@ -157,3 +157,19 @@ export const dismissFiredAlert = (id: string) =>
 
 export const clearFiredAlerts = () =>
   invoke<void>("clear_fired_alerts");
+
+// ============================================================================
+// Performance Digest
+// ============================================================================
+
+export const getDigestConfig = () =>
+  invoke<import("@/lib/bindings/DigestConfig").DigestConfig>("get_digest_config");
+
+export const setDigestConfig = (config: import("@/lib/bindings/DigestConfig").DigestConfig) =>
+  invoke<import("@/lib/bindings/DigestConfig").DigestConfig>("set_digest_config", { config });
+
+export const previewDigest = (days?: number) =>
+  invoke<import("@/lib/bindings/PerformanceDigest").PerformanceDigest>("preview_digest", { days });
+
+export const sendDigestNow = () =>
+  invoke<void>("send_digest_now");

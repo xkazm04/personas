@@ -37,28 +37,19 @@ export interface ToolImpactData {
   coUsedTools: CoUsedTool[];
 }
 
-interface ToolStepEntry {
-  tool_name?: string;
-}
+import type { ToolCallStep } from '@/lib/bindings/ToolCallStep';
 
 /**
- * Parse tool_steps JSON from a PersonaExecution.
+ * Extract unique tool names from a PersonaExecution's tool_steps.
  * Returns an array of unique tool names used in that execution.
  */
-function parseToolNames(toolStepsJson: string | null): string[] {
-  if (!toolStepsJson) return [];
-  try {
-    const steps: ToolStepEntry[] = JSON.parse(toolStepsJson);
-    if (!Array.isArray(steps)) return [];
-    const names = new Set<string>();
-    for (const step of steps) {
-      if (step.tool_name) names.add(step.tool_name);
-    }
-    return Array.from(names);
-  } catch {
-    // intentional: non-critical -- JSON parse fallback
-    return [];
+function parseToolNames(toolSteps: ToolCallStep[] | null): string[] {
+  if (!toolSteps || !Array.isArray(toolSteps)) return [];
+  const names = new Set<string>();
+  for (const step of toolSteps) {
+    if (step.tool_name) names.add(step.tool_name);
   }
+  return Array.from(names);
 }
 
 /**

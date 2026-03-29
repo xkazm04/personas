@@ -417,6 +417,60 @@ pub fn count_dead_letter(pool: &DbPool) -> Result<i64, AppError> {
     })
 }
 
+/// Publish an event directly into `dead_letter` status.
+///
+/// Used when an event *would have* been published but a precondition failed
+/// (e.g. `mark_triggered` + disable both failed in chain cascade evaluation).
+/// The event is recorded for auditability but will never be processed unless
+/// manually retried from the DLQ.
+pub fn publish_dead_letter(
+    pool: &DbPool,
+    input: CreatePersonaEventInput,
+    error_message: String,
+) -> Result<PersonaEvent, AppError> {
+    timed_query!("persona_events", "persona_events::publish_dead_letter", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let project_id = input.project_id.unwrap_or_else(|| "default".into());
+
+        let (stored_payload, payload_iv) = match &input.payload {
+            Some(plaintext) if !plaintext.is_empty() => {
+                match crypto::encrypt_for_db(plaintext) {
+                    Ok((ct, iv)) => (Some(ct), Some(iv)),
+                    Err(e) => {
+                        tracing::warn!("Failed to encrypt dead-letter payload, storing plaintext: {}", e);
+                        (Some(plaintext.clone()), None)
+                    }
+                }
+            }
+            other => (other.clone(), None),
+        };
+
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_events
+             (id, project_id, event_type, source_type, source_id, target_persona_id,
+              payload, payload_iv, use_case_id, status, error_message, processed_at, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'dead_letter', ?10, ?11, ?11)",
+            params![
+                id,
+                project_id,
+                input.event_type,
+                input.source_type,
+                input.source_id,
+                input.target_persona_id,
+                stored_payload,
+                payload_iv,
+                input.use_case_id,
+                error_message,
+                now,
+            ],
+        )?;
+
+        get_by_id(pool, &id)
+    })
+}
+
 /// Move a failed event to the dead letter queue.
 pub fn move_to_dead_letter(
     pool: &DbPool,
@@ -573,73 +627,39 @@ pub fn search(
     let fetch = limit + 1;
     let conn = pool.get()?;
 
-    let mut clauses: Vec<String> = Vec::new();
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    let mut idx = 1u32;
+    let mut qb = crate::db::query_builder::QueryBuilder::new();
 
     if let Some(ref v) = filter.event_type {
-        clauses.push(format!("event_type = ?{idx}"));
-        param_values.push(Box::new(v.clone()));
-        idx += 1;
+        qb.where_eq("event_type", v.clone());
     }
     if let Some(ref v) = filter.source_type {
-        clauses.push(format!("source_type = ?{idx}"));
-        param_values.push(Box::new(v.clone()));
-        idx += 1;
+        qb.where_eq("source_type", v.clone());
     }
     if let Some(ref v) = filter.status {
-        clauses.push(format!("status = ?{idx}"));
-        param_values.push(Box::new(v.clone()));
-        idx += 1;
+        qb.where_eq("status", v.clone());
     }
     if let Some(ref v) = filter.target_persona_id {
-        clauses.push(format!("target_persona_id = ?{idx}"));
-        param_values.push(Box::new(v.clone()));
-        idx += 1;
+        qb.where_eq("target_persona_id", v.clone());
     }
     if let Some(ref v) = filter.since {
-        clauses.push(format!("created_at >= ?{idx}"));
-        param_values.push(Box::new(v.clone()));
-        idx += 1;
+        qb.where_gte("created_at", v.clone());
     }
     if let Some(ref v) = filter.until {
-        clauses.push(format!("created_at <= ?{idx}"));
-        param_values.push(Box::new(v.clone()));
-        idx += 1;
+        qb.where_lte("created_at", v.clone());
     }
     if let Some(ref v) = filter.search {
         if !v.is_empty() {
-            // Full-text search on payload (plaintext stored after encryption roundtrip is
-            // not searchable, so we search the raw column which may be ciphertext).
-            // Also search event_type and source_type for broader match.
             let pattern = format!("%{v}%");
-            clauses.push(format!(
-                "(event_type LIKE ?{idx} OR source_type LIKE ?{} OR payload LIKE ?{})",
-                idx + 1,
-                idx + 2
-            ));
-            param_values.push(Box::new(pattern.clone()));
-            param_values.push(Box::new(pattern.clone()));
-            param_values.push(Box::new(pattern));
-            idx += 3;
+            qb.where_like_any(&["event_type", "source_type", "payload"], pattern);
         }
     }
 
-    let where_clause = if clauses.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", clauses.join(" AND "))
-    };
+    qb.order_by("created_at", "DESC");
+    qb.limit(fetch);
 
-    let sql = format!(
-        "SELECT * FROM persona_events {where_clause} ORDER BY created_at DESC LIMIT ?{idx}"
-    );
-    param_values.push(Box::new(fetch));
-
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
+    let sql = qb.build_select("SELECT * FROM persona_events");
     let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_to_event)?;
+    let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_event)?;
     let mut events = collect_rows(rows, "search_events");
     let has_more = events.len() as i64 > limit;
     if has_more {
@@ -903,12 +923,14 @@ pub fn update_subscription(
     input: UpdateEventSubscriptionInput,
 ) -> Result<PersonaEventSubscription, AppError> {
     timed_query!("event_subscriptions", "event_subscriptions::update_subscription", {
-        // Verify exists
-        get_subscription_by_id(pool, id)?;
+        // Fetch the existing subscription so we can locate the paired trigger
+        let existing = get_subscription_by_id(pool, id)?;
 
         let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
 
+        // 1) Update the subscription row
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
 
@@ -922,7 +944,7 @@ pub fn update_subscription(
             param_idx
         );
 
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now.clone())];
 
         if let Some(ref v) = input.event_type {
             param_values.push(Box::new(v.clone()));
@@ -937,7 +959,58 @@ pub fn update_subscription(
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
             param_values.iter().map(|p| p.as_ref()).collect();
-        conn.execute(&sql, params_ref.as_slice())?;
+        tx.execute(&sql, params_ref.as_slice())?;
+
+        // 2) Propagate changes to the paired event_listener trigger
+        let new_event_type = input.event_type.as_deref().unwrap_or(&existing.event_type);
+        let new_source_filter = input.source_filter.as_deref().or(existing.source_filter.as_deref());
+
+        let config = serde_json::json!({
+            "listen_event_type": new_event_type,
+            "source_filter": new_source_filter,
+        });
+        let encrypted_config = {
+            let raw = serde_json::to_string(&config).unwrap_or_default();
+            crypto::encrypt_trigger_config(&raw).unwrap_or_else(|e| {
+                tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
+                raw
+            })
+        };
+
+        if let Some(enabled) = input.enabled {
+            let status = if enabled { "active" } else { "disabled" };
+            tx.execute(
+                "UPDATE persona_triggers
+                 SET config = ?1, enabled = ?2, status = ?3, updated_at = ?4
+                 WHERE persona_id = ?5
+                   AND trigger_type = 'event_listener'
+                   AND COALESCE(use_case_id, '') = COALESCE(?6, '')",
+                params![
+                    encrypted_config,
+                    enabled as i32,
+                    status,
+                    now,
+                    existing.persona_id,
+                    existing.use_case_id,
+                ],
+            )?;
+        } else if input.event_type.is_some() || input.source_filter.is_some() {
+            tx.execute(
+                "UPDATE persona_triggers
+                 SET config = ?1, updated_at = ?2
+                 WHERE persona_id = ?3
+                   AND trigger_type = 'event_listener'
+                   AND COALESCE(use_case_id, '') = COALESCE(?4, '')",
+                params![
+                    encrypted_config,
+                    now,
+                    existing.persona_id,
+                    existing.use_case_id,
+                ],
+            )?;
+        }
+
+        tx.commit().map_err(AppError::Database)?;
 
         get_subscription_by_id(pool, id)
     })
@@ -1348,6 +1421,115 @@ mod tests {
         let pool = init_test_db().unwrap();
         let deleted = delete_subscription(&pool, "nonexistent").unwrap();
         assert!(!deleted);
+    }
+
+    #[test]
+    fn test_update_subscription_propagates_to_trigger() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool);
+
+        let sub_input = CreateEventSubscriptionInput {
+            persona_id: persona_id.clone(),
+            event_type: "file_changed".into(),
+            source_filter: Some("src/**".into()),
+            enabled: Some(true),
+            use_case_id: None,
+        };
+        let trigger_input = CreateTriggerInput {
+            persona_id: persona_id.clone(),
+            trigger_type: "event_listener".into(),
+            config: Some(r#"{"listen_event_type":"file_changed","source_filter":"src/**"}"#.into()),
+            enabled: Some(true),
+            use_case_id: None,
+        };
+
+        let sub = create_subscription_with_trigger(&pool, sub_input, trigger_input).unwrap();
+
+        // Verify trigger exists and is enabled
+        let conn = pool.get().unwrap();
+        let enabled_before: i32 = conn
+            .query_row(
+                "SELECT enabled FROM persona_triggers
+                 WHERE persona_id = ?1 AND trigger_type = 'event_listener'",
+                params![persona_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(enabled_before, 1);
+
+        // Update: disable the subscription and change event_type
+        update_subscription(
+            &pool,
+            &sub.id,
+            UpdateEventSubscriptionInput {
+                event_type: Some("build_complete".into()),
+                source_filter: None,
+                enabled: Some(false),
+            },
+        )
+        .unwrap();
+
+        // Verify the trigger was also updated
+        let (enabled_after, status): (i32, String) = conn
+            .query_row(
+                "SELECT enabled, status FROM persona_triggers
+                 WHERE persona_id = ?1 AND trigger_type = 'event_listener'",
+                params![persona_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(enabled_after, 0);
+        assert_eq!(status, "disabled");
+    }
+
+    #[test]
+    fn test_delete_subscription_removes_paired_trigger() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool);
+
+        let sub_input = CreateEventSubscriptionInput {
+            persona_id: persona_id.clone(),
+            event_type: "webhook_received".into(),
+            source_filter: None,
+            enabled: Some(true),
+            use_case_id: None,
+        };
+        let trigger_input = CreateTriggerInput {
+            persona_id: persona_id.clone(),
+            trigger_type: "event_listener".into(),
+            config: Some(r#"{"listen_event_type":"webhook_received"}"#.into()),
+            enabled: Some(true),
+            use_case_id: None,
+        };
+
+        let sub = create_subscription_with_trigger(&pool, sub_input, trigger_input).unwrap();
+
+        // Verify trigger exists
+        let conn = pool.get().unwrap();
+        let count_before: i32 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_triggers
+                 WHERE persona_id = ?1 AND trigger_type = 'event_listener'",
+                params![persona_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count_before, 1);
+
+        // Delete
+        let deleted = delete_subscription(&pool, &sub.id).unwrap();
+        assert!(deleted);
+
+        // Verify trigger was also deleted
+        let count_after: i32 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_triggers
+                 WHERE persona_id = ?1 AND trigger_type = 'event_listener'",
+                params![persona_id],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count_after, 0);
     }
 
     // ------------------------------------------------------------------

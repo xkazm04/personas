@@ -1,6 +1,9 @@
-import { Stethoscope, CheckCircle, CheckCircle2, AlertTriangle, X, List, GitBranch } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Stethoscope, CheckCircle, CheckCircle2, AlertTriangle, X, List, GitBranch, FileWarning, ChevronDown, ChevronRight } from 'lucide-react';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
+import type { HealingAuditEntry } from '@/lib/bindings/HealingAuditEntry';
+import { listHealingAuditLog } from '@/api/overview/healing';
 import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
@@ -25,7 +28,17 @@ interface HealingIssuesPanelProps {
   setViewMode: (mode: ViewMode) => void;
   timelineEvents: HealingTimelineEvent[];
   timelineLoading: boolean;
+  selectedPersonaId?: string | null;
 }
+
+const AUDIT_EVENT_LABELS: Record<string, string> = {
+  knowledge_parse_error: 'Parse error',
+  knowledge_persist_error: 'Persist error',
+  ai_heal_section_missing: 'Section missing',
+  ai_heal_unknown_target: 'Unknown target',
+  ai_heal_unknown_fix_type: 'Unknown fix type',
+  dedup_skipped: 'Duplicate skipped',
+};
 
 export function HealingIssuesPanel({
   healingIssues, healingRunning, handleRunAnalysis,
@@ -33,11 +46,34 @@ export function HealingIssuesPanel({
   issueFilter, setIssueFilter, issueCounts, sortedFilteredIssues,
   analysisResult, setAnalysisResult, analysisError, setAnalysisError,
   viewMode, setViewMode, timelineEvents, timelineLoading,
+  selectedPersonaId,
 }: HealingIssuesPanelProps) {
   const handleTimelineSelectIssue = (issueId: string) => {
     const issue = healingIssues.find(i => i.id === issueId);
     if (issue) setSelectedIssue(issue);
   };
+
+  // Audit log state
+  const [auditExpanded, setAuditExpanded] = useState(false);
+  const [auditEntries, setAuditEntries] = useState<HealingAuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+
+  const fetchAudit = useCallback(async () => {
+    setAuditLoading(true);
+    try {
+      const entries = await listHealingAuditLog(selectedPersonaId ?? undefined, 50);
+      setAuditEntries(entries);
+    } catch {
+      // non-critical — silently degrade
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [selectedPersonaId]);
+
+  useEffect(() => {
+    if (auditExpanded) fetchAudit();
+  }, [auditExpanded, fetchAudit]);
+
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
       {/* Header */}
@@ -180,6 +216,60 @@ export function HealingIssuesPanel({
           onResolve={resolveHealingIssue}
         />
       )}
+
+      {/* Healing Audit Log (silent failures) */}
+      <div className="border-t border-primary/10">
+        <button
+          onClick={() => setAuditExpanded(!auditExpanded)}
+          className="flex items-center gap-2 w-full px-4 py-2.5 text-left hover:bg-secondary/30 transition-colors"
+        >
+          {auditExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/70" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/70" />}
+          <FileWarning className="w-3.5 h-3.5 text-amber-400/70" />
+          <span className="text-sm typo-heading text-muted-foreground/90">Healing Audit Log</span>
+          {auditEntries.length > 0 && auditExpanded && (
+            <span className="px-1.5 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-400/80 border border-amber-500/15">
+              {auditEntries.length}
+            </span>
+          )}
+        </button>
+
+        {auditExpanded && (
+          <div className="px-4 pb-3 max-h-64 overflow-y-auto">
+            {auditLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+              </div>
+            ) : auditEntries.length === 0 ? (
+              <p className="text-sm text-muted-foreground/70 py-3 text-center">No silent failures recorded.</p>
+            ) : (
+              <div className="space-y-1">
+                {auditEntries.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-primary/5 text-sm"
+                  >
+                    <span className="shrink-0 px-1.5 py-0.5 text-xs rounded bg-amber-500/10 text-amber-400/90 border border-amber-500/15 mt-0.5">
+                      {AUDIT_EVENT_LABELS[entry.eventType] ?? entry.eventType}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-foreground/80 truncate">{entry.message}</p>
+                      {entry.detail && (
+                        <p className="text-muted-foreground/70 text-xs truncate mt-0.5">{entry.detail}</p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground/50 mt-0.5">
+                      {entry.subsystem}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground/40 mt-0.5">
+                      {new Date(entry.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -16,10 +16,13 @@ use std::time::Instant;
 // =============================================================================
 
 /// Get the current BYOM policy. Returns null if none is configured.
+/// Returns an error if the stored policy JSON is corrupt, so the frontend
+/// can display a degraded-policy warning instead of silently falling back
+/// to open-access.
 #[tauri::command]
 pub fn get_byom_policy(state: State<'_, Arc<AppState>>) -> Result<Option<ByomPolicy>, AppError> {
     require_auth_sync(&state)?;
-    Ok(ByomPolicy::load(&state.db))
+    ByomPolicy::load(&state.db)
 }
 
 /// Save the BYOM policy.

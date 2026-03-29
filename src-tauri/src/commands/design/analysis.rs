@@ -3,8 +3,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
+use tokio::io::AsyncBufReadExt;
 
 use crate::db::repos::core::design_conversations as conv_repo;
 use crate::db::repos::core::personas as persona_repo;
@@ -57,16 +56,15 @@ fn spawn_design_run(
     let design_id_clone = design_id.clone();
     let registry = state.process_registry.clone();
 
-    // Kill any existing design analysis child process before spawning a new one.
-    // Without this, rapid clicks on "Generate Design" spawn multiple concurrent
-    // CLI processes, but only the last PID is tracked -- earlier ones become
-    // unkillable orphans that silently consume API credits.
-    if let Some(old_pid) = registry.take_pid("design") {
-        tracing::info!(pid = old_pid, "Killing previous design analysis before starting new one");
-        engine::kill_process(old_pid);
+    // Atomically begin the new run: cancels the previous run's token, takes the
+    // old PID, and returns a fresh cancellation token for this run.  This fixes
+    // the race where a completed-but-not-yet-persisted run sees its registry ID
+    // overwritten by a newer run and silently discards a valid result.
+    let (old_pid, cancelled) = registry.begin_run("design", design_id.clone());
+    if let Some(pid) = old_pid {
+        tracing::info!(pid = pid, "Killing previous design analysis before starting new one");
+        engine::kill_process(pid);
     }
-
-    registry.set_id("design", design_id.clone());
 
     tokio::spawn(async move {
         run_design_analysis(DesignRunParams {
@@ -79,6 +77,7 @@ fn spawn_design_run(
             tool_names,
             connector_names,
             registry,
+            cancelled,
         })
         .await;
     });
@@ -133,8 +132,10 @@ pub async fn refine_design(
     require_auth(&state).await?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
 
-    // Prefer the caller-supplied result (from preview state) over the DB value,
-    // which may be stale if the user hasn't applied the latest design yet.
+    // persona.last_design_result is the canonical source of truth (written on
+    // every successful analysis in run_design_analysis).  The caller may supply
+    // a preview override via `current_result` for the rare case where the
+    // frontend preview state is newer than the DB (e.g. store hasn't refreshed).
     let last_result = current_result
         .or_else(|| persona.last_design_result.clone())
         .ok_or_else(|| AppError::Validation("No existing design to refine".into()))?;
@@ -245,6 +246,9 @@ struct DesignRunParams {
     tool_names: Vec<String>,
     connector_names: Vec<String>,
     registry: Arc<ActiveProcessRegistry>,
+    /// Per-run cancellation token — set to `true` when this run is superseded
+    /// by a newer run or explicitly cancelled by the user.
+    cancelled: Arc<std::sync::atomic::AtomicBool>,
 }
 
 async fn run_design_analysis(params: DesignRunParams) {
@@ -258,6 +262,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         tool_names,
         connector_names,
         registry,
+        cancelled,
     } = params;
     // Emit analyzing status
     let _ = app.emit(
@@ -271,29 +276,9 @@ async fn run_design_analysis(params: DesignRunParams) {
         },
     );
 
-    // Spawn Claude CLI process (same pattern as runner.rs)
-    let mut cmd = Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
-
-    let mut child = match cmd.spawn() {
-        Ok(c) => c,
+    // Spawn Claude CLI process via shared CliProcessDriver
+    let mut driver = match engine::cli_process::CliProcessDriver::spawn_cwd(&cli_args) {
+        Ok(d) => d,
         Err(e) => {
             let error_msg = if e.kind() == std::io::ErrorKind::NotFound {
                 "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
@@ -316,20 +301,16 @@ async fn run_design_analysis(params: DesignRunParams) {
     };
 
     // Register child PID so cancel can kill it
-    if let Some(pid) = child.id() {
+    if let Some(pid) = driver.pid() {
         registry.set_pid("design", pid);
     }
 
-    // Write prompt to stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        let prompt_bytes = prompt_text.into_bytes();
-        let _ = stdin.write_all(&prompt_bytes).await;
-        let _ = stdin.shutdown().await;
-    }
+    // Write prompt to stdin and close
+    driver.write_stdin(prompt_text.as_bytes()).await;
 
     // Read stdout line by line, emit design-output events
-    let stdout = match child.stdout.take() {
-        Some(s) => s,
+    let mut reader = match driver.take_stdout_reader().map(|r| r.lines()) {
+        Some(r) => r,
         None => {
             let _ = app.emit(
                 event_name::DESIGN_STATUS,
@@ -344,7 +325,6 @@ async fn run_design_analysis(params: DesignRunParams) {
             return;
         }
     };
-    let mut reader = BufReader::new(stdout).lines();
     let mut full_output = String::new();
 
     let timeout_duration = std::time::Duration::from_secs(600); // 10 min
@@ -374,8 +354,7 @@ async fn run_design_analysis(params: DesignRunParams) {
 
     // On timeout, kill the process BEFORE waiting -- otherwise wait() blocks forever
     if stream_result.is_err() {
-        let _ = child.kill().await;
-        let _ = child.wait().await;
+        driver.kill().await;
         registry.clear_pid("design");
         let _ = app.emit(
             event_name::DESIGN_STATUS,
@@ -391,13 +370,14 @@ async fn run_design_analysis(params: DesignRunParams) {
     }
 
     // Normal exit -- wait for process and clear the PID
-    let _ = child.wait().await;
+    let _ = driver.wait().await;
     registry.clear_pid("design");
 
-    // Check if this analysis was cancelled before persisting
-    let is_cancelled = registry.get_id("design").as_deref() != Some(&design_id);
-
-    if is_cancelled {
+    // Check if this run was explicitly cancelled (by user or by a newer run that
+    // killed our process).  Uses the per-run AtomicBool token instead of comparing
+    // registry IDs, which avoids the race where a newer run overwrites the ID
+    // before this run can check it — silently discarding a valid completed result.
+    if cancelled.load(std::sync::atomic::Ordering::Acquire) {
         tracing::info!(design_id = %design_id, "Design analysis cancelled, skipping DB write");
         return;
     }
@@ -423,6 +403,9 @@ async fn run_design_analysis(params: DesignRunParams) {
             compiler::run_feasibility(&mut result, &tool_names, &connector_names);
 
             // Stage 5: Persist via PersonaCompiler
+            // This is the single canonical write for design results.
+            // All other consumers (frontend store, conversation history)
+            // derive from persona.last_design_result rather than storing copies.
             let result_json = result.to_string();
             if let Err(e) = persona_repo::update(
                 &pool,

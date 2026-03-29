@@ -24,6 +24,8 @@ const validModes = new Set<string>(modeTabs.map((t) => t.id));
 export function LabTab() {
   const labMode = useAgentStore((s) => s.labMode);
   const setLabMode = useAgentStore((s) => s.setLabMode);
+  const personaId = useAgentStore((s) => s.selectedPersona?.id);
+  const hydrateActiveProgress = useAgentStore((s) => s.hydrateActiveProgress);
 
   // Restore persisted tab on mount
   useEffect(() => {
@@ -32,6 +34,11 @@ export function LabTab() {
       setLabMode(saved as LabMode);
     }
   }, [setLabMode]);
+
+  // Hydrate active run progress on mount (restores progress indicators after page refresh)
+  useEffect(() => {
+    if (personaId) hydrateActiveProgress(personaId);
+  }, [personaId, hydrateActiveProgress]);
 
   // Persist tab on change
   useEffect(() => {

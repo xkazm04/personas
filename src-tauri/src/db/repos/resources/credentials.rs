@@ -4,7 +4,7 @@ use rusqlite::{params, OptionalExtension};
 
 use crate::db::models::{
     CreateCredentialEventInput, CreateCredentialInput, CredentialEvent, CredentialField,
-    PersonaCredential, UpdateCredentialEventInput, UpdateCredentialInput,
+    CredentialLedger, PersonaCredential, UpdateCredentialEventInput, UpdateCredentialInput,
 };
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -38,6 +38,51 @@ pub const NON_SENSITIVE_KEYS: &[&str] = &[
     "workspace", "team", "region", "scope", "scopes",
     "oauth_client_mode", "token_type",
 ];
+
+/// Build a lookup map of `field_key -> is_sensitive` from a connector's fields
+/// JSON.  Returns `None` if the connector is not found or its fields column
+/// cannot be parsed.  Each field object may contain an explicit `"sensitive"`
+/// boolean; when absent the field defaults to sensitive (`true`).
+pub fn sensitivity_map_for_connector(
+    pool: &DbPool,
+    service_type: &str,
+) -> Option<HashMap<String, bool>> {
+    use crate::db::repos::resources::connectors;
+
+    let def = connectors::get_by_name(pool, service_type).ok()??;
+
+    #[derive(serde::Deserialize)]
+    struct FieldEntry {
+        key: String,
+        sensitive: Option<bool>,
+    }
+
+    let entries: Vec<FieldEntry> = serde_json::from_str(&def.fields).ok()?;
+    let mut map = HashMap::new();
+    for entry in entries {
+        map.insert(entry.key.clone(), entry.sensitive.unwrap_or(true));
+    }
+    Some(map)
+}
+
+/// Determine whether a credential field is sensitive.
+///
+/// Priority:
+/// 1. Connector schema `sensitive` flag (authoritative single source of truth)
+/// 2. Fallback to `NON_SENSITIVE_KEYS` heuristic for connectors without schema
+///    annotations or for ad-hoc fields not declared in the schema.
+pub fn is_field_sensitive(
+    sensitivity_map: Option<&HashMap<String, bool>>,
+    field_key: &str,
+) -> bool {
+    if let Some(map) = sensitivity_map {
+        if let Some(&sensitive) = map.get(field_key) {
+            return sensitive;
+        }
+    }
+    // Fallback: any key NOT in the hardcoded list is treated as sensitive
+    !NON_SENSITIVE_KEYS.contains(&field_key.to_lowercase().as_str())
+}
 
 // ============================================================================
 // Credential CRUD
@@ -99,6 +144,8 @@ pub fn create_with_fields(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
+        let sens_map = sensitivity_map_for_connector(pool, &input.service_type);
+
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
 
@@ -118,7 +165,7 @@ pub fn create_with_fields(
         )?;
 
         for (key, value) in fields {
-            let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+            let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
             let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
                 .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
 
@@ -170,8 +217,13 @@ pub fn update_with_fields(
     fields: Option<&HashMap<String, String>>,
 ) -> Result<PersonaCredential, AppError> {
     timed_query!("persona_credentials", "persona_credentials::update_with_fields", {
-        // Verify exists
-        get_by_id(pool, id)?;
+        // Verify exists and get service_type for sensitivity lookup
+        let existing = get_by_id(pool, id)?;
+
+        // Use the new service_type if being updated, otherwise keep existing
+        let effective_service_type = input.service_type.as_deref()
+            .unwrap_or(&existing.service_type);
+        let sens_map = sensitivity_map_for_connector(pool, effective_service_type);
 
         let now = chrono::Utc::now().to_rfc3339();
         let mut conn = pool.get()?;
@@ -209,7 +261,7 @@ pub fn update_with_fields(
                 )?;
 
                 for (key, value) in field_map {
-                    let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+                    let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
                     let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
                         .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
 
@@ -366,6 +418,67 @@ pub fn update_metadata(pool: &DbPool, id: &str, metadata: Option<&str>) -> Resul
 /// - `null` values remove keys
 /// - Sanitizes before persisting
 /// - Returns the updated credential row
+/// Apply a metadata patch on an existing connection (for use inside an outer
+/// transaction).  Does NOT manage its own transaction — the caller is
+/// responsible for commit/rollback.
+pub fn patch_metadata_on_conn(
+    conn: &rusqlite::Connection,
+    id: &str,
+    patch: serde_json::Map<String, serde_json::Value>,
+) -> Result<(), AppError> {
+    let current_raw: Option<String> = conn
+        .query_row(
+            "SELECT metadata FROM persona_credentials WHERE id = ?1",
+            params![id],
+            |row| row.get::<_, Option<String>>(0),
+        )
+        .optional()?
+        .flatten();
+
+    // Ensure credential exists before applying patch
+    if current_raw.is_none() {
+        let exists: Option<String> = conn
+            .query_row(
+                "SELECT id FROM persona_credentials WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        if exists.is_none() {
+            return Err(AppError::NotFound(format!("Credential {id}")));
+        }
+    }
+
+    let mut base_obj = current_raw
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+
+    for (key, value) in patch {
+        if value.is_null() {
+            base_obj.remove(&key);
+        } else {
+            base_obj.insert(key, value);
+        }
+    }
+
+    let next_meta_json = serde_json::Value::Object(base_obj);
+    let next_meta_str = serde_json::to_string(&next_meta_json)?;
+    let sanitized_meta = sanitize_secrets(&next_meta_str);
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let updated_rows = conn.execute(
+        "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
+        params![sanitized_meta, now, id],
+    )?;
+    if updated_rows == 0 {
+        return Err(AppError::NotFound(format!("Credential {id}")));
+    }
+
+    Ok(())
+}
+
 pub fn patch_metadata_atomic(
     pool: &DbPool,
     id: &str,
@@ -374,60 +487,9 @@ pub fn patch_metadata_atomic(
     timed_query!("persona_credentials", "persona_credentials::patch_metadata_atomic", {
         let mut conn = pool.get()?;
         let tx = conn.transaction()?;
-
-        let current_raw: Option<String> = tx
-            .query_row(
-                "SELECT metadata FROM persona_credentials WHERE id = ?1",
-                params![id],
-                |row| row.get::<_, Option<String>>(0),
-            )
-            .optional()?
-            .flatten();
-
-        // Ensure credential exists before applying patch
-        if current_raw.is_none() {
-            let exists: Option<String> = tx
-                .query_row(
-                    "SELECT id FROM persona_credentials WHERE id = ?1",
-                    params![id],
-                    |row| row.get(0),
-                )
-                .optional()?;
-            if exists.is_none() {
-                return Err(AppError::NotFound(format!("Credential {id}")));
-            }
-        }
-
-        let mut base_obj = current_raw
-            .as_deref()
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-            .and_then(|v| v.as_object().cloned())
-            .unwrap_or_default();
-
-        for (key, value) in patch {
-            if value.is_null() {
-                base_obj.remove(&key);
-            } else {
-                base_obj.insert(key, value);
-            }
-        }
-
-        let next_meta_json = serde_json::Value::Object(base_obj);
-        let next_meta_str = serde_json::to_string(&next_meta_json)?;
-        let sanitized_meta = sanitize_secrets(&next_meta_str);
-        let now = chrono::Utc::now().to_rfc3339();
-
-        let updated_rows = tx.execute(
-            "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
-            params![sanitized_meta, now, id],
-        )?;
-        if updated_rows == 0 {
-            return Err(AppError::NotFound(format!("Credential {id}")));
-        }
-
+        patch_metadata_on_conn(&tx, id, patch)?;
         tx.commit()?;
         get_by_id(pool, id)
-
     })
 }
 
@@ -465,34 +527,10 @@ pub fn increment_refresh_backoff_atomic(
             }
         }
 
-        let mut base_obj = current_raw
-            .as_deref()
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-            .and_then(|v| v.as_object().cloned())
-            .unwrap_or_default();
+        let mut ledger = CredentialLedger::parse(current_raw.as_deref());
+        let (new_fail_count, backoff_secs) = ledger.increment_refresh_backoff(backoff_steps);
 
-        let fail_count = base_obj
-            .get("oauth_refresh_fail_count")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0);
-
-        let new_fail_count = fail_count + 1;
-        let step_idx = (fail_count as usize).min(backoff_steps.len() - 1);
-        let backoff_secs = backoff_steps[step_idx];
-        let backoff_until =
-            (chrono::Utc::now() + chrono::Duration::seconds(backoff_secs)).to_rfc3339();
-
-        base_obj.insert(
-            "oauth_refresh_fail_count".to_string(),
-            serde_json::json!(new_fail_count),
-        );
-        base_obj.insert(
-            "oauth_refresh_backoff_until".to_string(),
-            serde_json::json!(backoff_until),
-        );
-
-        let next_meta_json = serde_json::Value::Object(base_obj);
-        let next_meta_str = serde_json::to_string(&next_meta_json)?;
+        let next_meta_str = ledger.to_json_string()?;
         let sanitized_meta = sanitize_secrets(&next_meta_str);
         let now = chrono::Utc::now().to_rfc3339();
 
@@ -529,31 +567,21 @@ pub fn append_healthcheck_metadata(
             .optional()?
             .flatten();
 
-        let metadata: serde_json::Value = current_raw
-            .as_deref()
-            .and_then(|s| serde_json::from_str(s).ok())
-            .unwrap_or(serde_json::Value::Null);
+        let mut ledger = CredentialLedger::parse(current_raw.as_deref());
 
-        let existing = crate::engine::rotation::parse_healthcheck_entries(&metadata).entries_or_empty();
+        // Delegate to rotation engine for ring-buffer append logic (entry
+        // construction, FIFO overflow, error classification).
+        let existing = crate::engine::rotation::ledger_entries_to_engine(&ledger.healthcheck_results);
         let updated = crate::engine::rotation::append_healthcheck_entry(&existing, success, message);
 
-        let mut meta_obj = metadata.as_object().cloned().unwrap_or_default();
-        meta_obj.insert(
-            "healthcheck_results".to_string(),
-            serde_json::to_value(&updated).unwrap_or_default(),
-        );
-        meta_obj.insert(
-            "healthcheck_last_success".to_string(),
-            serde_json::Value::Bool(success),
-        );
+        // Write updated ring buffer back into the ledger using typed conversion
+        ledger.healthcheck_results = crate::engine::rotation::engine_entries_to_ledger(&updated);
+        ledger.healthcheck_last_success = Some(success);
         if success {
-            meta_obj.insert(
-                "healthcheck_last_success_at".to_string(),
-                serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
-            );
+            ledger.healthcheck_last_success_at = Some(chrono::Utc::now().to_rfc3339());
         }
 
-        let next_meta = serde_json::to_string(&serde_json::Value::Object(meta_obj))?;
+        let next_meta = ledger.to_json_string()?;
         let sanitized = sanitize_secrets(&next_meta);
         let now = chrono::Utc::now().to_rfc3339();
 
@@ -580,7 +608,7 @@ pub fn record_usage(pool: &DbPool, credential_id: &str) -> Result<(), AppError> 
             params![now, credential_id],
         )?;
 
-        // Increment usage_count in metadata JSON
+        // Increment usage_count in metadata via typed ledger
         let row: Option<String> = conn
             .query_row(
                 "SELECT metadata FROM persona_credentials WHERE id = ?1",
@@ -589,18 +617,10 @@ pub fn record_usage(pool: &DbPool, credential_id: &str) -> Result<(), AppError> 
             )
             .optional()?;
 
-        let mut meta: serde_json::Value = row
-            .as_deref()
-            .and_then(|s| serde_json::from_str(s).ok())
-            .unwrap_or(serde_json::json!({}));
+        let mut ledger = CredentialLedger::parse(row.as_deref());
+        ledger.record_usage();
 
-        let count = meta.get("usage_count").and_then(|v| v.as_u64()).unwrap_or(0);
-        if let Some(obj) = meta.as_object_mut() {
-            obj.insert("usage_count".to_string(), serde_json::json!(count + 1));
-            obj.insert("last_used_at".to_string(), serde_json::json!(now));
-        }
-
-        let meta_str = serde_json::to_string(&meta).ok();
+        let meta_str = ledger.to_json_string().ok();
         conn.execute(
             "UPDATE persona_credentials SET metadata = ?1 WHERE id = ?2",
             params![meta_str, credential_id],
@@ -643,6 +663,65 @@ pub fn get_events_by_credential(
         let rows = stmt.query_map(params![credential_id], row_to_credential_event)?;
         rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 
+    })
+}
+
+/// Read the typed `CredentialLedger` for a credential.
+/// Returns `Default` if the credential has no metadata or it is invalid JSON.
+pub fn read_ledger(pool: &DbPool, credential_id: &str) -> Result<CredentialLedger, AppError> {
+    let cred = get_by_id(pool, credential_id)?;
+    Ok(CredentialLedger::parse(cred.metadata.as_deref()))
+}
+
+/// Atomically read-modify-write the credential ledger via a typed closure.
+///
+/// The closure receives a mutable `CredentialLedger`, applies section-level
+/// changes, and the result is persisted back as sanitized JSON. This is the
+/// preferred way for engine subsystems to update their slice of the ledger.
+pub fn update_ledger<F>(pool: &DbPool, id: &str, mutator: F) -> Result<CredentialLedger, AppError>
+where
+    F: FnOnce(&mut CredentialLedger),
+{
+    timed_query!("persona_credentials", "persona_credentials::update_ledger", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
+
+        let current_raw: Option<String> = tx
+            .query_row(
+                "SELECT metadata FROM persona_credentials WHERE id = ?1",
+                params![id],
+                |row| row.get::<_, Option<String>>(0),
+            )
+            .optional()?
+            .flatten();
+
+        if current_raw.is_none() {
+            let exists: Option<String> = tx
+                .query_row(
+                    "SELECT id FROM persona_credentials WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            if exists.is_none() {
+                return Err(AppError::NotFound(format!("Credential {id}")));
+            }
+        }
+
+        let mut ledger = CredentialLedger::parse(current_raw.as_deref());
+        mutator(&mut ledger);
+
+        let next_meta_str = ledger.to_json_string()?;
+        let sanitized_meta = sanitize_secrets(&next_meta_str);
+        let now = chrono::Utc::now().to_rfc3339();
+
+        tx.execute(
+            "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
+            params![sanitized_meta, now, id],
+        )?;
+
+        tx.commit()?;
+        Ok(ledger)
     })
 }
 
@@ -808,6 +887,10 @@ pub fn save_fields(
     fields: &HashMap<String, String>,
 ) -> Result<usize, AppError> {
     timed_query!("persona_credentials", "persona_credentials::save_fields", {
+        // Look up the credential's service_type for schema-based sensitivity
+        let cred = get_by_id(pool, credential_id)?;
+        let sens_map = sensitivity_map_for_connector(pool, &cred.service_type);
+
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
 
@@ -821,7 +904,7 @@ pub fn save_fields(
         let mut count = 0usize;
 
         for (key, value) in fields {
-            let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+            let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
             let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
                 .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
 
@@ -852,6 +935,39 @@ pub fn save_fields(
     })
 }
 
+/// Update a single credential field on an existing connection (for use inside
+/// an outer transaction).  If the field doesn't exist, inserts it.
+pub fn upsert_field_on_conn(
+    conn: &rusqlite::Connection,
+    credential_id: &str,
+    field_key: &str,
+    field_value: &str,
+    is_sensitive: bool,
+) -> Result<(), AppError> {
+    let (enc_val, field_iv) = crypto::encrypt_field(field_value, is_sensitive)
+        .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let field_type = classify_field_type(field_key);
+    let field_id = uuid::Uuid::new_v4().to_string();
+
+    // Atomic upsert — avoids TOCTOU race between concurrent UPDATE/INSERT.
+    conn.execute(
+        "INSERT INTO credential_fields
+         (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)
+         ON CONFLICT(credential_id, field_key) DO UPDATE SET
+           encrypted_value = excluded.encrypted_value,
+           iv              = excluded.iv,
+           field_type      = excluded.field_type,
+           is_sensitive    = excluded.is_sensitive,
+           updated_at      = excluded.updated_at",
+        params![field_id, credential_id, field_key, enc_val, field_iv, field_type, is_sensitive as i32, now],
+    )?;
+
+    Ok(())
+}
+
 /// Update a single credential field. If the field doesn't exist, inserts it.
 pub fn upsert_field(
     pool: &DbPool,
@@ -861,32 +977,8 @@ pub fn upsert_field(
     is_sensitive: bool,
 ) -> Result<(), AppError> {
     timed_query!("persona_credentials", "persona_credentials::upsert_field", {
-        let (enc_val, field_iv) = crypto::encrypt_field(field_value, is_sensitive)
-            .map_err(|e| AppError::Internal(format!("Field encryption failed: {e}")))?;
-
-        let now = chrono::Utc::now().to_rfc3339();
-        let field_type = classify_field_type(field_key);
         let conn = pool.get()?;
-
-        // Try UPDATE first
-        let rows = conn.execute(
-            "UPDATE credential_fields SET encrypted_value = ?1, iv = ?2, field_type = ?3,
-             is_sensitive = ?4, updated_at = ?5 WHERE credential_id = ?6 AND field_key = ?7",
-            params![enc_val, field_iv, field_type, is_sensitive as i32, now, credential_id, field_key],
-        )?;
-
-        if rows == 0 {
-            let field_id = uuid::Uuid::new_v4().to_string();
-            conn.execute(
-                "INSERT INTO credential_fields
-                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-                params![field_id, credential_id, field_key, enc_val, field_iv, field_type, is_sensitive as i32, now],
-            )?;
-        }
-
-        Ok(())
-
+        upsert_field_on_conn(&conn, credential_id, field_key, field_value, is_sensitive)
     })
 }
 

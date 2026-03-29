@@ -26,6 +26,8 @@ interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isOffline: boolean;
+  /** True when authenticated via cached profile only (no access token). Cloud features unavailable. */
+  isOfflineAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 
@@ -38,6 +40,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
   isAuthenticated: false,
   isOffline: false,
+  isOfflineAuthenticated: false,
   isLoading: false,
   error: null,
 
@@ -49,6 +52,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         user: state.user,
         isAuthenticated: state.is_authenticated,
         isOffline: state.is_offline,
+        isOfflineAuthenticated: state.is_offline_authenticated,
         isLoading: false,
       });
     } catch {
@@ -88,6 +92,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         user: null,
         isAuthenticated: false,
         isOffline: false,
+        isOfflineAuthenticated: false,
         error: null,
       });
     } catch (err) {

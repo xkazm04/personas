@@ -100,7 +100,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
         content: input.content,
         category: input.category,
         importance: input.importance,
-        tags: JSON.stringify(input.tags),
+        tags: input.tags,
         source_execution_id: null,
       });
       set((state) => ({

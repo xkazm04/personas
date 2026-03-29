@@ -3,12 +3,7 @@ import * as credApi from '@/api/vault/credentials';
 import { toCredentialMetadata, type CredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
 import { createModuleCache, useModuleCacheSubscription } from '@/hooks/utility/data/useModuleSubscription';
-
-// -- Re-use the same shared caches from useCredentialHealth ----------
-// We import them indirectly: the result cache is the module-level cache
-// inside useCredentialHealth.ts. Since we can't import it directly,
-// we call checkStored-equivalent logic that writes to the same cache
-// by invoking the healthcheck API and using the exported static helpers.
+import { setHealthResultStatic } from './useCredentialHealth';
 
 // -- Bulk-specific state cache (separate from per-key health cache) --
 
@@ -98,6 +93,10 @@ export function useBulkHealthcheck() {
             const hcResult = await credApi.healthcheckCredential(cred.id);
             success = hcResult.success;
             message = hcResult.message;
+
+            // Sync result into the shared module-level health cache so
+            // CredentialCard picks up fresh data instead of stale metadata.
+            setHealthResultStatic(cred.id, { success, message });
 
             // Persist healthcheck metadata via atomic patch (avoids stale overwrites)
             const nowIso = new Date().toISOString();

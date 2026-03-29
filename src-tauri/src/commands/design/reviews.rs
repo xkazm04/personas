@@ -4,8 +4,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::Command;
+use tokio::io::AsyncBufReadExt;
 
 use crate::db::models::{
     CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, CreatePersonaEventInput,
@@ -871,7 +870,7 @@ pub fn update_manual_review_status(
                 content: memory_content,
                 category: Some("learned".to_string()),
                 importance: Some(6),
-                tags: Some(serde_json::json!(["review", decision]).to_string()),
+                tags: Some(crate::db::models::Json(vec!["review".to_string(), decision.to_string()])),
             },
         );
 
@@ -1007,39 +1006,50 @@ pub fn seed_mock_manual_review(
 ) -> Result<PersonaManualReview, AppError> {
     require_auth_sync(&state)?;
 
-    // Pick a random persona (or use a fallback id)
-    let personas = persona_repo::get_all(&state.db)?;
-    let idx = (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
+    #[cfg(not(debug_assertions))]
+    {
+        return Err(AppError::Validation(
+            "seed_mock_manual_review is only available in debug builds".into(),
+        ));
+    }
 
-    let persona_id = personas.get(idx).map(|p| p.id.clone())
-        .unwrap_or_else(|| "mock-persona".to_string());
+    #[cfg(debug_assertions)]
+    {
+        // Pick a random persona (or use a fallback id)
+        let personas = persona_repo::get_all(&state.db)?;
+        let idx = (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
 
-    // Create a dummy execution id
-    let execution_id = format!("mock-exec-{}", &uuid::Uuid::new_v4().to_string()[..8]);
+        let persona_id = personas.get(idx).map(|p| p.id.clone())
+            .unwrap_or_else(|| "mock-persona".to_string());
 
-    let t = chrono::Utc::now().timestamp_millis() as usize;
-    let title = MOCK_TITLES[t % MOCK_TITLES.len()].to_string();
-    let description = Some(MOCK_DESCRIPTIONS[t % MOCK_DESCRIPTIONS.len()].to_string());
-    let sev = MOCK_SEVERITIES[t % MOCK_SEVERITIES.len()].to_string();
-    let suggested_actions = Some(MOCK_ACTIONS[t % MOCK_ACTIONS.len()].to_string());
-    let context_data = Some(MOCK_CONTEXT[t % MOCK_CONTEXT.len()].to_string());
+        // Create a dummy execution id
+        let execution_id = format!("mock-exec-{}", &uuid::Uuid::new_v4().to_string()[..8]);
 
-    // Insert directly -- disable FK checks for dev seed (execution_id is fake)
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = state.db.get()?;
-    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
-    let result = conn.execute(
-        "INSERT INTO persona_manual_reviews
-         (id, execution_id, persona_id, title, description, severity, status,
-          context_data, suggested_actions, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9)",
-        rusqlite::params![id, execution_id, persona_id, title, description, sev, context_data, suggested_actions, now],
-    );
-    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
-    result?;
+        let t = chrono::Utc::now().timestamp_millis() as usize;
+        let title = MOCK_TITLES[t % MOCK_TITLES.len()].to_string();
+        let description = Some(MOCK_DESCRIPTIONS[t % MOCK_DESCRIPTIONS.len()].to_string());
+        let sev = MOCK_SEVERITIES[t % MOCK_SEVERITIES.len()].to_string();
+        let suggested_actions = Some(MOCK_ACTIONS[t % MOCK_ACTIONS.len()].to_string());
+        let context_data = Some(MOCK_CONTEXT[t % MOCK_CONTEXT.len()].to_string());
 
-    manual_repo::get_by_id(&state.db, &id)
+        // Insert directly -- disable FK checks for dev seed (execution_id is fake)
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = state.db.get()?;
+        let result = {
+            let _fk_guard = crate::db::FkDisabledGuard::new(&conn)?;
+            conn.execute(
+                "INSERT INTO persona_manual_reviews
+                 (id, execution_id, persona_id, title, description, severity, status,
+                  context_data, suggested_actions, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9)",
+                rusqlite::params![id, execution_id, persona_id, title, description, sev, context_data, suggested_actions, now],
+            )
+        }; // _fk_guard dropped here → FK restored
+        result?;
+
+        manual_repo::get_by_id(&state.db, &id)
+    }
 }
 
 /// Backfill categories for all reviews that currently have `category = NULL`.
@@ -1322,28 +1332,8 @@ async fn run_cli_for_template(
     test_case_index: usize,
     registry: &Arc<crate::ActiveProcessRegistry>,
 ) -> Result<String, String> {
-    let mut cmd = Command::new(&cli_args.command);
-    cmd.args(&cli_args.args)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-
-    #[cfg(windows)]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-
-    for key in &cli_args.env_removals {
-        cmd.env_remove(key);
-    }
-    for (key, val) in &cli_args.env_overrides {
-        cmd.env(key, val);
-    }
-
-    let mut child = match cmd.spawn() {
-        Ok(c) => c,
+    let mut driver = match crate::engine::cli_process::CliProcessDriver::spawn_cwd(cli_args) {
+        Ok(d) => d,
         Err(e) => {
             return if e.kind() == std::io::ErrorKind::NotFound {
                 Err("Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code".into())
@@ -1354,20 +1344,18 @@ async fn run_cli_for_template(
     };
 
     // Register child PID so cancel can kill it immediately
-    if let Some(pid) = child.id() {
+    if let Some(pid) = driver.pid() {
         registry.set_run_pid("review", run_id, pid);
     }
 
-    // Write prompt to stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        let prompt_bytes = prompt_text.as_bytes().to_vec();
-        let _ = stdin.write_all(&prompt_bytes).await;
-        let _ = stdin.shutdown().await;
-    }
+    // Write prompt to stdin and close
+    driver.write_stdin(prompt_text.as_bytes()).await;
 
     // Read stdout line by line, emit output events
-    let stdout = child.stdout.take().expect("stdout was piped");
-    let mut reader = BufReader::new(stdout).lines();
+    let mut reader = driver
+        .take_stdout_reader()
+        .expect("stdout was piped")
+        .lines();
     let mut full_output = String::new();
 
     let timeout_duration = std::time::Duration::from_secs(180); // 3 min per template
@@ -1396,26 +1384,16 @@ async fn run_cli_for_template(
     .await;
 
     // If the stream timed out, kill the process first so wait() doesn't block.
-    // If it completed normally, just wait() for the exit status.
     if stream_result.is_err() {
-        let _ = child.kill().await;
-        let _ = child.wait().await;
+        driver.kill().await;
         registry.clear_run_pid("review", run_id);
         return Err("Template generation timed out after 3 minutes".into());
     }
 
-    let _ = child.wait().await;
+    let _ = driver.wait().await;
     registry.clear_run_pid("review", run_id);
 
     if full_output.is_empty() {
-        // Read stderr for error info
-        if let Some(mut stderr) = child.stderr.take() {
-            let mut err_buf = String::new();
-            let _ = tokio::io::AsyncReadExt::read_to_string(&mut stderr, &mut err_buf).await;
-            if !err_buf.is_empty() {
-                return Err(format!("Claude CLI produced no output. Stderr: {}", err_buf.chars().take(500).collect::<String>()));
-            }
-        }
         return Err("Claude CLI produced no output".into());
     }
 

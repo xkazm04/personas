@@ -47,5 +47,5 @@ pub struct MemoryExport {
     pub content: String,
     pub category: String,
     pub importance: i32,
-    pub tags: Option<String>,
+    pub tags: Option<crate::db::models::Json<Vec<String>>>,
 }

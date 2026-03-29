@@ -37,6 +37,8 @@ pub async fn start_scheduler(
         state.ambient_context.clone(),
         #[cfg(feature = "desktop")]
         state.context_rule_engine.clone(),
+        state.composite_state.clone(),
+        state.smee_relay_notifier.clone(),
     );
 
     Ok(state.scheduler.stats())

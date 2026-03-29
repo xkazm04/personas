@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Segment -> Sources -> your source -> Settings -> API Keys"
+      "helpText": "From Segment -> Sources -> your source -> Settings -> API Keys",
+      "sensitive": true
     },
     {
       "key": "access_token",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": false,
       "placeholder": "",
-      "helpText": "Optional: for Config API access (workspace-level)"
+      "helpText": "Optional: for Config API access (workspace-level)",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

@@ -10,6 +10,7 @@ use crate::db::models::{
     ExecutionDashboardData, PersonaCostEntry,
     AnomalyDrilldownData, CorrelatedEvent, RootCauseSuggestion,
 };
+use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -239,25 +240,19 @@ pub fn get_recent_error_rate(
 // Optional persona_id filter helper
 // ============================================================================
 
-/// Builds the optional `AND persona_id = ?N` clause and matching param vec.
-/// The date_filter string is always `?1`; if `persona_id` is Some, it becomes `?2`.
-fn persona_filter_params(
+/// Builds a QueryBuilder with the date filter as `?1` (for use in
+/// `datetime('now', ?1)`) and an optional `AND persona_id = ?N` condition.
+fn persona_filter_qb(
     date_filter: String,
     persona_id: Option<&str>,
-) -> (String, Vec<Box<dyn rusqlite::types::ToSql>>) {
-    match persona_id {
-        Some(pid) => (
-            " AND persona_id = ?2".to_string(),
-            vec![
-                Box::new(date_filter) as Box<dyn rusqlite::types::ToSql>,
-                Box::new(pid.to_string()),
-            ],
-        ),
-        None => (
-            String::new(),
-            vec![Box::new(date_filter) as Box<dyn rusqlite::types::ToSql>],
-        ),
+) -> QueryBuilder {
+    let mut qb = QueryBuilder::new();
+    // Push the date offset as ?1 — used manually in `datetime('now', ?1)`
+    qb.push_param(date_filter);
+    if let Some(pid) = persona_id {
+        qb.where_eq("persona_id", pid.to_string());
     }
+    qb
 }
 
 // ============================================================================
@@ -270,7 +265,12 @@ pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -
     let start = std::time::Instant::now();
     let days = days.unwrap_or(30).clamp(1, 365);
     let conn = pool.get()?;
-    let (pid_clause, param_values) = persona_filter_params(format!("-{days} days"), persona_id);
+    let qb = persona_filter_qb(format!("-{days} days"), persona_id);
+    let pid_clause = if qb.has_conditions() {
+        format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
+    } else {
+        String::new()
+    };
 
     let sql = format!(
         "SELECT
@@ -283,10 +283,7 @@ pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -
          WHERE created_at >= datetime('now', ?1){pid_clause}"
     );
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-
-    let result = conn.query_row(&sql, params_ref.as_slice(), |row| {
+    let result = conn.query_row(&sql, qb.params_ref().as_slice(), |row| {
         Ok(crate::db::models::MetricsSummary {
             total_executions: row.get(0)?,
             successful_executions: row.get(1)?,
@@ -325,7 +322,12 @@ pub fn get_chart_data(
     let start = std::time::Instant::now();
     let days = days.unwrap_or(30).clamp(1, 365);
     let conn = pool.get()?;
-    let (pid_clause, param_values) = persona_filter_params(format!("-{days} days"), persona_id);
+    let qb = persona_filter_qb(format!("-{days} days"), persona_id);
+    let pid_clause = if qb.has_conditions() {
+        format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
+    } else {
+        String::new()
+    };
 
     // 1) Date-bucketed chart points (GROUP BY date only)
     let chart_sql = format!(
@@ -343,8 +345,7 @@ pub fn get_chart_data(
          ORDER BY date ASC"
     );
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
+    let params_ref = qb.params_ref();
 
     let chart_points: Vec<MetricsChartPoint> = {
         let mut stmt = conn.prepare(&chart_sql)?;

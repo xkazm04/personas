@@ -787,7 +787,7 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
             validation::require_max_len(&format!("{prefix}.memory[{j}].title"), &m.title, MAX_NAME_LEN)?;
             validation::require_max_len(&format!("{prefix}.memory[{j}].content"), &m.content, MAX_MEMORY_CONTENT_LEN)?;
             validation::require_max_len(&format!("{prefix}.memory[{j}].category"), &m.category, MAX_SHORT_FIELD_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.memory[{j}].tags"), &m.tags, MAX_SHORT_FIELD_LEN)?;
+            validation::require_optional_max_len(&format!("{prefix}.memory[{j}].tags"), &m.tags.as_ref().map(|j| serde_json::to_string(&j.0).unwrap_or_default()), MAX_SHORT_FIELD_LEN)?;
         }
 
         // Validate test suites
@@ -1636,13 +1636,7 @@ pub async fn import_credentials(
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
 
-    // Non-sensitive field keys (mirrored from cred_repo::create_with_fields)
-    const NON_SENSITIVE_KEYS: &[&str] = &[
-        "base_url", "url", "host", "hostname", "server",
-        "port", "database", "project", "organization", "org",
-        "workspace", "team", "region", "scope", "scopes",
-        "oauth_client_mode", "token_type",
-    ];
+    use crate::db::repos::resources::credentials as cred_repo;
 
     for entry in &bundle.credentials {
         let conflict_key = entry.name.to_lowercase();
@@ -1707,9 +1701,12 @@ pub async fn import_credentials(
             }
         }
 
+        // Derive field sensitivity from connector schema
+        let sens_map = cred_repo::sensitivity_map_for_connector(pool, &entry.service_type);
+
         // Insert encrypted fields within the same transaction
         for (key, value) in &entry.fields {
-            let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
+            let is_sensitive = cred_repo::is_field_sensitive(sens_map.as_ref(), key);
             let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
                 .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
 

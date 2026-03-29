@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Buffer -> Settings -> Apps -> Access Token"
+      "helpText": "From Buffer -> Settings -> Apps -> Access Token",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

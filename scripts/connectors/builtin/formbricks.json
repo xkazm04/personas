@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "Go to Formbricks -> Settings -> API Keys -> Add API Key"
+      "helpText": "Go to Formbricks -> Settings -> API Keys -> Add API Key",
+      "sensitive": true
     },
     {
       "key": "base_url",
@@ -20,7 +21,8 @@
       "type": "url",
       "required": false,
       "placeholder": "https://app.formbricks.com",
-      "helpText": "Your Formbricks instance URL (defaults to formbricks.com cloud)"
+      "helpText": "Your Formbricks instance URL (defaults to formbricks.com cloud)",
+      "sensitive": false
     }
   ],
   "healthcheck_config": {
@@ -42,7 +44,12 @@
     "setup_guide": "1. Log in to Formbricks (app.formbricks.com or self-hosted).\n2. Go to Settings -> API Keys.\n3. Click 'Add API Key' and copy the key.\n4. Paste the key here. If self-hosted, also enter your instance URL.",
     "pricing_tier": "free",
     "auth_methods": [
-      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

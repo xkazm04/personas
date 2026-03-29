@@ -4,7 +4,7 @@ export interface LabArenaRun {
   id: string;
   personaId: string;
   status: LabRunStatus;
-  modelsTested: string;
+  modelsTested: string[];
   scenariosCount: number;
   useCaseFilter: string | null;
   summary: string | null;

@@ -1,6 +1,7 @@
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
-import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
+import type { RealtimeEvent, AnimationMap } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
+import { useAnimatedEvents } from '@/hooks/realtime/useAnimatedEvents';
 import type { ProcessingInfo, ReturnFlow, DiscoveredSource } from './libs/visualizationHelpers';
 import {
   CX, CY, TOOL_RING_R, PERSONA_RING_R,
@@ -11,9 +12,19 @@ import {
 } from './libs/visualizationHelpers';
 import type { PersonaInfo } from './event_bus/state/EventBusTypes';
 
+interface PendingCompletion {
+  animationId: string;
+  personaId: string;
+  color: string;
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+}
+
 // -- Hook: all state logic for EventBusVisualization --------------
 
-export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[]) {
+export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[], animationMapRef: React.RefObject<AnimationMap>, animTick: number) {
   // -- Discovered source topology --
   const discoveredSourcesRef = useRef(new Map<string, DiscoveredSource>());
 
@@ -85,15 +96,13 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
   }, [personaNodes]);
 
   // -- Active events + seen types --
-  const { activeEvents, seenTypes, inFlightCount } = useMemo(() => {
-    const active: RealtimeEvent[] = [];
+  const animatedEvents = useAnimatedEvents(events, animationMapRef.current, animTick);
+
+  const { seenTypes, inFlightCount } = useMemo(() => {
     const types = new Set<string>();
-    for (const e of events) {
-      types.add(e.event_type);
-      if (e._phase !== 'done') active.push(e);
-    }
-    return { activeEvents: active, seenTypes: [...types], inFlightCount: active.length };
-  }, [events]);
+    for (const e of events) types.add(e.event_type);
+    return { seenTypes: [...types], inFlightCount: animatedEvents.length };
+  }, [events, animatedEvents.length]);
 
   // -- Source / target helpers --
   const getSourcePos = useCallback((evt: RealtimeEvent) => {
@@ -117,28 +126,90 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
     return pn ? { x: pn.x, y: pn.y } : null;
   }, [personaPositionMap, personaNodes]);
 
-  // -- Processing state + return flows --
+  // -- Processing state + return flows (batched via rAF) --
   const [processingSet, setProcessingSet] = useState<Map<string, ProcessingInfo>>(new Map());
   const [returnFlows, setReturnFlows] = useState<ReturnFlow[]>([]);
   const spawnedRef = useRef(new Set<string>());
-  const timeoutByAnimationIdRef = useRef(new Map<string, number>());
 
-  const clearTrackedTimeouts = useCallback(() => {
-    for (const t of timeoutByAnimationIdRef.current.values()) clearTimeout(t);
-    timeoutByAnimationIdRef.current.clear();
+  // Pending completions queued by setTimeout, flushed once per frame
+  const pendingCompletionsRef = useRef<PendingCompletion[]>([]);
+  const completionTimersRef = useRef(new Map<string, number>());
+  const rafRef = useRef<number | null>(null);
+  const activeRef = useRef(false);
+
+  // rAF flush loop: batches all pending completions + prunes return flows in one render
+  useEffect(() => {
+    activeRef.current = true;
+    let lastPruneAt = Date.now();
+
+    function flush() {
+      if (!activeRef.current) return;
+
+      const now = Date.now();
+      const pending = pendingCompletionsRef.current;
+      const shouldPrune = now - lastPruneAt >= 300;
+
+      if (pending.length > 0 || shouldPrune) {
+        // Batch all processing completions + new return flows
+        if (pending.length > 0) {
+          const batch = pending.splice(0, pending.length);
+
+          setProcessingSet((prev) => {
+            const next = new Map(prev);
+            for (const c of batch) next.delete(c.personaId);
+            return next;
+          });
+
+          setReturnFlows((prev) => {
+            const newFlows = batch.map((c) => ({
+              id: `ret-${c.animationId}`,
+              fromX: c.fromX, fromY: c.fromY,
+              toX: c.toX, toY: c.toY,
+              color: c.color, startedAt: now,
+            }));
+            const combined = [...prev, ...newFlows];
+            return combined.length > 50 ? combined.slice(combined.length - 50) : combined;
+          });
+        }
+
+        // Prune expired return flows (replaces the 300ms setInterval)
+        if (shouldPrune) {
+          lastPruneAt = now;
+          setReturnFlows((prev) => {
+            const next = prev.filter((f) => now - f.startedAt < RETURN_FLOW_MS);
+            return next.length !== prev.length ? next : prev;
+          });
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(flush);
+    }
+
+    rafRef.current = requestAnimationFrame(flush);
+
+    return () => {
+      activeRef.current = false;
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      for (const t of completionTimersRef.current.values()) clearTimeout(t);
+      completionTimersRef.current.clear();
+    };
   }, []);
 
-  useEffect(() => () => { clearTrackedTimeouts(); }, [clearTrackedTimeouts]);
-
-  // Spawn processing + return flow when event reaches persona
+  // Spawn processing entries when events reach persona; queue completions via setTimeout
   useEffect(() => {
-    for (const evt of activeEvents) {
-      if (evt._phase !== 'delivering') continue;
-      if (spawnedRef.current.has(evt._animationId)) continue;
-      spawnedRef.current.add(evt._animationId);
+    const pendingStarts: Array<{ personaId: string; color: string; durationMs: number }> = [];
+
+    for (const { event: evt, animationId, phase } of animatedEvents) {
+      if (phase !== 'delivering') continue;
+      if (spawnedRef.current.has(animationId)) continue;
+      spawnedRef.current.add(animationId);
       if (spawnedRef.current.size > 200) {
         spawnedRef.current.clear();
-        clearTrackedTimeouts();
+        for (const t of completionTimersRef.current.values()) clearTimeout(t);
+        completionTimersRef.current.clear();
       }
 
       const color = EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8';
@@ -151,47 +222,40 @@ export function useEventBusState(events: RealtimeEvent[], personas: PersonaInfo[
         ?? 'unknown';
       const durationMs = 1200 + Math.random() * 1800;
 
-      setProcessingSet((prev) => {
-        const next = new Map(prev);
-        next.set(personaId, { color, durationMs, startedAt: Date.now() });
-        return next;
-      });
+      pendingStarts.push({ personaId, color, durationMs });
 
-      const animationId = evt._animationId;
+      // Schedule completion — just push to queue instead of calling setState
       const timeoutId = window.setTimeout(() => {
-        timeoutByAnimationIdRef.current.delete(animationId);
-        setProcessingSet((prev) => { const next = new Map(prev); next.delete(personaId); return next; });
-        setReturnFlows((prev) => {
-          const next = [
-            ...prev,
-            { id: `ret-${animationId}`, fromX: tgt.x, fromY: tgt.y, toX: src.x, toY: src.y, color, startedAt: Date.now() },
-          ];
-          return next.length > 50 ? next.slice(next.length - 50) : next;
+        completionTimersRef.current.delete(animationId);
+        pendingCompletionsRef.current.push({
+          animationId, personaId, color,
+          fromX: tgt.x, fromY: tgt.y,
+          toX: src.x, toY: src.y,
         });
       }, durationMs);
-      timeoutByAnimationIdRef.current.set(animationId, timeoutId);
+      completionTimersRef.current.set(animationId, timeoutId);
     }
-  }, [activeEvents, clearTrackedTimeouts, getSourcePos, getTargetPos, personaNodes]);
 
-  // Prune finished return flows
-  useEffect(() => {
-    const timer = setInterval(() => {
+    // Batch all new processing starts into a single setState call
+    if (pendingStarts.length > 0) {
       const now = Date.now();
-      setReturnFlows((prev) => {
-        const next = prev.filter((f) => now - f.startedAt < RETURN_FLOW_MS);
-        return next.length !== prev.length ? next : prev;
+      setProcessingSet((prev) => {
+        const next = new Map(prev);
+        for (const s of pendingStarts) {
+          next.set(s.personaId, { color: s.color, durationMs: s.durationMs, startedAt: now });
+        }
+        return next;
       });
-    }, 300);
-    return () => clearInterval(timer);
-  }, []);
+    }
+  }, [animatedEvents, getSourcePos, getTargetPos, personaNodes]);
 
-  const hasTraffic = activeEvents.length > 0 || returnFlows.length > 0 || processingSet.size > 0;
+  const hasTraffic = animatedEvents.length > 0 || returnFlows.length > 0 || processingSet.size > 0;
 
   return {
     discoveredSourcesRef,
     toolNodes,
     personaNodes,
-    activeEvents,
+    animatedEvents,
     seenTypes,
     inFlightCount,
     getSourcePos,

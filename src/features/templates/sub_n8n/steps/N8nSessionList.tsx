@@ -84,23 +84,11 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
 
       // If aborted (deleted while loading), discard the result
       if (abortController.signal.aborted) return;
-      const parseErrors: string[] = [];
 
-      const parseJsonField = <T,>(raw: string | null, label: string): T | null => {
-        if (!raw) return null;
-        try {
-          return JSON.parse(raw) as T;
-        } catch {
-          // intentional: non-critical -- JSON parse fallback
-          parseErrors.push(label);
-          return null;
-        }
-      };
-
-      const parsedResult = parseJsonField<AgentIR>(full.parser_result, 'parser results');
-      const draft = parseJsonField<N8nPersonaDraft>(full.draft_json, 'draft');
-      const questions = parseJsonField<TransformQuestion[]>(full.questions_json, 'questions');
-      const rawUserAnswers = parseJsonField<Record<string, string>>(full.user_answers, 'saved answers');
+      const parsedResult = (full.parser_result as AgentIR | null) ?? null;
+      const draft = (full.draft_json as N8nPersonaDraft | null) ?? null;
+      const questions = (full.questions_json as TransformQuestion[] | null) ?? null;
+      const rawUserAnswers = (full.user_answers as Record<string, string> | null) ?? null;
 
       const transformId = full.transform_id ?? null;
 
@@ -160,9 +148,7 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
         transformId,
         userAnswers,
         transformSubPhase: subPhase,
-        recoveryWarning: parseErrors.length > 0
-          ? `Session partially restored. Could not recover ${parseErrors.join(', ')}.`
-          : null,
+        recoveryWarning: null,
       });
     } catch {
       // Suppress errors if the load was intentionally aborted by a delete

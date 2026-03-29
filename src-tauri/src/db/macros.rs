@@ -336,3 +336,204 @@ macro_rules! timed_query {
         _tq_result
     }};
 }
+
+/// Generate the 7 common CRUD functions shared across lab repo modules.
+///
+/// Each lab mode (arena, ab, eval, matrix) shares identical implementations
+/// for run lookup/status/progress/delete and result lookup. This macro
+/// generates all of them from table names, type names, and row mappers.
+///
+/// The mode-specific functions (`create_run`, `create_result`, row mappers,
+/// and any unique helpers like `update_run_draft`) remain hand-written in
+/// each module file.
+///
+/// # Generated functions
+///
+/// - `get_run_by_id(pool, id)`
+/// - `get_runs_by_persona(pool, persona_id, limit)`
+/// - `update_run_status(pool, id, status, scenarios_count, summary, error, completed_at)`
+/// - `update_progress(pool, run_id, progress_json)`
+/// - `delete_run(pool, id)`
+/// - `get_result_by_id(pool, id)`
+/// - `get_results_by_run(pool, run_id)`
+///
+/// # Example
+///
+/// ```ignore
+/// lab_crud! {
+///     run_table: "lab_arena_runs",
+///     result_table: "lab_arena_results",
+///     run_type: LabArenaRun,
+///     result_type: LabArenaResult,
+///     run_entity: "LabArenaRun",
+///     result_entity: "LabArenaResult",
+///     result_order: "scenario_name, model_id",
+///     run_mapper: row_to_run,
+///     result_mapper: row_to_result,
+/// }
+/// ```
+#[macro_export]
+macro_rules! lab_crud {
+    (
+        run_table: $run_table:literal,
+        result_table: $result_table:literal,
+        run_type: $run_type:ty,
+        result_type: $result_type:ty,
+        run_entity: $run_entity:literal,
+        result_entity: $result_entity:literal,
+        result_order: $result_order:literal,
+        run_mapper: $run_mapper:ident,
+        result_mapper: $result_mapper:ident $(,)?
+    ) => {
+        pub fn get_run_by_id(
+            pool: &crate::db::DbPool,
+            id: &str,
+        ) -> Result<$run_type, crate::error::AppError> {
+            timed_query!($run_table, concat!($run_table, "::get_run_by_id"), {
+                let conn = pool.get()?;
+                conn.query_row(
+                    concat!("SELECT * FROM ", $run_table, " WHERE id = ?1"),
+                    rusqlite::params![id],
+                    $run_mapper,
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        crate::error::AppError::NotFound(format!(concat!($run_entity, " {}"), id))
+                    }
+                    other => crate::error::AppError::Database(other),
+                })
+            })
+        }
+
+        pub fn get_runs_by_persona(
+            pool: &crate::db::DbPool,
+            persona_id: &str,
+            limit: Option<i64>,
+        ) -> Result<Vec<$run_type>, crate::error::AppError> {
+            timed_query!($run_table, concat!($run_table, "::get_runs_by_persona"), {
+                let limit = limit.unwrap_or(20);
+                let conn = pool.get()?;
+                let mut stmt = conn.prepare(
+                    concat!(
+                        "SELECT * FROM ", $run_table,
+                        " WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2"
+                    ),
+                )?;
+                let rows = stmt.query_map(rusqlite::params![persona_id, limit], $run_mapper)?;
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(crate::error::AppError::Database)
+            })
+        }
+
+        pub fn update_run_status(
+            pool: &crate::db::DbPool,
+            id: &str,
+            status: crate::db::models::LabRunStatus,
+            scenarios_count: Option<i32>,
+            summary: Option<&str>,
+            error: Option<&str>,
+            completed_at: Option<&str>,
+        ) -> Result<(), crate::error::AppError> {
+            timed_query!($run_table, concat!($run_table, "::update_run_status"), {
+                let conn = pool.get()?;
+                let current: String = conn
+                    .query_row(
+                        concat!("SELECT status FROM ", $run_table, " WHERE id = ?1"),
+                        rusqlite::params![id],
+                        |row| row.get(0),
+                    )
+                    .map_err(|e| match e {
+                        rusqlite::Error::QueryReturnedNoRows => {
+                            crate::error::AppError::NotFound(format!(concat!($run_entity, " {}"), id))
+                        }
+                        other => crate::error::AppError::Database(other),
+                    })?;
+                let current_status = crate::db::models::LabRunStatus::from_db(&current);
+                current_status
+                    .validate_transition(status)
+                    .map_err(crate::error::AppError::Validation)?;
+                conn.execute(
+                    concat!(
+                        "UPDATE ", $run_table, " SET",
+                        " status = ?1,",
+                        " scenarios_count = COALESCE(?2, scenarios_count),",
+                        " summary = COALESCE(?3, summary),",
+                        " error = COALESCE(?4, error),",
+                        " completed_at = COALESCE(?5, completed_at)",
+                        " WHERE id = ?6"
+                    ),
+                    rusqlite::params![status.as_str(), scenarios_count, summary, error, completed_at, id],
+                )?;
+                Ok(())
+            })
+        }
+
+        pub fn update_progress(
+            pool: &crate::db::DbPool,
+            run_id: &str,
+            progress_json: &str,
+        ) -> Result<(), crate::error::AppError> {
+            timed_query!($run_table, concat!($run_table, "::update_progress"), {
+                let conn = pool.get().map_err(|e| crate::error::AppError::Internal(e.to_string()))?;
+                conn.execute(
+                    concat!("UPDATE ", $run_table, " SET progress_json = ?1 WHERE id = ?2"),
+                    rusqlite::params![progress_json, run_id],
+                )
+                .map_err(|e| crate::error::AppError::Internal(e.to_string()))?;
+                Ok(())
+            })
+        }
+
+        pub fn delete_run(
+            pool: &crate::db::DbPool,
+            id: &str,
+        ) -> Result<bool, crate::error::AppError> {
+            timed_query!($run_table, concat!($run_table, "::delete_run"), {
+                let conn = pool.get()?;
+                let rows = conn.execute(
+                    concat!("DELETE FROM ", $run_table, " WHERE id = ?1"),
+                    rusqlite::params![id],
+                )?;
+                Ok(rows > 0)
+            })
+        }
+
+        pub fn get_result_by_id(
+            pool: &crate::db::DbPool,
+            id: &str,
+        ) -> Result<$result_type, crate::error::AppError> {
+            timed_query!($result_table, concat!($result_table, "::get_result_by_id"), {
+                let conn = pool.get()?;
+                conn.query_row(
+                    concat!("SELECT * FROM ", $result_table, " WHERE id = ?1"),
+                    rusqlite::params![id],
+                    $result_mapper,
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        crate::error::AppError::NotFound(format!(concat!($result_entity, " {}"), id))
+                    }
+                    other => crate::error::AppError::Database(other),
+                })
+            })
+        }
+
+        pub fn get_results_by_run(
+            pool: &crate::db::DbPool,
+            run_id: &str,
+        ) -> Result<Vec<$result_type>, crate::error::AppError> {
+            timed_query!($result_table, concat!($result_table, "::get_results_by_run"), {
+                let conn = pool.get()?;
+                let mut stmt = conn.prepare(
+                    concat!(
+                        "SELECT * FROM ", $result_table,
+                        " WHERE run_id = ?1 ORDER BY ", $result_order
+                    ),
+                )?;
+                let rows = stmt.query_map(rusqlite::params![run_id], $result_mapper)?;
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(crate::error::AppError::Database)
+            })
+        }
+    };
+}

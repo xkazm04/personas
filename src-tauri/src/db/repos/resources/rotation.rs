@@ -108,7 +108,15 @@ pub fn create_policy(
         let now = chrono::Utc::now().to_rfc3339();
         let interval = input.rotation_interval_days.unwrap_or(90);
         let policy_type = input.policy_type.as_deref().unwrap_or("scheduled");
-        let enabled = input.enabled.unwrap_or(true) as i32;
+        let enabled = input.enabled.unwrap_or(true);
+
+        // Enforce single-active-policy invariant: disable any existing enabled
+        // policies for this credential before creating an enabled one.
+        if enabled {
+            disable_policies_for_credential(pool, &input.credential_id)?;
+        }
+
+        let enabled_i32 = enabled as i32;
 
         // Compute next_rotation_at
         let next = chrono::Utc::now()
@@ -120,7 +128,7 @@ pub fn create_policy(
             "INSERT INTO credential_rotation_policies
              (id, credential_id, enabled, rotation_interval_days, policy_type, next_rotation_at, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
-            params![id, input.credential_id, enabled, interval, policy_type, next_str, now],
+            params![id, input.credential_id, enabled_i32, interval, policy_type, next_str, now],
         )?;
 
         get_policy_by_id(pool, &id)
@@ -138,7 +146,15 @@ pub fn update_policy(
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
-        let enabled = input.enabled.unwrap_or(existing.enabled) as i32;
+        let enabled_bool = input.enabled.unwrap_or(existing.enabled);
+
+        // Enforce single-active-policy invariant: when enabling a policy,
+        // disable all other enabled policies for the same credential.
+        if enabled_bool && !existing.enabled {
+            disable_policies_for_credential(pool, &existing.credential_id)?;
+        }
+
+        let enabled = enabled_bool as i32;
         let interval = input
             .rotation_interval_days
             .unwrap_or(existing.rotation_interval_days);
@@ -162,6 +178,22 @@ pub fn update_policy(
 
         get_policy_by_id(pool, id)
 
+    })
+}
+
+/// Disable all enabled rotation policies for a credential.
+/// Used to enforce the single-active-policy invariant before enabling a new one.
+pub fn disable_policies_for_credential(pool: &DbPool, credential_id: &str) -> Result<u64, AppError> {
+    timed_query!("credential_rotation", "credential_rotation::disable_policies_for_credential", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "UPDATE credential_rotation_policies
+             SET enabled = 0, updated_at = ?1
+             WHERE credential_id = ?2 AND enabled = 1",
+            params![now, credential_id],
+        )?;
+        Ok(rows as u64)
     })
 }
 

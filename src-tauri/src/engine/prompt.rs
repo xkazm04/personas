@@ -1,5 +1,7 @@
 use super::types::{providers, CliArgs, ModelProfile};
 use crate::db::models::{Persona, PersonaToolDefinition};
+#[cfg(test)]
+use crate::db::models::{PersonaTrustLevel, PersonaTrustOrigin};
 
 /// Parse the model_profile JSON string into a ModelProfile struct.
 /// Returns None if the input is None, empty, or invalid JSON.
@@ -1171,8 +1173,8 @@ mod tests {
             design_context: None,
             group_id: None,
             source_review_id: None,
-            trust_level: "manual".into(),
-            trust_origin: "user".into(),
+            trust_level: PersonaTrustLevel::Manual,
+            trust_origin: PersonaTrustOrigin::User,
             trust_verified_at: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),

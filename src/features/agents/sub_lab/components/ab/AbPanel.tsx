@@ -2,12 +2,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { DiffViewer } from '@/features/agents/sub_lab/shared';
-import { LabProgress } from '../shared/LabProgress';
 import { AbHistory } from './AbHistory';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
-import { ModelToggleGrid, UseCaseFilterPicker, LabActionButtons } from '../../shared';
+import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
 
 export function AbPanel() {
   const promptVersions = useAgentStore((s) => s.promptVersions);
@@ -90,43 +89,37 @@ export function AbPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
-        <div className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            {renderVersionPicker('Version A', 'blue', versionAId, setVersionAId, 'ab-version-a-trigger')}
-            {renderVersionPicker('Version B', 'violet', versionBId, setVersionBId, 'ab-version-b-trigger')}
-          </div>
-
-          {versionA && versionB && (
-            <div className="rounded-lg border border-primary/10 bg-secondary/10 p-3">
-              <DiffViewer versionA={versionA} versionB={versionB} />
-            </div>
-          )}
-
-          <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} />
-          <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} />
-
-          <div className="space-y-1">
-            <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
-            <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}'
-              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
-          </div>
-
-          <LabActionButtons
-            isRunning={isLabRunning}
-            onStart={() => void handleStart()}
-            onCancel={() => void handleCancel()}
-            disabled={!versionAId || !versionBId || selectedModels.size === 0}
-            disabledReason={!versionAId ? 'Select Version A to continue' : !versionBId ? 'Select Version B to continue' : selectedModels.size === 0 ? 'Select at least one model' : ''}
-            runLabel="Run A/B Test"
-            cancelLabel="Cancel A/B Test"
-            cancelTestId="ab-cancel-btn"
-            runTestId="ab-run-btn"
-          />
-
-          <LabProgress />
+      <LabPanelShell
+        isRunning={isLabRunning}
+        onStart={() => void handleStart()}
+        onCancel={() => void handleCancel()}
+        disabled={!versionAId || !versionBId || selectedModels.size === 0}
+        disabledReason={!versionAId ? 'Select Version A to continue' : !versionBId ? 'Select Version B to continue' : selectedModels.size === 0 ? 'Select at least one model' : ''}
+        runLabel="Run A/B Test"
+        cancelLabel="Cancel A/B Test"
+        cancelTestId="ab-cancel-btn"
+        runTestId="ab-run-btn"
+      >
+        <div className="grid grid-cols-2 gap-3">
+          {renderVersionPicker('Version A', 'blue', versionAId, setVersionAId, 'ab-version-a-trigger')}
+          {renderVersionPicker('Version B', 'violet', versionBId, setVersionBId, 'ab-version-b-trigger')}
         </div>
-      </div>
+
+        {versionA && versionB && (
+          <div className="rounded-lg border border-primary/10 bg-secondary/10 p-3">
+            <DiffViewer versionA={versionA} versionB={versionB} />
+          </div>
+        )}
+
+        <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} />
+        <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} />
+
+        <div className="space-y-1">
+          <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
+          <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}'
+            className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
+        </div>
+      </LabPanelShell>
 
       <AbHistory runs={abRuns} resultsMap={abResultsMap} expandedRunId={expandedRunId} onToggleExpand={setExpandedRunId} onDelete={(id) => void deleteAbRun(id)} />
     </div>

@@ -2,11 +2,10 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    CreateTeamInput, CreateTeamMemoryInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember,
+    CreateTeamInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember,
     PipelineRun, TeamCounts, UpdateTeamInput,
 };
 use crate::db::repos::resources::teams as repo;
-use crate::db::repos::resources::team_memories as team_memories_repo;
 use crate::engine::event_registry::event_name;
 use crate::engine::optimizer::{self, PipelineAnalytics};
 use crate::engine::topology_heuristic;
@@ -155,27 +154,6 @@ pub fn delete_team_connection(
 }
 
 // ============================================================================
-// Pipeline Helpers
-// ============================================================================
-
-/// Update a node's fields in the pipeline status array by member_id.
-fn update_node_status(
-    statuses: &mut [serde_json::Value],
-    member_id: &str,
-    fields: &[(&str, serde_json::Value)],
-) {
-    for ns in statuses.iter_mut() {
-        if ns.get("member_id").and_then(|v| v.as_str()) == Some(member_id) {
-            if let Some(obj) = ns.as_object_mut() {
-                for (key, value) in fields {
-                    obj.insert((*key).into(), value.clone());
-                }
-            }
-        }
-    }
-}
-
-// ============================================================================
 // Pipeline Runs
 // ============================================================================
 
@@ -206,8 +184,7 @@ pub async fn execute_team(
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
     use crate::db::repos::resources::teams as team_repo;
-    use crate::db::repos::core::personas as persona_repo;
-    use crate::db::repos::resources::tools as tool_repo;
+    use crate::engine::pipeline_executor::{self, PipelineContext};
     use tauri::Emitter;
 
     // Reject if this team already has a running pipeline to prevent concurrent
@@ -236,9 +213,7 @@ pub async fn execute_team(
         return Ok(run_id);
     }
 
-    // Topological sort via shared module -- exclude feedback edges so the graph
-    // is a clean DAG. Feedback edges (e.g. reviewer->orchestrator) are intentional
-    // back-edges that should not affect execution order or data flow.
+    // Topological sort — exclude feedback edges so the graph is a clean DAG.
     let member_ids: Vec<String> = members.iter().map(|m| m.id.clone()).collect();
     let edges: Vec<(&str, &str)> = connections
         .iter()
@@ -254,8 +229,6 @@ pub async fn execute_team(
             cycle_nodes = ?sort_result.cycle_nodes,
             "Pipeline contains a non-feedback cycle -- cyclic nodes will be appended after acyclic ones",
         );
-
-        // Emit cycle warning to frontend with affected member IDs
         let _ = app.emit(
             event_name::PIPELINE_CYCLE_WARNING,
             serde_json::json!({
@@ -271,7 +244,7 @@ pub async fn execute_team(
     execution_order.extend(sort_result.cycle_nodes);
 
     // Build initial node statuses
-    let node_statuses: Vec<serde_json::Value> = members
+    let initial_node_statuses: Vec<serde_json::Value> = members
         .iter()
         .map(|m| {
             serde_json::json!({
@@ -283,7 +256,7 @@ pub async fn execute_team(
         .collect();
 
     let node_statuses_json =
-        serde_json::to_string(&node_statuses).unwrap_or_else(|_| "[]".into());
+        serde_json::to_string(&initial_node_statuses).unwrap_or_else(|_| "[]".into());
     let _ = team_repo::update_pipeline_run(
         &state.db,
         &run_id,
@@ -291,352 +264,37 @@ pub async fn execute_team(
         &node_statuses_json,
         None,
     );
-
-    // Emit initial status
     let _ = app.emit(
         event_name::PIPELINE_STATUS,
         serde_json::json!({
             "pipeline_id": run_id,
             "team_id": team_id,
             "status": "running",
-            "node_statuses": node_statuses,
+            "node_statuses": initial_node_statuses,
         }),
     );
 
     // Set up cancellation flag.
-    // The guard ensures unregister_run is called even if the task panics.
     let (cancelled, run_guard) =
         state.process_registry.register_run_guarded("pipeline", &run_id);
 
-    // Clone what we need for the async task
-    let db = state.db.clone();
-    let engine = state.engine.clone();
-    let run_id_clone = run_id.clone();
-
-    // Build predecessor map from non-feedback edges so each node receives
-    // output from its actual predecessor(s) rather than a global last_output.
-    let predecessor_map: std::collections::HashMap<String, Vec<String>> = {
-        let mut map: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
-        for c in &connections {
-            if c.connection_type != "feedback" {
-                map.entry(c.target_member_id.clone())
-                    .or_default()
-                    .push(c.source_member_id.clone());
-            }
-        }
-        map
+    let ctx = PipelineContext {
+        db: state.db.clone(),
+        engine: state.engine.clone(),
+        app: app.clone(),
+        run_id: run_id.clone(),
+        team_id: team_id.clone(),
+        input_data,
+        members,
+        connections,
+        execution_order,
+        initial_node_statuses,
+        cancelled,
     };
 
     tokio::spawn(async move {
         let _guard = run_guard;
-        let mut node_outputs: std::collections::HashMap<String, Option<String>> = std::collections::HashMap::new();
-        let mut final_statuses = node_statuses.clone();
-        let mut has_failure = false;
-        let mut memories_created: u32 = 0;
-
-        for member_id in &execution_order {
-            let member = match members.iter().find(|m| &m.id == member_id) {
-                Some(m) => m,
-                None => continue,
-            };
-
-            // Update this node to "running"
-            update_node_status(&mut final_statuses, member_id, &[
-                ("status", serde_json::json!("running")),
-            ]);
-            let status_json = serde_json::to_string(&final_statuses).unwrap_or_default();
-            let _ = team_repo::update_pipeline_run(
-                &db,
-                &run_id_clone,
-                "running",
-                &status_json,
-                None,
-            );
-            let _ = app.emit(
-                event_name::PIPELINE_STATUS,
-                serde_json::json!({
-                    "pipeline_id": run_id_clone,
-                    "team_id": team_id,
-                    "status": "running",
-                    "node_statuses": final_statuses,
-                }),
-            );
-
-            // Load persona + tools
-            let persona = match persona_repo::get_by_id(&db, &member.persona_id) {
-                Ok(p) => p,
-                Err(_) => {
-                    update_node_status(&mut final_statuses, member_id, &[
-                        ("status", serde_json::json!("failed")),
-                        ("error", serde_json::json!("Persona not found")),
-                    ]);
-                    has_failure = true;
-                    continue;
-                }
-            };
-            let persona_name = persona.name.clone();
-
-            let tools =
-                tool_repo::get_tools_for_persona(&db, &member.persona_id).unwrap_or_default();
-
-            // Resolve input for this node: use predecessor output(s) if available,
-            // otherwise fall back to the pipeline-level input_data for root nodes.
-            let resolved_input = if let Some(preds) = predecessor_map.get(member_id) {
-                // Use the last predecessor's output that is available
-                preds
-                    .iter()
-                    .rev()
-                    .find_map(|pid| node_outputs.get(pid).and_then(|o| o.clone()))
-                    .or_else(|| input_data.clone())
-            } else {
-                // Root node (no non-feedback predecessors) -- use pipeline input
-                input_data.clone()
-            };
-
-            // Load top 20 team memories by importance for context injection
-            let team_memories = team_memories_repo::get_for_injection(&db, &team_id, 20)
-                .unwrap_or_default();
-
-            let memory_context: Option<String> = if team_memories.is_empty() {
-                None
-            } else {
-                let entries: Vec<String> = team_memories.iter().map(|m| {
-                    format!("- [{}] {}: {}", m.category, m.title, m.content)
-                }).collect();
-                Some(format!(
-                    "## Team Memory Context\nShared memories from past runs:\n{}",
-                    entries.join("\n")
-                ))
-            };
-
-            // Build input_data for this node
-            let node_input = resolved_input.as_ref().map(|output| {
-                let mut obj = serde_json::json!({
-                    "pipeline_input": output,
-                    "pipeline_context": {
-                        "run_id": run_id_clone,
-                        "member_id": member_id,
-                        "role": member.role,
-                    }
-                });
-                if let Some(ref ctx) = memory_context {
-                    obj["team_memory_context"] = serde_json::json!(ctx);
-                }
-                obj
-            });
-
-            // Create execution
-            let exec = match crate::db::repos::execution::executions::create(
-                &db,
-                &member.persona_id,
-                None,
-                node_input
-                    .as_ref()
-                    .map(|v| v.to_string()),
-                None,
-                None,
-            ) {
-                Ok(e) => e,
-                Err(_) => {
-                    update_node_status(&mut final_statuses, member_id, &[
-                        ("status", serde_json::json!("failed")),
-                        ("error", serde_json::json!("Failed to create execution")),
-                    ]);
-                    has_failure = true;
-                    continue;
-                }
-            };
-
-            // Update node status with execution_id
-            update_node_status(&mut final_statuses, member_id, &[
-                ("execution_id", serde_json::json!(exec.id)),
-            ]);
-
-            // Run execution
-            if let Err(e) = engine
-                .start_execution(
-                    app.clone(),
-                    db.clone(),
-                    exec.id.clone(),
-                    persona,
-                    tools,
-                    node_input,
-                    None,
-                )
-                .await
-            {
-                update_node_status(&mut final_statuses, member_id, &[
-                    ("status", serde_json::json!("failed")),
-                    ("error", serde_json::json!(format!("{}", e))),
-                ]);
-                has_failure = true;
-                continue;
-            }
-
-            // Wait for execution to complete by polling (check cancellation each tick)
-            let mut completed = false;
-            let mut was_cancelled = false;
-            for _ in 0..600 {
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-
-                // Check cancellation flag
-                if cancelled.load(std::sync::atomic::Ordering::Relaxed) {
-                    was_cancelled = true;
-                    // Cancel the underlying execution too
-                    let persona_id = Some(member.persona_id.clone());
-                    let _ = engine
-                        .cancel_execution(&exec.id, &db, persona_id.as_deref())
-                        .await;
-                    update_node_status(&mut final_statuses, member_id, &[
-                        ("status", serde_json::json!("cancelled")),
-                        ("error", serde_json::json!("Pipeline cancelled by user")),
-                    ]);
-                    has_failure = true;
-                    completed = true;
-                    break;
-                }
-
-                if let Ok(execution) =
-                    crate::db::repos::execution::executions::get_by_id(&db, &exec.id)
-                {
-                    match execution.status.as_str() {
-                        "completed" => {
-                            node_outputs.insert(member_id.clone(), execution.output_data.clone());
-                            update_node_status(&mut final_statuses, member_id, &[
-                                ("status", serde_json::json!("completed")),
-                                ("output", serde_json::json!(execution.output_data)),
-                            ]);
-
-                            // Auto-create team memory from node output
-                            if let Some(ref output_text) = execution.output_data {
-                                let truncated = if output_text.len() > 500 {
-                                    format!("{}...", &output_text[..500])
-                                } else {
-                                    output_text.clone()
-                                };
-                                if team_memories_repo::create(&db, CreateTeamMemoryInput {
-                                    team_id: team_id.clone(),
-                                    run_id: Some(run_id_clone.clone()),
-                                    member_id: Some(member_id.clone()),
-                                    persona_id: Some(member.persona_id.clone()),
-                                    title: format!("{} output (run {})", persona_name, &run_id_clone[..8]),
-                                    content: truncated,
-                                    category: Some("observation".into()),
-                                    importance: Some(3),
-                                    tags: Some(format!("auto,run:{}", &run_id_clone[..8])),
-                                }).is_ok() {
-                                    memories_created += 1;
-                                }
-                            }
-
-                            completed = true;
-                            break;
-                        }
-                        "failed" | "cancelled" => {
-                            update_node_status(&mut final_statuses, member_id, &[
-                                ("status", serde_json::json!("failed")),
-                                ("error", serde_json::json!(execution.error_message)),
-                            ]);
-                            has_failure = true;
-                            completed = true;
-                            break;
-                        }
-                        _ => {}
-                    }
-                }
-            }
-
-            if !completed {
-                update_node_status(&mut final_statuses, member_id, &[
-                    ("status", serde_json::json!("failed")),
-                    ("error", serde_json::json!("Execution timed out")),
-                ]);
-                has_failure = true;
-            }
-
-            if was_cancelled {
-                break;
-            }
-
-            // Emit updated status
-            let status_json = serde_json::to_string(&final_statuses).unwrap_or_default();
-            let _ = team_repo::update_pipeline_run(
-                &db,
-                &run_id_clone,
-                "running",
-                &status_json,
-                None,
-            );
-            let _ = app.emit(
-                event_name::PIPELINE_STATUS,
-                serde_json::json!({
-                    "pipeline_id": run_id_clone,
-                    "team_id": team_id,
-                    "status": "running",
-                    "node_statuses": final_statuses,
-                    "memories_created": memories_created,
-                }),
-            );
-
-            if has_failure {
-                break;
-            }
-        }
-
-        // Mark any remaining idle nodes so the UI doesn't show them as pending
-        // after the pipeline is terminal.
-        let skip_label = if cancelled.load(std::sync::atomic::Ordering::Relaxed) {
-            "cancelled"
-        } else if has_failure {
-            "skipped"
-        } else {
-            "" // all nodes completed — nothing to patch
-        };
-        if !skip_label.is_empty() {
-            for ns in final_statuses.iter_mut() {
-                if ns.get("status").and_then(|v| v.as_str()) == Some("idle") {
-                    if let Some(obj) = ns.as_object_mut() {
-                        obj.insert("status".into(), serde_json::json!(skip_label));
-                    }
-                }
-            }
-        }
-
-        // Finalize
-        let final_status = if cancelled.load(std::sync::atomic::Ordering::Relaxed) {
-            "cancelled"
-        } else if has_failure {
-            "failed"
-        } else {
-            "completed"
-        };
-        let final_json = serde_json::to_string(&final_statuses).unwrap_or_default();
-        let _ = team_repo::update_pipeline_run(
-            &db,
-            &run_id_clone,
-            final_status,
-            &final_json,
-            None,
-        );
-        let _ = app.emit(
-            event_name::PIPELINE_STATUS,
-            serde_json::json!({
-                "pipeline_id": run_id_clone,
-                "team_id": team_id,
-                "status": final_status,
-                "node_statuses": final_statuses,
-                "memories_created": memories_created,
-            }),
-        );
-
-        // Evict excess auto-generated memories if over the cap
-        if memories_created > 0 {
-            if let Err(e) = team_memories_repo::evict_excess(&db, &team_id, None) {
-                tracing::warn!(team_id = %team_id, error = %e, "Failed to evict excess team memories");
-            }
-        }
-
-        // Guard handles unregister_run on drop.
+        pipeline_executor::run_pipeline(ctx).await;
     });
 
     Ok(run_id)

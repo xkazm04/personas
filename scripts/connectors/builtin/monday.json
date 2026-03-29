@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "eyJ...",
-      "helpText": "From monday.com -> Avatar -> Developers -> My Access Tokens"
+      "helpText": "From monday.com -> Avatar -> Developers -> My Access Tokens",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

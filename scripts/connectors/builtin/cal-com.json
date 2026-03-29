@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "cal_live_...",
-      "helpText": "Generate at cal.com/settings/developer/api-keys"
+      "helpText": "Generate at cal.com/settings/developer/api-keys",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -35,8 +36,22 @@
     "setup_guide": "1. Go to cal.com and sign in to your account\n2. Navigate to Settings -> Developer -> API Keys\n3. Click 'Create new API key'\n4. Copy the generated key (starts with cal_live_)",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true},
-      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@calcom/cal-mcp", "transport": "stdio", "suggested_env": {"CAL_API_KEY": ""}}
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      },
+      {
+        "id": "mcp",
+        "label": "MCP",
+        "type": "mcp",
+        "package": "@calcom/cal-mcp",
+        "transport": "stdio",
+        "suggested_env": {
+          "CAL_API_KEY": ""
+        }
+      }
     ]
   }
 }

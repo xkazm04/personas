@@ -24,7 +24,7 @@ function parseSummary(run: LabArenaRun) {
 }
 
 function parseModels(run: LabArenaRun): string[] {
-  try { return JSON.parse(run.modelsTested); } catch { return []; }
+  return run.modelsTested ?? [];
 }
 
 function computeWinnerScore(results: LabArenaResult[] | undefined): { ta: number; oq: number; pc: number; comp: number } | null {

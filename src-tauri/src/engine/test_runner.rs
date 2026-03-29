@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::db::models::{
     CreateTestResultInput, CreateArenaResultInput, CreateAbResultInput, CreateMatrixResultInput,
-    CreateEvalResultInput, LabRunStatus, Persona, PersonaToolDefinition,
+    CreateEvalResultInput, CreateLabResultBaseInput, LabRunStatus, Persona, PersonaToolDefinition,
 };
 use super::types::EphemeralPersona;
 use crate::db::repos::execution::test_runs as repo;
@@ -147,7 +147,7 @@ pub async fn run_test(
     let _ = repo::update_run_status(
         &pool,
         &run_id,
-        "running",
+        LabRunStatus::Running,
         Some(scenario_count as i32),
         None,
         None,
@@ -186,7 +186,7 @@ pub async fn run_test(
         // Check cancellation before each scenario
         if cancelled.load(std::sync::atomic::Ordering::Acquire) {
             let _ = repo::update_run_status(
-                &pool, &run_id, "cancelled", None, None, None, None,
+                &pool, &run_id, LabRunStatus::Cancelled, None, None, None, None,
             );
             emit_status(&app, &run_id, "cancelled", None);
             return;
@@ -259,7 +259,7 @@ pub async fn run_test(
                     tool_calls_expected: scenario
                         .expected_tool_sequence
                         .as_ref()
-                        .map(|v| serde_json::to_string(v).unwrap_or_default()),
+                        .map(|v| crate::db::models::Json(v.clone())),
                     tool_calls_actual: scores.tool_calls_actual.clone(),
                     tool_accuracy_score: scores.tool_accuracy,
                     output_quality_score: scores.output_quality,
@@ -275,7 +275,7 @@ pub async fn run_test(
                 let _ = repo::update_run_status(
                     &pool,
                     &run_id,
-                    "failed",
+                    LabRunStatus::Failed,
                     Some(scenario_count as i32),
                     None,
                     None,
@@ -336,7 +336,7 @@ pub async fn run_test(
     let _ = repo::update_run_status(
         &pool,
         &run_id,
-        "completed",
+        LabRunStatus::Completed,
         None,
         Some(&summary_str),
         None,
@@ -544,7 +544,7 @@ pub(crate) struct ScoreResult {
     pub(crate) output_quality: Option<i32>,
     pub(crate) protocol_compliance: Option<i32>,
     pub(crate) output_preview: Option<String>,
-    pub(crate) tool_calls_actual: Option<String>,
+    pub(crate) tool_calls_actual: Option<crate::db::models::Json<Vec<String>>>,
     pub(crate) input_tokens: i64,
     pub(crate) output_tokens: i64,
     pub(crate) cost_usd: f64,
@@ -641,7 +641,7 @@ pub(crate) async fn score_result(output: &ExecutionOutput, scenario: &TestScenar
     let tool_calls_json = if output.tool_calls.is_empty() {
         None
     } else {
-        Some(serde_json::to_string(&output.tool_calls).unwrap_or_default())
+        Some(crate::db::models::Json(output.tool_calls.clone()))
     };
 
     let preview = if output.assistant_text.len() > 2000 {
@@ -909,7 +909,7 @@ fn emit_status(app: &AppHandle, run_id: &str, phase: &str, error: Option<&str>) 
 
 fn finish_with_error(app: &AppHandle, pool: &DbPool, run_id: &str, error: &str) {
     let now = chrono::Utc::now().to_rfc3339();
-    let _ = repo::update_run_status(pool, run_id, "failed", None, None, Some(error), Some(&now));
+    let _ = repo::update_run_status(pool, run_id, LabRunStatus::Failed, None, None, Some(error), Some(&now));
     emit_status(app, run_id, "failed", Some(error));
 }
 
@@ -1237,34 +1237,14 @@ fn build_arena_summary(
 }
 
 /// Common fields extracted from a scenario + model + scores for persisting lab results.
-struct CommonResultFields {
-    scenario_name: String,
-    model_id: String,
-    provider: String,
-    status: String,
-    output_preview: Option<String>,
-    tool_calls_expected: Option<String>,
-    tool_calls_actual: Option<String>,
-    tool_accuracy_score: Option<i32>,
-    output_quality_score: Option<i32>,
-    protocol_compliance: Option<i32>,
-    input_tokens: i64,
-    output_tokens: i64,
-    cost_usd: f64,
-    duration_ms: i64,
-    error_message: Option<String>,
-    rationale: Option<String>,
-    suggestions: Option<String>,
-}
-
-fn make_common_result_fields(scenario: &TestScenario, model: &TestModelConfig, status: &str, scores: &ScoreResult) -> CommonResultFields {
-    CommonResultFields {
+fn make_common_result_fields(scenario: &TestScenario, model: &TestModelConfig, status: &str, scores: &ScoreResult) -> CreateLabResultBaseInput {
+    CreateLabResultBaseInput {
         scenario_name: scenario.name.clone(),
         model_id: model.id.clone(),
         provider: model.provider.clone(),
         status: status.to_string(),
         output_preview: scores.output_preview.clone(),
-        tool_calls_expected: scenario.expected_tool_sequence.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default()),
+        tool_calls_expected: scenario.expected_tool_sequence.as_ref().map(|v| crate::db::models::Json(v.clone())),
         tool_calls_actual: scores.tool_calls_actual.clone(),
         tool_accuracy_score: scores.tool_accuracy,
         output_quality_score: scores.output_quality,
@@ -1304,15 +1284,9 @@ pub async fn run_arena_test(
             let _ = arena_repo::update_run_status(pool, id, status, sc, sum, err, ca);
         }),
         persist_result: Box::new(|pool, run_id, _variant, scenario, model, status, scores| {
-            let f = make_common_result_fields(scenario, model, status, scores);
+            let base = make_common_result_fields(scenario, model, status, scores);
             let _ = arena_repo::create_result(pool, &CreateArenaResultInput {
-                run_id: run_id.to_string(), scenario_name: f.scenario_name, model_id: f.model_id,
-                provider: f.provider, status: f.status, output_preview: f.output_preview,
-                tool_calls_expected: f.tool_calls_expected, tool_calls_actual: f.tool_calls_actual,
-                tool_accuracy_score: f.tool_accuracy_score, output_quality_score: f.output_quality_score,
-                protocol_compliance: f.protocol_compliance, input_tokens: f.input_tokens,
-                output_tokens: f.output_tokens, cost_usd: f.cost_usd, duration_ms: f.duration_ms,
-                error_message: f.error_message, rationale: f.rationale, suggestions: f.suggestions,
+                run_id: run_id.to_string(), base,
             });
         }),
         build_summary: Box::new(build_arena_summary),
@@ -1353,16 +1327,9 @@ pub async fn run_ab_test(
         }),
         persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
             let src = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label).unwrap();
-            let f = make_common_result_fields(scenario, model, status, scores);
+            let base = make_common_result_fields(scenario, model, status, scores);
             let _ = ab_repo::create_result(pool, &CreateAbResultInput {
-                run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1,
-                scenario_name: f.scenario_name, model_id: f.model_id, provider: f.provider,
-                status: f.status, output_preview: f.output_preview,
-                tool_calls_expected: f.tool_calls_expected, tool_calls_actual: f.tool_calls_actual,
-                tool_accuracy_score: f.tool_accuracy_score, output_quality_score: f.output_quality_score,
-                protocol_compliance: f.protocol_compliance, input_tokens: f.input_tokens,
-                output_tokens: f.output_tokens, cost_usd: f.cost_usd, duration_ms: f.duration_ms,
-                error_message: f.error_message, rationale: f.rationale, suggestions: f.suggestions,
+                run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
             });
         }),
         build_summary: Box::new(build_keyed_summary),
@@ -1402,16 +1369,9 @@ pub async fn run_eval_test(
         }),
         persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
             let src = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label).unwrap();
-            let f = make_common_result_fields(scenario, model, status, scores);
+            let base = make_common_result_fields(scenario, model, status, scores);
             let _ = eval_repo::create_result(pool, &CreateEvalResultInput {
-                run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1,
-                scenario_name: f.scenario_name, model_id: f.model_id, provider: f.provider,
-                status: f.status, output_preview: f.output_preview,
-                tool_calls_expected: f.tool_calls_expected, tool_calls_actual: f.tool_calls_actual,
-                tool_accuracy_score: f.tool_accuracy_score, output_quality_score: f.output_quality_score,
-                protocol_compliance: f.protocol_compliance, input_tokens: f.input_tokens,
-                output_tokens: f.output_tokens, cost_usd: f.cost_usd, duration_ms: f.duration_ms,
-                error_message: f.error_message, rationale: f.rationale, suggestions: f.suggestions,
+                run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
             });
         }),
         build_summary: Box::new(build_keyed_summary),
@@ -1485,16 +1445,9 @@ pub async fn run_matrix_test(
             let _ = matrix_repo::update_run_status(pool, id, status, sc, sum, err, ca);
         }),
         persist_result: Box::new(|pool, run_id, variant, scenario, model, status, scores| {
-            let f = make_common_result_fields(scenario, model, status, scores);
+            let base = make_common_result_fields(scenario, model, status, scores);
             let _ = matrix_repo::create_result(pool, &CreateMatrixResultInput {
-                run_id: run_id.to_string(), variant: variant.label.clone(),
-                scenario_name: f.scenario_name, model_id: f.model_id, provider: f.provider,
-                status: f.status, output_preview: f.output_preview,
-                tool_calls_expected: f.tool_calls_expected, tool_calls_actual: f.tool_calls_actual,
-                tool_accuracy_score: f.tool_accuracy_score, output_quality_score: f.output_quality_score,
-                protocol_compliance: f.protocol_compliance, input_tokens: f.input_tokens,
-                output_tokens: f.output_tokens, cost_usd: f.cost_usd, duration_ms: f.duration_ms,
-                error_message: f.error_message, rationale: f.rationale, suggestions: f.suggestions,
+                run_id: run_id.to_string(), variant: variant.label.clone(), base,
             });
         }),
         build_summary: Box::new(build_keyed_summary),

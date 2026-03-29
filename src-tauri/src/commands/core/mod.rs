@@ -6,3 +6,4 @@ pub mod import_export;
 pub mod data_portability;
 pub mod saved_views;
 pub mod chat;
+pub mod validation;

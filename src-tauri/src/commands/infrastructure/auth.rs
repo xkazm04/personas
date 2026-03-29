@@ -45,6 +45,9 @@ pub struct AuthSubscription {
 pub struct AuthStateResponse {
     pub is_authenticated: bool,
     pub is_offline: bool,
+    /// True when the user is offline but has a cached profile — local-only
+    /// features may work, but cloud/remote commands should be rejected.
+    pub is_offline_authenticated: bool,
     pub user: Option<AuthUser>,
     pub subscription: Option<AuthSubscription>,
 }
@@ -68,9 +71,11 @@ pub struct AuthStateInner {
 
 impl AuthStateInner {
     pub fn to_response(&self) -> AuthStateResponse {
+        let offline_authed = self.is_offline && self.user.is_some() && self.access_token.is_none();
         AuthStateResponse {
-            is_authenticated: self.access_token.is_some() || (self.is_offline && self.user.is_some()),
+            is_authenticated: self.access_token.is_some() || offline_authed,
             is_offline: self.is_offline,
+            is_offline_authenticated: offline_authed,
             user: self.user.clone(),
             subscription: self.subscription.clone(),
         }
@@ -444,6 +449,7 @@ pub async fn logout(
     let _ = app.emit(event_name::AUTH_STATE_CHANGED, AuthStateResponse {
         is_authenticated: false,
         is_offline: false,
+        is_offline_authenticated: false,
         user: None,
         subscription: None,
     });
@@ -788,9 +794,30 @@ mod tests {
             pending_oauth_state: None,
         };
         let resp = inner.to_response();
-        // Offline with cached user = still authenticated
+        // Offline with cached user = authenticated but offline-only
         assert!(resp.is_authenticated);
         assert!(resp.is_offline);
+        assert!(resp.is_offline_authenticated);
+    }
+
+    #[test]
+    fn test_to_response_online_with_token_not_offline_authenticated() {
+        let inner = AuthStateInner {
+            access_token: Some(SecureString::new("token".into())),
+            user: Some(AuthUser {
+                id: "u1".into(),
+                email: "test@example.com".into(),
+                display_name: None,
+                avatar_url: None,
+            }),
+            subscription: None,
+            is_offline: false,
+            token_expires_at: None,
+            pending_oauth_state: None,
+        };
+        let resp = inner.to_response();
+        assert!(resp.is_authenticated);
+        assert!(!resp.is_offline_authenticated);
     }
 
     #[test]

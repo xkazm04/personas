@@ -1,13 +1,12 @@
 import { useEffect, useMemo } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
-import { LabProgress } from '../shared/LabProgress';
 import { ArenaHistory } from './ArenaHistory';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { ALL_MODELS, selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 import { useHealthCheck, HealthCheckPanel } from '@/features/agents/health';
-import { ModelToggleGrid, UseCaseFilterPicker, LabActionButtons } from '../../shared';
+import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
 
 export function ArenaPanel() {
   const arenaRuns = useAgentStore((s) => s.arenaRuns);
@@ -62,36 +61,30 @@ export function ArenaPanel() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Left: Arena setup */}
-      <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
-        <div className="p-4 space-y-3">
-          {(!hasPrompt || !hasTools) && (
-            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-amber-400/90">
-                {!hasPrompt && <p>This persona has no prompt configured. Add a prompt first.</p>}
-                {!hasTools && <p>This persona has no tools assigned. Add tools for richer testing.</p>}
-              </div>
+      <LabPanelShell
+        isRunning={isLabRunning}
+        onStart={() => void handleStart()}
+        onCancel={() => void handleCancel()}
+        disabled={selectedModels.size === 0 || !hasPrompt}
+        disabledReason={!hasPrompt ? 'Add a prompt to this persona first' : selectedModels.size === 0 ? 'Select at least one model' : ''}
+        runLabel={<>Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})</>}
+        cancelLabel="Cancel Test"
+        cancelTestId="arena-cancel-btn"
+        runTestId="arena-run-btn"
+      >
+        {(!hasPrompt || !hasTools) && (
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-amber-400/90">
+              {!hasPrompt && <p>This persona has no prompt configured. Add a prompt first.</p>}
+              {!hasTools && <p>This persona has no tools assigned. Add tools for richer testing.</p>}
             </div>
-          )}
+          </div>
+        )}
 
-          <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} label="Focus on Use Case" />
-          <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} testIdPrefix="arena" />
-
-          <LabActionButtons
-            isRunning={isLabRunning}
-            onStart={() => void handleStart()}
-            onCancel={() => void handleCancel()}
-            disabled={selectedModels.size === 0 || !hasPrompt}
-            disabledReason={!hasPrompt ? 'Add a prompt to this persona first' : selectedModels.size === 0 ? 'Select at least one model' : ''}
-            runLabel={<>Run Arena ({selectedModels.size} model{selectedModels.size !== 1 ? 's' : ''}{selectedUseCase ? ` -- ${selectedUseCase.title}` : ''})</>}
-            cancelLabel="Cancel Test"
-            cancelTestId="arena-cancel-btn"
-            runTestId="arena-run-btn"
-          />
-
-          <LabProgress />
-        </div>
-      </div>
+        <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} label="Focus on Use Case" />
+        <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} testIdPrefix="arena" />
+      </LabPanelShell>
 
       {/* Right: Health Check */}
       <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40 p-4">

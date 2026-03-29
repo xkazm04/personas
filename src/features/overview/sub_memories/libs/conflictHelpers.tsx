@@ -47,8 +47,8 @@ export function mergeMemories(a: PersonaMemory, b: PersonaMemory): {
   importance: number;
   tags: string[];
 } {
-  const tagsA: string[] = a.tags ? (() => { try { return JSON.parse(a.tags); } catch { return []; } })() : [];
-  const tagsB: string[] = b.tags ? (() => { try { return JSON.parse(b.tags); } catch { return []; } })() : [];
+  const tagsA: string[] = a.tags ?? [];
+  const tagsB: string[] = b.tags ?? [];
   const mergedTags = [...new Set([...tagsA, ...tagsB])];
 
   const newer = new Date(a.created_at) > new Date(b.created_at) ? a : b;

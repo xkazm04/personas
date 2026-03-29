@@ -12,6 +12,7 @@ export { EVENT_TYPE_HEX_COLORS } from '@/lib/design/eventTokens';
 // -- Types ----------------------------------------------------------
 export type AnimationPhase = 'entering' | 'on-bus' | 'delivering' | 'done';
 
+/** Pure event data — no animation metadata */
 export interface RealtimeEvent {
   id: string;
   project_id: string;
@@ -24,10 +25,17 @@ export interface RealtimeEvent {
   error_message: string | null;
   processed_at: string | null;
   created_at: string;
-  _animationId: string;
-  _phase: AnimationPhase;
-  _phaseStartedAt: number;
 }
+
+/** Animation state stored separately, keyed by animationId */
+export interface AnimationState {
+  eventId: string;
+  animationId: string;
+  phase: AnimationPhase;
+  phaseStartedAt: number;
+}
+
+export type AnimationMap = Map<string, AnimationState>;
 
 export interface RealtimeStats {
   eventsPerMinute: number;
@@ -45,6 +53,10 @@ export interface UseRealtimeEventsReturn {
   isConnected: boolean;
   selectedEvent: RealtimeEvent | null;
   droppedCount: number;
+  /** Ref to animation state map — read in render via animTick counter */
+  animationMapRef: React.RefObject<AnimationMap>;
+  /** Increments each time animation state changes, use as dep to re-render */
+  animTick: number;
   togglePause: () => void;
   selectEvent: (event: RealtimeEvent | null) => void;
   triggerTestFlow: () => Promise<void>;
@@ -108,6 +120,15 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
   const testFlowTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   isPausedRef.current = isPaused;
 
+  // Animation state lives in a ref — only the tick counter triggers re-renders
+  const animationMapRef = useRef<AnimationMap>(new Map());
+  const [animTick, setAnimTick] = useState(0);
+
+  // Stats are tracked separately from animation state — only recomputed when
+  // the events array actually changes (add/remove), never on animation ticks.
+  const [dataVersion, setDataVersion] = useState(0);
+  const statsRef = useRef<RealtimeStats>(computeStats([]));
+
   const clearPendingTestFlowTimeouts = useCallback(() => {
     for (const timeoutId of testFlowTimeoutsRef.current) {
       clearTimeout(timeoutId);
@@ -115,31 +136,51 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
     testFlowTimeoutsRef.current = [];
   }, []);
 
-  const stats = useMemo(() => computeStats(events), [events]);
+  const stats = useMemo(() => statsRef.current, [dataVersion]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Helper: push events and recompute stats in one batch.
+  // This is the ONLY way events should be added — it ensures stats stay in sync
+  // with the data state and never recompute on animation-only ticks.
+  const pushEvent = useCallback((event: RealtimeEvent) => {
+    setEvents((prev) => {
+      const next = [event, ...prev];
+      const capped = next.length > 200 ? next.slice(0, 200) : next;
+      if (next.length > 200) {
+        setDroppedCount((c) => c + next.length - 200);
+      }
+      // Recompute stats from the new data state
+      statsRef.current = computeStats(capped);
+      setDataVersion((v) => v + 1);
+      return capped;
+    });
+  }, []);
+
+  // Helper: register animation state for a new event
+  const registerAnimation = useCallback((eventId: string) => {
+    const animationId = `${eventId}-${Date.now()}`;
+    animationMapRef.current.set(animationId, {
+      eventId,
+      animationId,
+      phase: 'entering',
+      phaseStartedAt: Date.now(),
+    });
+    return animationId;
+  }, []);
 
   // Listen to Tauri 'event-bus' events from backend
   const handleBusEvent = useCallback((raw: PersonaEvent) => {
     if (isPausedRef.current) return;
 
-    const realtimeEvent: RealtimeEvent = {
-      ...raw,
-      _animationId: `${raw.id}-${Date.now()}`,
-      _phase: 'entering' as AnimationPhase,
-      _phaseStartedAt: Date.now(),
-    };
-
-    setEvents((prev) => {
-      const next = [realtimeEvent, ...prev];
-      if (next.length > 200) {
-        setDroppedCount((c) => c + next.length - 200);
-        return next.slice(0, 200);
-      }
-      return next;
-    });
-  }, []);
+    registerAnimation(raw.id);
+    pushEvent(raw as RealtimeEvent);
+  }, [registerAnimation, pushEvent]);
   const isConnected = useEventBusListener(handleBusEvent);
 
-  useEventPhaseProgressor({ active: !isPaused, setEvents });
+  useEventPhaseProgressor({
+    active: !isPaused,
+    animationMapRef,
+    onTick: setAnimTick,
+  });
 
   useEffect(() => () => {
     clearPendingTestFlowTimeouts();
@@ -174,8 +215,9 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
         const src = simSources[i % simSources.length]!;
         const timeoutId = setTimeout(() => {
           if (isPausedRef.current) return;
+          const simId = `sim-${Date.now()}-${i}`;
           const simEvent: RealtimeEvent = {
-            id: `sim-${Date.now()}-${i}`,
+            id: simId,
             project_id: 'test',
             event_type: simEventTypes[i % simEventTypes.length]!,
             source_type: src.type,
@@ -186,25 +228,16 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
             error_message: null,
             processed_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
-            _animationId: `sim-${Date.now()}-${i}`,
-            _phase: 'entering',
-            _phaseStartedAt: Date.now(),
           };
-          setEvents((prev) => {
-            const next = [simEvent, ...prev];
-            if (next.length > 200) {
-              setDroppedCount((c) => c + next.length - 200);
-              return next.slice(0, 200);
-            }
-            return next;
-          });
+          registerAnimation(simId);
+          pushEvent(simEvent);
         }, i * 350);
         testFlowTimeoutsRef.current.push(timeoutId);
       }
     } finally {
       setTestFlowLoading(false);
     }
-  }, [clearPendingTestFlowTimeouts]);
+  }, [clearPendingTestFlowTimeouts, registerAnimation, pushEvent]);
 
   return {
     events,
@@ -213,6 +246,8 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
     isConnected,
     selectedEvent,
     droppedCount,
+    animationMapRef,
+    animTick,
     togglePause,
     selectEvent,
     triggerTestFlow,

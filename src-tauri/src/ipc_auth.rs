@@ -276,9 +276,19 @@ pub fn require_auth_sync(_state: &Arc<AppState>) -> Result<(), AppError> {
 pub fn require_cloud_auth_sync(state: &Arc<AppState>, command: &str) -> Result<(), AppError> {
     match state.auth.try_lock() {
         Ok(auth) => {
-            let is_authenticated =
-                auth.access_token.is_some() || (auth.is_offline && auth.user.is_some());
-            if !is_authenticated {
+            // Cloud commands require a real access token -- a cached user
+            // profile alone (offline mode) is not sufficient because cloud
+            // endpoints need a valid JWT to authorise requests.
+            if auth.access_token.is_none() {
+                if auth.is_offline && auth.user.is_some() {
+                    tracing::warn!(
+                        command = command,
+                        "Blocked offline-only cloud IPC call (sync) -- no access token"
+                    );
+                    return Err(AppError::Auth(
+                        "Cloud features are unavailable in offline mode. Reconnect to use this feature.".into(),
+                    ));
+                }
                 tracing::warn!(
                     command = command,
                     "Blocked unauthenticated cloud IPC call (sync)"
@@ -348,10 +358,19 @@ pub async fn require_privileged(state: &Arc<AppState>, command: &str) -> Result<
 pub async fn require_cloud_auth(state: &Arc<AppState>, command: &str) -> Result<(), AppError> {
     let auth = state.auth.lock().await;
 
-    let is_authenticated =
-        auth.access_token.is_some() || (auth.is_offline && auth.user.is_some());
-
-    if !is_authenticated {
+    // Cloud commands require a real access token -- a cached user
+    // profile alone (offline mode) is not sufficient because cloud
+    // endpoints need a valid JWT to authorise requests.
+    if auth.access_token.is_none() {
+        if auth.is_offline && auth.user.is_some() {
+            tracing::warn!(
+                command = command,
+                "Blocked offline-only cloud IPC call -- no access token"
+            );
+            return Err(AppError::Auth(
+                "Cloud features are unavailable in offline mode. Reconnect to use this feature.".into(),
+            ));
+        }
         tracing::warn!(
             command = command,
             "Blocked unauthenticated cloud IPC call"

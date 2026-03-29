@@ -1,15 +1,10 @@
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useEffect, useCallback, Suspense } from 'react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { Bot, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { useToastStore } from '@/stores/toastStore';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
-import { type PersonaDraft, buildDraft } from '../libs/PersonaDraft';
-import { useEditorDirtyState, useEditorHistory, TabSaveError } from '../libs/EditorDocument';
-import { tabIdsToLabels } from '../libs/editorTabConstants';
-import { useEditorSave } from '../libs/useEditorSave';
 import { UnsavedChangesBanner, CloudNudgeBanner, PartialLoadBanner } from './EditorBanners';
 import { EditorTabBar } from './EditorTabBar';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
@@ -21,6 +16,9 @@ import {
 import { EditorTabContent } from './EditorTabContent';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
+import { useEditorDraft } from '../hooks/useEditorDraft';
+import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
+import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
 
 export function EditorBody() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -28,31 +26,26 @@ export function EditorBody() {
   const deletePersona = useAgentStore((s) => s.deletePersona);
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const pendingPersonaId = useAgentStore((s) => s.pendingSelectPersonaId);
+  const setEditorDirty = useAgentStore((s) => s.setEditorDirty);
+  const cancelPendingSwitch = useAgentStore((s) => s.cancelPendingSwitch);
 
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [pendingPersonaId, setPendingPersonaId] = useState<string | null>(null);
-  const [dismissedWarnings, setDismissedWarnings] = useState(false);
+  const {
+    draft, baseline, patch, setBaseline,
+    isSaving, modelDirty, saveError,
+    isDirty, allDirtyTabs,
+    saveAllTabs, cancelAllDebouncedSaves, clearAllDirty,
+    undo, redo,
+    partialLoadWarnings, dismissWarnings,
+    showDeleteConfirm, setShowDeleteConfirm,
+    connectorsMissing, setConnectorsMissing,
+  } = useEditorDraft();
 
-  const partialLoadWarnings = (!dismissedWarnings && selectedPersona?.warnings?.length)
-    ? selectedPersona.warnings
-    : [];
-  const [connectorsMissing, setConnectorsMissing] = useState(0);
-
-  const [draft, setDraft] = useState<PersonaDraft>(() =>
-    selectedPersona ? buildDraft(selectedPersona) : buildDraft({ name: '', enabled: false }),
-  );
-  const [baseline, setBaseline] = useState<PersonaDraft>(draft);
-  const prevPersonaIdRef = useRef(selectedPersona?.id);
-  const dirtyRef = useRef(false);
-  const isSwitchingRef = useRef(false);
-
-  const patch = useCallback((updates: Partial<PersonaDraft>) => {
-    setDraft((prev) => ({ ...prev, ...updates }));
-  }, []);
-
-  const { isSaving, modelDirty, saveError } = useEditorSave({ draft, baseline, setDraft, setBaseline, pendingPersonaId });
-  const { isDirty, dirtyTabs: allDirtyTabs, saveAll: saveAllTabs, cancelAll: cancelAllDebouncedSaves, clearAll: clearAllDirty } = useEditorDirtyState();
-  const { undo, redo, clearHistory } = useEditorHistory();
+  const { handleDiscardAndSwitch, handleSaveAndSwitch } = usePersonaSwitchGuard({
+    cancelAllDebouncedSaves,
+    saveAllTabs,
+    clearAllDirty,
+  });
 
   // Global unsaved-changes guard for sidebar section navigation + window close
   const guard = useUnsavedGuard(isDirty, {
@@ -62,72 +55,26 @@ export function EditorBody() {
     },
     onDiscard: () => {
       cancelAllDebouncedSaves();
-      dirtyRef.current = false;
       clearAllDirty();
     },
   });
 
+  // Sync dirty state to the store so selectPersona can guard atomically
   useEffect(() => {
-    if (selectedPersona && !pendingPersonaId) {
-      const d = buildDraft(selectedPersona);
-      setDraft(d);
-      setBaseline(d);
-      prevPersonaIdRef.current = selectedPersona.id;
-      setDismissedWarnings(false);
-      // New persona -- clear undo history so old entries don't leak across personas
-      clearHistory();
+    setEditorDirty(isDirty);
+  }, [isDirty, setEditorDirty]);
+
+  useEditorKeyboard(undo, redo);
+
+  const handleDelete = useCallback(async () => {
+    if (!selectedPersona) return;
+    await deletePersona(selectedPersona.id);
+    const { buildPersonaId, resetBuildSession } = useAgentStore.getState();
+    if (buildPersonaId === selectedPersona.id) {
+      resetBuildSession();
     }
-  }, [selectedPersona?.id, pendingPersonaId, clearHistory]);
-
-  useEffect(() => {
-    if (!selectedPersona) {
-      setPendingPersonaId(null);
-      setShowDeleteConfirm(false);
-      dirtyRef.current = false;
-      prevPersonaIdRef.current = undefined;
-      const empty = buildDraft({ name: '', enabled: false });
-      setDraft(empty);
-      setBaseline(empty);
-    }
-  }, [selectedPersona]);
-  dirtyRef.current = isDirty;
-
-  useEffect(() => {
-    let lastSeenId = useAgentStore.getState().selectedPersonaId;
-    const unsub = useAgentStore.subscribe((state) => {
-      const newId = state.selectedPersonaId;
-      if (newId === lastSeenId) return;
-      if (dirtyRef.current) {
-        useAgentStore.setState({ selectedPersonaId: prevPersonaIdRef.current ?? null });
-        lastSeenId = prevPersonaIdRef.current ?? null;
-        cancelAllDebouncedSaves();
-        setPendingPersonaId(newId);
-      } else {
-        lastSeenId = newId;
-      }
-    });
-    return unsub;
-  }, [cancelAllDebouncedSaves]);
-
-  // Ctrl+Z / Ctrl+Shift+Z for undo/redo across all editor tabs
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      // Only fire when no text input is focused (avoid hijacking undo inside textareas)
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
-
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        e.preventDefault();
-        if (e.shiftKey) {
-          redo();
-        } else {
-          undo();
-        }
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [undo, redo]);
+    setShowDeleteConfirm(false);
+  }, [selectedPersona, deletePersona, setShowDeleteConfirm]);
 
   if (!selectedPersona) {
     return (
@@ -141,39 +88,6 @@ export function EditorBody() {
     );
   }
 
-  const handleDiscardAndSwitch = () => {
-    cancelAllDebouncedSaves();
-    const target = pendingPersonaId;
-    setPendingPersonaId(null);
-    dirtyRef.current = false;
-    clearAllDirty();
-    if (target !== null) useAgentStore.getState().selectPersona(target);
-  };
-
-  const handleSaveAndSwitch = async () => {
-    if (isSwitchingRef.current) return;
-    isSwitchingRef.current = true;
-    cancelAllDebouncedSaves();
-    try {
-      try {
-        await saveAllTabs();
-      } catch (err) {
-        const label = err instanceof TabSaveError
-          ? `Failed to save ${tabIdsToLabels(err.failedTabs)}`
-          : 'Failed to save changes';
-        useToastStore.getState().addToast(label, 'error');
-        return;
-      }
-      const target = pendingPersonaId;
-      setPendingPersonaId(null);
-      dirtyRef.current = false;
-      clearAllDirty();
-      if (target !== null) useAgentStore.getState().selectPersona(target);
-    } finally {
-      isSwitchingRef.current = false;
-    }
-  };
-
   const changedSections = allDirtyTabs.map((t) => t.charAt(0).toUpperCase() + t.slice(1));
 
   return (
@@ -185,12 +99,12 @@ export function EditorBody() {
         changedSections={changedSections}
         onSaveAndSwitch={handleSaveAndSwitch}
         onDiscardAndSwitch={handleDiscardAndSwitch}
-        onDismiss={() => setPendingPersonaId(null)}
+        onDismiss={cancelPendingSwitch}
       />
 
       <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={connectorsMissing} />
       <CloudNudgeBanner />
-      <PartialLoadBanner warnings={partialLoadWarnings} onDismiss={() => setDismissedWarnings(true)} />
+      <PartialLoadBanner warnings={partialLoadWarnings} onDismiss={dismissWarnings} />
 
       {saveError && (
         <div className="animate-fade-slide-in mx-6 my-2 rounded-xl px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
@@ -234,7 +148,7 @@ export function EditorBody() {
                     draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
                     connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
                     setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
-                    onDelete={async () => { await deletePersona(selectedPersona.id); const { buildPersonaId, resetBuildSession } = useAgentStore.getState(); if (buildPersonaId === selectedPersona.id) { resetBuildSession(); } setShowDeleteConfirm(false); }}
+                    onDelete={handleDelete}
                   />
                 </EditorTabContent>
               )}

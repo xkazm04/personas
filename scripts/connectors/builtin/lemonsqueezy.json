@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "Go to app.lemonsqueezy.com -> Settings -> API -> Create API Key"
+      "helpText": "Go to app.lemonsqueezy.com -> Settings -> API -> Create API Key",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

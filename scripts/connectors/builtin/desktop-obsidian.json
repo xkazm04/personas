@@ -12,7 +12,8 @@
       "type": "text",
       "required": false,
       "placeholder": "~/Documents/MyVault",
-      "helpText": "Path to your Obsidian vault. Auto-detected if left blank."
+      "helpText": "Path to your Obsidian vault. Auto-detected if left blank.",
+      "sensitive": true
     },
     {
       "key": "api_port",
@@ -20,7 +21,8 @@
       "type": "text",
       "required": false,
       "placeholder": "27124",
-      "helpText": "Port for the Obsidian Local REST API plugin (optional)"
+      "helpText": "Port for the Obsidian Local REST API plugin (optional)",
+      "sensitive": true
     },
     {
       "key": "api_key",
@@ -28,17 +30,36 @@
       "type": "password",
       "required": false,
       "placeholder": "",
-      "helpText": "API key for the Local REST API plugin (optional)"
+      "helpText": "API key for the Local REST API plugin (optional)",
+      "sensitive": true
     }
   ],
   "healthcheck_config": null,
   "services": [
-    { "toolName": "obsidian_list_notes", "label": "List Notes" },
-    { "toolName": "obsidian_read_note", "label": "Read Note" },
-    { "toolName": "obsidian_write_note", "label": "Write Note" },
-    { "toolName": "obsidian_search", "label": "Search Notes" },
-    { "toolName": "obsidian_vault_structure", "label": "Vault Structure" },
-    { "toolName": "obsidian_append", "label": "Append to Note" }
+    {
+      "toolName": "obsidian_list_notes",
+      "label": "List Notes"
+    },
+    {
+      "toolName": "obsidian_read_note",
+      "label": "Read Note"
+    },
+    {
+      "toolName": "obsidian_write_note",
+      "label": "Write Note"
+    },
+    {
+      "toolName": "obsidian_search",
+      "label": "Search Notes"
+    },
+    {
+      "toolName": "obsidian_vault_structure",
+      "label": "Vault Structure"
+    },
+    {
+      "toolName": "obsidian_append",
+      "label": "Append to Note"
+    }
   ],
   "events": [],
   "metadata": {
@@ -51,6 +72,10 @@
     "docs_url": "https://obsidian.md/",
     "setup_guide": "1. Ensure Obsidian is installed on your system\n2. Optionally install the Local REST API plugin for richer access\n3. Click Detect to scan for Obsidian vaults\n4. Approve the requested capabilities",
     "pricing_tier": "free",
-    "capabilities": ["file_read", "file_write", "network_local"]
+    "capabilities": [
+      "file_read",
+      "file_write",
+      "network_local"
+    ]
   }
 }

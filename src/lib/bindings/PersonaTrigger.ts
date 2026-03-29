@@ -2,4 +2,4 @@
 
 import type { TriggerStatus } from "./TriggerStatus";
 
-export type PersonaTrigger = { id: string, persona_id: string, trigger_type: string, config: string | null, enabled: boolean, status: TriggerStatus, last_triggered_at: string | null, next_trigger_at: string | null, created_at: string, updated_at: string, use_case_id: string | null, };
+export type PersonaTrigger = { id: string, persona_id: string, trigger_type: string, config: string | null, enabled: boolean, status: TriggerStatus, last_triggered_at: string | null, next_trigger_at: string | null, trigger_version: number, created_at: string, updated_at: string, use_case_id: string | null, };

@@ -194,6 +194,44 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         "ALTER TABLE persona_executions ADD COLUMN log_truncated INTEGER NOT NULL DEFAULT 0;"
     ); // ignore "duplicate column" error on re-run
 
+    // -- Enforce at most one production version per persona --------------------
+    // Before creating the unique index, fix any existing violations by keeping
+    // only the highest-version-number production row per persona.
+    conn.execute_batch(
+        "UPDATE persona_prompt_versions SET tag = 'experimental'
+         WHERE tag = 'production'
+           AND id NOT IN (
+               SELECT id FROM (
+                   SELECT id, ROW_NUMBER() OVER (
+                       PARTITION BY persona_id ORDER BY version_number DESC
+                   ) AS rn
+                   FROM persona_prompt_versions
+                   WHERE tag = 'production'
+               ) WHERE rn = 1
+           );"
+    )?;
+    conn.execute_batch(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_ppv_one_production
+         ON persona_prompt_versions(persona_id) WHERE tag = 'production';"
+    )?;
+
+    // -- Healing audit log (surface silent failures) --------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS healing_audit_log (
+            id              TEXT PRIMARY KEY,
+            persona_id      TEXT,
+            execution_id    TEXT,
+            event_type      TEXT NOT NULL,
+            subsystem       TEXT NOT NULL,
+            message         TEXT NOT NULL,
+            detail          TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_hal_persona  ON healing_audit_log(persona_id);
+        CREATE INDEX IF NOT EXISTS idx_hal_created  ON healing_audit_log(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_hal_type     ON healing_audit_log(event_type);"
+    )?;
+
     tracing::info!("Database migrations complete");
     Ok(())
 }
@@ -3237,6 +3275,33 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             CREATE INDEX IF NOT EXISTS idx_chat_created   ON chat_messages(created_at);"
         )?;
         tracing::info!("Widened chat_messages role CHECK to include system and tool");
+    }
+
+    // Circuit breaker persistence table (survive restarts, 15-min TTL)
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS circuit_breaker_state (
+            provider              TEXT PRIMARY KEY,
+            consecutive_failures  INTEGER NOT NULL DEFAULT 0,
+            is_open               INTEGER NOT NULL DEFAULT 0,
+            opened_at             TEXT,
+            updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+        );"
+    )?;
+
+    // -- Add trigger_version column for race-safe CAS on mark_triggered ----------
+    // Replaces value-based CAS (WHERE next_trigger_at IS ?old) with a monotonic
+    // version counter.  Two concurrent ticks reading the same version will race on
+    // the UPDATE, but only the first to increment wins; the second touches 0 rows.
+    let has_trigger_version: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_triggers') WHERE name = 'trigger_version'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_trigger_version {
+        conn.execute_batch(
+            "ALTER TABLE persona_triggers ADD COLUMN trigger_version INTEGER NOT NULL DEFAULT 0;"
+        )?;
+        tracing::info!("Added trigger_version column to persona_triggers for CAS safety");
     }
 
     Ok(())

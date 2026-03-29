@@ -3,9 +3,10 @@ import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
 import { CX, CY } from '../../libs/visualizationHelpers';
 import type { ReturnFlow } from '../../libs/visualizationHelpers';
 import { COMET_TAIL_STEPS } from './EventBusTypes';
+import type { AnimatedEvent } from '@/hooks/realtime/useAnimatedEvents';
 
 interface InboundProps {
-  activeEvents: RealtimeEvent[];
+  activeEvents: AnimatedEvent[];
   uid: string;
   getSrc: (evt: RealtimeEvent) => { x: number; y: number };
   getTgt: (evt: RealtimeEvent) => { x: number; y: number } | null;
@@ -15,16 +16,16 @@ interface InboundProps {
 export function InboundCometTrails({ activeEvents, uid, getSrc: _getSrc, getTgt, onSelectEvent }: InboundProps) {
   return (
     <>
-      {activeEvents.map(evt => {
+      {activeEvents.map(({ event: evt, animationId, phase }) => {
         const tgt = getTgt(evt);
         const color = evt.status === 'failed' ? '#ef4444' : (EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8');
         let tx: number, ty: number;
-        switch (evt._phase) {
+        switch (phase) {
           case 'entering': case 'on-bus': tx = CX; ty = CY; break;
           case 'delivering': default: tx = tgt?.x ?? CX; ty = tgt?.y ?? CY;
         }
         return (
-          <g key={evt._animationId} onClick={() => onSelectEvent(evt)} style={{ cursor: 'pointer' }}>
+          <g key={animationId} onClick={() => onSelectEvent(evt)} style={{ cursor: 'pointer' }}>
             {Array.from({ length: COMET_TAIL_STEPS }, (_, i) => {
               const scale = 1 - (i / COMET_TAIL_STEPS);
               return (
@@ -40,7 +41,7 @@ export function InboundCometTrails({ activeEvents, uid, getSrc: _getSrc, getTgt,
             <circle className="animate-fade-slide-in"
               r={0.45} fill="white"
             />
-            {evt._phase === 'delivering' && (evt.status === 'completed' || evt.status === 'failed') && (
+            {phase === 'delivering' && (evt.status === 'completed' || evt.status === 'failed') && (
               <>
                 <circle className="animate-fade-slide-in"
                   cx={tx} cy={ty} fill="none" stroke={color} strokeWidth={0.15}

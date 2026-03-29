@@ -11,6 +11,7 @@ use crate::engine::failover::CircuitBreakerStatus;
 use crate::engine::scheduler as sched_logic;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged, require_privileged_sync};
+use crate::validation::safe_resolve_log_path;
 use crate::AppState;
 
 /// Verify that the execution belongs to the expected persona.
@@ -288,17 +289,7 @@ pub fn get_execution_log(
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
     if let Some(ref path) = execution.log_file_path {
-        // Path traversal guard: canonicalize both the log root and the requested
-        // path, then verify the requested path is inside the log directory.
-        let log_root = state.engine.log_dir().canonicalize().unwrap_or_else(|_| state.engine.log_dir().to_path_buf());
-        let requested = std::path::Path::new(path)
-            .canonicalize()
-            .map_err(|_| AppError::NotFound(format!("Log file not found: {id}")))?;
-        if !requested.starts_with(&log_root) {
-            return Err(AppError::Validation(
-                "Log file path is outside the allowed log directory".into(),
-            ));
-        }
+        let requested = safe_resolve_log_path(path, state.engine.log_dir())?;
         match std::fs::read_to_string(&requested) {
             Ok(content) => Ok(Some(content)),
             Err(_) => Ok(None),
@@ -319,19 +310,7 @@ pub fn get_execution_log_lines(
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
     if let Some(ref path) = execution.log_file_path {
-        let log_root = state
-            .engine
-            .log_dir()
-            .canonicalize()
-            .unwrap_or_else(|_| state.engine.log_dir().to_path_buf());
-        let requested = std::path::Path::new(path)
-            .canonicalize()
-            .map_err(|_| AppError::NotFound(format!("Log file not found: {id}")))?;
-        if !requested.starts_with(&log_root) {
-            return Err(AppError::Validation(
-                "Log file path is outside the allowed log directory".into(),
-            ));
-        }
+        let requested = safe_resolve_log_path(path, state.engine.log_dir())?;
         match std::fs::read_to_string(&requested) {
             Ok(content) => {
                 let lines: Vec<String> = content

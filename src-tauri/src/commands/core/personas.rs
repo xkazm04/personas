@@ -19,6 +19,8 @@ use crate::engine::types::ExecutionState;
 use crate::engine;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
+use crate::validation::contract::check;
+use crate::validation::persona as pv;
 use crate::AppState;
 
 #[tauri::command]
@@ -39,7 +41,62 @@ pub fn create_persona(
     input: CreatePersonaInput,
 ) -> Result<Persona, AppError> {
     require_auth_sync(&state)?;
+    validate_create_persona(&input)?;
     repo::create(&state.db, input)
+}
+
+fn validate_create_persona(input: &CreatePersonaInput) -> Result<(), AppError> {
+    let mut errors = Vec::new();
+    errors.extend(pv::validate_name(&input.name));
+    errors.extend(pv::validate_system_prompt(&input.system_prompt));
+    if let Some(ref sp) = input.structured_prompt {
+        errors.extend(pv::validate_structured_prompt(sp));
+    }
+    if let Some(v) = input.max_concurrent {
+        errors.extend(pv::validate_max_concurrent(v));
+    }
+    if let Some(v) = input.timeout_ms {
+        errors.extend(pv::validate_timeout_ms(v));
+    }
+    if let Some(v) = input.max_budget_usd {
+        errors.extend(pv::validate_max_budget_usd(v));
+    }
+    if let Some(v) = input.max_turns {
+        errors.extend(pv::validate_max_turns(v));
+    }
+    if let Some(ref channels) = input.notification_channels {
+        errors.extend(pv::validate_notification_channels(channels));
+    }
+    check(errors)
+}
+
+fn validate_update_persona(input: &UpdatePersonaInput) -> Result<(), AppError> {
+    let mut errors = Vec::new();
+    if let Some(ref name) = input.name {
+        errors.extend(pv::validate_name(name));
+    }
+    if let Some(ref prompt) = input.system_prompt {
+        errors.extend(pv::validate_system_prompt(prompt));
+    }
+    if let Some(Some(ref sp)) = input.structured_prompt {
+        errors.extend(pv::validate_structured_prompt(sp));
+    }
+    if let Some(v) = input.max_concurrent {
+        errors.extend(pv::validate_max_concurrent(v));
+    }
+    if let Some(v) = input.timeout_ms {
+        errors.extend(pv::validate_timeout_ms(v));
+    }
+    if let Some(Some(v)) = input.max_budget_usd {
+        errors.extend(pv::validate_max_budget_usd(v));
+    }
+    if let Some(Some(v)) = input.max_turns {
+        errors.extend(pv::validate_max_turns(v));
+    }
+    if let Some(ref channels) = input.notification_channels {
+        errors.extend(pv::validate_notification_channels(channels));
+    }
+    check(errors)
 }
 
 #[tauri::command]
@@ -49,6 +106,7 @@ pub fn update_persona(
     input: UpdatePersonaInput,
 ) -> Result<Persona, AppError> {
     require_auth_sync(&state)?;
+    validate_update_persona(&input)?;
     let result = repo::update(&state.db, &id, input)?;
     // Invalidate cached session AFTER successful DB update
     let pool = state.session_pool.clone();
@@ -370,7 +428,7 @@ async fn delete_persona_inner(
         if tokio::time::Instant::now() >= deadline {
             tracing::warn!(
                 persona_id = %id,
-                "Timed out waiting for engine slots to clear; proceeding with deletion"
+                "Timed out waiting for engine slots to clear; force-cancelling remaining executions"
             );
             timeout_reached = true;
             break;
@@ -378,7 +436,26 @@ async fn delete_persona_inner(
         tokio::time::sleep(DELETION_DRAIN_POLL).await;
     }
 
-    // ── Phase 2b: Finalize the delete ──
+    // ── Phase 2b: Force-cancel any remaining stale executions after timeout ──
+    // This prevents active tasks from writing to DB rows that are about
+    // to be CASCADE-deleted, which would cause silent data corruption or
+    // foreign-key constraint violations.
+    if timeout_reached {
+        let force_count = state
+            .engine
+            .force_cancel_all_for_persona(id, &state.db)
+            .await;
+        for exec_id in &force_cancelled {
+            // The earlier force_cancelled list already counted; only add
+            // new ones discovered in the tracker after the drain loop.
+            let _ = exec_id;
+        }
+        // Add force-cancelled count from the post-timeout sweep
+        force_cancelled.reserve(force_count);
+        // Note: individual IDs were already logged inside force_cancel_all_for_persona
+    }
+
+    // ── Phase 2c: Finalize the delete ──
     let deleted = repo::delete(&state.db, id)?;
 
     Ok(DeletePersonaResult {

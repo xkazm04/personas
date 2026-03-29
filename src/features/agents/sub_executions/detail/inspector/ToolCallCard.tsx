@@ -25,7 +25,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
         <div className="ml-auto">
           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-code border ${durationColor(step.duration_ms)}`}>
             <Clock className="w-3 h-3" />
-            {step.duration_ms !== undefined ? formatDuration(step.duration_ms) : 'pending'}
+            {step.duration_ms != null ? formatDuration(step.duration_ms) : 'pending'}
           </span>
         </div>
       </div>

@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "Go to Attio -> Settings -> Developers -> API Access -> Generate a new token"
+      "helpText": "Go to Attio -> Settings -> Developers -> API Access -> Generate a new token",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -34,7 +35,12 @@
     "setup_guide": "1. Log in to Attio.\n2. Go to Settings -> Developers -> API Access.\n3. Click 'Generate a new token'.\n4. Select the required scopes (read/write for records, lists, objects).\n5. Copy the token and paste it here.",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "pat", "label": "PAT", "type": "credential", "is_default": true}
+      {
+        "id": "pat",
+        "label": "PAT",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

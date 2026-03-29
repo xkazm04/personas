@@ -4,9 +4,9 @@ export interface LabEvalRun {
   id: string;
   personaId: string;
   status: LabRunStatus;
-  versionIds: string;
-  versionNumbers: string;
-  modelsTested: string;
+  versionIds: string[];
+  versionNumbers: number[];
+  modelsTested: string[];
   scenariosCount: number;
   useCaseFilter: string | null;
   testInput: string | null;

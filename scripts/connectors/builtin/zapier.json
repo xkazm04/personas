@@ -6,12 +6,22 @@
   "icon_url": "/icons/connectors/zapier.svg",
   "category": "automation",
   "fields": [
-    { "key": "api_key", "label": "API Key", "type": "password", "required": true, "placeholder": "", "helpText": "From zapier.com/app/developer -> API Key" }
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From zapier.com/app/developer -> API Key",
+      "sensitive": true
+    }
   ],
   "healthcheck_config": {
     "endpoint": "https://api.zapier.com/v1/profiles/me",
     "method": "GET",
-    "headers": { "Authorization": "Bearer {{api_key}}" },
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
     "description": "Validates API key via Zapier profiles endpoint"
   },
   "services": [],
@@ -25,7 +35,12 @@
     "is_platform": true,
     "platform_type": "zapier",
     "auth_methods": [
-      { "id": "api_key", "label": "API Key", "type": "credential", "is_default": true }
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

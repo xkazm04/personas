@@ -3,7 +3,7 @@ import {
   listDesignConversations,
   getActiveDesignConversation,
   createDesignConversation,
-  appendDesignConversationMessage,
+  appendSingleDesignMessage,
   updateDesignConversationStatus,
   deleteDesignConversation,
 } from '@/api/templates/design';
@@ -13,11 +13,7 @@ import type {
   AgentIR,
   DesignQuestion,
 } from '@/lib/types/designTypes';
-import { parseConversationMessages } from '@/lib/types/designTypes';
 import { useToastStore } from '@/stores/toastStore';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('design-conversation');
 
 /**
  * Manages persistent design conversations alongside the design analysis flow.
@@ -119,37 +115,25 @@ export function useDesignConversation(personaId: string | null) {
   }, [personaId]);
 
   /**
-   * Serialize a message append through the queue. Reads the LATEST conversation
-   * state at write time (not at call time) to prevent read-modify-write races.
+   * Serialize a message append through the queue. Sends only the new message
+   * to the backend which appends it server-side (O(1) IPC payload).
    */
   const enqueueAppend = useCallback((
     buildMessage: (conv: DesignConversation) => {
       message: DesignConversationMessage;
-      lastResult?: string;
     },
   ): void => {
     const doAppend = async () => {
       const conv = activeConvRef.current;
       if (!conv) return;
 
-      const { message, lastResult } = buildMessage(conv);
-      const messages = parseConversationMessages(conv.messages);
-      if (!messages) {
-        logger.warn('Skipping append: conversation messages JSON is corrupt. Existing history preserved.');
-        return;
-      }
-      messages.push(message);
-      // Cap message history to prevent unbounded growth in long sessions
-      const MAX_MESSAGES = 500;
-      if (messages.length > MAX_MESSAGES) {
-        messages.splice(0, messages.length - MAX_MESSAGES);
-      }
+      const { message } = buildMessage(conv);
 
       try {
-        const updated = await appendDesignConversationMessage(
+        const updated = await appendSingleDesignMessage(
           conv.id,
-          JSON.stringify(messages),
-          lastResult ?? null,
+          JSON.stringify(message),
+          null,
         );
         setActiveConversation(updated);
         setConversations((prev) =>
@@ -157,10 +141,18 @@ export function useDesignConversation(personaId: string | null) {
         );
       } catch {
         // intentional: non-critical -- preserve appended message in-memory when persistence fails
+        const currentMessages = conv.messages;
+        let fallbackMessages: string;
+        try {
+          const parsed = JSON.parse(currentMessages) as DesignConversationMessage[];
+          parsed.push(message);
+          fallbackMessages = JSON.stringify(parsed);
+        } catch {
+          fallbackMessages = currentMessages;
+        }
         const fallback: DesignConversation = {
           ...conv,
-          messages: JSON.stringify(messages),
-          lastResult: lastResult ?? conv.lastResult,
+          messages: fallbackMessages,
           updatedAt: new Date().toISOString(),
         };
         setActiveConversation(fallback);
@@ -201,7 +193,10 @@ export function useDesignConversation(personaId: string | null) {
     });
   }, [enqueueAppend]);
 
-  /** Record an AI result in the conversation. */
+  /** Record an AI result in the conversation.
+   *  The canonical result is stored in persona.last_design_result (written by the
+   *  backend on every successful analysis).  We only record a summary message here
+   *  — no duplicate lastResult blob — to keep a single source of truth. */
   const addResultMessage = useCallback((result: AgentIR) => {
     enqueueAppend(() => ({
       message: {
@@ -210,7 +205,6 @@ export function useDesignConversation(personaId: string | null) {
         messageType: 'result',
         timestamp: new Date().toISOString(),
       },
-      lastResult: JSON.stringify(result),
     }));
   }, [enqueueAppend]);
 

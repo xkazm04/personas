@@ -84,7 +84,8 @@ export const startQueryDebug = (
   errorContext: string | null,
   serviceType: string,
   debugId: string,
-) => invoke<void>('start_query_debug', { credentialId, queryText, errorContext, serviceType, debugId });
+  allowMutations = false,
+) => invoke<void>('start_query_debug', { credentialId, queryText, errorContext, serviceType, debugId, allowMutations });
 
 export const cancelQueryDebug = (debugId: string) =>
   invoke<void>('cancel_query_debug', { debugId });

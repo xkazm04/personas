@@ -12,7 +12,8 @@
       "type": "url",
       "required": true,
       "placeholder": "https://xxxx.supabase.co",
-      "helpText": "From Supabase Dashboard -> Settings -> API"
+      "helpText": "From Supabase Dashboard -> Settings -> API",
+      "sensitive": true
     },
     {
       "key": "anon_key",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "eyJ...",
-      "helpText": "The anon key for client-side access"
+      "helpText": "The anon key for client-side access",
+      "sensitive": true
     },
     {
       "key": "service_role_key",
@@ -28,7 +30,8 @@
       "type": "password",
       "required": false,
       "placeholder": "eyJ...",
-      "helpText": "For server-side admin access (bypasses RLS)"
+      "helpText": "For server-side admin access (bypasses RLS)",
+      "sensitive": true
     },
     {
       "key": "pooler_url",
@@ -36,7 +39,8 @@
       "type": "password",
       "required": false,
       "placeholder": "postgresql://postgres.xxxx:...",
-      "helpText": "Supavisor pooler URL for direct database access"
+      "helpText": "Supavisor pooler URL for direct database access",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -62,7 +66,10 @@
       {
         "id": "anon",
         "label": "Anon Key",
-        "fields": ["project_url", "anon_key"],
+        "fields": [
+          "project_url",
+          "anon_key"
+        ],
         "auth_type_label": "API Key",
         "healthcheck_config": {
           "endpoint": "{{project_url}}/rest/v1/",
@@ -76,7 +83,10 @@
       {
         "id": "service_role",
         "label": "Service Role",
-        "fields": ["project_url", "service_role_key"],
+        "fields": [
+          "project_url",
+          "service_role_key"
+        ],
         "auth_type_label": "Service Role",
         "healthcheck_config": {
           "endpoint": "{{project_url}}/rest/v1/",
@@ -90,7 +100,9 @@
       {
         "id": "pooler",
         "label": "Pooler URL",
-        "fields": ["pooler_url"],
+        "fields": [
+          "pooler_url"
+        ],
         "auth_type_label": "Connection String",
         "healthcheck_skip": true
       }

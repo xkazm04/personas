@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "Generate at your Penpot instance -> Profile -> Access Tokens"
+      "helpText": "Generate at your Penpot instance -> Profile -> Access Tokens",
+      "sensitive": true
     },
     {
       "key": "base_url",
@@ -20,7 +21,8 @@
       "type": "url",
       "required": false,
       "placeholder": "https://design.penpot.app",
-      "helpText": "Your Penpot instance URL (defaults to penpot.app cloud)"
+      "helpText": "Your Penpot instance URL (defaults to penpot.app cloud)",
+      "sensitive": false
     }
   ],
   "healthcheck_config": {

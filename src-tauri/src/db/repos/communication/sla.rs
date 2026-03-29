@@ -5,6 +5,7 @@ use rusqlite::params;
 use crate::db::models::{
     GlobalSlaStats, HealingSummary, PersonaSlaStats, SlaDailyPoint, SlaDashboardData,
 };
+use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -34,29 +35,24 @@ fn batch_query_map<V>(
         return Ok(HashMap::new());
     }
 
+    let mut qb = QueryBuilder::new();
     let placeholders: Vec<String> = persona_ids
         .iter()
-        .enumerate()
-        .map(|(i, _)| format!("?{}", i + 1))
+        .map(|s| qb.push_param(s.to_string()))
         .collect();
+    let date_ph = if let Some(df) = date_filter {
+        qb.push_param(df.to_string())
+    } else {
+        // No date filter — use a placeholder index that won't be referenced
+        format!("?{}", qb.param_count() + 1)
+    };
 
-    let date_idx = persona_ids.len() + 1;
     let sql = sql_template
         .replace("{placeholders}", &placeholders.join(", "))
-        .replace("{date_param}", &format!("?{}", date_idx));
-
-    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = persona_ids
-        .iter()
-        .map(|s| Box::new(s.to_string()) as Box<dyn rusqlite::types::ToSql>)
-        .collect();
-    if let Some(df) = date_filter {
-        params_vec.push(Box::new(df.to_string()));
-    }
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        params_vec.iter().map(|p| p.as_ref()).collect();
+        .replace("{date_param}", &date_ph);
 
     let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_mapper)?;
+    let rows = stmt.query_map(qb.params_ref().as_slice(), row_mapper)?;
 
     let mut map = HashMap::new();
     for r in rows {
@@ -78,29 +74,24 @@ fn batch_query_map_vec<V>(
         return Ok(HashMap::new());
     }
 
+    let mut qb = QueryBuilder::new();
     let placeholders: Vec<String> = persona_ids
         .iter()
-        .enumerate()
-        .map(|(i, _)| format!("?{}", i + 1))
+        .map(|s| qb.push_param(s.to_string()))
         .collect();
+    let date_ph = if let Some(df) = date_filter {
+        qb.push_param(df.to_string())
+    } else {
+        // No date filter — use a placeholder index that won't be referenced
+        format!("?{}", qb.param_count() + 1)
+    };
 
-    let date_idx = persona_ids.len() + 1;
     let sql = sql_template
         .replace("{placeholders}", &placeholders.join(", "))
-        .replace("{date_param}", &format!("?{}", date_idx));
-
-    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = persona_ids
-        .iter()
-        .map(|s| Box::new(s.to_string()) as Box<dyn rusqlite::types::ToSql>)
-        .collect();
-    if let Some(df) = date_filter {
-        params_vec.push(Box::new(df.to_string()));
-    }
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        params_vec.iter().map(|p| p.as_ref()).collect();
+        .replace("{date_param}", &date_ph);
 
     let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_mapper)?;
+    let rows = stmt.query_map(qb.params_ref().as_slice(), row_mapper)?;
 
     let mut map: HashMap<String, Vec<V>> = HashMap::new();
     for r in rows {

@@ -59,7 +59,10 @@ pub async fn execute_desktop_bridge(
             let action = serde_json::from_value(action)
                 .map_err(|e| AppError::Validation(format!("Invalid Terminal action: {e}")))?;
             let shell = config.terminal_shell.as_deref().unwrap_or("bash");
-            crate::engine::desktop_bridges::terminal::execute(shell, action, &config.env_vars)
+            let mut manifest = crate::engine::desktop_security::get_manifest("desktop_terminal")
+                .expect("desktop_terminal manifest is always defined");
+            manifest.allowed_paths = config.terminal_allowed_paths.clone();
+            crate::engine::desktop_bridges::terminal::execute(shell, action, &config.env_vars, &manifest)
                 .await
         }
         "obsidian" => {

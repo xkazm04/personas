@@ -9,3 +9,4 @@ export {
 export { ModelToggleGrid } from './ModelToggleGrid';
 export { UseCaseFilterPicker } from './UseCaseFilterPicker';
 export { LabActionButtons } from './LabActionButtons';
+export { LabPanelShell } from './LabPanelShell';

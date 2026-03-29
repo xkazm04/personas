@@ -53,6 +53,9 @@ pub enum AppError {
     #[error("Retry exhausted: {0}")]
     RetryExhausted(String),
 
+    #[error("Identity keyring lost: {0}")]
+    KeyringLost(String),
+
     #[error("{0}")]
     Internal(String),
 }
@@ -106,6 +109,7 @@ impl Serialize for AppError {
                 AppError::Forbidden(_) => "forbidden",
                 AppError::OAuthRevoked(_) => "oauth_revoked",
                 AppError::RetryExhausted(_) => "retry_exhausted",
+                AppError::KeyringLost(_) => "keyring_lost",
                 AppError::Internal(_) => "internal",
             },
         )?;

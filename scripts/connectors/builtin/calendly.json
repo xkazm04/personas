@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "eyJ...",
-      "helpText": "Generate at calendly.com/integrations/api_webhooks"
+      "helpText": "Generate at calendly.com/integrations/api_webhooks",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

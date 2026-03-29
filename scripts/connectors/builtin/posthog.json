@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "phx_...",
-      "helpText": "From PostHog -> Settings -> Personal API Keys"
+      "helpText": "From PostHog -> Settings -> Personal API Keys",
+      "sensitive": true
     },
     {
       "key": "project_api_key",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": false,
       "placeholder": "phc_...",
-      "helpText": "Optional: project token for event ingestion"
+      "helpText": "Optional: project token for event ingestion",
+      "sensitive": true
     },
     {
       "key": "host",
@@ -28,7 +30,8 @@
       "type": "url",
       "required": false,
       "placeholder": "https://us.posthog.com",
-      "helpText": "Defaults to us.posthog.com. Use eu.posthog.com for EU cloud."
+      "helpText": "Defaults to us.posthog.com. Use eu.posthog.com for EU cloud.",
+      "sensitive": false
     }
   ],
   "healthcheck_config": {

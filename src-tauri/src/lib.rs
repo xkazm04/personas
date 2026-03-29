@@ -47,12 +47,24 @@ pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
 });
 
 /// Tracks an active CLI-backed process: its task ID and optional child PID.
-#[derive(Default)]
 pub struct ActiveProcess {
     /// The ID of the currently-running task (e.g. design_id, negotiation_id).
     pub id: Option<String>,
     /// PID of the CLI child process, used to kill on cancel.
     pub child_pid: Option<u32>,
+    /// Per-run cancellation token.  Set to `true` when the run is superseded
+    /// (new run starts and kills the old process) or explicitly cancelled.
+    pub cancelled: Arc<AtomicBool>,
+}
+
+impl Default for ActiveProcess {
+    fn default() -> Self {
+        Self {
+            id: None,
+            child_pid: None,
+            cancelled: Arc::new(AtomicBool::new(false)),
+        }
+    }
 }
 
 /// Combined state for a multi-run entry: cancellation flag and optional child PID.
@@ -109,6 +121,32 @@ impl ActiveProcessRegistry {
         map.entry(domain.to_string()).or_default().id = Some(id);
     }
 
+    /// Atomically begin a new run for a single-process domain.
+    ///
+    /// - Marks the previous run (if any) as cancelled via its `AtomicBool`.
+    /// - Takes the previous child PID (for the caller to kill).
+    /// - Installs the new `id` and returns a fresh cancellation token.
+    ///
+    /// This prevents the race where a completed-but-not-yet-checked run sees its
+    /// registry ID overwritten by a newer run and silently discards a valid result.
+    pub fn begin_run(&self, domain: &str, id: String) -> (Option<u32>, Arc<AtomicBool>) {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        let proc = map.entry(domain.to_string()).or_default();
+
+        // Cancel the previous run
+        proc.cancelled.store(true, Ordering::Release);
+
+        // Take the old PID so the caller can kill the child process
+        let old_pid = proc.child_pid.take();
+
+        // Install new run state
+        let token = Arc::new(AtomicBool::new(false));
+        proc.id = Some(id);
+        proc.cancelled = token.clone();
+
+        (old_pid, token)
+    }
+
     /// Get the active task ID for a domain.
     pub fn get_id(&self, domain: &str) -> Option<String> {
         let map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
@@ -151,10 +189,12 @@ impl ActiveProcessRegistry {
         }
     }
 
-    /// Cancel an active process: clear the ID and kill the child process if running.
+    /// Cancel an active process: set the cancelled flag, clear the ID, and
+    /// return the child PID so the caller can kill the process.
     pub fn cancel(&self, domain: &str) -> Option<u32> {
         let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(proc) = map.get_mut(domain) {
+            proc.cancelled.store(true, Ordering::Release);
             proc.id = None;
             proc.child_pid.take()
         } else {
@@ -315,10 +355,15 @@ pub struct AppState {
     pub cloud_webhook_relay_state: Arc<tokio::sync::Mutex<engine::cloud_webhook_relay::CloudWebhookRelayState>>,
     /// Build session manager for multi-turn agent builder sessions.
     pub build_session_manager: Arc<engine::build_session::BuildSessionManager>,
+    /// Composite trigger evaluation state (suppression cache + partial matches).
+    pub composite_state: engine::composite::CompositeState,
     /// Session reuse pool — caches Claude session IDs for warm persona re-execution.
     pub session_pool: Arc<engine::session_pool::SessionPool>,
     /// TTL-based cache for CLI binary probes (version / PATH checks).
     pub binary_probe_cache: Arc<commands::infrastructure::system::BinaryProbeCache>,
+    /// Notifier for the Smee relay manager — wake it immediately on relay
+    /// create / update / delete instead of waiting for the next poll cycle.
+    pub smee_relay_notifier: engine::smee_relay::SmeeRelayNotifier,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -533,7 +578,7 @@ pub fn run() {
             st.checkpoint("event_cleanup");
 
             let scheduler = Arc::new(engine::background::SchedulerState::new());
-            let engine = Arc::new(engine::ExecutionEngine::new(log_dir, scheduler.clone()));
+            let engine = Arc::new(engine::ExecutionEngine::new(log_dir, scheduler.clone(), Some(Arc::new(pool.clone()))));
             let auth = Arc::new(tokio::sync::Mutex::new(
                 commands::infrastructure::auth::AuthStateInner::default(),
             ));
@@ -597,6 +642,8 @@ pub fn run() {
             );
             st.checkpoint("kb_reconciliation");
 
+            let smee_notifier = engine::smee_relay::SmeeRelayNotifier::new();
+
             let state_arc = Arc::new(AppState {
                 db: pool.clone(),
                 user_db: user_db_pool,
@@ -630,12 +677,14 @@ pub fn run() {
                     engine::cloud_webhook_relay::CloudWebhookRelayState::load_from_db(&pool),
                 )),
                 build_session_manager: Arc::new(engine::build_session::BuildSessionManager::new()),
+                composite_state: engine::composite::CompositeState::new(),
                 session_pool: Arc::new(engine::session_pool::SessionPool::new()),
                 binary_probe_cache: Arc::new(
                     commands::infrastructure::system::BinaryProbeCache::new(
                         std::time::Duration::from_secs(60),
                     ),
                 ),
+                smee_relay_notifier: smee_notifier,
             });
             app.manage(state_arc.clone());
 
@@ -736,6 +785,7 @@ pub fn run() {
             let startup_ambient_ctx = state_arc.ambient_context.clone();
             #[cfg(feature = "desktop")]
             let startup_rule_engine = state_arc.context_rule_engine.clone();
+            let startup_composite_state = state_arc.composite_state.clone();
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 let _webhook_shutdown = engine::background::start_loops(
@@ -751,6 +801,8 @@ pub fn run() {
                     startup_ambient_ctx,
                     #[cfg(feature = "desktop")]
                     startup_rule_engine,
+                    startup_composite_state,
+                    state_arc.smee_relay_notifier.clone(),
                 );
                 tracing::info!("Scheduler auto-started");
                 #[cfg(feature = "desktop")]
@@ -791,6 +843,9 @@ pub fn run() {
             // Test automation (feature-gated)
             #[cfg(feature = "test-automation")]
             test_automation::__test_respond,
+            // Core -- Validation
+            commands::core::validation::get_validation_rules,
+            commands::core::validation::validate_persona_contracts,
             // Core -- Personas
             commands::core::personas::list_personas,
             commands::core::personas::get_persona,
@@ -945,6 +1000,7 @@ pub fn run() {
             commands::execution::healing::list_healing_knowledge,
             commands::execution::healing::trigger_ai_healing,
             commands::execution::healing::get_healing_timeline,
+            commands::execution::healing::list_healing_audit_log,
             // Execution -- Knowledge Graph
             commands::execution::knowledge::list_execution_knowledge,
             commands::execution::knowledge::get_knowledge_injection,
@@ -976,6 +1032,7 @@ pub fn run() {
             commands::design::conversations::get_active_design_conversation,
             commands::design::conversations::create_design_conversation,
             commands::design::conversations::append_design_conversation_message,
+            commands::design::conversations::append_single_design_message,
             commands::design::conversations::update_design_conversation_status,
             commands::design::conversations::delete_design_conversation,
             // Design -- N8n Transform
@@ -1295,6 +1352,11 @@ pub fn run() {
             commands::communication::observability::alerts::create_fired_alert,
             commands::communication::observability::alerts::dismiss_fired_alert,
             commands::communication::observability::alerts::clear_fired_alerts,
+            // Communication -- Observability: Performance Digest
+            commands::communication::observability::digest::get_digest_config,
+            commands::communication::observability::digest::set_digest_config,
+            commands::communication::observability::digest::preview_digest,
+            commands::communication::observability::digest::send_digest_now,
             // Communication -- SLA Dashboard
             commands::communication::sla::get_sla_dashboard,
             // Teams
@@ -1439,6 +1501,9 @@ pub fn run() {
             commands::infrastructure::settings::get_app_setting,
             commands::infrastructure::settings::set_app_setting,
             commands::infrastructure::settings::delete_app_setting,
+            commands::infrastructure::settings::get_quality_gate_config,
+            commands::infrastructure::settings::set_quality_gate_config,
+            commands::infrastructure::settings::reset_quality_gate_config,
             // Infrastructure -- BYOM (Bring Your Own Model)
             commands::infrastructure::byom::get_byom_policy,
             commands::infrastructure::byom::set_byom_policy,
@@ -1613,6 +1678,7 @@ pub fn run() {
             notifications::get_notification_delivery_stats,
             // Network -- Identity (Invisible Apps Phase 1)
             commands::network::identity::get_local_identity,
+            commands::network::identity::reinitialize_identity,
             commands::network::identity::set_display_name,
             commands::network::identity::export_identity_card,
             commands::network::identity::list_trusted_peers,

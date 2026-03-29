@@ -1,6 +1,7 @@
 import { useMemo, useRef, useEffect, useId } from 'react';
-import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
+import type { RealtimeEvent, AnimationMap } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
+import { useAnimatedEvents } from '@/hooks/realtime/useAnimatedEvents';
 import type { DiscoveredSource } from '../../libs/visualizationHelpers';
 import {
   FADE_AFTER_MS,
@@ -37,6 +38,8 @@ interface Props {
   events: RealtimeEvent[];
   personas: PersonaInfo[];
   droppedCount?: number;
+  animationMapRef: React.RefObject<AnimationMap>;
+  animTick: number;
   onSelectEvent: (event: RealtimeEvent | null) => void;
 }
 
@@ -61,7 +64,7 @@ function distributeVertically(
   return items.map((item, i) => ({ ...item, y: topY + i * step }));
 }
 
-export default function SwimLaneVisualization({ events, personas, onSelectEvent }: Props) {
+export default function SwimLaneVisualization({ events, personas, animationMapRef, animTick, onSelectEvent }: Props) {
   const uid = useId();
 
   /* ---------- source discovery ---------- */
@@ -106,11 +109,8 @@ export default function SwimLaneVisualization({ events, personas, onSelectEvent 
   const srcMap = useMemo(() => { const m = new Map<string, number>(); for (const n of sourceNodes) m.set(n.id, n.y); return m; }, [sourceNodes]);
   const agtMap = useMemo(() => { const m = new Map<string, number>(); for (const n of agentNodes) m.set(n.id, n.y); return m; }, [agentNodes]);
 
-  const { activeEvents, inFlightCount } = useMemo(() => {
-    const active: RealtimeEvent[] = [];
-    for (const e of events) { if (e._phase !== 'done') active.push(e); }
-    return { activeEvents: active, inFlightCount: active.length };
-  }, [events]);
+  const animatedEvents = useAnimatedEvents(events, animationMapRef.current, animTick);
+  const inFlightCount = animatedEvents.length;
 
   const getSrcY = (evt: RealtimeEvent) => {
     const key = evt.source_id || evt.source_type;
@@ -191,13 +191,13 @@ export default function SwimLaneVisualization({ events, personas, onSelectEvent 
           ))}
 
           {/* Event particles flowing left->hub->right */}
-          {activeEvents.map(evt => {
+          {animatedEvents.map(({ event: evt, animationId, phase }) => {
             const srcY = getSrcY(evt);
             const agtY = getAgtY(evt);
             const color = evt.status === 'failed' ? '#ef4444' : (EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8');
 
             let targetX: number, targetY: number;
-            switch (evt._phase) {
+            switch (phase) {
               case 'entering':
                 targetX = HUB_X; targetY = srcY; break;
               case 'on-bus':
@@ -207,7 +207,7 @@ export default function SwimLaneVisualization({ events, personas, onSelectEvent 
             }
 
             return (
-              <g key={evt._animationId} onClick={() => onSelectEvent(evt)} style={{ cursor: 'pointer' }}>
+              <g key={animationId} onClick={() => onSelectEvent(evt)} style={{ cursor: 'pointer' }}>
                 {/* Trail line */}
                 <line className="animate-fade-in"
                   stroke={color} strokeWidth="0.12"
@@ -231,7 +231,7 @@ export default function SwimLaneVisualization({ events, personas, onSelectEvent 
                   {EVENT_TYPE_LABELS[evt.event_type] ?? evt.event_type.replace(/_/g, ' ')}
                 </text>
                 {/* Impact ring */}
-                {evt._phase === 'delivering' && (evt.status === 'completed' || evt.status === 'failed') && (
+                {phase === 'delivering' && (evt.status === 'completed' || evt.status === 'failed') && (
                   <circle className="animate-fade-slide-in"
                     cx={targetX} cy={targetY} fill="none" stroke={color} strokeWidth={0.12}
                   />

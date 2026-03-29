@@ -18,6 +18,7 @@ pub mod smee_relay;
 pub mod connector_strategy;
 pub mod credential_design;
 pub mod dispatch;
+pub mod quality_gate;
 pub mod protocol;
 pub mod credential_negotiator;
 pub mod cron;
@@ -29,6 +30,7 @@ pub mod failover;
 pub mod google_oauth;
 pub mod oauth_refresh;
 pub mod healing;
+pub mod healing_orchestrator;
 pub mod healing_timeline;
 pub mod ai_healing;
 pub mod ai_helpers;
@@ -59,6 +61,7 @@ pub mod trace;
 pub mod dream_replay;
 pub mod types;
 pub mod lifecycle;
+pub mod process_session;
 pub mod webhook;
 pub mod workflow_compiler;
 pub mod platform_rules;
@@ -73,7 +76,10 @@ pub mod app_focus;
 pub mod ambient_context;
 #[cfg(feature = "desktop")]
 pub mod context_rules;
+pub mod capability;
+pub mod capability_contract;
 pub mod composite;
+pub mod digest;
 pub mod db_query;
 pub mod safe_json;
 pub mod output_assertions;
@@ -96,6 +102,7 @@ pub mod path_safety;
 pub mod platforms;
 pub mod cost;
 pub mod session_pool;
+pub mod pipeline_executor;
 pub mod template_checksums;
 #[cfg(feature = "desktop")]
 pub mod desktop_bridges;
@@ -419,9 +426,6 @@ async fn run_execution_with_ceiling(
     }
 }
 
-/// Maximum consecutive failures before the circuit breaker trips.
-const CIRCUIT_BREAKER_THRESHOLD: u32 = 5;
-
 /// Saved execution context for queued executions. When a running slot opens,
 /// the engine uses this context to start the promoted execution.
 struct QueuedExecutionContext {
@@ -466,14 +470,18 @@ pub struct ExecutionEngine {
 }
 
 impl ExecutionEngine {
-    pub fn new(log_dir: PathBuf, scheduler: Arc<SchedulerState>) -> Self {
+    pub fn new(log_dir: PathBuf, scheduler: Arc<SchedulerState>, pool: Option<Arc<crate::db::DbPool>>) -> Self {
+        let circuit_breaker = match pool {
+            Some(p) => Arc::new(failover::ProviderCircuitBreaker::with_persistence(p)),
+            None => Arc::new(failover::ProviderCircuitBreaker::new()),
+        };
         Self {
             tracker: Arc::new(Mutex::new(ConcurrencyTracker::new())),
             tasks: Arc::new(Mutex::new(HashMap::new())),
             child_pids: Arc::new(Mutex::new(HashMap::new())),
             cancelled_flags: Arc::new(Mutex::new(HashMap::new())),
             log_dir,
-            circuit_breaker: Arc::new(failover::ProviderCircuitBreaker::new()),
+            circuit_breaker,
             queued_contexts: Arc::new(Mutex::new(HashMap::new())),
             scheduler,
             deleting_personas: Arc::new(Mutex::new(HashSet::new())),
@@ -846,6 +854,10 @@ impl ExecutionEngine {
                         },
                     )
                     .await;
+                    // Signal frontend that persona health data has changed
+                    emit_event(&app_for_healing, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
+                        "persona_id": persona_id,
+                    }));
                 } else {
                     handle_execution_result(
                         &pool_clone,
@@ -1031,6 +1043,92 @@ impl ExecutionEngine {
         self.cancelled_flags.lock().await.remove(execution_id);
 
         true
+    }
+
+    /// Force-cancel **all** remaining running and queued executions for a persona.
+    ///
+    /// Unlike `cancel_execution` (which gracefully waits for metric writes),
+    /// this aborts task handles immediately and cleans up tracker slots.
+    /// Used as a last resort when the deletion drain timeout has been reached
+    /// and stale tasks would otherwise write to CASCADE-deleted DB rows.
+    pub async fn force_cancel_all_for_persona(
+        &self,
+        persona_id: &str,
+        pool: &DbPool,
+    ) -> usize {
+        let mut force_count: usize = 0;
+
+        // 1. Collect running execution IDs for this persona
+        let running_ids = self.tracker.lock().await.running_ids(persona_id);
+
+        for exec_id in &running_ids {
+            // Set cancellation flag so any in-flight write sees it
+            if let Some(flag) = self.cancelled_flags.lock().await.get(exec_id) {
+                flag.store(true, Ordering::Release);
+            }
+
+            // Kill child OS process
+            if let Some(pid) = self.child_pids.lock().await.remove(exec_id) {
+                tracing::info!(
+                    execution_id = %exec_id,
+                    pid = pid,
+                    "Force-killing child process during persona deletion",
+                );
+                kill_process(pid);
+            }
+
+            // Abort the tokio task (don't wait for graceful shutdown)
+            if let Some(handle) = self.tasks.lock().await.remove(exec_id) {
+                handle.abort();
+            }
+
+            // Mark as cancelled in DB (best-effort, persona row may be about to be deleted)
+            let _ = exec_repo::update_status(
+                pool,
+                exec_id,
+                UpdateExecutionStatus {
+                    status: ExecutionState::Cancelled,
+                    error_message: Some("Force-cancelled: persona deletion drain timeout".into()),
+                    ..Default::default()
+                },
+            );
+
+            // Clean up tracker slot
+            self.tracker
+                .lock()
+                .await
+                .remove_running(persona_id, exec_id);
+            self.cancelled_flags.lock().await.remove(exec_id);
+
+            force_count += 1;
+        }
+
+        // 2. Drain queued executions
+        let queued_ids = self.tracker.lock().await.queued_ids(persona_id);
+        for exec_id in &queued_ids {
+            self.tracker.lock().await.remove_queued(persona_id, exec_id);
+            self.queued_contexts.lock().await.remove(exec_id);
+            let _ = exec_repo::update_status(
+                pool,
+                exec_id,
+                UpdateExecutionStatus {
+                    status: ExecutionState::Cancelled,
+                    error_message: Some("Force-cancelled: persona deletion drain timeout".into()),
+                    ..Default::default()
+                },
+            );
+            force_count += 1;
+        }
+
+        if force_count > 0 {
+            tracing::warn!(
+                persona_id = %persona_id,
+                force_count,
+                "Force-cancelled remaining executions after deletion drain timeout",
+            );
+        }
+
+        force_count
     }
 
     // =========================================================================
@@ -1401,6 +1499,9 @@ fn drain_and_start_next(
                             },
                         )
                         .await;
+                        emit_event(&app_for_healing, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
+                            "persona_id": persona_id_owned,
+                        }));
                     } else {
                         handle_execution_result(
                             &pool_clone,
@@ -1551,6 +1652,19 @@ async fn handle_execution_result(
         }
     }
 
+    // Guard: if the persona was deleted (or is being deleted) while this
+    // execution was running, skip all post-execution writes that reference
+    // the persona. The rows would either hit FK constraint errors or be
+    // immediately CASCADE-deleted.
+    if persona_repo::get_by_id(pool, persona_id).is_err() {
+        tracing::info!(
+            persona_id,
+            execution_id = %exec_id,
+            "Persona no longer exists; skipping post-execution writes",
+        );
+        return;
+    }
+
     // Trust score refresh -- update graduated autonomy score from execution history
     if let Err(e) = persona_repo::refresh_trust_score(pool, persona_id) {
         tracing::warn!(persona_id, error = %e, "Failed to refresh trust score");
@@ -1570,7 +1684,7 @@ async fn handle_execution_result(
             result.cost_usd,
             result.duration_ms as i64,
             result.model_used.as_deref(),
-            result.tool_steps.as_deref(),
+            result.tool_steps.as_ref().map(|j| serde_json::to_string(&j.0).unwrap_or_default()).as_deref(),
             result.error.as_deref(),
         );
     }
@@ -1651,6 +1765,11 @@ async fn handle_execution_result(
             healing_personas,
         );
     }
+
+    // Signal frontend that persona health data has changed
+    emit_event(app, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
+        "persona_id": persona_id,
+    }));
 
     // Refresh system tray
     #[cfg(feature = "desktop")]
@@ -1758,15 +1877,33 @@ fn evaluate_healing_and_retry(
     let error_str = result.error.as_deref().unwrap_or("");
     let timed_out = error_str.contains("timed out");
 
-    let category = healing::classify_error(error_str, timed_out, result.session_limit_reached);
+    let is_dev_mode = cfg!(debug_assertions)
+        || std::env::var("VITE_DEVELOPMENT").as_deref() == Ok("true");
 
+    let exec_state_str = if result.success { "incomplete" } else { "failed" };
+
+    let category = healing::classify_error(error_str, timed_out, result.session_limit_reached);
     let kb_hint = resolve_service_knowledge_hint(pool, persona_id, &category);
 
     let current_retry_count = exec_repo::get_by_id(pool, exec_id)
         .map(|e| e.retry_count)
         .unwrap_or(0);
 
-    let diagnosis = healing::diagnose(&category, error_str, timeout_ms, consecutive, current_retry_count, kb_hint.as_ref());
+    // --- Decision tree (see healing_orchestrator module docs for precedence) ---
+    let ctx = healing_orchestrator::HealingContext {
+        error: error_str,
+        timed_out,
+        session_limit_reached: result.session_limit_reached,
+        execution_state: exec_state_str,
+        timeout_ms,
+        consecutive_failures: consecutive,
+        retry_count: current_retry_count,
+        kb_hint: kb_hint.as_ref(),
+        has_session_id: result.claude_session_id.is_some(),
+        is_dev_mode,
+    };
+    let strategy = healing_orchestrator::evaluate(&ctx);
+    let diagnosis = strategy.diagnosis().clone();
 
     record_failure_to_knowledge_base(pool, persona_id, &category, &diagnosis);
 
@@ -1786,9 +1923,9 @@ fn evaluate_healing_and_retry(
         Err(_) => return,
     };
 
-    let auto_fixed = healing::is_auto_fixable(&category)
-        && consecutive < 3
-        && current_retry_count < healing::MAX_RETRY_COUNT;
+    // auto_fixed is true only when the strategy wants auto-fix AND the DB
+    // status transition succeeded — prevents orphaned retries on DB failure.
+    let mut auto_fixed = strategy.is_auto_action();
 
     // Fetch persona info for notifications
     let persona_for_heal = persona_repo::get_by_id(pool, persona_id).ok();
@@ -1800,13 +1937,31 @@ fn evaluate_healing_and_retry(
         .map(|p| p.name.clone())
         .unwrap_or_else(|| "Agent".into());
 
-    // Circuit breaker check
-    if consecutive >= CIRCUIT_BREAKER_THRESHOLD {
+    // Circuit breaker: disable persona after too many consecutive failures.
+    if matches!(strategy, healing_orchestrator::HealingStrategy::CircuitBreakerTripped { .. }) {
         check_circuit_breaker(pool, app, exec_id, persona_id, consecutive, &issue.id, &heal_name);
     }
 
-    if auto_fixed {
-        let _ = healing_repo::mark_auto_fix_pending(pool, &issue.id);
+    let auto_fix_persisted = if matches!(strategy, healing_orchestrator::HealingStrategy::RuleBasedRetry { .. }) {
+        match healing_repo::mark_auto_fix_pending(pool, &issue.id) {
+            Ok(()) => true,
+            Err(e) => {
+                tracing::error!(
+                    issue_id = %issue.id,
+                    error = %e,
+                    "mark_auto_fix_pending failed — skipping auto-retry to avoid orphaned retry"
+                );
+                false
+            }
+        }
+    } else {
+        false
+    };
+
+    // If the DB transition failed, demote to non-auto-fixed so downstream
+    // event payloads and strategy execution stay consistent.
+    if !auto_fix_persisted && auto_fixed {
+        auto_fixed = false;
     }
 
     // Notify healing issue
@@ -1820,7 +1975,7 @@ fn evaluate_healing_and_retry(
     );
 
     // Derive retry-specific storytelling fields
-    let (strategy, backoff_seconds) = if auto_fixed {
+    let (strategy_label, backoff_seconds) = if auto_fixed {
         match &diagnosis.action {
             healing::HealingAction::RetryWithBackoff { delay_secs } => {
                 (Some("Exponential backoff".to_string()), Some(*delay_secs))
@@ -1851,37 +2006,32 @@ fn evaluate_healing_and_retry(
             suggested_fix: diagnosis.suggested_fix.clone(),
             persona_name: heal_name,
             description: Some(diagnosis.description.clone()),
-            strategy,
+            strategy: strategy_label,
             backoff_seconds,
             retry_number: if auto_fixed { Some(current_retry_count + 1) } else { None },
             max_retries: Some(healing::MAX_RETRY_COUNT),
         },
     );
 
-    // Spawn retry if auto-fixable and under circuit breaker threshold
-    if auto_fixed && consecutive < CIRCUIT_BREAKER_THRESHOLD {
-        spawn_healing_retry(
-            pool,
-            app,
-            exec_id,
-            persona_id,
-            current_retry_count,
-            &diagnosis,
-            tracker.clone(),
-            child_pids.clone(),
-            cancelled_flags.clone(),
-            log_dir.clone(),
-            circuit_breaker.clone(),
-        );
-    }
-
-    // -- AI Healing (dev-mode only) -----------------------------------
-    // When rule-based healing can't resolve the issue, resume the original
-    // Claude session as a chained execution to diagnose and fix.
-    if cfg!(debug_assertions) || std::env::var("VITE_DEVELOPMENT").as_deref() == Ok("true") {
-        let exec_state_str = if result.success { "incomplete" } else { "failed" };
-        if ai_healing::should_trigger_ai_healing(&category, exec_state_str, consecutive) {
-            // Need a session ID to resume -- if the original CLI never initialized, skip
+    // Execute the chosen strategy.
+    match strategy {
+        healing_orchestrator::HealingStrategy::RuleBasedRetry { .. } if auto_fix_persisted => {
+            spawn_healing_retry(
+                pool,
+                app,
+                exec_id,
+                persona_id,
+                current_retry_count,
+                &diagnosis,
+                tracker.clone(),
+                child_pids.clone(),
+                cancelled_flags.clone(),
+                log_dir.clone(),
+                circuit_breaker.clone(),
+            );
+        }
+        healing_orchestrator::HealingStrategy::AiHealing { .. } => {
+            // AI healing: resume the original Claude session as a chained execution.
             if let Some(ref session_id) = result.claude_session_id {
                 spawn_healing_chain(
                     pool.clone(),
@@ -1898,13 +2048,10 @@ fn evaluate_healing_and_retry(
                     circuit_breaker,
                     healing_personas,
                 );
-            } else {
-                tracing::info!(
-                    "AI healing: no session ID for {}, skipping chain resume",
-                    exec_id,
-                );
             }
         }
+        // CircuitBreakerTripped and CreateIssue — no further action needed.
+        _ => {}
     }
 }
 
@@ -2258,6 +2405,11 @@ fn spawn_healing_chain(
                 },
             );
 
+            // Signal frontend that persona health data has changed
+            emit_event(&app, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
+                "persona_id": persona_id,
+            }));
+
             // 11. Process healing output: parse fixes and apply to DB
             let _ = app.emit(
                 event_name::AI_HEALING_STATUS,
@@ -2544,6 +2696,9 @@ fn spawn_delayed_retry(
                 },
             )
             .await;
+            emit_event(&app, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
+                "persona_id": persona_id,
+            }));
         } else {
             let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
             persist_status_if_not_final(
@@ -2579,6 +2734,10 @@ fn spawn_delayed_retry(
                     cost_usd: Some(result.cost_usd),
                 },
             );
+
+            emit_event(&app, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
+                "persona_id": persona_id,
+            }));
 
             if result.success {
                 tracing::info!(

@@ -2,6 +2,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::repos::core::settings as repo;
+use crate::engine::quality_gate::{self, QualityGateConfig};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -29,4 +30,31 @@ pub fn set_app_setting(
 pub fn delete_app_setting(state: State<'_, Arc<AppState>>, key: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete(&state.db, &key)
+}
+
+#[tauri::command]
+pub fn get_quality_gate_config(
+    state: State<'_, Arc<AppState>>,
+) -> Result<QualityGateConfig, AppError> {
+    require_auth_sync(&state)?;
+    Ok(quality_gate::load(&state.db))
+}
+
+#[tauri::command]
+pub fn set_quality_gate_config(
+    state: State<'_, Arc<AppState>>,
+    config: QualityGateConfig,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    quality_gate::save(&state.db, &config)
+}
+
+#[tauri::command]
+pub fn reset_quality_gate_config(
+    state: State<'_, Arc<AppState>>,
+) -> Result<QualityGateConfig, AppError> {
+    require_auth_sync(&state)?;
+    let default = QualityGateConfig::default();
+    quality_gate::save(&state.db, &default)?;
+    Ok(default)
 }

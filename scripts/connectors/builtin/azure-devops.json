@@ -12,7 +12,8 @@
       "type": "text",
       "required": true,
       "placeholder": "my-org",
-      "helpText": "Your Azure DevOps organization name (from dev.azure.com/{organization})"
+      "helpText": "Your Azure DevOps organization name (from dev.azure.com/{organization})",
+      "sensitive": false
     },
     {
       "key": "pat",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "Generate at dev.azure.com/{org}/_usersSettings/tokens with required scopes"
+      "helpText": "Generate at dev.azure.com/{org}/_usersSettings/tokens with required scopes",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

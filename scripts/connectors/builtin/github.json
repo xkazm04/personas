@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "ghp_...",
-      "helpText": "Generate at github.com/settings/tokens with required scopes"
+      "helpText": "Generate at github.com/settings/tokens with required scopes",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

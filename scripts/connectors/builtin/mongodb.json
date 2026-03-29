@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "mongodb+srv://user:password@cluster.xxxxx.mongodb.net/dbname",
-      "helpText": "MongoDB connection URI from Atlas or your self-hosted instance"
+      "helpText": "MongoDB connection URI from Atlas or your self-hosted instance",
+      "sensitive": true
     },
     {
       "key": "database_name",
@@ -20,7 +21,8 @@
       "type": "text",
       "required": false,
       "placeholder": "mydb",
-      "helpText": "Default database to connect to (can also be in connection string)"
+      "helpText": "Default database to connect to (can also be in connection string)",
+      "sensitive": true
     }
   ],
   "healthcheck_config": null,

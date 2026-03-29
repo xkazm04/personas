@@ -2,8 +2,9 @@ use rusqlite::params;
 
 use crate::db::models::{
     CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, PersonaDesignPattern,
-    PersonaDesignReview,
+    PersonaDesignReview, SmartSearchRow,
 };
+use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -53,6 +54,17 @@ row_mapper!(row_to_pattern -> PersonaDesignPattern {
     last_validated_at, is_active [bool], created_at,
 });
 
+fn row_to_smart(row: &rusqlite::Row) -> rusqlite::Result<SmartSearchRow> {
+    Ok(SmartSearchRow {
+        id: row.get("id")?,
+        name: row.get("test_case_name")?,
+        instruction: row.get("instruction")?,
+        category: row.get("category")?,
+        connectors_used: row.get("connectors_used")?,
+        trigger_types: row.get("trigger_types")?,
+    })
+}
+
 // ============================================================================
 // Design Reviews
 // ============================================================================
@@ -78,6 +90,76 @@ pub fn get_reviews(
             )?;
             let rows = stmt.query_map(params![limit], row_to_review)?;
             rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        }
+    })
+}
+
+/// Lightweight search for smart-search pre-filtering.
+/// Returns only the columns needed for LLM ranking, filtered by keyword LIKE
+/// match on name/instruction/connectors/category. When `keywords` is empty,
+/// returns all templates up to `limit`.
+pub fn search_reviews_compact(
+    pool: &DbPool,
+    keywords: &[String],
+    limit: i64,
+) -> Result<(Vec<SmartSearchRow>, i64), AppError> {
+    timed_query!("design_reviews", "design_reviews::search_reviews_compact", {
+        let conn = pool.get()?;
+
+        // Count total templates (for truncation detection)
+        let total: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM persona_design_reviews",
+            [],
+            |row| row.get(0),
+        )?;
+
+        if keywords.is_empty() {
+            let mut stmt = conn.prepare(
+                "SELECT id, test_case_name, instruction, category, connectors_used, trigger_types \
+                 FROM persona_design_reviews ORDER BY adoption_count DESC, created_at DESC LIMIT ?1",
+            )?;
+            let rows = stmt.query_map(params![limit], row_to_smart)?;
+            let results = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+            Ok((results, total))
+        } else {
+            // Build OR conditions: any keyword matches any of name/instruction/connectors/category
+            let mut conditions = Vec::new();
+            let mut param_values: Vec<String> = Vec::new();
+            let search_cols = ["test_case_name", "instruction", "connectors_used", "COALESCE(category, '')"];
+            let mut idx = 1usize;
+            for kw in keywords {
+                let like = format!("%{}%", escape_like(kw));
+                let col_conds: Vec<String> = search_cols
+                    .iter()
+                    .map(|col| {
+                        let cond = format!("{col} LIKE ?{idx} ESCAPE '\\'");
+                        idx += 1;
+                        param_values.push(like.clone());
+                        cond
+                    })
+                    .collect();
+                conditions.push(format!("({})", col_conds.join(" OR ")));
+            }
+            let where_clause = conditions.join(" OR ");
+            let sql = format!(
+                "SELECT id, test_case_name, instruction, category, connectors_used, trigger_types \
+                 FROM persona_design_reviews WHERE {where_clause} \
+                 ORDER BY adoption_count DESC, created_at DESC LIMIT ?{idx}"
+            );
+
+            let mut stmt = conn.prepare(&sql)?;
+            let mut bound_params: Vec<Box<dyn rusqlite::types::ToSql>> = param_values
+                .iter()
+                .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
+                .collect();
+            bound_params.push(Box::new(limit));
+
+            let rows = stmt.query_map(
+                rusqlite::params_from_iter(bound_params.iter().map(|b| b.as_ref())),
+                row_to_smart,
+            )?;
+            let results = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+            Ok((results, total))
         }
     })
 }
@@ -199,19 +281,20 @@ pub fn delete_stale_seed_templates(
         // If the catalog is empty (shouldn't happen), don't mass-delete
         return Ok(0);
     }
-    let placeholders: Vec<String> = active_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 2)).collect();
-    let sql = format!(
-        "DELETE FROM persona_design_reviews WHERE test_run_id = ?1 AND test_case_id NOT IN ({})",
-        placeholders.join(","),
+    let mut qb = QueryBuilder::new();
+    qb.where_eq("test_run_id", seed_run_id.to_string());
+    // Build NOT IN manually using push_param
+    let placeholders: Vec<String> = active_ids
+        .iter()
+        .map(|id| qb.push_param(id.clone()))
+        .collect();
+    qb.where_raw(
+        |_| format!("test_case_id NOT IN ({})", placeholders.join(",")),
+        vec![],
     );
+    let sql = format!("DELETE FROM persona_design_reviews {}", qb.where_clause());
     let mut stmt = conn.prepare(&sql)?;
-    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::with_capacity(active_ids.len() + 1);
-    params_vec.push(Box::new(seed_run_id.to_string()));
-    for id in active_ids {
-        params_vec.push(Box::new(id.clone()));
-    }
-    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
-    let rows = stmt.execute(param_refs.as_slice())?;
+    let rows = stmt.execute(qb.params_ref().as_slice())?;
     Ok(rows)
     })
 }
@@ -278,60 +361,47 @@ pub fn get_reviews_paginated(
     let conn = pool.get()?;
 
     // Build WHERE clause
-    let mut conditions: Vec<String> = Vec::new();
-    let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    let mut param_idx = 1usize;
+    let mut qb = QueryBuilder::new();
 
     if let Some(q) = search {
         if !q.trim().is_empty() {
             let like = format!("%{}%", escape_like(q.trim()));
-            conditions.push(format!(
-                "(test_case_name LIKE ?{} ESCAPE '\\' OR instruction LIKE ?{} ESCAPE '\\')",
-                param_idx,
-                param_idx + 1
-            ));
-            params_vec.push(Box::new(like.clone()));
-            params_vec.push(Box::new(like));
-            param_idx += 2;
+            qb.where_like_escape_any(&["test_case_name", "instruction"], like);
         }
     }
 
     if let Some(connectors) = connector_filter {
         if !connectors.is_empty() {
-            // Each connector must be present: connectors_used LIKE '%"name"%'
-            let mut connector_conds = Vec::new();
-            for c in connectors {
-                connector_conds.push(format!("connectors_used LIKE ?{param_idx}"));
-                params_vec.push(Box::new(format!("%\"{c}\"%")));
-                param_idx += 1;
-            }
+            // Each connector has its own LIKE pattern: connectors_used LIKE '%"name"%'
             // ANY connector matches (OR logic)
-            conditions.push(format!("({})", connector_conds.join(" OR ")));
+            let param_boxes: Vec<Box<dyn rusqlite::types::ToSql>> = connectors
+                .iter()
+                .map(|c| Box::new(format!("%\"{c}\"%")) as Box<dyn rusqlite::types::ToSql>)
+                .collect();
+            let count = connectors.len();
+            qb.where_raw(
+                |idx| {
+                    let parts: Vec<String> = (0..count)
+                        .map(|i| format!("connectors_used LIKE ?{}", idx + i))
+                        .collect();
+                    format!("({})", parts.join(" OR "))
+                },
+                param_boxes,
+            );
         }
     }
 
     if let Some(categories) = category_filter {
         if !categories.is_empty() {
-            let placeholders: Vec<String> = categories
-                .iter()
-                .enumerate()
-                .map(|(i, _)| format!("?{}", param_idx + i))
-                .collect();
-            conditions.push(format!(
-                "COALESCE(category, 'Other') IN ({})",
-                placeholders.join(",")
-            ));
-            for c in categories {
-                params_vec.push(Box::new(c.clone()));
-            }
-            param_idx += categories.len();
+            qb.where_in("COALESCE(category, 'Other')", categories.to_vec());
         }
     }
 
-    let where_clause = if conditions.is_empty() {
+    let where_clause = qb.where_clause();
+    let where_with_space = if where_clause.is_empty() {
         String::new()
     } else {
-        format!(" WHERE {}", conditions.join(" AND "))
+        format!(" {where_clause}")
     };
 
     // Determine if we need coverage post-filtering
@@ -357,13 +427,11 @@ pub fn get_reviews_paginated(
         };
 
         let select_sql = format!(
-            "SELECT * FROM persona_design_reviews{where_clause} ORDER BY {order_col} {order_dir}",
+            "SELECT * FROM persona_design_reviews{where_with_space} ORDER BY {order_col} {order_dir}",
         );
-        let params_refs: Vec<&dyn rusqlite::types::ToSql> =
-            params_vec.iter().map(|p| p.as_ref()).collect();
 
         let mut stmt = conn.prepare(&select_sql)?;
-        let rows = stmt.query_map(params_refs.as_slice(), row_to_review)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_review)?;
         let all_rows = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
 
         // Post-filter by coverage
@@ -397,10 +465,8 @@ pub fn get_reviews_paginated(
     } else {
         // Fast path: no coverage filter -- use SQL LIMIT/OFFSET
         // Count total
-        let count_sql = format!("SELECT COUNT(*) FROM persona_design_reviews{where_clause}");
-        let params_refs: Vec<&dyn rusqlite::types::ToSql> =
-            params_vec.iter().map(|p| p.as_ref()).collect();
-        let total: i64 = conn.query_row(&count_sql, params_refs.as_slice(), |row| row.get(0))?;
+        let count_sql = format!("SELECT COUNT(*) FROM persona_design_reviews{where_with_space}");
+        let total: i64 = conn.query_row(&count_sql, qb.params_ref().as_slice(), |row| row.get(0))?;
 
         // Sort
         let order_col = match sort_by.unwrap_or("created_at") {
@@ -415,19 +481,14 @@ pub fn get_reviews_paginated(
         };
 
         let offset = page * per_page;
+        let limit_ph = qb.push_param(per_page);
+        let offset_ph = qb.push_param(offset);
         let select_sql = format!(
-            "SELECT * FROM persona_design_reviews{} ORDER BY {} {} LIMIT ?{} OFFSET ?{}",
-            where_clause, order_col, order_dir, param_idx, param_idx + 1,
+            "SELECT * FROM persona_design_reviews{where_with_space} ORDER BY {order_col} {order_dir} LIMIT {limit_ph} OFFSET {offset_ph}",
         );
 
-        let mut all_params = params_vec;
-        all_params.push(Box::new(per_page));
-        all_params.push(Box::new(offset));
-        let all_refs: Vec<&dyn rusqlite::types::ToSql> =
-            all_params.iter().map(|p| p.as_ref()).collect();
-
         let mut stmt = conn.prepare(&select_sql)?;
-        let rows = stmt.query_map(all_refs.as_slice(), row_to_review)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_review)?;
         let items = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
 
         Ok(PaginatedReviewResult { items, total })

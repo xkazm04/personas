@@ -158,6 +158,7 @@ export const continueN8nTransform = (
 // ============================================================================
 
 export type { N8nTransformSession } from '@/lib/bindings/N8nTransformSession';
+export type { N8nSessionResponse } from '@/lib/bindings/N8nSessionResponse';
 
 export const createN8nSession = (
   workflowName: string,
@@ -165,19 +166,19 @@ export const createN8nSession = (
   step: string,
   status: import('@/lib/bindings/SessionStatus').SessionStatus,
 ) =>
-  invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession>(
+  invoke<import('@/lib/bindings/N8nSessionResponse').N8nSessionResponse>(
     "create_n8n_session",
     { workflowName, rawWorkflowJson, step, status },
   );
 
 export const getN8nSession = (id: string) =>
-  invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession>(
+  invoke<import('@/lib/bindings/N8nSessionResponse').N8nSessionResponse>(
     "get_n8n_session",
     { id },
   );
 
 export const listN8nSessions = () =>
-  invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession[]>(
+  invoke<import('@/lib/bindings/N8nSessionResponse').N8nSessionResponse[]>(
     "list_n8n_sessions",
   );
 
@@ -201,7 +202,7 @@ export const updateN8nSession = (
     questionsJson?: string | null;
   },
 ) =>
-  invoke<import('@/lib/bindings/N8nTransformSession').N8nTransformSession>(
+  invoke<import('@/lib/bindings/N8nSessionResponse').N8nSessionResponse>(
     "update_n8n_session",
     { params: { id, ...updates } },
   );

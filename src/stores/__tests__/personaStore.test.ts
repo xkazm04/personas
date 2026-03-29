@@ -39,6 +39,7 @@ describe("personaStore", () => {
       personas: [],
       selectedPersonaId: null,
       selectedPersona: null,
+      detailCache: {},
       isLoading: false,
       error: null,
     });

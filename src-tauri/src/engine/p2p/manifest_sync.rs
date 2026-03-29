@@ -80,18 +80,26 @@ impl ManifestSync {
         }
     }
 
-    /// Compute a content hash of manifest entries for delta comparison.
+    /// Compute a SHA-256 content hash of manifest entries for delta comparison.
     fn compute_manifest_hash(resources: &[ManifestEntry]) -> String {
-        use std::hash::{Hash, Hasher};
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
         for entry in resources {
-            entry.resource_type.hash(&mut hasher);
-            entry.resource_id.hash(&mut hasher);
-            entry.display_name.hash(&mut hasher);
-            entry.access_level.hash(&mut hasher);
-            entry.tags.hash(&mut hasher);
+            hasher.update(entry.resource_type.as_bytes());
+            hasher.update(b"\x00");
+            hasher.update(entry.resource_id.as_bytes());
+            hasher.update(b"\x00");
+            hasher.update(entry.display_name.as_bytes());
+            hasher.update(b"\x00");
+            hasher.update(entry.access_level.as_bytes());
+            hasher.update(b"\x00");
+            for tag in &entry.tags {
+                hasher.update(tag.as_bytes());
+                hasher.update(b"\x1F");
+            }
+            hasher.update(b"\x1E");
         }
-        format!("{:x}", hasher.finish())
+        format!("{:x}", hasher.finalize())
     }
 
     /// Set the app handle for emitting sync progress events.
@@ -159,10 +167,11 @@ impl ManifestSync {
                     )));
                 }
 
-                // Delta check: skip DB writes if manifest content hasn't changed
+                // Delta check + DB write in a single critical section to prevent
+                // the hash cache from diverging from database state.
                 let new_hash = Self::compute_manifest_hash(&resources);
                 {
-                    let hashes = self.manifest_hashes.read().await;
+                    let mut hashes = self.manifest_hashes.write().await;
                     if hashes.get(peer_id).map(|h| h.as_str()) == Some(new_hash.as_str()) {
                         self.counters.sync_successes.fetch_add(1, Ordering::Relaxed);
                         self.counters.total_sync_duration_ms.fetch_add(duration_ms, Ordering::Relaxed);
@@ -175,10 +184,10 @@ impl ManifestSync {
                         );
                         return Ok(());
                     }
-                }
 
-                self.upsert_peer_manifest(peer_id, &resources)?;
-                self.manifest_hashes.write().await.insert(peer_id.to_string(), new_hash);
+                    self.upsert_peer_manifest(peer_id, &resources)?;
+                    hashes.insert(peer_id.to_string(), new_hash);
+                }
 
                 self.counters.sync_successes.fetch_add(1, Ordering::Relaxed);
                 self.counters.total_sync_duration_ms.fetch_add(duration_ms, Ordering::Relaxed);

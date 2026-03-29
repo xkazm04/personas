@@ -128,21 +128,80 @@ fn load_private_key() -> Result<SigningKey, AppError> {
 
 /// Sign arbitrary bytes with the local identity's private key.
 /// Returns base64-encoded Ed25519 signature.
-/// If the keyring entry is missing (OS credential store cleared), regenerates the key.
-pub fn sign_message(message: &[u8]) -> Result<String, AppError> {
-    let signing_key = match load_private_key() {
-        Ok(key) => key,
-        Err(_) => {
-            // Keyring entry lost — regenerate and re-store
-            tracing::warn!("Keyring entry missing, regenerating Ed25519 signing key");
-            let mut csprng = rand::rngs::OsRng;
-            let new_key = SigningKey::generate(&mut csprng);
-            store_private_key(&new_key)?;
-            new_key
+///
+/// Returns `AppError::KeyringLost` if the OS keyring entry is missing or the
+/// stored key no longer matches the database identity.  Callers should surface
+/// this to the user and direct them to call [`reinitialize_identity`] to
+/// explicitly regenerate the keypair (which invalidates all existing trust
+/// relationships).
+pub fn sign_message(pool: &DbPool, message: &[u8]) -> Result<String, AppError> {
+    let signing_key = load_private_key().map_err(|_| {
+        AppError::KeyringLost(
+            "OS keyring entry for identity key is missing. \
+             Run identity re-initialization to generate a new keypair."
+                .into(),
+        )
+    })?;
+
+    // Verify the loaded key matches the identity stored in the database.
+    // A mismatch means the keyring was cleared and a different key was
+    // written back (e.g. by an older code-path or manual intervention).
+    if let Some(db_identity) = identity_repo::get_local_identity(pool)? {
+        let pk_bytes = B64.decode(&db_identity.public_key_b64).map_err(|e| {
+            AppError::Internal(format!("Corrupt public key in DB: {e}"))
+        })?;
+        let db_public_key = VerifyingKey::try_from(pk_bytes.as_slice()).map_err(|e| {
+            AppError::Internal(format!("Invalid Ed25519 public key in DB: {e}"))
+        })?;
+
+        if signing_key.verifying_key() != db_public_key {
+            return Err(AppError::KeyringLost(
+                "Keyring private key does not match the database identity. \
+                 The OS credential store may have been reset. \
+                 Run identity re-initialization to generate a new keypair."
+                    .into(),
+            ));
         }
-    };
+    }
+
     let signature = signing_key.sign(message);
     Ok(B64.encode(signature.to_bytes()))
+}
+
+/// Explicitly regenerate the local identity keypair after a keyring loss.
+///
+/// This generates a fresh Ed25519 keypair, stores the private key in the OS
+/// keyring, and updates the database identity with the new peer_id and
+/// public_key.  **All existing trust relationships will be invalidated** —
+/// peers that imported the old public key must re-import the new identity card.
+///
+/// Returns the new `PeerIdentity`.
+pub fn reinitialize_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
+    tracing::warn!("Re-initializing identity — generating new Ed25519 keypair (old trust relationships will be invalidated)");
+
+    let mut csprng = rand::rngs::OsRng;
+    let signing_key = SigningKey::generate(&mut csprng);
+    let verifying_key = signing_key.verifying_key();
+    let peer_id = public_key_to_peer_id(&verifying_key);
+
+    // Store new private key in OS keyring
+    store_private_key(&signing_key)?;
+
+    // Preserve display_name if an old identity exists, otherwise derive one
+    let display_name = identity_repo::get_local_identity(pool)?
+        .map(|old| old.display_name)
+        .unwrap_or_else(|| format!("User-{}", &peer_id[..8]));
+
+    // Upsert overwrites the old peer_id + public_key
+    let identity = identity_repo::upsert_local_identity(
+        pool,
+        &peer_id,
+        verifying_key.as_bytes(),
+        &display_name,
+    )?;
+
+    tracing::info!(peer_id = %peer_id, "Identity re-initialized with new keypair");
+    Ok(identity)
 }
 
 /// Verify a signature against a known public key.

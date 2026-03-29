@@ -383,10 +383,6 @@ fn perform_rollback(pool: &DbPool, persona_id: &str, version_id: &str) -> Result
         );
     }
 
-    // Look up current production version before the transaction so the read
-    // uses the pool normally (matching the rest of the codebase).
-    let current_prod = metric_repo::get_production_version(pool, persona_id)?;
-
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(crate::error::AppError::Database)?;
     let now = chrono::Utc::now().to_rfc3339();
@@ -399,15 +395,17 @@ fn perform_rollback(pool: &DbPool, persona_id: &str, version_id: &str) -> Result
         rusqlite::params![version.structured_prompt, version.system_prompt, now, persona_id],
     ).map_err(crate::error::AppError::Database)?;
 
-    // Demote current production, promote rollback target
-    if let Some(ref current) = current_prod {
-        if current.id != version_id {
-            tx.execute(
-                "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
-                rusqlite::params!["experimental", current.id],
-            ).map_err(crate::error::AppError::Database)?;
-        }
-    }
+    // Atomically demote ALL current production versions for this persona,
+    // then promote the rollback target.  This avoids the race where
+    // get_production_version() returns None (or a stale row) outside the
+    // transaction, which would skip the demotion and leave two versions
+    // tagged "production".
+    tx.execute(
+        "UPDATE persona_prompt_versions SET tag = 'experimental' \
+         WHERE persona_id = ?1 AND tag = 'production' AND id != ?2",
+        rusqlite::params![persona_id, version_id],
+    ).map_err(crate::error::AppError::Database)?;
+
     tx.execute(
         "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
         rusqlite::params!["production", version_id],

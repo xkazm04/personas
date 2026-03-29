@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{HealingKnowledge, HealingTimelineEvent, PersonaExecution, PersonaHealingIssue};
+use crate::db::models::{HealingAuditEntry, HealingKnowledge, HealingTimelineEvent, PersonaExecution, PersonaHealingIssue};
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as repo;
 use crate::engine::healing;
@@ -156,4 +156,14 @@ pub fn get_healing_timeline(
 ) -> Result<Vec<HealingTimelineEvent>, AppError> {
     require_auth_sync(&state)?;
     healing_timeline::build_healing_timeline(&state.db, &persona_id)
+}
+
+#[tauri::command]
+pub fn list_healing_audit_log(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<HealingAuditEntry>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_audit_log(&state.db, persona_id.as_deref(), limit.unwrap_or(100))
 }

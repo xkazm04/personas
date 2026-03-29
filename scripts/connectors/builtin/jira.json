@@ -12,7 +12,8 @@
       "type": "text",
       "required": true,
       "placeholder": "your-company.atlassian.net",
-      "helpText": "Your Jira Cloud domain (without https://)"
+      "helpText": "Your Jira Cloud domain (without https://)",
+      "sensitive": true
     },
     {
       "key": "email",
@@ -20,7 +21,8 @@
       "type": "text",
       "required": true,
       "placeholder": "you@company.com",
-      "helpText": "The email address for your Atlassian account"
+      "helpText": "The email address for your Atlassian account",
+      "sensitive": true
     },
     {
       "key": "api_token",
@@ -28,7 +30,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From id.atlassian.com/manage-profile/security/api-tokens"
+      "helpText": "From id.atlassian.com/manage-profile/security/api-tokens",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

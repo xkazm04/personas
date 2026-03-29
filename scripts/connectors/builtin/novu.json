@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Novu dashboard -> Settings -> API Keys"
+      "helpText": "From Novu dashboard -> Settings -> API Keys",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {
@@ -34,8 +35,22 @@
     "setup_guide": "1. Sign up at web.novu.co.\n2. Go to Settings -> API Keys.\n3. Copy the API key for your environment.\n4. Paste it here.",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "api_key", "label": "API Key", "type": "credential", "is_default": true},
-      {"id": "mcp", "label": "MCP", "type": "mcp", "package": "@novu/mcp", "transport": "stdio", "suggested_env": {"NOVU_API_KEY": ""}}
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      },
+      {
+        "id": "mcp",
+        "label": "MCP",
+        "type": "mcp",
+        "package": "@novu/mcp",
+        "transport": "stdio",
+        "suggested_env": {
+          "NOVU_API_KEY": ""
+        }
+      }
     ]
   }
 }

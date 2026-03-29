@@ -22,6 +22,8 @@ export default function RealtimeVisualizerPage() {
     isConnected,
     selectedEvent,
     droppedCount,
+    animationMapRef: liveAnimMapRef,
+    animTick: liveAnimTick,
     togglePause,
     selectEvent,
     triggerTestFlow,
@@ -33,6 +35,8 @@ export default function RealtimeVisualizerPage() {
 
   // When replay is active, feed replay events to the visualization
   const rawDisplayEvents = timeline.active ? timeline.replayEvents : liveEvents;
+  const animationMapRef = timeline.active ? timeline.animationMapRef : liveAnimMapRef;
+  const animTick = timeline.active ? timeline.animTick : liveAnimTick;
 
   // -- Event bus filter ----------------------------------------------
   const {
@@ -118,6 +122,8 @@ export default function RealtimeVisualizerPage() {
           events={displayEvents}
           personas={personaInfos}
           droppedCount={timeline.active ? 0 : droppedCount}
+          animationMapRef={animationMapRef}
+          animTick={animTick}
           onSelectEvent={selectEvent}
         />
 

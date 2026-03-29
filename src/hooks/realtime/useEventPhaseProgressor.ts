@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
-import type { AnimationPhase, RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
+import type { AnimationPhase, AnimationMap } from '@/hooks/realtime/useRealtimeEvents';
 
 export const PHASE_DURATIONS: Record<AnimationPhase, number> = {
   entering: 300,
@@ -11,10 +10,11 @@ export const PHASE_DURATIONS: Record<AnimationPhase, number> = {
 
 interface UseEventPhaseProgressorOptions {
   active: boolean;
-  setEvents: Dispatch<SetStateAction<RealtimeEvent[]>>;
+  animationMapRef: React.RefObject<AnimationMap>;
+  onTick: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export function useEventPhaseProgressor({ active, setEvents }: UseEventPhaseProgressorOptions) {
+export function useEventPhaseProgressor({ active, animationMapRef, onTick }: UseEventPhaseProgressorOptions) {
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -32,46 +32,53 @@ export function useEventPhaseProgressor({ active, setEvents }: UseEventPhaseProg
       }
 
       const now = Date.now();
-      setEvents((prev) => {
-        if (prev.length === 0) return prev;
+      const map = animationMapRef.current;
 
-        // Read-only pass: check if any event needs a phase transition
-        let needsUpdate = false;
-        for (const event of prev) {
-          const elapsed = now - event._phaseStartedAt;
-          if (event._phase === 'done') {
-            if (elapsed >= PHASE_DURATIONS.done) { needsUpdate = true; break; }
-          } else if (elapsed > PHASE_DURATIONS[event._phase]) {
-            needsUpdate = true; break;
+      if (map.size === 0) {
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      // Check if any animation needs a phase transition
+      let needsUpdate = false;
+      const toDelete: string[] = [];
+
+      for (const [key, anim] of map) {
+        const elapsed = now - anim.phaseStartedAt;
+        if (anim.phase === 'done') {
+          if (elapsed >= PHASE_DURATIONS.done) {
+            toDelete.push(key);
+            needsUpdate = true;
           }
+        } else if (elapsed > PHASE_DURATIONS[anim.phase]) {
+          needsUpdate = true;
         }
-        if (!needsUpdate) return prev;
+      }
 
-        // Only allocate when something actually changed
-        const updated: RealtimeEvent[] = [];
-        for (const event of prev) {
-          const elapsed = now - event._phaseStartedAt;
+      if (needsUpdate) {
+        // Remove expired 'done' entries
+        for (const key of toDelete) {
+          map.delete(key);
+        }
 
-          if (event._phase === 'done') {
-            if (elapsed < PHASE_DURATIONS.done) updated.push(event);
-            continue;
-          }
-
-          if (elapsed > PHASE_DURATIONS[event._phase]) {
-            const nextPhase: AnimationPhase =
-              event._phase === 'entering'
+        // Advance phases in-place
+        for (const anim of map.values()) {
+          if (anim.phase === 'done') continue;
+          const elapsed = now - anim.phaseStartedAt;
+          if (elapsed > PHASE_DURATIONS[anim.phase]) {
+            anim.phase =
+              anim.phase === 'entering'
                 ? 'on-bus'
-                : event._phase === 'on-bus'
+                : anim.phase === 'on-bus'
                   ? 'delivering'
                   : 'done';
-            updated.push({ ...event, _phase: nextPhase, _phaseStartedAt: now });
-          } else {
-            updated.push(event);
+            anim.phaseStartedAt = now;
           }
         }
 
-        return updated;
-      });
+        // Bump the tick counter to notify React consumers
+        onTick((t) => t + 1);
+      }
 
       rafRef.current = requestAnimationFrame(tick);
     }
@@ -85,5 +92,5 @@ export function useEventPhaseProgressor({ active, setEvents }: UseEventPhaseProg
         rafRef.current = null;
       }
     };
-  }, [active, setEvents]);
+  }, [active, animationMapRef, onTick]);
 }

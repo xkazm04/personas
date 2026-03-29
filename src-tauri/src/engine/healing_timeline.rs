@@ -168,7 +168,15 @@ pub fn run_healing_analysis(
             diagnosis.suggested_fix.as_deref(),
         )? {
             Some(issue) => issue,
-            None => continue,
+            None => {
+                repo::create_audit_entry(
+                    pool, Some(persona_id), Some(&exec.id),
+                    "dedup_skipped", "healing_analysis",
+                    "Healing issue creation skipped (duplicate for this persona+execution)",
+                    Some(&diagnosis.title),
+                );
+                continue;
+            }
         };
 
         created += 1;
@@ -182,15 +190,22 @@ pub fn run_healing_analysis(
             );
 
         if is_auto_fixable {
-            let _ = repo::mark_auto_fix_pending(pool, &issue.id);
-            auto_fixed += 1;
+            if let Err(e) = repo::mark_auto_fix_pending(pool, &issue.id) {
+                tracing::error!(
+                    issue_id = %issue.id,
+                    error = %e,
+                    "mark_auto_fix_pending failed — skipping auto-fix to avoid orphaned retry"
+                );
+            } else {
+                auto_fixed += 1;
 
-            if !retry_scheduled {
-                retries.push(HealingRetryRequest {
-                    execution_id: exec.id.clone(),
-                    diagnosis,
-                });
-                retry_scheduled = true;
+                if !retry_scheduled {
+                    retries.push(HealingRetryRequest {
+                        execution_id: exec.id.clone(),
+                        diagnosis,
+                    });
+                    retry_scheduled = true;
+                }
             }
         }
     }

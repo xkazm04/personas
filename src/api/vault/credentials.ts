@@ -84,13 +84,11 @@ export const listCredentialFields = (credentialId: string) =>
 export const updateCredentialField = (
   credentialId: string,
   fieldKey: string,
-  isSensitive: boolean,
   sessionEncryptedValue: string,
 ) =>
   invoke<boolean>("update_credential_field", {
     credentialId,
     fieldKey,
-    isSensitive,
     sessionEncryptedValue,
   });
 

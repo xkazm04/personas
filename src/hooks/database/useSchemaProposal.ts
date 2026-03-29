@@ -6,6 +6,7 @@ import {
 } from '@/api/vault/database/schemaProposal';
 import { executeDbQuery } from '@/api/vault/database/dbSchema';
 import { clearCacheForCredential } from '@/hooks/database/useTableIntrospection';
+import { splitSqlStatements } from '@/hooks/database/sqlStatementSplitter';
 
 // -- Types ------------------------------------------------------------
 
@@ -155,14 +156,24 @@ export function useSchemaProposal({
     setExecutionResult(null);
 
     try {
-      // Split SQL into individual statements and execute sequentially
-      const statements = sql
-        .split(';')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+      const statements = splitSqlStatements(sql);
 
-      for (const stmt of statements) {
-        await executeDbQuery(credentialId, stmt, undefined, true);
+      // Wrap in a transaction so a mid-sequence failure rolls back cleanly
+      await executeDbQuery(credentialId, 'BEGIN', undefined, true);
+
+      try {
+        for (const stmt of statements) {
+          await executeDbQuery(credentialId, stmt, undefined, true);
+        }
+        await executeDbQuery(credentialId, 'COMMIT', undefined, true);
+      } catch (stmtErr) {
+        // Roll back the partial changes
+        try {
+          await executeDbQuery(credentialId, 'ROLLBACK', undefined, true);
+        } catch {
+          // best-effort rollback
+        }
+        throw stmtErr;
       }
 
       clearCacheForCredential(credentialId);

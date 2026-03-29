@@ -14,22 +14,11 @@ export const STAGE_COLORS: Record<PipelineStage, { bar: string; text: string; bg
 
 // Tool step sub-span type
 
-export interface ToolCallStep {
-  step_index: number;
-  tool_name: string;
-  input_preview: string;
-  output_preview: string;
-  started_at_ms: number;
-  ended_at_ms?: number;
-  duration_ms?: number;
-}
+import type { ToolCallStep } from '@/lib/bindings/ToolCallStep';
 
-export function parseToolSteps(raw: string | null): ToolCallStep[] {
+export type { ToolCallStep };
+
+export function parseToolSteps(raw: ToolCallStep[] | null): ToolCallStep[] {
   if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch { // intentional: non-critical -- JSON parse fallback
-    return [];
-  }
+  return Array.isArray(raw) ? raw : [];
 }

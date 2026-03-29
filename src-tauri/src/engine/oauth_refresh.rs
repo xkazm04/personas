@@ -14,6 +14,13 @@ use crate::error::AppError;
 use serde::Serialize;
 use tauri::AppHandle;
 
+use crate::db::models::CredentialLedger;
+
+/// Parse a credential's metadata into a typed ledger.
+fn parse_ledger(cred: &crate::db::models::PersonaCredential) -> CredentialLedger {
+    CredentialLedger::parse(cred.metadata.as_deref())
+}
+
 /// Parse a credential's JSON metadata, returning `None` if absent or invalid.
 fn parse_credential_metadata(
     cred: &crate::db::models::PersonaCredential,
@@ -165,22 +172,15 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
 
         approaching_expiry += 1;
 
-        // Check backoff: skip credentials still in backoff from a previous failure
-        let backoff_until = meta
-            .as_ref()
-            .and_then(|m| m.get("oauth_refresh_backoff_until"))
-            .and_then(|v| v.as_str())
-            .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok());
-
-        if let Some(until) = backoff_until {
-            if until > now {
-                tracing::debug!(
-                    credential_id = %cred.id,
-                    backoff_until = %until,
-                    "Skipping OAuth refresh — credential is in backoff"
-                );
-                continue;
-            }
+        // Check backoff via typed ledger
+        let ledger = parse_ledger(cred);
+        if ledger.is_in_refresh_backoff() {
+            tracing::debug!(
+                credential_id = %cred.id,
+                backoff_until = ?ledger.oauth_refresh_backoff_until,
+                "Skipping OAuth refresh — credential is in backoff"
+            );
+            continue;
         }
 
         tracing::info!(
@@ -254,19 +254,15 @@ pub async fn refresh_single_credential(
         return Err(AppError::Validation("No refresh_token found".into()));
     }
 
-    // Extract the previous token's issued-at time from metadata (for actual lifetime calc)
-    let meta = parse_credential_metadata(cred);
+    // Extract the previous token's issued-at time from typed ledger (for actual lifetime calc)
+    let ledger = parse_ledger(cred);
 
-    let previous_refresh_at = meta
-        .as_ref()
-        .and_then(|m| m.get("oauth_last_refresh_at"))
-        .and_then(|v| v.as_str())
+    let previous_refresh_at = ledger
+        .oauth_last_refresh_at
+        .as_deref()
         .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok());
 
-    let previous_predicted_secs = meta
-        .as_ref()
-        .and_then(|m| m.get("oauth_predicted_lifetime_secs"))
-        .and_then(|v| v.as_i64());
+    let previous_predicted_secs = ledger.oauth_predicted_lifetime_secs;
 
     // Get connector metadata for strategy resolution
     let connector_meta = get_connector_metadata(pool, &cred.service_type);
@@ -310,31 +306,57 @@ pub async fn refresh_single_credential(
         AppError::Internal("Strategy returned no token after refresh".into())
     })?;
 
-    // Persist the fresh access_token
-    cred_repo::upsert_field(pool, &cred.id, "access_token", &resolved.token, true)?;
-
-    // Persist oauth_token_expires_at alongside the access_token in decrypted fields.
-    // This allows resolve_oauth_token to detect expired tokens even when callers hold
-    // stale field snapshots loaded before a background refresh updated the DB.
+    // Compute values needed for persistence before opening the transaction.
     let expiry_secs_for_field = resolved.expires_in_secs.unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
     let expires_at_rfc3339 = (chrono::Utc::now() + chrono::Duration::seconds(expiry_secs_for_field)).to_rfc3339();
-    cred_repo::upsert_field(pool, &cred.id, "oauth_token_expires_at", &expires_at_rfc3339, false)?;
 
-    // Persist rotated refresh_token if the provider returned one (RFC 6749 §6).
-    // This prevents credential death when providers enforce refresh token rotation
-    // and ensures exfiltrated old tokens are invalidated server-side.
-    if let Some(ref new_refresh_token) = resolved.refresh_token {
-        cred_repo::upsert_field(pool, &cred.id, "refresh_token", new_refresh_token, true)?;
+    // Compute lifetime metrics
+    let used_fallback = resolved.expires_in_secs.is_none();
+    let expiry_secs = resolved.expires_in_secs.unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
+
+    // Build the metadata patch using the typed ledger
+    let current_count = ledger.oauth_refresh_count.unwrap_or(0);
+    let new_expiry = (chrono::Utc::now() + chrono::Duration::seconds(expiry_secs)).to_rfc3339();
+
+    // Build a JSON patch from the ledger fields for the atomic persist block
+    let mut patch = serde_json::Map::new();
+    patch.insert("oauth_refresh_count".to_string(), serde_json::json!(current_count + 1));
+    patch.insert("oauth_last_refresh_at".to_string(), serde_json::json!(chrono::Utc::now().to_rfc3339()));
+    patch.insert("oauth_predicted_lifetime_secs".to_string(), serde_json::json!(expiry_secs));
+    patch.insert("oauth_token_expires_at".to_string(), serde_json::json!(new_expiry));
+    // Clear any previous revocation flag on successful refresh
+    patch.insert("needs_reauth".to_string(), serde_json::Value::Null);
+    patch.insert("needs_reauth_at".to_string(), serde_json::Value::Null);
+
+    // ---- Atomic persist block ------------------------------------------------
+    // Wrap access_token, oauth_token_expires_at, rotated refresh_token, AND the
+    // metadata patch in a single SQLite transaction.  This prevents credential
+    // death when a crash occurs between persisting the new access_token and the
+    // rotated refresh_token (the old one is already revoked server-side).
+    {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
+
+        cred_repo::upsert_field_on_conn(&tx, &cred.id, "access_token", &resolved.token, true)?;
+        cred_repo::upsert_field_on_conn(&tx, &cred.id, "oauth_token_expires_at", &expires_at_rfc3339, false)?;
+
+        if let Some(ref new_refresh_token) = resolved.refresh_token {
+            cred_repo::upsert_field_on_conn(&tx, &cred.id, "refresh_token", new_refresh_token, true)?;
+        }
+
+        cred_repo::patch_metadata_on_conn(&tx, &cred.id, patch)?;
+
+        tx.commit()?;
+    }
+    // ---- End atomic persist block --------------------------------------------
+
+    if let Some(ref _new_refresh_token) = resolved.refresh_token {
         tracing::info!(
             credential_id = %cred.id,
             service_type = %cred.service_type,
             "Rotated refresh_token persisted"
         );
     }
-
-    // Compute lifetime metrics
-    let used_fallback = resolved.expires_in_secs.is_none();
-    let expiry_secs = resolved.expires_in_secs.unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
 
     // Actual lifetime: how long the previous token lived before we replaced it
     let actual_lifetime_secs = previous_refresh_at.map(|prev| {
@@ -381,44 +403,6 @@ pub async fn refresh_single_credential(
             );
         }
     }
-
-    // Update metadata with refresh stats
-    let now = chrono::Utc::now().to_rfc3339();
-    let mut patch = serde_json::Map::new();
-
-    let current_count = cred
-        .metadata
-        .as_deref()
-        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-        .and_then(|m| m.get("oauth_refresh_count").and_then(|v| v.as_u64()))
-        .unwrap_or(0);
-
-    patch.insert(
-        "oauth_refresh_count".to_string(),
-        serde_json::json!(current_count + 1),
-    );
-    patch.insert(
-        "oauth_last_refresh_at".to_string(),
-        serde_json::json!(now),
-    );
-    // Store the predicted lifetime so the next refresh can compute drift
-    patch.insert(
-        "oauth_predicted_lifetime_secs".to_string(),
-        serde_json::json!(expiry_secs),
-    );
-
-    // Use the provider-reported expiry if available, otherwise fall back
-    let new_expiry = (chrono::Utc::now() + chrono::Duration::seconds(expiry_secs)).to_rfc3339();
-    patch.insert(
-        "oauth_token_expires_at".to_string(),
-        serde_json::json!(new_expiry),
-    );
-
-    // Clear any previous revocation flag on successful refresh
-    patch.insert("needs_reauth".to_string(), serde_json::Value::Null);
-    patch.insert("needs_reauth_at".to_string(), serde_json::Value::Null);
-
-    cred_repo::patch_metadata_atomic(pool, &cred.id, patch)?;
 
     // Audit log
     let rt_rotated = resolved.refresh_token.is_some();
@@ -479,11 +463,9 @@ fn set_refresh_backoff(pool: &DbPool, credential_id: &str) {
 
 /// Clear the backoff fields after a successful OAuth refresh.
 fn clear_refresh_backoff(pool: &DbPool, credential_id: &str) {
-    let mut patch = serde_json::Map::new();
-    patch.insert("oauth_refresh_backoff_until".to_string(), serde_json::Value::Null);
-    patch.insert("oauth_refresh_fail_count".to_string(), serde_json::Value::Null);
-
-    if let Err(e) = cred_repo::patch_metadata_atomic(pool, credential_id, patch) {
+    if let Err(e) = cred_repo::update_ledger(pool, credential_id, |l| {
+        l.clear_refresh_backoff();
+    }) {
         tracing::warn!(credential_id = %credential_id, error = %e, "Failed to clear OAuth refresh backoff");
     }
 }
@@ -502,13 +484,9 @@ pub struct CredentialReauthRequiredEvent {
 /// Mark a credential's metadata with `needs_reauth: true` so the frontend can
 /// surface it even without a live event (e.g. on next app launch).
 fn mark_needs_reauth(pool: &DbPool, credential_id: &str) {
-    let mut patch = serde_json::Map::new();
-    patch.insert("needs_reauth".to_string(), serde_json::json!(true));
-    patch.insert(
-        "needs_reauth_at".to_string(),
-        serde_json::json!(chrono::Utc::now().to_rfc3339()),
-    );
-    if let Err(e) = cred_repo::patch_metadata_atomic(pool, credential_id, patch) {
+    if let Err(e) = cred_repo::update_ledger(pool, credential_id, |l| {
+        l.mark_needs_reauth();
+    }) {
         tracing::warn!(credential_id = %credential_id, error = %e, "Failed to mark credential as needs_reauth");
     }
 }

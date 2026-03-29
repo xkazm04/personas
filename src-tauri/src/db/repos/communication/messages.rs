@@ -1,6 +1,7 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{CreateMessageInput, MessageThreadSummary, PersonaMessage, PersonaMessageDelivery};
+use crate::db::query_builder::QueryBuilder;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -193,47 +194,38 @@ pub fn get_thread_summaries(
     let conn = pool.get()?;
 
     // Get distinct threads ordered by latest activity
-    let (sql, params_vec): (String, Vec<Box<dyn rusqlite::ToSql>>) = if let Some(pid) = persona_id
-    {
-        (
-            "SELECT thread_id,
+    let mut qb = QueryBuilder::new();
+    qb.where_raw(|_| "thread_id IS NOT NULL".to_string(), vec![]);
+    if let Some(pid) = persona_id {
+        qb.where_eq("persona_id", pid.to_string());
+    }
+    qb.order_by("last_at", "DESC");
+    qb.limit(limit);
+    qb.offset(offset);
+
+    let base = "SELECT thread_id,
                     MIN(created_at) AS first_at,
                     MAX(created_at) AS last_at,
                     COUNT(*) AS cnt
-             FROM persona_messages
-             WHERE thread_id IS NOT NULL AND persona_id = ?1
-             GROUP BY thread_id
-             ORDER BY last_at DESC
-             LIMIT ?2 OFFSET ?3"
-                .to_string(),
-            vec![
-                Box::new(pid.to_string()) as Box<dyn rusqlite::ToSql>,
-                Box::new(limit),
-                Box::new(offset),
-            ],
-        )
-    } else {
-        (
-            "SELECT thread_id,
-                    MIN(created_at) AS first_at,
-                    MAX(created_at) AS last_at,
-                    COUNT(*) AS cnt
-             FROM persona_messages
-             WHERE thread_id IS NOT NULL
-             GROUP BY thread_id
-             ORDER BY last_at DESC
-             LIMIT ?1 OFFSET ?2"
-                .to_string(),
-            vec![
-                Box::new(limit) as Box<dyn rusqlite::ToSql>,
-                Box::new(offset),
-            ],
-        )
-    };
+             FROM persona_messages";
+    // We need GROUP BY between WHERE and ORDER BY, so build manually
+    let sql = format!(
+        "{base} {} GROUP BY thread_id {}",
+        qb.where_clause(),
+        {
+            // Extract ORDER BY + LIMIT + OFFSET from build_clauses minus WHERE
+            let clauses = qb.build_clauses();
+            let wc = qb.where_clause();
+            if wc.is_empty() {
+                clauses
+            } else {
+                clauses.strip_prefix(&wc).unwrap_or(&clauses).trim().to_string()
+            }
+        },
+    );
 
     let mut stmt = conn.prepare(&sql)?;
-    let param_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
-    let thread_rows = stmt.query_map(param_refs.as_slice(), |row| {
+    let thread_rows = stmt.query_map(qb.params_ref().as_slice(), |row| {
         Ok((
             row.get::<_, String>(0)?,
             row.get::<_, String>(1)?,      // first_at

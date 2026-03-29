@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "pk_...",
-      "helpText": "From ClickUp Settings -> Apps -> API Token"
+      "helpText": "From ClickUp Settings -> Apps -> API Token",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

@@ -12,6 +12,8 @@ use crate::db::repos::communication::events as event_repo;
 use crate::engine::chain;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged};
+use crate::validation::contract::check;
+use crate::validation::trigger as tv;
 use crate::AppState;
 
 #[tauri::command]
@@ -31,39 +33,12 @@ pub fn list_triggers(
     repo::get_by_persona_id(&state.db, &persona_id)
 }
 
-/// Validate that a config string, if non-empty, is valid JSON.
-fn validate_config_json(config: Option<&str>) -> Result<(), AppError> {
-    if let Some(c) = config {
-        let trimmed = c.trim();
-        if !trimmed.is_empty() {
-            serde_json::from_str::<serde_json::Value>(trimmed).map_err(|e| {
-                AppError::Validation(format!("Invalid config JSON: {e}"))
-            })?;
-        }
-    }
-    Ok(())
-}
-
-/// If the trigger is a polling type, validate that any configured URL does not
-/// point to a private/internal address (SSRF protection).
-fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
-    if trigger_type != "polling" {
-        return Ok(());
-    }
-    let url = config
-        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
-        .and_then(|v| {
-            v.get("url")
-                .or(v.get("endpoint"))
-                .and_then(|u| u.as_str().map(String::from))
-        });
-    if let Some(u) = url {
-        if !u.is_empty() {
-            crate::engine::url_safety::validate_url_safety(&u)
-                .map_err(|reason| AppError::Validation(format!("Polling URL blocked: {reason}")))?;
-        }
-    }
-    Ok(())
+/// Validate trigger creation input using the validation contract layer.
+fn validate_trigger_input(trigger_type: &str, config: Option<&str>) -> Result<(), AppError> {
+    let mut errors = Vec::new();
+    errors.extend(tv::validate_config_json(config));
+    errors.extend(tv::validate_polling_url(trigger_type, config));
+    check(errors)
 }
 
 /// If the trigger is a chain type, validate the condition type and extract
@@ -108,8 +83,7 @@ pub fn create_trigger(
     input: CreateTriggerInput,
 ) -> Result<PersonaTrigger, AppError> {
     require_auth_sync(&state)?;
-    validate_config_json(input.config.as_deref())?;
-    validate_polling_url(&input.trigger_type, input.config.as_deref())?;
+    validate_trigger_input(&input.trigger_type, input.config.as_deref())?;
     validate_chain_cycle(
         &state.db,
         &input.trigger_type,
@@ -128,7 +102,7 @@ pub fn update_trigger(
     input: UpdateTriggerInput,
 ) -> Result<PersonaTrigger, AppError> {
     require_auth_sync(&state)?;
-    validate_config_json(input.config.as_deref())?;
+    check(tv::validate_config_json(input.config.as_deref()))?;
     // Verify ownership: the trigger must belong to the specified persona
     let existing = repo::get_by_id(&state.db, &id)?;
     if existing.persona_id != persona_id {
@@ -142,7 +116,7 @@ pub fn update_trigger(
     if input.trigger_type.is_some() || input.config.is_some() {
         let trigger_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
         let config = input.config.as_deref().or(existing.config.as_deref());
-        validate_polling_url(trigger_type, config)?;
+        check(tv::validate_polling_url(trigger_type, config))?;
         validate_chain_cycle(&state.db, trigger_type, config, &existing.persona_id, Some(&id))?;
     }
     repo::update(&state.db, &id, input)
@@ -1190,6 +1164,15 @@ pub fn seed_mock_cron_agent(
 ) -> Result<CronAgent, AppError> {
     require_auth_sync(&state)?;
 
+    #[cfg(not(debug_assertions))]
+    {
+        return Err(crate::error::AppError::Validation(
+            "seed_mock_cron_agent is only available in debug builds".into(),
+        ));
+    }
+
+    #[cfg(debug_assertions)]
+    {
     let personas = crate::db::repos::core::personas::get_all(&state.db)?;
     let t = chrono::Utc::now().timestamp_millis() as usize;
     let idx = t % std::cmp::max(personas.len(), 1);
@@ -1211,14 +1194,16 @@ pub fn seed_mock_cron_agent(
     let next = (now + chrono::Duration::minutes(((t % 60) + 5) as i64)).to_rfc3339();
 
     let conn = state.db.get()?;
-    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
-    conn.execute(
-        "INSERT INTO persona_triggers
-         (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
-         VALUES (?1, ?2, 'schedule', ?3, 1, ?4, ?5, ?4, ?4)",
-        rusqlite::params![trigger_id, p_id, config, now_str, next],
-    )?;
-    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+    let result = {
+        let _fk_guard = crate::db::FkDisabledGuard::new(&conn)?;
+        conn.execute(
+            "INSERT INTO persona_triggers
+             (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
+             VALUES (?1, ?2, 'schedule', ?3, 1, ?4, ?5, ?4, ?4)",
+            rusqlite::params![trigger_id, p_id, config, now_str, next],
+        )
+    }; // _fk_guard dropped here → FK restored
+    result?;
 
     let description = cron_to_human(cron_expr);
 
@@ -1239,6 +1224,7 @@ pub fn seed_mock_cron_agent(
         recent_executions: 0,
         recent_failures: 0,
     })
+    }
 }
 
 // =============================================================================
@@ -1467,7 +1453,7 @@ pub fn get_composite_partial_matches(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<crate::engine::composite::PartialMatchResult>, AppError> {
     require_auth_sync(&state)?;
-    Ok(crate::engine::composite::get_partial_matches())
+    Ok(state.composite_state.get_partial_matches())
 }
 
 /// Returns the partial-match snapshot for a single composite trigger.
@@ -1477,5 +1463,5 @@ pub fn get_composite_partial_match(
     trigger_id: String,
 ) -> Result<Option<crate::engine::composite::PartialMatchResult>, AppError> {
     require_auth_sync(&state)?;
-    Ok(crate::engine::composite::get_partial_match_for(&trigger_id))
+    Ok(state.composite_state.get_partial_match_for(&trigger_id))
 }

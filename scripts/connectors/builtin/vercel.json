@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Vercel -> Settings -> Tokens -> Create"
+      "helpText": "From Vercel -> Settings -> Tokens -> Create",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

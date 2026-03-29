@@ -159,6 +159,16 @@ pub struct BuildSession {
     pub updated_at: String,
 }
 
+impl BuildSession {
+    /// Parse the JSON-encoded `agent_ir` string into a typed `AgentIr` struct.
+    /// Returns `None` if the field is absent or unparseable.
+    pub fn parse_agent_ir(&self) -> Option<super::agent_ir::AgentIr> {
+        self.agent_ir
+            .as_deref()
+            .and_then(|s| serde_json::from_str(s).ok())
+    }
+}
+
 // ============================================================================
 // UserAnswer -- input from frontend to resume a paused session
 // ============================================================================

@@ -9,13 +9,13 @@ import { EventBusOverlays } from './rendering/EventBusOverlays';
 
 export type { DiscoveredSource } from '../libs/visualizationHelpers';
 
-export default function EventBusVisualization({ events, personas, droppedCount = 0, onSelectEvent }: Props) {
+export default function EventBusVisualization({ events, personas, droppedCount = 0, animationMapRef, animTick, onSelectEvent }: Props) {
   const uid = useId();
   const {
     discoveredSourcesRef,
     toolNodes,
     personaNodes,
-    activeEvents,
+    animatedEvents,
     seenTypes,
     inFlightCount,
     getSourcePos,
@@ -23,7 +23,7 @@ export default function EventBusVisualization({ events, personas, droppedCount =
     processingSet,
     returnFlows,
     hasTraffic,
-  } = useEventBusState(events, personas);
+  } = useEventBusState(events, personas, animationMapRef, animTick);
 
   return (
     <div className="w-full h-full relative min-h-[280px]">
@@ -32,7 +32,7 @@ export default function EventBusVisualization({ events, personas, droppedCount =
         <ToolNodeGroup nodes={toolNodes} />
         <PersonaNodeGroup nodes={personaNodes} processingSet={processingSet} />
         <InboundParticles
-          activeEvents={activeEvents}
+          activeEvents={animatedEvents}
           uid={uid}
           getSourcePos={getSourcePos}
           getTargetPos={getTargetPos}

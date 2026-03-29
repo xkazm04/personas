@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Cloudflare Dashboard -> My Profile -> API Tokens -> Create Token"
+      "helpText": "From Cloudflare Dashboard -> My Profile -> API Tokens -> Create Token",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

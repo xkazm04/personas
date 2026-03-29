@@ -4,12 +4,14 @@ use std::time::Instant;
 use rusqlite::{params, Row};
 use tracing::instrument;
 
-use crate::db::models::{CreatePersonaInput, Persona, PersonaHealth, PersonaSummary, UpdatePersonaInput};
+use crate::db::models::{CreatePersonaInput, HealthStatus, Persona, PersonaHealth, PersonaSummary, PersonaTrustLevel, PersonaTrustOrigin, UpdatePersonaInput};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
 use crate::engine::crypto::CryptoError;
 use crate::error::AppError;
+use crate::validation::contract::check as validate_check;
+use crate::validation::persona as pv;
 
 /// Session-scoped counter of decryption failures. Helps detect systemic key
 /// rotation issues before users report broken model configs.
@@ -166,146 +168,40 @@ fn encrypt_update_profile(profile: &Option<Option<String>>) -> Result<Option<Opt
 }
 
 // -- Shared validation helpers ------------------------------------------------
-
-const MAX_NAME_CHARS: usize = 200;
+// All business rules live in crate::validation::persona. These thin wrappers
+// keep the repo layer as a safety net while the command layer is the primary
+// validation callsite.
 
 fn validate_name(name: &str) -> Result<(), AppError> {
-    if name.trim().is_empty() {
-        return Err(AppError::Validation("Name cannot be empty".into()));
-    }
-    if name.chars().count() > MAX_NAME_CHARS {
-        return Err(AppError::Validation(format!(
-            "Name exceeds maximum length of {MAX_NAME_CHARS} characters"
-        )));
-    }
-    reject_dangerous_content(name, "Name")?;
-    Ok(())
+    validate_check(pv::validate_name(name))
 }
 
-/// 50 KB limit -- generous for prompts, prevents economic abuse via oversized payloads.
-const MAX_PROMPT_BYTES: usize = 50 * 1024;
-
 fn validate_system_prompt(prompt: &str) -> Result<(), AppError> {
-    if prompt.trim().is_empty() {
-        return Err(AppError::Validation("System prompt cannot be empty".into()));
-    }
-    if prompt.len() > MAX_PROMPT_BYTES {
-        return Err(AppError::Validation(format!(
-            "System prompt exceeds maximum size of {} KB",
-            MAX_PROMPT_BYTES / 1024
-        )));
-    }
-    reject_dangerous_content(prompt, "System prompt")?;
-    Ok(())
+    validate_check(pv::validate_system_prompt(prompt))
 }
 
 fn validate_structured_prompt(prompt: &str) -> Result<(), AppError> {
-    if prompt.len() > MAX_PROMPT_BYTES {
-        return Err(AppError::Validation(format!(
-            "Structured prompt exceeds maximum size of {} KB",
-            MAX_PROMPT_BYTES / 1024
-        )));
-    }
-    reject_dangerous_content(prompt, "Structured prompt")?;
-    // Must be valid JSON
-    if serde_json::from_str::<serde_json::Value>(prompt).is_err() {
-        return Err(AppError::Validation(
-            "Structured prompt must be valid JSON".into(),
-        ));
-    }
-    Ok(())
-}
-
-/// Reject null bytes and C0 control characters (except \t, \n, \r) that have
-/// no legitimate purpose in prompts and could be used to smuggle payloads.
-fn reject_dangerous_content(text: &str, field_name: &str) -> Result<(), AppError> {
-    for ch in text.chars() {
-        if ch == '\0' {
-            return Err(AppError::Validation(format!(
-                "{field_name} must not contain null bytes"
-            )));
-        }
-        // Block C0 control chars U+0001..U+001F except tab, newline, carriage return
-        if ch.is_control() && ch != '\t' && ch != '\n' && ch != '\r' {
-            return Err(AppError::Validation(format!(
-                "{field_name} contains invalid control characters"
-            )));
-        }
-    }
-    Ok(())
+    validate_check(pv::validate_structured_prompt(prompt))
 }
 
 fn validate_max_concurrent(v: i32) -> Result<(), AppError> {
-    if v < 1 || v > 50 {
-        return Err(AppError::Validation("max_concurrent must be between 1 and 50".into()));
-    }
-    Ok(())
+    validate_check(pv::validate_max_concurrent(v))
 }
 
 fn validate_timeout_ms(v: i32) -> Result<(), AppError> {
-    if v < 1000 {
-        return Err(AppError::Validation("timeout_ms must be >= 1000".into()));
-    }
-    let ceiling = crate::engine::ENGINE_MAX_EXECUTION_MS;
-    if v > ceiling {
-        return Err(AppError::Validation(format!(
-            "timeout_ms must be <= {} (engine ceiling is {} minutes)",
-            ceiling,
-            ceiling / 60_000,
-        )));
-    }
-    Ok(())
+    validate_check(pv::validate_timeout_ms(v))
 }
 
 fn validate_max_budget_usd(v: f64) -> Result<(), AppError> {
-    if v.is_nan() || v.is_infinite() {
-        return Err(AppError::Validation("max_budget_usd must be a finite number".into()));
-    }
-    if v < 0.0 {
-        return Err(AppError::Validation("max_budget_usd must be >= 0".into()));
-    }
-    Ok(())
+    validate_check(pv::validate_max_budget_usd(v))
 }
 
 fn validate_max_turns(v: i32) -> Result<(), AppError> {
-    if v < 1 {
-        return Err(AppError::Validation("max_turns must be >= 1".into()));
-    }
-    Ok(())
+    validate_check(pv::validate_max_turns(v))
 }
 
 fn validate_notification_channels(channels_json: &str) -> Result<(), AppError> {
-    let channels: Vec<serde_json::Value> = serde_json::from_str(channels_json)
-        .map_err(|_| AppError::Validation("notification_channels must be a valid JSON array".into()))?;
-
-    for ch in &channels {
-        let enabled = ch.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-        if !enabled {
-            continue;
-        }
-        let ch_type = ch.get("type").and_then(|v| v.as_str()).unwrap_or("");
-        let config = ch.get("config");
-        let get_field = |key: &str| -> bool {
-            config
-                .and_then(|c| c.get(key))
-                .and_then(|v| v.as_str())
-                .map(|s| !s.trim().is_empty())
-                .unwrap_or(false)
-        };
-        match ch_type {
-            "slack" if !get_field("channel") => {
-                return Err(AppError::Validation("Slack channel name is required".into()));
-            }
-            "telegram" if !get_field("chat_id") => {
-                return Err(AppError::Validation("Telegram chat ID is required".into()));
-            }
-            "email" if !get_field("to") => {
-                return Err(AppError::Validation("Email 'to' address is required".into()));
-            }
-            _ => {}
-        }
-    }
-    Ok(())
+    validate_check(pv::validate_notification_channels(channels_json))
 }
 
 // -- Notification channel secret encryption helpers --------------------------
@@ -455,8 +351,12 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         design_context: row.get("design_context")?,
         group_id: row.get("group_id")?,
         source_review_id: row.get::<_, Option<String>>("source_review_id").unwrap_or(None),
-        trust_level: row.get::<_, Option<String>>("trust_level")?.unwrap_or_else(|| "verified".to_string()),
-        trust_origin: row.get::<_, Option<String>>("trust_origin")?.unwrap_or_else(|| "builtin".to_string()),
+        trust_level: row.get::<_, Option<String>>("trust_level")?
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(PersonaTrustLevel::Verified),
+        trust_origin: row.get::<_, Option<String>>("trust_origin")?
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(PersonaTrustOrigin::Builtin),
         trust_verified_at: row.get::<_, Option<String>>("trust_verified_at").unwrap_or(None),
         trust_score: row.get::<_, Option<f64>>("trust_score")?.unwrap_or(0.0),
         parameters: row.get::<_, Option<String>>("parameters").unwrap_or(None),
@@ -819,18 +719,17 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
         };
 
         let status = if total_recent == 0 {
-            "dormant"
+            HealthStatus::Dormant
         } else {
             let fail_ratio = fail_count / total_recent as f64;
             if fail_ratio == 0.0 {
-                "healthy"
+                HealthStatus::Healthy
             } else if fail_ratio >= HEALTH_FAILING_RATIO {
-                "failing"
+                HealthStatus::Failing
             } else {
-                "degraded"
+                HealthStatus::Degraded
             }
-        }
-        .to_string();
+        };
 
         let runs_today = today_map.get(&persona_id).copied().unwrap_or(0);
 

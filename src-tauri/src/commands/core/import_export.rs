@@ -248,7 +248,7 @@ pub async fn import_persona(
         validation::require_max_len(&format!("memory[{i}].title"), &m.title, MAX_NAME_LEN)?;
         validation::require_max_len(&format!("memory[{i}].content"), &m.content, MAX_MEMORY_CONTENT_LEN)?;
         validation::require_max_len(&format!("memory[{i}].category"), &m.category, MAX_SHORT_FIELD_LEN)?;
-        validation::require_optional_max_len(&format!("memory[{i}].tags"), &m.tags, MAX_SHORT_FIELD_LEN)?;
+        validation::require_optional_max_len(&format!("memory[{i}].tags"), &m.tags.as_ref().map(|j| serde_json::to_string(&j.0).unwrap_or_default()), MAX_SHORT_FIELD_LEN)?;
     }
 
     let pool = &state.db;

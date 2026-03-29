@@ -14,6 +14,7 @@ export const usePipelineStore = create<PipelineStore>()((...a) => ({
   error: null,
   errorKind: null,
   isLoading: false,
+  sliceErrors: {},
   ...createTriggerSlice(...a),
   ...createTeamSlice(...a),
   ...createGroupSlice(...a),

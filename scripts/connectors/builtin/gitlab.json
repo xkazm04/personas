@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "glpat-...",
-      "helpText": "Generate at GitLab > Settings > Access Tokens with api scope"
+      "helpText": "Generate at GitLab > Settings > Access Tokens with api scope",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

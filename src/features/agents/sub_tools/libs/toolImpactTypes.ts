@@ -1,4 +1,5 @@
 import type { ToolUsageSummary } from '@/lib/types/types';
+import type { ToolCallStep } from '@/lib/bindings/ToolCallStep';
 
 /** A use case that references (has been executed with) a given tool */
 export interface ToolUseCaseRef {
@@ -33,28 +34,17 @@ export interface ToolImpactData {
   coUsedTools: CoUsedTool[];
 }
 
-interface ToolStepEntry {
-  tool_name?: string;
-}
-
 /**
- * Parse tool_steps JSON from a PersonaExecution.
+ * Extract unique tool names from a PersonaExecution's tool_steps.
  * Returns an array of unique tool names used in that execution.
  */
-export function parseToolNames(toolStepsJson: string | null): string[] {
-  if (!toolStepsJson) return [];
-  try {
-    const steps: ToolStepEntry[] = JSON.parse(toolStepsJson);
-    if (!Array.isArray(steps)) return [];
-    const names = new Set<string>();
-    for (const step of steps) {
-      if (step.tool_name) names.add(step.tool_name);
-    }
-    return Array.from(names);
-  } catch {
-    // intentional: non-critical -- JSON parse fallback
-    return [];
+export function parseToolNames(toolSteps: ToolCallStep[] | null): string[] {
+  if (!toolSteps || !Array.isArray(toolSteps)) return [];
+  const names = new Set<string>();
+  for (const step of toolSteps) {
+    if (step.tool_name) names.add(step.tool_name);
   }
+  return Array.from(names);
 }
 
 /**

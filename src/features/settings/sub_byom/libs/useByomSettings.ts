@@ -61,6 +61,8 @@ export type ByomSection = 'policy' | 'keys' | 'routing' | 'compliance' | 'audit'
 export function useByomSettings() {
   const [policy, setPolicy] = useState<ByomPolicy>(defaultPolicy());
   const [loaded, setLoaded] = useState(false);
+  /** Non-null when the stored policy JSON is corrupt and could not be parsed. */
+  const [corruptPolicyError, setCorruptPolicyError] = useState<string | null>(null);
   const [auditLog, setAuditLog] = useState<ProviderAuditEntry[]>([]);
   const [usageStats, setUsageStats] = useState<ProviderUsageStats[]>([]);
   const [usageTimeseries, setUsageTimeseries] = useState<ProviderUsageTimeseries[]>([]);
@@ -79,8 +81,17 @@ export function useByomSettings() {
       const initial = p ?? defaultPolicy();
       setPolicy(initial);
       savedSnapshotRef.current = initial;
+      setCorruptPolicyError(null);
       setLoaded(true);
-    }).catch(() => setLoaded(true));
+    }).catch((err: unknown) => {
+      // The backend returns a validation error when the stored JSON is corrupt.
+      // Surface this to the user instead of silently falling back to open-access.
+      const msg = err && typeof err === 'object' && 'error' in err
+        ? String((err as { error: string }).error)
+        : 'BYOM policy could not be loaded — the stored JSON may be corrupt.';
+      setCorruptPolicyError(msg);
+      setLoaded(true);
+    });
   }, []);
 
   // Lazy-load tab-specific data only when the user navigates to that tab
@@ -115,6 +126,7 @@ export function useByomSettings() {
     const reset = defaultPolicy();
     setPolicy(reset);
     savedSnapshotRef.current = reset;
+    setCorruptPolicyError(null);
     useToastStore.getState().addToast('Policy reset to defaults', 'success');
   }, []);
 
@@ -216,6 +228,7 @@ export function useByomSettings() {
   return {
     policy,
     loaded,
+    corruptPolicyError,
     isDirty,
     auditLog,
     usageStats,

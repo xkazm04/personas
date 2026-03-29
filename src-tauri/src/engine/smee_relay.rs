@@ -45,6 +45,36 @@ fn find_sse_boundary(buf: &str) -> Option<(usize, usize)> {
 }
 
 // ---------------------------------------------------------------------------
+// Notification channel (replaces 60s polling)
+// ---------------------------------------------------------------------------
+
+/// Notifier that Tauri commands use to wake the relay manager immediately
+/// after a relay is created, updated, or deleted. Backed by `tokio::sync::Notify`
+/// so the handle can be cheaply cloned and shared without ownership issues.
+#[derive(Clone)]
+pub struct SmeeRelayNotifier {
+    inner: Arc<tokio::sync::Notify>,
+}
+
+impl SmeeRelayNotifier {
+    pub fn new() -> Self {
+        Self {
+            inner: Arc::new(tokio::sync::Notify::new()),
+        }
+    }
+
+    /// Signal the relay manager to re-sync.
+    pub fn notify(&self) {
+        self.inner.notify_one();
+    }
+
+    /// Wait for a notification (used by the relay manager loop).
+    pub async fn notified(&self) {
+        self.inner.notified().await;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
 
@@ -60,12 +90,15 @@ struct RelayInstanceStatus {
 pub struct SmeeRelayState {
     /// Per-relay status keyed by relay ID.
     relays: HashMap<String, RelayInstanceStatus>,
+    /// Last emitted aggregate status snapshot (for change detection).
+    last_emitted: Option<(bool, u64, Option<String>, Option<String>)>,
 }
 
 impl SmeeRelayState {
     pub fn new() -> Self {
         Self {
             relays: HashMap::new(),
+            last_emitted: None,
         }
     }
 }
@@ -84,7 +117,7 @@ pub struct SmeeRelayStatus {
     pub error: Option<String>,
 }
 
-fn emit_status(app: &AppHandle, state: &SmeeRelayState) {
+fn emit_status(app: &AppHandle, state: &mut SmeeRelayState) {
     let any_connected = state.relays.values().any(|r| r.connected);
     let total_events: u64 = state.relays.values().map(|r| r.events_relayed).sum();
     let latest_event = state
@@ -103,6 +136,13 @@ fn emit_status(app: &AppHandle, state: &SmeeRelayState) {
             .filter_map(|r| r.error.clone())
             .last()
     };
+
+    // Change detection: skip emit when nothing changed.
+    let snapshot = (any_connected, total_events, latest_event.clone(), aggregate_error.clone());
+    if state.last_emitted.as_ref() == Some(&snapshot) {
+        return;
+    }
+    state.last_emitted = Some(snapshot);
 
     let status = SmeeRelayStatus {
         connected: any_connected,
@@ -166,7 +206,7 @@ async fn relay_sse_core(
             events_relayed: prev_events,
             last_event_at: prev_last_event,
         });
-        emit_status(app, &s);
+        emit_status(app, &mut s);
     }
 
     let _ = smee_relay_repo::set_status_quiet(pool, &params.relay_key, "active");
@@ -254,7 +294,7 @@ async fn relay_sse_core(
                         r.events_relayed += 1;
                         r.last_event_at = Some(chrono::Utc::now().to_rfc3339());
                     }
-                    emit_status(app, &s);
+                    emit_status(app, &mut s);
                     tracing::debug!(event_id = %event.id, "Smee relay: published event");
                 }
                 Err(e) => {
@@ -273,12 +313,13 @@ async fn relay_sse_core(
 
 /// Long-lived background task that manages all active Smee relay connections.
 ///
-/// Periodically polls the smee_relays table for active relays and spawns/stops
-/// SSE connections as needed.
+/// Wakes immediately when a command notifies via the notifier, and also performs
+/// a periodic safety-net sync every 5 minutes in case a notification is missed.
 pub async fn run_smee_relay(
     pool: DbPool,
     app: AppHandle,
     state: Arc<tokio::sync::Mutex<SmeeRelayState>>,
+    notifier: SmeeRelayNotifier,
 ) {
     use crate::db::repos::communication::smee_relays as smee_relay_repo;
 
@@ -289,10 +330,9 @@ pub async fn run_smee_relay(
         Arc::new(tokio::sync::Mutex::new(HashMap::new()));
 
     loop {
-        // Read active relays from database
+        // ---- Sync relay tasks with database state ----
         let active_relays = smee_relay_repo::list_active_urls(&pool).unwrap_or_default();
 
-        // Build set of relay IDs that should be connected
         let desired_ids: std::collections::HashSet<String> = active_relays.iter().map(|(id, _)| id.clone()).collect();
 
         let mut tasks = active_tasks.lock().await;
@@ -357,9 +397,6 @@ pub async fn run_smee_relay(
                     let connected_at = Instant::now();
                     match relay_sse_core(&params, &pool2, &app2, &state2).await {
                         Ok(()) => {
-                            // Only reset backoff if the connection was stable long enough.
-                            // A short-lived Ok(()) likely means the server accepted then
-                            // immediately closed (rate limiting / maintenance).
                             if connected_at.elapsed().as_secs() >= MIN_STABLE_CONNECTION_SECS {
                                 backoff = Duration::from_secs(1);
                             }
@@ -379,7 +416,7 @@ pub async fn run_smee_relay(
                                     last_event_at: None,
                                 });
                             }
-                            emit_status(&app2, &s);
+                            emit_status(&app2, &mut s);
                         }
                     }
                     tokio::time::sleep(backoff).await;
@@ -399,15 +436,19 @@ pub async fn run_smee_relay(
             tracing::info!(relay_id = %relay_id, url = %channel_url, "Started Smee relay task");
         }
 
-        // Emit aggregate status
+        // Emit aggregate status (change detection skips if unchanged)
         {
-            let s = state.lock().await;
-            emit_status(&app, &s);
+            let mut s = state.lock().await;
+            emit_status(&app, &mut s);
         }
 
         drop(tasks);
 
-        // Poll every 60 seconds (reduced from 10s to avoid IPC congestion)
-        tokio::time::sleep(Duration::from_secs(60)).await;
+        // Wait for either a command notification or a 5-minute safety-net timeout.
+        // The safety net catches edge cases where a notification was missed.
+        tokio::select! {
+            _ = notifier.notified() => {}
+            _ = tokio::time::sleep(Duration::from_secs(300)) => {}
+        }
     }
 }

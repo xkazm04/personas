@@ -63,6 +63,7 @@ export interface BridgeConfig {
   obsidian_api_port?: number;
   obsidian_api_key?: string;
   env_vars?: Record<string, string>;
+  terminal_allowed_paths?: string[];
 }
 
 // -- Plan types -------------------------------------------------------

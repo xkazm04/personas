@@ -1136,7 +1136,9 @@ pub async fn smee_relay_create(
     if stripped.is_empty() || stripped.contains('/') {
         return Err(AppError::Validation("Smee URL must be https://smee.io/<channel>".into()));
     }
-    smee_relay_repo::create(&state.db, input)
+    let relay = smee_relay_repo::create(&state.db, input)?;
+    state.smee_relay_notifier.notify();
+    Ok(relay)
 }
 
 /// Update an existing Smee relay.
@@ -1147,7 +1149,9 @@ pub async fn smee_relay_update(
     input: UpdateSmeeRelayInput,
 ) -> Result<SmeeRelay, AppError> {
     require_cloud_auth(&state, "smee_relay_update").await?;
-    smee_relay_repo::update(&state.db, &id, input)
+    let relay = smee_relay_repo::update(&state.db, &id, input)?;
+    state.smee_relay_notifier.notify();
+    Ok(relay)
 }
 
 /// Set the status of a Smee relay (active/paused).
@@ -1161,7 +1165,9 @@ pub async fn smee_relay_set_status(
     if !["active", "paused"].contains(&status.as_str()) {
         return Err(AppError::Validation("Status must be 'active' or 'paused'".into()));
     }
-    smee_relay_repo::set_status(&state.db, &id, &status)
+    let relay = smee_relay_repo::set_status(&state.db, &id, &status)?;
+    state.smee_relay_notifier.notify();
+    Ok(relay)
 }
 
 /// Delete a Smee relay.
@@ -1171,5 +1177,7 @@ pub async fn smee_relay_delete(
     id: String,
 ) -> Result<(), AppError> {
     require_cloud_auth(&state, "smee_relay_delete").await?;
-    smee_relay_repo::delete(&state.db, &id)
+    smee_relay_repo::delete(&state.db, &id)?;
+    state.smee_relay_notifier.notify();
+    Ok(())
 }

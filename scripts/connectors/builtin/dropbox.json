@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "sl.u...",
-      "helpText": "From Dropbox App Console -> Generate Access Token (or use OAuth flow)"
+      "helpText": "From Dropbox App Console -> Generate Access Token (or use OAuth flow)",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

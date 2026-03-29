@@ -12,7 +12,8 @@
       "type": "url",
       "required": true,
       "placeholder": "https://xxx.upstash.io",
-      "helpText": "From Upstash Console -> Database -> Details -> REST API -> URL"
+      "helpText": "From Upstash Console -> Database -> Details -> REST API -> URL",
+      "sensitive": true
     },
     {
       "key": "redis_token",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Upstash Console -> Database -> Details -> REST API -> Token"
+      "helpText": "From Upstash Console -> Database -> Details -> REST API -> Token",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

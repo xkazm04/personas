@@ -58,9 +58,9 @@ fn try_mark_triggered(
     pool: &DbPool,
     trigger_id: &str,
     next: Option<String>,
-    expected: Option<&str>,
+    expected_version: i32,
 ) {
-    if let Err(e) = trigger_repo::mark_triggered(pool, trigger_id, next, expected) {
+    if let Err(e) = trigger_repo::mark_triggered(pool, trigger_id, next, expected_version) {
         tracing::error!(trigger_id = %trigger_id, "mark_triggered failed: {}", e);
         record_mark_failure(trigger_id);
     } else {
@@ -146,7 +146,7 @@ pub async fn poll_due_triggers(
         // but still advance the schedule so it doesn't pile up as overdue.
         if !trigger.is_within_active_window(now) {
             let next = sched_logic::compute_next_trigger_at(&trigger, now);
-            let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+            let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
             continue;
         }
 
@@ -170,7 +170,7 @@ pub async fn poll_due_triggers(
                 tracing::warn!(trigger_id = %trigger.id, "Polling trigger missing 'url' in config");
                 // Still mark triggered to advance next_trigger_at
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+                try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
                 continue;
             }
         };
@@ -183,7 +183,7 @@ pub async fn poll_due_triggers(
                 "Polling trigger URL blocked (SSRF protection): {}", reason
             );
             let next = sched_logic::compute_next_trigger_at(&trigger, now);
-            try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+            try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
             continue;
         }
 
@@ -207,7 +207,7 @@ pub async fn poll_due_triggers(
                     "Polling HTTP request failed: {}", e
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+                try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
                 continue;
             }
         };
@@ -221,7 +221,7 @@ pub async fn poll_due_triggers(
                     "Polling: failed to read response body: {}", e
                 );
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+                try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
                 continue;
             }
         };
@@ -311,7 +311,7 @@ pub async fn poll_due_triggers(
             );
 
             // No content change -- still advance the schedule so we don't re-poll immediately
-            try_mark_triggered(pool, &trigger.id, next, trigger.next_trigger_at.as_deref());
+            try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
         }
     }
 }

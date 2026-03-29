@@ -542,22 +542,20 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
     };
     let trimmed = raw.trim();
 
-    let mut key_bytes = if let Some(protected_b64) = trimmed.strip_prefix(DPAPI_PREFIX) {
+    let (mut key_bytes, needs_resave) = if let Some(protected_b64) = trimmed.strip_prefix(DPAPI_PREFIX) {
         let protected_bytes = B64.decode(protected_b64)?;
-        platform_unprotect(&protected_bytes)?
+        let decrypted = platform_unprotect(&protected_bytes)?;
+        // On Unix, platform_unprotect may have used the legacy key derivation.
+        // Re-save to re-encrypt with the hardened key.
+        #[cfg(not(windows))]
+        let needs_resave = LEGACY_DECRYPT_USED.swap(false, std::sync::atomic::Ordering::Relaxed);
+        #[cfg(windows)]
+        let needs_resave = false;
+        (decrypted, needs_resave)
     } else {
-        // Legacy plaintext base64 format -- decode and schedule migration
+        // Legacy plaintext base64 format -- always needs migration
         let bytes = B64.decode(trimmed)?;
-        if bytes.len() == 32 {
-            tracing::info!("Found legacy plaintext key file, migrating to protected format");
-            let mut key = [0u8; 32];
-            key.copy_from_slice(&bytes);
-            // Re-save in protected format (best-effort migration)
-            if let Err(e) = save_local_fallback_key(&key) {
-                tracing::warn!("Failed to migrate legacy key file to protected format: {}", e);
-            }
-        }
-        bytes
+        (bytes, true)
     };
 
     if key_bytes.len() != 32 {
@@ -570,7 +568,15 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
 
     let mut key = [0u8; 32];
     key.copy_from_slice(&key_bytes);
-    key_bytes.zeroize(); // Zeroize decoded buffer immediately
+    key_bytes.zeroize();
+
+    if needs_resave {
+        tracing::info!("Re-encrypting fallback key with hardened key derivation");
+        if let Err(e) = save_local_fallback_key(&key) {
+            tracing::warn!("Failed to re-encrypt fallback key: {}", e);
+        }
+    }
+
     Ok(Some(key))
 }
 
@@ -799,21 +805,57 @@ fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
 // Unix local key protection (AES-256-GCM with machine-derived key)
 // ---------------------------------------------------------------------------
 
-/// Derive a 32-byte encryption key from machine-specific entropy.
-/// Uses HKDF-SHA256 over /etc/machine-id (or fallback hostname) + UID.
-/// This is NOT a substitute for a proper keychain, but prevents trivial
-/// file-copy attacks where the key file is exfiltrated to another machine.
+/// Derive a 32-byte encryption key from machine-specific entropy plus a
+/// random machine secret.
+///
+/// Uses HKDF-SHA256 over: random machine secret + /etc/machine-id + UID.
+/// The random secret prevents offline derivation by attackers who only know
+/// the hostname and UID. The machine-id and UID still provide binding to the
+/// specific machine/user as defense-in-depth.
 #[cfg(not(windows))]
 fn derive_unix_local_key() -> Result<[u8; 32], CryptoError> {
     use sha2::Sha256;
-    use hmac::Hmac;
     use hkdf::Hkdf;
 
-    // Gather machine-specific entropy
+    let machine_secret = load_or_create_machine_secret()?;
+
+    // Gather machine-specific entropy (belt-and-suspenders alongside the secret)
     let machine_id = fs::read_to_string("/etc/machine-id")
         .or_else(|_| fs::read_to_string("/var/lib/dbus/machine-id"))
         .unwrap_or_else(|_| {
-            // Fallback: hostname is less unique but still binds to the machine
+            whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into())
+        });
+
+    let uid = unsafe { libc::getuid() };
+
+    // Combine random secret with machine-bound values
+    let mut ikm = Vec::with_capacity(32 + 64 + 16);
+    ikm.extend_from_slice(&machine_secret);
+    ikm.extend_from_slice(format!("personas-desktop:{}:{}", machine_id.trim(), uid).as_bytes());
+
+    let hk = Hkdf::<Sha256>::new(
+        Some(b"personas-fallback-key-protection"),
+        &ikm,
+    );
+    ikm.zeroize();
+
+    let mut okm = [0u8; 32];
+    hk.expand(b"local-key-encryption", &mut okm)
+        .map_err(|e| CryptoError::KeyManagement(format!("HKDF expand failed: {e}")))?;
+
+    Ok(okm)
+}
+
+/// Legacy key derivation using only machine-id + UID (no random secret).
+/// Used solely for migrating existing encrypted fallback files.
+#[cfg(not(windows))]
+fn derive_unix_local_key_legacy() -> Result<[u8; 32], CryptoError> {
+    use sha2::Sha256;
+    use hkdf::Hkdf;
+
+    let machine_id = fs::read_to_string("/etc/machine-id")
+        .or_else(|_| fs::read_to_string("/var/lib/dbus/machine-id"))
+        .unwrap_or_else(|_| {
             whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into())
         });
 
@@ -829,6 +871,79 @@ fn derive_unix_local_key() -> Result<[u8; 32], CryptoError> {
         .map_err(|e| CryptoError::KeyManagement(format!("HKDF expand failed: {e}")))?;
 
     Ok(okm)
+}
+
+/// Path to the random machine secret file used to harden Unix local key derivation.
+#[cfg(not(windows))]
+fn machine_secret_path() -> Option<PathBuf> {
+    let appdata = std::env::var("APPDATA")
+        .or_else(|_| std::env::var("HOME"))
+        .ok()?;
+    let dir = PathBuf::from(appdata).join("com.personas.desktop");
+    Some(dir.join("local.secret"))
+}
+
+/// Load or create the 32-byte random machine secret.
+/// The secret is persisted with chmod 600 so it survives restarts but
+/// cannot be read by other users on the same machine.
+#[cfg(not(windows))]
+fn load_or_create_machine_secret() -> Result<[u8; 32], CryptoError> {
+    let Some(path) = machine_secret_path() else {
+        return Err(CryptoError::KeyManagement(
+            "Cannot determine machine secret path".into(),
+        ));
+    };
+
+    // Try to load existing secret
+    if path.exists() {
+        match fs::read(&path) {
+            Ok(bytes) if bytes.len() == 32 => {
+                let mut secret = [0u8; 32];
+                secret.copy_from_slice(&bytes);
+                return Ok(secret);
+            }
+            Ok(bytes) => {
+                tracing::warn!(
+                    "Machine secret has wrong length ({}, expected 32), regenerating",
+                    bytes.len()
+                );
+            }
+            Err(e) => {
+                tracing::warn!("Failed to read machine secret ({}), regenerating", e);
+            }
+        }
+    }
+
+    // Generate new random secret
+    let mut secret = [0u8; 32];
+    OsRng.fill_bytes(&mut secret);
+
+    // Ensure parent directory exists
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| {
+            CryptoError::KeyManagement(format!("Failed creating machine secret dir: {e}"))
+        })?;
+    }
+
+    // Write atomically with restricted permissions
+    let parent = path.parent().ok_or_else(|| {
+        CryptoError::KeyManagement("Machine secret path has no parent directory".into())
+    })?;
+    let mut tmp = tempfile::NamedTempFile::new_in(parent)
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed creating temp file: {e}")))?;
+    tmp.write_all(&secret)
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed writing machine secret: {e}")))?;
+    tmp.flush()
+        .map_err(|e| CryptoError::KeyManagement(format!("Failed flushing machine secret: {e}")))?;
+
+    restrict_file_permissions(tmp.path())?;
+
+    tmp.persist(&path).map_err(|e| {
+        CryptoError::KeyManagement(format!("Failed persisting machine secret: {e}"))
+    })?;
+
+    tracing::info!("Generated new random machine secret for local key derivation");
+    Ok(secret)
 }
 
 /// Encrypt data with AES-256-GCM using the machine-derived key.
@@ -855,6 +970,9 @@ fn unix_local_protect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
 }
 
 /// Decrypt data previously protected by `unix_local_protect`.
+/// Tries the current (hardened) key first; on failure, falls back to the
+/// legacy deterministic derivation and transparently re-encrypts the data
+/// with the new key so the migration happens at most once.
 #[cfg(not(windows))]
 fn unix_local_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
     if data.len() < 13 {
@@ -864,16 +982,44 @@ fn unix_local_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
     }
 
     let (nonce_bytes, ciphertext) = data.split_at(12);
-    let mut key_bytes = derive_unix_local_key()?;
-    let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
-    let cipher = Aes256Gcm::new(key);
-    key_bytes.zeroize();
-
     let nonce = Nonce::from_slice(nonce_bytes);
-    cipher
+
+    // Try with the hardened key (random machine secret + machine-id + UID)
+    {
+        let mut key_bytes = derive_unix_local_key()?;
+        let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
+        let cipher = Aes256Gcm::new(key);
+        key_bytes.zeroize();
+
+        if let Ok(plaintext) = cipher.decrypt(nonce, ciphertext) {
+            return Ok(plaintext);
+        }
+    }
+
+    // Fall back to legacy derivation (machine-id + UID only) for migration
+    let mut legacy_key_bytes = derive_unix_local_key_legacy()?;
+    let legacy_key = Key::<Aes256Gcm>::from_slice(&legacy_key_bytes);
+    let legacy_cipher = Aes256Gcm::new(legacy_key);
+    legacy_key_bytes.zeroize();
+
+    let plaintext = legacy_cipher
         .decrypt(nonce, ciphertext)
-        .map_err(|e| CryptoError::Decrypt(format!("Local key unprotection failed: {e}")))
+        .map_err(|e| CryptoError::Decrypt(format!("Local key unprotection failed: {e}")))?;
+
+    tracing::info!(
+        "Decrypted fallback key with legacy derivation -- \
+         will be re-encrypted with hardened key"
+    );
+    LEGACY_DECRYPT_USED.store(true, std::sync::atomic::Ordering::Relaxed);
+
+    Ok(plaintext)
 }
+
+/// Atomic flag set by `unix_local_unprotect` when the legacy derivation was
+/// used. Checked by `load_local_fallback_key` to trigger re-encryption.
+#[cfg(not(windows))]
+static LEGACY_DECRYPT_USED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
 
 // ---------------------------------------------------------------------------
 // Windows DPAPI wrappers

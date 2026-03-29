@@ -12,7 +12,8 @@
       "type": "text",
       "required": true,
       "placeholder": "AKIA...",
-      "helpText": "From AWS IAM -> Users -> Security credentials -> Access keys"
+      "helpText": "From AWS IAM -> Users -> Security credentials -> Access keys",
+      "sensitive": true
     },
     {
       "key": "secret_access_key",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From the same IAM access key creation page"
+      "helpText": "From the same IAM access key creation page",
+      "sensitive": true
     },
     {
       "key": "region",
@@ -28,7 +30,8 @@
       "type": "text",
       "required": true,
       "placeholder": "us-east-1",
-      "helpText": "AWS region for your S3 bucket"
+      "helpText": "AWS region for your S3 bucket",
+      "sensitive": false
     }
   ],
   "healthcheck_config": {
@@ -50,7 +53,12 @@
     "setup_guide": "1. Log in to the AWS Console.\n2. Go to IAM -> Users -> select your user.\n3. Under Security credentials, click 'Create access key'.\n4. Choose 'Application running outside AWS'.\n5. Copy the Access Key ID and Secret Access Key.\n6. Paste both values and your preferred region here.",
     "pricing_tier": "freemium",
     "auth_methods": [
-      {"id": "api_key", "label": "Access Key", "type": "credential", "is_default": true}
+      {
+        "id": "api_key",
+        "label": "Access Key",
+        "type": "credential",
+        "is_default": true
+      }
     ]
   }
 }

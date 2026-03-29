@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "pat-...",
-      "helpText": "From HubSpot -> Settings -> Integrations -> Private Apps -> Create"
+      "helpText": "From HubSpot -> Settings -> Integrations -> Private Apps -> Create",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

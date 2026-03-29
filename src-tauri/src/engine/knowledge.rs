@@ -7,6 +7,7 @@
 use serde::Deserialize;
 use tracing::warn;
 
+use crate::db::repos::execution::healing as healing_repo;
 use crate::db::repos::execution::knowledge as knowledge_repo;
 use crate::db::DbPool;
 
@@ -86,6 +87,15 @@ fn extract_tool_sequence(ctx: &ExecutionContext<'_>, steps_json: &str) {
                 error = %e,
                 "Failed to parse tool sequence steps JSON during knowledge extraction"
             );
+            healing_repo::create_audit_entry(
+                ctx.pool,
+                Some(ctx.persona_id),
+                Some(ctx.execution_id),
+                "knowledge_parse_error",
+                "knowledge_extraction",
+                "Failed to parse tool sequence steps JSON",
+                Some(&format!("{e}")),
+            );
             return;
         }
     };
@@ -116,6 +126,11 @@ fn extract_tool_sequence(ctx: &ExecutionContext<'_>, steps_json: &str) {
         ctx.execution_id,
     ) {
         tracing::warn!("Failed to persist tool_sequence knowledge: {}", e);
+        healing_repo::create_audit_entry(
+            ctx.pool, Some(ctx.persona_id), Some(ctx.execution_id),
+            "knowledge_persist_error", "knowledge_extraction",
+            "Failed to persist tool_sequence knowledge", Some(&format!("{e}")),
+        );
     }
 }
 
@@ -147,6 +162,11 @@ fn extract_failure_pattern(ctx: &ExecutionContext<'_>, error_message: &str) {
         ctx.execution_id,
     ) {
         tracing::warn!("Failed to persist failure_pattern knowledge: {}", e);
+        healing_repo::create_audit_entry(
+            ctx.pool, Some(ctx.persona_id), Some(ctx.execution_id),
+            "knowledge_persist_error", "knowledge_extraction",
+            "Failed to persist failure_pattern knowledge", Some(&format!("{e}")),
+        );
     }
 }
 
@@ -170,6 +190,11 @@ fn extract_model_performance(ctx: &ExecutionContext<'_>, model: &str) {
         ctx.execution_id,
     ) {
         tracing::warn!("Failed to persist model_performance knowledge: {}", e);
+        healing_repo::create_audit_entry(
+            ctx.pool, Some(ctx.persona_id), Some(ctx.execution_id),
+            "knowledge_persist_error", "knowledge_extraction",
+            "Failed to persist model_performance knowledge", Some(&format!("{e}")),
+        );
     }
 }
 
@@ -199,6 +224,11 @@ fn extract_cost_quality(ctx: &ExecutionContext<'_>) {
         ctx.execution_id,
     ) {
         tracing::warn!("Failed to persist cost_quality knowledge: {}", e);
+        healing_repo::create_audit_entry(
+            ctx.pool, Some(ctx.persona_id), Some(ctx.execution_id),
+            "knowledge_persist_error", "knowledge_extraction",
+            "Failed to persist cost_quality knowledge", Some(&format!("{e}")),
+        );
     }
 }
 

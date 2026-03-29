@@ -169,6 +169,17 @@ pub struct PersonaDesignReview {
     pub category: Option<String>,
 }
 
+/// Lightweight row for smart-search pre-filtering (avoids loading full review).
+#[derive(Debug, Clone)]
+pub struct SmartSearchRow {
+    pub id: String,
+    pub name: String,
+    pub instruction: String,
+    pub category: Option<String>,
+    pub connectors_used: Option<String>,
+    pub trigger_types: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct CreateDesignReviewInput {
     pub test_case_id: String,

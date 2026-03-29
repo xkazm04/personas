@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useToggleSet } from '@/hooks/lab/useToggleSet';
 import { Check } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
-import { LabProgress } from '../shared/LabProgress';
 import { EvalHistory } from './EvalHistory';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
-import { ModelToggleGrid, UseCaseFilterPicker, LabActionButtons } from '../../shared';
+import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
 
 export function EvalPanel() {
   const promptVersions = useAgentStore((s) => s.promptVersions);
@@ -47,57 +46,51 @@ export function EvalPanel() {
 
   return (
     <div className="space-y-6" data-testid="eval-panel">
-      <div className="border border-primary/20 rounded-xl overflow-hidden backdrop-blur-sm bg-secondary/40">
-        <div className="p-4 space-y-3">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-muted-foreground/80">Prompt Versions (select 2+)</label>
-            <div className="flex flex-wrap gap-2" data-testid="eval-version-selector">
-              {promptVersions.map((v) => {
-                const isSelected = selectedVersionIds.values.has(v.id);
-                return (
-                  <button key={v.id} onClick={() => toggleVersion(v.id)} data-testid={`eval-version-toggle-${v.version_number}`}
+      <LabPanelShell
+        isRunning={isLabRunning}
+        onStart={() => void handleStart()}
+        onCancel={() => void handleCancel()}
+        disabled={selectedVersionIds.values.size < 2 || selectedModels.size === 0}
+        disabledReason={selectedVersionIds.values.size < 2 ? 'Select at least 2 prompt versions' : selectedModels.size === 0 ? 'Select at least one model' : ''}
+        runLabel="Run Evaluation Matrix"
+        cancelLabel="Cancel Eval"
+        cancelTestId="eval-cancel-btn"
+        runTestId="eval-start-btn"
+      >
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-muted-foreground/80">Prompt Versions (select 2+)</label>
+          <div className="flex flex-wrap gap-2" data-testid="eval-version-selector">
+            {promptVersions.map((v) => {
+              const isSelected = selectedVersionIds.values.has(v.id);
+              return (
+                <button key={v.id} onClick={() => toggleVersion(v.id)} data-testid={`eval-version-toggle-${v.version_number}`}
 
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${isSelected ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'}`}>
-                    {isSelected && <Check className="w-3 h-3" />}
-                    <span className="font-mono">v{v.version_number}</span>
-                    <span className="text-sm opacity-60">{v.tag}</span>
-                  </button>
-                );
-              })}
-            </div>
-            {promptVersions.length < 2 && <p className="text-sm text-amber-400/80 mt-1">At least 2 prompt versions are needed. Create more versions in the Versions tab.</p>}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-sm font-medium border transition-all ${isSelected ? 'bg-primary/15 text-primary border-primary/30' : 'bg-background/30 text-muted-foreground/90 border-primary/10 hover:border-primary/20'}`}>
+                  {isSelected && <Check className="w-3 h-3" />}
+                  <span className="font-mono">v{v.version_number}</span>
+                  <span className="text-sm opacity-60">{v.tag}</span>
+                </button>
+              );
+            })}
           </div>
-
-          <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} testIdPrefix="eval" />
-          <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} testIdPrefix="eval" />
-
-          <div className="space-y-1">
-            <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
-            <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}' data-testid="eval-test-input"
-              className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
-          </div>
-
-          {selectedVersionIds.values.size >= 2 && selectedModels.size > 0 && (
-            <div className="text-sm text-muted-foreground/70 bg-secondary/30 rounded-xl px-3 py-2">
-              {selectedVersionIds.values.size} versions x {selectedModels.size} models = {selectedVersionIds.values.size * selectedModels.size} evaluation cells
-            </div>
-          )}
-
-          <LabActionButtons
-            isRunning={isLabRunning}
-            onStart={() => void handleStart()}
-            onCancel={() => void handleCancel()}
-            disabled={selectedVersionIds.values.size < 2 || selectedModels.size === 0}
-            disabledReason={selectedVersionIds.values.size < 2 ? 'Select at least 2 prompt versions' : selectedModels.size === 0 ? 'Select at least one model' : ''}
-            runLabel="Run Evaluation Matrix"
-            cancelLabel="Cancel Eval"
-            cancelTestId="eval-cancel-btn"
-            runTestId="eval-start-btn"
-          />
-
-          <LabProgress />
+          {promptVersions.length < 2 && <p className="text-sm text-amber-400/80 mt-1">At least 2 prompt versions are needed. Create more versions in the Versions tab.</p>}
         </div>
-      </div>
+
+        <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} testIdPrefix="eval" />
+        <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} testIdPrefix="eval" />
+
+        <div className="space-y-1">
+          <label className="text-sm text-muted-foreground/70">Test Input (optional JSON)</label>
+          <textarea value={testInput} onChange={(e) => setTestInput(e.target.value)} placeholder='{"task": "Summarize the latest sales report"}' data-testid="eval-test-input"
+            className="w-full h-20 px-3 py-2 text-sm bg-background/50 border border-primary/20 rounded-xl text-foreground placeholder-muted-foreground/30 focus-ring resize-none font-mono disabled:opacity-50" />
+        </div>
+
+        {selectedVersionIds.values.size >= 2 && selectedModels.size > 0 && (
+          <div className="text-sm text-muted-foreground/70 bg-secondary/30 rounded-xl px-3 py-2">
+            {selectedVersionIds.values.size} versions x {selectedModels.size} models = {selectedVersionIds.values.size * selectedModels.size} evaluation cells
+          </div>
+        )}
+      </LabPanelShell>
 
       <EvalHistory runs={evalRuns} resultsMap={evalResultsMap} expandedRunId={expandedRunId} onToggleExpand={setExpandedRunId} onDelete={(id) => void deleteEvalRun(id)} />
     </div>

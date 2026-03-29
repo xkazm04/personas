@@ -174,6 +174,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
         skip_conflicts: skipConflicts,
         rename_prefix: renamePrefix || null,
         preview_id: preview?.preview_id ?? null,
+        expected_bundle_hash: preview?.bundle_hash ?? null,
       };
 
       const result = shareLinkUrl

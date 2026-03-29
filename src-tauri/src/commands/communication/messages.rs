@@ -3,7 +3,7 @@ use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
 
-use crate::db::models::{CreateMessageInput, MessageThreadSummary, PersonaMessage, PersonaMessageDelivery};
+use crate::db::models::{MessageThreadSummary, PersonaMessage, PersonaMessageDelivery};
 use crate::db::repos::communication::messages as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -139,28 +139,42 @@ pub fn seed_mock_message(
 ) -> Result<PersonaMessage, AppError> {
     require_auth_sync(&state)?;
 
-    use super::mock_seed::{self, MOCK_MESSAGE_TEMPLATES};
+    #[cfg(not(debug_assertions))]
+    {
+        return Err(AppError::Validation(
+            "seed_mock_message is only available in debug builds".into(),
+        ));
+    }
 
-    let t = mock_seed::seed_index();
-    let persona_id = mock_seed::pick_persona_id(&state.db, t)?
-        .unwrap_or_else(|| "mock-persona".to_string());
-    let tpl = &MOCK_MESSAGE_TEMPLATES[t % MOCK_MESSAGE_TEMPLATES.len()];
+    #[cfg(debug_assertions)]
+    {
+        use super::mock_seed::{self, MOCK_MESSAGE_TEMPLATES};
 
-    let input = CreateMessageInput {
-        persona_id,
-        execution_id: None,
-        title: Some(tpl.title.to_string()),
-        content: tpl.content.to_string(),
-        content_type: None,
-        priority: Some(tpl.priority.to_string()),
-        metadata: None,
-        thread_id: None,
-    };
+        let t = mock_seed::seed_index();
+        let persona_id = mock_seed::pick_persona_id(&state.db, t)?
+            .unwrap_or_else(|| "mock-persona".to_string());
+        let tpl = &MOCK_MESSAGE_TEMPLATES[t % MOCK_MESSAGE_TEMPLATES.len()];
 
-    // Disable FK checks for dev seed (persona may not exist)
-    let conn = state.db.get()?;
-    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
-    let result = repo::create(&state.db, input);
-    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
-    result
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let content_type = "text";
+        let priority = tpl.priority;
+        let thread_id = &id; // self-referencing thread
+
+        // Use a single connection with RAII guard so FK checks are always
+        // restored, even on error or panic.
+        let conn = state.db.get()?;
+        let result = {
+            let _fk_guard = crate::db::FkDisabledGuard::new(&conn)?;
+            conn.execute(
+                "INSERT INTO persona_messages
+                 (id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, thread_id)
+                 VALUES (?1, ?2, NULL, ?3, ?4, ?5, ?6, 0, NULL, ?7, ?8)",
+                rusqlite::params![id, persona_id, tpl.title, tpl.content, content_type, priority, now, thread_id],
+            )
+        }; // _fk_guard dropped here → FK restored
+        result?;
+
+        repo::get_by_id(&state.db, &id)
+    }
 }

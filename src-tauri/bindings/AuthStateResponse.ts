@@ -2,4 +2,4 @@
 import type { AuthSubscription } from "./AuthSubscription";
 import type { AuthUser } from "./AuthUser";
 
-export type AuthStateResponse = { is_authenticated: boolean, is_offline: boolean, user: AuthUser | null, subscription: AuthSubscription | null, };
+export type AuthStateResponse = { is_authenticated: boolean, is_offline: boolean, is_offline_authenticated: boolean, user: AuthUser | null, subscription: AuthSubscription | null, };

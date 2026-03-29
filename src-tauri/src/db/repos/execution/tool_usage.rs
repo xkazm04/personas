@@ -1,6 +1,7 @@
 use rusqlite::params;
 
 use crate::db::models::{PersonaToolUsage, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary};
+use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -86,28 +87,27 @@ pub fn get_usage_summary(
 ) -> Result<Vec<ToolUsageSummary>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_usage_summary", {
     let conn = pool.get()?;
-    let persona_clause = if persona_id.is_some() { " AND persona_id = ?2" } else { "" };
+    let mut qb = QueryBuilder::new();
+    qb.where_gte("created_at", since.to_string());
+    if let Some(pid) = persona_id {
+        qb.where_eq("persona_id", pid.to_string());
+    }
+
     let sql = format!(
         "SELECT tool_name,
                 SUM(invocation_count) as total_invocations,
                 COUNT(DISTINCT execution_id) as unique_executions,
                 COUNT(DISTINCT persona_id) as unique_personas
          FROM persona_tool_usage
-         WHERE created_at >= ?1 AND {}{}
+         {} AND {}
          GROUP BY tool_name
          ORDER BY total_invocations DESC",
-        internal_tools_exclusion("tool_name"),
-        persona_clause
+        qb.where_clause(),
+        internal_tools_exclusion("tool_name")
     );
 
     let mut stmt = conn.prepare(&sql)?;
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(since.to_string())];
-    if let Some(pid) = persona_id {
-        param_values.push(Box::new(pid.to_string()));
-    }
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
-
-    let rows = stmt.query_map(params_ref.as_slice(), |row| {
+    let rows = stmt.query_map(qb.params_ref().as_slice(), |row| {
         Ok(ToolUsageSummary {
             tool_name: row.get("tool_name")?,
             total_invocations: row.get("total_invocations")?,
@@ -126,27 +126,26 @@ pub fn get_usage_over_time(
 ) -> Result<Vec<ToolUsageOverTime>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_usage_over_time", {
     let conn = pool.get()?;
-    let persona_clause = if persona_id.is_some() { " AND persona_id = ?2" } else { "" };
+    let mut qb = QueryBuilder::new();
+    qb.where_gte("created_at", since.to_string());
+    if let Some(pid) = persona_id {
+        qb.where_eq("persona_id", pid.to_string());
+    }
+
     let sql = format!(
         "SELECT DATE(created_at) as date,
                 tool_name,
                 SUM(invocation_count) as invocations
          FROM persona_tool_usage
-         WHERE created_at >= ?1 AND {}{}
+         {} AND {}
          GROUP BY date, tool_name
          ORDER BY date ASC, tool_name ASC",
-        internal_tools_exclusion("tool_name"),
-        persona_clause
+        qb.where_clause(),
+        internal_tools_exclusion("tool_name")
     );
 
     let mut stmt = conn.prepare(&sql)?;
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(since.to_string())];
-    if let Some(pid) = persona_id {
-        param_values.push(Box::new(pid.to_string()));
-    }
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
-
-    let rows = stmt.query_map(params_ref.as_slice(), |row| {
+    let rows = stmt.query_map(qb.params_ref().as_slice(), |row| {
         Ok(ToolUsageOverTime {
             date: row.get("date")?,
             tool_name: row.get("tool_name")?,

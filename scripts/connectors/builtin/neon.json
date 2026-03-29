@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "",
-      "helpText": "From Neon Console -> Account Settings -> API Keys -> Generate"
+      "helpText": "From Neon Console -> Account Settings -> API Keys -> Generate",
+      "sensitive": true
     },
     {
       "key": "connection_string",
@@ -20,7 +21,8 @@
       "type": "password",
       "required": false,
       "placeholder": "postgresql://user:pass@ep-xxx.region.aws.neon.tech/dbname",
-      "helpText": "Optional: PostgreSQL connection string for direct database access"
+      "helpText": "Optional: PostgreSQL connection string for direct database access",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

@@ -76,7 +76,24 @@ impl BuildSessionManager {
         let (input_tx, input_rx) = mpsc::channel::<UserAnswer>(32);
         let cancel_flag = Arc::new(AtomicBool::new(false));
 
-        // Create the DB row
+        // Guard: reject if there's already an active build for this persona
+        {
+            let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+            for handle in sessions.values() {
+                if !handle.cancel_flag.load(Ordering::Relaxed) {
+                    if let Ok(Some(existing)) = build_session_repo::get_by_id(&pool, &handle.session_id) {
+                        if existing.persona_id == persona_id && !existing.phase.is_terminal() {
+                            return Err(AppError::Validation(format!(
+                                "Build session {} already active for persona {}",
+                                handle.session_id, persona_id
+                            )));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Create the DB row (after duplicate check to avoid orphaned rows)
         let now = chrono::Utc::now().to_rfc3339();
         let session = BuildSession {
             id: session_id.clone(),
@@ -94,23 +111,6 @@ impl BuildSessionManager {
             updated_at: now,
         };
         build_session_repo::create(&pool, &session)?;
-
-        // Guard: reject if there's already an active build for this persona
-        {
-            let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-            for handle in sessions.values() {
-                if !handle.cancel_flag.load(Ordering::Relaxed) {
-                    if let Ok(Some(existing)) = build_session_repo::get_by_id(&pool, &handle.session_id) {
-                        if existing.persona_id == persona_id && !existing.phase.is_terminal() {
-                            return Err(AppError::Validation(format!(
-                                "Build session {} already active for persona {}",
-                                handle.session_id, persona_id
-                            )));
-                        }
-                    }
-                }
-            }
-        }
 
         // Insert the session handle
         let handle = SessionHandle {
@@ -669,14 +669,9 @@ pub async fn run_tool_tests(
     app: &tauri::AppHandle,
     session_id: &str,
     persona_id: &str,
-    agent_ir: &serde_json::Value,
+    agent_ir: &crate::db::models::AgentIr,
 ) -> Result<serde_json::Value, AppError> {
-    let tools = agent_ir
-        .get("tools")
-        .or_else(|| agent_ir.get("suggested_tools"))
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
+    let tools = &agent_ir.tools;
 
     if tools.is_empty() {
         return Ok(serde_json::json!({
@@ -690,8 +685,8 @@ pub async fn run_tool_tests(
     }
 
     let persona_name = agent_ir
-        .get("name")
-        .and_then(|v| v.as_str())
+        .name
+        .as_deref()
         .unwrap_or("draft-agent");
 
     // Step 1: Resolve credentials to get env var names + values
@@ -790,7 +785,8 @@ pub async fn run_tool_tests(
         let fallback_results: Vec<serde_json::Value> = tools
             .iter()
             .filter_map(|t| {
-                let name = t.as_str().or_else(|| t.get("name").and_then(|n| n.as_str()))?;
+                let name = t.name();
+                if name.is_empty() { return None; }
                 Some(name)
             })
             .map(|name| {

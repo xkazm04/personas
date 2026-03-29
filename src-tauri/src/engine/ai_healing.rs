@@ -8,13 +8,19 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::db::models::UpdatePersonaInput;
-use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::execution::healing as healing_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
 use super::error_taxonomy::ErrorCategory as FailureCategory;
 use super::types::ExecutionResult;
+
+// Bounds for AI-healing config changes. Values outside these ranges are
+// rejected to prevent a misdiagnosis from bricking a persona.
+const TIMEOUT_MS_MIN: i32 = 1_000;     // 1 second
+const TIMEOUT_MS_MAX: i32 = 1_800_000; // 30 minutes
+const MAX_TURNS_MIN: i32 = 1;
+const MAX_TURNS_MAX: i32 = 100;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -132,7 +138,7 @@ Output each database change on its own line:
 
 Valid types: modify_prompt, update_config, modify_file, run_command
 Valid targets for modify_prompt: system_prompt, instructions, structured_prompt, or any section name
-Valid targets for update_config: timeout_ms, max_turns, enabled
+Valid targets for update_config: timeout_ms (1000-1800000), max_turns (1-100), enabled (true only; disabling requires human approval)
 
 ## Rules
 - Be surgical -- fix the minimum needed
@@ -224,45 +230,74 @@ pub async fn process_healing_result(
 // Fix application
 // ---------------------------------------------------------------------------
 
-/// Apply database-level fixes (prompt changes, config updates).
+/// Apply database-level fixes (prompt changes, config updates) atomically
+/// within a single SQLite transaction. Either all DB fixes succeed or none
+/// are persisted, preventing partially-healed persona state.
 fn apply_db_fixes(
     pool: &DbPool,
     persona_id: &str,
     fixes: &[HealingFix],
 ) -> Result<Vec<String>, AppError> {
+    use rusqlite::params;
+
     let mut applied = Vec::new();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
 
     for fix in fixes {
         match fix.fix_type.as_str() {
             "modify_prompt" => {
                 match fix.target.as_str() {
                     "system_prompt" | "instructions" => {
-                        let input = UpdatePersonaInput {
-                            system_prompt: Some(fix.payload.clone()),
-                            ..Default::default()
-                        };
-                        persona_repo::update(pool, persona_id, input)?;
+                        tx.execute(
+                            "UPDATE personas SET system_prompt = ?1, updated_at = ?2 WHERE id = ?3",
+                            params![fix.payload, now, persona_id],
+                        ).map_err(AppError::Database)?;
                         applied.push(format!("Updated system_prompt: {}", fix.description));
                     }
                     "structured_prompt" => {
-                        let input = UpdatePersonaInput {
-                            structured_prompt: Some(Some(fix.payload.clone())),
-                            ..Default::default()
-                        };
-                        persona_repo::update(pool, persona_id, input)?;
+                        tx.execute(
+                            "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
+                            params![fix.payload, now, persona_id],
+                        ).map_err(AppError::Database)?;
                         applied.push(format!("Updated structured_prompt: {}", fix.description));
                     }
                     other => {
                         // Try to patch a specific section within structured_prompt
-                        if let Ok(patched) =
-                            patch_structured_prompt_section(pool, persona_id, other, &fix.payload)
-                        {
-                            applied.push(format!("Patched section '{}': {}", other, fix.description));
-                            if !patched {
-                                tracing::warn!(
-                                    "AI healing: section '{}' not found in structured_prompt",
-                                    other
-                                );
+                        let sp: Option<String> = tx.query_row(
+                            "SELECT structured_prompt FROM personas WHERE id = ?1",
+                            params![persona_id],
+                            |row| row.get(0),
+                        ).map_err(AppError::Database)?;
+
+                        let sp = sp.unwrap_or_default();
+                        if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(&sp) {
+                            if let Some(obj) = val.as_object_mut() {
+                                if obj.contains_key(other) {
+                                    obj.insert(
+                                        other.to_string(),
+                                        serde_json::Value::String(fix.payload.clone()),
+                                    );
+                                    let updated = serde_json::to_string(&val).unwrap_or(sp);
+                                    tx.execute(
+                                        "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
+                                        params![updated, now, persona_id],
+                                    ).map_err(AppError::Database)?;
+                                    applied.push(format!("Patched section '{}': {}", other, fix.description));
+                                } else {
+                                    tracing::warn!(
+                                        "AI healing: section '{}' not found in structured_prompt",
+                                        other
+                                    );
+                                    healing_repo::create_audit_entry(
+                                        pool, Some(persona_id), None,
+                                        "ai_heal_section_missing", "ai_healing",
+                                        &format!("Section '{}' not found in structured_prompt", other),
+                                        Some(&fix.description),
+                                    );
+                                }
                             }
                         }
                     }
@@ -271,36 +306,87 @@ fn apply_db_fixes(
             "update_config" => match fix.target.as_str() {
                 "timeout_ms" => {
                     if let Ok(timeout) = fix.payload.parse::<i32>() {
-                        let input = UpdatePersonaInput {
-                            timeout_ms: Some(timeout),
-                            ..Default::default()
-                        };
-                        persona_repo::update(pool, persona_id, input)?;
-                        applied.push(format!("Updated timeout_ms to {}: {}", timeout, fix.description));
+                        if !(TIMEOUT_MS_MIN..=TIMEOUT_MS_MAX).contains(&timeout) {
+                            tracing::warn!(
+                                "AI healing: timeout_ms {} out of bounds [{}, {}], rejecting",
+                                timeout, TIMEOUT_MS_MIN, TIMEOUT_MS_MAX,
+                            );
+                            healing_repo::create_audit_entry(
+                                pool, Some(persona_id), None,
+                                "ai_heal_value_rejected", "ai_healing",
+                                &format!(
+                                    "Rejected timeout_ms={} (must be {}-{})",
+                                    timeout, TIMEOUT_MS_MIN, TIMEOUT_MS_MAX,
+                                ),
+                                Some(&fix.description),
+                            );
+                        } else {
+                            tx.execute(
+                                "UPDATE personas SET timeout_ms = ?1, updated_at = ?2 WHERE id = ?3",
+                                params![timeout, now, persona_id],
+                            ).map_err(AppError::Database)?;
+                            applied.push(format!("Updated timeout_ms to {}: {}", timeout, fix.description));
+                        }
                     }
                 }
                 "max_turns" => {
                     if let Ok(turns) = fix.payload.parse::<i32>() {
-                        let input = UpdatePersonaInput {
-                            max_turns: Some(Some(turns)),
-                            ..Default::default()
-                        };
-                        persona_repo::update(pool, persona_id, input)?;
-                        applied.push(format!("Updated max_turns to {}: {}", turns, fix.description));
+                        if !(MAX_TURNS_MIN..=MAX_TURNS_MAX).contains(&turns) {
+                            tracing::warn!(
+                                "AI healing: max_turns {} out of bounds [{}, {}], rejecting",
+                                turns, MAX_TURNS_MIN, MAX_TURNS_MAX,
+                            );
+                            healing_repo::create_audit_entry(
+                                pool, Some(persona_id), None,
+                                "ai_heal_value_rejected", "ai_healing",
+                                &format!(
+                                    "Rejected max_turns={} (must be {}-{})",
+                                    turns, MAX_TURNS_MIN, MAX_TURNS_MAX,
+                                ),
+                                Some(&fix.description),
+                            );
+                        } else {
+                            tx.execute(
+                                "UPDATE personas SET max_turns = ?1, updated_at = ?2 WHERE id = ?3",
+                                params![turns, now, persona_id],
+                            ).map_err(AppError::Database)?;
+                            applied.push(format!("Updated max_turns to {}: {}", turns, fix.description));
+                        }
                     }
                 }
                 "enabled" => {
+                    // AI healing must never disable a persona -- that requires human approval.
+                    // Only allow setting enabled=true (re-enabling).
                     if let Ok(enabled) = fix.payload.parse::<bool>() {
-                        let input = UpdatePersonaInput {
-                            enabled: Some(enabled),
-                            ..Default::default()
-                        };
-                        persona_repo::update(pool, persona_id, input)?;
-                        applied.push(format!("Set enabled={}: {}", enabled, fix.description));
+                        if !enabled {
+                            tracing::warn!(
+                                "AI healing: blocked attempt to disable persona {}",
+                                persona_id,
+                            );
+                            healing_repo::create_audit_entry(
+                                pool, Some(persona_id), None,
+                                "ai_heal_disable_blocked", "ai_healing",
+                                "Blocked AI healing from setting enabled=false (requires human approval)",
+                                Some(&fix.description),
+                            );
+                        } else {
+                            let enabled_int = 1;
+                            tx.execute(
+                                "UPDATE personas SET enabled = ?1, updated_at = ?2 WHERE id = ?3",
+                                params![enabled_int, now, persona_id],
+                            ).map_err(AppError::Database)?;
+                            applied.push(format!("Set enabled=true: {}", fix.description));
+                        }
                     }
                 }
                 other => {
                     tracing::warn!("AI healing: unknown config target '{}'", other);
+                    healing_repo::create_audit_entry(
+                        pool, Some(persona_id), None,
+                        "ai_heal_unknown_target", "ai_healing",
+                        &format!("Unknown config target '{}'", other),
+                        Some(&fix.description),
+                    );
                 }
             },
             "modify_file" | "run_command" => {
@@ -313,43 +399,39 @@ fn apply_db_fixes(
             }
             other => {
                 tracing::warn!("AI healing: unknown fix type '{}'", other);
+                healing_repo::create_audit_entry(
+                    pool, Some(persona_id), None,
+                    "ai_heal_unknown_fix_type", "ai_healing",
+                    &format!("Unknown fix type '{}'", other),
+                    Some(&fix.description),
+                );
             }
         }
     }
+
+    // Log applied fixes as a healing issue for audit trail
+    if !applied.is_empty() {
+        let log_id = uuid::Uuid::new_v4().to_string();
+        let description = applied.join("\n");
+        tx.execute(
+            "INSERT OR IGNORE INTO persona_healing_issues \
+             (id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at) \
+             VALUES (?1, ?2, NULL, ?3, ?4, 0, 'info', 'auto_heal', NULL, 1, 'resolved', ?5)",
+            params![
+                log_id,
+                persona_id,
+                format!("AI healing applied {} fixes", applied.len()),
+                description,
+                now,
+            ],
+        ).map_err(AppError::Database)?;
+    }
+
+    tx.commit().map_err(AppError::Database)?;
 
     Ok(applied)
 }
 
-/// Patch a specific section within the structured_prompt JSON.
-fn patch_structured_prompt_section(
-    pool: &DbPool,
-    persona_id: &str,
-    section: &str,
-    new_content: &str,
-) -> Result<bool, AppError> {
-    let persona = persona_repo::get_by_id(pool, persona_id)?;
-    let sp = persona.structured_prompt.unwrap_or_default();
-
-    if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(&sp) {
-        if let Some(obj) = val.as_object_mut() {
-            if obj.contains_key(section) {
-                obj.insert(
-                    section.to_string(),
-                    serde_json::Value::String(new_content.to_string()),
-                );
-                let updated = serde_json::to_string(&val).unwrap_or(sp);
-                let input = UpdatePersonaInput {
-                    structured_prompt: Some(Some(updated)),
-                    ..Default::default()
-                };
-                persona_repo::update(pool, persona_id, input)?;
-                return Ok(true);
-            }
-        }
-    }
-
-    Ok(false)
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -472,5 +554,24 @@ mod tests {
         assert!(prompt.contains("Unknown"));
         assert!(prompt.contains("healing_fix"));
         assert!(prompt.contains("healing_complete"));
+    }
+
+    #[test]
+    fn test_healing_prompt_documents_bounds() {
+        let input = build_healing_input("err", "Unknown");
+        let prompt = input.get("_healing_prompt").unwrap().as_str().unwrap();
+        assert!(prompt.contains("1000-1800000"), "prompt should document timeout_ms bounds");
+        assert!(prompt.contains("1-100"), "prompt should document max_turns bounds");
+        assert!(prompt.contains("true only"), "prompt should note enabled=true only");
+    }
+
+    #[test]
+    fn test_config_bounds_constants() {
+        assert_eq!(TIMEOUT_MS_MIN, 1_000);
+        assert_eq!(TIMEOUT_MS_MAX, 1_800_000);
+        assert_eq!(MAX_TURNS_MIN, 1);
+        assert_eq!(MAX_TURNS_MAX, 100);
+        assert!(TIMEOUT_MS_MIN > 0, "timeout lower bound must be positive");
+        assert!(MAX_TURNS_MIN > 0, "max_turns lower bound must be positive");
     }
 }

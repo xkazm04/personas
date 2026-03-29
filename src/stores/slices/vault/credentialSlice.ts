@@ -28,7 +28,7 @@ export interface CredentialSlice {
   createCredential: (input: { name: string; service_type: string; data: object }) => Promise<string>;
   updateCredential: (id: string, input: { name?: string; service_type?: string; data?: object }) => Promise<void>;
   deleteCredential: (id: string) => Promise<void>;
-  updateCredentialField: (id: string, key: string, value: string, isSensitive: boolean) => Promise<void>;
+  updateCredentialField: (id: string, key: string, value: string) => Promise<void>;
   healthcheckCredential: (credentialId: string) => Promise<{ success: boolean; message: string }>;
   healthcheckCredentialPreview: (serviceType: string, fieldValues: Record<string, string>) => Promise<{ success: boolean; message: string }>;
   fetchConnectorDefinitions: () => Promise<void>;
@@ -149,10 +149,10 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
     }
   },
 
-  updateCredentialField: async (id, key, value, isSensitive) => {
+  updateCredentialField: async (id, key, value) => {
     try {
       const sessionEncryptedValue = await encryptWithSessionKey(value);
-      await updateCredentialField(id, key, isSensitive, sessionEncryptedValue);
+      await updateCredentialField(id, key, sessionEncryptedValue);
       // Optimistic: bump updated_at locally instead of re-fetching the full list.
       // Field updates don't change credential-level metadata, only the timestamp.
       const now = new Date().toISOString();

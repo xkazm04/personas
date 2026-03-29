@@ -1,6 +1,174 @@
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
+use std::str::FromStr;
+
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+
+use crate::error::AppError;
+
+// ============================================================================
+// Typed enums for stringly-typed fields
+// ============================================================================
+
+/// Trust level for a persona — mirrors the peer `TrustLevel` enum in
+/// `identity.rs` but kept separate because persona trust and peer trust
+/// may diverge in the future.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum PersonaTrustLevel {
+    Manual,
+    Verified,
+    Revoked,
+}
+
+impl Default for PersonaTrustLevel {
+    fn default() -> Self {
+        Self::Verified
+    }
+}
+
+impl fmt::Display for PersonaTrustLevel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl PersonaTrustLevel {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Manual => "manual",
+            Self::Verified => "verified",
+            Self::Revoked => "revoked",
+        }
+    }
+
+    pub fn is_revoked(&self) -> bool {
+        matches!(self, Self::Revoked)
+    }
+}
+
+impl FromStr for PersonaTrustLevel {
+    type Err = AppError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "manual" => Ok(Self::Manual),
+            "verified" => Ok(Self::Verified),
+            "revoked" => Ok(Self::Revoked),
+            _ => Err(AppError::Validation(format!(
+                "Invalid trust_level '{s}': must be 'manual', 'verified', or 'revoked'"
+            ))),
+        }
+    }
+}
+
+/// Origin of a persona's trust classification.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum PersonaTrustOrigin {
+    Builtin,
+    User,
+    System,
+}
+
+impl Default for PersonaTrustOrigin {
+    fn default() -> Self {
+        Self::Builtin
+    }
+}
+
+impl fmt::Display for PersonaTrustOrigin {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl PersonaTrustOrigin {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Builtin => "builtin",
+            Self::User => "user",
+            Self::System => "system",
+        }
+    }
+}
+
+impl FromStr for PersonaTrustOrigin {
+    type Err = AppError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "builtin" => Ok(Self::Builtin),
+            "user" => Ok(Self::User),
+            "system" => Ok(Self::System),
+            _ => Err(AppError::Validation(format!(
+                "Invalid trust_origin '{s}': must be 'builtin', 'user', or 'system'"
+            ))),
+        }
+    }
+}
+
+/// Parameter type discriminator for persona free parameters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum ParamType {
+    Number,
+    String,
+    Boolean,
+    Select,
+}
+
+impl fmt::Display for ParamType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Number => "number",
+            Self::String => "string",
+            Self::Boolean => "boolean",
+            Self::Select => "select",
+        })
+    }
+}
+
+/// File type discriminator for design context files.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "kebab-case")]
+pub enum DesignFileKind {
+    ApiSpec,
+    Schema,
+    McpConfig,
+    Other,
+}
+
+impl Default for DesignFileKind {
+    fn default() -> Self {
+        Self::Other
+    }
+}
+
+/// Canonical health status for a persona.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum HealthStatus {
+    Healthy,
+    Degraded,
+    Failing,
+    Dormant,
+}
+
+impl fmt::Display for HealthStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Self::Healthy => "healthy",
+            Self::Degraded => "degraded",
+            Self::Failing => "failing",
+            Self::Dormant => "dormant",
+        })
+    }
+}
 
 // ============================================================================
 // Design Context -- typed envelope for the design_context JSON column
@@ -13,9 +181,8 @@ use ts_rs::TS;
 pub struct DesignFile {
     pub name: String,
     pub content: String,
-    /// File type discriminator: "api-spec", "schema", "mcp-config", "other"
     #[serde(rename = "type")]
-    pub file_type: String,
+    pub file_type: DesignFileKind,
 }
 
 /// Design files and URL references provided as context during design analysis.
@@ -108,7 +275,7 @@ pub struct PersonaParameter {
     pub key: String,
     pub label: String,
     #[serde(rename = "type")]
-    pub param_type: String, // "number", "string", "boolean", "select"
+    pub param_type: ParamType,
     pub default_value: serde_json::Value,
     pub value: serde_json::Value,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -151,8 +318,8 @@ pub struct Persona {
     pub design_context: Option<String>,
     pub group_id: Option<String>,
     pub source_review_id: Option<String>,
-    pub trust_level: String,
-    pub trust_origin: String,
+    pub trust_level: PersonaTrustLevel,
+    pub trust_origin: PersonaTrustOrigin,
     pub trust_verified_at: Option<String>,
     pub trust_score: f64,
     /// Free parameters: JSON array of `PersonaParameter` definitions.
@@ -296,8 +463,7 @@ pub struct CreatePersonaInput {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PersonaHealth {
-    /// Canonical health level: "healthy", "degraded", "failing", or "dormant"
-    pub status: String,
+    pub status: HealthStatus,
     /// Last N execution statuses (e.g. ["completed","failed","completed"]), newest first
     pub recent_statuses: Vec<String>,
     /// Success rate from recent executions (0.0--1.0)

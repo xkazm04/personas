@@ -1,6 +1,7 @@
 use rusqlite::params;
 
 use crate::db::models::{CreatePersonaMemoryInput, PersonaMemory, validate_importance, validate_category, DEFAULT_MEMORY_CATEGORY};
+use crate::db::query_builder::QueryBuilder;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -65,42 +66,24 @@ fn build_memory_filters(
     persona_id: Option<&str>,
     category: Option<&str>,
     search: Option<&str>,
-) -> (String, Vec<String>) {
-    let mut conditions: Vec<String> = Vec::new();
-    let mut param_values: Vec<String> = Vec::new();
-    let mut param_idx = 1u32;
+) -> QueryBuilder {
+    let mut qb = QueryBuilder::new();
 
     if let Some(pid) = persona_id {
-        conditions.push(format!("persona_id = ?{param_idx}"));
-        param_values.push(pid.to_string());
-        param_idx += 1;
+        qb.where_eq("persona_id", pid.to_string());
     }
     if let Some(cat) = category {
-        conditions.push(format!("category = ?{param_idx}"));
-        param_values.push(cat.to_string());
-        param_idx += 1;
+        qb.where_eq("category", cat.to_string());
     }
     if let Some(q) = search {
         let trimmed = q.trim();
         if !trimmed.is_empty() {
             let pattern = format!("%{}%", escape_like(trimmed));
-            conditions.push(format!(
-                "(title LIKE ?{} ESCAPE '\\' OR content LIKE ?{} ESCAPE '\\')",
-                param_idx,
-                param_idx + 1
-            ));
-            param_values.push(pattern.clone());
-            param_values.push(pattern);
+            qb.where_like_escape_any(&["title", "content"], pattern);
         }
     }
 
-    let where_clause = if conditions.is_empty() {
-        String::new()
-    } else {
-        format!("WHERE {}", conditions.join(" AND "))
-    };
-
-    (where_clause, param_values)
+    qb
 }
 
 row_mapper!(row_to_memory -> PersonaMemory {
@@ -150,30 +133,14 @@ pub fn get_all(
 
         let conn = pool.get()?;
 
-        let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = filter_params
-            .into_iter()
-            .map(|value| Box::new(value) as Box<dyn rusqlite::types::ToSql>)
-            .collect();
-        let limit_idx = param_values.len() + 1;
+        let mut qb = build_memory_filters(persona_id, category, search);
+        qb.order_by(order_col, order_dir);
+        qb.limit(limit);
+        qb.offset(offset);
 
-        let sql = format!(
-            "SELECT * FROM persona_memories {} ORDER BY {} {} LIMIT ?{} OFFSET ?{}",
-            where_clause,
-            order_col,
-            order_dir,
-            limit_idx,
-            limit_idx + 1
-        );
-
-        param_values.push(Box::new(limit));
-        param_values.push(Box::new(offset));
-
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
-
+        let sql = qb.build_select("SELECT * FROM persona_memories");
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_memory)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
         let results: Vec<PersonaMemory> = collect_rows(rows, "memories::get_all");
         Ok(results)
     })
@@ -189,21 +156,12 @@ pub fn get_all_by_persona_ids(
     }
     timed_query!("persona_memories", "persona_memories::get_all_by_persona_ids", {
         let conn = pool.get()?;
-        let placeholders: Vec<String> = persona_ids
-            .iter()
-            .enumerate()
-            .map(|(i, _)| format!("?{}", i + 1))
-            .collect();
-        let sql = format!(
-            "SELECT * FROM persona_memories WHERE persona_id IN ({}) ORDER BY created_at DESC",
-            placeholders.join(", ")
-        );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
+        let mut qb = QueryBuilder::new();
+        qb.where_in("persona_id", persona_ids.iter().map(|s| s.to_string()).collect());
+        qb.order_by("created_at", "DESC");
+        let sql = qb.build_select("SELECT * FROM persona_memories");
         let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_memory)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
         Ok(collect_rows(rows, "memories::get_all_by_persona_ids"))
     })
 }
@@ -292,7 +250,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
                 category,
                 input.source_execution_id,
                 importance,
-                normalize_tags(input.tags),
+                normalize_tags(input.tags.map(|j| serde_json::to_string(&j.0).unwrap_or_default())),
                 now,
             ],
         )?;
@@ -310,15 +268,9 @@ pub fn get_total_count(
     timed_query!("persona_memories", "persona_memories::get_total_count", {
         let conn = pool.get()?;
 
-        let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
-
-        let sql = format!("SELECT COUNT(*) FROM persona_memories {where_clause}");
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = filter_params
-            .iter()
-            .map(|value| value as &dyn rusqlite::types::ToSql)
-            .collect();
-
-        let count: i64 = conn.query_row(&sql, params_ref.as_slice(), |row| row.get(0))?;
+        let qb = build_memory_filters(persona_id, category, search);
+        let sql = format!("SELECT COUNT(*) FROM persona_memories {}", qb.where_clause());
+        let count: i64 = conn.query_row(&sql, qb.params_ref().as_slice(), |row| row.get(0))?;
         Ok(count)
     })
 }
@@ -386,12 +338,8 @@ pub fn get_stats(
 ) -> Result<MemoryStats, AppError> {
     timed_query!("persona_memories", "persona_memories::get_stats", {
         let conn = pool.get()?;
-        let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = filter_params
-            .iter()
-            .map(|value| value as &dyn rusqlite::types::ToSql)
-            .collect();
-        compute_memory_stats(&conn, &where_clause, &params_ref)
+        let qb = build_memory_filters(persona_id, category, search);
+        compute_memory_stats(&conn, &qb.where_clause(), &qb.params_ref())
     })
 }
 
@@ -423,35 +371,20 @@ pub fn get_all_with_stats(
         let order_dir = validated_sort_direction(sort_direction);
 
         let conn = pool.get()?;
-        let (where_clause, filter_params) = build_memory_filters(persona_id, category, search);
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = filter_params
-            .iter()
-            .map(|value| value as &dyn rusqlite::types::ToSql)
-            .collect();
-
-        let stats = compute_memory_stats(&conn, &where_clause, &params_ref)?;
+        let filter_qb = build_memory_filters(persona_id, category, search);
+        let where_clause = filter_qb.where_clause();
+        let stats = compute_memory_stats(&conn, &where_clause, &filter_qb.params_ref())?;
         let total = stats.total;
 
-        // Paginated memories
-        let mut mem_params: Vec<Box<dyn rusqlite::types::ToSql>> = filter_params
-            .into_iter()
-            .map(|v| Box::new(v) as Box<dyn rusqlite::types::ToSql>)
-            .collect();
-        let limit_idx = mem_params.len() + 1;
-        let mem_sql = format!(
-            "SELECT * FROM persona_memories {} ORDER BY {} {} LIMIT ?{} OFFSET ?{}",
-            where_clause,
-            order_col,
-            order_dir,
-            limit_idx,
-            limit_idx + 1
-        );
-        mem_params.push(Box::new(limit_val));
-        mem_params.push(Box::new(offset_val));
-        let mem_params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            mem_params.iter().map(|p| p.as_ref()).collect();
+        // Paginated memories — build a new QB with same filters + pagination
+        let mut qb = build_memory_filters(persona_id, category, search);
+        qb.order_by(order_col, order_dir);
+        qb.limit(limit_val);
+        qb.offset(offset_val);
+
+        let mem_sql = qb.build_select("SELECT * FROM persona_memories");
         let mut mem_stmt = conn.prepare(&mem_sql)?;
-        let mem_rows = mem_stmt.query_map(mem_params_ref.as_slice(), row_to_memory)?;
+        let mem_rows = mem_stmt.query_map(qb.params_ref().as_slice(), row_to_memory)?;
         let memories: Vec<PersonaMemory> = collect_rows(mem_rows, "memories::get_all_with_stats");
 
         Ok(MemoriesWithStats {
@@ -488,16 +421,10 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
         let mut total_deleted: i64 = 0;
 
         for chunk in ids.chunks(CHUNK_SIZE) {
-            let placeholders: Vec<String> = (1..=chunk.len()).map(|i| format!("?{i}")).collect();
-            let sql = format!(
-                "DELETE FROM persona_memories WHERE id IN ({})",
-                placeholders.join(", ")
-            );
-            let params: Vec<&dyn rusqlite::types::ToSql> = chunk
-                .iter()
-                .map(|id| id as &dyn rusqlite::types::ToSql)
-                .collect();
-            let rows = tx.execute(&sql, params.as_slice())?;
+            let mut qb = QueryBuilder::new();
+            qb.where_in("id", chunk.iter().map(|s| s.to_string()).collect());
+            let sql = format!("DELETE FROM persona_memories {}", qb.where_clause());
+            let rows = tx.execute(&sql, qb.params_ref().as_slice())?;
             total_deleted += rows as i64;
         }
 
@@ -587,20 +514,15 @@ pub fn increment_access_batch(pool: &DbPool, ids: &[String]) -> Result<(), AppEr
     timed_query!("persona_memories", "persona_memories::increment_access_batch", {
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
-        let placeholders: Vec<String> = (1..=ids.len()).map(|i| format!("?{}", i + 2)).collect();
+        let mut qb = QueryBuilder::new();
+        let p_now1 = qb.push_param(now.clone());
+        let p_now2 = qb.push_param(now);
+        qb.where_in("id", ids.iter().map(|s| s.clone()).collect());
         let sql = format!(
-            "UPDATE persona_memories SET access_count = access_count + 1, last_accessed_at = ?1, updated_at = ?2 WHERE id IN ({})",
-            placeholders.join(", ")
+            "UPDATE persona_memories SET access_count = access_count + 1, last_accessed_at = {p_now1}, updated_at = {p_now2} {}",
+            qb.where_clause()
         );
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::with_capacity(ids.len() + 2);
-        param_values.push(Box::new(now.clone()));
-        param_values.push(Box::new(now));
-        for id in ids {
-            param_values.push(Box::new(id.clone()));
-        }
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
-        conn.execute(&sql, params_ref.as_slice())?;
+        conn.execute(&sql, qb.params_ref().as_slice())?;
         Ok(())
     })
 }

@@ -1,43 +1,43 @@
-use std::fmt;
-use std::str::FromStr;
-
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::{Persona, PersonaToolDefinition};
+use crate::db::models::{Persona, PersonaToolDefinition, PersonaTrustLevel, PersonaTrustOrigin};
 
 // =============================================================================
 // ExecutionState -- canonical state machine for execution status
 // =============================================================================
 
-/// Canonical execution state machine.
-///
-/// Valid transitions:
-///   Queued -> Running
-///   Running -> Completed | Failed | Incomplete | Cancelled
-///
-/// This is the single source of truth for execution status. The DB column
-/// stores the lowercase string form, the frontend `isExecuting` boolean is
-/// derived from `is_active()`, and event payloads carry this enum serialized.
-///
-/// The TS binding is exported via ts_rs and consumed by the frontend
-/// `executionState.ts` module. **Do not add variants here without updating
-/// the `TERMINAL` / `ACTIVE` slices and the compile-time assertion test.**
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
-#[serde(rename_all = "lowercase")]
-#[ts(export)]
-pub enum ExecutionState {
-    Queued,
-    Running,
-    Completed,
-    Failed,
-    Incomplete,
-    Cancelled,
+crate::declare_lifecycle! {
+    /// Canonical execution state machine.
+    ///
+    /// Valid transitions:
+    ///   Queued   -> Running | Failed | Cancelled
+    ///   Running  -> Completed | Failed | Incomplete | Cancelled
+    ///
+    /// This is the single source of truth for execution status. The DB column
+    /// stores the lowercase string form, the frontend `isExecuting` boolean is
+    /// derived from `is_active()`, and event payloads carry this enum serialized.
+    ///
+    /// The TS binding is exported via ts_rs and consumed by the frontend
+    /// `executionState.ts` module. **Do not add variants here without updating
+    /// the `TERMINAL` / `ACTIVE` slices and the compile-time assertion test.**
+    pub enum ExecutionState, entity = "execution" {
+        Queued("queued")         => [Running, Failed, Cancelled],
+        Running("running")       => [Completed, Failed, Incomplete, Cancelled],
+        Completed("completed")   => [],
+        Failed("failed")         => [],
+        Incomplete("incomplete") => [],
+        Cancelled("cancelled")   => [],
+    }
+    aliases {
+        // Backwards-compat: some old DB rows might have "pending"
+        "pending" => Queued,
+    }
 }
 
+#[allow(dead_code)]
 impl ExecutionState {
     /// All terminal states (execution is done, no further transitions).
-    #[allow(dead_code)]
     pub const TERMINAL: &'static [ExecutionState] = &[
         ExecutionState::Completed,
         ExecutionState::Failed,
@@ -46,7 +46,6 @@ impl ExecutionState {
     ];
 
     /// All active states (execution is in progress).
-    #[allow(dead_code)]
     pub const ACTIVE: &'static [ExecutionState] = &[
         ExecutionState::Queued,
         ExecutionState::Running,
@@ -60,59 +59,6 @@ impl ExecutionState {
     /// Returns true if the execution has reached a terminal state.
     pub fn is_terminal(&self) -> bool {
         !self.is_active()
-    }
-
-    /// Check whether transitioning from `self` to `target` is valid.
-    #[allow(dead_code)]
-    pub fn can_transition_to(&self, target: ExecutionState) -> bool {
-        matches!(
-            (self, target),
-            (ExecutionState::Queued, ExecutionState::Running)
-                | (ExecutionState::Running, ExecutionState::Completed)
-                | (ExecutionState::Running, ExecutionState::Failed)
-                | (ExecutionState::Running, ExecutionState::Incomplete)
-                | (ExecutionState::Running, ExecutionState::Cancelled)
-                // Recovery transitions: allow terminal -> cancelled for edge cases
-                // and queued -> failed for stale execution recovery
-                | (ExecutionState::Queued, ExecutionState::Failed)
-                | (ExecutionState::Queued, ExecutionState::Cancelled)
-        )
-    }
-
-    /// Returns the DB string representation (lowercase).
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            ExecutionState::Queued => "queued",
-            ExecutionState::Running => "running",
-            ExecutionState::Completed => "completed",
-            ExecutionState::Failed => "failed",
-            ExecutionState::Incomplete => "incomplete",
-            ExecutionState::Cancelled => "cancelled",
-        }
-    }
-}
-
-impl fmt::Display for ExecutionState {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl FromStr for ExecutionState {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "queued" => Ok(ExecutionState::Queued),
-            "running" => Ok(ExecutionState::Running),
-            "completed" => Ok(ExecutionState::Completed),
-            "failed" => Ok(ExecutionState::Failed),
-            "incomplete" => Ok(ExecutionState::Incomplete),
-            "cancelled" => Ok(ExecutionState::Cancelled),
-            // Backwards-compat: some old DB rows might have "pending"
-            "pending" => Ok(ExecutionState::Queued),
-            other => Err(format!("Unknown execution state: '{other}'")),
-        }
     }
 }
 
@@ -222,7 +168,8 @@ pub struct CliArgs {
 }
 
 /// Individual tool call step captured during execution for the inspector
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ts_rs::TS)]
+#[ts(export)]
 pub struct ToolCallStep {
     pub step_index: u32,
     pub tool_name: String,
@@ -244,12 +191,12 @@ pub struct ExecutionResult {
     pub log_file_path: Option<String>,
     pub claude_session_id: Option<String>,
     pub duration_ms: u64,
-    pub execution_flows: Option<String>,
+    pub execution_flows: Option<crate::db::models::Json<serde_json::Value>>,
     pub model_used: Option<String>,
     pub input_tokens: u64,
     pub output_tokens: u64,
     pub cost_usd: f64,
-    pub tool_steps: Option<String>,
+    pub tool_steps: Option<crate::db::models::Json<Vec<ToolCallStep>>>,
     /// Trace ID for this execution (used for chain trace propagation).
     pub trace_id: Option<String>,
     /// Frozen config snapshot assembled at the validate stage.
@@ -445,8 +392,8 @@ impl EphemeralPersona {
             design_context: draft.design_context,
             group_id: None,
             source_review_id: None,
-            trust_level: "verified".to_string(),
-            trust_origin: "builtin".to_string(),
+            trust_level: PersonaTrustLevel::Verified,
+            trust_origin: PersonaTrustOrigin::Builtin,
             trust_verified_at: None,
             trust_score: 1.0,
             parameters: None,
@@ -655,17 +602,7 @@ mod tests {
     /// classify it as either TERMINAL or ACTIVE.
     #[test]
     fn terminal_plus_active_covers_all_variants() {
-        // Exhaustive list of every variant — update this when adding variants.
-        let all: &[ExecutionState] = &[
-            ExecutionState::Queued,
-            ExecutionState::Running,
-            ExecutionState::Completed,
-            ExecutionState::Failed,
-            ExecutionState::Incomplete,
-            ExecutionState::Cancelled,
-        ];
-
-        for state in all {
+        for state in ExecutionState::ALL_VARIANTS {
             assert!(
                 ExecutionState::TERMINAL.contains(state) || ExecutionState::ACTIVE.contains(state),
                 "ExecutionState::{state:?} is neither TERMINAL nor ACTIVE — classify it",

@@ -3,7 +3,8 @@ use rusqlite::{params, Row};
 use std::str::FromStr;
 
 use crate::db::models::{
-    AutomationRun, CreateAutomationInput, PersonaAutomation, UpdateAutomationInput,
+    AutomationFallbackMode, AutomationPlatform, AutomationRun, AutomationRunStatus,
+    CreateAutomationInput, PersonaAutomation, UpdateAutomationInput,
 };
 use crate::db::DbPool;
 use crate::engine::lifecycle::AutomationDeployStatus;
@@ -17,7 +18,9 @@ fn row_to_automation(row: &Row) -> rusqlite::Result<PersonaAutomation> {
         use_case_id: row.get("use_case_id")?,
         name: row.get("name")?,
         description: row.get::<_, Option<String>>("description")?.unwrap_or_default(),
-        platform: row.get("platform")?,
+        platform: row.get::<_, Option<String>>("platform")?
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(AutomationPlatform::Custom),
         platform_workflow_id: row.get("platform_workflow_id")?,
         platform_url: row.get("platform_url")?,
         webhook_url: row.get("webhook_url")?,
@@ -28,7 +31,9 @@ fn row_to_automation(row: &Row) -> rusqlite::Result<PersonaAutomation> {
         output_schema: row.get("output_schema")?,
         timeout_ms: row.get::<_, Option<i64>>("timeout_ms")?.unwrap_or(30000),
         retry_count: row.get::<_, Option<i32>>("retry_count")?.unwrap_or(1),
-        fallback_mode: row.get::<_, Option<String>>("fallback_mode")?.unwrap_or_else(|| "connector".into()),
+        fallback_mode: row.get::<_, Option<String>>("fallback_mode")?
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(AutomationFallbackMode::Connector),
         deployment_status: AutomationDeployStatus::from_str(
             &row.get::<_, Option<String>>("deployment_status")?.unwrap_or_else(|| "draft".into()),
         )
@@ -68,21 +73,13 @@ pub fn create(pool: &DbPool, input: CreateAutomationInput) -> Result<PersonaAuto
         if input.name.trim().is_empty() {
             return Err(AppError::Validation("Automation name cannot be empty".into()));
         }
-        let valid_platforms = ["n8n", "github_actions", "zapier", "custom"];
-        if !valid_platforms.contains(&input.platform.as_str()) {
-            return Err(AppError::Validation(format!(
-                "Invalid platform '{}'. Must be one of: {}",
-                input.platform,
-                valid_platforms.join(", ")
-            )));
-        }
 
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let method = input.webhook_method.as_deref().unwrap_or("POST");
         let timeout = input.timeout_ms.unwrap_or(30000);
         let retries = input.retry_count.unwrap_or(1);
-        let fallback = input.fallback_mode.as_deref().unwrap_or("connector");
+        let fallback = input.fallback_mode.unwrap_or(AutomationFallbackMode::Connector);
         let desc = input.description.as_deref().unwrap_or("");
 
         let conn = pool.get()?;
@@ -95,10 +92,12 @@ pub fn create(pool: &DbPool, input: CreateAutomationInput) -> Result<PersonaAuto
               deployment_status, created_at, updated_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,'draft',?18,?18)",
             params![
-                id, input.persona_id, input.use_case_id, input.name, desc, input.platform,
+                id, input.persona_id, input.use_case_id, input.name, desc,
+                input.platform.as_str(),
                 input.platform_workflow_id, input.platform_url, input.webhook_url, method,
                 input.platform_credential_id, input.credential_mapping,
-                input.input_schema, input.output_schema, timeout, retries, fallback,
+                input.input_schema, input.output_schema, timeout, retries,
+                fallback.as_str(),
                 now,
             ],
         )?;
@@ -151,7 +150,7 @@ pub fn update(
         push_field_param!(input.output_schema, "output_schema", sets, param_idx, param_values, clone);
         push_field_param!(input.timeout_ms, "timeout_ms", sets, param_idx, param_values, copy);
         push_field_param!(input.retry_count, "retry_count", sets, param_idx, param_values, copy);
-        push_field_param!(input.fallback_mode, "fallback_mode", sets, param_idx, param_values, clone);
+        push_field_param!(input.fallback_mode, "fallback_mode", sets, param_idx, param_values, as_str);
         push_field_param!(input.deployment_status, "deployment_status", sets, param_idx, param_values, as_str);
         push_field_param!(input.error_message, "error_message", sets, param_idx, param_values, clone);
 
@@ -264,7 +263,7 @@ pub fn create_run(
 pub fn complete_run(
     pool: &DbPool,
     run_id: &str,
-    status: &str,
+    status: AutomationRunStatus,
     output_data: Option<&str>,
     duration_ms: Option<i64>,
     platform_run_id: Option<&str>,
@@ -281,7 +280,7 @@ pub fn complete_run(
                  platform_run_id = ?4, platform_logs_url = ?5,
                  error_message = ?6, warnings = ?7, completed_at = ?8
              WHERE id = ?9",
-            params![status, output_data, duration_ms, platform_run_id, platform_logs_url, error_message, warnings, now, run_id],
+            params![status.as_str(), output_data, duration_ms, platform_run_id, platform_logs_url, error_message, warnings, now, run_id],
         )?;
         get_run_by_id(pool, run_id)
     })

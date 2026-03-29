@@ -297,9 +297,9 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       trace = completeTrace(trace);
       if (!runInBackground) {
         executionLifecycle.markFailed(set);
-        reportError(err, "Failed to execute persona", set, { stateUpdates: { executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace } });
+        reportError(err, "Failed to execute persona", set, { action: "executePersona", stateUpdates: { executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace } });
       } else {
-        reportError(err, "Failed to execute persona in background", set);
+        reportError(err, "Failed to execute persona in background", set, { action: "executePersonaBackground" });
       }
       return null;
     }
@@ -314,7 +314,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         set({ pipelineTrace: completeTrace(traceStage(trace, 'finalize_status', { cancelled: true })) });
       }
     } catch (err) {
-      reportError(err, "Failed to cancel execution", set);
+      reportError(err, "Failed to cancel execution", set, { action: "cancelExecution" });
     } finally {
       // If a chat stream is active, finalize it before clearing state.
       const { chatStreaming: streaming, activeChatSessionId: sid, executionPersonaId: pid, executionOutput: out } = get();
@@ -405,7 +405,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     set({ activeExecutionId: null, lastExecutionId: execId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null });
     const personaId = get().selectedPersona?.id;
     if (personaId) get().fetchExecutions(personaId);
-    get().fetchPersonaSummaries();
+    // Health summaries are now pushed via PERSONA_HEALTH_CHANGED event from the backend
 
     // Clear recovery state
     try { localStorage.removeItem('personas:active-execution'); } catch { /* ignore */ }
@@ -422,7 +422,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         const executions = await listExecutions(personaId);
         set({ executions, executionsPersonaId: personaId });
       } catch (err) {
-        reportError(err, "Failed to fetch executions", set);
+        reportError(err, "Failed to fetch executions", set, { action: "fetchExecutions" });
       } finally {
         set({ executionsLoading: false });
         inflightFetch = null;

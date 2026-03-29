@@ -1,6 +1,6 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreateMatrixResultInput, LabMatrixResult, LabMatrixRun, LabRunStatus};
+use crate::db::models::{CreateMatrixResultInput, LabMatrixResult, LabMatrixRun, LabRunStatus, row_to_lab_result_base};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -32,28 +32,25 @@ fn row_to_result(row: &Row) -> rusqlite::Result<LabMatrixResult> {
         id: row.get("id")?,
         run_id: row.get("run_id")?,
         variant: row.get("variant")?,
-        scenario_name: row.get("scenario_name")?,
-        model_id: row.get("model_id")?,
-        provider: row.get("provider")?,
-        status: row.get("status")?,
-        output_preview: row.get("output_preview")?,
-        tool_calls_expected: row.get("tool_calls_expected")?,
-        tool_calls_actual: row.get("tool_calls_actual")?,
-        tool_accuracy_score: row.get("tool_accuracy_score")?,
-        output_quality_score: row.get("output_quality_score")?,
-        protocol_compliance: row.get("protocol_compliance")?,
-        input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
-        output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
-        cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
-        duration_ms: row.get::<_, Option<i64>>("duration_ms")?.unwrap_or(0),
-        rationale: row.get("rationale")?,
-        suggestions: row.get("suggestions")?,
-        error_message: row.get("error_message")?,
-        created_at: row.get("created_at")?,
+        base: row_to_lab_result_base(row)?,
     })
 }
 
-// -- Matrix Runs ------------------------------------------------
+// -- Generated CRUD (get/update/delete for runs + results) ------
+
+lab_crud! {
+    run_table: "lab_matrix_runs",
+    result_table: "lab_matrix_results",
+    run_type: LabMatrixRun,
+    result_type: LabMatrixResult,
+    run_entity: "LabMatrixRun",
+    result_entity: "LabMatrixResult",
+    result_order: "variant, scenario_name, model_id",
+    run_mapper: row_to_run,
+    result_mapper: row_to_result,
+}
+
+// -- Matrix-specific functions ----------------------------------
 
 pub fn create_run(
     pool: &DbPool,
@@ -73,78 +70,6 @@ pub fn create_run(
             params![id, persona_id, user_instruction, models_tested, use_case_filter, now],
         )?;
         get_run_by_id(pool, &id)
-    })
-}
-
-pub fn get_run_by_id(pool: &DbPool, id: &str) -> Result<LabMatrixRun, AppError> {
-    timed_query!("lab_matrix_runs", "lab_matrix_runs::get_run_by_id", {
-        let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM lab_matrix_runs WHERE id = ?1",
-            params![id],
-            row_to_run,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("LabMatrixRun {id}")),
-            other => AppError::Database(other),
-        })
-    })
-}
-
-pub fn get_runs_by_persona(
-    pool: &DbPool,
-    persona_id: &str,
-    limit: Option<i64>,
-) -> Result<Vec<LabMatrixRun>, AppError> {
-    timed_query!("lab_matrix_runs", "lab_matrix_runs::get_runs_by_persona", {
-        let limit = limit.unwrap_or(20);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM lab_matrix_runs WHERE persona_id = ?1
-             ORDER BY created_at DESC LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![persona_id, limit], row_to_run)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
-}
-
-pub fn update_run_status(
-    pool: &DbPool,
-    id: &str,
-    status: LabRunStatus,
-    scenarios_count: Option<i32>,
-    summary: Option<&str>,
-    error: Option<&str>,
-    completed_at: Option<&str>,
-) -> Result<(), AppError> {
-    timed_query!("lab_matrix_runs", "lab_matrix_runs::update_run_status", {
-        let conn = pool.get()?;
-        let current: String = conn
-            .query_row(
-                "SELECT status FROM lab_matrix_runs WHERE id = ?1",
-                params![id],
-                |row| row.get(0),
-            )
-            .map_err(|e| match e {
-                rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("LabMatrixRun {id}")),
-                other => AppError::Database(other),
-            })?;
-        let current_status = LabRunStatus::from_db(&current);
-        current_status
-            .validate_transition(status)
-            .map_err(AppError::Validation)?;
-        conn.execute(
-            "UPDATE lab_matrix_runs SET
-                status = ?1,
-                scenarios_count = COALESCE(?2, scenarios_count),
-                summary = COALESCE(?3, summary),
-                error = COALESCE(?4, error),
-                completed_at = COALESCE(?5, completed_at)
-             WHERE id = ?6",
-            params![status.as_str(), scenarios_count, summary, error, completed_at, id],
-        )?;
-        Ok(())
     })
 }
 
@@ -175,27 +100,6 @@ pub fn accept_draft(pool: &DbPool, id: &str) -> Result<(), AppError> {
     })
 }
 
-pub fn update_progress(pool: &DbPool, run_id: &str, progress_json: &str) -> Result<(), AppError> {
-    timed_query!("lab_matrix_runs", "lab_matrix_runs::update_progress", {
-        let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
-        conn.execute(
-            "UPDATE lab_matrix_runs SET progress_json = ?1 WHERE id = ?2",
-            rusqlite::params![progress_json, run_id],
-        ).map_err(|e| AppError::Internal(e.to_string()))?;
-        Ok(())
-    })
-}
-
-pub fn delete_run(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    timed_query!("lab_matrix_runs", "lab_matrix_runs::delete_run", {
-        let conn = pool.get()?;
-        let rows = conn.execute("DELETE FROM lab_matrix_runs WHERE id = ?1", params![id])?;
-        Ok(rows > 0)
-    })
-}
-
-// -- Matrix Results ---------------------------------------------
-
 pub fn create_result(
     pool: &DbPool,
     input: &CreateMatrixResultInput,
@@ -218,58 +122,27 @@ pub fn create_result(
                 id,
                 input.run_id,
                 input.variant,
-                input.scenario_name,
-                input.model_id,
-                input.provider,
-                input.status,
-                input.output_preview,
-                input.tool_calls_expected,
-                input.tool_calls_actual,
-                input.tool_accuracy_score,
-                input.output_quality_score,
-                input.protocol_compliance,
-                input.input_tokens,
-                input.output_tokens,
-                input.cost_usd,
-                input.duration_ms,
-                input.rationale,
-                input.suggestions,
-                input.error_message,
+                input.base.scenario_name,
+                input.base.model_id,
+                input.base.provider,
+                input.base.status,
+                input.base.output_preview,
+                input.base.tool_calls_expected,
+                input.base.tool_calls_actual,
+                input.base.tool_accuracy_score,
+                input.base.output_quality_score,
+                input.base.protocol_compliance,
+                input.base.input_tokens,
+                input.base.output_tokens,
+                input.base.cost_usd,
+                input.base.duration_ms,
+                input.base.rationale,
+                input.base.suggestions,
+                input.base.error_message,
                 now,
             ],
             row_to_result,
         )
         .map_err(AppError::Database)
-    })
-}
-
-pub fn get_result_by_id(pool: &DbPool, id: &str) -> Result<LabMatrixResult, AppError> {
-    timed_query!("lab_matrix_runs", "lab_matrix_runs::get_result_by_id", {
-        let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM lab_matrix_results WHERE id = ?1",
-            params![id],
-            row_to_result,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("LabMatrixResult {id}")),
-            other => AppError::Database(other),
-        })
-    })
-}
-
-pub fn get_results_by_run(
-    pool: &DbPool,
-    run_id: &str,
-) -> Result<Vec<LabMatrixResult>, AppError> {
-    timed_query!("lab_matrix_runs", "lab_matrix_runs::get_results_by_run", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM lab_matrix_results WHERE run_id = ?1
-             ORDER BY variant, scenario_name, model_id",
-        )?;
-        let rows = stmt.query_map(params![run_id], row_to_result)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
     })
 }

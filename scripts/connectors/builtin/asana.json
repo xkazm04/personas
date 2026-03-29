@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "1/12345:abcdef...",
-      "helpText": "From Asana -> My Settings -> Apps -> Manage Developer Apps -> Personal Access Tokens"
+      "helpText": "From Asana -> My Settings -> Apps -> Manage Developer Apps -> Personal Access Tokens",
+      "sensitive": true
     }
   ],
   "healthcheck_config": {

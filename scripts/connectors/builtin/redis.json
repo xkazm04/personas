@@ -12,7 +12,8 @@
       "type": "password",
       "required": true,
       "placeholder": "redis://default:password@host:6379",
-      "helpText": "Redis connection URL (redis:// or rediss:// for TLS)"
+      "helpText": "Redis connection URL (redis:// or rediss:// for TLS)",
+      "sensitive": true
     },
     {
       "key": "host",
@@ -20,7 +21,8 @@
       "type": "text",
       "required": false,
       "placeholder": "localhost",
-      "helpText": "Alternative: provide host/port/password separately"
+      "helpText": "Alternative: provide host/port/password separately",
+      "sensitive": false
     },
     {
       "key": "port",
@@ -28,7 +30,8 @@
       "type": "text",
       "required": false,
       "placeholder": "6379",
-      "helpText": "Redis port (default 6379)"
+      "helpText": "Redis port (default 6379)",
+      "sensitive": false
     },
     {
       "key": "password",
@@ -36,7 +39,8 @@
       "type": "password",
       "required": false,
       "placeholder": "",
-      "helpText": "Redis AUTH password"
+      "helpText": "Redis AUTH password",
+      "sensitive": true
     }
   ],
   "healthcheck_config": null,
@@ -54,13 +58,19 @@
       {
         "id": "connection_url",
         "label": "Connection URL",
-        "fields": ["connection_url"],
+        "fields": [
+          "connection_url"
+        ],
         "auth_type_label": "Connection URL"
       },
       {
         "id": "individual",
         "label": "Individual Fields",
-        "fields": ["host", "port", "password"],
+        "fields": [
+          "host",
+          "port",
+          "password"
+        ],
         "auth_type_label": "Host/Port"
       }
     ]
