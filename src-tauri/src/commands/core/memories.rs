@@ -378,15 +378,27 @@ Memories to review:
             .to_string();
 
         if score < threshold {
-            let _ = repo::delete(&db, id);
-            deleted_count += 1;
-            details.push(MemoryReviewDetail {
-                id: id.to_string(),
-                title,
-                score,
-                reason,
-                action: "deleted".to_string(),
-            });
+            match repo::delete(&db, id) {
+                Ok(_) => {
+                    deleted_count += 1;
+                    details.push(MemoryReviewDetail {
+                        id: id.to_string(),
+                        title,
+                        score,
+                        reason,
+                        action: "deleted".to_string(),
+                    });
+                }
+                Err(e) => {
+                    details.push(MemoryReviewDetail {
+                        id: id.to_string(),
+                        title,
+                        score,
+                        reason: format!("DB error on delete: {e}"),
+                        action: "error".to_string(),
+                    });
+                }
+            }
         } else {
             // Map 7-10 to importance 3-5
             let new_importance = match score {
@@ -395,15 +407,27 @@ Memories to review:
                 9..=10 => 5,
                 _ => 3,
             };
-            let _ = repo::update_importance(&db, id, new_importance);
-            updated_count += 1;
-            details.push(MemoryReviewDetail {
-                id: id.to_string(),
-                title,
-                score,
-                reason,
-                action: "kept".to_string(),
-            });
+            match repo::update_importance(&db, id, new_importance) {
+                Ok(_) => {
+                    updated_count += 1;
+                    details.push(MemoryReviewDetail {
+                        id: id.to_string(),
+                        title,
+                        score,
+                        reason,
+                        action: "kept".to_string(),
+                    });
+                }
+                Err(e) => {
+                    details.push(MemoryReviewDetail {
+                        id: id.to_string(),
+                        title,
+                        score,
+                        reason: format!("DB error on update: {e}"),
+                        action: "error".to_string(),
+                    });
+                }
+            }
         }
     }
 

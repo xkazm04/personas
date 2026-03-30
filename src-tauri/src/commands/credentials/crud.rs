@@ -287,9 +287,7 @@ pub fn vault_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
     require_privileged_sync(&state, "vault_status")?;
-    let all = repo::get_all(&state.db)?;
-    let total = all.len();
-    let plaintext = all.iter().filter(|c| crypto::is_plaintext(&c.iv)).count();
+    let (total, plaintext) = repo::count_vault_status(&state.db)?;
     let encrypted = total - plaintext;
     let source = crypto::key_source_label();
 

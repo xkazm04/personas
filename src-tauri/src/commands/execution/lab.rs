@@ -729,18 +729,30 @@ pub async fn lab_improve_prompt(
     let results_summary = match mode.as_str() {
         "arena" => {
             let results = arena_repo::get_results_by_run(&state.db, &run_id)?;
+            if results.is_empty() {
+                return Err(AppError::Validation("No results found for this run — cannot generate improvement suggestions without data".into()));
+            }
             build_results_summary_arena(&results)
         }
         "ab" => {
             let results = ab_repo::get_results_by_run(&state.db, &run_id)?;
+            if results.is_empty() {
+                return Err(AppError::Validation("No results found for this run — cannot generate improvement suggestions without data".into()));
+            }
             build_results_summary_ab(&results)
         }
         "matrix" => {
             let results = matrix_repo::get_results_by_run(&state.db, &run_id)?;
+            if results.is_empty() {
+                return Err(AppError::Validation("No results found for this run — cannot generate improvement suggestions without data".into()));
+            }
             build_results_summary_matrix(&results)
         }
         "eval" => {
             let results = eval_repo::get_results_by_run(&state.db, &run_id)?;
+            if results.is_empty() {
+                return Err(AppError::Validation("No results found for this run — cannot generate improvement suggestions without data".into()));
+            }
             build_results_summary_eval(&results)
         }
         _ => unreachable!(),

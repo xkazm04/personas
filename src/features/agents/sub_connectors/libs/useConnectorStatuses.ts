@@ -33,15 +33,33 @@ export function useConnectorStatuses() {
 
   const credentialLinks = useSelectedCredentialLinks();
 
+  // Pre-build lookup maps to avoid O(N*M) linear searches
+  const credentialsByServiceType = useMemo(() => {
+    const map = new Map<string, (typeof credentials)[number]>();
+    for (const cred of credentials) {
+      if (!map.has(cred.service_type)) map.set(cred.service_type, cred);
+    }
+    return map;
+  }, [credentials]);
+
+  const credentialsByIdMap = useMemo(() => {
+    const map = new Map<string, (typeof credentials)[number]>();
+    for (const cred of credentials) map.set(cred.id, cred);
+    return map;
+  }, [credentials]);
+
   // Build connector statuses
   useEffect(() => {
     if (requiredCredTypes.length === 0) { setStatuses([]); return; }
-    setStatuses((prev) =>
-      requiredCredTypes.map((credType) => {
-        const matchedCred = credentials.find((c) => c.service_type === credType);
-        const existing = prev.find((p) => p.name === credType);
+    setStatuses((prev) => {
+      const prevByName = new Map<string, ConnectorStatus>();
+      for (const p of prev) prevByName.set(p.name, p);
+
+      return requiredCredTypes.map((credType) => {
+        const matchedCred = credentialsByServiceType.get(credType) ?? null;
+        const existing = prevByName.get(credType);
         const linkedCredId = credentialLinks[credType];
-        const linkedCred = linkedCredId ? credentials.find((c) => c.id === linkedCredId) : null;
+        const linkedCred = linkedCredId ? credentialsByIdMap.get(linkedCredId) ?? null : null;
         return {
           name: credType,
           credentialId: existing?.credentialId ?? matchedCred?.id ?? linkedCred?.id ?? null,
@@ -50,9 +68,9 @@ export function useConnectorStatuses() {
           result: existing?.result ?? null,
           linkError: existing?.linkError ?? null,
         };
-      }),
-    );
-  }, [requiredCredTypes, credentials, credentialLinks]);
+      });
+    });
+  }, [requiredCredTypes, credentials, credentialLinks, credentialsByServiceType, credentialsByIdMap]);
 
   useEffect(() => { void fetchCredentials().catch(silentCatch("useConnectorStatuses:initialFetchCredentials")); }, [fetchCredentials]);
 

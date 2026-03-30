@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 
 const WIDTH = 48;
 const HEIGHT = 32;
@@ -39,8 +39,40 @@ interface WorkflowThumbnailProps {
   rawWorkflowJson: string;
 }
 
-export function WorkflowThumbnail({ rawWorkflowJson }: WorkflowThumbnailProps) {
+/**
+ * Lazy-rendered workflow thumbnail that only parses JSON and builds SVG
+ * when scrolled into view via IntersectionObserver.
+ */
+export const WorkflowThumbnail = memo(function WorkflowThumbnail({ rawWorkflowJson }: WorkflowThumbnailProps) {
+  const [isVisible, setIsVisible] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    // Clean up previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+
+    if (!node) return;
+
+    observerRef.current = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+          // Once visible, stop observing — thumbnail stays rendered
+          observerRef.current?.disconnect();
+          observerRef.current = null;
+        }
+      },
+      { rootMargin: '100px' },
+    );
+    observerRef.current.observe(node);
+  }, []);
+
   const elements = useMemo(() => {
+    if (!isVisible) return null;
+
     try {
       const parsed = JSON.parse(rawWorkflowJson) as N8nWorkflow;
       const nodes = (parsed.nodes ?? []).filter(
@@ -77,7 +109,19 @@ export function WorkflowThumbnail({ rawWorkflowJson }: WorkflowThumbnailProps) {
       // intentional: non-critical -- JSON parse fallback
       return null;
     }
-  }, [rawWorkflowJson]);
+  }, [rawWorkflowJson, isVisible]);
+
+  // Placeholder while not yet visible
+  if (!isVisible) {
+    return (
+      <div
+        ref={containerRef}
+        style={{ width: WIDTH, height: HEIGHT }}
+        className="shrink-0 rounded bg-primary/5"
+        data-testid="workflow-thumbnail-placeholder"
+      />
+    );
+  }
 
   if (!elements) {
     return (
@@ -137,4 +181,4 @@ export function WorkflowThumbnail({ rawWorkflowJson }: WorkflowThumbnailProps) {
       ))}
     </svg>
   );
-}
+});

@@ -482,25 +482,28 @@ pub fn get_for_injection(
     timed_query!("persona_memories", "persona_memories::get_for_injection", {
         let conn = pool.get()?;
 
-        // Core memories — always injected
-        let mut core_stmt = conn.prepare(
-            "SELECT * FROM persona_memories
-             WHERE persona_id = ?1 AND tier = 'core'
-             ORDER BY importance DESC, created_at DESC
-             LIMIT ?2",
+        // Single round-trip: fetch both tiers via UNION ALL with per-tier limits.
+        let mut stmt = conn.prepare(
+            "SELECT * FROM (
+                 SELECT * FROM persona_memories
+                 WHERE persona_id = ?1 AND tier = 'core'
+                 ORDER BY importance DESC, created_at DESC
+                 LIMIT ?2
+             )
+             UNION ALL
+             SELECT * FROM (
+                 SELECT * FROM persona_memories
+                 WHERE persona_id = ?1 AND tier IN ('active', 'working')
+                 ORDER BY importance DESC, access_count DESC, created_at DESC
+                 LIMIT ?3
+             )",
         )?;
-        let core_rows = core_stmt.query_map(params![persona_id, core_limit], row_to_memory)?;
-        let core: Vec<PersonaMemory> = collect_rows(core_rows, "memories::get_for_injection/core");
+        let rows = stmt.query_map(params![persona_id, core_limit, active_limit], row_to_memory)?;
+        let all: Vec<PersonaMemory> = collect_rows(rows, "memories::get_for_injection");
 
-        // Active memories — scored selection
-        let mut active_stmt = conn.prepare(
-            "SELECT * FROM persona_memories
-             WHERE persona_id = ?1 AND tier IN ('active', 'working')
-             ORDER BY importance DESC, access_count DESC, created_at DESC
-             LIMIT ?2",
-        )?;
-        let active_rows = active_stmt.query_map(params![persona_id, active_limit], row_to_memory)?;
-        let active: Vec<PersonaMemory> = collect_rows(active_rows, "memories::get_for_injection/active");
+        let (core, active) = all.into_iter().partition(|m| {
+            m.tier == "core"
+        });
 
         Ok(TieredMemories { core, active })
     })
@@ -537,11 +540,12 @@ pub fn increment_access_batch(pool: &DbPool, ids: &[String]) -> Result<(), AppEr
 pub fn run_lifecycle(pool: &DbPool, persona_id: &str) -> Result<(i64, i64), AppError> {
     timed_query!("persona_memories", "persona_memories::run_lifecycle", {
         let conn = pool.get()?;
+        let tx = conn.unchecked_transaction()?;
         let now = chrono::Utc::now();
         let updated_at = now.to_rfc3339();
 
         // Promote: working memories accessed frequently -> active
-        let promoted = conn.execute(
+        let promoted = tx.execute(
             "UPDATE persona_memories
              SET tier = 'active', updated_at = ?1
              WHERE persona_id = ?2 AND tier = 'working' AND access_count >= 5",
@@ -550,13 +554,14 @@ pub fn run_lifecycle(pool: &DbPool, persona_id: &str) -> Result<(i64, i64), AppE
 
         // Archive: working memories older than 30 days with no accesses -> archive
         let cutoff = (now - chrono::Duration::days(30)).to_rfc3339();
-        let archived = conn.execute(
+        let archived = tx.execute(
             "UPDATE persona_memories
              SET tier = 'archive', updated_at = ?1
              WHERE persona_id = ?2 AND tier = 'working' AND access_count = 0 AND created_at < ?3",
             params![updated_at, persona_id, cutoff],
         )? as i64;
 
+        tx.commit()?;
         Ok((promoted, archived))
     })
 }

@@ -200,6 +200,8 @@ pub fn build_client_from_credential(
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    let _ = crate::db::repos::resources::audit_log::log_decrypt(pool, credential_id, &credential.name, "platform:github", None, None);
+    if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(pool, credential_id, &credential.name, "platform:github", None, None) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
     GitHubClient::from_fields(&fields)
 }

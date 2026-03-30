@@ -228,7 +228,7 @@ export default function ObservabilityDashboard() {
       {healing.selectedIssue && (
         <HealingIssueModal
           issue={healing.selectedIssue}
-          onResolve={(id) => { d.resolveHealingIssue(id); healing.setSelectedIssue(null); }}
+          onResolve={(id) => d.resolveHealingIssue(id)}
           onClose={() => healing.setSelectedIssue(null)}
         />
       )}

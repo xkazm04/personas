@@ -386,10 +386,7 @@ pub fn get_bulk_delivery_summaries(
             row.get::<_, i64>(3)?,
         ))
     })?;
-    let mut result = Vec::new();
-    for row in rows {
-        if let Ok(r) = row { result.push(r); }
-    }
+    let result = collect_rows(rows, "messages::get_bulk_delivery_summaries");
     Ok(result)
     })
 }

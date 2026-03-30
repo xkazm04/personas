@@ -8,12 +8,13 @@ import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 
 interface HealingIssueModalProps {
   issue: PersonaHealingIssue;
-  onResolve: (id: string) => void;
+  onResolve: (id: string) => Promise<void>;
   onClose: () => void;
 }
 
 export default function HealingIssueModal({ issue, onResolve, onClose }: HealingIssueModalProps) {
   const [resolved, setResolved] = useState(false);
+  const [resolving, setResolving] = useState(false);
   const defaultSev = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
   const defaultCat = { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' };
   const sev = SEVERITY_COLORS[issue.severity] ?? defaultSev;
@@ -30,10 +31,18 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
 
   const [copied, setCopied] = useState(false);
 
-  const handleResolve = useCallback(() => {
-    onResolve(issue.id);
-    setResolved(true);
-  }, [onResolve, issue.id]);
+  const handleResolve = useCallback(async () => {
+    if (resolving) return;
+    setResolving(true);
+    try {
+      await onResolve(issue.id);
+      setResolved(true);
+    } catch {
+      // Error toast is handled by the store's reportError
+    } finally {
+      setResolving(false);
+    }
+  }, [onResolve, issue.id, resolving]);
 
   const handleCopyFix = useCallback(() => {
     if (!issue.suggested_fix) return;
@@ -61,6 +70,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
             isAutoFixPending={isAutoFixPending}
             isCircuitBreaker={isCircuitBreaker}
             copied={copied}
+            resolving={resolving}
             onClose={onClose}
             onResolve={handleResolve}
             onCopyFix={handleCopyFix}
@@ -99,7 +109,7 @@ function ResolvedAnimation() {
   );
 }
 
-function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircuitBreaker, copied, onClose, onResolve, onCopyFix }: {
+function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircuitBreaker, copied, resolving, onClose, onResolve, onCopyFix }: {
   issue: PersonaHealingIssue;
   sev: { bg: string; text: string; border: string };
   cat: { bg: string; text: string; border: string };
@@ -107,6 +117,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
   isAutoFixPending: boolean;
   isCircuitBreaker: boolean;
   copied: boolean;
+  resolving: boolean;
   onClose: () => void;
   onResolve: () => void;
   onCopyFix: () => void;
@@ -223,11 +234,12 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
         {!isAutoFixed && !isAutoFixPending && (
           <button
             onClick={onResolve}
+            disabled={resolving}
             title="Manual fix applied outside the healing system"
-            className="flex items-center gap-1.5 px-4 py-2 typo-heading text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/20 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 typo-heading text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <CheckCircle className="w-3.5 h-3.5" />
-            Mark as Resolved
+            {resolving ? <LoadingSpinner size="xs" /> : <CheckCircle className="w-3.5 h-3.5" />}
+            {resolving ? 'Resolving…' : 'Mark as Resolved'}
           </button>
         )}
       </div>

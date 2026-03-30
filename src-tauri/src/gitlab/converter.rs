@@ -75,7 +75,9 @@ pub fn resolve_credentials_for_gitlab(
                         continue;
                     }
                 };
-                let _ = audit_log::log_decrypt(pool, &cred.id, &cred.name, "gitlab:provision_variables", None, None);
+                if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "gitlab:provision_variables", None, None) {
+                    tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential decrypt");
+                }
                 let prefix = connector.name.to_uppercase().replace('-', "_");
 
                 for (field_key, field_val) in &fields {

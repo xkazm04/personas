@@ -151,6 +151,9 @@ export const EventName = {
   // Context rules
   CONTEXT_RULE_MATCH: 'context-rule-match',
 
+  // Clipboard watcher (ambient agent)
+  CLIPBOARD_ERROR_DETECTED: 'clipboard-error-detected',
+
   // Assertion results
   ASSERTION_RESULTS: 'assertion-results',
 
@@ -408,6 +411,21 @@ export interface ContextRuleMatchPayload {
   matchedAt: number;
 }
 
+/** Clipboard error detection result with KB matches (ambient agent). */
+export interface ClipboardErrorDetectedPayload {
+  detection: {
+    errorType: string;
+    summary: string;
+    confidence: number;
+  };
+  matches: Array<{
+    kbName: string;
+    chunkText: string;
+    similarity: number;
+    sourceFile: string | null;
+  }>;
+}
+
 /** Assertion results summary (db/models/output_assertion.rs ExecutionAssertionSummary, camelCase). */
 export interface AssertionResultsPayload {
   executionId: string;
@@ -636,6 +654,9 @@ export interface EventPayloadMap {
 
   // Context rules
   [EventName.CONTEXT_RULE_MATCH]: ContextRuleMatchPayload;
+
+  // Clipboard watcher (ambient agent)
+  [EventName.CLIPBOARD_ERROR_DETECTED]: ClipboardErrorDetectedPayload;
 
   // Assertion results
   [EventName.ASSERTION_RESULTS]: AssertionResultsPayload;

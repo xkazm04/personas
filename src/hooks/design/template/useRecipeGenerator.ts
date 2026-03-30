@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { startRecipeGeneration, cancelRecipeGeneration } from '@/api/templates/recipes';
 import { EventName } from '@/lib/eventRegistry';
@@ -21,7 +22,7 @@ export function useRecipeGenerator() {
     traceOperation: 'recipe_execution',
   });
 
-  return {
+  return useMemo(() => ({
     phase: task.phase as RecipeGeneratorPhase,
     lines: task.lines,
     draft: task.result,
@@ -29,5 +30,5 @@ export function useRecipeGenerator() {
     start: task.start,
     cancel: task.cancel,
     reset: task.reset,
-  };
+  }), [task.phase, task.lines, task.result, task.error, task.start, task.cancel, task.reset]);
 }

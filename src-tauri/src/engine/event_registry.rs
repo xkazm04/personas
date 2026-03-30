@@ -160,6 +160,9 @@ event_names! {
     // Context rules
     CONTEXT_RULE_MATCH         => "context-rule-match",
 
+    // Clipboard watcher (ambient agent)
+    CLIPBOARD_ERROR_DETECTED   => "clipboard-error-detected",
+
     // Assertion results
     ASSERTION_RESULTS          => "assertion-results",
 

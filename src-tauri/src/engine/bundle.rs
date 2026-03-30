@@ -391,6 +391,7 @@ pub fn apply_import(
     let mut imported = 0u32;
     let mut skipped = 0u32;
     let mut errors = Vec::new();
+    let mut provenance_batch: Vec<CreateProvenanceInput> = Vec::new();
 
     // Load all existing persona names once before the loop for O(1) conflict checks
     let existing_names: HashSet<String> = persona_repo::get_all(pool)
@@ -437,12 +438,24 @@ pub fn apply_import(
 
             match import_persona_from_value(pool, &persona_value) {
                 Ok(new_id) => {
-                    record_provenance(pool, "persona", &new_id, &sig, &bundle_hash);
+                    provenance_batch.push(CreateProvenanceInput {
+                        resource_type: "persona".into(),
+                        resource_id: new_id,
+                        source_peer_id: sig.signer_peer_id.clone(),
+                        source_display_name: None,
+                        bundle_hash: Some(bundle_hash.clone()),
+                        signature_verified: true,
+                    });
                     imported += 1;
                 }
                 Err(e) => errors.push(format!("Import {}: {}", entry.display_name, e)),
             }
         }
+    }
+
+    // Batch-insert all provenance records in a single transaction
+    if let Err(e) = exposure_repo::batch_upsert_provenance(pool, provenance_batch) {
+        tracing::warn!("Failed to batch-record provenance: {}", e);
     }
 
     Ok(BundleImportResult {
@@ -658,25 +671,6 @@ fn import_persona_from_value(
     Ok(persona.id)
 }
 
-fn record_provenance(
-    pool: &DbPool,
-    resource_type: &str,
-    resource_id: &str,
-    sig: &BundleSignature,
-    bundle_hash: &str,
-) {
-    let input = CreateProvenanceInput {
-        resource_type: resource_type.into(),
-        resource_id: resource_id.into(),
-        source_peer_id: sig.signer_peer_id.clone(),
-        source_display_name: None,
-        bundle_hash: Some(bundle_hash.into()),
-        signature_verified: true,
-    };
-    if let Err(e) = exposure_repo::upsert_provenance(pool, input) {
-        tracing::warn!("Failed to record provenance for {}/{}: {}", resource_type, resource_id, e);
-    }
-}
 
 // -- Network scope extraction -------------------------------------------
 

@@ -45,9 +45,12 @@ export default function App() {
     // Dynamic imports: event bridge + middleware + background hooks.
     // These pull in all 5 domain stores — loading them async keeps
     // them out of the main bundle (~300 KB savings).
-    void import("@/lib/storeBusWiring").then(m => m.initStoreBus());
-    void import("@/lib/eventBridge").then(m => m.initAllListeners());
-    void import("@/lib/execution/middleware").then(m => m.registerAllMiddleware());
+    // Loaded in parallel (no interdependency) to avoid a boot waterfall.
+    void Promise.all([
+      import("@/lib/storeBusWiring").then(m => m.initStoreBus()),
+      import("@/lib/eventBridge").then(m => m.initAllListeners()),
+      import("@/lib/execution/middleware").then(m => m.registerAllMiddleware()),
+    ]);
     void useAuthStore.getState().initialize();
     // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.
     // Only loaded in dev builds; tree-shaken from production.

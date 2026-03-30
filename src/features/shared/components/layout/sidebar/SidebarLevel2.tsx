@@ -132,14 +132,18 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
     case 'personas':
       return <AgentsSidebarNav onCreatePersona={onCreatePersona} />;
 
-    case 'events':
+    case 'events': {
+      const visibleEventItems = isDev ? eventBusItems : eventBusItems.filter(i => !i.devOnly);
+      const eventDevSet = isDev ? new Set(eventBusItems.filter(i => i.devOnly).map(i => i.id)) : undefined;
       return (
         <SidebarSubNav
-          items={eventBusItems}
+          items={visibleEventItems}
           activeId={eventBusTab}
           onSelect={(id) => setEventBusTab(id as EventBusTab)}
+          devItems={eventDevSet}
         />
       );
+    }
 
     case 'credentials':
       return (

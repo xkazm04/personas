@@ -78,7 +78,7 @@ pub fn create(pool: &DbPool, input: CreateAutomationInput) -> Result<PersonaAuto
         let now = chrono::Utc::now().to_rfc3339();
         let method = input.webhook_method.as_deref().unwrap_or("POST");
         let timeout = input.timeout_ms.unwrap_or(30000);
-        let retries = input.retry_count.unwrap_or(1);
+        let retries = input.retry_count.unwrap_or(1).clamp(1, 5);
         let fallback = input.fallback_mode.unwrap_or(AutomationFallbackMode::Connector);
         let desc = input.description.as_deref().unwrap_or("");
 
@@ -149,7 +149,8 @@ pub fn update(
         push_field_param!(input.input_schema, "input_schema", sets, param_idx, param_values, clone);
         push_field_param!(input.output_schema, "output_schema", sets, param_idx, param_values, clone);
         push_field_param!(input.timeout_ms, "timeout_ms", sets, param_idx, param_values, copy);
-        push_field_param!(input.retry_count, "retry_count", sets, param_idx, param_values, copy);
+        let clamped_retry = input.retry_count.map(|r| r.clamp(1, 5));
+        push_field_param!(clamped_retry, "retry_count", sets, param_idx, param_values, copy);
         push_field_param!(input.fallback_mode, "fallback_mode", sets, param_idx, param_values, as_str);
         push_field_param!(input.deployment_status, "deployment_status", sets, param_idx, param_values, as_str);
         push_field_param!(input.error_message, "error_message", sets, param_idx, param_values, clone);
@@ -178,38 +179,24 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
         let conn = pool.get()?;
         let mut impacts: Vec<(String, String)> = Vec::new();
 
-        // Check if automation is active
-        let status: Option<String> = conn
+        let (status, running_runs, total_runs): (Option<String>, i64, i64) = conn
             .query_row(
-                "SELECT deployment_status FROM persona_automations WHERE id = ?1",
+                "SELECT pa.deployment_status,
+                        COALESCE(SUM(CASE WHEN ar.status IN ('running', 'pending') THEN 1 ELSE 0 END), 0),
+                        COUNT(ar.id)
+                 FROM persona_automations pa
+                 LEFT JOIN automation_runs ar ON ar.automation_id = pa.id
+                 WHERE pa.id = ?1",
                 params![id],
-                |r| r.get(0),
-            )
-            .ok();
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )?;
+
         if status.as_deref() == Some("active") {
             impacts.push(("status".into(), "This automation is currently active and will stop running".into()));
         }
-
-        // Running automation runs
-        let running_runs: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM automation_runs WHERE automation_id = ?1 AND status IN ('running', 'pending')",
-                params![id],
-                |r| r.get(0),
-            )
-            .unwrap_or(0);
         if running_runs > 0 {
             impacts.push(("run".into(), format!("{running_runs} in-progress run(s) will be orphaned")));
         }
-
-        // Historical runs that will be deleted
-        let total_runs: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) FROM automation_runs WHERE automation_id = ?1",
-                params![id],
-                |r| r.get(0),
-            )
-            .unwrap_or(0);
         if total_runs > 0 {
             impacts.push(("history".into(), format!("{total_runs} historical run(s) will be deleted")));
         }

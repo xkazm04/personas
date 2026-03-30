@@ -422,7 +422,9 @@ pub async fn list_tools(
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:list_tools", None, None);
+    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:list_tools", None, None) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
 
     let connection_type = fields
         .get("connection_type")
@@ -475,7 +477,9 @@ pub async fn execute_tool(
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:execute_tool", persona_id, persona_name);
+    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:execute_tool", persona_id, persona_name) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
 
     let connection_type = fields
         .get("connection_type")

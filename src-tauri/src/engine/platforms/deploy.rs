@@ -137,7 +137,9 @@ async fn deploy_n8n(
     let cred = crate::db::repos::resources::credentials::get_by_id(pool, &input.credential_id)?;
     let fields =
         crate::db::repos::resources::credentials::get_decrypted_fields(pool, &cred)?;
-    let _ = crate::db::repos::resources::audit_log::log_decrypt(pool, &cred.id, &cred.name, "platform:deploy", None, None);
+    if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(pool, &cred.id, &cred.name, "platform:deploy", None, None) {
+        tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential decrypt");
+    }
     let base_url = fields.get("base_url").cloned().unwrap_or_default();
 
     let platform_url = if base_url.is_empty() {

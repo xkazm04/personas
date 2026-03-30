@@ -404,8 +404,18 @@ impl GitLabClient {
             });
 
         let resp = update_req.send().await.map_err(gitlab_err)?;
-        if resp.status().is_success() {
+        let status = resp.status();
+
+        if status.is_success() {
             return Ok(());
+        }
+
+        // Only fall back to POST (create) on 404 Not Found
+        if status != reqwest::StatusCode::NOT_FOUND {
+            let body = resp.text().await.unwrap_or_default();
+            return Err(AppError::GitLab(format!(
+                "GitLab API error ({status}): {body}"
+            )));
         }
 
         // File doesn't exist yet -- create it

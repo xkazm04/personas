@@ -77,20 +77,11 @@ impl BuildSessionManager {
         let cancel_flag = Arc::new(AtomicBool::new(false));
 
         // Guard: reject if there's already an active build for this persona
-        {
-            let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-            for handle in sessions.values() {
-                if !handle.cancel_flag.load(Ordering::Relaxed) {
-                    if let Ok(Some(existing)) = build_session_repo::get_by_id(&pool, &handle.session_id) {
-                        if existing.persona_id == persona_id && !existing.phase.is_terminal() {
-                            return Err(AppError::Validation(format!(
-                                "Build session {} already active for persona {}",
-                                handle.session_id, persona_id
-                            )));
-                        }
-                    }
-                }
-            }
+        if let Some(existing) = build_session_repo::get_active_for_persona(&pool, &persona_id)? {
+            return Err(AppError::Validation(format!(
+                "Build session {} already active for persona {}",
+                existing.id, persona_id
+            )));
         }
 
         // Create the DB row (after duplicate check to avoid orphaned rows)

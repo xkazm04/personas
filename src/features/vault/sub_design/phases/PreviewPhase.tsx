@@ -47,6 +47,7 @@ export function PreviewPhase() {
     onReset,
     onRefine,
     onNegotiatorValues,
+    prefetchedAuthDetections,
   } = useCredentialDesignContext();
 
   const [showNegotiator, setShowNegotiator] = useState(false);
@@ -174,6 +175,7 @@ export function PreviewPhase() {
             <NegotiatorPanel
               key="neg-panel"
               designResult={result}
+              prefetchedAuthDetections={prefetchedAuthDetections}
               onComplete={(values) => {
                 setShowNegotiator(false);
                 if (onNegotiatorValues) {

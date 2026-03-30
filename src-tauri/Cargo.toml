@@ -58,7 +58,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-appender = "0.2"
 thiserror = "2"
-rusqlite = { version = "0.38", features = ["bundled"] }
+rusqlite = { version = "0.38", features = ["bundled", "hooks"] }
 r2d2 = "0.8"
 r2d2_sqlite = "0.32"
 uuid = { version = "1", features = ["v4"] }
@@ -96,6 +96,7 @@ tempfile = "3"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 jsonschema = { version = "0.28", default-features = false }
 ammonia = "4"
+bytemuck = "1"
 
 # Vector Knowledge Base (Phase 1: sqlite-vec + local embeddings)
 sqlite-vec = "0.1"

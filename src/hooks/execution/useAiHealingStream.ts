@@ -111,9 +111,12 @@ export function useAiHealingStream(personaId: string): AiHealingState {
 
     return () => {
       mounted = false;
-      // Await any still-pending listener registrations, then tear them all down
-      void Promise.all(pendingListeners).then((fns) => {
-        for (const fn of fns) fn();
+      // Await any still-pending listener registrations, then tear them all down.
+      // Use allSettled so one rejected registration doesn't prevent cleanup of others.
+      void Promise.allSettled(pendingListeners).then((results) => {
+        for (const r of results) {
+          if (r.status === 'fulfilled') r.value();
+        }
       });
     };
   }, [personaId]);

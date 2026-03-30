@@ -77,3 +77,92 @@ pub const SMART_SEARCH_MODEL: &str = "smart_search_model";
 /// When enabled, provides a generated `claude -p` command for external cron scheduling.
 #[allow(dead_code)]
 pub const CLAUDE_CLI_FALLBACK_PREFIX: &str = "claude_cli_fallback:";
+
+/// Whether the weekly health digest is enabled. Value: `"true"` or `"false"`.
+pub const HEALTH_DIGEST_ENABLED: &str = "health_digest_enabled";
+
+/// ISO 8601 timestamp of the last health digest run.
+pub const HEALTH_DIGEST_LAST_RUN: &str = "health_digest_last_run";
+
+/// JSON-encoded notification preferences (healing severity thresholds).
+pub const NOTIFICATION_PREFS: &str = "notification_prefs";
+
+/// JSON-encoded CLI engine capability map (which operations each provider supports).
+pub const ENGINE_CAPABILITIES: &str = "engine_capabilities";
+
+/// BYOM (Bring Your Own Model) policy configuration (JSON-encoded ByomPolicy).
+pub const BYOM_POLICY: &str = "byom_policy";
+
+/// GitLab pipeline notification preferences (JSON-encoded).
+pub const GITLAB_PIPELINE_NOTIFICATION_PREFS: &str = "gitlab_pipeline_notification_prefs";
+
+/// Exact keys allowed in the settings store.
+const ALLOWED_KEYS: &[&str] = &[
+    OLLAMA_API_KEY,
+    LITELLM_BASE_URL,
+    LITELLM_MASTER_KEY,
+    CLI_ENGINE,
+    EVENT_RETENTION_DAYS,
+    EXECUTION_RETENTION_DAYS,
+    GLOBAL_MODEL_PROFILE,
+    FILE_WATCHER_DEBOUNCE_MS,
+    PERFORMANCE_DIGEST,
+    PERFORMANCE_DIGEST_LAST,
+    QUALITY_GATE_CONFIG,
+    SMART_SEARCH_MODEL,
+    HEALTH_DIGEST_ENABLED,
+    HEALTH_DIGEST_LAST_RUN,
+    NOTIFICATION_PREFS,
+    ENGINE_CAPABILITIES,
+    BYOM_POLICY,
+    GITLAB_PIPELINE_NOTIFICATION_PREFS,
+];
+
+/// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
+const ALLOWED_PREFIXES: &[&str] = &[
+    EXECUTION_RETENTION_MONTHS_PREFIX,
+    AUTO_ROLLBACK_PREFIX,
+    AUTO_OPTIMIZE_PREFIX,
+    HEALTH_WATCH_PREFIX,
+    CLAUDE_CLI_FALLBACK_PREFIX,
+];
+
+/// Returns `Ok(())` if the key is in the allow-list (exact match or prefix match).
+/// Returns `Err` with a descriptive message otherwise.
+pub fn validate_key(key: &str) -> Result<(), String> {
+    if ALLOWED_KEYS.contains(&key) {
+        return Ok(());
+    }
+    for prefix in ALLOWED_PREFIXES {
+        if key.starts_with(prefix) {
+            return Ok(());
+        }
+    }
+    Err(format!("unknown settings key: {key}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn exact_key_accepted() {
+        assert!(validate_key("cli_engine").is_ok());
+        assert!(validate_key("byom_policy").is_ok());
+        assert!(validate_key("health_digest_enabled").is_ok());
+    }
+
+    #[test]
+    fn prefix_key_accepted() {
+        assert!(validate_key("auto_rollback:abc-123").is_ok());
+        assert!(validate_key("health_watch:some-persona").is_ok());
+        assert!(validate_key("execution_retention_months:xyz").is_ok());
+    }
+
+    #[test]
+    fn unknown_key_rejected() {
+        assert!(validate_key("evil_key").is_err());
+        assert!(validate_key("").is_err());
+        assert!(validate_key("cli_engine_extra").is_err());
+    }
+}

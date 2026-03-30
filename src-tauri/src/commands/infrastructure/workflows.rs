@@ -53,7 +53,7 @@ pub fn get_workflows_overview(
             status: snap.status,
             error: snap.error,
             line_count: snap.lines.len(),
-            output_tail: snap.lines.into_iter().rev().take(20).collect::<Vec<_>>().into_iter().rev().collect(),
+            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
             elapsed_secs: snap.elapsed_secs,
         });
     }
@@ -65,7 +65,7 @@ pub fn get_workflows_overview(
             status: snap.status,
             error: snap.error,
             line_count: snap.lines.len(),
-            output_tail: snap.lines.into_iter().rev().take(20).collect::<Vec<_>>().into_iter().rev().collect(),
+            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
             elapsed_secs: snap.elapsed_secs,
         });
     }
@@ -77,7 +77,7 @@ pub fn get_workflows_overview(
             status: snap.status,
             error: snap.error,
             line_count: snap.lines.len(),
-            output_tail: snap.lines.into_iter().rev().take(20).collect::<Vec<_>>().into_iter().rev().collect(),
+            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
             elapsed_secs: snap.elapsed_secs,
         });
     }
@@ -89,7 +89,7 @@ pub fn get_workflows_overview(
             status: snap.status,
             error: snap.error,
             line_count: snap.lines.len(),
-            output_tail: snap.lines.into_iter().rev().take(20).collect::<Vec<_>>().into_iter().rev().collect(),
+            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
             elapsed_secs: snap.elapsed_secs,
         });
     }
@@ -101,7 +101,7 @@ pub fn get_workflows_overview(
             status: snap.status,
             error: snap.error,
             line_count: snap.lines.len(),
-            output_tail: snap.lines.into_iter().rev().take(20).collect::<Vec<_>>().into_iter().rev().collect(),
+            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
             elapsed_secs: snap.elapsed_secs,
         });
     }

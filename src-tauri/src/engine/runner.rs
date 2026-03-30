@@ -881,6 +881,9 @@ pub async fn run_execution(
     let persona_name_for_stream = persona.name.clone();
     let notif_channels_for_stream = persona.notification_channels.clone();
 
+    // Pre-load quality gate config once per execution (avoids O(messages) DB reads).
+    let gate_config = super::quality_gate::load(&pool_for_stream);
+
     // Start stream processing span
     let stream_span = trace.start_span(
         SpanType::StreamProcessing,
@@ -1059,16 +1062,17 @@ pub async fn run_execution(
                                         };
                                         if let Some(msg) = protocol_msg {
                                             let notif_ref = notif_channels_for_stream.as_deref();
-                                            let mut dispatch_ctx = super::dispatch::DispatchContext {
-                                                app: &app,
-                                                pool: &pool_for_stream,
-                                                execution_id: &exec_id_for_stream,
-                                                persona_id: &persona_id_for_stream,
-                                                project_id: &project_id_for_stream,
-                                                persona_name: &persona_name_for_stream,
-                                                notification_channels: notif_ref,
-                                                logger: &mut logger,
-                                            };
+                                            let mut dispatch_ctx = super::dispatch::DispatchContext::new(
+                                                &app,
+                                                &pool_for_stream,
+                                                &exec_id_for_stream,
+                                                &persona_id_for_stream,
+                                                &project_id_for_stream,
+                                                &persona_name_for_stream,
+                                                notif_ref,
+                                                &mut logger,
+                                                Some(gate_config.clone()),
+                                            );
                                             super::dispatch::dispatch(&mut dispatch_ctx, &msg);
                                         }
                                     }
@@ -1147,8 +1151,8 @@ pub async fn run_execution(
 
                                 // End the most recent open ToolCall trace span
                                 let tool_span_to_close = {
-                                    let spans = trace.spans.lock().unwrap_or_else(|e| e.into_inner());
-                                    spans.iter().rev()
+                                    let store = trace.spans.lock().unwrap_or_else(|e| e.into_inner());
+                                    store.vec.iter().rev()
                                         .find(|s| s.span_type == SpanType::ToolCall && s.end_ms.is_none())
                                         .map(|s| s.span_id.clone())
                                 };
@@ -1193,16 +1197,17 @@ pub async fn run_execution(
                                             Some(&stream_span),
                                             None,
                                         );
-                                        let mut dispatch_ctx = super::dispatch::DispatchContext {
-                                            app: &app,
-                                            pool: &pool_for_stream,
-                                            execution_id: &exec_id_for_stream,
-                                            persona_id: &persona_id_for_stream,
-                                            project_id: &project_id_for_stream,
-                                            persona_name: &persona_name_for_stream,
-                                            notification_channels: notif_channels_for_stream.as_deref(),
-                                            logger: &mut logger,
-                                        };
+                                        let mut dispatch_ctx = super::dispatch::DispatchContext::new(
+                                            &app,
+                                            &pool_for_stream,
+                                            &exec_id_for_stream,
+                                            &persona_id_for_stream,
+                                            &project_id_for_stream,
+                                            &persona_name_for_stream,
+                                            notif_channels_for_stream.as_deref(),
+                                            &mut logger,
+                                            Some(gate_config.clone()),
+                                        );
                                         use super::protocol::ExecutionProtocol;
                                         dispatch_ctx.dispatch_message(&protocol_msg);
                                         trace.end_span_ok(&dispatch_span);
@@ -1327,16 +1332,17 @@ pub async fn run_execution(
 
         if need_events || need_memories {
             let notif_ref = persona.notification_channels.as_deref();
-            let mut dispatch_ctx = super::dispatch::DispatchContext {
-                app: &app,
-                pool: &pool,
-                execution_id: &execution_id,
-                persona_id: &persona.id,
-                project_id: &persona.project_id,
-                persona_name: &persona.name,
-                notification_channels: notif_ref,
-                logger: &mut logger,
-            };
+            let mut dispatch_ctx = super::dispatch::DispatchContext::new(
+                &app,
+                &pool,
+                &execution_id,
+                &persona.id,
+                &persona.project_id,
+                &persona.name,
+                notif_ref,
+                &mut logger,
+                None, // lazy-loaded on first use (context persists across loop)
+            );
             use super::protocol::ExecutionProtocol;
             for line in assistant_text.split('\n') {
                 let trimmed = line.trim();

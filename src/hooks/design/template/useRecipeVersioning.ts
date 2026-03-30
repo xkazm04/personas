@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { startRecipeVersioning, cancelRecipeVersioning } from '@/api/templates/recipes';
 import { EventName } from '@/lib/eventRegistry';
@@ -18,10 +19,10 @@ export function useRecipeVersioning() {
     startFn: startRecipeVersioning,
     cancelFn: cancelRecipeVersioning,
     errorMessage: 'Failed to generate recipe version',
-    traceOperation: 'recipe_execution',
+    traceOperation: 'recipe_versioning',
   });
 
-  return {
+  return useMemo(() => ({
     phase: task.phase as RecipeVersioningPhase,
     lines: task.lines,
     draft: task.result,
@@ -29,5 +30,5 @@ export function useRecipeVersioning() {
     start: task.start,
     cancel: task.cancel,
     reset: task.reset,
-  };
+  }), [task.phase, task.lines, task.result, task.error, task.start, task.cancel, task.reset]);
 }

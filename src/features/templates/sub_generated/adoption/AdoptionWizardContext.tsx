@@ -113,7 +113,15 @@ export function AdoptionWizardProvider({
 
   // -- Async transform orchestration --
 
-  const asyncOps = useAsyncTransform({
+  const {
+    currentAdoptId,
+    isRestoring,
+    startTransform,
+    cancelTransform,
+    continueTransform,
+    confirmSave,
+    cleanupAll,
+  } = useAsyncTransform({
     state,
     wizard,
     reviewTestCaseName: review?.test_case_name,
@@ -160,6 +168,11 @@ export function AdoptionWizardProvider({
 
   // -- Layer 4: Actions --
 
+  const asyncOps = useMemo(
+    () => ({ currentAdoptId, isRestoring, startTransform, cancelTransform, continueTransform, confirmSave, cleanupAll }),
+    [currentAdoptId, isRestoring, startTransform, cancelTransform, continueTransform, confirmSave, cleanupAll],
+  );
+
   const {
     handleNext,
     setConnectorCredential,
@@ -199,13 +212,13 @@ export function AdoptionWizardProvider({
       hasDatabaseConnector,
       setConnectorCredential,
       clearConnectorCredential,
-      currentAdoptId: asyncOps.currentAdoptId,
-      isRestoring: asyncOps.isRestoring,
-      startTransform: asyncOps.startTransform,
-      cancelTransform: asyncOps.cancelTransform,
-      continueTransform: asyncOps.continueTransform,
-      confirmSave: asyncOps.confirmSave,
-      cleanupAll: asyncOps.cleanupAll,
+      currentAdoptId,
+      isRestoring,
+      startTransform,
+      cancelTransform,
+      continueTransform,
+      confirmSave,
+      cleanupAll,
       handleNext,
       handleCredentialCreated,
       handleSkipQuestions,
@@ -231,7 +244,13 @@ export function AdoptionWizardProvider({
       hasDatabaseConnector,
       setConnectorCredential,
       clearConnectorCredential,
-      asyncOps,
+      currentAdoptId,
+      isRestoring,
+      startTransform,
+      cancelTransform,
+      continueTransform,
+      confirmSave,
+      cleanupAll,
       handleNext,
       handleCredentialCreated,
       handleSkipQuestions,

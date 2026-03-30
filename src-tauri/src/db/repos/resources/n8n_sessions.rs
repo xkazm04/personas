@@ -1,4 +1,5 @@
 use rusqlite::{named_params, params};
+use tracing::warn;
 
 use crate::db::models::{CreateN8nSessionInput, N8nSessionSummary, N8nTransformSession, SessionStatus, UpdateN8nSessionInput};
 use crate::db::DbPool;
@@ -161,12 +162,18 @@ pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<Vec<String>, AppErr
         // Collect transform_ids of sessions we're about to mark as failed
         let mut stmt = conn.prepare(
             "SELECT transform_id FROM n8n_transform_sessions
-             WHERE status IN ('transforming', 'analyzing')
+             WHERE status IN ('transforming', 'analyzing', 'interrupted')
                AND transform_id IS NOT NULL",
         )?;
         let transform_ids: Vec<String> = stmt
             .query_map([], |row| row.get(0))?
-            .filter_map(|r| r.ok())
+            .filter_map(|r| match r {
+                Ok(id) => Some(id),
+                Err(e) => {
+                    warn!("recover_interrupted_sessions: failed to read transform_id from row: {e}");
+                    None
+                }
+            })
             .collect();
 
         let now = chrono::Utc::now().to_rfc3339();
@@ -175,12 +182,13 @@ pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<Vec<String>, AppErr
              SET status = ?1,
                  error = 'App closed during transform -- click Retry to resume',
                  updated_at = ?2
-             WHERE status IN (?3, ?4)",
+             WHERE status IN (?3, ?4, ?5)",
             params![
                 SessionStatus::Failed,
                 now,
                 SessionStatus::Transforming,
                 SessionStatus::Analyzing,
+                SessionStatus::Interrupted,
             ],
         )?;
         Ok(transform_ids)

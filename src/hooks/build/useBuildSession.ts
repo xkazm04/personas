@@ -14,11 +14,12 @@
  *    Winner: Channel
  *
  * 2. RECOVERY (primary criterion per CONTEXT.md):
- *    - Channel: Events lost during navigation (onmessage callback detached).
- *      Recovery via getActiveBuildSession() hydrating from SQLite checkpoint.
- *    - EventBridge: Events lost during navigation (listener unsubscribed).
- *      Recovery via same SQLite checkpoint hydration.
- *    Result: TIE -- both require checkpoint-based recovery. Neither buffers.
+ *    - Channel: Used for initial session only. On navigation away, Channel
+ *      detaches and EventBridge (global Tauri listener) takes over seamlessly.
+ *      On remount, SQLite checkpoint hydration restores missed state, while
+ *      EventBridge continues delivering live events without interruption.
+ *    - EventBridge: Global listener survives navigation, no gap.
+ *    Result: Channel + EventBridge fallback provides gapless recovery.
  *
  * 3. THROUGHPUT:
  *    - Channel: Single handler path (onmessage -> pendingEventsRef -> RAF flush)
@@ -288,25 +289,23 @@ export function useBuildSession(
     let cancelled = false;
 
     (async () => {
-      // Skip hydration if the store already has a valid session with cell data
-      // (happens when navigating away and back — Zustand state survives but Channel detached)
-      if (currentStore.buildSessionId && Object.keys(currentStore.buildCellStates).length > 0) {
-        // Restore sessionIdRef so answerQuestion can reach the backend
-        sessionIdRef.current = currentStore.buildSessionId;
-        (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = true;
-        // Ensure buildPersonaId is set (may be null if component unmounted and remounted)
-        if (!currentStore.buildPersonaId) {
-          useAgentStore.setState({ buildPersonaId: effectivePersonaId });
-        }
-        return;
-      }
-
+      // Always hydrate from SQLite to pick up events that arrived while unmounted.
+      // The EventBridge (global Tauri listener) handles live events when Channel
+      // is not active, so we do NOT set __BUILD_CHANNEL_ACTIVE__ here — only
+      // startSession sets it when a real Channel is created.
       const session = await getActiveBuildSession(effectivePersonaId);
       if (cancelled) return;
+
       if (session) {
         sessionIdRef.current = session.id;
-        (window as unknown as Record<string, unknown>).__BUILD_CHANNEL_ACTIVE__ = true;
         useAgentStore.getState().hydrateBuildSession(session);
+        // Ensure buildPersonaId is set (may be null if component unmounted and remounted)
+        if (!useAgentStore.getState().buildPersonaId) {
+          useAgentStore.setState({ buildPersonaId: effectivePersonaId });
+        }
+      } else if (currentStore.buildSessionId && Object.keys(currentStore.buildCellStates).length > 0) {
+        // No active session in DB but store has stale data — restore ref for UI consistency
+        sessionIdRef.current = currentStore.buildSessionId;
       }
     })();
 

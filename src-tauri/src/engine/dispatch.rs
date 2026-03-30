@@ -8,7 +8,7 @@ use tauri::{AppHandle, Emitter};
 
 use super::event_registry::event_name;
 use super::protocol::{ExecutionProtocol, StatusFinalization};
-use super::quality_gate::{FilterAction, QualityGateConfig};
+use super::quality_gate::{self, FilterAction, QualityGateConfig};
 use super::types::{
     ExecutionOutputEvent, HeartbeatEvent, StructuredExecutionEvent,
 };
@@ -39,6 +39,49 @@ pub struct DispatchContext<'a> {
     pub persona_name: &'a str,
     pub notification_channels: Option<&'a str>,
     pub logger: &'a mut ExecutionLogger,
+    /// Cached quality-gate config — loaded lazily on first use, then reused for
+    /// all subsequent protocol messages in this execution. Avoids O(messages)
+    /// DB reads for config that rarely changes.
+    quality_gate_cache: Option<QualityGateConfig>,
+}
+
+impl<'a> DispatchContext<'a> {
+    /// Create a new dispatch context with a pre-loaded quality-gate config.
+    ///
+    /// The `gate_config` is shared across all protocol messages in the execution,
+    /// avoiding repeated DB queries. Load it once with [`quality_gate::load`]
+    /// before the message processing loop and pass the same `Arc` to every context.
+    pub fn new(
+        app: &'a AppHandle,
+        pool: &'a DbPool,
+        execution_id: &'a str,
+        persona_id: &'a str,
+        project_id: &'a str,
+        persona_name: &'a str,
+        notification_channels: Option<&'a str>,
+        logger: &'a mut ExecutionLogger,
+        gate_config: Option<QualityGateConfig>,
+    ) -> Self {
+        Self {
+            app,
+            pool,
+            execution_id,
+            persona_id,
+            project_id,
+            persona_name,
+            notification_channels,
+            logger,
+            quality_gate_cache: gate_config,
+        }
+    }
+
+    /// Return the cached quality-gate config, loading from DB on first call.
+    fn quality_gate_config(&mut self) -> &QualityGateConfig {
+        if self.quality_gate_cache.is_none() {
+            self.quality_gate_cache = Some(quality_gate::load(self.pool));
+        }
+        self.quality_gate_cache.as_ref().unwrap()
+    }
 }
 
 /// Route a single protocol message to the appropriate DB repo and emit events.
@@ -149,8 +192,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             importance,
             tags,
         } => {
-            // Quality gate: load configurable patterns from DB (falls back to defaults).
-            let gate_config = super::quality_gate::load(ctx.pool);
+            // Quality gate: use cached config (loaded lazily on first use).
+            let gate_config = ctx.quality_gate_config().clone();
             let cat_lower = category.as_deref().unwrap_or("").to_lowercase();
             let combined = format!("{} {}", title, content);
 
@@ -233,8 +276,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             context_data,
             suggested_actions,
         } => {
-            // Quality gate: load configurable patterns from DB (falls back to defaults).
-            let gate_config = super::quality_gate::load(ctx.pool);
+            // Quality gate: use cached config (loaded lazily on first use).
+            let gate_config = ctx.quality_gate_config().clone();
             let combined = format!("{} {}", title, description.as_deref().unwrap_or(""));
 
             if let Some((rule_label, action)) = QualityGateConfig::check_rules(&gate_config.review_rules, &combined) {

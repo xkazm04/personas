@@ -238,7 +238,7 @@ export type SettingsTab = "account" | "appearance" | "notifications" | "engine" 
 export type DevToolsTab = "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner";
 export type AgentTab = "all" | "create" | "team" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "doc-signing" | "ocr";
-export type EventBusTab = "canvas" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
+export type EventBusTab = "builder" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
 export type CliEngine = "claude_code" | "codex_cli";
 

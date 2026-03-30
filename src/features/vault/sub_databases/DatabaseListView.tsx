@@ -34,16 +34,25 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
 
   // Build rows: filter to database credentials, enrich with counts
   const allRows: DbRow[] = useMemo(() => {
+    const connectorByName = new Map(connectorDefinitions.map((d) => [d.name, d]));
+
+    const tableCountByCredential = new Map<string, number>();
+    for (const t of dbSchemaTables) {
+      tableCountByCredential.set(t.credential_id, (tableCountByCredential.get(t.credential_id) || 0) + 1);
+    }
+
+    const queryCountByCredential = new Map<string, number>();
+    for (const q of dbSavedQueries) {
+      queryCountByCredential.set(q.credential_id, (queryCountByCredential.get(q.credential_id) || 0) + 1);
+    }
+
     return credentials
-      .filter((c) => {
-        const def = connectorDefinitions.find((d) => d.name === c.service_type);
-        return def?.category === 'database';
-      })
+      .filter((c) => connectorByName.get(c.service_type)?.category === 'database')
       .map((c) => ({
         credential: c,
-        connector: connectorDefinitions.find((d) => d.name === c.service_type),
-        tableCount: dbSchemaTables.filter((t) => t.credential_id === c.id).length,
-        queryCount: dbSavedQueries.filter((q) => q.credential_id === c.id).length,
+        connector: connectorByName.get(c.service_type),
+        tableCount: tableCountByCredential.get(c.id) || 0,
+        queryCount: queryCountByCredential.get(c.id) || 0,
       }));
   }, [credentials, connectorDefinitions, dbSchemaTables, dbSavedQueries]);
 

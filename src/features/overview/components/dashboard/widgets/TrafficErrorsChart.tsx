@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react';
 import { TrendingUp } from 'lucide-react';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
@@ -6,6 +7,7 @@ import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTool
 import { CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { useOverviewFilterValues } from '../OverviewFilterContext';
 
 interface ChartDataPoint {
   date: string;
@@ -19,7 +21,11 @@ interface TrafficErrorsChartProps {
   totalErrors: number;
 }
 
-export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: TrafficErrorsChartProps) {
+export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: TrafficErrorsChartProps) {
+  const { effectiveDays } = useOverviewFilterValues();
+  const rangeLabel = effectiveDays === 1 ? 'Yesterday' : `${effectiveDays} Days Ago`;
+  const formatCounter = useCallback((v: number) => Math.round(v).toLocaleString(), []);
+
   return (
     <div className={`${CARD_CONTAINER} p-4 space-y-4 relative overflow-hidden`} aria-label="Traffic and errors chart">
       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-3xl rounded-full pointer-events-none" />
@@ -33,11 +39,11 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-cyan-400" />
-            <AnimatedCounter value={totalTraffic} className="typo-body text-muted-foreground/60" formatFn={(v) => Math.round(v).toLocaleString()} />
+            <AnimatedCounter value={totalTraffic} className="typo-body text-muted-foreground/60" formatFn={formatCounter} />
           </div>
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-rose-400" />
-            <AnimatedCounter value={totalErrors} className="typo-body text-muted-foreground/60" formatFn={(v) => Math.round(v).toLocaleString()} />
+            <AnimatedCounter value={totalErrors} className="typo-body text-muted-foreground/60" formatFn={formatCounter} />
           </div>
         </div>
       </div>
@@ -63,10 +69,10 @@ export function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: Tra
 
       <div className="pt-3 border-t border-primary/5 relative z-10">
         <div className="flex justify-between typo-label text-muted-foreground/60">
-          <span>14 Days Ago</span>
+          <span>{rangeLabel}</span>
           <span>Today</span>
         </div>
       </div>
     </div>
   );
-}
+});

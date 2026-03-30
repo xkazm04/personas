@@ -91,7 +91,9 @@ pub async fn gitlab_connect_from_vault(
 
     let credential = cred_repo::get_by_id(&state.db, &credential_id)?;
     let fields = cred_repo::get_decrypted_fields(&state.db, &credential)?;
-    let _ = audit_log::log_decrypt(&state.db, &credential.id, &credential.name, "gitlab:connect_from_vault", None, None);
+    if let Err(e) = audit_log::log_decrypt(&state.db, &credential.id, &credential.name, "gitlab:connect_from_vault", None, None) {
+        tracing::warn!(credential_id = %credential.id, error = %e, "Failed to write audit log for credential decrypt");
+    }
 
     let token = fields
         .get("personal_access_token")
@@ -482,13 +484,13 @@ pub async fn gitlab_list_persona_versions(
         .collect::<String>();
     let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
 
-    let tags = client.list_tags(project_id, Some(&search_prefix)).await?;
-
-    // Also get agents to determine which version is currently deployed
-    let agents = client
-        .list_duo_agents(project_id)
-        .await
-        .unwrap_or_default();
+    // Fire both API calls concurrently — they are independent
+    let (tags_result, agents_result) = tokio::join!(
+        client.list_tags(project_id, Some(&search_prefix)),
+        client.list_duo_agents(project_id),
+    );
+    let tags = tags_result?;
+    let agents = agents_result.unwrap_or_default();
     let current_agent = agents.iter().find(|a| {
         a.name.to_lowercase().replace(' ', "-") == slug
     });
@@ -580,8 +582,25 @@ pub async fn gitlab_deploy_persona_versioned(
 
     let definition = gitlab::converter::persona_to_agent(&persona, &persona_tools, hint_slice);
 
-    // Deploy the agent
-    let deploy_result = match client.create_duo_agent(project_id, &definition).await {
+    // Fetch project metadata once — reused for both AGENTS.md fallback and version tagging
+    let project = client.get_project(project_id).await?;
+
+    // Compute the tag search prefix before spawning concurrent work
+    let slug = persona.name
+        .to_lowercase()
+        .replace(' ', "-")
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '-')
+        .collect::<String>();
+    let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
+
+    // Deploy the agent and fetch existing tags concurrently — they are independent
+    let (agent_result, existing_tags) = tokio::join!(
+        client.create_duo_agent(project_id, &definition),
+        async { client.list_tags(project_id, Some(&search_prefix)).await.unwrap_or_default() },
+    );
+
+    let deploy_result = match agent_result {
         Ok(agent) => {
             tracing::info!(
                 persona_id = %persona_id,
@@ -597,7 +616,6 @@ pub async fn gitlab_deploy_persona_versioned(
             }
         }
         Err(_api_err) => {
-            let project = client.get_project(project_id).await?;
             let branch = project.default_branch.as_deref().unwrap_or("main");
             let md_content =
                 gitlab::converter::persona_to_agents_md(&persona, &persona_tools, hint_slice);
@@ -618,19 +636,6 @@ pub async fn gitlab_deploy_persona_versioned(
         }
     };
 
-    // Tag the current commit as a new version
-    let slug = persona.name
-        .to_lowercase()
-        .replace(' ', "-")
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '-')
-        .collect::<String>();
-    let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
-    let existing_tags = client
-        .list_tags(project_id, Some(&search_prefix))
-        .await
-        .unwrap_or_default();
-
     // Compute next version number
     let max_version = existing_tags
         .iter()
@@ -641,8 +646,6 @@ pub async fn gitlab_deploy_persona_versioned(
     let next_version = max_version + 1;
 
     let tag_name = build_persona_tag(&persona.name, next_version, environment.as_deref());
-
-    let project = client.get_project(project_id).await?;
     let default_branch = project.default_branch.as_deref().unwrap_or("main");
 
     let tag_message = format!(
@@ -768,6 +771,9 @@ pub async fn gitlab_rollback_persona(
     let definition =
         gitlab::converter::persona_to_agent_with_prompt(persona, &persona_tools, snapshot_prompt);
 
+    // Fetch project metadata once — reused for both AGENTS.md fallback and rollback tagging
+    let project = client.get_project(project_id).await?;
+
     // Attempt to update the existing Duo Agent or create new
     let deploy_result = match client.create_duo_agent(project_id, &definition).await {
         Ok(agent) => GitLabDeployResult {
@@ -778,7 +784,6 @@ pub async fn gitlab_rollback_persona(
         },
         Err(_) => {
             // Fallback: push the historical AGENTS.md content directly
-            let project = client.get_project(project_id).await?;
             let branch = project.default_branch.as_deref().unwrap_or("main");
             client
                 .upsert_agents_md(project_id, branch, &historical_agents_md)
@@ -818,8 +823,6 @@ pub async fn gitlab_rollback_persona(
     let rollback_version = max_version + 1;
 
     let rollback_tag = build_persona_tag(&persona_name, rollback_version, parsed_env.as_deref());
-
-    let project = client.get_project(project_id).await?;
     let default_branch = project.default_branch.as_deref().unwrap_or("main");
 
     let rollback_msg = format!(
@@ -1069,7 +1072,8 @@ pub async fn gitlab_rollback_from_history(
         }
     };
 
-    // Record the rollback in history
+    // Record the rollback in history — store the prompt that was actually deployed
+    // (from the agent definition), not the current persona DB state.
     if let Err(e) = deployment_history::insert(
         &state.db,
         &persona.id,
@@ -1080,7 +1084,7 @@ pub async fn gitlab_rollback_from_history(
         "success",
         deploy_result.agent_id.as_deref(),
         deploy_result.web_url.as_deref(),
-        Some(&persona.system_prompt),
+        Some(&definition.system_prompt),
         Some(&deployment_id),
     ) {
         tracing::warn!(

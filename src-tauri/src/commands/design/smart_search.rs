@@ -222,18 +222,20 @@ pub async fn smart_search_templates(
         })
         .collect();
 
-    let templates_searched = summaries.len();
-
     // Serialize summaries and enforce prompt size cap
     let mut summaries_json =
         serde_json::to_string_pretty(&summaries).unwrap_or_else(|_| "[]".into());
 
+    let templates_searched;
     if summaries_json.len() > MAX_PROMPT_CHARS {
         // Truncate to fit: re-serialize with fewer templates
         let safe_count = summaries.len() * MAX_PROMPT_CHARS / summaries_json.len();
         let trimmed = &summaries[..safe_count.max(1)];
         summaries_json =
             serde_json::to_string_pretty(trimmed).unwrap_or_else(|_| "[]".into());
+        templates_searched = trimmed.len();
+    } else {
+        templates_searched = summaries.len();
     }
 
     let prompt_text = build_smart_search_prompt(&query, &summaries_json);

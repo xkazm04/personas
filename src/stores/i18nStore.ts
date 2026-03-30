@@ -5,6 +5,7 @@ export type Language = 'en' | 'zh' | 'ar' | 'hi' | 'ru' | 'id' | 'es' | 'fr' | '
 
 interface I18nState {
   language: Language;
+  fontReady: boolean;
   setLanguage: (lang: Language) => void;
 }
 
@@ -21,14 +22,26 @@ const LANG_FONT_URL: Partial<Record<Language, string>> = {
 /** Track which font stylesheets have already been injected. */
 const loadedFonts = new Set<string>();
 
-/** Inject a <link> for the language's Google Font if needed (no-op for Latin scripts). */
+/** Inject a <link> for the language's Google Font asynchronously. */
 function loadFontForLanguage(lang: Language) {
   const url = LANG_FONT_URL[lang];
   if (!url || loadedFonts.has(lang)) return;
   loadedFonts.add(lang);
+
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = url;
+  // Load asynchronously: start as print media, swap to all on load
+  link.media = 'print';
+  link.onload = () => {
+    link.media = 'all';
+    useI18nStore.setState({ fontReady: true });
+  };
+  link.onerror = () => {
+    // Still mark ready so UI doesn't hang waiting for a failed font
+    link.media = 'all';
+    useI18nStore.setState({ fontReady: true });
+  };
   document.head.appendChild(link);
 }
 
@@ -37,6 +50,13 @@ function applyLangAttributes(lang: Language) {
   const html = document.documentElement;
   html.setAttribute('data-lang', lang);
   html.setAttribute('lang', lang);
+
+  // If switching to a language that needs a custom font, mark not ready until loaded
+  const needsFont = lang in LANG_FONT_URL && !loadedFonts.has(lang);
+  if (needsFont) {
+    useI18nStore.setState({ fontReady: false });
+  }
+
   loadFontForLanguage(lang);
 }
 
@@ -44,6 +64,7 @@ export const useI18nStore = create<I18nState>()(
   persist(
     (set) => ({
       language: 'en',
+      fontReady: true,
       setLanguage: (language) => {
         applyLangAttributes(language);
         set({ language });
@@ -51,6 +72,7 @@ export const useI18nStore = create<I18nState>()(
     }),
     {
       name: 'personas-i18n-storage',
+      partialize: (state) => ({ language: state.language }),
       onRehydrateStorage: () => (state) => {
         if (state) applyLangAttributes(state.language);
       },

@@ -108,22 +108,53 @@ export function useConnectorStatuses({
     );
   }, []);
 
+  // Pre-build lookup maps to avoid O(N*M) linear searches in the status loop
+  const credentialsByIdMap = useMemo(() => {
+    const map = new Map<string, CredentialMetadata>();
+    for (const cred of credentials) map.set(cred.id, cred);
+    return map;
+  }, [credentials]);
+
+  const connectorRailByName = useMemo(() => {
+    const map = new Map<string, (typeof connectorRailItems)[number]>();
+    for (const item of connectorRailItems) map.set(item.name, item);
+    return map;
+  }, [connectorRailItems]);
+
+  const connectorDefByName = useMemo(() => {
+    const nameSet = new Set<string>();
+    for (const def of connectorDefinitions) nameSet.add(def.name);
+    return nameSet;
+  }, [connectorDefinitions]);
+
+  // Pre-compute fuzzy matches for connectors not found in credentialsByServiceType
+  const matchedCredByConnector = useMemo(() => {
+    const map = new Map<string, { id: string; name: string } | null>();
+    for (const conn of connectors) {
+      map.set(conn.name, credentialsByServiceType.get(conn.name) ?? matchCredentialToConnector(credentials, conn.name));
+    }
+    return map;
+  }, [connectors, credentialsByServiceType, credentials]);
+
   // Build connector statuses from draft + store data + manual links
   useEffect(() => {
     if (connectors.length === 0) {
       setStatuses([]);
       return;
     }
-    setStatuses((prev) =>
-      connectors.map((conn) => {
-        const rail = connectorRailItems.find((item) => item.name === conn.name);
+    setStatuses((prev) => {
+      const prevByName = new Map<string, ConnectorStatus>();
+      for (const p of prev) prevByName.set(p.name, p);
+
+      return connectors.map((conn) => {
+        const rail = connectorRailByName.get(conn.name);
         const linkedCredentialId = credentialLinks[conn.name];
         const linkedCredential = linkedCredentialId
-          ? credentials.find((credential) => credential.id === linkedCredentialId)
+          ? credentialsByIdMap.get(linkedCredentialId) ?? null
           : null;
-        const matchedCred = credentialsByServiceType.get(conn.name) ?? matchCredentialToConnector(credentials, conn.name);
-        const matchedDef = connectorDefinitions.find((c) => c.name === conn.name);
-        const existing = prev.find((p) => p.name === conn.name);
+        const matchedCred = matchedCredByConnector.get(conn.name) ?? null;
+        const hasConnectorDef = connectorDefByName.has(conn.name);
+        const existing = prevByName.get(conn.name);
         const manual = manualLinks?.[conn.name];
 
         return {
@@ -131,13 +162,13 @@ export function useConnectorStatuses({
           n8nType: conn.n8n_credential_type,
           credentialId: existing?.credentialId ?? manual?.id ?? linkedCredentialId ?? matchedCred?.id ?? null,
           credentialName: existing?.credentialName ?? manual?.name ?? linkedCredential?.name ?? rail?.credentialName ?? matchedCred?.name ?? null,
-          hasConnectorDef: !!matchedDef,
+          hasConnectorDef,
           testing: existing?.testing ?? false,
           result: existing?.result ?? null,
         };
-      }),
-    );
-  }, [connectors, connectorRailItems, credentialLinks, credentials, credentialsByServiceType, connectorDefinitions, manualLinks]);
+      });
+    });
+  }, [connectors, connectorRailByName, credentialLinks, credentialsByIdMap, credentialsByServiceType, connectorDefByName, matchedCredByConnector, manualLinks]);
 
   // Fetch credentials and connector definitions on mount
   useEffect(() => {

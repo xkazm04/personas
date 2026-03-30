@@ -75,15 +75,15 @@ export const credentialItems: SubNavItem[] = [
 ];
 
 export const eventBusItems: SubNavItem[] = [
-  { id: 'canvas', label: 'Canvas', icon: Network },
-  { id: 'studio', label: 'Chain Studio', icon: GitBranch },
-  { id: 'shared', label: 'Marketplace', icon: Store },
   { id: 'live-stream', label: 'Live Stream', icon: Activity },
+  { id: 'builder', label: 'Builder', icon: Network },
   { id: 'rate-limits', label: 'Speed Limits', icon: Gauge },
   { id: 'test', label: 'Test', icon: Zap },
   { id: 'smee-relay', label: 'Local Relay', icon: Unplug },
-  { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook },
-  { id: 'dead-letter', label: 'Dead Letter Queue', icon: Archive },
+  { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook, devOnly: true },
+  { id: 'dead-letter', label: 'Dead Letter Queue', icon: Archive, devOnly: true },
+  { id: 'studio', label: 'Chain Studio', icon: GitBranch, devOnly: true },
+  { id: 'shared', label: 'Marketplace', icon: Store, devOnly: true },
 ];
 
 export const templateItems: SubNavItem[] = [

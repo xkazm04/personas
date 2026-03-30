@@ -24,14 +24,18 @@ interface NegotiatorPanelProps {
   onClose: () => void;
   /** Optional pre-filled values from autoCred or existing credentials */
   prefilledValues?: Record<string, string>;
+  /** Pre-fetched auth detections from the design orchestrator (avoids blocking fetch on mount). */
+  prefetchedAuthDetections?: AuthDetectionInfo[];
 }
 
-export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledValues }: NegotiatorPanelProps) {
-  // Fetch auth detections on mount so the negotiator can skip steps for
-  // services the user is already authenticated to.
-  const [authDetections, setAuthDetections] = useState<AuthDetectionInfo[]>([]);
-  const [authDetectLoading, setAuthDetectLoading] = useState(true);
+export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledValues, prefetchedAuthDetections }: NegotiatorPanelProps) {
+  // Use prefetched auth detections when available; otherwise fall back to
+  // fetching on mount (e.g. when rendered outside the design modal).
+  const hasPrefetched = prefetchedAuthDetections !== undefined;
+  const [authDetections, setAuthDetections] = useState<AuthDetectionInfo[]>(hasPrefetched ? prefetchedAuthDetections : []);
+  const [authDetectLoading, setAuthDetectLoading] = useState(!hasPrefetched);
   useEffect(() => {
+    if (hasPrefetched) return; // skip fetch — already warm-cached
     let cancelled = false;
     detectAuthenticatedServices()
       .then((detections) => {
@@ -55,7 +59,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
         if (!cancelled) setAuthDetectLoading(false);
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [hasPrefetched]);
 
   // Filter auth detections to those matching the current connector's service name
   const matchingAuth = useMemo(() => {

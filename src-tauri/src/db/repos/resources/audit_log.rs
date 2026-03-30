@@ -1,6 +1,7 @@
 use rusqlite::params;
 
 use crate::db::models::{CredentialAuditEntry, CredentialDependent, CredentialUsageStats};
+use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
 use crate::utils::sanitization::sanitize_secrets;
@@ -68,9 +69,8 @@ pub fn get_by_credential(
                     detail: row.get(6)?,
                     created_at: row.get(7)?,
                 })
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+            })?;
+        let rows = collect_rows(rows, "audit_log::get_by_credential");
         Ok(rows)
 
     })
@@ -191,9 +191,8 @@ pub fn get_all(
                     detail: row.get(6)?,
                     created_at: row.get(7)?,
                 })
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+            })?;
+        let rows = collect_rows(rows, "audit_log::get_all");
         Ok(rows)
 
     })
@@ -227,7 +226,7 @@ pub fn get_dependents(
              INNER JOIN connector_definitions cd ON cd.name = ?1
              WHERE cd.services LIKE '%' || ptd.name || '%'",
         )?;
-        let structural: Vec<CredentialDependent> = stmt
+        let structural = stmt
             .query_map(params![service_type], |row| {
                 Ok(CredentialDependent {
                     persona_id: row.get(0)?,
@@ -236,9 +235,8 @@ pub fn get_dependents(
                     via_connector: row.get(2)?,
                     last_used_at: None,
                 })
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+            })?;
+        let structural = collect_rows(structural, "audit_log::get_dependents/structural");
 
         // Find observed dependents from audit log (personas that have used this credential)
         let mut stmt2 = conn.prepare(
@@ -247,7 +245,7 @@ pub fn get_dependents(
              WHERE credential_id = ?1 AND persona_id IS NOT NULL
              GROUP BY persona_id",
         )?;
-        let observed: Vec<CredentialDependent> = stmt2
+        let observed = stmt2
             .query_map(params![credential_id], |row| {
                 Ok(CredentialDependent {
                     persona_id: row.get(0)?,
@@ -256,9 +254,8 @@ pub fn get_dependents(
                     via_connector: None,
                     last_used_at: row.get(2)?,
                 })
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+            })?;
+        let observed = collect_rows(observed, "audit_log::get_dependents/observed");
 
         // Merge: structural first, then observed (skip duplicates)
         let mut result = structural;

@@ -193,27 +193,43 @@ pub async fn test_build_draft(
         },
     )?;
 
-    // Run real API tests
-    let report = build_session_engine::run_tool_tests(
+    // Run real API tests — on failure, revert to draft_ready so the user can retry
+    let result = build_session_engine::run_tool_tests(
         &state.db,
         &app,
         &session_id,
         &persona_id,
         &agent_ir,
     )
-    .await?;
+    .await;
 
-    // Transition to test_complete
-    build_session_repo::update(
-        &state.db,
-        &session_id,
-        &UpdateBuildSession {
-            phase: Some(BuildPhase::TestComplete.as_str().to_string()),
-            ..Default::default()
-        },
-    )?;
-
-    Ok(report)
+    match result {
+        Ok(report) => {
+            // Transition to test_complete
+            build_session_repo::update(
+                &state.db,
+                &session_id,
+                &UpdateBuildSession {
+                    phase: Some(BuildPhase::TestComplete.as_str().to_string()),
+                    ..Default::default()
+                },
+            )?;
+            Ok(report)
+        }
+        Err(e) => {
+            // Revert to draft_ready so the session isn't stuck in testing
+            let _ = build_session_repo::update(
+                &state.db,
+                &session_id,
+                &UpdateBuildSession {
+                    phase: Some(BuildPhase::DraftReady.as_str().to_string()),
+                    error_message: Some(Some(e.to_string())),
+                    ..Default::default()
+                },
+            );
+            Err(e)
+        }
+    }
 }
 
 /// Promote a tested build draft to production.

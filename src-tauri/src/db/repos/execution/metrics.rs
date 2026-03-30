@@ -940,7 +940,7 @@ pub fn get_execution_dashboard(
     let total_cost: f64 = daily_points.iter().map(|p| p.total_cost).sum();
     let total_completed: i64 = daily_points.iter().map(|p| p.completed).sum();
     let total_failed: i64 = daily_points.iter().map(|p| p.failed).sum();
-    let active_personas = top_personas.len() as i64;
+    let active_personas = persona_aggs.len() as i64;
     let overall_success_rate = if total_executions > 0 {
         total_completed as f64 / total_executions as f64
     } else {

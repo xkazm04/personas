@@ -115,22 +115,33 @@ pub struct N8nSessionResponse {
 
 impl From<N8nTransformSession> for N8nSessionResponse {
     fn from(s: N8nTransformSession) -> Self {
-        fn parse_json_field(raw: Option<String>) -> Option<serde_json::Value> {
-            raw.and_then(|s| serde_json::from_str(&s).ok())
+        fn parse_json_field(raw: Option<String>, field: &str, session_id: &str) -> Option<serde_json::Value> {
+            raw.and_then(|text| {
+                serde_json::from_str(&text).unwrap_or_else(|err| {
+                    tracing::warn!(
+                        session_id,
+                        field,
+                        %err,
+                        "N8nSessionResponse: malformed JSON in column — returning null; data may be corrupt"
+                    );
+                    None
+                })
+            })
         }
+        let id = &s.id;
         Self {
+            parser_result: parse_json_field(s.parser_result, "parser_result", id),
+            draft_json: parse_json_field(s.draft_json, "draft_json", id),
+            user_answers: parse_json_field(s.user_answers, "user_answers", id),
+            questions_json: parse_json_field(s.questions_json, "questions_json", id),
             id: s.id,
             workflow_name: s.workflow_name,
             status: s.status,
             raw_workflow_json: s.raw_workflow_json,
-            parser_result: parse_json_field(s.parser_result),
-            draft_json: parse_json_field(s.draft_json),
-            user_answers: parse_json_field(s.user_answers),
             step: s.step,
             error: s.error,
             persona_id: s.persona_id,
             transform_id: s.transform_id,
-            questions_json: parse_json_field(s.questions_json),
             created_at: s.created_at,
             updated_at: s.updated_at,
         }

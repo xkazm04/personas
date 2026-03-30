@@ -110,11 +110,24 @@ pub struct FileWatcherSubscription {
 }
 
 /// Clipboard monitor subscription: detect clipboard content changes.
+/// Also runs error detection + KB search for the clipboard watcher feature.
 #[cfg(feature = "desktop")]
 pub struct ClipboardSubscription {
     pub pool: DbPool,
     pub state: Arc<tokio::sync::Mutex<super::clipboard_monitor::ClipboardState>>,
     pub ambient_ctx: super::ambient_context::AmbientContextHandle,
+    /// App handle for sending OS notifications and Tauri events.
+    pub app: AppHandle,
+    /// User database pool (for KB lookups).
+    pub user_db: crate::db::UserDbPool,
+    /// Embedding manager for vectorising error queries.
+    pub embedding_manager: Option<Arc<crate::engine::embedder::EmbeddingManager>>,
+    /// Vector store for KB similarity search.
+    pub vector_store: Option<Arc<super::vector_store::SqliteVectorStore>>,
+    /// Cooldown: last time a clipboard error notification was sent.
+    pub last_notification: Arc<tokio::sync::Mutex<Option<std::time::Instant>>>,
+    /// Whether the clipboard watcher is enabled (toggled from tray).
+    pub watcher_enabled: Arc<std::sync::atomic::AtomicBool>,
 }
 
 /// App focus subscription: detect foreground application changes.
@@ -351,7 +364,192 @@ impl ReactiveSubscription for ClipboardSubscription {
         if hash_before != hash_after {
             let mut ctx = self.ambient_ctx.lock().await;
             ctx.push_clipboard("text", 0); // Length unknown here, but signal is still useful
+            drop(ctx);
+
+            // Clipboard watcher: detect errors and search KB for resolutions
+            if self.watcher_enabled.load(std::sync::atomic::Ordering::Relaxed) {
+                self.run_error_detection().await;
+            }
         }
+    }
+}
+
+#[cfg(feature = "desktop")]
+impl ClipboardSubscription {
+    /// Read the current clipboard text and run error detection + KB search.
+    /// Sends an OS notification if a KB match is found, respecting a 30-second cooldown.
+    async fn run_error_detection(&self) {
+        use std::sync::atomic::Ordering;
+        use std::time::Instant;
+
+        // Cooldown check: 30 seconds between notifications
+        {
+            let last = self.last_notification.lock().await;
+            if let Some(t) = *last {
+                if t.elapsed().as_secs() < 30 {
+                    return;
+                }
+            }
+        }
+
+        // Read clipboard text (separate read from the monitor — we need the actual content)
+        let clip_text = tokio::task::spawn_blocking(|| {
+            arboard::Clipboard::new()
+                .ok()
+                .and_then(|mut cb| cb.get_text().ok())
+                .filter(|t| !t.is_empty())
+        })
+        .await
+        .unwrap_or(None);
+
+        let text = match clip_text {
+            Some(t) => t,
+            None => return,
+        };
+
+        // Run error detection
+        let detection = match super::clipboard_error_detector::detect_error_pattern(&text) {
+            Some(d) if d.confidence >= 0.6 => d,
+            _ => return,
+        };
+
+        tracing::debug!(
+            error_type = %detection.error_type,
+            confidence = detection.confidence,
+            summary = %detection.summary,
+            "Clipboard error detected"
+        );
+
+        // Search KB for the error summary
+        let matches = match self.search_kb(&detection.summary) {
+            Ok(m) => m,
+            Err(e) => {
+                tracing::debug!("KB search for clipboard error failed: {e}");
+                return;
+            }
+        };
+
+        // Filter to similarity > 0.5 threshold
+        let good_matches: Vec<_> = matches
+            .into_iter()
+            .filter(|m| m.similarity > 0.5)
+            .collect();
+
+        if good_matches.is_empty() {
+            return;
+        }
+
+        // Send OS notification with top match
+        let top = &good_matches[0];
+        let body = format!(
+            "KB \"{}\": {}",
+            top.kb_name,
+            top.chunk_text.chars().take(120).collect::<String>()
+        );
+        crate::notifications::send(&self.app, "Possible fix found", &body);
+
+        // Emit Tauri event with full detection + matches payload
+        {
+            use tauri::Emitter;
+            let payload = serde_json::json!({
+                "detection": detection,
+                "matches": good_matches,
+            });
+            let _ = self.app.emit(event_name::CLIPBOARD_ERROR_DETECTED, payload);
+        }
+
+        // Update cooldown timestamp
+        {
+            let mut last = self.last_notification.lock().await;
+            *last = Some(Instant::now());
+        }
+
+        tracing::info!(
+            error_type = %detection.error_type,
+            kb_matches = good_matches.len(),
+            "Clipboard watcher: notified user of KB match for detected error"
+        );
+    }
+
+    /// Search all KBs for the given query. Wraps the command module's logic
+    /// with direct field access to avoid needing the full AppState.
+    fn search_kb(
+        &self,
+        query: &str,
+    ) -> Result<Vec<crate::commands::execution::clipboard_intel::KbMatch>, crate::error::AppError>
+    {
+        let embedding_manager = self.embedding_manager.as_ref().ok_or_else(|| {
+            crate::error::AppError::Internal("Embedding manager not available".into())
+        })?;
+        let vector_store = self.vector_store.as_ref().ok_or_else(|| {
+            crate::error::AppError::Internal("Vector store not available".into())
+        })?;
+
+        let query_text = query.to_string();
+        let em = embedding_manager.clone();
+        let query_vec = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(em.embed_query(&query_text))
+        })?;
+
+        let user_conn = self.user_db.get()?;
+
+        // List all ready KBs
+        let mut kb_stmt = user_conn.prepare(
+            "SELECT id, name FROM knowledge_bases WHERE status = 'ready' ORDER BY created_at DESC",
+        )?;
+        let kb_list: Vec<(String, String)> = kb_stmt
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let mut all_matches = Vec::new();
+        let limit = 3usize;
+
+        for (kb_id, kb_name) in &kb_list {
+            let results = match vector_store.search(kb_id, &query_vec, limit) {
+                Ok(r) => r,
+                Err(_) => continue,
+            };
+            for (chunk_id, distance) in results {
+                let similarity = 1.0 / (1.0 + distance);
+                let (chunk_text, source_file) = user_conn
+                    .prepare(
+                        "SELECT c.content, d.source_path
+                         FROM kb_chunks c
+                         LEFT JOIN kb_documents d ON d.id = c.document_id
+                         WHERE c.id = ?1",
+                    )
+                    .and_then(|mut stmt| {
+                        stmt.query_row(rusqlite::params![chunk_id], |row| {
+                            Ok((
+                                row.get::<_, String>(0)?,
+                                row.get::<_, Option<String>>(1)?,
+                            ))
+                        })
+                    })
+                    .unwrap_or_default();
+
+                if chunk_text.is_empty() {
+                    continue;
+                }
+
+                all_matches.push(
+                    crate::commands::execution::clipboard_intel::KbMatch {
+                        kb_name: kb_name.clone(),
+                        chunk_text,
+                        similarity,
+                        source_file,
+                    },
+                );
+            }
+        }
+
+        all_matches.sort_by(|a, b| {
+            b.similarity
+                .partial_cmp(&a.similarity)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        all_matches.truncate(limit);
+        Ok(all_matches)
     }
 }
 

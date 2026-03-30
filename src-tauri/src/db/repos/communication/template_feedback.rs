@@ -44,11 +44,15 @@ pub fn create(pool: &DbPool, input: CreateTemplateFeedbackInput) -> Result<Templ
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let labels_json = serde_json::to_string(&input.labels).unwrap_or_else(|_| "[]".to_string());
+    let rating_str = serde_json::to_value(&input.rating)
+        .ok()
+        .and_then(|v| v.as_str().map(String::from))
+        .unwrap_or_else(|| "neutral".to_string());
 
     conn.execute(
         "INSERT INTO template_feedback (id, review_id, persona_id, execution_id, rating, labels, comment, source, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-        params![id, input.review_id, input.persona_id, input.execution_id, input.rating, labels_json, input.comment, input.source, now],
+        params![id, input.review_id, input.persona_id, input.execution_id, rating_str, labels_json, input.comment, input.source, now],
     )?;
 
     let row = conn.query_row(

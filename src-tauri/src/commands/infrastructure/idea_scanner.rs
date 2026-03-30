@@ -227,6 +227,17 @@ pub async fn dev_tools_run_scan(
 
     let project = repo::get_project_by_id(&state.db, &project_id)?;
 
+    // Resolve agents before creating any DB records to avoid orphaned "running" scans
+    let all_agents = get_scan_agents();
+    let selected_agents: Vec<&ScanAgentMeta> = all_agents
+        .iter()
+        .filter(|a| scan_types.contains(&a.key))
+        .collect();
+
+    if selected_agents.is_empty() {
+        return Err(AppError::Validation("No valid scan agents selected".into()));
+    }
+
     // Create scan record
     let scan_type_str = scan_types.join(",");
     let scan = repo::create_scan(
@@ -240,23 +251,6 @@ pub async fn dev_tools_run_scan(
     let cancel_token = CancellationToken::new();
     IDEA_SCAN_JOBS.insert_running(scan_id.clone(), cancel_token.clone(), IdeaScanExtra)?;
     IDEA_SCAN_JOBS.set_status(&app, &scan_id, "running", None);
-
-    // Resolve agents
-    let all_agents = get_scan_agents();
-    let selected_agents: Vec<&ScanAgentMeta> = all_agents
-        .iter()
-        .filter(|a| scan_types.contains(&a.key))
-        .collect();
-
-    if selected_agents.is_empty() {
-        IDEA_SCAN_JOBS.set_status(
-            &app,
-            &scan_id,
-            "failed",
-            Some("No valid agents selected".into()),
-        );
-        return Err(AppError::Validation("No valid scan agents selected".into()));
-    }
 
     // Get existing context summary for richer analysis
     let contexts = repo::list_contexts_by_project(&state.db, &project_id, None).unwrap_or_default();
@@ -561,13 +555,23 @@ async fn run_idea_scan(
     })
     .await;
 
-    let _ = child.wait().await;
-
     if stream_result.is_err() {
+        // Timeout fired — explicitly kill the child to prevent zombie processes.
+        // kill_on_drop only fires when the Child is dropped, but we hold it alive
+        // for the wait() call below, so we must kill manually.
+        let _ = child.kill().await;
+        // Give the child a brief window to exit after being killed.
+        let _ = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            child.wait(),
+        )
+        .await;
         return Err(AppError::Internal(
             "Idea scan timed out after 5 minutes".into(),
         ));
     }
+
+    let _ = child.wait().await;
 
     IDEA_SCAN_JOBS.emit_line(
         app,

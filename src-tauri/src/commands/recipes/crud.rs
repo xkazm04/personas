@@ -1,5 +1,10 @@
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, LazyLock};
 
+use regex::Regex;
+
+static PLACEHOLDER_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\{\{(\w+)\}\}").expect("static regex"));
 use serde_json::json;
 use tauri::{Emitter, State};
 
@@ -21,28 +26,39 @@ use super::recipe_execution;
 use super::recipe_generation;
 use super::recipe_versioning;
 
+/// Single-pass substitution of `{{key}}` placeholders using a precompiled regex.
+/// Builds the output string in one scan instead of O(n*m) repeated `String::replace` calls.
+fn render_template(
+    template: &str,
+    input_data: &HashMap<String, serde_json::Value>,
+) -> String {
+    PLACEHOLDER_RE.replace_all(template, |caps: &regex::Captures| {
+        let key = &caps[1];
+        match input_data.get(key) {
+            Some(serde_json::Value::String(s)) => s.clone(),
+            Some(other) => other.to_string(),
+            None => caps[0].to_string(), // leave unmatched placeholders for validation
+        }
+    })
+    .into_owned()
+}
+
 /// Scan rendered prompt for unreplaced `{{variable}}` placeholders and return
 /// an error listing the missing variables if any are found.
 fn validate_no_unreplaced_placeholders(rendered: &str) -> Result<(), AppError> {
-    let mut missing = Vec::new();
-    let mut rest = rendered;
-    while let Some(start) = rest.find("{{") {
-        if let Some(end) = rest[start..].find("}}") {
-            let name = &rest[start + 2..start + end];
-            if !name.is_empty() && !missing.contains(&name.to_string()) {
-                missing.push(name.to_string());
-            }
-            rest = &rest[start + end + 2..];
-        } else {
-            break;
-        }
-    }
-    if missing.is_empty() {
+    let missing: Vec<String> = PLACEHOLDER_RE
+        .captures_iter(rendered)
+        .map(|c| c[1].to_string())
+        .collect::<Vec<_>>();
+    // deduplicate while preserving order
+    let mut seen = std::collections::HashSet::new();
+    let unique: Vec<&str> = missing.iter().filter(|s| seen.insert(s.as_str())).map(|s| s.as_str()).collect();
+    if unique.is_empty() {
         Ok(())
     } else {
         Err(AppError::Validation(format!(
             "Template has unreplaced placeholder(s): {}. Provide values for these variables.",
-            missing.join(", ")
+            unique.join(", ")
         )))
     }
 }
@@ -128,16 +144,8 @@ pub fn execute_recipe(
     require_auth_sync(&state)?;
     let recipe = repo::get_by_id(&state.db, &input.recipe_id)?;
 
-    // Substitute {{variable}} placeholders with input_data values
-    let mut rendered = recipe.prompt_template.clone();
-    for (key, value) in &input.input_data {
-        let placeholder = format!("{{{{{key}}}}}");
-        let replacement = match value {
-            serde_json::Value::String(s) => s.clone(),
-            other => other.to_string(),
-        };
-        rendered = rendered.replace(&placeholder, &replacement);
-    }
+    // Single-pass substitution of {{variable}} placeholders
+    let rendered = render_template(&recipe.prompt_template, &input.input_data);
 
     validate_no_unreplaced_placeholders(&rendered)?;
 
@@ -161,16 +169,8 @@ pub async fn start_recipe_execution(
     require_auth(&state).await?;
     let recipe = repo::get_by_id(&state.db, &recipe_id)?;
 
-    // Render the prompt template with input values
-    let mut rendered = recipe.prompt_template.clone();
-    for (key, value) in &input_data {
-        let placeholder = format!("{{{{{key}}}}}");
-        let replacement = match value {
-            serde_json::Value::String(s) => s.clone(),
-            other => other.to_string(),
-        };
-        rendered = rendered.replace(&placeholder, &replacement);
-    }
+    // Single-pass substitution of {{variable}} placeholders
+    let rendered = render_template(&recipe.prompt_template, &input_data);
 
     validate_no_unreplaced_placeholders(&rendered)?;
 

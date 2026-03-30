@@ -208,6 +208,46 @@ fn try_desktop_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
     }
 }
 
+/// Race CLI and desktop healthcheck probes concurrently.
+///
+/// When both a CLI probe and a desktop probe exist for a service type, they are
+/// run in parallel via `tokio::select!`. The first successful result wins.  If
+/// neither probe exists, returns `None` so the caller can fall back to a
+/// generic "stored" message.
+async fn race_local_probes(service_type: &str) -> Option<HealthcheckResult> {
+    let has_cli = CLI_HEALTH_PROBES.iter().any(|p| p.service_type == service_type);
+    let has_desktop = DESKTOP_CONNECTOR_MAP.iter().any(|(n, _)| *n == service_type);
+
+    match (has_cli, has_desktop) {
+        (true, true) => {
+            // Race both probes concurrently -- return first success or last failure
+            tokio::select! {
+                Some(cli) = try_cli_healthcheck(service_type) => {
+                    if cli.success {
+                        return Some(cli);
+                    }
+                    // CLI failed, still check desktop
+                    try_desktop_healthcheck(service_type).or(Some(cli))
+                }
+                // Desktop check is synchronous and instant; wrap in async block
+                desktop = async { try_desktop_healthcheck(service_type) } => {
+                    if desktop.as_ref().is_some_and(|r| r.success) {
+                        return desktop;
+                    }
+                    // Desktop failed or absent, wait for CLI
+                    match try_cli_healthcheck(service_type).await {
+                        Some(cli) => Some(cli),
+                        None => desktop,
+                    }
+                }
+            }
+        }
+        (true, false) => try_cli_healthcheck(service_type).await,
+        (false, true) => try_desktop_healthcheck(service_type),
+        (false, false) => None,
+    }
+}
+
 /// Run a healthcheck for a stored credential.
 ///
 /// 1. Load credential from DB
@@ -224,29 +264,22 @@ pub async fn run_healthcheck(
 
     let fields = cred_repo::get_decrypted_fields(pool, &cred)?;
 
-    let _ = audit_log::log_decrypt(pool, credential_id, &cred.name, "healthcheck", None, None);
+    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &cred.name, "healthcheck", None, None) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
 
     let (connector, hc_config) = resolve_connector_healthcheck(pool, &cred.service_type, Some(&fields))?;
 
-    // If the matched variant says to skip HTTP healthcheck, try CLI probe instead
+    // If the matched variant says to skip HTTP healthcheck, race CLI + desktop probes
     if hc_config.skip {
-        if let Some(cli_result) = try_cli_healthcheck(&cred.service_type).await {
+        if let Some(result) = race_local_probes(&cred.service_type).await {
             tracing::debug!(
                 credential_id = %credential_id,
                 service_type = %cred.service_type,
-                success = cli_result.success,
-                "healthcheck via CLI probe"
+                success = result.success,
+                "healthcheck via local probe (CLI or desktop)"
             );
-            return Ok(cli_result);
-        }
-        if let Some(desktop_result) = try_desktop_healthcheck(&cred.service_type) {
-            tracing::debug!(
-                credential_id = %credential_id,
-                service_type = %cred.service_type,
-                success = desktop_result.success,
-                "healthcheck via desktop app detection"
-            );
-            return Ok(desktop_result);
+            return Ok(result);
         }
         tracing::debug!(
             credential_id = %credential_id,
@@ -259,10 +292,26 @@ pub async fn run_healthcheck(
         });
     }
 
-    // Resolve auth token via connector strategy
+    // Resolve auth token via connector strategy.
+    // For OAuth credentials, acquire a per-credential lock to prevent concurrent
+    // token exchanges with the background refresh tick (see oauth_refresh_lock).
     let strategy = connector_strategy::registry()?.get(&cred.service_type, connector.metadata.as_deref());
-    let token = strategy.resolve_auth_token(connector.metadata.as_deref(), &fields).await?
-        .map(|r| r.token);
+    let (token, fields) = if strategy.is_oauth(&fields) {
+        let _lock = super::oauth_refresh_lock::acquire(credential_id).await;
+        // Re-read fields inside the lock — a concurrent refresh may have already
+        // persisted a fresh access_token while we were waiting.
+        let fresh_fields = cred_repo::get_decrypted_fields(pool, &cred)?;
+        if let Err(e) = audit_log::log_decrypt(pool, credential_id, &cred.name, "healthcheck_locked", None, None) {
+            tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+        }
+        let token = strategy.resolve_auth_token(connector.metadata.as_deref(), &fresh_fields).await?
+            .map(|r| r.token);
+        (token, fresh_fields)
+    } else {
+        let token = strategy.resolve_auth_token(connector.metadata.as_deref(), &fields).await?
+            .map(|r| r.token);
+        (token, fields)
+    };
 
     execute_healthcheck_request_with_strategy(
         strategy, &hc_config, &fields, token,
@@ -277,23 +326,15 @@ pub async fn run_healthcheck_with_fields(
 ) -> Result<HealthcheckResult, AppError> {
     let (connector, hc_config) = resolve_connector_healthcheck(pool, service_type, Some(fields))?;
 
-    // If the matched variant says to skip HTTP healthcheck, try CLI probe instead
+    // If the matched variant says to skip HTTP healthcheck, race CLI + desktop probes
     if hc_config.skip {
-        if let Some(cli_result) = try_cli_healthcheck(service_type).await {
+        if let Some(result) = race_local_probes(service_type).await {
             tracing::debug!(
                 service_type = %service_type,
-                success = cli_result.success,
-                "healthcheck via CLI probe"
+                success = result.success,
+                "healthcheck via local probe (CLI or desktop)"
             );
-            return Ok(cli_result);
-        }
-        if let Some(desktop_result) = try_desktop_healthcheck(service_type) {
-            tracing::debug!(
-                service_type = %service_type,
-                success = desktop_result.success,
-                "healthcheck via desktop app detection"
-            );
-            return Ok(desktop_result);
+            return Ok(result);
         }
         tracing::debug!(
             service_type = %service_type,

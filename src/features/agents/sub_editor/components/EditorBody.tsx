@@ -1,4 +1,5 @@
 import { useEffect, useCallback, Suspense } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { Bot, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
@@ -21,14 +22,22 @@ import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
 import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
 
 export function EditorBody() {
-  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const {
+    selectedPersona, deletePersona,
+    pendingSelectPersonaId: pendingPersonaId,
+    setEditorDirty, cancelPendingSwitch,
+  } = useAgentStore(useShallow((s) => ({
+    selectedPersona: s.selectedPersona,
+    deletePersona: s.deletePersona,
+    pendingSelectPersonaId: s.pendingSelectPersonaId,
+    setEditorDirty: s.setEditorDirty,
+    cancelPendingSwitch: s.cancelPendingSwitch,
+  })));
   const editorTab = useSystemStore((s) => s.editorTab);
-  const deletePersona = useAgentStore((s) => s.deletePersona);
-  const credentials = useVaultStore((s) => s.credentials);
-  const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
-  const pendingPersonaId = useAgentStore((s) => s.pendingSelectPersonaId);
-  const setEditorDirty = useAgentStore((s) => s.setEditorDirty);
-  const cancelPendingSwitch = useAgentStore((s) => s.cancelPendingSwitch);
+  const { credentials, connectorDefinitions } = useVaultStore(useShallow((s) => ({
+    credentials: s.credentials,
+    connectorDefinitions: s.connectorDefinitions,
+  })));
 
   const {
     draft, baseline, patch, setBaseline,

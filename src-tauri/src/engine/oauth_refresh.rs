@@ -236,18 +236,45 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
 
 /// Refresh a single credential's OAuth access token.
 ///
-/// 1. Decrypt fields to get refresh_token
-/// 2. Resolve the connector's strategy
-/// 3. Use resolve_auth_token to get a fresh access_token
-/// 4. Persist the new access_token to encrypted fields
-/// 5. Update metadata with refresh stats
-/// 6. Record token lifetime metrics
+/// 1. Acquire per-credential lock (prevents concurrent refresh races)
+/// 2. Re-check token freshness (another task may have refreshed while waiting)
+/// 3. Decrypt fields to get refresh_token
+/// 4. Resolve the connector's strategy
+/// 5. Use resolve_auth_token to get a fresh access_token
+/// 6. Persist the new access_token to encrypted fields
+/// 7. Update metadata with refresh stats
+/// 8. Record token lifetime metrics
 pub async fn refresh_single_credential(
     pool: &DbPool,
     cred: &crate::db::models::PersonaCredential,
 ) -> Result<String, AppError> {
+    // Acquire per-credential lock to prevent concurrent refresh races.
+    // If another task is already refreshing this credential, we wait.
+    let _lock = super::oauth_refresh_lock::acquire(&cred.id).await;
+
+    // After acquiring the lock, re-check whether the token was already refreshed
+    // by whichever task held the lock before us. Re-read credential from DB.
+    if let Ok(fresh_cred) = cred_repo::get_by_id(pool, &cred.id) {
+        let fresh_meta = parse_credential_metadata(&fresh_cred);
+        if let Some(ref meta) = fresh_meta {
+            if let Some(expires_at) = extract_expires_at(meta) {
+                let remaining = expires_at.signed_duration_since(chrono::Utc::now());
+                if remaining.num_seconds() > REFRESH_THRESHOLD_SECS {
+                    tracing::info!(
+                        credential_id = %cred.id,
+                        remaining_secs = remaining.num_seconds(),
+                        "Skipping refresh — token was already refreshed by another task"
+                    );
+                    return Ok("Token already refreshed by concurrent task".to_string());
+                }
+            }
+        }
+    }
+
     let fields = cred_repo::get_decrypted_fields(pool, cred)?;
-    let _ = audit_log::log_decrypt(pool, &cred.id, &cred.name, "oauth_refresh", None, None);
+    if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "oauth_refresh", None, None) {
+        tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential decrypt");
+    }
 
     // Must have a refresh_token to refresh
     if !fields.contains_key("refresh_token") {

@@ -311,6 +311,45 @@ pub fn upsert_provenance(
     })
 }
 
+#[instrument(skip(pool, inputs), fields(count = inputs.len()))]
+pub fn batch_upsert_provenance(
+    pool: &DbPool,
+    inputs: Vec<CreateProvenanceInput>,
+) -> Result<(), AppError> {
+    if inputs.is_empty() {
+        return Ok(());
+    }
+    timed_query!("exposure_scans", "exposure_scans::batch_upsert_provenance", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
+        {
+            let mut stmt = tx.prepare_cached(
+                "INSERT INTO resource_provenance (resource_type, resource_id, source_peer_id,
+                 source_display_name, bundle_hash, signature_verified)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                 ON CONFLICT(resource_type, resource_id) DO UPDATE SET
+                    source_peer_id = excluded.source_peer_id,
+                    source_display_name = excluded.source_display_name,
+                    bundle_hash = excluded.bundle_hash,
+                    signature_verified = excluded.signature_verified,
+                    imported_at = datetime('now')",
+            ).map_err(AppError::Database)?;
+            for input in &inputs {
+                stmt.execute(params![
+                    input.resource_type,
+                    input.resource_id,
+                    input.source_peer_id,
+                    input.source_display_name,
+                    input.bundle_hash,
+                    input.signature_verified as i32,
+                ]).map_err(AppError::Database)?;
+            }
+        }
+        tx.commit().map_err(AppError::Database)?;
+        Ok(())
+    })
+}
+
 // -- Helpers -------------------------------------------------------------
 
 use rusqlite::OptionalExtension;

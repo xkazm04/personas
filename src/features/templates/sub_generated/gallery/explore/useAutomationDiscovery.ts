@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { CATEGORY_ROLE_GROUPS, type RoleGroup } from '../search/filters/searchConstants';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
+import { getCachedLightFields } from '../cards/reviewParseCache';
 
 /**
  * An automation opportunity: a role group where the user has partial or full
@@ -19,12 +20,6 @@ export interface AutomationOpportunity {
   /** How many of the group's categories the user already has coverage for */
   coveredCategories: number;
   totalCategories: number;
-}
-
-function parseConnectors(t: PersonaDesignReview): string[] {
-  if (!t.connectors_used) return [];
-  try { return JSON.parse(t.connectors_used) as string[]; }
-  catch { return []; }
 }
 
 /**
@@ -64,7 +59,7 @@ export function useAutomationDiscovery(
         let hasCoverage = false;
 
         for (const t of templates) {
-          const connectors = parseConnectors(t).map(c => c.toLowerCase());
+          const connectors = getCachedLightFields(t).connectors.map(c => c.toLowerCase());
           if (connectors.length === 0) {
             // No connectors needed — always ready
             readyNow.push(t);

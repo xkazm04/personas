@@ -89,12 +89,13 @@ pub async fn rotate_credential_now(
     credential_id: String,
 ) -> Result<String, AppError> {
     require_privileged(&state, "rotate_credential_now").await?;
+    let cred = crate::db::repos::resources::credentials::get_by_id(&state.db, &credential_id)?;
     let result = rotation_engine::rotate_now(&state.db, &credential_id, "manual").await;
     let (op, detail) = match &result {
         Ok(_) => ("credential_rotated", "manual rotation succeeded".to_string()),
         Err(e) => ("credential_rotation_failed", format!("manual rotation failed: {e}")),
     };
-    audit_log::insert_warn(&state.db, &credential_id, &credential_id, op, Some(&detail));
+    audit_log::insert_warn(&state.db, &credential_id, &cred.name, op, Some(&detail));
     result
 }
 

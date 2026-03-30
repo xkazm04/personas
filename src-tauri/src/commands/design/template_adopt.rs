@@ -424,6 +424,7 @@ pub fn confirm_template_adopt_draft(
     require_auth_sync(&state)?;
     let tpl_name = template_name.as_deref().unwrap_or("unknown");
     tracing::info!(template_id = %tpl_name, "confirm_template_adopt_draft: start");
+    validate_json_field("draft_json", &draft_json)?;
     let draft: N8nPersonaOutput = serde_json::from_str(&draft_json)
         .map_err(|e| AppError::Validation(format!("Invalid draft JSON: {e}")))?;
 
@@ -479,6 +480,7 @@ pub fn instant_adopt_template_inner(
     if design_result_json.trim().is_empty() {
         return Err(AppError::Validation("Design result JSON cannot be empty".into()));
     }
+    validate_json_field("design_result_json", &design_result_json)?;
 
     // Backend integrity check: verify the design result against the embedded manifest.
     // This catches tampered templates even if the frontend checksums were bypassed.
