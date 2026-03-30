@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { cancelSetupInstall, startSetupInstall } from "@/api/system/system";
@@ -89,6 +89,12 @@ export function useAutoInstaller() {
       }
       cleanup();
     }
+  }, [cleanup]);
+
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
   }, [cleanup]);
 
   const cancel = useCallback(() => {

@@ -258,11 +258,13 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("teams", "teams::delete", {
-        let conn = pool.get()?;
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
         // Clean up related rows which have no FK CASCADE on team_id
-        conn.execute("DELETE FROM pipeline_runs WHERE team_id = ?1", params![id])?;
-        conn.execute("DELETE FROM team_memories WHERE team_id = ?1", params![id])?;
-        let rows = conn.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
+        tx.execute("DELETE FROM pipeline_runs WHERE team_id = ?1", params![id])?;
+        tx.execute("DELETE FROM team_memories WHERE team_id = ?1", params![id])?;
+        let rows = tx.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
+        tx.commit().map_err(AppError::Database)?;
         Ok(rows > 0)
 
     })
@@ -302,6 +304,20 @@ pub fn add_member(
         let py = position_y.unwrap_or(0.0);
 
         let conn = pool.get()?;
+
+        // Prevent duplicate persona in the same team
+        let exists: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM persona_team_members WHERE team_id = ?1 AND persona_id = ?2)",
+            params![team_id, persona_id],
+            |row| row.get(0),
+        )?;
+        if exists {
+            return Err(AppError::Validation(format!(
+                "Persona {} is already a member of team {}",
+                persona_id, team_id
+            )));
+        }
+
         conn.execute(
             "INSERT INTO persona_team_members (id, team_id, persona_id, role, position_x, position_y, config, created_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
@@ -432,6 +448,37 @@ pub fn create_connection(
 
         let conn_type = connection_type.unwrap_or_else(|| "sequential".into());
         let conn = pool.get()?;
+
+        // Validate both member IDs belong to the specified team
+        let source_belongs: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_team_members WHERE id = ?1 AND team_id = ?2",
+                params![source_member_id, team_id],
+                |row| row.get::<_, i64>(0),
+            )
+            .map(|c| c > 0)
+            .unwrap_or(false);
+
+        if !source_belongs {
+            return Err(AppError::Validation(
+                "Source member does not belong to the specified team".into(),
+            ));
+        }
+
+        let target_belongs: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_team_members WHERE id = ?1 AND team_id = ?2",
+                params![target_member_id, team_id],
+                |row| row.get::<_, i64>(0),
+            )
+            .map(|c| c > 0)
+            .unwrap_or(false);
+
+        if !target_belongs {
+            return Err(AppError::Validation(
+                "Target member does not belong to the specified team".into(),
+            ));
+        }
 
         // Check for duplicate edge
         let exists: bool = conn

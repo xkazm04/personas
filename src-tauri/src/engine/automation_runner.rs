@@ -56,15 +56,17 @@ pub async fn invoke_automation(
     let method = automation.webhook_method.as_str();
     let body = input_json.unwrap_or("{}");
     let timeout_ms = automation.timeout_ms;
-    let max_attempts = (automation.retry_count.max(1)) as u32;
+    let max_attempts = (automation.retry_count.clamp(1, 5)) as u32;
 
     let mut result = invoke_webhook(webhook_url, method, body, &auth_resolution.headers, timeout_ms).await;
 
-    // Retry on transient errors with exponential backoff
+    // Retry on transient errors with exponential backoff (capped at 30s)
+    const MAX_BACKOFF_MS: u64 = 30_000;
     if max_attempts > 1 {
         let mut attempt = 1u32;
         while attempt < max_attempts && is_retryable_error(&result) {
-            let backoff = std::time::Duration::from_millis(1000 * 2u64.pow(attempt - 1));
+            let backoff_ms = (1000u64 * 2u64.pow(attempt - 1)).min(MAX_BACKOFF_MS);
+            let backoff = std::time::Duration::from_millis(backoff_ms);
             tracing::info!(
                 automation = %automation.name,
                 attempt = attempt + 1,
@@ -194,11 +196,13 @@ async fn resolve_auth_headers(
         ))
     })?;
 
-    let _ = audit_log::log_decrypt(
+    if let Err(e) = audit_log::log_decrypt(
         pool, cred_id, &credential.name,
         &format!("automation_runner:{}", automation.name),
         None, None,
-    );
+    ) {
+        tracing::warn!(credential_id = cred_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
 
     // Common patterns for webhook auth
     if let Some(token) = fields.get("api_key").or(fields.get("access_token")).or(fields.get("token")) {
@@ -336,7 +340,7 @@ async fn invoke_webhook(
         req = req.header(key, value);
     }
 
-    let resp = req.send().await.map_err(|e| {
+    let mut resp = req.send().await.map_err(|e| {
         if e.is_timeout() {
             AppError::Execution(format!("Webhook timed out after {timeout_ms}ms: {url}"))
         } else if e.is_connect() {
@@ -427,11 +431,14 @@ async fn invoke_github_dispatch(
     execution_id: Option<&str>,
 ) -> Result<AutomationRun, AppError> {
     // Parse dispatch metadata from credential_mapping
-    let mapping: serde_json::Value = automation
-        .credential_mapping
-        .as_deref()
-        .and_then(|s| serde_json::from_str(s).ok())
-        .unwrap_or_default();
+    let raw_mapping = automation.credential_mapping.as_deref().unwrap_or("{}");
+    let mapping: serde_json::Value =
+        serde_json::from_str(raw_mapping).map_err(|e| {
+            AppError::Validation(format!(
+                "Automation '{}' has malformed credential_mapping JSON: {e}",
+                automation.name
+            ))
+        })?;
 
     let event_type = mapping["event_type"]
         .as_str()

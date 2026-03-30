@@ -227,12 +227,15 @@ async fn invoke_api(
         )));
     }
 
+    // Pre-parse input JSON once instead of re-parsing per token.
+    let input_val: Option<serde_json::Value> = serde_json::from_str(input_json).ok();
+
     // Substitute placeholders in each token individually.
     // Each token becomes a separate process argument so shell metacharacters
     // (;, |, &&, $(...), etc.) have no effect.
     let resolved_tokens: Vec<String> = raw_tokens[1..]
         .iter()
-        .map(|token| resolve_placeholders(token, env_map, input_json))
+        .map(|token| resolve_placeholders(token, env_map, input_val.as_ref()))
         .collect();
 
     // Validate resolved arguments -- block dangerous curl flags and URL schemes
@@ -283,24 +286,22 @@ async fn invoke_api(
 fn resolve_placeholders(
     token: &str,
     env_map: &HashMap<&str, &str>,
-    input_json: &str,
+    input_val: Option<&serde_json::Value>,
 ) -> String {
     let mut resolved = token.to_string();
 
     // 1. Substitute input parameters FIRST (user-controlled values).
     //    Sanitize values to strip null bytes and CRLF sequences that could be
     //    used for header injection in HTTP requests.
-    if let Ok(input_val) = serde_json::from_str::<serde_json::Value>(input_json) {
-        if let Some(obj) = input_val.as_object() {
-            for (key, val) in obj {
-                let raw = match val {
-                    serde_json::Value::String(s) => s.clone(),
-                    other => other.to_string(),
-                };
-                let sanitized = sanitize_input_value(&raw);
-                resolved = resolved.replace(&format!("${{{}}}", key), &sanitized);
-                resolved = resolved.replace(&format!("${}", key), &sanitized);
-            }
+    if let Some(obj) = input_val.and_then(|v| v.as_object()) {
+        for (key, val) in obj {
+            let raw = match val {
+                serde_json::Value::String(s) => s.clone(),
+                other => other.to_string(),
+            };
+            let sanitized = sanitize_input_value(&raw);
+            resolved = resolved.replace(&format!("${{{}}}", key), &sanitized);
+            resolved = resolved.replace(&format!("${}", key), &sanitized);
         }
     }
 

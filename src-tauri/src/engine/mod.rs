@@ -29,6 +29,7 @@ pub mod eval;
 pub mod failover;
 pub mod google_oauth;
 pub mod oauth_refresh;
+pub mod oauth_refresh_lock;
 pub mod healing;
 pub mod healing_orchestrator;
 pub mod healing_timeline;
@@ -76,6 +77,8 @@ pub mod app_focus;
 pub mod ambient_context;
 #[cfg(feature = "desktop")]
 pub mod context_rules;
+#[cfg(feature = "desktop")]
+pub mod clipboard_error_detector;
 pub mod capability;
 pub mod capability_contract;
 pub mod composite;

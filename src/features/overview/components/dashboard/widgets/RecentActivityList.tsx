@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Activity, AlertCircle, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 import { DASHBOARD_GRID_SPAN_MAJOR, CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
@@ -15,7 +16,7 @@ interface RecentActivityListProps {
   onViewAll: () => void;
 }
 
-export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityListProps) {
+export const RecentActivityList = memo(function RecentActivityList({ recentExecs, onViewAll }: RecentActivityListProps) {
   return (
     <div className={`${DASHBOARD_GRID_SPAN_MAJOR} space-y-4`}>
       <div className="flex items-center justify-between px-1">
@@ -69,4 +70,4 @@ export function RecentActivityList({ recentExecs, onViewAll }: RecentActivityLis
       </div>
     </div>
   );
-}
+});

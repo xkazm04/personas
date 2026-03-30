@@ -10,7 +10,7 @@
 //! a "not yet supported" error with guidance.
 
 use std::collections::HashMap;
-use std::sync::OnceLock;
+use std::sync::{LazyLock, OnceLock};
 use std::time::Instant;
 
 use serde_json::Value;
@@ -265,7 +265,9 @@ pub async fn execute_query(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:execute", None, None);
+    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:execute", None, None) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
 
     let result = match service {
         "supabase" => execute_supabase(&fields, query_text).await,
@@ -308,7 +310,9 @@ pub async fn introspect_tables(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:introspect_tables", None, None);
+    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:introspect_tables", None, None) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
     let start = Instant::now();
 
     let result = match credential.service_type.as_str() {
@@ -359,7 +363,9 @@ pub async fn introspect_columns(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    let _ = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:introspect_columns", None, None);
+    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:introspect_columns", None, None) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
     let start = Instant::now();
     let safe_name = table_name.replace(|c: char| !c.is_alphanumeric() && c != '_', "");
 
@@ -400,13 +406,63 @@ pub async fn introspect_columns(
     finalize_result(result, duration_ms, service, credential_id, &fields, "introspect_columns", Some(&safe_name))
 }
 
+// -- Supabase OpenAPI spec cache ------------------------------------------
+
+/// TTL for cached OpenAPI specs (seconds).
+const OPENAPI_SPEC_CACHE_TTL_SECS: f64 = 30.0;
+
+struct OpenApiSpecCacheEntry {
+    spec: Value,
+    fetched_at: Instant,
+}
+
+/// Keyed by `project_url` so each Supabase project gets its own cache slot.
+static OPENAPI_SPEC_CACHE: LazyLock<std::sync::Mutex<HashMap<String, OpenApiSpecCacheEntry>>> =
+    LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+
+/// Return the OpenAPI spec for a Supabase project, reusing a cached copy when fresh.
+async fn fetch_supabase_openapi_spec_cached(
+    fields: &HashMap<String, String>,
+) -> Result<Value, AppError> {
+    let project_url = fields
+        .get("project_url")
+        .ok_or_else(|| AppError::Validation("Missing project_url field".into()))?;
+    let cache_key = project_url.clone();
+
+    // Check cache first
+    {
+        let cache = OPENAPI_SPEC_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(entry) = cache.get(&cache_key) {
+            if entry.fetched_at.elapsed().as_secs_f64() < OPENAPI_SPEC_CACHE_TTL_SECS {
+                return Ok(entry.spec.clone());
+            }
+        }
+    }
+
+    // Cache miss or stale — fetch fresh
+    let spec = fetch_supabase_openapi_spec(fields).await?;
+
+    {
+        let mut cache = OPENAPI_SPEC_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+        cache.insert(
+            cache_key,
+            OpenApiSpecCacheEntry {
+                spec: spec.clone(),
+                fetched_at: Instant::now(),
+            },
+        );
+    }
+
+    Ok(spec)
+}
+
 // -- Supabase OpenAPI introspection --------------------------------------
 
 /// Fetch the PostgREST OpenAPI spec and extract table names.
 async fn introspect_supabase_tables(
     fields: &HashMap<String, String>,
 ) -> Result<QueryResult, AppError> {
-    let spec = fetch_supabase_openapi_spec(fields).await?;
+    let spec = fetch_supabase_openapi_spec_cached(fields).await?;
 
     let definitions = spec
         .get("definitions")
@@ -438,7 +494,7 @@ async fn introspect_supabase_columns(
     fields: &HashMap<String, String>,
     table_name: &str,
 ) -> Result<QueryResult, AppError> {
-    let spec = fetch_supabase_openapi_spec(fields).await?;
+    let spec = fetch_supabase_openapi_spec_cached(fields).await?;
 
     let definitions = spec
         .get("definitions")

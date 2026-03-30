@@ -10,6 +10,8 @@
 //! `byom_policy`. When no policy is configured, all providers are allowed
 //! (backwards-compatible default).
 
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -237,17 +239,35 @@ impl ByomPolicy {
             return warnings;
         }
 
-        let allowed_set: Vec<EngineKind> = self
-            .allowed_providers
-            .iter()
-            .filter_map(|s| s.parse().ok())
-            .collect();
+        let mut allowed_set: HashSet<EngineKind> = HashSet::new();
+        for s in &self.allowed_providers {
+            match s.parse::<EngineKind>() {
+                Ok(kind) => { allowed_set.insert(kind); }
+                Err(_) => warnings.push(PolicyWarning {
+                    severity: PolicyWarningSeverity::Info,
+                    message: format!(
+                        "Top-level allowed_providers contains unknown provider '{}' — \
+                         it will be ignored (check for typos)",
+                        s,
+                    ),
+                }),
+            }
+        }
 
-        let blocked_set: Vec<EngineKind> = self
-            .blocked_providers
-            .iter()
-            .filter_map(|s| s.parse().ok())
-            .collect();
+        let mut blocked_set: HashSet<EngineKind> = HashSet::new();
+        for s in &self.blocked_providers {
+            match s.parse::<EngineKind>() {
+                Ok(kind) => { blocked_set.insert(kind); }
+                Err(_) => warnings.push(PolicyWarning {
+                    severity: PolicyWarningSeverity::Info,
+                    message: format!(
+                        "Top-level blocked_providers contains unknown provider '{}' — \
+                         it will be ignored (check for typos)",
+                        s,
+                    ),
+                }),
+            }
+        }
 
         // Check compliance rules
         for rule in &self.compliance_rules {
@@ -357,7 +377,7 @@ impl ByomPolicy {
         }
 
         // 1. Build blocked set from top-level blocked_providers
-        let mut blocked: Vec<EngineKind> = self
+        let mut blocked: HashSet<EngineKind> = self
             .blocked_providers
             .iter()
             .filter_map(|s| s.parse().ok())
@@ -365,14 +385,14 @@ impl ByomPolicy {
 
         // 2. If allowed_providers is non-empty, block everything not in the allowed list
         if !self.allowed_providers.is_empty() {
-            let allowed_set: Vec<EngineKind> = self
+            let allowed_set: HashSet<EngineKind> = self
                 .allowed_providers
                 .iter()
                 .filter_map(|s| s.parse().ok())
                 .collect();
             for kind in EngineKind::ALL {
-                if !allowed_set.contains(&kind) && !blocked.contains(&kind) {
-                    blocked.push(kind);
+                if !allowed_set.contains(&kind) {
+                    blocked.insert(kind);
                 }
             }
         }
@@ -390,14 +410,14 @@ impl ByomPolicy {
             });
             if matches {
                 // This compliance rule applies: only its allowed providers are permitted
-                let compliance_allowed: Vec<EngineKind> = rule
+                let compliance_allowed: HashSet<EngineKind> = rule
                     .allowed_providers
                     .iter()
                     .filter_map(|s| s.parse().ok())
                     .collect();
                 for kind in EngineKind::ALL {
-                    if !compliance_allowed.contains(&kind) && !blocked.contains(&kind) {
-                        blocked.push(kind);
+                    if !compliance_allowed.contains(&kind) {
+                        blocked.insert(kind);
                     }
                 }
                 compliance_rule_name = Some(rule.name.clone());
@@ -427,7 +447,7 @@ impl ByomPolicy {
         PolicyDecision {
             preferred_provider,
             preferred_model,
-            blocked_providers: blocked,
+            blocked_providers: blocked.into_iter().collect(),
             routing_rule_name,
             compliance_rule_name,
         }
@@ -864,5 +884,47 @@ mod tests {
     #[test]
     fn test_default_complexity_constant_is_standard() {
         assert_eq!(TaskComplexity::DEFAULT, TaskComplexity::Standard);
+    }
+
+    #[test]
+    fn test_validate_unknown_top_level_allowed_provider_warns() {
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude-code".into(), "claude_code".into()],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Info);
+        assert!(warnings[0].message.contains("allowed_providers"));
+        assert!(warnings[0].message.contains("claude-code"));
+    }
+
+    #[test]
+    fn test_validate_unknown_top_level_blocked_provider_warns() {
+        let policy = ByomPolicy {
+            enabled: true,
+            blocked_providers: vec!["cladue_code".into()],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Info);
+        assert!(warnings[0].message.contains("blocked_providers"));
+        assert!(warnings[0].message.contains("cladue_code"));
+    }
+
+    #[test]
+    fn test_validate_all_unknown_allowed_providers_warns_for_each() {
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["bad1".into(), "bad2".into()],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 2);
+        assert!(warnings.iter().all(|w| w.severity == PolicyWarningSeverity::Info));
+        assert!(warnings[0].message.contains("bad1"));
+        assert!(warnings[1].message.contains("bad2"));
     }
 }

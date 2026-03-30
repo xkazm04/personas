@@ -82,7 +82,7 @@ export function EventsPage() {
       />
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {eventBusTab === "canvas" && <LazyWrap><EventCanvas allTriggers={allTriggers} /></LazyWrap>}
+        {eventBusTab === "builder" && <LazyWrap><EventCanvas allTriggers={allTriggers} /></LazyWrap>}
         {eventBusTab === "studio" && <LazyWrap><TriggerStudioCanvas /></LazyWrap>}
         {eventBusTab === "shared" && <LazyWrap><SharedEventsTab /></LazyWrap>}
         {eventBusTab === "live-stream" && <LiveStreamTab />}

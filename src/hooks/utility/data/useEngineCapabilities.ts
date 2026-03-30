@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
-import { systemHealthCheck } from "@/api/system/system";
+import { healthCheckLocal } from "@/api/system/system";
 import { silentCatch } from "@/lib/silentCatch";
 
 import {
@@ -50,20 +50,17 @@ export function useEngineCapabilities(): UseEngineCapabilitiesResult {
         // Use defaults on error
       }
 
-      // Detect installed providers
+      // Detect installed providers (lightweight local-only probe)
       try {
-        const report = await systemHealthCheck();
-        const localSection = report.sections.find((s) => s.id === 'local');
-        if (localSection) {
-          const installed = new Set<CliEngine>();
-          for (const item of localSection.items) {
-            if (item.status === 'ok') {
-              if (item.id === 'claude_cli') installed.add('claude_code');
-              else if (item.id === 'codex_cli') installed.add('codex_cli');
-            }
+        const localSection = await healthCheckLocal();
+        const installed = new Set<CliEngine>();
+        for (const item of localSection.items) {
+          if (item.status === 'ok') {
+            if (item.id === 'claude_cli') installed.add('claude_code');
+            else if (item.id === 'codex_cli') installed.add('codex_cli');
           }
-          setInstalledProviders(installed);
         }
+        setInstalledProviders(installed);
       } catch {
         // No providers detected
       }

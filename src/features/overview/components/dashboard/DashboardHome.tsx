@@ -6,7 +6,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { selectActiveAlertCount } from '@/stores/selectors/activeAlertCount';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
@@ -89,6 +89,8 @@ export default function DashboardHome() {
     return { totalTraffic, totalErrors };
   }, [chartData]);
 
+  const handleViewAllExecs = useCallback(() => setOverviewTab('executions'), [setOverviewTab]);
+
   const isEmptyDashboard = personas.length === 0 && globalExecutions.length === 0;
 
   return (
@@ -164,7 +166,7 @@ export default function DashboardHome() {
             <div className={DASHBOARD_GRID}>
               <div className="relative">
                 <StalenessIndicator fetchedAt={pipelineFetchedAt.globalExecutions} hasError={!!pipelineErrors.globalExecutions} label="Recent activity" />
-                <RecentActivityList recentExecs={stats.recentExecs} onViewAll={() => setOverviewTab('executions')} />
+                <RecentActivityList recentExecs={stats.recentExecs} onViewAll={handleViewAllExecs} />
               </div>
 
               <div className="space-y-5">

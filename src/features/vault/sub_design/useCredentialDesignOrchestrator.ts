@@ -4,6 +4,8 @@ import { useOAuthConsent } from '@/hooks/design/oauth/useOAuthConsent';
 import { useUniversalOAuth } from '@/hooks/design/oauth/useUniversalOAuth';
 import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { extractFirstUrl } from '@/features/vault/sub_design/CredentialDesignHelpers';
+import { detectAuthenticatedServices } from '@/api/auth/authDetect';
+import type { AuthDetectionInfo } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { CredentialDesignContextValue } from '@/features/vault/sub_design/CredentialDesignContext';
 import type { CredentialDesignOrchestrator } from './orchestratorTypes';
 import { useDesignFields, useFieldValidation } from './orchestratorDerived';
@@ -31,6 +33,37 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
   useEffect(() => {
     if (design.result) lastResultRef.current = design.result;
   }, [design.result]);
+
+  // -- Prefetch auth detections during analyzing phase so results are
+  //    warm-cached by the time the user opens the NegotiatorPanel. The
+  //    backend has a 5-minute cache (AUTH_DETECT_CACHE_TTL), so even if
+  //    the user takes a while in preview the results stay fresh. --
+  const [prefetchedAuthDetections, setPrefetchedAuthDetections] = useState<AuthDetectionInfo[] | undefined>(undefined);
+  const authPrefetchedRef = useRef(false);
+  useEffect(() => {
+    if (design.phase !== 'analyzing' && design.phase !== 'preview') return;
+    if (authPrefetchedRef.current) return;
+    authPrefetchedRef.current = true;
+    let cancelled = false;
+    detectAuthenticatedServices()
+      .then((detections) => {
+        if (cancelled) return;
+        const mapped: AuthDetectionInfo[] = detections
+          .filter((d) => d.authenticated)
+          .map((d) => ({
+            serviceType: d.service_type,
+            method: d.method,
+            authenticated: d.authenticated,
+            identity: d.identity,
+            confidence: d.confidence,
+          }));
+        setPrefetchedAuthDetections(mapped);
+      })
+      .catch(() => {
+        if (!cancelled) setPrefetchedAuthDetections([]);
+      });
+    return () => { cancelled = true; };
+  }, [design.phase]);
 
   // -- Derive OAuth status message --
   const oauthStatusMessage = useMemo(() => {
@@ -192,6 +225,8 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     setNegotiatorValues({});
     setRefinementCount(0);
     lastResultRef.current = null;
+    authPrefetchedRef.current = false;
+    setPrefetchedAuthDetections(undefined);
   }, [design.reset, oauth.reset, universalOAuth.reset, health.invalidate]);
 
   // -- Context value --
@@ -223,6 +258,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
         onReset: handleReset,
         onRefine: handleRefine,
         onNegotiatorValues: handleNegotiatorValues,
+        prefetchedAuthDetections,
       })
     : null;
 

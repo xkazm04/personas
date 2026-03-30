@@ -149,16 +149,11 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
     // Hydrate suppression state from DB on first tick after app start
     state.hydrate_from_db(pool);
 
-    // Load all enabled composite triggers
-    let triggers = match trigger_repo::get_all(pool) {
+    // Load only enabled composite triggers (filtered at SQL level)
+    let composite_triggers = match trigger_repo::get_enabled_by_type(pool, "composite") {
         Ok(t) => t,
         Err(_) => return,
     };
-
-    let composite_triggers: Vec<_> = triggers
-        .into_iter()
-        .filter(|t| t.trigger_type == "composite" && t.enabled)
-        .collect();
 
     if composite_triggers.is_empty() {
         return;

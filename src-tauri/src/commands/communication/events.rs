@@ -1,7 +1,12 @@
 use std::sync::Arc;
 
 use chrono::DateTime;
-use tauri::{AppHandle, State};
+use tauri::State;
+
+// AppHandle kept on commands for forward-compatibility but no longer used
+// for manual event-bus emits — CDC handles those automatically.
+#[allow(unused_imports)]
+use tauri::AppHandle;
 
 use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, CreateTriggerInput,
@@ -9,7 +14,7 @@ use crate::db::models::{
     UpdateEventSubscriptionInput,
 };
 use crate::db::repos::communication::events as repo;
-use crate::engine::event_registry::emit_event_bus;
+// NOTE: emit_event_bus calls removed — CDC update_hook auto-emits on persona_events INSERT/UPDATE
 use crate::engine::rate_limiter::EVENT_SOURCE_WINDOW;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -55,7 +60,7 @@ pub fn search_events(
 
 #[tauri::command]
 pub fn publish_event(
-    app: AppHandle,
+    _app: AppHandle,
     state: State<'_, Arc<AppState>>,
     input: CreatePersonaEventInput,
 ) -> Result<PersonaEvent, AppError> {
@@ -70,7 +75,7 @@ pub fn publish_event(
     }
 
     let event = repo::publish(&state.db, input)?;
-    emit_event_bus(&app, &event);
+    // CDC auto-emits on persona_events INSERT
     Ok(event)
 }
 
@@ -135,7 +140,7 @@ pub fn delete_subscription(
 
 #[tauri::command]
 pub fn test_event_flow(
-    app: AppHandle,
+    _app: AppHandle,
     state: State<'_, Arc<AppState>>,
     event_type: String,
     payload: Option<String>,
@@ -159,7 +164,7 @@ pub fn test_event_flow(
         use_case_id: None,
     };
     let event = repo::publish(&state.db, input)?;
-    emit_event_bus(&app, &event);
+    // CDC auto-emits on persona_events INSERT
     Ok(event)
 }
 
@@ -184,13 +189,13 @@ pub fn count_dead_letter_events(
 
 #[tauri::command]
 pub fn retry_dead_letter_event(
-    app: AppHandle,
+    _app: AppHandle,
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<PersonaEvent, AppError> {
     require_auth_sync(&state)?;
     let event = repo::retry_dead_letter(&state.db, &id)?;
-    emit_event_bus(&app, &event);
+    // CDC auto-emits on persona_events UPDATE
     Ok(event)
 }
 
@@ -208,7 +213,7 @@ pub fn discard_dead_letter_event(
 
 #[tauri::command]
 pub fn seed_mock_event(
-    app: AppHandle,
+    _app: AppHandle,
     state: State<'_, Arc<AppState>>,
 ) -> Result<PersonaEvent, AppError> {
     require_auth_sync(&state)?;
@@ -245,7 +250,7 @@ pub fn seed_mock_event(
         event.status = tpl.status.clone();
     }
 
-    emit_event_bus(&app, &event);
+    // CDC auto-emits on persona_events INSERT + UPDATE
 
     Ok(event)
 }

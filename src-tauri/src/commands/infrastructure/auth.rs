@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
@@ -125,30 +125,44 @@ impl SupabaseUserResponse {
 // Helpers: environment
 // ---------------------------------------------------------------------------
 
-/// Resolve Supabase URL.
+/// Cached Supabase URL — resolved once on first access via `OnceLock`.
 ///
 /// Priority: compile-time `SUPABASE_URL` (set during CI build) -> runtime env var.
 /// The compile-time path is the production default; runtime override is useful
 /// during development.
-fn supabase_url() -> Result<String, AppError> {
-    if let Some(url) = option_env!("SUPABASE_URL") {
-        return Ok(url.to_string());
+fn supabase_url() -> Result<&'static str, AppError> {
+    static URL: OnceLock<Result<String, String>> = OnceLock::new();
+    let result = URL.get_or_init(|| {
+        if let Some(url) = option_env!("SUPABASE_URL") {
+            return Ok(url.to_string());
+        }
+        std::env::var("SUPABASE_URL")
+            .map_err(|_| "SUPABASE_URL not configured. Set it as an environment variable or rebuild with SUPABASE_URL set at compile time.".to_string())
+    });
+    match result {
+        Ok(s) => Ok(s.as_str()),
+        Err(msg) => Err(AppError::Auth(msg.clone())),
     }
-    std::env::var("SUPABASE_URL")
-        .map_err(|_| AppError::Auth("SUPABASE_URL not configured. Set it as an environment variable or rebuild with SUPABASE_URL set at compile time.".into()))
 }
 
-/// Resolve Supabase anon key.
+/// Cached Supabase anon key — resolved once on first access via `OnceLock`.
 ///
 /// The anon key is a **public** client key by Supabase design -- it is safe to
 /// embed in the binary. Security is enforced by Row Level Security policies and
 /// OAuth access tokens, not by the secrecy of this key.
-fn supabase_anon_key() -> Result<String, AppError> {
-    if let Some(key) = option_env!("SUPABASE_ANON_KEY") {
-        return Ok(key.to_string());
+fn supabase_anon_key() -> Result<&'static str, AppError> {
+    static KEY: OnceLock<Result<String, String>> = OnceLock::new();
+    let result = KEY.get_or_init(|| {
+        if let Some(key) = option_env!("SUPABASE_ANON_KEY") {
+            return Ok(key.to_string());
+        }
+        std::env::var("SUPABASE_ANON_KEY")
+            .map_err(|_| "SUPABASE_ANON_KEY not configured. Set it as an environment variable or rebuild with SUPABASE_ANON_KEY set at compile time.".to_string())
+    });
+    match result {
+        Ok(s) => Ok(s.as_str()),
+        Err(msg) => Err(AppError::Auth(msg.clone())),
     }
-    std::env::var("SUPABASE_ANON_KEY")
-        .map_err(|_| AppError::Auth("SUPABASE_ANON_KEY not configured. Set it as an environment variable or rebuild with SUPABASE_ANON_KEY set at compile time.".into()))
 }
 
 // ---------------------------------------------------------------------------
@@ -228,7 +242,7 @@ async fn fetch_user_profile(access_token: &str) -> Result<AuthUser, AppError> {
 
     let resp = crate::SHARED_HTTP
         .get(&url)
-        .header("apikey", &anon_key)
+        .header("apikey", anon_key)
         .header("Authorization", format!("Bearer {access_token}"))
         .send()
         .await
@@ -261,7 +275,7 @@ async fn refresh_access_token(
 
     let resp = crate::SHARED_HTTP
         .post(&url)
-        .header("apikey", &anon_key)
+        .header("apikey", anon_key)
         .header("Content-Type", "application/json")
         .json(&serde_json::json!({ "refresh_token": refresh_token }))
         .send()
@@ -369,7 +383,7 @@ pub async fn login_with_google(
         "{}/auth/v1/authorize?provider=google&redirect_to={}&apikey={}",
         base_url,
         urlencoding::encode(&redirect_to),
-        urlencoding::encode(&anon_key),
+        urlencoding::encode(anon_key),
     );
 
     // Close any existing OAuth window from a previous attempt

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Users, Zap } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -20,6 +20,12 @@ export default function TeamList() {
   const deleteTeam = usePipelineStore((s) => s.deleteTeam);
   const cloneTeam = usePipelineStore((s) => s.cloneTeam);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
+
+  const parentNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of teams) map.set(t.id, t.name);
+    return map;
+  }, [teams]);
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -127,7 +133,7 @@ export default function TeamList() {
             <TeamCard
               key={team.id}
               team={team}
-              parentTeamName={team.parent_team_id ? (teams.find(t => t.id === team.parent_team_id)?.name ?? null) : null}
+              parentTeamName={team.parent_team_id ? (parentNameMap.get(team.parent_team_id) ?? null) : null}
               confirmDeleteId={confirmDeleteId}
               onSelect={selectTeam}
               onClone={cloneTeam}

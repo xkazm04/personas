@@ -364,6 +364,9 @@ pub struct AppState {
     /// Notifier for the Smee relay manager — wake it immediately on relay
     /// create / update / delete instead of waiting for the next poll cycle.
     pub smee_relay_notifier: engine::smee_relay::SmeeRelayNotifier,
+    /// Whether the clipboard error watcher is enabled (toggled from system tray).
+    #[cfg(feature = "desktop")]
+    pub clipboard_watcher_enabled: Arc<std::sync::atomic::AtomicBool>,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -454,8 +457,11 @@ pub fn run() {
                 .app_data_dir()
                 .map_err(|e| format!("Failed to resolve app data directory: {e}"))?;
 
-            let pool = db::init_db(&app_data_dir)?;
-            tracing::info!("Database pool ready (max_size=8)");
+            // Create CDC channel for reactive SQLite change notifications
+            let (cdc_sender, cdc_receiver) = db::cdc::create_cdc_channel(512);
+
+            let pool = db::init_db(&app_data_dir, Some(cdc_sender))?;
+            tracing::info!("Database pool ready (max_size=4, CDC enabled)");
             st.checkpoint("db_init");
 
             let user_db_pool = db::init_user_db(&app_data_dir)?;
@@ -685,8 +691,18 @@ pub fn run() {
                     ),
                 ),
                 smee_relay_notifier: smee_notifier,
+                #[cfg(feature = "desktop")]
+                clipboard_watcher_enabled: Arc::new(std::sync::atomic::AtomicBool::new(true)),
             });
             app.manage(state_arc.clone());
+
+            // Spawn CDC drain task: converts SQLite update_hook events into Tauri emits
+            db::cdc::spawn_cdc_drain_task(
+                app.handle().clone(),
+                cdc_receiver,
+                pool.clone(),
+            );
+            st.checkpoint("cdc_drain_task");
 
             // Test automation HTTP server (feature-gated)
             #[cfg(feature = "test-automation")]
@@ -786,6 +802,7 @@ pub fn run() {
             #[cfg(feature = "desktop")]
             let startup_rule_engine = state_arc.context_rule_engine.clone();
             let startup_composite_state = state_arc.composite_state.clone();
+            let startup_smee_notifier = state_arc.smee_relay_notifier.clone();
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 let _webhook_shutdown = engine::background::start_loops(
@@ -802,7 +819,7 @@ pub fn run() {
                     #[cfg(feature = "desktop")]
                     startup_rule_engine,
                     startup_composite_state,
-                    state_arc.smee_relay_notifier.clone(),
+                    startup_smee_notifier,
                 );
                 tracing::info!("Scheduler auto-started");
                 #[cfg(feature = "desktop")]
@@ -1071,6 +1088,17 @@ pub fn run() {
             commands::design::template_feedback::create_template_feedback,
             commands::design::template_feedback::list_template_feedback,
             commands::design::template_feedback::get_template_performance,
+            // Design -- Skills
+            commands::design::skills::create_skill,
+            commands::design::skills::get_skill,
+            commands::design::skills::list_skills,
+            commands::design::skills::update_skill,
+            commands::design::skills::delete_skill,
+            commands::design::skills::add_skill_component,
+            commands::design::skills::remove_skill_component,
+            commands::design::skills::assign_skill,
+            commands::design::skills::remove_skill,
+            commands::design::skills::get_persona_skills,
             // Design -- Team Synthesis
             commands::design::team_synthesis::synthesize_team_from_templates,
             // Design -- Platform Definitions
@@ -1268,6 +1296,9 @@ pub fn run() {
             commands::execution::ambient::get_context_rule_matches,
             #[cfg(feature = "desktop")]
             commands::execution::ambient::get_context_stream_stats,
+            // Clipboard Intelligence -- error detection + KB search
+            #[cfg(feature = "desktop")]
+            commands::execution::clipboard_intel::search_kb_for_clipboard_error,
             // Credential Recipes -- shared discovery cache
             commands::credentials::credential_recipes::get_credential_recipe,
             commands::credentials::credential_recipes::list_credential_recipes,

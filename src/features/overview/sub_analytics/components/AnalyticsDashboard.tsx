@@ -145,7 +145,7 @@ export default function AnalyticsDashboard() {
       {healing.selectedIssue && (
         <HealingIssueModal
           issue={healing.selectedIssue}
-          onResolve={(id) => { healing.resolveHealingIssue(id); healing.setSelectedIssue(null); }}
+          onResolve={(id) => healing.resolveHealingIssue(id)}
           onClose={() => healing.setSelectedIssue(null)}
         />
       )}

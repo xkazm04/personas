@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft, Monitor, Download, RefreshCw } from 'lucide-react';
 import { createLogger } from '@/lib/log';
 
@@ -104,8 +104,8 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
     }
   };
 
-  const installedApps = apps.filter((a) => a.installed);
-  const notInstalledApps = apps.filter((a) => !a.installed);
+  const installedApps = useMemo(() => apps.filter((a) => a.installed), [apps]);
+  const notInstalledApps = useMemo(() => apps.filter((a) => !a.installed), [apps]);
 
   return (
     <div

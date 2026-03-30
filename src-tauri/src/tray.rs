@@ -72,6 +72,21 @@ fn build_tray_menu(
 
     let mut builder = MenuBuilder::new(app);
 
+    // Clipboard watcher status
+    let watcher_active = state
+        .clipboard_watcher_enabled
+        .load(std::sync::atomic::Ordering::Relaxed);
+    let watcher_status = if watcher_active {
+        "Clipboard Watcher: Active"
+    } else {
+        "Clipboard Watcher: Paused"
+    };
+    let watcher_toggle = if watcher_active {
+        "Pause Clipboard Watcher"
+    } else {
+        "Resume Clipboard Watcher"
+    };
+
     builder = builder
         .item(
             &MenuItemBuilder::with_id("show_hide", "Show / Hide Window").build(app)?,
@@ -84,6 +99,15 @@ fn build_tray_menu(
         )
         .item(
             &MenuItemBuilder::with_id("toggle_scheduler", toggle_label).build(app)?,
+        )
+        .separator()
+        .item(
+            &MenuItemBuilder::with_id("watcher_status", watcher_status)
+                .enabled(false)
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("toggle_watcher", watcher_toggle).build(app)?,
         )
         .separator();
 
@@ -140,12 +164,29 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                     state.rate_limiter.clone(),
                     state.tier_config.clone(),
                     state.cloud_client.clone(),
+                    state.cloud_webhook_relay_state.clone(),
                     #[cfg(feature = "desktop")]
                     state.ambient_context.clone(),
                     #[cfg(feature = "desktop")]
                     state.context_rule_engine.clone(),
+                    state.composite_state.clone(),
+                    state.smee_relay_notifier.clone(),
                 );
             }
+            refresh_tray(app);
+        }
+        "toggle_watcher" => {
+            let state: &Arc<AppState> = &app.state::<Arc<AppState>>();
+            let current = state
+                .clipboard_watcher_enabled
+                .load(std::sync::atomic::Ordering::Relaxed);
+            state
+                .clipboard_watcher_enabled
+                .store(!current, std::sync::atomic::Ordering::Relaxed);
+            tracing::info!(
+                enabled = !current,
+                "Clipboard watcher toggled from system tray"
+            );
             refresh_tray(app);
         }
         "quit" => {

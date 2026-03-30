@@ -93,8 +93,20 @@ pub fn create(
     })
 }
 
+/// Valid healing issue statuses. The issue lifecycle is:
+/// `open` -> `auto_fix_pending` -> `resolved` (or back to `open` on revert).
+const VALID_STATUSES: &[&str] = &["open", "auto_fix_pending", "resolved"];
+
 pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppError> {
     timed_query!("healing_events", "healing_events::update_status", {
+        if !VALID_STATUSES.contains(&status) {
+            return Err(AppError::Validation(format!(
+                "Invalid healing issue status '{}'. Valid values: {}",
+                status,
+                VALID_STATUSES.join(", "),
+            )));
+        }
+
         // Verify exists
         get_by_id(pool, id)?;
 
@@ -477,10 +489,10 @@ mod tests {
         assert!(resolved.resolved_at.is_some());
 
         // Update status to something else (not resolved)
-        update_status(&pool, &issue2.id, "investigating").unwrap();
-        let investigating = get_by_id(&pool, &issue2.id).unwrap();
-        assert_eq!(investigating.status, "investigating");
-        assert!(investigating.resolved_at.is_none());
+        update_status(&pool, &issue2.id, "auto_fix_pending").unwrap();
+        let pending = get_by_id(&pool, &issue2.id).unwrap();
+        assert_eq!(pending.status, "auto_fix_pending");
+        assert!(pending.resolved_at.is_none());
 
         // Filter by resolved status
         let resolved_list = get_all(&pool, None, Some("resolved")).unwrap();
@@ -648,5 +660,51 @@ mod tests {
         // Second revert on already-open issue should fail (race simulation)
         let err = revert_auto_fix_pending(&pool, &issue.id);
         assert!(err.is_err(), "double revert should error");
+    }
+
+    #[test]
+    fn test_update_status_rejects_invalid_values() {
+        let pool = init_test_db().unwrap();
+
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Validation Test".into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        let issue = create(
+            &pool, &persona.id, "Test issue", "desc", false,
+            None, None, None, None,
+        )
+        .unwrap()
+        .expect("should create");
+
+        // Invalid statuses should be rejected
+        for bad in &["", "Resolved", "OPEN", "investigating", "closed", "nonsense"] {
+            let err = update_status(&pool, &issue.id, bad);
+            assert!(err.is_err(), "status '{}' should be rejected", bad);
+        }
+
+        // Valid statuses should be accepted
+        for good in &["open", "auto_fix_pending", "resolved"] {
+            update_status(&pool, &issue.id, good).unwrap();
+        }
     }
 }

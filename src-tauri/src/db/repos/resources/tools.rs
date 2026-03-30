@@ -134,9 +134,6 @@ pub fn update_definition(
             }
         }
 
-        // Verify exists
-        get_definition_by_id(pool, id)?;
-
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
@@ -163,7 +160,11 @@ pub fn update_definition(
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
             param_values.iter().map(|p| p.as_ref()).collect();
-        conn.execute(&sql, params_ref.as_slice())?;
+        let rows_affected = conn.execute(&sql, params_ref.as_slice())?;
+
+        if rows_affected == 0 {
+            return Err(AppError::NotFound(format!("Tool definition {id}")));
+        }
 
         get_definition_by_id(pool, id)
 
@@ -331,26 +332,14 @@ pub fn bulk_assign_tools(
         let mut count = 0u32;
         let tx = conn.unchecked_transaction()?;
         for tool_id in tool_ids {
-            // Skip if already assigned
-            let exists: bool = tx
-                .query_row(
-                    "SELECT COUNT(*) FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
-                    params![persona_id, tool_id],
-                    |row| row.get::<_, i64>(0),
-                )
-                .map(|c| c > 0)
-                .unwrap_or(false);
-            if exists {
-                continue;
-            }
             let id = uuid::Uuid::new_v4().to_string();
             let now = chrono::Utc::now().to_rfc3339();
-            tx.execute(
-                "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
+            let rows = tx.execute(
+                "INSERT OR IGNORE INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
                  VALUES (?1, ?2, ?3, NULL, ?4)",
                 params![id, persona_id, tool_id, now],
             )?;
-            count += 1;
+            count += rows as u32;
         }
         tx.commit()?;
         Ok(count)

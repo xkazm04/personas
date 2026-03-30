@@ -64,7 +64,14 @@ pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinitio
             ],
         )?;
 
-        get_by_id(pool, &id)
+        conn.query_row(
+            "SELECT * FROM recipe_definitions WHERE id = ?1",
+            params![id],
+            row_to_recipe,
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {id}")),
+            other => AppError::Database(other),
+        })
 
     })
 }
@@ -75,10 +82,18 @@ pub fn update(
     input: UpdateRecipeInput,
 ) -> Result<RecipeDefinition, AppError> {
     timed_query!("recipes", "recipes::update", {
-        get_by_id(pool, id)?;
-
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
+
+        // Verify recipe exists
+        let exists: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM recipe_definitions WHERE id = ?1)",
+            params![id],
+            |row| row.get(0),
+        )?;
+        if !exists {
+            return Err(AppError::NotFound(format!("Recipe {id}")));
+        }
 
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
@@ -150,7 +165,14 @@ pub fn update(
             param_values.iter().map(|p| p.as_ref()).collect();
         conn.execute(&sql, params_ref.as_slice())?;
 
-        get_by_id(pool, id)
+        conn.query_row(
+            "SELECT * FROM recipe_definitions WHERE id = ?1",
+            params![id],
+            row_to_recipe,
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {id}")),
+            other => AppError::Database(other),
+        })
 
     })
 }
@@ -327,8 +349,7 @@ pub fn create_version(
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             rusqlite::params![id, recipe_id, version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, now],
         )?;
-        let conn2 = pool.get()?;
-        conn2.query_row(
+        conn.query_row(
             "SELECT * FROM recipe_versions WHERE id = ?1",
             [&id],
             row_to_version,
@@ -394,13 +415,23 @@ pub fn accept_version(
         // 4. Update the recipe definition with the new data
         let now = chrono::Utc::now().to_rfc3339();
         tx.execute(
-            "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, updated_at = ?4 WHERE id = ?5",
-            rusqlite::params![prompt_template, input_schema, sample_inputs, now, recipe_id],
+            "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, description = ?4, updated_at = ?5 WHERE id = ?6",
+            rusqlite::params![prompt_template, input_schema, sample_inputs, description, now, recipe_id],
         )?;
+
+        // 5. Read the updated recipe within the transaction
+        let recipe = tx.query_row(
+            "SELECT * FROM recipe_definitions WHERE id = ?1",
+            params![recipe_id],
+            row_to_recipe,
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {recipe_id}")),
+            other => AppError::Database(other),
+        })?;
 
         tx.commit()?;
 
-        get_by_id(pool, recipe_id)
+        Ok(recipe)
 
     })
 }
@@ -454,13 +485,23 @@ pub fn revert_to_version(pool: &DbPool, recipe_id: &str, version_id: &str) -> Re
         // 5. Update the recipe definition to the target version
         let now = chrono::Utc::now().to_rfc3339();
         tx.execute(
-            "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, updated_at = ?4 WHERE id = ?5",
-            rusqlite::params![version.prompt_template, version.input_schema, version.sample_inputs, now, recipe_id],
+            "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, description = ?4, updated_at = ?5 WHERE id = ?6",
+            rusqlite::params![version.prompt_template, version.input_schema, version.sample_inputs, version.description, now, recipe_id],
         )?;
+
+        // 6. Read the updated recipe within the transaction
+        let recipe = tx.query_row(
+            "SELECT * FROM recipe_definitions WHERE id = ?1",
+            params![recipe_id],
+            row_to_recipe,
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {recipe_id}")),
+            other => AppError::Database(other),
+        })?;
 
         tx.commit()?;
 
-        get_by_id(pool, recipe_id)
+        Ok(recipe)
 
     })
 }

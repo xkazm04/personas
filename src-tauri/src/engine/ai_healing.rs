@@ -298,7 +298,35 @@ fn apply_db_fixes(
                                         Some(&fix.description),
                                     );
                                 }
+                            } else {
+                                tracing::error!(
+                                    "AI healing: structured_prompt is valid JSON but not an object, cannot patch section '{}'",
+                                    other
+                                );
+                                healing_repo::create_audit_entry(
+                                    pool, Some(persona_id), None,
+                                    "ai_heal_not_object", "ai_healing",
+                                    &format!(
+                                        "structured_prompt is not a JSON object, cannot patch section '{}'",
+                                        other
+                                    ),
+                                    Some(&fix.description),
+                                );
                             }
+                        } else {
+                            tracing::error!(
+                                "AI healing: structured_prompt is not valid JSON, cannot patch section '{}'",
+                                other
+                            );
+                            healing_repo::create_audit_entry(
+                                pool, Some(persona_id), None,
+                                "ai_heal_invalid_json", "ai_healing",
+                                &format!(
+                                    "structured_prompt is not valid JSON, cannot patch section '{}'",
+                                    other
+                                ),
+                                Some(&fix.description),
+                            );
                         }
                     }
                 }

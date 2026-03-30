@@ -8,6 +8,16 @@ export const PHASE_DURATIONS: Record<AnimationPhase, number> = {
   done: 1500,
 };
 
+/** Maximum animation entries allowed — safety valve against unbounded growth */
+const MAX_ANIMATION_ENTRIES = 200;
+
+/** Total duration of all phases — entries older than this are certainly stale */
+const TOTAL_PHASE_DURATION =
+  PHASE_DURATIONS.entering +
+  PHASE_DURATIONS['on-bus'] +
+  PHASE_DURATIONS.delivering +
+  PHASE_DURATIONS.done;
+
 interface UseEventPhaseProgressorOptions {
   active: boolean;
   animationMapRef: React.RefObject<AnimationMap>;
@@ -21,18 +31,49 @@ export function useEventPhaseProgressor({ active, animationMapRef, onTick }: Use
     if (!active) return;
 
     let stopped = false;
+    let wasHidden = document.hidden;
 
     function tick() {
       if (stopped) return;
 
       // Skip ticks when the tab is hidden — no painting happens anyway
       if (document.hidden) {
+        wasHidden = true;
         rafRef.current = requestAnimationFrame(tick);
         return;
       }
 
       const now = Date.now();
       const map = animationMapRef.current;
+
+      // On tab restore, purge stale entries that accumulated while hidden
+      // instead of bulk-advancing them (which would cause a visible freeze).
+      if (wasHidden && map.size > 0) {
+        wasHidden = false;
+        const staleKeys: string[] = [];
+        for (const [key, anim] of map) {
+          if (now - anim.phaseStartedAt > TOTAL_PHASE_DURATION) {
+            staleKeys.push(key);
+          }
+        }
+        if (staleKeys.length > 0) {
+          for (const key of staleKeys) {
+            map.delete(key);
+          }
+          onTick((t) => t + 1);
+        }
+      }
+
+      // Safety cap: if the map somehow exceeds the limit, drop oldest entries
+      if (map.size > MAX_ANIMATION_ENTRIES) {
+        const entries = [...map.entries()].sort(
+          (a, b) => a[1].phaseStartedAt - b[1].phaseStartedAt
+        );
+        const excess = map.size - MAX_ANIMATION_ENTRIES;
+        for (let i = 0; i < excess; i++) {
+          map.delete(entries[i]![0]);
+        }
+      }
 
       if (map.size === 0) {
         rafRef.current = requestAnimationFrame(tick);

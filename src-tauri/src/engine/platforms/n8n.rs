@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -99,12 +98,7 @@ impl N8nClient {
             .ok_or_else(|| AppError::Validation("n8n credential missing 'api_key' field".into()))?
             .clone();
 
-        let http = reqwest::Client::builder()
-            .timeout(Duration::from_secs(30))
-            .build()
-            .map_err(|e| AppError::Internal(format!("Failed to create HTTP client: {e}")))?;
-
-        Ok(Self { base_url, api_key, http })
+        Ok(Self { base_url, api_key, http: crate::SHARED_HTTP.clone() })
     }
 
     /// List all workflows.
@@ -257,6 +251,8 @@ pub fn build_client_from_credential(
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    let _ = crate::db::repos::resources::audit_log::log_decrypt(pool, credential_id, &credential.name, "platform:n8n", None, None);
+    if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(pool, credential_id, &credential.name, "platform:n8n", None, None) {
+        tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+    }
     N8nClient::from_fields(&fields)
 }

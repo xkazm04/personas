@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { startRecipeExecution, cancelRecipeExecution } from '@/api/templates/recipes';
 import { EventName } from '@/lib/eventRegistry';
@@ -24,13 +25,15 @@ export function useRecipeExecution() {
     traceOperation: 'recipe_execution',
   });
 
-  return {
+  const output = task.result?.output ?? null;
+
+  return useMemo(() => ({
     phase: task.phase as RecipeExecutionPhase,
     lines: task.lines,
-    output: task.result?.output ?? null,
+    output,
     error: task.error,
     start: task.start,
     cancel: task.cancel,
     reset: task.reset,
-  };
+  }), [task.phase, task.lines, output, task.error, task.start, task.cancel, task.reset]);
 }

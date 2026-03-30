@@ -11,6 +11,7 @@
 //! For chain triggers, a `chain_trace_id` propagates through payloads so
 //! multi-persona execution chains appear as a single distributed trace.
 
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
@@ -146,9 +147,61 @@ pub struct TraceCollector {
     persona_id: String,
     chain_trace_id: Option<String>,
     epoch: Instant,
-    pub(crate) spans: Mutex<Vec<TraceSpan>>,
+    pub(crate) spans: Mutex<SpanStore>,
     root_span_id: String,
     evicted_span_count: AtomicU64,
+}
+
+/// Internal storage pairing a span vec with an O(1) span_id -> index lookup.
+pub(crate) struct SpanStore {
+    pub(crate) vec: Vec<TraceSpan>,
+    index: HashMap<String, usize>,
+}
+
+impl SpanStore {
+    fn new() -> Self {
+        Self {
+            vec: Vec::new(),
+            index: HashMap::new(),
+        }
+    }
+
+    fn push(&mut self, span: TraceSpan) {
+        let idx = self.vec.len();
+        self.index.insert(span.span_id.clone(), idx);
+        self.vec.push(span);
+    }
+
+    fn get_mut(&mut self, span_id: &str) -> Option<&mut TraceSpan> {
+        self.index.get(span_id).copied().and_then(|i| self.vec.get_mut(i))
+    }
+
+    fn get(&self, span_id: &str) -> Option<&TraceSpan> {
+        self.index.get(span_id).copied().and_then(|i| self.vec.get(i))
+    }
+
+    /// Remove span at `pos` and fix up the index for the swapped-in element.
+    fn remove(&mut self, pos: usize) {
+        let removed = self.vec.remove(pos);
+        self.index.remove(&removed.span_id);
+        // `Vec::remove` shifts all elements after `pos` left by one — update their indices.
+        for i in pos..self.vec.len() {
+            self.index.insert(self.vec[i].span_id.clone(), i);
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.vec.len()
+    }
+
+    fn iter_mut(&mut self) -> std::slice::IterMut<'_, TraceSpan> {
+        self.vec.iter_mut()
+    }
+
+    fn drain(&mut self) -> std::vec::Drain<'_, TraceSpan> {
+        self.index.clear();
+        self.vec.drain(..)
+    }
 }
 
 impl TraceCollector {
@@ -177,13 +230,16 @@ impl TraceCollector {
             metadata: None,
         };
 
+        let mut store = SpanStore::new();
+        store.push(root_span);
+
         Self {
             trace_id,
             execution_id: execution_id.to_string(),
             persona_id: persona_id.to_string(),
             chain_trace_id,
             epoch,
-            spans: Mutex::new(vec![root_span]),
+            spans: Mutex::new(store),
             root_span_id,
             evicted_span_count: AtomicU64::new(0),
         }
@@ -237,21 +293,23 @@ impl TraceCollector {
             metadata,
         };
 
-        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
+        let mut store = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
         // Evict oldest completed non-root spans when at capacity.
         // Fallback: evict oldest open non-root span to prevent unbounded growth.
-        if spans.len() >= MAX_SPANS {
-            let evict_pos = spans
+        if store.len() >= MAX_SPANS {
+            let evict_pos = store
+                .vec
                 .iter()
                 .position(|s| s.span_id != self.root_span_id && s.end_ms.is_some())
                 .or_else(|| {
-                    spans
+                    store
+                        .vec
                         .iter()
                         .position(|s| s.span_id != self.root_span_id)
                 });
             if let Some(pos) = evict_pos {
-                spans.remove(pos);
+                store.remove(pos);
                 // Rate-limit: warn only on the first eviction per trace.
                 let prev = self.evicted_span_count.fetch_add(1, Ordering::Relaxed);
                 if prev == 0 {
@@ -265,8 +323,8 @@ impl TraceCollector {
             }
         }
 
-        spans.push(span);
-        drop(spans);
+        store.push(span);
+        drop(store);
         span_id
     }
 
@@ -280,9 +338,9 @@ impl TraceCollector {
         output_tokens: Option<u64>,
     ) {
         let end_ms = self.epoch.elapsed().as_millis() as u64;
-        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
+        let mut store = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
-        if let Some(span) = spans.iter_mut().find(|s| s.span_id == span_id) {
+        if let Some(span) = store.get_mut(span_id) {
             span.end_ms = Some(end_ms);
             span.duration_ms = Some(end_ms.saturating_sub(span.start_ms));
             span.error = error;
@@ -319,11 +377,11 @@ impl TraceCollector {
         error: Option<String>,
     ) -> ExecutionTrace {
         let end_ms = self.epoch.elapsed().as_millis() as u64;
-        let mut spans = self.spans.lock().unwrap_or_else(|e| e.into_inner());
+        let mut store = self.spans.lock().unwrap_or_else(|e| e.into_inner());
 
         // Force-close orphaned spans (started but never ended).
         let mut orphan_count = 0u32;
-        for span in spans.iter_mut() {
+        for span in store.iter_mut() {
             if span.span_id != self.root_span_id && span.end_ms.is_none() {
                 span.end_ms = Some(end_ms);
                 span.duration_ms = Some(end_ms.saturating_sub(span.start_ms));
@@ -340,7 +398,7 @@ impl TraceCollector {
         }
 
         // Close root span
-        if let Some(root) = spans.iter_mut().find(|s| s.span_id == self.root_span_id) {
+        if let Some(root) = store.get_mut(&self.root_span_id) {
             root.end_ms = Some(end_ms);
             root.duration_ms = Some(end_ms);
             root.cost_usd = total_cost_usd;
@@ -363,7 +421,7 @@ impl TraceCollector {
             execution_id: self.execution_id.clone(),
             persona_id: self.persona_id.clone(),
             chain_trace_id: self.chain_trace_id.clone(),
-            spans: spans.drain(..).collect(),
+            spans: store.drain().collect(),
             total_duration_ms: Some(end_ms),
             evicted_span_count: evicted,
             created_at: chrono::Utc::now().to_rfc3339(),
@@ -375,8 +433,7 @@ impl TraceCollector {
         self.spans
             .lock()
             .unwrap_or_else(|e| e.into_inner())
-            .iter()
-            .find(|s| s.span_id == span_id)
+            .get(span_id)
             .cloned()
     }
 }

@@ -50,6 +50,7 @@ mod ocr;
 mod shared_event;
 mod tool_audit;
 mod sla;
+mod skill;
 
 pub use json_column::Json;
 pub use persona::*;
@@ -101,4 +102,5 @@ pub use ocr::*;
 pub use shared_event::*;
 pub use tool_audit::*;
 pub use sla::*;
+pub use skill::*;
 pub use agent_ir::*;

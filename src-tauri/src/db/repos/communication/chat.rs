@@ -33,10 +33,12 @@ pub fn get_session_messages(
         let limit = limit.unwrap_or(200);
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT * FROM chat_messages
-             WHERE persona_id = ?1 AND session_id = ?2
-             ORDER BY created_at ASC
-             LIMIT ?3",
+            "SELECT * FROM (
+                 SELECT * FROM chat_messages
+                 WHERE persona_id = ?1 AND session_id = ?2
+                 ORDER BY created_at DESC
+                 LIMIT ?3
+             ) ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map(params![persona_id, session_id, limit], row_to_chat_message)?;
         Ok(collect_rows(rows, "chat::get_session_messages"))

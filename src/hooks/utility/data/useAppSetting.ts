@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { deleteAppSetting, getAppSetting, setAppSetting } from '@/api/system/settings';
 import { createLogger } from '@/lib/log';
 
@@ -10,6 +10,7 @@ interface UseAppSettingResult {
   save: () => Promise<void>;
   loaded: boolean;
   saved: boolean;
+  error: string | null;
 }
 
 /**
@@ -27,6 +28,9 @@ export function useAppSetting(
   const [value, setValueRaw] = useState(defaultValue);
   const [loaded, setLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
   useEffect(() => {
     getAppSetting(key)
@@ -52,15 +56,22 @@ export function useAppSetting(
   }, []);
 
   const save = useCallback(async () => {
-    const trimmed = value.trim();
-    if (trimmed) {
-      await setAppSetting(key, trimmed);
-    } else {
-      await deleteAppSetting(key);
+    setError(null);
+    try {
+      const trimmed = valueRef.current.trim();
+      if (trimmed) {
+        await setAppSetting(key, trimmed);
+      } else {
+        await deleteAppSetting(key);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error('Failed to save app setting', { key, err: message });
+      setError(message);
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }, [key, value]);
+  }, [key]);
 
-  return { value, setValue, save, loaded, saved };
+  return { value, setValue, save, loaded, saved, error };
 }

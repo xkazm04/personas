@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Wrench, ListChecks, ChevronDown, ChevronRight } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
@@ -10,6 +10,18 @@ import { N8nEntitiesTab } from '../edit/N8nEntitiesTab';
 import { N8nUseCasesTab } from '../edit/N8nUseCasesTab';
 import { useN8nDesignData } from '../hooks/useN8nDesignData';
 import { useVaultStore } from "@/stores/vaultStore";
+
+/** Shallow-compare two objects by own enumerable keys. */
+function shallowEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  if (a === b) return true;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
 
 interface N8nEditStepProps {
   draft: N8nPersonaDraft;
@@ -64,6 +76,15 @@ export function N8nEditStep({
   onTestUseCase,
   testingUseCaseId,
 }: N8nEditStepProps) {
+  // Stabilise draft reference: only update when a field actually changes
+  // (shallow comparison) so that memos depending on stableDraft don't
+  // re-compute on every keystroke that creates a new object wrapper.
+  const stableDraftRef = useRef(draft);
+  if (!shallowEqual(stableDraftRef.current as unknown as Record<string, unknown>, draft as unknown as Record<string, unknown>)) {
+    stableDraftRef.current = draft;
+  }
+  const stableDraft = stableDraftRef.current;
+
   // Track manually linked credentials so they survive tab switches (component remounts)
   const [manualLinks, setManualLinks] = useState<Record<string, { id: string; name: string }>>({});
   const [connectorsMissing, setConnectorsMissing] = useState(0);
@@ -103,7 +124,7 @@ export function N8nEditStep({
       Icon: ListChecks,
       content: (
         <N8nUseCasesTab
-          draft={draft}
+          draft={stableDraft}
           adjustmentRequest={adjustmentRequest}
           transforming={transforming}
           disabled={disabled}
@@ -114,7 +135,7 @@ export function N8nEditStep({
         />
       ),
     },
-  ], [draft, adjustmentRequest, transforming, disabled, onAdjustmentChange, onApplyAdjustment, onTestUseCase, testingUseCaseId]);
+  ], [stableDraft, adjustmentRequest, transforming, disabled, onAdjustmentChange, onApplyAdjustment, onTestUseCase, testingUseCaseId]);
 
   // Orange dot badge for connectors tab when action is needed
   const connectorsBadge = connectorsMissing > 0 ? (
@@ -130,7 +151,7 @@ export function N8nEditStep({
       badge: connectorsBadge,
       content: (
         <N8nEntitiesTab
-          draft={draft}
+          draft={stableDraft}
           parsedResult={parsedResult}
           selectedToolIndices={selectedToolIndices}
           selectedTriggerIndices={selectedTriggerIndices}
@@ -143,7 +164,7 @@ export function N8nEditStep({
         />
       ),
     },
-  ], [draft, parsedResult, selectedToolIndices, selectedTriggerIndices, selectedConnectorNames, onGoToAnalyze, connectorsBadge, manualLinks, handleConnectorLink, handleMissingCountChange, updateDraft]);
+  ], [stableDraft, parsedResult, selectedToolIndices, selectedTriggerIndices, selectedConnectorNames, onGoToAnalyze, connectorsBadge, manualLinks, handleConnectorLink, handleMissingCountChange, updateDraft]);
 
   // Show test output panel when a test has been started
   const showTestPanel = testPhase !== 'idle' || testLines.length > 0;

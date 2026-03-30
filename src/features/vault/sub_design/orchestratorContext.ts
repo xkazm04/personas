@@ -1,6 +1,7 @@
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import type { CredentialDesignContextValue } from '@/features/vault/sub_design/CredentialDesignContext';
+import type { AuthDetectionInfo } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { deriveCredentialFlow } from '@/features/vault/sub_design/CredentialDesignHelpers';
 
 interface ContextBuildInput {
@@ -30,6 +31,7 @@ interface ContextBuildInput {
   onReset: () => void;
   onRefine: () => void;
   onNegotiatorValues: (values: Record<string, string>) => void;
+  prefetchedAuthDetections?: AuthDetectionInfo[];
 }
 
 export function buildContextValue(input: ContextBuildInput): CredentialDesignContextValue {
@@ -60,5 +62,6 @@ export function buildContextValue(input: ContextBuildInput): CredentialDesignCon
     onReset: input.onReset,
     onRefine: input.onRefine,
     onNegotiatorValues: input.onNegotiatorValues,
+    prefetchedAuthDetections: input.prefetchedAuthDetections,
   };
 }

@@ -40,20 +40,24 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
     return () => document.removeEventListener('keydown', handleKey);
   }, [showReadinessPopover]);
 
+  const triggers = selectedPersona?.triggers;
+  const subscriptions = selectedPersona?.subscriptions;
+  const tools = selectedPersona?.tools;
+
   const readiness = useMemo(() => {
     if (!selectedPersona) return { canEnable: false, reasons: [] as string[] };
     const reasons: string[] = [];
-    if (!(selectedPersona.triggers || []).length && !(selectedPersona.subscriptions || []).length) {
+    if (!(triggers || []).length && !(subscriptions || []).length) {
       reasons.push('No triggers or event subscriptions configured');
     }
     const credTypes = new Set(credentials.map((c) => c.service_type));
-    const missingCreds = (selectedPersona.tools || [])
+    const missingCreds = (tools || [])
       .filter((t) => t.requires_credential_type && !credTypes.has(t.requires_credential_type))
       .map((t) => t.requires_credential_type!);
     const unique = [...new Set(missingCreds)];
     if (unique.length > 0) reasons.push(`Missing credentials: ${unique.join(', ')}`);
     return { canEnable: reasons.length === 0, reasons };
-  }, [selectedPersona, credentials]);
+  }, [selectedPersona, triggers, subscriptions, tools, credentials]);
 
   const handleHeaderToggle = useCallback(async () => {
     if (!selectedPersona) return;

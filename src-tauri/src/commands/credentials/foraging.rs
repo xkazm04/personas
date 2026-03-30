@@ -5,7 +5,7 @@
 //! Returns a list of discovered credential sources that the user can
 //! selectively import into the vault.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -510,7 +510,7 @@ fn scan_ssh_keys() -> Vec<ForagedCredential> {
 /// Mark credentials that already exist in the vault.
 fn mark_existing(
     results: &mut [ForagedCredential],
-    existing_service_types: &[String],
+    existing_service_types: &HashSet<String>,
 ) {
     for cred in results.iter_mut() {
         if existing_service_types.contains(&cred.service_type) {
@@ -561,11 +561,9 @@ pub fn scan_credential_sources(
     let start = std::time::Instant::now();
 
     // Get existing credential service types to mark duplicates
-    let existing_types: Vec<String> =
-        match crate::db::repos::resources::credentials::get_all(&state.db) {
-            Ok(creds) => creds.iter().map(|c| c.service_type.clone()).collect(),
-            Err(_) => Vec::new(),
-        };
+    let existing_types: HashSet<String> =
+        crate::db::repos::resources::credentials::get_distinct_service_types(&state.db)
+            .unwrap_or_default();
 
     let mut scanned_sources = Vec::new();
     let mut all_results = Vec::new();

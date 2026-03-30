@@ -232,6 +232,48 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_hal_type     ON healing_audit_log(event_type);"
     )?;
 
+    // -- Index on n8n_transform_sessions(status, updated_at DESC) for list queries
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_nts_status_updated ON n8n_transform_sessions(status, updated_at DESC);"
+    )?;
+
+    // -- Composable Agent Skills ------------------------------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS skills (
+            id          TEXT PRIMARY KEY,
+            name        TEXT NOT NULL,
+            version     TEXT NOT NULL DEFAULT '1.0.0',
+            description TEXT,
+            category    TEXT,
+            is_builtin  INTEGER NOT NULL DEFAULT 0,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(name, version)
+        );
+        CREATE INDEX IF NOT EXISTS idx_skills_category ON skills(category);
+
+        CREATE TABLE IF NOT EXISTS skill_components (
+            id              TEXT PRIMARY KEY,
+            skill_id        TEXT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+            component_type  TEXT NOT NULL,
+            component_data  TEXT NOT NULL,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_skill_components_skill ON skill_components(skill_id);
+
+        CREATE TABLE IF NOT EXISTS persona_skills (
+            id          TEXT PRIMARY KEY,
+            persona_id  TEXT NOT NULL,
+            skill_id    TEXT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+            enabled     INTEGER NOT NULL DEFAULT 1,
+            config      TEXT,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(persona_id, skill_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_persona_skills_persona ON persona_skills(persona_id);
+        CREATE INDEX IF NOT EXISTS idx_persona_skills_skill ON persona_skills(skill_id);"
+    )?;
+
     tracing::info!("Database migrations complete");
     Ok(())
 }
@@ -734,6 +776,8 @@ CREATE TABLE IF NOT EXISTS persona_memories (
 CREATE INDEX IF NOT EXISTS idx_persona_memories_persona    ON persona_memories(persona_id);
 CREATE INDEX IF NOT EXISTS idx_persona_memories_category   ON persona_memories(category);
 CREATE INDEX IF NOT EXISTS idx_persona_memories_importance ON persona_memories(importance DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_persona_importance_created ON persona_memories(persona_id, importance DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pm_persona_category         ON persona_memories(persona_id, category);
 
 -- ============================================================================
 -- Healing Issues
@@ -864,6 +908,7 @@ CREATE TABLE IF NOT EXISTS n8n_transform_sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_nts_status  ON n8n_transform_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_nts_created ON n8n_transform_sessions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_nts_status_updated ON n8n_transform_sessions(status, updated_at DESC);
 
 -- ============================================================================
 -- Credential Audit Log (append-only, never updated or deleted)
@@ -1570,6 +1615,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE INDEX IF NOT EXISTS idx_chat_persona   ON chat_messages(persona_id);
 CREATE INDEX IF NOT EXISTS idx_chat_session   ON chat_messages(session_id);
 CREATE INDEX IF NOT EXISTS idx_chat_created   ON chat_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_persona_session_created ON chat_messages(persona_id, session_id, created_at DESC);
 
 -- ============================================================================
 -- Chat Session Context (persistent session metadata for cross-restart memory)
@@ -1587,6 +1633,7 @@ CREATE TABLE IF NOT EXISTS chat_session_context (
 );
 CREATE INDEX IF NOT EXISTS idx_chat_ctx_persona   ON chat_session_context(persona_id);
 CREATE INDEX IF NOT EXISTS idx_chat_ctx_updated   ON chat_session_context(updated_at);
+CREATE INDEX IF NOT EXISTS idx_chat_ctx_persona_updated ON chat_session_context(persona_id, updated_at DESC);
 
 -- ============================================================================
 -- Build Sessions (multi-turn agent builder sessions)
@@ -1777,7 +1824,8 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             DROP TABLE n8n_transform_sessions;
             ALTER TABLE n8n_transform_sessions_new RENAME TO n8n_transform_sessions;
             CREATE INDEX IF NOT EXISTS idx_nts_status  ON n8n_transform_sessions(status);
-            CREATE INDEX IF NOT EXISTS idx_nts_created ON n8n_transform_sessions(created_at DESC);"
+            CREATE INDEX IF NOT EXISTS idx_nts_created ON n8n_transform_sessions(created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_nts_status_updated ON n8n_transform_sessions(status, updated_at DESC);"
         )?;
         tracing::info!("Migrated n8n_transform_sessions: added transform_id, questions_json, awaiting_answers status");
     }
@@ -3303,6 +3351,77 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         )?;
         tracing::info!("Added trigger_version column to persona_triggers for CAS safety");
     }
+
+    // -- Composite indexes for memory & chat hot-path queries --------------------
+    // These are idempotent (IF NOT EXISTS) and cover the top query patterns that
+    // degrade to full table scans as data grows.
+    conn.execute_batch(
+        // chat_messages: get_session_messages + list_sessions
+        // WHERE persona_id = ? AND session_id = ? ORDER BY created_at DESC
+        "CREATE INDEX IF NOT EXISTS idx_chat_persona_session_created
+         ON chat_messages(persona_id, session_id, created_at DESC);
+
+         -- persona_memories: get_by_persona
+         -- WHERE persona_id = ? ORDER BY importance DESC, created_at DESC
+         CREATE INDEX IF NOT EXISTS idx_pm_persona_importance_created
+         ON persona_memories(persona_id, importance DESC, created_at DESC);
+
+         -- persona_memories: run_lifecycle
+         -- WHERE persona_id = ? AND tier = 'working' AND access_count ...
+         CREATE INDEX IF NOT EXISTS idx_pm_persona_tier_access
+         ON persona_memories(persona_id, tier, access_count, created_at);
+
+         -- persona_memories: get_all filtered by persona_id + category
+         CREATE INDEX IF NOT EXISTS idx_pm_persona_category
+         ON persona_memories(persona_id, category);
+
+         -- chat_session_context: get_latest_session
+         -- WHERE persona_id = ? ORDER BY updated_at DESC LIMIT 1
+         CREATE INDEX IF NOT EXISTS idx_chat_ctx_persona_updated
+         ON chat_session_context(persona_id, updated_at DESC);"
+    )?;
+    tracing::info!("Ensured composite indexes for memory & chat hot-path queries");
+
+    // -- Composite indexes for automation_runs hot-path queries -------------------
+    // The single-column idx_automation_runs_automation cannot satisfy ORDER BY
+    // started_at DESC without a filesort; a composite index eliminates that.
+    // The (status, started_at) index lets reap_stale_runs avoid a full table scan.
+    conn.execute_batch(
+        // get_runs_by_automation: WHERE automation_id = ? ORDER BY started_at DESC
+        "CREATE INDEX IF NOT EXISTS idx_automation_runs_auto_started
+         ON automation_runs(automation_id, started_at DESC);
+
+         -- reap_stale_runs: WHERE status = 'running' AND julianday(started_at) ...
+         CREATE INDEX IF NOT EXISTS idx_automation_runs_status_started
+         ON automation_runs(status, started_at);"
+    )?;
+    tracing::info!("Ensured composite indexes for automation_runs hot-path queries");
+
+    // -- Composite indexes for team_memories and pipeline_runs hot-path queries ----
+    // team_memories: get_by_team, get_for_injection, evict_excess all filter by
+    // team_id and sort by importance DESC, created_at DESC/ASC. A composite index
+    // lets SQLite satisfy the WHERE + ORDER BY without a filesort.
+    // pipeline_runs: has_running_pipeline filters (team_id, status); list_pipeline_runs
+    // filters team_id and sorts by started_at DESC.
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_tm_team_importance_created
+         ON team_memories(team_id, importance DESC, created_at DESC);
+
+         CREATE INDEX IF NOT EXISTS idx_pr_team_status
+         ON pipeline_runs(team_id, status);
+
+         CREATE INDEX IF NOT EXISTS idx_pr_team_started
+         ON pipeline_runs(team_id, started_at DESC);"
+    )?;
+    tracing::info!("Ensured composite indexes for team_memories and pipeline_runs hot-path queries");
+
+    // Add composite index for trigger_id + created_at on persona_executions
+    // Covers get_by_trigger_id query: WHERE trigger_id = ? ORDER BY created_at DESC
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_pe_trigger_created
+         ON persona_executions(trigger_id, created_at DESC);"
+    )?;
+    tracing::info!("Ensured composite index idx_pe_trigger_created on persona_executions");
 
     Ok(())
 }

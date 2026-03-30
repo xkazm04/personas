@@ -171,7 +171,11 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
   const handleBusEvent = useCallback((raw: PersonaEvent) => {
     if (isPausedRef.current) return;
 
-    registerAnimation(raw.id);
+    // Skip animation registration when tab is hidden — animations are purely
+    // visual and the progressor won't advance them, causing unbounded Map growth.
+    if (!document.hidden) {
+      registerAnimation(raw.id);
+    }
     pushEvent(raw as RealtimeEvent);
   }, [registerAnimation, pushEvent]);
   const isConnected = useEventBusListener(handleBusEvent);
@@ -229,7 +233,9 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
             processed_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
           };
-          registerAnimation(simId);
+          if (!document.hidden) {
+            registerAnimation(simId);
+          }
           pushEvent(simEvent);
         }, i * 350);
         testFlowTimeoutsRef.current.push(timeoutId);

@@ -22,10 +22,14 @@ export function buildConnectorRailItems(
 ): ConnectorRailItem[] {
   if (!connectors || connectors.length === 0) return [];
 
+  // Pre-build credential-by-id map to avoid O(N*M) lookups
+  const credentialsById = new Map<string, PersonaCredential>();
+  for (const cred of credentials) credentialsById.set(cred.id, cred);
+
   return connectors.map((connector) => {
     const linkedCredentialId = credentialLinks[connector.name];
     const linkedCredential = linkedCredentialId
-      ? credentials.find((credential) => credential.id === linkedCredentialId)
+      ? credentialsById.get(linkedCredentialId) ?? null
       : null;
     const matchedCredential = linkedCredential ?? matchCredentialToConnector(credentials, connector.name);
     const hasCredential = connector.has_credential || !!linkedCredentialId || !!matchedCredential;

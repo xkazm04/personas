@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
+import type { AuthDetectionInfo } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { CredentialFlow } from './CredentialDesignHelpers';
 
 // -- Context value ------------------------------------------------
@@ -43,6 +44,9 @@ export interface CredentialDesignContextValue {
   onReset: () => void;
   onRefine?: () => void;
   onNegotiatorValues?: (capturedValues: Record<string, string>) => void;
+
+  /** Pre-fetched auth detections (warm-cached during analyzing phase). */
+  prefetchedAuthDetections?: AuthDetectionInfo[];
 }
 
 const CredentialDesignContext = createContext<CredentialDesignContextValue | null>(null);

@@ -21,3 +21,4 @@ pub mod signing;
 pub mod webhook_log;
 pub mod deployment_history;
 pub mod cloud_webhook_watermarks;
+pub mod skills;

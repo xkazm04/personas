@@ -472,6 +472,9 @@ pub fn publish_dead_letter(
 }
 
 /// Move a failed event to the dead letter queue.
+///
+/// Only events with status `Failed` can transition to `DeadLetter`,
+/// matching the lifecycle rules in `PersonaEventStatus::can_transition_to`.
 pub fn move_to_dead_letter(
     pool: &DbPool,
     id: &str,
@@ -483,11 +486,22 @@ pub fn move_to_dead_letter(
         let rows = conn.execute(
             "UPDATE persona_events
              SET status = 'dead_letter', error_message = ?1, processed_at = ?2
-             WHERE id = ?3",
+             WHERE id = ?3 AND status = 'failed'",
             params![error_message, now, id],
         )?;
         if rows == 0 {
-            return Err(AppError::NotFound(format!("PersonaEvent {id}")));
+            // Distinguish "not found" from "wrong status" for a clear error message.
+            let current_str: String = conn
+                .query_row(
+                    "SELECT status FROM persona_events WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .map_err(|_| AppError::NotFound(format!("PersonaEvent {id}")))?;
+            return Err(AppError::Validation(format!(
+                "Invalid event status transition: {} -> dead_letter",
+                current_str
+            )));
         }
         Ok(())
     })

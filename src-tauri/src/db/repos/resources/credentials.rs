@@ -91,6 +91,44 @@ pub fn is_field_sensitive(
 crud_get_by_id!(PersonaCredential, "persona_credentials", "Credential", row_to_credential);
 crud_get_all!(PersonaCredential, "persona_credentials", row_to_credential, "created_at DESC");
 
+/// Count total credentials and plaintext (unencrypted) credentials via SQL.
+/// Much cheaper than `get_all` when only aggregate counts are needed.
+pub fn count_vault_status(pool: &DbPool) -> Result<(i64, i64), AppError> {
+    timed_query!("persona_credentials", "persona_credentials::count_vault_status", {
+        let conn = pool.get()?;
+        let total: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM persona_credentials",
+            [],
+            |row| row.get(0),
+        ).map_err(AppError::Database)?;
+        let plaintext: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM persona_credentials WHERE iv = ''",
+            [],
+            |row| row.get(0),
+        ).map_err(AppError::Database)?;
+        Ok((total, plaintext))
+    })
+}
+
+/// Return the distinct set of service types that already exist in the vault.
+/// Much cheaper than `get_all` when only the service types are needed.
+pub fn get_distinct_service_types(
+    pool: &DbPool,
+) -> Result<std::collections::HashSet<String>, AppError> {
+    timed_query!("persona_credentials", "persona_credentials::get_distinct_service_types", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT service_type FROM persona_credentials",
+        )?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+        let mut set = std::collections::HashSet::new();
+        for row in rows {
+            set.insert(row?);
+        }
+        Ok(set)
+    })
+}
+
 pub fn get_by_service_type(
     pool: &DbPool,
     service_type: &str,
@@ -597,33 +635,23 @@ pub fn append_healthcheck_metadata(
 }
 
 /// Record a usage event for a credential: increment usage_count and set last_used_at.
+/// Uses a single SQL UPDATE with json_set/json_extract to avoid multiple round-trips.
 pub fn record_usage(pool: &DbPool, credential_id: &str) -> Result<(), AppError> {
     timed_query!("persona_credentials", "persona_credentials::record_usage", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
-        // Update last_used_at on the credential row
         conn.execute(
-            "UPDATE persona_credentials SET last_used_at = ?1, updated_at = ?1 WHERE id = ?2",
+            "UPDATE persona_credentials SET
+                last_used_at = ?1,
+                updated_at = ?1,
+                metadata = json_set(
+                    COALESCE(metadata, '{}'),
+                    '$.usage_count', COALESCE(json_extract(metadata, '$.usage_count'), 0) + 1,
+                    '$.last_used_at', ?1
+                )
+            WHERE id = ?2",
             params![now, credential_id],
-        )?;
-
-        // Increment usage_count in metadata via typed ledger
-        let row: Option<String> = conn
-            .query_row(
-                "SELECT metadata FROM persona_credentials WHERE id = ?1",
-                params![credential_id],
-                |r| r.get(0),
-            )
-            .optional()?;
-
-        let mut ledger = CredentialLedger::parse(row.as_deref());
-        ledger.record_usage();
-
-        let meta_str = ledger.to_json_string().ok();
-        conn.execute(
-            "UPDATE persona_credentials SET metadata = ?1 WHERE id = ?2",
-            params![meta_str, credential_id],
         )?;
 
         Ok(())

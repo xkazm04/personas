@@ -168,7 +168,8 @@ pub fn update_persona(
     Ok(result)
 }
 
-/// Lightweight parameter-only update — no rebuild required.
+/// Lightweight parameter-only update — invalidates cached sessions so the
+/// engine picks up the new parameter values immediately.
 #[tauri::command]
 pub fn update_persona_parameters(
     state: State<'_, Arc<AppState>>,
@@ -176,14 +177,70 @@ pub fn update_persona_parameters(
     parameters: Option<String>,
 ) -> Result<Persona, AppError> {
     require_auth_sync(&state)?;
-    repo::update(
+    let result = repo::update(
         &state.db,
         &id,
         UpdatePersonaInput {
             parameters: Some(parameters),
             ..Default::default()
         },
-    )
+    )?;
+
+    // Invalidate cached session so the engine uses updated parameter values
+    let pool = state.session_pool.clone();
+    let pid = id.clone();
+    tokio::spawn(async move { pool.invalidate(&pid).await; });
+
+    // Auto-sync to cloud if connected (fire-and-forget)
+    let cloud_client = state.cloud_client.clone();
+    let db = state.db.clone();
+    let sync_id = id.clone();
+    tokio::spawn(async move {
+        let client = match cloud_client.lock().await.clone() {
+            Some(c) => c,
+            None => return,
+        };
+        let deployments = match client.list_deployments().await {
+            Ok(d) => d,
+            Err(_) => return,
+        };
+        if !deployments.iter().any(|d| d.persona_id == sync_id) {
+            return;
+        }
+        let persona = match crate::db::repos::core::personas::get_by_id(&db, &sync_id) {
+            Ok(p) => p,
+            Err(_) => return,
+        };
+        let tools_list = match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
+            Ok(t) => t,
+            Err(_) => return,
+        };
+        let prompt = engine::prompt::assemble_prompt(&persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
+        let body = serde_json::json!({
+            "id": persona.id,
+            "name": persona.name,
+            "description": persona.description,
+            "systemPrompt": prompt,
+            "structuredPrompt": persona.structured_prompt,
+            "icon": persona.icon,
+            "color": persona.color,
+            "enabled": true,
+            "maxConcurrent": persona.max_concurrent,
+            "timeoutMs": persona.timeout_ms,
+            "modelProfile": persona.model_profile,
+            "maxBudgetUsd": persona.max_budget_usd,
+            "maxTurns": persona.max_turns,
+            "designContext": persona.design_context,
+            "groupId": persona.group_id,
+        });
+        if let Err(e) = client.upsert_persona(&body).await {
+            tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed after parameter update");
+        } else {
+            tracing::info!(persona_id = %sync_id, "Persona auto-synced to cloud after parameter update");
+        }
+    });
+
+    Ok(result)
 }
 
 #[tauri::command]

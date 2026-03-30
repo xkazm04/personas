@@ -1,5 +1,6 @@
 #[macro_use]
 pub mod macros;
+pub mod cdc;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
 #[allow(dead_code)]
@@ -77,7 +78,14 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for SqlitePragma
 }
 
 /// Initialize the database: create file, enable WAL + foreign keys, run migrations, seed data.
-pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
+///
+/// When `cdc_sender` is provided, every pooled connection will have a
+/// `rusqlite::update_hook` registered that pushes change events through the
+/// channel.  Pass `None` to disable CDC (e.g. in tests).
+pub fn init_db(
+    app_data_dir: &PathBuf,
+    cdc_sender: Option<cdc::CdcSender>,
+) -> Result<DbPool, AppError> {
     std::fs::create_dir_all(app_data_dir)?;
     restrict_dir_permissions(app_data_dir);
     let db_path = app_data_dir.join("personas.db");
@@ -85,9 +93,14 @@ pub fn init_db(app_data_dir: &PathBuf) -> Result<DbPool, AppError> {
     tracing::info!(path = %db_path.display(), "Initializing database");
 
     let manager = SqliteConnectionManager::file(&db_path);
+    let customizer: Box<dyn CustomizeConnection<rusqlite::Connection, rusqlite::Error>> =
+        match cdc_sender {
+            Some(sender) => Box::new(cdc::CdcCustomizer::new(sender)),
+            None => Box::new(SqlitePragmaCustomizer),
+        };
     let pool = Pool::builder()
         .max_size(4)
-        .connection_customizer(Box::new(SqlitePragmaCustomizer))
+        .connection_customizer(customizer)
         .build(manager)?;
 
     // Set WAL journal mode (database-wide, only needs to run once)

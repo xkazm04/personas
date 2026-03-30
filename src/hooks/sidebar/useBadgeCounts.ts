@@ -36,20 +36,26 @@ export function useBadgeCounts(): BadgeCounts {
       void state.fetchUnreadMessageCount();
       void state.fetchRecentEvents();
 
-      // Subscribe to store changes and update only when badge fields change
-      let prev = { ...state } as { pendingReviewCount: number; unreadMessageCount: number; pendingEventCount: number };
+      // Subscribe to store changes — only track the 3 badge fields to avoid
+      // re-renders when unrelated overview state changes.
+      let prev: BadgeCounts = {
+        pendingReviewCount: state.pendingReviewCount,
+        unreadMessageCount: state.unreadMessageCount,
+        pendingEventCount: state.pendingEventCount,
+      };
       unsub = useOverviewStore.subscribe((s) => {
         if (
           s.pendingReviewCount !== prev.pendingReviewCount ||
           s.unreadMessageCount !== prev.unreadMessageCount ||
           s.pendingEventCount !== prev.pendingEventCount
         ) {
-          prev = s;
-          setCounts({
+          const next: BadgeCounts = {
             pendingReviewCount: s.pendingReviewCount,
             unreadMessageCount: s.unreadMessageCount,
             pendingEventCount: s.pendingEventCount,
-          });
+          };
+          prev = next;
+          setCounts(next);
         }
       });
     });

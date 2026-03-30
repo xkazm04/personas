@@ -1,22 +1,11 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+import type { FeedbackLabel } from '@/lib/bindings/FeedbackLabel';
+import type { FeedbackRating } from '@/lib/bindings/FeedbackRating';
 import type { TemplateFeedback } from '@/lib/bindings/TemplateFeedback';
 import type { TemplatePerformance } from '@/lib/bindings/TemplatePerformance';
 
-export type FeedbackLabel =
-  // Positive
-  | 'accurate_prompt'
-  | 'good_tool_selection'
-  | 'reliable'
-  | 'cost_efficient'
-  // Negative
-  | 'wrong_tools'
-  | 'poor_instructions'
-  | 'missing_context'
-  | 'over_engineered'
-  | 'under_specified'
-  | 'wrong_triggers'
-  | 'credential_issues';
+export type { FeedbackLabel, FeedbackRating };
 
 export const FEEDBACK_LABELS: Record<FeedbackLabel, { label: string; positive: boolean }> = {
   accurate_prompt: { label: 'Accurate Prompt', positive: true },
@@ -35,8 +24,8 @@ export const FEEDBACK_LABELS: Record<FeedbackLabel, { label: string; positive: b
 export const createTemplateFeedback = (
   reviewId: string,
   personaId: string,
-  rating: 'positive' | 'negative' | 'neutral',
-  labels: string[],
+  rating: FeedbackRating,
+  labels: FeedbackLabel[],
   comment?: string,
   executionId?: string,
   source?: string,

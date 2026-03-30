@@ -264,7 +264,7 @@ impl MetricsRegistry {
         let now = chrono::Utc::now();
         self.buffers.retain(|_, buf| {
             buf.entries
-                .last()
+                .back()
                 .map(|e| (now - e.timestamp).num_seconds() < METRICS_IDLE_EVICTION_SECS as i64)
                 .unwrap_or(false)
         });
@@ -337,7 +337,7 @@ pub async fn get_all_proxy_metrics() -> Vec<ApiProxyCredentialMetrics> {
         latencies.sort_unstable();
 
         let avg = latencies.iter().sum::<u64>() / count as u64;
-        let last_ts = buf.entries.last().map(|e| e.timestamp.to_rfc3339());
+        let last_ts = buf.entries.back().map(|e| e.timestamp.to_rfc3339());
 
         results.push(ApiProxyCredentialMetrics {
             credential_id: cred_id.clone(),
@@ -490,7 +490,9 @@ pub async fn execute_api_request(
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
 
-    let _ = audit_log::log_decrypt(pool, &credential.id, &credential.name, "api_proxy", None, None);
+    if let Err(e) = audit_log::log_decrypt(pool, &credential.id, &credential.name, "api_proxy", None, None) {
+        tracing::warn!(credential_id = %credential.id, error = %e, "Failed to write audit log for credential decrypt");
+    }
 
     // Resolve base URL from credential fields, dynamic domain fields, or well-known defaults
     let base_url_resolved: String = if let Some(url) = fields
@@ -553,6 +555,21 @@ pub async fn execute_api_request(
 
     let strategy =
         connector_strategy::registry()?.get(&credential.service_type, connector_metadata);
+
+    // For OAuth credentials, acquire a per-credential lock to prevent concurrent
+    // token exchanges with the background refresh tick (see oauth_refresh_lock).
+    let (_lock, fields) = if strategy.is_oauth(&fields) {
+        let lock = super::oauth_refresh_lock::acquire(credential_id).await;
+        // Re-read fields inside the lock — a concurrent refresh may have persisted
+        // a fresh access_token while we were waiting.
+        let fresh = cred_repo::get_decrypted_fields(pool, &credential)?;
+        if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "api_proxy_locked", None, None) {
+            tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
+        }
+        (Some(lock), fresh)
+    } else {
+        (None, fields)
+    };
     let token = strategy
         .resolve_auth_token(connector_metadata, &fields)
         .await?

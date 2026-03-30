@@ -230,8 +230,7 @@ pub async fn get_export_stats(
     let mut memory_count: u32 = 0;
     let mut test_suite_count: u32 = 0;
     for p in &personas {
-        memory_count += memory_repo::get_all(pool, Some(&p.id), None, None, None, None, None, None)?
-            .len() as u32;
+        memory_count += memory_repo::get_total_count(pool, Some(&p.id), None, None)? as u32;
         test_suite_count += suite_repo::list_by_persona(pool, &p.id)?.len() as u32;
     }
 
@@ -1451,7 +1450,9 @@ pub async fn export_credentials(
     for cred in &all_creds {
         let fields = cred_repo::get_decrypted_fields(pool, cred)
             .unwrap_or_default();
-        let _ = audit_log::log_decrypt(pool, &cred.id, &cred.name, "data_portability:export", None, None);
+        if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "data_portability:export", None, None) {
+            tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential decrypt");
+        }
         entries.push(CredentialExportEntry {
             name: cred.name.clone(),
             service_type: cred.service_type.clone(),

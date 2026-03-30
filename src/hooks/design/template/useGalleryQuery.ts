@@ -123,6 +123,8 @@ export function useGalleryQuery(
   const fetchMoreLockRef = useRef(false);
   /** Set to true when a fetchMore was requested while another was in-flight. */
   const fetchMoreQueuedRef = useRef(false);
+  /** Session flag — ensures backfillReviewCategories only runs once per app session. */
+  const backfillRanRef = useRef(false);
 
   const setSearch = useCallback((value: string) => {
     setSearchRaw(value);
@@ -231,51 +233,62 @@ export function useGalleryQuery(
   const hasMore = items.length < total;
 
   // Fetch available connectors, categories, and trending templates.
+  // All independent fetches are batched with Promise.all to avoid a serial waterfall.
   useEffect(() => {
     let cancelled = false;
 
-    backfillReviewCategories().catch(silentCatch("galleryQuery:backfillCategories"));
-    listReviewConnectors()
-      .then((data) => { if (!cancelled) setAvailableConnectors(data); })
-      .catch(silentCatch("galleryQuery:listConnectors"));
-    listReviewCategories()
-      .then((data) => { if (!cancelled) setAvailableCategories(data); })
-      .catch(silentCatch("galleryQuery:listCategories"));
-    getTrendingTemplates(5)
-      .then((data) => { if (!cancelled) setTrendingTemplates(data); })
-      .catch(silentCatch("galleryQuery:getTrending"));
+    // Gate backfill behind a session flag so it only runs once per app session.
+    if (!backfillRanRef.current) {
+      backfillRanRef.current = true;
+      backfillReviewCategories().catch(silentCatch("galleryQuery:backfillCategories"));
+    }
+
+    const fetches: Promise<void>[] = [
+      listReviewConnectors()
+        .then((data) => { if (!cancelled) setAvailableConnectors(data); })
+        .catch(silentCatch("galleryQuery:listConnectors")),
+      listReviewCategories()
+        .then((data) => { if (!cancelled) setAvailableCategories(data); })
+        .catch(silentCatch("galleryQuery:listCategories")),
+      getTrendingTemplates(5)
+        .then((data) => { if (!cancelled) setTrendingTemplates(data); })
+        .catch(silentCatch("galleryQuery:getTrending")),
+    ];
 
     // unfilteredTotal is now derived from the initial fetchPage(0) call which runs
     // on mount with no filters active — no separate request needed here.
 
     if (stableCoverageServiceTypes && stableCoverageServiceTypes.length > 0) {
-      listDesignReviewsPaginated({
-        sortBy: 'trending',
-        sortDir: 'desc',
-        page: 0,
-        perPage: 6,
-        coverageFilter: 'full',
-        coverageServiceTypes: stableCoverageServiceTypes,
-      })
-        .then((r) => { if (!cancelled) setReadyTemplates(r.items); })
-        .catch(silentCatch("galleryQuery:readyTemplates"));
-
-      listDesignReviewsPaginated({
-        sortBy: 'trending',
-        sortDir: 'desc',
-        page: 0,
-        perPage: 30,
-        coverageFilter: 'partial',
-        coverageServiceTypes: stableCoverageServiceTypes,
-      })
-        .then((r) => {
-          if (!cancelled) {
-            const scored = scoreRecommendations(r.items, stableCoverageServiceTypes);
-            setRecommendedTemplates(scored);
-          }
+      fetches.push(
+        listDesignReviewsPaginated({
+          sortBy: 'trending',
+          sortDir: 'desc',
+          page: 0,
+          perPage: 6,
+          coverageFilter: 'full',
+          coverageServiceTypes: stableCoverageServiceTypes,
         })
-        .catch(silentCatch("galleryQuery:recommendedTemplates"));
+          .then((r) => { if (!cancelled) setReadyTemplates(r.items); })
+          .catch(silentCatch("galleryQuery:readyTemplates")),
+        listDesignReviewsPaginated({
+          sortBy: 'trending',
+          sortDir: 'desc',
+          page: 0,
+          perPage: 30,
+          coverageFilter: 'partial',
+          coverageServiceTypes: stableCoverageServiceTypes,
+        })
+          .then((r) => {
+            if (!cancelled) {
+              const scored = scoreRecommendations(r.items, stableCoverageServiceTypes);
+              setRecommendedTemplates(scored);
+            }
+          })
+          .catch(silentCatch("galleryQuery:recommendedTemplates")),
+      );
     }
+
+    Promise.all(fetches).catch(silentCatch("galleryQuery:mountBatch"));
 
     return () => { cancelled = true; };
   }, [stableCoverageServiceTypes]);

@@ -196,7 +196,11 @@ fn vec_table_name(kb_id: &str) -> Result<String, AppError> {
     Ok(format!("kb_vec_{safe}"))
 }
 
-/// Convert a Vec<f32> to a byte blob for sqlite-vec.
-fn vec_f32_to_blob(v: &[f32]) -> Vec<u8> {
-    v.iter().flat_map(|f| f.to_le_bytes()).collect()
+// Ensure native byte order matches the LE encoding sqlite-vec expects.
+#[cfg(not(target_endian = "little"))]
+compile_error!("vec_f32_to_blob relies on native little-endian byte order");
+
+/// Convert a slice of f32 to a byte slice for sqlite-vec (zero-copy).
+fn vec_f32_to_blob(v: &[f32]) -> &[u8] {
+    bytemuck::cast_slice(v)
 }

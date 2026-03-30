@@ -433,13 +433,23 @@ pub fn start_loops(
             dropped: fw_dropped,
             ambient_ctx: ambient_ctx.clone(),
         }));
-        subscriptions.push(Box::new(ClipboardSubscription {
-            pool: pool.clone(),
-            state: Arc::new(tokio::sync::Mutex::new(
-                super::clipboard_monitor::ClipboardState::new(),
-            )),
-            ambient_ctx: ambient_ctx.clone(),
-        }));
+        // Build clipboard subscription with watcher support (error detection + KB search)
+        {
+            let app_state: &Arc<crate::AppState> = &app.state::<Arc<crate::AppState>>();
+            subscriptions.push(Box::new(ClipboardSubscription {
+                pool: pool.clone(),
+                state: Arc::new(tokio::sync::Mutex::new(
+                    super::clipboard_monitor::ClipboardState::new(),
+                )),
+                ambient_ctx: ambient_ctx.clone(),
+                app: app.clone(),
+                user_db: app_state.user_db.clone(),
+                embedding_manager: app_state.embedding_manager.clone(),
+                vector_store: app_state.vector_store.clone(),
+                last_notification: Arc::new(tokio::sync::Mutex::new(None)),
+                watcher_enabled: app_state.clipboard_watcher_enabled.clone(),
+            }));
+        }
         subscriptions.push(Box::new(AppFocusSubscription {
             pool: pool.clone(),
             state: Arc::new(tokio::sync::Mutex::new(
