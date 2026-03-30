@@ -123,23 +123,39 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Project Creation Modal (with folder picker, type selector, post-creation scan)
+// Project Modal (create + edit modes)
 // ---------------------------------------------------------------------------
 
-type ModalStep = 'create' | 'created';
+type ModalStep = 'form' | 'created';
+
+/** Data shape for an existing project being edited. */
+interface EditProjectData {
+  id: string;
+  name: string;
+  path: string;
+  description: string;
+  projectType: ProjectType;
+  githubUrl: string;
+}
 
 function ProjectModal({
   open: isOpen,
   onClose,
   onCreate,
+  onUpdate,
   onScanNow,
+  editProject,
 }: {
   open: boolean;
   onClose: () => void;
   onCreate: (data: { name: string; path: string; description: string; projectType: ProjectType; githubUrl: string }) => Promise<{ id: string } | undefined>;
+  onUpdate: (id: string, data: { name: string; description: string; projectType: ProjectType; githubUrl: string }) => Promise<void>;
   onScanNow: (projectId: string, rootPath: string, projectName: string) => void;
+  editProject?: EditProjectData | null;
 }) {
-  const [step, setStep] = useState<ModalStep>('create');
+  const isEdit = !!editProject;
+
+  const [step, setStep] = useState<ModalStep>('form');
   const [name, setName] = useState('');
   const [path, setPath] = useState('');
   const [description, setDescription] = useState('');
@@ -149,7 +165,20 @@ function ProjectModal({
   const [createdProject, setCreatedProject] = useState<{ id: string; name: string; path: string } | null>(null);
   const { shouldAnimate: _shouldAnimate } = useMotion();
 
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (editProject) {
+      setName(editProject.name);
+      setPath(editProject.path);
+      setDescription(editProject.description);
+      setProjectType(editProject.projectType);
+      setGithubUrl(editProject.githubUrl);
+      setNameEdited(true);
+    }
+  }, [editProject]);
+
   const handleSelectFolder = async () => {
+    if (isEdit) return; // path is read-only in edit mode
     try {
       const selected = await open({
         directory: true,
@@ -159,7 +188,6 @@ function ProjectModal({
       if (!selected) return;
       const folderPath = typeof selected === 'string' ? selected : selected;
       setPath(folderPath);
-      // Auto-fill name from folder basename if user hasn't manually edited
       if (!nameEdited) {
         const segments = folderPath.replace(/[\\/]+$/, '').split(/[\\/]/);
         const folderName = segments[segments.length - 1] || '';
@@ -177,21 +205,32 @@ function ProjectModal({
 
   const handleSubmit = async () => {
     if (!name.trim() || !path.trim()) return;
-    const result = await onCreate({
-      name: name.trim(),
-      path: path.trim(),
-      description: description.trim(),
-      projectType,
-      githubUrl: githubUrl.trim(),
-    });
-    if (result) {
-      setCreatedProject({ id: result.id, name: name.trim(), path: path.trim() });
-      setStep('created');
+
+    if (isEdit && editProject) {
+      await onUpdate(editProject.id, {
+        name: name.trim(),
+        description: description.trim(),
+        projectType,
+        githubUrl: githubUrl.trim(),
+      });
+      handleClose();
+    } else {
+      const result = await onCreate({
+        name: name.trim(),
+        path: path.trim(),
+        description: description.trim(),
+        projectType,
+        githubUrl: githubUrl.trim(),
+      });
+      if (result) {
+        setCreatedProject({ id: result.id, name: name.trim(), path: path.trim() });
+        setStep('created');
+      }
     }
   };
 
   const handleClose = () => {
-    setStep('create');
+    setStep('form');
     setName('');
     setPath('');
     setDescription('');
@@ -220,23 +259,27 @@ function ProjectModal({
           className="animate-fade-slide-in bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-md shadow-elevation-4"
           onClick={(e) => e.stopPropagation()}
         >
-          {step === 'create' ? (
+          {step === 'form' ? (
             <>
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base font-semibold text-foreground/90">New Project</h2>
+                <h2 className="text-base font-semibold text-foreground/90">
+                  {isEdit ? 'Edit Project' : 'New Project'}
+                </h2>
                 <Button variant="ghost" size="icon-sm" onClick={handleClose}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
 
               <div className="space-y-4">
-                {/* Folder picker */}
+                {/* Folder picker (read-only in edit mode) */}
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Project Folder</label>
                   <div className="flex gap-2">
                     <div
-                      onClick={handleSelectFolder}
-                      className="flex-1 flex items-center gap-2 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl cursor-pointer hover:bg-secondary/60 transition-colors min-w-0"
+                      onClick={isEdit ? undefined : handleSelectFolder}
+                      className={`flex-1 flex items-center gap-2 px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl min-w-0 ${
+                        isEdit ? 'opacity-60' : 'cursor-pointer hover:bg-secondary/60 transition-colors'
+                      }`}
                     >
                       <FolderOpen className="w-4 h-4 text-amber-400 flex-shrink-0" />
                       {path ? (
@@ -245,17 +288,19 @@ function ProjectModal({
                         <span className="text-muted-foreground/50">Select a folder...</span>
                       )}
                     </div>
-                    <Button variant="secondary" size="sm" onClick={handleSelectFolder}>
-                      Browse
-                    </Button>
+                    {!isEdit && (
+                      <Button variant="secondary" size="sm" onClick={handleSelectFolder}>
+                        Browse
+                      </Button>
+                    )}
                   </div>
                 </div>
 
-                {/* Project Name (auto-filled, editable) */}
+                {/* Project Name */}
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
                     Project Name
-                    {path && !nameEdited && (
+                    {!isEdit && path && !nameEdited && (
                       <span className="text-[10px] text-muted-foreground/40 font-normal">(auto-filled from folder)</span>
                     )}
                   </label>
@@ -270,7 +315,7 @@ function ProjectModal({
                   </div>
                 </div>
 
-                {/* Project Type (visual only) */}
+                {/* Project Type */}
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
                     Project Type
@@ -316,11 +361,11 @@ function ProjectModal({
                   variant="accent"
                   accentColor="amber"
                   size="sm"
-                  icon={<Plus className="w-3.5 h-3.5" />}
+                  icon={isEdit ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                   disabled={!name.trim() || !path.trim()}
                   onClick={handleSubmit}
                 >
-                  Create Project
+                  {isEdit ? 'Save Changes' : 'Create Project'}
                 </Button>
               </div>
             </>
@@ -503,10 +548,16 @@ function GoalBoard({
 // Main Page
 // ---------------------------------------------------------------------------
 
-function ProjectRowMenu({ projectId, projectName }: { projectId: string; projectName: string }) {
+function ProjectRowMenu({ projectId, projectName, onEdit }: { projectId: string; projectName: string; onEdit: () => void }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const deleteProject = useSystemStore((s) => s.deleteProject);
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(false);
+    onEdit();
+  };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -535,6 +586,14 @@ function ProjectRowMenu({ projectId, projectName }: { projectId: string; project
           <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden py-1">
             <button
               type="button"
+              onClick={handleEdit}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left text-foreground/70 hover:bg-primary/5 transition-colors"
+            >
+              <Pencil className="w-3 h-3" />
+              Edit Project
+            </button>
+            <button
+              type="button"
               onClick={handleDelete}
               className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors ${
                 confirming ? 'bg-red-500/10 text-red-400' : 'text-red-400/70 hover:bg-red-500/5'
@@ -559,6 +618,7 @@ export default function ProjectManagerPage() {
   const storeGoals = useSystemStore((s) => s.goals);
   const storeGoalSignals = useSystemStore((s) => s.goalSignals);
   const storeCreateProject = useSystemStore((s) => s.createProject);
+  const storeUpdateProject = useSystemStore((s) => s.updateProject);
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const createGoal = useSystemStore((s) => s.createGoal);
@@ -577,6 +637,7 @@ export default function ProjectManagerPage() {
   const storeActiveProjectId = useSystemStore((s) => s.activeProjectId);
   const [activeProjectId, setLocalActiveProject] = useState<string | null>(storeActiveProjectId);
   const [showModal, setShowModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<EditProjectData | null>(null);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
@@ -616,6 +677,37 @@ export default function ProjectManagerPage() {
     }
   }, [storeCreateProject, storeProjects, setActiveProject]);
 
+  const handleUpdateProject = useCallback(async (id: string, data: { name: string; description: string; projectType: ProjectType; githubUrl: string }) => {
+    await storeUpdateProject(id, {
+      name: data.name,
+      description: data.description,
+      techStack: data.projectType,
+      githubUrl: data.githubUrl || undefined,
+    });
+  }, [storeUpdateProject]);
+
+  const handleEditProject = useCallback((projectId: string) => {
+    const raw = storeProjects.find((p) => p.id === projectId);
+    if (!raw) return;
+    // Resolve projectType from tech_stack
+    const techStackLower = (raw.tech_stack ?? '').toLowerCase();
+    const matchedType = PROJECT_TYPES.find((pt) => pt.id === techStackLower);
+    setEditingProject({
+      id: raw.id,
+      name: raw.name,
+      path: raw.root_path,
+      description: raw.description ?? '',
+      projectType: matchedType?.id ?? 'other',
+      githubUrl: raw.github_url ?? '',
+    });
+    setShowModal(true);
+  }, [storeProjects]);
+
+  const handleCloseModal = useCallback(() => {
+    setShowModal(false);
+    setEditingProject(null);
+  }, []);
+
   const handleSetActive = useCallback((id: string) => {
     setLocalActiveProject(id);
     setActiveProject?.(id);
@@ -634,7 +726,7 @@ export default function ProjectManagerPage() {
             accentColor="amber"
             size="sm"
             icon={<Plus className="w-3.5 h-3.5" />}
-            onClick={() => setShowModal(true)}
+            onClick={() => { setEditingProject(null); setShowModal(true); }}
           >
             New Project
           </Button>
@@ -709,7 +801,7 @@ export default function ProjectManagerPage() {
                   accentColor="amber"
                   size="sm"
                   icon={<Plus className="w-3.5 h-3.5" />}
-                  onClick={() => setShowModal(true)}
+                  onClick={() => { setEditingProject(null); setShowModal(true); }}
                 >
                   Create First Project
                 </Button>
@@ -746,7 +838,7 @@ export default function ProjectManagerPage() {
                     <span className="text-xs text-muted-foreground/60 self-center">{project.goalCount}</span>
                     <span className="self-center"><StatusBadge status={project.status} /></span>
                     <span className="text-xs text-muted-foreground/60 self-center">{project.createdAt}</span>
-                    <ProjectRowMenu projectId={project.id} projectName={project.name} />
+                    <ProjectRowMenu projectId={project.id} projectName={project.name} onEdit={() => handleEditProject(project.id)} />
                   </div>
                 ))}
               </div>
@@ -757,9 +849,11 @@ export default function ProjectManagerPage() {
 
       <ProjectModal
         open={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={handleCloseModal}
         onCreate={handleCreateProject}
+        onUpdate={handleUpdateProject}
         onScanNow={startBackgroundScan}
+        editProject={editingProject}
       />
     </ContentBox>
   );

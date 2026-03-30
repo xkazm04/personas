@@ -1,28 +1,21 @@
 /**
  * BuildQuestionnaireModal -- questionnaire carousel for adoption questions.
  * One question at a time with animated card transitions, category badges,
- * and support for select, text, and boolean input types.
+ * and support for select, text, boolean, and devtools_project input types.
  *
- * UI/UX improvements (v2):
- *  1. Fixed card height (320px) — no layout shifts between questions
- *  2. Larger modal (max-w-2xl) — consistent, spacious feel
- *  3. Visible text input with focus ring and filled-state styling
- *  4. Boolean toggle with Yes/No pill buttons, handles true/false defaults
- *  5. Answered-state checkmarks on progress dots
- *  6. Question number badge on each card
- *  7. Context text with info icon, better contrast
- *  8. Prominent "Skip All" link in footer
- *  9. Larger submit button on last step with pulse animation
- * 10. data-testid attributes for test automation
+ * Renders as a headerless overlay panel — the parent modal provides the header
+ * with step name and progress. Unanswered mandatory questions are highlighted
+ * in the progress dots with a pulsing ring.
  */
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronLeft, ChevronRight, X, Send, Check, Info,
+  ChevronLeft, ChevronRight, Send, Check, Info,
   KeyRound, Settings2, ShieldCheck, Brain, Bell,
   Globe, Gauge, SkipForward,
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { DevToolsProjectDropdown } from '@/features/shared/components/forms/DevToolsProjectDropdown';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 
 const CATEGORY_META: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
@@ -128,6 +121,12 @@ export function BuildQuestionnaireModal({
     ? (userAnswers[q.id] ?? normalizeBooleanDefault(q.default) ?? '')
     : (userAnswers[q.id] ?? q.default ?? '');
 
+  // Find first unanswered question index (for submit-disabled navigation hint)
+  const firstUnansweredIndex = questions.findIndex((qn) => {
+    const val = userAnswers[qn.id];
+    return val === undefined || val === '';
+  });
+
   return (
     <BaseModal
       isOpen
@@ -137,27 +136,8 @@ export function BuildQuestionnaireModal({
       size="lg"
       panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden w-full max-w-2xl"
     >
-      {/* Header — step name + progress */}
-      <div
-        data-testid="build-questionnaire-modal"
-        className="flex items-center justify-between px-6 py-4 border-b border-primary/10"
-      >
-        <div>
-          <h3 id="build-questionnaire-title" className="text-sm font-semibold text-foreground/90">
-            {dim ? dim.label : 'Setup'} — Question {activeIndex + 1} of {questions.length}
-          </h3>
-          <p className="text-xs text-muted-foreground/50 mt-0.5">
-            {answeredCount} of {questions.length} answered
-          </p>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-lg hover:bg-foreground/[0.04] transition-colors"
-          aria-label="Close questionnaire"
-        >
-          <X className="w-4.5 h-4.5 text-muted-foreground/60" />
-        </button>
-      </div>
+      {/* No header — parent AdoptionWizardModal provides step name in its header */}
+      <span id="build-questionnaire-title" className="sr-only">Setup Questions</span>
 
       {/* Card area — fixed height container for consistent sizing */}
       <div className="flex items-center gap-4 px-6 py-5">
@@ -292,6 +272,15 @@ export function BuildQuestionnaireModal({
                     })}
                   </div>
                 )}
+
+                {/* DEVTOOLS PROJECT SELECTOR */}
+                {(q.type as string) === 'devtools_project' && (
+                  <DevToolsProjectDropdown
+                    value={currentAnswer || null}
+                    onSelect={(project) => onAnswerUpdated(q.id, project.id)}
+                    placeholder="Select a codebase project..."
+                  />
+                )}
               </div>
             </motion.div>
           </AnimatePresence>
@@ -312,26 +301,32 @@ export function BuildQuestionnaireModal({
         </button>
       </div>
 
-      {/* Progress dots with answered indicators */}
+      {/* Progress dots — unanswered questions pulse when submit is blocked */}
       <div className="flex items-center justify-center gap-2 px-6 pb-1">
         {questions.map((qn, i) => {
           const dotTone = CARD_TONES[i % CARD_TONES.length]!;
           const isActive = i === activeIndex;
-          const isAnswered = !!userAnswers[qn.id];
+          const isAnswered = (() => {
+            const val = userAnswers[qn.id];
+            return val !== undefined && val !== '';
+          })();
+          const showUnansweredWarning = isLast && !allAnswered && !isAnswered && !isActive;
           return (
             <button
               key={i}
               type="button"
               onClick={() => goTo(i)}
-              title={`Question ${i + 1}${isAnswered ? ' (answered)' : ''}`}
+              title={`Question ${i + 1}${isAnswered ? ' (answered)' : ' (unanswered)'}`}
               className={`rounded-full transition-all duration-200 flex items-center justify-center ${
                 isActive
                   ? `w-7 h-2.5 ${dotTone.dot}`
                   : isAnswered
                     ? `w-2.5 h-2.5 ${dotTone.dot} opacity-60`
-                    : 'w-2.5 h-2.5 bg-foreground/12'
+                    : showUnansweredWarning
+                      ? 'w-2.5 h-2.5 bg-rose-400 animate-pulse ring-2 ring-rose-400/30'
+                      : 'w-2.5 h-2.5 bg-foreground/12'
               }`}
-              aria-label={`Go to question ${i + 1}`}
+              aria-label={`Go to question ${i + 1}${isAnswered ? '' : ' (unanswered)'}`}
             />
           );
         })}
@@ -357,18 +352,30 @@ export function BuildQuestionnaireModal({
         <button
           type="button"
           data-testid="questionnaire-submit-btn"
-          onClick={isLast ? onSubmit : goNext}
+          onClick={() => {
+            if (isLast) {
+              if (allAnswered) {
+                onSubmit();
+              } else if (firstUnansweredIndex >= 0) {
+                // Navigate to first unanswered question
+                goTo(firstUnansweredIndex);
+              }
+            } else {
+              goNext();
+            }
+          }}
           className={`inline-flex items-center gap-2 rounded-xl text-sm font-medium transition-all ${
             isLast
               ? allAnswered
                 ? 'px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-elevation-1'
-                : 'px-6 py-2.5 bg-primary/50 text-primary-foreground/70 cursor-not-allowed'
+                : 'px-6 py-2.5 bg-primary/50 text-primary-foreground/70 cursor-pointer hover:bg-primary/60'
               : 'px-5 py-2 bg-primary/10 text-primary hover:bg-primary/20'
           }`}
-          disabled={isLast && !allAnswered}
         >
           {isLast ? (
-            <>Submit Answers <Send className="w-3.5 h-3.5" /></>
+            allAnswered
+              ? <>Submit Answers <Send className="w-3.5 h-3.5" /></>
+              : <>Answer remaining ({questions.length - answeredCount})</>
           ) : (
             <>Next <ChevronRight className="w-3.5 h-3.5" /></>
           )}
