@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronLeft, ChevronRight, Send, Check, Info,
+  ChevronLeft, ChevronRight, X, Send, Check, Info,
   KeyRound, Settings2, ShieldCheck, Brain, Bell,
   Globe, Gauge, SkipForward,
 } from 'lucide-react';
@@ -44,7 +44,7 @@ const slideVariants = {
 };
 
 /** Fixed card height so every question has the same visual footprint. */
-const CARD_HEIGHT = 320;
+const CARD_HEIGHT = 400;
 
 interface BuildQuestionnaireModalProps {
   questions: TransformQuestionResponse[];
@@ -134,10 +134,24 @@ export function BuildQuestionnaireModal({
       titleId="build-questionnaire-title"
       containerClassName="fixed inset-0 z-[200] flex items-center justify-center p-4"
       size="lg"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden w-full max-w-2xl"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden w-full max-w-3xl"
     >
-      {/* No header — parent AdoptionWizardModal provides step name in its header */}
-      <span id="build-questionnaire-title" className="sr-only">Setup Questions</span>
+      {/* Minimal header — step name only, no icon/title duplication */}
+      <div className="flex items-center justify-between px-6 py-3 border-b border-primary/10">
+        <h3 id="build-questionnaire-title" className="text-sm font-medium text-foreground/80">
+          {dim ? dim.label : 'Setup'} — Question {activeIndex + 1} of {questions.length}
+          <span className="text-muted-foreground/40 ml-2 text-xs font-normal">
+            {answeredCount} answered
+          </span>
+        </h3>
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/60 hover:text-foreground/80"
+          aria-label="Cancel setup"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
 
       {/* Card area — fixed height container for consistent sizing */}
       <div className="flex items-center gap-4 px-6 py-5">
@@ -197,7 +211,7 @@ export function BuildQuestionnaireModal({
               )}
 
               {/* Input area — flex-1 to fill remaining card space */}
-              <div className="flex-1 mt-auto pt-2 overflow-y-auto">
+              <div className={`flex-1 mt-auto pt-2 ${q.type === 'devtools_project' ? 'overflow-visible' : 'overflow-y-auto'}`}>
                 {/* SELECT */}
                 {q.type === 'select' && q.options && (
                   <div className="space-y-1.5">
@@ -274,7 +288,7 @@ export function BuildQuestionnaireModal({
                 )}
 
                 {/* DEVTOOLS PROJECT SELECTOR */}
-                {(q.type as string) === 'devtools_project' && (
+                {q.type === 'devtools_project' && (
                   <DevToolsProjectDropdown
                     value={currentAnswer || null}
                     onSelect={(project) => onAnswerUpdated(q.id, project.id)}

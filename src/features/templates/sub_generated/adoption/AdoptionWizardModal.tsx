@@ -26,7 +26,7 @@ export default function AdoptionWizardModal({
       isOpen
       onClose={onClose}
       titleId="adoption-matrix-title"
-      maxWidthClass="max-w-[1400px]"
+      maxWidthClass="max-w-[1750px]"
       panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
     >
       <div className="relative h-full overflow-hidden flex flex-col">

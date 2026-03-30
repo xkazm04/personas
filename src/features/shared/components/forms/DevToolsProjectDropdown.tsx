@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, FolderGit2, Check, Loader2 } from 'lucide-react';
+import { ChevronDown, FolderGit2, Check, Loader2, Wrench } from 'lucide-react';
 import { listProjects } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { Listbox } from './Listbox';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('devtools-project-dropdown');
 
 interface DevToolsProjectDropdownProps {
   /** Currently selected project ID (or null). */
   value: string | null;
   /** Callback when a project is selected. Returns the full DevProject. */
   onSelect: (project: DevProject) => void;
-  /** Optional status filter (default: 'active'). */
+  /** Optional status filter (default: undefined = all projects). */
   status?: string;
   /** Placeholder text when nothing is selected. */
   placeholder?: string;
@@ -20,28 +23,45 @@ interface DevToolsProjectDropdownProps {
 /**
  * Reusable dropdown that queries DevTools projects from SQLite and presents
  * them in an app-themed selector. Shows project name, root path, and tech stack.
+ * Sorted by name ascending.
  *
  * Used by template adoption flows to let users pick which codebase to work with.
  */
 export function DevToolsProjectDropdown({
   value,
   onSelect,
-  status = 'active',
+  status,
   placeholder = 'Select a project...',
   className,
 }: DevToolsProjectDropdownProps) {
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    listProjects(status).then((result) => {
-      if (!cancelled) {
-        setProjects(result);
-        setLoading(false);
+    setError(null);
+
+    (async () => {
+      try {
+        const result = await listProjects(status);
+        if (cancelled) return;
+        // Sort by name ascending
+        const sorted = [...result].sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+        );
+        setProjects(sorted);
+      } catch (err) {
+        if (cancelled) return;
+        logger.error('Failed to load DevTools projects', { error: String(err) });
+        setError(String(err));
+        setProjects([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    });
+    })();
+
     return () => { cancelled = true; };
   }, [status]);
 
@@ -76,6 +96,8 @@ export function DevToolsProjectDropdown({
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Loading projects...
               </span>
+            ) : error ? (
+              <span className="text-rose-400/80 text-xs">Failed to load projects</span>
             ) : selected ? (
               <div className="min-w-0">
                 <span className="font-medium">{selected.name}</span>
@@ -98,10 +120,29 @@ export function DevToolsProjectDropdown({
       )}
     >
       {({ close, focusIndex }) => (
-        <div className="absolute z-50 mt-1 w-full bg-background border border-primary/15 rounded-xl shadow-lg overflow-hidden">
-          {projects.length === 0 && !loading ? (
-            <div className="px-4 py-6 text-center text-sm text-muted-foreground/50">
-              No projects found. Add a project in Dev Tools first.
+        <div className="w-full bg-background border border-primary/15 rounded-xl shadow-lg overflow-hidden">
+          {loading ? (
+            <div className="px-4 py-6 flex items-center justify-center gap-2 text-sm text-muted-foreground/50">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading...
+            </div>
+          ) : error ? (
+            <div className="px-4 py-6 text-center">
+              <p className="text-sm text-rose-400/80 mb-1">Failed to load projects</p>
+              <p className="text-xs text-muted-foreground/40">{error}</p>
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="px-5 py-6 text-center">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <Wrench className="w-5 h-5 text-primary/60" />
+              </div>
+              <p className="text-sm font-medium text-foreground/70 mb-1">No projects found</p>
+              <p className="text-xs text-muted-foreground/50 mb-3">
+                Add a codebase project in Dev Tools first, then return here to select it.
+              </p>
+              <p className="text-xs text-muted-foreground/35">
+                Navigate to <span className="font-medium text-primary/70">Plugins &rarr; Dev Tools</span> to create a project.
+              </p>
             </div>
           ) : (
             <div className="max-h-64 overflow-y-auto py-1">
