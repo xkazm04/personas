@@ -152,6 +152,7 @@ export function CredentialSchemaForm({
   return (
     <div
       className="animate-fade-slide-in space-y-4"
+      data-testid="vault-schema-form"
     >
       {showHeader && (
         <div className="flex items-center gap-3">
@@ -181,13 +182,14 @@ export function CredentialSchemaForm({
             placeholder={config.namePlaceholder}
             aria-invalid={!!error}
             aria-describedby={error ? 'schema-form-error' : undefined}
+            data-testid="vault-schema-name"
             className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-xl text-foreground text-sm focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
           />
         </div>
       )}
 
       {config.subTypes.length > 1 && (
-        <div>
+        <div data-testid="vault-schema-subtype">
           <label className="block text-sm font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
             {config.subTypeLabel}
           </label>

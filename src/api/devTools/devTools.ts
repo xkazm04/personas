@@ -57,21 +57,23 @@ export type { TriageRule } from "@/lib/bindings/TriageRule";
 export const listProjects = (status?: string) =>
   safeInvoke<DevProject[]>([], "dev_tools_list_projects", { status: status });
 
-export const createProject = (name: string, rootPath: string, description?: string, techStack?: string) =>
+export const createProject = (name: string, rootPath: string, description?: string, techStack?: string, githubUrl?: string) =>
   invoke<DevProject>("dev_tools_create_project", {
     name,
     rootPath,
     description: description,
     techStack: techStack,
+    githubUrl: githubUrl,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
     description: updates.description,
     status: updates.status,
     techStack: updates.techStack,
+    githubUrl: updates.githubUrl,
   });
 
 export const deleteProject = (id: string) =>

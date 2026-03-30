@@ -4,8 +4,6 @@ import { CredentialSchemaForm, MCP_SCHEMA, CUSTOM_SCHEMA, DATABASE_SCHEMA } from
 import { ForagingPanel } from '@/features/vault/sub_foraging/ForagingPanel';
 import { DesktopDiscoveryPanel } from '@/features/vault/sub_desktop/DesktopDiscoveryPanel';
 import { DatabaseListView } from '@/features/vault/sub_databases/DatabaseListView';
-import { ProvisioningWizard } from '@/features/vault/sub_wizard/ProvisioningWizard';
-import { AutopilotPanel } from '@/features/vault/sub_autopilot/AutopilotPanel';
 import { WorkspaceConnectPanel } from '@/features/vault/sub_workspace/WorkspaceConnectPanel';
 import type { useCredentialManagerState } from './useCredentialManagerState';
 
@@ -26,16 +24,14 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
   } = state;
 
   return (
-    <>
+    <div data-testid="vault-add-views">
       {viewState.view === 'add-new' && (
         <CredentialTypePicker
-          onSelectApiTool={() => dispatch({ type: 'GO_ADD_API_TOOL' })}
+          onSelectAiGuide={() => dispatch({ type: 'GO_ADD_AI_GUIDE' })}
           onSelectMcp={() => dispatch({ type: 'GO_ADD_MCP' })}
           onSelectCustom={() => dispatch({ type: 'GO_ADD_CUSTOM' })}
           onSelectDatabase={() => dispatch({ type: 'GO_ADD_DATABASE' })}
           onSelectDesktop={() => dispatch({ type: 'GO_ADD_DESKTOP' })}
-          onSelectWizard={() => dispatch({ type: 'GO_ADD_WIZARD' })}
-          onSelectAutopilot={() => dispatch({ type: 'GO_ADD_AUTOPILOT' })}
           onWorkspaceConnect={() => dispatch({ type: 'GO_WORKSPACE_CONNECT' })}
           onForage={() => dispatch({ type: 'GO_FORAGING' })}
           onBack={() => dispatch({ type: 'GO_LIST' })}
@@ -52,12 +48,6 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
         />
       )}
 
-      {viewState.view === 'add-wizard' && (
-        <ProvisioningWizard onClose={() => {
-          fetchConnectorDefinitions();
-          dispatch({ type: 'GO_LIST' });
-        }} />
-      )}
 
       {viewState.view === 'foraging' && IS_DESKTOP && (
         <ForagingPanel
@@ -81,7 +71,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
         />
       )}
 
-      {viewState.view === 'add-api-tool' && (
+      {viewState.view === 'add-ai-guide' && (
         <div
           key="design-inline"
           className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl p-4"
@@ -122,20 +112,10 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
         />
       )}
 
-      {viewState.view === 'add-autopilot' && (
-        <AutopilotPanel
-          onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
-          onComplete={() => {
-            void fetchCredentials();
-            fetchConnectorDefinitions();
-            dispatch({ type: 'GO_CATALOG' });
-          }}
-        />
-      )}
 
       {viewState.view === 'databases' && (
         <DatabaseListView onBack={() => dispatch({ type: 'GO_LIST' })} />
       )}
-    </>
+    </div>
   );
 }

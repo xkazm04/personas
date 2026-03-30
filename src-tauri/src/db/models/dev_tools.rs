@@ -14,6 +14,7 @@ pub struct DevProject {
     pub description: Option<String>,
     pub status: String,
     pub tech_stack: Option<String>,
+    pub github_url: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

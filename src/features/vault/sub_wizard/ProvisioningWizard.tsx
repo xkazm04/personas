@@ -83,6 +83,7 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
   return (
     <div
       key="wizard-inline"
+      data-testid="vault-wizard-container"
       className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl overflow-hidden"
     >
       {/* Header */}
@@ -90,6 +91,7 @@ export function ProvisioningWizard({ onClose }: ProvisioningWizardProps) {
         <div className="flex items-center gap-3">
           <button
             onClick={phase === 'batch' ? handleBack : handleClose}
+            data-testid={phase === 'batch' ? 'vault-wizard-next' : 'vault-wizard-cancel'}
             className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

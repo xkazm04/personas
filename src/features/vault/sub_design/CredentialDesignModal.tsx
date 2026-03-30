@@ -31,7 +31,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
       panelClassName={embedded ? 'max-h-[80vh] overflow-y-auto bg-background border border-primary/15 rounded-2xl' : 'max-h-[min(90vh,960px)] overflow-y-auto bg-background border border-primary/15 rounded-2xl shadow-elevation-4'}
     >
       {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur-sm border-b border-primary/10">
+      <div data-testid="vault-design-container" className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-background/95 backdrop-blur-sm border-b border-primary/10">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-primary" />
@@ -46,6 +46,7 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
           size="icon-sm"
           icon={<X className="w-4 h-4" />}
           onClick={modal.handleClose}
+          data-testid="vault-design-cancel"
           className="text-muted-foreground/90 hover:text-foreground hover:bg-secondary/60"
         />
       </div>

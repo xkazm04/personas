@@ -16,13 +16,11 @@ export type ViewName =
   | 'catalog-form'
   | 'catalog-auto-setup'
   | 'add-new'
-  | 'add-api-tool'
+  | 'add-ai-guide'
   | 'add-mcp'
   | 'add-custom'
   | 'add-database'
   | 'add-desktop'
-  | 'add-wizard'
-  | 'add-autopilot'
   | 'workspace-connect'
   | 'foraging'
   | 'databases'
@@ -36,13 +34,11 @@ export type CredentialViewState =
   | { view: 'catalog-form'; connector: ConnectorDefinition; credentialName: string; parentSearch: string; oauthValues?: Record<string, string> }
   | { view: 'catalog-auto-setup'; connector: ConnectorDefinition; parentSearch: string }
   | { view: 'add-new' }
-  | { view: 'add-api-tool' }
+  | { view: 'add-ai-guide' }
   | { view: 'add-mcp' }
   | { view: 'add-custom' }
   | { view: 'add-database' }
   | { view: 'add-desktop' }
-  | { view: 'add-wizard' }
-  | { view: 'add-autopilot' }
   | { view: 'workspace-connect' }
   | { view: 'foraging' }
   | { view: 'databases' }
@@ -59,13 +55,11 @@ export type CredentialViewAction =
   | { type: 'SET_CATALOG_SEARCH'; search: string }
   | { type: 'CANCEL_FORM' }
   | { type: 'GO_ADD_NEW' }
-  | { type: 'GO_ADD_API_TOOL' }
+  | { type: 'GO_ADD_AI_GUIDE' }
   | { type: 'GO_ADD_MCP' }
   | { type: 'GO_ADD_CUSTOM' }
   | { type: 'GO_ADD_DATABASE' }
   | { type: 'GO_ADD_DESKTOP' }
-  | { type: 'GO_ADD_WIZARD' }
-  | { type: 'GO_ADD_AUTOPILOT' }
   | { type: 'GO_WORKSPACE_CONNECT' }
   | { type: 'GO_FORAGING' }
   | { type: 'GO_DATABASES' }
@@ -85,7 +79,7 @@ export type CredentialViewAction =
 type ActionType = CredentialViewAction['type'];
 
 // Sidebar navigation actions are valid from any view
-const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_ADD_WIZARD', 'GO_ADD_AUTOPILOT', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES', 'GO_GRAPH'];
+const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES', 'GO_GRAPH'];
 
 /** View-specific transitions (in addition to global actions). */
 const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
@@ -93,14 +87,12 @@ const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
   'catalog-browse':     ['PICK_CONNECTOR', 'SET_CATALOG_SEARCH'],
   'catalog-form':       ['CANCEL_FORM', 'GO_AUTO_SETUP', 'GO_ADD_DESKTOP', 'SET_CREDENTIAL_NAME', 'SET_OAUTH_VALUES'],
   'catalog-auto-setup': ['CANCEL_FORM'],
-  'add-new':            ['GO_ADD_API_TOOL', 'GO_ADD_MCP', 'GO_ADD_CUSTOM', 'GO_ADD_DATABASE', 'GO_ADD_DESKTOP', 'GO_ADD_WIZARD', 'GO_ADD_AUTOPILOT', 'GO_WORKSPACE_CONNECT', 'GO_FORAGING'],
-  'add-api-tool':       [],
+  'add-new':            ['GO_ADD_AI_GUIDE', 'GO_ADD_MCP', 'GO_ADD_CUSTOM', 'GO_ADD_DATABASE', 'GO_ADD_DESKTOP', 'GO_WORKSPACE_CONNECT', 'GO_FORAGING'],
+  'add-ai-guide':       [],
   'add-mcp':            [],
   'add-custom':         [],
   'add-database':       [],
   'add-desktop':        [],
-  'add-wizard':         [],
-  'add-autopilot':      [],
   'workspace-connect':  [],
   'foraging':           [],
   'databases':          [],
@@ -111,22 +103,20 @@ const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
 export const credentialViewFSM = createFSM<ViewName>({
   entity: 'credential-view',
   transitions: {
-    'list':               ['catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'catalog-browse':     ['list', 'catalog-form', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'catalog-form':       ['list', 'catalog-browse', 'catalog-auto-setup', 'add-new', 'add-desktop', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'catalog-auto-setup': ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'add-new':            ['list', 'catalog-browse', 'add-api-tool', 'add-mcp', 'add-custom', 'add-database', 'add-desktop', 'add-wizard', 'add-autopilot', 'workspace-connect', 'foraging', 'databases', 'graph'],
-    'add-api-tool':       ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'add-mcp':            ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'add-custom':         ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'add-database':       ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'add-desktop':        ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'add-wizard':         ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'add-autopilot':      ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'workspace-connect':  ['list', 'catalog-browse', 'add-new', 'add-wizard', 'databases', 'graph'],
-    'foraging':           ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases', 'graph'],
-    'databases':          ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'graph'],
-    'graph':              ['list', 'catalog-browse', 'add-new', 'add-wizard', 'workspace-connect', 'databases'],
+    'list':               ['catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'catalog-browse':     ['list', 'catalog-form', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'catalog-form':       ['list', 'catalog-browse', 'catalog-auto-setup', 'add-new', 'add-desktop', 'workspace-connect', 'databases', 'graph'],
+    'catalog-auto-setup': ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'add-new':            ['list', 'catalog-browse', 'add-ai-guide', 'add-mcp', 'add-custom', 'add-database', 'add-desktop', 'workspace-connect', 'foraging', 'databases', 'graph'],
+    'add-ai-guide':       ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'add-mcp':            ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'add-custom':         ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'add-database':       ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'add-desktop':        ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'workspace-connect':  ['list', 'catalog-browse', 'add-new', 'databases', 'graph'],
+    'foraging':           ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
+    'databases':          ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'graph'],
+    'graph':              ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases'],
   },
 });
 
@@ -153,13 +143,11 @@ const NAV_KEY_MAP: Record<ViewName, CredentialNavKey> = {
   'catalog-form':       'from-template',
   'catalog-auto-setup': 'from-template',
   'add-new':            'add-new',
-  'add-api-tool':       'add-new',
+  'add-ai-guide':       'add-new',
   'add-mcp':            'add-new',
   'add-custom':         'add-new',
   'add-database':       'add-new',
   'add-desktop':        'add-new',
-  'add-wizard':         'add-new',
-  'add-autopilot':      'autopilot',
   'workspace-connect':  'add-new',
   'foraging':           'add-new',
   'databases':          'databases',
@@ -181,13 +169,11 @@ type ActionHandler<A extends CredentialViewAction = CredentialViewAction> =
 const GO_LIST: ActionHandler = () => ({ view: 'list' });
 const GO_CATALOG: ActionHandler = () => ({ view: 'catalog-browse', search: '' });
 const GO_ADD_NEW: ActionHandler = () => ({ view: 'add-new' });
-const GO_ADD_API_TOOL: ActionHandler = () => ({ view: 'add-api-tool' });
+const GO_ADD_AI_GUIDE: ActionHandler = () => ({ view: 'add-ai-guide' });
 const GO_ADD_MCP: ActionHandler = () => ({ view: 'add-mcp' });
 const GO_ADD_CUSTOM: ActionHandler = () => ({ view: 'add-custom' });
 const GO_ADD_DATABASE: ActionHandler = () => ({ view: 'add-database' });
 const GO_ADD_DESKTOP: ActionHandler = () => ({ view: 'add-desktop' });
-const GO_ADD_WIZARD: ActionHandler = () => ({ view: 'add-wizard' });
-const GO_ADD_AUTOPILOT: ActionHandler = () => ({ view: 'add-autopilot' });
 const GO_WORKSPACE_CONNECT: ActionHandler = () => ({ view: 'workspace-connect' });
 const GO_FORAGING: ActionHandler = () => ({ view: 'foraging' });
 const GO_DATABASES: ActionHandler = () => ({ view: 'databases' });
@@ -254,13 +240,11 @@ const ACTION_HANDLERS: Record<ActionType, ActionHandler<never>> = {
   SET_CATALOG_SEARCH: SET_CATALOG_SEARCH as ActionHandler<never>,
   CANCEL_FORM: CANCEL_FORM as ActionHandler<never>,
   GO_ADD_NEW: GO_ADD_NEW as ActionHandler<never>,
-  GO_ADD_API_TOOL: GO_ADD_API_TOOL as ActionHandler<never>,
+  GO_ADD_AI_GUIDE: GO_ADD_AI_GUIDE as ActionHandler<never>,
   GO_ADD_MCP: GO_ADD_MCP as ActionHandler<never>,
   GO_ADD_CUSTOM: GO_ADD_CUSTOM as ActionHandler<never>,
   GO_ADD_DATABASE: GO_ADD_DATABASE as ActionHandler<never>,
   GO_ADD_DESKTOP: GO_ADD_DESKTOP as ActionHandler<never>,
-  GO_ADD_WIZARD: GO_ADD_WIZARD as ActionHandler<never>,
-  GO_ADD_AUTOPILOT: GO_ADD_AUTOPILOT as ActionHandler<never>,
   GO_WORKSPACE_CONNECT: GO_WORKSPACE_CONNECT as ActionHandler<never>,
   GO_FORAGING: GO_FORAGING as ActionHandler<never>,
   GO_DATABASES: GO_DATABASES as ActionHandler<never>,
@@ -313,8 +297,8 @@ export function getBreadcrumbs(state: CredentialViewState): BreadcrumbSegment[] 
 
     case 'add-new':
       return [root, { label: 'Add New', action: null }];
-    case 'add-api-tool':
-      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'API Tool', action: null }];
+    case 'add-ai-guide':
+      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'AI Guide', action: null }];
     case 'add-mcp':
       return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'MCP Server', action: null }];
     case 'add-custom':
@@ -323,10 +307,6 @@ export function getBreadcrumbs(state: CredentialViewState): BreadcrumbSegment[] 
       return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Database', action: null }];
     case 'add-desktop':
       return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Desktop App', action: null }];
-    case 'add-wizard':
-      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Setup Wizard', action: null }];
-    case 'add-autopilot':
-      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'API Autopilot', action: null }];
     case 'workspace-connect':
       return [root, { label: 'Workspace Connect', action: null }];
     case 'foraging':
@@ -366,9 +346,6 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
         break;
       case 'graph':
         dispatch({ type: 'GO_GRAPH' });
-        break;
-      case 'autopilot':
-        dispatch({ type: 'GO_ADD_AUTOPILOT' });
         break;
     }
   }, []);

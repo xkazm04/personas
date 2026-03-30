@@ -1,14 +1,12 @@
-import { Sparkles, Server, Link, Database, ArrowLeft, Radar, Monitor, Bot, Globe, Zap } from 'lucide-react';
+import { ArrowLeft, Radar, Globe } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
 interface CredentialTypePickerProps {
-  onSelectApiTool: () => void;
+  onSelectAiGuide: () => void;
   onSelectMcp: () => void;
   onSelectCustom: () => void;
   onSelectDatabase: () => void;
   onSelectDesktop: () => void;
-  onSelectWizard: () => void;
-  onSelectAutopilot: () => void;
   onWorkspaceConnect: () => void;
   onForage: () => void;
   onBack: () => void;
@@ -16,106 +14,70 @@ interface CredentialTypePickerProps {
 
 const TYPES = [
   {
-    id: 'api-tool',
-    icon: Sparkles,
-    title: 'AI-Built Connector',
-    description: 'Describe what you want to connect to and AI creates the setup for you -- no configuration needed.',
+    id: 'ai-guide',
+    testId: 'vault-pick-ai-connector',
+    label: 'AI Guide',
     color: '#8B5CF6',
-    badge: 'Most popular',
-    badgeColor: '#8B5CF6',
-    useCase: 'Use this for: Slack, GitHub, Notion, Linear, Jira',
+    illustration: '/vault-icons/ai-guide-nobg.png',
   },
   {
     id: 'mcp',
-    icon: Server,
-    title: 'AI Tool Server',
-    description: 'Connect to an AI tool server -- paste the address and you\'re done.',
+    testId: 'vault-pick-mcp',
+    label: 'MCP',
     color: '#06B6D4',
-    badge: null,
-    badgeColor: null,
-    useCase: 'Use this for: MCP-compatible tool servers and plugins',
+    illustration: '/vault-icons/mcp-nobg.png',
   },
   {
     id: 'custom',
-    icon: Link,
-    title: 'Web Service',
-    description: 'Connect to any web service -- we\'ll guide you through the login details step by step.',
+    testId: 'vault-pick-custom',
+    label: 'Custom API',
     color: '#F59E0B',
-    badge: null,
-    badgeColor: null,
-    useCase: 'Use this for: REST APIs, webhooks, or services not in the catalog',
+    illustration: '/vault-icons/custom-api-nobg.png',
   },
   {
     id: 'database',
-    icon: Database,
-    title: 'Database',
-    description: 'Connect to your database -- just paste the connection details and pick your tables.',
+    testId: 'vault-pick-database',
+    label: 'Database',
     color: '#10B981',
-    badge: null,
-    badgeColor: null,
-    useCase: 'Use this for: PostgreSQL, MySQL, SQLite, MongoDB',
+    illustration: '/vault-icons/database-nobg.png',
   },
-  {
-    id: 'desktop',
-    icon: Monitor,
-    title: 'Desktop App',
-    description: 'Link apps already on your computer like VS Code, Docker, or Obsidian in one click.',
-    color: '#F97316',
-    badge: null,
-    badgeColor: null,
-    useCase: 'Use this for: VS Code, Docker, Obsidian, local CLI tools',
-  },
-  {
-    id: 'wizard',
-    icon: Bot,
-    title: 'AI Setup Wizard',
-    description: 'Let AI find your services and set everything up automatically -- just follow along.',
-    color: '#7C3AED',
-    badge: 'Recommended for beginners',
-    badgeColor: '#7C3AED',
-    useCase: 'Use this for: first-time setup or when you\'re not sure what to pick',
-  },
-  {
-    id: 'autopilot',
-    icon: Zap,
-    title: 'API Autopilot',
-    description: 'Paste an OpenAPI spec URL and auto-generate a typed connector with tools and playground.',
-    color: '#F43F5E',
-    badge: 'New',
-    badgeColor: '#F43F5E',
-    useCase: 'Use this for: any SaaS with a documented API (OpenAPI / Swagger)',
-  },
-] as const;
+  ...(import.meta.env.DEV ? [{
+    id: 'desktop' as const,
+    testId: 'vault-pick-desktop',
+    label: 'Desktop App',
+    color: '#D4A017',
+    illustration: '/vault-icons/desktop-nobg.png',
+    devOnly: true,
+  }] : []),
+];
 
 export function CredentialTypePicker({
-  onSelectApiTool,
+  onSelectAiGuide,
   onSelectMcp,
   onSelectCustom,
   onSelectDatabase,
   onSelectDesktop,
-  onSelectWizard,
-  onSelectAutopilot,
   onWorkspaceConnect,
   onForage,
   onBack,
 }: CredentialTypePickerProps) {
   const handlers: Record<string, () => void> = {
-    'api-tool': onSelectApiTool,
+    'ai-guide': onSelectAiGuide,
     'mcp': onSelectMcp,
     'custom': onSelectCustom,
     'database': onSelectDatabase,
     'desktop': onSelectDesktop,
-    'wizard': onSelectWizard,
-    'autopilot': onSelectAutopilot,
   };
 
   return (
     <div
       className="animate-fade-slide-in space-y-4"
+      data-testid="vault-type-picker"
     >
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
+          data-testid="vault-back-btn"
           className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -126,50 +88,29 @@ export function CredentialTypePicker({
         </div>
       </div>
 
-      <div className="grid gap-3" style={{ gridTemplateColumns: IS_MOBILE ? '1fr' : 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+      <div className="grid gap-3" style={{ gridTemplateColumns: IS_MOBILE ? '1fr' : 'repeat(auto-fill, minmax(180px, 1fr))' }}>
         {TYPES.filter((t) => !IS_MOBILE || t.id !== 'desktop').map((type) => {
-          const Icon = type.icon;
-          const isWizard = type.id === 'wizard';
+          const isDev = 'devOnly' in type && type.devOnly;
           return (
             <button
               key={type.id}
+              data-testid={type.testId}
               onClick={handlers[type.id]}
-              className={`group text-left p-4 border rounded-xl hover:bg-secondary/50 hover:border-primary/25 transition-all relative ${
-                isWizard
-                  ? 'bg-secondary/35 border-primary/20 ring-1 ring-violet-500/15'
-                  : 'bg-secondary/25 border-primary/15'
-              }`}
+              className={`group relative text-left border rounded-xl hover:border-primary/25 transition-all overflow-hidden ${isDev ? 'border-amber-400/50 ring-1 ring-amber-400/20' : 'border-primary/15'}`}
+              style={{ borderTopColor: type.color, borderTopWidth: 3 }}
             >
-              {isWizard && (
-                <div className="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-500/15 text-violet-400 border border-violet-500/20">
-                  Not sure? Start here
+              <div className="flex flex-col items-center py-4 px-3 gap-2">
+                <img
+                  src={type.illustration}
+                  alt={type.label}
+                  className="w-16 h-16 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all"
+                  draggable={false}
+                />
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-sm font-medium text-foreground">{type.label}</h4>
+                  {isDev && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-400 border border-amber-400/25 font-medium">DEV</span>}
                 </div>
-              )}
-              <div className="flex items-center gap-2 mb-3">
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center border shrink-0"
-                  style={{
-                    backgroundColor: `${type.color}15`,
-                    borderColor: `${type.color}30`,
-                  }}
-                >
-                  <Icon className="w-4.5 h-4.5" style={{ color: type.color }} />
-                </div>
-                {type.badge && (
-                  <span
-                    className="px-1.5 py-0.5 rounded text-[10px] font-medium leading-tight"
-                    style={{
-                      backgroundColor: `${type.badgeColor}15`,
-                      color: type.badgeColor,
-                    }}
-                  >
-                    {type.badge}
-                  </span>
-                )}
               </div>
-              <h4 className="text-sm font-medium text-foreground mb-1">{type.title}</h4>
-              <p className="text-sm text-muted-foreground/60 leading-relaxed">{type.description}</p>
-              <p className="text-xs text-muted-foreground/40 mt-1.5">{type.useCase}</p>
             </button>
           );
         })}
@@ -178,6 +119,7 @@ export function CredentialTypePicker({
       {/* Workspace Connect -- full width */}
       <button
         onClick={onWorkspaceConnect}
+        data-testid="vault-pick-workspace"
         className="w-full text-left p-4 bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 rounded-xl hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
       >
         <div className="flex items-center gap-3">
@@ -197,6 +139,7 @@ export function CredentialTypePicker({
       {!IS_MOBILE && (
         <button
           onClick={onForage}
+          data-testid="vault-pick-foraging"
           className="w-full text-left p-4 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 border border-violet-500/15 rounded-xl hover:from-violet-500/10 hover:to-cyan-500/10 hover:border-violet-500/25 transition-all"
         >
           <div className="flex items-center gap-3">

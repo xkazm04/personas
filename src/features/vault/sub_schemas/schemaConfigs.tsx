@@ -78,8 +78,8 @@ export const CUSTOM_SCHEMA: SchemaFormConfig = {
       <Link className="w-4.5 h-4.5 text-amber-400" />
     </div>
   ),
-  title: 'Custom Connection',
-  subtitle: 'URL + authentication with optional API definition',
+  title: 'Custom API',
+  subtitle: 'URL + authentication with optional OpenAPI spec',
   nameLabel: 'Connection Name',
   namePlaceholder: 'My API Service',
   subTypeLabel: 'Authentication Method',
@@ -132,16 +132,28 @@ export const CUSTOM_SCHEMA: SchemaFormConfig = {
   extraFields: [
     {
       kind: 'textarea',
+      key: 'openapi_spec_url',
+      sectionTitle: 'OpenAPI Spec (Optional)',
+      placeholder: 'https://petstore3.swagger.io/api/v3/openapi.json',
+      helpText: 'Paste an OpenAPI/Swagger spec URL to auto-generate typed tools for this API.',
+      rows: 1,
+    },
+    {
+      kind: 'textarea',
       key: 'api_definition',
       sectionTitle: 'API Definition (Optional)',
       placeholder: 'Paste OpenAPI/Swagger JSON or YAML here, or describe the API endpoints in plain text...',
-      helpText: 'Helps AI understand available endpoints. Max 500KB.',
+      helpText: 'Alternative: paste the spec content directly or describe endpoints in plain text. Max 500KB.',
       rows: 4,
     },
   ],
   buildExtraMetadata: (_subTypeId, extras) => {
     const def = (extras.api_definition as string)?.trim();
-    return def ? { api_definition: def.slice(0, 500_000) } : {};
+    const specUrl = (extras.openapi_spec_url as string)?.trim();
+    return {
+      ...(def ? { api_definition: def.slice(0, 500_000) } : {}),
+      ...(specUrl ? { openapi_spec_url: specUrl } : {}),
+    };
   },
 };
 

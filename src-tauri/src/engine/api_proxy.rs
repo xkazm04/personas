@@ -264,7 +264,7 @@ impl MetricsRegistry {
         let now = chrono::Utc::now();
         self.buffers.retain(|_, buf| {
             buf.entries
-                .last()
+                .back()
                 .map(|e| (now - e.timestamp).num_seconds() < METRICS_IDLE_EVICTION_SECS as i64)
                 .unwrap_or(false)
         });
@@ -337,7 +337,7 @@ pub async fn get_all_proxy_metrics() -> Vec<ApiProxyCredentialMetrics> {
         latencies.sort_unstable();
 
         let avg = latencies.iter().sum::<u64>() / count as u64;
-        let last_ts = buf.entries.last().map(|e| e.timestamp.to_rfc3339());
+        let last_ts = buf.entries.back().map(|e| e.timestamp.to_rfc3339());
 
         results.push(ApiProxyCredentialMetrics {
             credential_id: cred_id.clone(),

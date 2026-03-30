@@ -786,6 +786,7 @@ pub fn run() {
             #[cfg(feature = "desktop")]
             let startup_rule_engine = state_arc.context_rule_engine.clone();
             let startup_composite_state = state_arc.composite_state.clone();
+            let startup_smee_notifier = state_arc.smee_relay_notifier.clone();
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 let _webhook_shutdown = engine::background::start_loops(
@@ -802,7 +803,7 @@ pub fn run() {
                     #[cfg(feature = "desktop")]
                     startup_rule_engine,
                     startup_composite_state,
-                    state_arc.smee_relay_notifier.clone(),
+                    startup_smee_notifier,
                 );
                 tracing::info!("Scheduler auto-started");
                 #[cfg(feature = "desktop")]

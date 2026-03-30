@@ -54,19 +54,13 @@ export function useCredentialManagerState() {
     fetchCredentials,
   });
 
-  // Sync between provisioning wizard store and FSM view
+  // Wizard was removed — close the provisioning wizard store if it was open
   const wizardPhase = useProvisioningWizardStore((s) => s.phase);
   useEffect(() => {
-    if (wizardPhase !== 'closed' && viewState.view !== 'add-wizard') {
-      dispatch({ type: 'GO_ADD_WIZARD' });
-    }
-  }, [wizardPhase]);
-
-  useEffect(() => {
-    if (viewState.view !== 'add-wizard' && wizardPhase !== 'closed') {
+    if (wizardPhase !== 'closed') {
       useProvisioningWizardStore.getState().close();
     }
-  }, [viewState.view]);
+  }, [wizardPhase]);
 
   // Sync unified search to FSM when in catalog view
   useEffect(() => {

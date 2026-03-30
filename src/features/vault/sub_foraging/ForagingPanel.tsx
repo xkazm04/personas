@@ -34,6 +34,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
     <div
       key="foraging"
       className="animate-fade-slide-in space-y-4"
+      data-testid="vault-foraging-container"
     >
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -74,6 +75,7 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
               icon={<Sparkles className="w-3.5 h-3.5" />}
               onClick={forage.scan}
               accentColor="violet"
+              data-testid="vault-foraging-scan"
               className="bg-violet-500/15 text-violet-400 border-violet-500/25 hover:bg-violet-500/25"
             >
               Start Scan

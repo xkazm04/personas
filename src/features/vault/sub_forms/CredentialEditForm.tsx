@@ -157,6 +157,7 @@ export function CredentialEditForm({
               key={field.key}
               source="schema"
               mode="editable"
+              testIdBase={`vault-field-${field.key}`}
               label={field.label}
               value={values[field.key] || ''}
               onChange={(nextValue) => handleChange(field.key, nextValue)}

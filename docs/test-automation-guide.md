@@ -235,6 +235,68 @@ Stable selectors that survive UI refactors. Use with `click_testid` and `fill_fi
 | `credential-list` | Credential list container |
 | `create-credential-btn` | Add new credential button |
 
+### Credential Creation (Vault "Add New")
+
+| testid | Element |
+|---|---|
+| `vault-type-picker` | Type picker container (all options) |
+| `vault-pick-ai-connector` | AI-Built Connector option |
+| `vault-pick-mcp` | AI Tool Server option |
+| `vault-pick-custom` | Web Service option |
+| `vault-pick-database` | Database option |
+| `vault-pick-desktop` | Desktop App option |
+| `vault-pick-wizard` | AI Setup Wizard option |
+| `vault-pick-autopilot` | API Autopilot option |
+| `vault-pick-workspace` | Workspace Connect option |
+| `vault-pick-foraging` | Auto-Discover option |
+| `vault-back-btn` | Back to type picker |
+| `vault-add-views` | Add views container |
+
+### Credential Creation — AI-Built Connector
+
+| testid | Element |
+|---|---|
+| `vault-design-container` | Design flow container |
+| `vault-design-input` | Description textarea |
+| `vault-design-submit` | "Design Credential" button |
+| `vault-design-cancel` | Cancel/close button |
+
+### Credential Creation — Schema Form (MCP / Custom / Database)
+
+| testid | Element |
+|---|---|
+| `vault-schema-form` | Form container |
+| `vault-schema-name` | Credential name input |
+| `vault-schema-subtype` | Subtype selector |
+| `vault-schema-save` | Save credential button |
+| `vault-schema-cancel` | Cancel button |
+
+### Credential Creation — API Autopilot
+
+| testid | Element |
+|---|---|
+| `vault-autopilot-container` | Autopilot container |
+| `vault-autopilot-url-input` | OpenAPI URL/spec input |
+| `vault-autopilot-submit` | Submit URL button |
+| `vault-autopilot-preview` | Preview step container |
+| `vault-autopilot-confirm` | Confirm/generate button |
+
+### Credential Creation — Other Flows
+
+| testid | Element |
+|---|---|
+| `vault-wizard-container` | AI Setup Wizard container |
+| `vault-wizard-start` | Start wizard button |
+| `vault-wizard-cancel` | Cancel wizard |
+| `vault-wizard-next` | Next step |
+| `vault-desktop-container` | Desktop discovery container |
+| `vault-desktop-scan` | Scan/refresh button |
+| `vault-desktop-import-mcp` | Import Claude MCP tab |
+| `vault-workspace-container` | Workspace Connect container |
+| `vault-workspace-connect` | Connect button |
+| `vault-foraging-container` | Auto-discover container |
+| `vault-foraging-scan` | Start scan button |
+
 ### Page Containers
 
 | testid | Element |

@@ -128,10 +128,11 @@ export function AutopilotPanel({ onBack, onComplete }: AutopilotPanelProps) {
   }
 
   return (
-    <div className="animate-fade-slide-in space-y-4">
+    <div className="animate-fade-slide-in space-y-4" data-testid="vault-autopilot-container">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
+          data-testid="vault-autopilot-back"
           onClick={step === 'input' ? onBack : () => setStep(step === 'generated' ? 'preview' : 'input')}
           className="p-1.5 rounded-lg hover:bg-secondary/60 text-muted-foreground/80 hover:text-foreground transition-colors"
         >
@@ -215,6 +216,7 @@ export function AutopilotPanel({ onBack, onComplete }: AutopilotPanelProps) {
                   urlValidation.onChange(e.target.value);
                 }}
                 placeholder="https://api.example.com/openapi.json"
+                data-testid="vault-autopilot-url-input"
                 className={`w-full px-3 py-2.5 bg-secondary/30 border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-blue-500/40 ${
                   urlValidation.validationState === 'error' ? 'border-red-500/40' :
                   urlValidation.validationState === 'valid' ? 'border-emerald-500/30' :
@@ -245,6 +247,7 @@ export function AutopilotPanel({ onBack, onComplete }: AutopilotPanelProps) {
           <button
             onClick={handleParse}
             disabled={isParsing || (inputMode === 'url' ? !specUrl.trim() : !specContent.trim())}
+            data-testid="vault-autopilot-submit"
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-400 rounded-lg text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
@@ -255,7 +258,7 @@ export function AutopilotPanel({ onBack, onComplete }: AutopilotPanelProps) {
 
       {/* Step 2: Preview */}
       {step === 'preview' && parseResult && (
-        <div className="space-y-4">
+        <div className="space-y-4" data-testid="vault-autopilot-preview">
           {/* API Summary Card */}
           <div className="p-4 bg-secondary/30 border border-primary/15 rounded-xl space-y-3">
             <div className="flex items-center justify-between">
@@ -348,6 +351,7 @@ export function AutopilotPanel({ onBack, onComplete }: AutopilotPanelProps) {
             <button
               onClick={handleGenerate}
               disabled={isGenerating || selectedEndpoints.size === 0}
+              data-testid="vault-autopilot-confirm"
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-400 rounded-lg text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}

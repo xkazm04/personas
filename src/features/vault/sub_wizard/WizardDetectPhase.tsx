@@ -184,6 +184,7 @@ export function WizardDetectPhase({ onSelect }: WizardDetectPhaseProps) {
             size="md"
             icon={<Sparkles className="w-3.5 h-3.5" />}
             onClick={handleSetup}
+            data-testid="vault-wizard-start"
           >
             Set up {selected.size} service{selected.size !== 1 ? 's' : ''}
           </Button>

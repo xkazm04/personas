@@ -186,6 +186,7 @@ function ProviderSection({
             variant="primary"
             size="lg"
             block
+            data-testid="vault-workspace-connect"
             className="bg-blue-600 hover:bg-blue-500"
           >
             Connect {ws.selectedServices.length} service{ws.selectedServices.length !== 1 ? 's' : ''} with one login
@@ -262,6 +263,7 @@ export function WorkspaceConnectPanel({ onBack, onComplete }: WorkspaceConnectPa
   return (
     <div
       className="animate-fade-slide-in bg-secondary/35 border border-primary/15 rounded-xl p-4"
+      data-testid="vault-workspace-container"
     >
       <ProviderSection
         provider={GOOGLE_WORKSPACE}

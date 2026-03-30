@@ -140,10 +140,13 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                     state.rate_limiter.clone(),
                     state.tier_config.clone(),
                     state.cloud_client.clone(),
+                    state.cloud_webhook_relay_state.clone(),
                     #[cfg(feature = "desktop")]
                     state.ambient_context.clone(),
                     #[cfg(feature = "desktop")]
                     state.context_rule_engine.clone(),
+                    state.composite_state.clone(),
+                    state.smee_relay_notifier.clone(),
                 );
             }
             refresh_tray(app);

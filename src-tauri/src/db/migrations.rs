@@ -232,6 +232,11 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_hal_type     ON healing_audit_log(event_type);"
     )?;
 
+    // -- Add github_url to dev_projects ----------------------------------------
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_projects ADD COLUMN github_url TEXT;"
+    ); // ignore "duplicate column" error on re-run
+
     tracing::info!("Database migrations complete");
     Ok(())
 }

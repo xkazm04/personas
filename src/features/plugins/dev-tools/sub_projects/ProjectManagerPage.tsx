@@ -11,6 +11,7 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useContextScanBackground } from '../hooks/useContextScanBackground';
 import { ImplementationLog } from './ImplementationLog';
+import { GitHubRepoSelector } from './GitHubRepoSelector';
 
 // ---------------------------------------------------------------------------
 // Types – thin view-models mapped from store bindings
@@ -135,7 +136,7 @@ function ProjectModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: { name: string; path: string; description: string; projectType: ProjectType }) => Promise<{ id: string } | undefined>;
+  onCreate: (data: { name: string; path: string; description: string; projectType: ProjectType; githubUrl: string }) => Promise<{ id: string } | undefined>;
   onScanNow: (projectId: string, rootPath: string, projectName: string) => void;
 }) {
   const [step, setStep] = useState<ModalStep>('create');
@@ -143,6 +144,7 @@ function ProjectModal({
   const [path, setPath] = useState('');
   const [description, setDescription] = useState('');
   const [projectType, setProjectType] = useState<ProjectType>('other');
+  const [githubUrl, setGithubUrl] = useState('');
   const [nameEdited, setNameEdited] = useState(false);
   const [createdProject, setCreatedProject] = useState<{ id: string; name: string; path: string } | null>(null);
   const { shouldAnimate: _shouldAnimate } = useMotion();
@@ -180,6 +182,7 @@ function ProjectModal({
       path: path.trim(),
       description: description.trim(),
       projectType,
+      githubUrl: githubUrl.trim(),
     });
     if (result) {
       setCreatedProject({ id: result.id, name: name.trim(), path: path.trim() });
@@ -193,6 +196,7 @@ function ProjectModal({
     setPath('');
     setDescription('');
     setProjectType('other');
+    setGithubUrl('');
     setNameEdited(false);
     setCreatedProject(null);
     onClose();
@@ -301,6 +305,9 @@ function ProjectModal({
                     className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-ring resize-none"
                   />
                 </div>
+
+                {/* GitHub URL -- repo selector (if PAT available) or manual input */}
+                <GitHubRepoSelector value={githubUrl} onChange={setGithubUrl} />
               </div>
 
               <div className="flex justify-end gap-2 mt-6">
@@ -593,7 +600,7 @@ export default function ProjectManagerPage() {
     if (selectedGoalId) fetchGoalSignals?.(selectedGoalId);
   }, [selectedGoalId]);
 
-  const handleCreateProject = useCallback(async (data: { name: string; path: string; description: string; projectType: ProjectType }) => {
+  const handleCreateProject = useCallback(async (data: { name: string; path: string; description: string; projectType: ProjectType; githubUrl: string }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
     const existing = storeProjects.find((p) => p.root_path === data.path);
     if (existing) {
@@ -602,7 +609,7 @@ export default function ProjectManagerPage() {
       return { id: existing.id };
     }
     try {
-      const project = await storeCreateProject(data.name, data.path, data.description, data.projectType);
+      const project = await storeCreateProject(data.name, data.path, data.description, data.projectType, data.githubUrl || undefined);
       return { id: project.id };
     } catch {
       return undefined;
@@ -708,9 +715,9 @@ export default function ProjectManagerPage() {
                 </Button>
               </div>
             ) : (
-              <div className="border border-primary/10 rounded-xl overflow-hidden">
+              <div className="border border-primary/10 rounded-xl">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+                <div className="grid grid-cols-[1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_40px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider rounded-t-xl">
                   <span>Name</span>
                   <span>Path</span>
                   <span>Tech Stack</span>

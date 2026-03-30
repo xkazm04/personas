@@ -116,7 +116,7 @@ fn rule(label: &str, pattern: &str) -> QualityGateRule {
 impl QualityGateConfig {
     /// Check whether the combined text matches any of the given rules.
     /// Returns the first matching rule label, or None.
-    pub fn check_rules(rules: &[QualityGateRule], combined: &str) -> Option<(String, &FilterAction)> {
+    pub fn check_rules<'a>(rules: &'a [QualityGateRule], combined: &str) -> Option<(String, &'a FilterAction)> {
         for r in rules {
             let haystack: String;
             let needle: String;

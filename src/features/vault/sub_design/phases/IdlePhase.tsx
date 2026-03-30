@@ -181,6 +181,7 @@ export function IdlePhase({
         placeholder="e.g. Slack, OpenAI, GitHub, Stripe..."
         rows={3}
         autoFocus
+        data-testid="vault-design-input"
         className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
       />
       <div className="flex justify-end gap-2.5">
@@ -197,6 +198,7 @@ export function IdlePhase({
         <button
           onClick={onStart}
           disabled={!instruction.trim()}
+          data-testid="vault-design-submit"
           className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20"
         >
           <Sparkles className="w-4 h-4" />

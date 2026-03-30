@@ -336,7 +336,7 @@ async fn invoke_webhook(
         req = req.header(key, value);
     }
 
-    let resp = req.send().await.map_err(|e| {
+    let mut resp = req.send().await.map_err(|e| {
         if e.is_timeout() {
             AppError::Execution(format!("Webhook timed out after {timeout_ms}ms: {url}"))
         } else if e.is_connect() {

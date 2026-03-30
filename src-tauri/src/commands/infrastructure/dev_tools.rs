@@ -42,6 +42,7 @@ pub fn dev_tools_create_project(
     description: Option<String>,
     status: Option<String>,
     tech_stack: Option<String>,
+    github_url: Option<String>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::create_project(
@@ -51,6 +52,7 @@ pub fn dev_tools_create_project(
         description.as_deref(),
         status.as_deref(),
         tech_stack.as_deref(),
+        github_url.as_deref(),
     )
 }
 
@@ -62,6 +64,7 @@ pub fn dev_tools_update_project(
     description: Option<Option<String>>,
     status: Option<String>,
     tech_stack: Option<Option<String>>,
+    github_url: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::update_project(
@@ -71,6 +74,7 @@ pub fn dev_tools_update_project(
         description.as_ref().map(|o| o.as_deref()),
         status.as_deref(),
         tech_stack.as_ref().map(|o| o.as_deref()),
+        github_url.as_ref().map(|o| o.as_deref()),
     )
 }
 

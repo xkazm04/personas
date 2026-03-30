@@ -72,7 +72,6 @@ export const credentialItems: SubNavItem[] = [
   { id: 'from-template', label: 'Catalog', icon: LayoutTemplate, minTier: TIERS.TEAM },
   { id: 'graph', label: 'Dependencies', icon: Network },
   { id: 'add-new', label: 'Add new', icon: Plus },
-  { id: 'autopilot', label: 'API Autopilot', icon: Zap },
 ];
 
 export const eventBusItems: SubNavItem[] = [
