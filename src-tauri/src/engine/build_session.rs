@@ -755,16 +755,45 @@ pub async fn run_tool_tests(
         })
         .collect();
 
+    // Built-in platform connectors that never need user credentials
+    let platform_connectors: std::collections::HashSet<&str> = [
+        "personas_database", "personas_messages", "personas_vector_db",
+        "messaging", "database", "builtin",
+    ].iter().copied().collect();
+
+    // Build connector resolution list for the report so the frontend can show
+    // which connectors were matched to user credentials.
+    let connectors_resolved: Vec<serde_json::Value> = {
+        let names: Vec<String> = agent_ir.required_connectors.iter()
+            .filter_map(|c| c.name().map(|n| n.to_string()))
+            .collect();
+        names.iter()
+            .filter(|name| !platform_connectors.contains(name.to_lowercase().as_str()))
+            .map(|name| {
+                let name_lower = name.to_lowercase();
+                let matched = resolved_cred_names.contains(&name_lower)
+                    || resolved_cred_names.iter().any(|cred| name_lower.contains(cred.as_str()) || cred.contains(&name_lower))
+                    || hints.iter().any(|h| h.to_lowercase().contains(&name_lower));
+                serde_json::json!({
+                    "name": name,
+                    "has_credential": matched,
+                })
+            }).collect()
+    };
+
     let total = test_plan.len();
     if total == 0 {
         tracing::warn!(
             session_id = %session_id,
             "CLI returned no test_plan entries, falling back to credential check"
         );
+        // http_request is NOT builtin — it typically requires connector credentials
+        // (e.g., Alpha Vantage API key). It must go through credential resolution.
+        // web_search/web_fetch are platform capabilities (Claude built-in).
         let builtin_tool_names: std::collections::HashSet<&str> = [
             "personas_database", "database", "database_query", "db_query", "db_write",
             "personas_messages", "messaging", "personas_vector_db",
-            "file_read", "file_write", "web_search", "web_fetch", "http_request",
+            "file_read", "file_write", "web_search", "web_fetch",
             "data_processing", "nlp_parser", "ai_generation", "date_calculation",
             "notification_sender", "text_analysis", "data_enrichment",
         ].iter().copied().collect();
@@ -842,6 +871,7 @@ pub async fn run_tool_tests(
             "tools_failed": fb_failed,
             "tools_skipped": fb_skipped,
             "credential_issues": fb_cred_issues,
+            "connectors_resolved": connectors_resolved,
         }));
     }
 
@@ -986,6 +1016,7 @@ pub async fn run_tool_tests(
         "tools_failed": failed,
         "tools_skipped": skipped,
         "credential_issues": credential_issues,
+        "connectors_resolved": connectors_resolved,
         "summary": summary,
     }))
 }
@@ -1247,8 +1278,11 @@ fn extract_test_plan(raw_output: &str) -> Vec<serde_json::Value> {
 }
 
 /// Extract the LLM's text content from raw CLI stream-json output.
+/// Prefers the `result` event (final complete output) over `assistant` events
+/// (streaming fragments) to avoid duplication.
 fn extract_llm_text_from_output(raw: &str) -> String {
-    let mut texts = Vec::new();
+    let mut result_text: Option<String> = None;
+    let mut assistant_text: Option<String> = None;
     for line in raw.lines() {
         let trimmed = line.trim();
         if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
@@ -1269,19 +1303,20 @@ fn extract_llm_text_from_output(raw: &str) -> String {
                                 .and_then(|i| i.get("text").and_then(|t| t.as_str()))
                         })
                     {
-                        texts.push(text.to_string());
+                        assistant_text = Some(text.to_string());
                     }
                 }
                 "result" => {
                     if let Some(text) = obj.get("result").and_then(|v| v.as_str()) {
-                        texts.push(text.to_string());
+                        result_text = Some(text.to_string());
                     }
                 }
                 _ => {}
             }
         }
     }
-    texts.join("\n")
+    // Prefer result (complete output) over assistant (may be partial/duplicate)
+    result_text.or(assistant_text).unwrap_or_default()
 }
 
 // =============================================================================
@@ -1418,8 +1453,12 @@ Business logic only. No scheduling (that's triggers).
 Only resolve use-cases AFTER the user answers your questions. Never auto-resolve from a short description.
 data format: {{"items": ["Human-readable description of task 1"], "use_cases": [{{"title": "Short Title", "description": "Detailed description of what this task does", "category": "email|data|notification|monitoring|integration|other", "execution_mode": "e2e"}}]}}
 
-### 2. connectors — WHICH services
-**IMPORTANT:** This agent runs on Claude CLI which has **built-in web search and web browsing capabilities**. For use cases involving web search, news fetching, or URL reading, use the built-in capability — do NOT suggest a separate web browser/search connector. Only suggest external connectors for services requiring API authentication (Gmail, Slack, Notion, etc.).
+### 2. connectors — WHICH services (external APIs requiring credentials)
+**CRITICAL — NEVER put these in connectors (they are built-in agent capabilities, not external services):**
+- web_search, web_fetch, web_browse — the agent has native internet access, no connector or credential needed. Mention in use-cases/tasks dimension instead.
+- file_read, file_write — built-in file system access
+- data_processing, text_analysis, ai_generation — built-in AI capabilities
+Only list connectors for services that require API authentication credentials (Gmail, Slack, Notion, Alpha Vantage, etc.).
 **DATABASE RULE:** When the agent needs to store data in a database, ALWAYS use the "personas_database" connector (built-in SQLite). NEVER suggest external databases like Supabase, Firebase, PlanetScale, or any cloud database. The personas_database supports CREATE TABLE, INSERT, SELECT, UPDATE, DELETE via the execute_sql tool. It is always available — no credentials needed.
 Each connector needs structured data so the UI can render interactive cards:
 data format: {{"items": ["Gmail (google) — reading emails"], "connectors": [{{"name": "gmail", "service_type": "google", "purpose": "reading and filtering emails", "has_credential": true}}], "alternatives": {{"gmail": ["outlook", "yahoo_mail"]}}}}

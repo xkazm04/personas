@@ -159,9 +159,13 @@ export default function AppearanceSettings() {
           {/* Text sizing */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title="Text Size" icon={<Type />} />
-            <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 2xl:grid-cols-4 gap-3">
               {TEXT_SCALES.map((scale) => {
                 const isActive = textScale === scale.id;
+                const sizeClass =
+                  scale.id === 'compact' ? 'text-xs' :
+                  scale.id === 'default' ? 'text-sm' :
+                  scale.id === 'large' ? 'text-base' : 'text-lg';
                 return (
                   <Button
                     variant="ghost"
@@ -174,11 +178,7 @@ export default function AppearanceSettings() {
                     }`}
                   >
                     <span
-                      className={`font-semibold ${
-                        scale.id === 'large'
-                          ? 'text-base'
-                          : 'text-lg'
-                      } ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}
+                      className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}
                     >
                       Aa
                     </span>

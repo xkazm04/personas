@@ -111,13 +111,13 @@ pub fn update_persona(
     // Invalidate cached session AFTER successful DB update
     let pool = state.session_pool.clone();
     let pid = id.clone();
-    tokio::spawn(async move { pool.invalidate(&pid).await; });
+    tauri::async_runtime::spawn(async move { pool.invalidate(&pid).await; });
 
     // Auto-sync to cloud if connected (fire-and-forget)
     let cloud_client = state.cloud_client.clone();
     let db = state.db.clone();
     let sync_id = id.clone();
-    tokio::spawn(async move {
+    tauri::async_runtime::spawn(async move {
         let client = match cloud_client.lock().await.clone() {
             Some(c) => c,
             None => return, // not connected to cloud — nothing to sync
@@ -189,13 +189,13 @@ pub fn update_persona_parameters(
     // Invalidate cached session so the engine uses updated parameter values
     let pool = state.session_pool.clone();
     let pid = id.clone();
-    tokio::spawn(async move { pool.invalidate(&pid).await; });
+    tauri::async_runtime::spawn(async move { pool.invalidate(&pid).await; });
 
     // Auto-sync to cloud if connected (fire-and-forget)
     let cloud_client = state.cloud_client.clone();
     let db = state.db.clone();
     let sync_id = id.clone();
-    tokio::spawn(async move {
+    tauri::async_runtime::spawn(async move {
         let client = match cloud_client.lock().await.clone() {
             Some(c) => c,
             None => return,

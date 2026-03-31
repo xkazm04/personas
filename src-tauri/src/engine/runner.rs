@@ -260,7 +260,14 @@ pub async fn run_execution(
         None,
         Some(serde_json::json!({ "tool_count": tools.len() })),
     );
-    let (cred_env, cred_hints, cred_failures) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
+    let (mut cred_env, mut cred_hints, cred_failures) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
+
+    // Second pass: inject credentials for ALL connectors referenced in the persona's
+    // design_context, not just those matched by tool name. This ensures that generic
+    // tools like http_request can access connector credentials (e.g. alpha_vantage API key)
+    // even if the tool name doesn't match the connector name.
+    inject_design_context_credentials(&pool, &persona, &mut cred_env, &mut cred_hints, &persona.id, &persona.name).await;
+
     trace.end_span(&cred_span, None, None, None, None);
 
     if !cred_failures.is_empty() {
@@ -1057,6 +1064,7 @@ pub async fn run_execution(
                                                 severity: input_val.get("severity").and_then(|v| v.as_str()).map(String::from),
                                                 context_data: input_val.get("context_data").and_then(|v| v.as_str()).map(String::from),
                                                 suggested_actions: input_val.get("suggested_actions").and_then(|v| serde_json::from_value(v.clone()).ok()),
+                                                decisions: input_val.get("decisions").and_then(|v| serde_json::from_value(v.clone()).ok()),
                                             }),
                                             _ => None,
                                         };
@@ -1734,6 +1742,105 @@ pub(crate) async fn resolve_credential_env_vars(
     }
 
     (env_vars, hints, failures)
+}
+
+/// Inject credentials for connectors referenced in the persona's design_context.
+/// This ensures that generic tools (http_request, etc.) have access to all
+/// connector credentials even when tool-name-based matching fails.
+async fn inject_design_context_credentials(
+    pool: &DbPool,
+    persona: &crate::db::models::Persona,
+    env_vars: &mut Vec<(String, String)>,
+    hints: &mut Vec<String>,
+    persona_id: &str,
+    persona_name: &str,
+) {
+    // Extract connector names from design_context JSON
+    let dc = match &persona.design_context {
+        Some(dc) => dc,
+        None => return,
+    };
+    let parsed: serde_json::Value = match serde_json::from_str(dc) {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+
+    // Connector names may be in useCases[].connectors or a top-level connectors/summary field
+    let mut connector_names: Vec<String> = Vec::new();
+
+    // Check useCases[].connectors (common pattern from promote)
+    if let Some(use_cases) = parsed.get("useCases").and_then(|v| v.as_array()) {
+        for uc in use_cases {
+            if let Some(conns) = uc.get("connectors").and_then(|v| v.as_array()) {
+                for c in conns {
+                    if let Some(name) = c.get("name").and_then(|v| v.as_str()) {
+                        connector_names.push(name.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    // Check summary.connectors (alternate pattern)
+    if let Some(summary) = parsed.get("summary") {
+        if let Some(conns) = summary.get("connectors").and_then(|v| v.as_array()) {
+            for c in conns {
+                if let Some(name) = c.as_str() {
+                    connector_names.push(name.to_string());
+                } else if let Some(name) = c.get("name").and_then(|v| v.as_str()) {
+                    connector_names.push(name.to_string());
+                }
+            }
+        }
+    }
+
+    // Also check last_design_result for required_connectors/suggested_connectors
+    if let Some(ref ldr) = persona.last_design_result {
+        if let Ok(dr) = serde_json::from_str::<serde_json::Value>(ldr) {
+            for key in &["required_connectors", "suggested_connectors"] {
+                if let Some(conns) = dr.get(key).and_then(|v| v.as_array()) {
+                    for c in conns {
+                        // Handle both string ("gmail") and object ({"name": "gmail"}) formats
+                        if let Some(name) = c.as_str() {
+                            connector_names.push(name.to_string());
+                        } else if let Some(name) = c.get("name").and_then(|v| v.as_str()) {
+                            connector_names.push(name.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if connector_names.is_empty() { return; }
+
+    // Deduplicate and skip connectors already injected
+    let existing_prefixes: std::collections::HashSet<String> = env_vars.iter()
+        .filter_map(|(k, _)| k.split('_').next().map(|p| p.to_lowercase()))
+        .collect();
+
+    let connectors = match connector_repo::get_all(pool) {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+
+    for name in &connector_names {
+        let name_lower = name.to_lowercase();
+        // Skip if we already injected env vars for this connector
+        if existing_prefixes.contains(&name_lower) { continue; }
+
+        // Try to find a matching connector definition
+        if let Some(conn) = connectors.iter().find(|c| c.name.to_lowercase() == name_lower) {
+            let _ = inject_connector_credentials(pool, conn, env_vars, hints, persona_id, persona_name).await;
+        } else {
+            // Direct service_type lookup as fallback
+            if let Ok(creds) = cred_repo::get_by_service_type(pool, name) {
+                if let Some(cred) = creds.first() {
+                    let _ = inject_credential(pool, cred, name, name, env_vars, hints, persona_id, persona_name).await;
+                }
+            }
+        }
+    }
 }
 
 /// Decrypt and inject all fields from a connector's first credential as env vars.

@@ -312,12 +312,16 @@ fn parse_agent_memory(msg: &serde_json::Value) -> Option<ProtocolMessage> {
 }
 
 fn parse_manual_review(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    let decisions = msg.get("decisions")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.clone());
     Some(ProtocolMessage::ManualReview {
         title: str_field_or(msg, "title", ""),
         description: str_field(msg, "description"),
         severity: str_field(msg, "severity"),
         context_data: str_field(msg, "context_data"),
         suggested_actions: str_array_field(msg, "suggested_actions"),
+        decisions,
     })
 }
 

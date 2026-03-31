@@ -1080,9 +1080,9 @@ You MUST:
 6. **End with protocol messages** — after your main work, output the required JSON protocol lines (one per line, not inside code blocks).
 
 **CRITICAL rules for manual_review:**
-- manual_review is for BUSINESS DECISIONS requiring human judgment (e.g. "Should we approve this invoice?", "Is this lead qualified?")
+- manual_review is ONLY for BUSINESS DECISIONS requiring human judgment (e.g. "Should we approve this invoice?", "Is this lead qualified?")
 - NEVER use manual_review for operational issues (no access, no data, API errors, missing pages, credentials). Report those in your user_message.
-- If you have nothing requiring human review, emit one with severity "low" summarizing what was validated.
+- If nothing requires human judgment, do NOT emit a manual_review at all. Routine executions should not create approval items.
 
 **Data scoping — avoid unbounded queries:**
 - When querying databases, ALWAYS use LIMIT clauses (start with LIMIT 10-50) and filter by recent time windows (e.g. last 7 days, last 24 hours). Never run SELECT * without WHERE and LIMIT.
@@ -1118,14 +1118,17 @@ You MUST use the following protocols during EVERY execution. This is mandatory �
    {"knowledge_annotation": {"scope": "tool:web_search", "note": "Specific insight about how the tool behaved", "confidence": 0.8}}
    ```
 
-5. **manual_review** — If you encounter anything uncertain, risky, or requiring human judgment, flag it:
+5. **manual_review** — ONLY if you encounter something uncertain, risky, or requiring human business judgment, flag it. Do NOT emit manual_review for routine successful executions.
+   For a single decision:
    ```json
-   {"manual_review": {"title": "Needs Verification", "description": "What needs review and why", "severity": "medium", "suggested_actions": ["Verify this finding", "Cross-check with source"]}}
+   {"manual_review": {"title": "Needs Verification", "description": "What needs review", "severity": "medium", "suggested_actions": ["Verify", "Skip"]}}
    ```
-   If nothing needs review, emit one with severity "low" summarizing what was validated:
+   For **multiple decisions** (e.g. reviewing several findings, signals, or items at once), include a `decisions` array so the user can accept or reject each item individually:
    ```json
-   {"manual_review": {"title": "Execution Audit", "description": "Summary of checks performed and confidence level", "severity": "low", "suggested_actions": ["No action required"]}}
+   {"manual_review": {"title": "Weekly Signal Review", "description": "Review each signal", "severity": "medium", "decisions": [{"id": "d1", "label": "MSFT Buy Signal (RSI 26.4)", "description": "Deeply oversold, potential reversal", "category": "signal"}, {"id": "d2", "label": "AAPL Hold (RSI 45.2)", "description": "Neutral range, no action", "category": "signal"}], "suggested_actions": ["Accept valuable signals", "Reject noise"]}}
    ```
+   Each decision object must have `id` (unique), `label` (short display text), and optionally `description` and `category`.
+   Skip this protocol entirely if the execution completed normally with no items requiring human decision-making.
 
 6. **execution_flow** — Declare the steps you took:
    ```json

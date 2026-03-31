@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, GitBranch, Zap, Bot } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import {
   TRIGGER_BLOCK_TEMPLATES,
   DEFAULT_CONDITION_BRANCHES,
@@ -83,12 +84,8 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 onClick={() => onAddPersonaStep(persona)}
                 className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors group"
               >
-                <div className="w-6 h-6 rounded flex items-center justify-center bg-emerald-500/10">
-                  {persona.icon ? (
-                    <span className="text-xs">{persona.icon}</span>
-                  ) : (
-                    <Bot className="w-3 h-3 text-emerald-400" />
-                  )}
+                <div className="icon-frame-sm bg-emerald-500/10">
+                  <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" framed />
                 </div>
                 <div className="flex flex-col items-start min-w-0">
                   <span className="text-[11px] text-foreground/80 group-hover:text-foreground truncate">{persona.name}</span>

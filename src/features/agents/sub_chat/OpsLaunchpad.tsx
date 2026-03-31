@@ -129,8 +129,8 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
       {/* Top half: Card grid */}
       <div className="flex-1 flex flex-col justify-center px-2">
         <div className="text-center mb-4">
-          <p className="text-sm font-medium text-foreground/70">Operations for <span className="text-primary">{personaName}</span></p>
-          <p className="text-[11px] text-muted-foreground/50 mt-0.5">Select an action or type a command below</p>
+          <p className="text-lg font-medium text-foreground/70">Operations for <span className="text-primary">{personaName}</span></p>
+          <p className="text-sm text-muted-foreground/50 mt-0.5">Select an action or type a command below</p>
         </div>
         <div className="grid grid-cols-5 gap-2 max-w-[640px] mx-auto">
           {OPS_PRESETS.map((preset) => {
@@ -145,8 +145,8 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${c.bg} ${c.text} group-hover:scale-110 transition-transform`}>
                   {preset.icon}
                 </div>
-                <span className="text-[11px] font-medium text-foreground/80 leading-tight">{preset.label}</span>
-                <span className="text-[9px] text-muted-foreground/50 leading-tight line-clamp-2">{preset.description}</span>
+                <span className="text-sm font-medium text-foreground/80 leading-tight">{preset.label}</span>
+                <span className="text-xs text-muted-foreground/50 leading-tight line-clamp-2">{preset.description}</span>
               </button>
             );
           })}
@@ -179,7 +179,7 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
             </div>
             {(selectedPreset.options ?? []).map((opt) => (
               <div key={opt.key} className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground/60">{opt.label}</label>
+                <label className="text-sm font-medium text-muted-foreground/60">{opt.label}</label>
                 <input
                   type="text"
                   value={optionValues[opt.key] ?? ''}
@@ -191,11 +191,11 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
                 />
               </div>
             ))}
-            <p className="text-[10px] text-muted-foreground/40 italic">{selectedPreset.prompt}</p>
+            <p className="text-xs text-muted-foreground/40 italic">{selectedPreset.prompt}</p>
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
-            <p className="text-[11px] text-muted-foreground/40">Click a card above to configure and run, or type a command directly</p>
+            <p className="text-sm text-muted-foreground/40">Click a card above to configure and run, or type a command directly</p>
           </div>
         )}
       </div>

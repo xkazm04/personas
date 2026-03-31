@@ -109,8 +109,31 @@ pub struct AgentIrEvent {
     pub direction: Option<String>,
 }
 
+/// A connector entry in agent IR. May be a plain name (`"gmail"`) or a full object.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum AgentIrConnector {
+    Simple(String),
+    Structured(AgentIrConnectorData),
+}
+
+impl Default for AgentIrConnector {
+    fn default() -> Self {
+        AgentIrConnector::Structured(AgentIrConnectorData::default())
+    }
+}
+
+impl AgentIrConnector {
+    pub fn name(&self) -> Option<&str> {
+        match self {
+            AgentIrConnector::Simple(s) => Some(s.as_str()),
+            AgentIrConnector::Structured(d) => d.name.as_deref(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct AgentIrConnector {
+pub struct AgentIrConnectorData {
     #[serde(default)]
     pub name: Option<String>,
     #[serde(default)]

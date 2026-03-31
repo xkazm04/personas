@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Users, Trash2, ChevronRight, GitBranch, GitFork } from 'lucide-react';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
@@ -13,7 +14,7 @@ interface TeamCardProps {
   onConfirmDelete: (id: string | null) => void;
 }
 
-export function TeamCard({
+export const TeamCard = memo(function TeamCard({
   team,
   parentTeamName,
   confirmDeleteId,
@@ -22,7 +23,7 @@ export function TeamCard({
   onDelete,
   onConfirmDelete,
 }: TeamCardProps) {
-  const teamCounts = usePipelineStore((s) => s.teamCounts);
+  const counts = usePipelineStore((s) => s.teamCounts[team.id]);
   return (
     <div
       key={team.id}
@@ -113,10 +114,7 @@ export function TeamCard({
           <span className={`px-2 py-0.5 text-sm font-mono rounded-full ${team.enabled ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-500/15 text-muted-foreground border border-zinc-500/20'}`}>
             {team.enabled ? 'active' : 'draft'}
           </span>
-          {(() => {
-            const counts = teamCounts[team.id];
-            if (!counts) return null;
-            return (
+          {counts && (
               <>
                 <span className="flex items-center gap-1 text-sm text-muted-foreground/90">
                   <Users className="w-3 h-3" />
@@ -127,11 +125,10 @@ export function TeamCard({
                   {counts.connections}
                 </span>
               </>
-            );
-          })()}
+          )}
         </div>
         <ChevronRight className="w-4 h-4 text-muted-foreground/80 group-hover:text-indigo-400/60 group-hover:translate-x-0.5 transition-all" />
       </div>
     </div>
   );
-}
+});

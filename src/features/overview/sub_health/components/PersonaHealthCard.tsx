@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Heart, TrendingDown, TrendingUp, Minus, DollarSign, AlertTriangle, Clock, Wrench, ChevronDown, ChevronRight } from 'lucide-react';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
+
 import { HeartbeatIndicator } from './HeartbeatIndicator';
 
 interface PersonaHealthCardProps {
@@ -44,10 +45,10 @@ export function PersonaHealthCard({ signal }: PersonaHealthCardProps) {
     >
       {/* Header — always visible */}
       <div className="flex items-center gap-3 p-3">
-        <HeartbeatIndicator score={signal.heartbeatScore} grade={signal.grade} size="md" />
+        <HeartbeatIndicator score={signal.heartbeatScore} grade={signal.grade} size="md"
+          personaIcon={signal.personaIcon ?? null} personaColor={signal.personaColor ?? null} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            {signal.personaIcon && <span className="text-base">{signal.personaIcon}</span>}
             <h3 className="typo-heading text-foreground/90 truncate">{signal.personaName}</h3>
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">

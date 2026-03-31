@@ -123,6 +123,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
   // Animation state lives in a ref — only the tick counter triggers re-renders
   const animationMapRef = useRef<AnimationMap>(new Map());
   const [animTick, setAnimTick] = useState(0);
+  const wakeRef = useRef<(() => void) | null>(null);
 
   // Stats are tracked separately from animation state — only recomputed when
   // the events array actually changes (add/remove), never on animation ticks.
@@ -164,6 +165,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
       phase: 'entering',
       phaseStartedAt: Date.now(),
     });
+    wakeRef.current?.();
     return animationId;
   }, []);
 
@@ -180,11 +182,12 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
   }, [registerAnimation, pushEvent]);
   const isConnected = useEventBusListener(handleBusEvent);
 
-  useEventPhaseProgressor({
+  const { wake } = useEventPhaseProgressor({
     active: !isPaused,
     animationMapRef,
     onTick: setAnimTick,
   });
+  wakeRef.current = wake;
 
   useEffect(() => () => {
     clearPendingTestFlowTimeouts();

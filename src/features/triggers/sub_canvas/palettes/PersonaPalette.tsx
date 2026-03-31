@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Bot, ChevronDown, ChevronRight, Search, Store } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import { setPendingItem } from '../hooks/useEventCanvasDragDrop';
@@ -122,8 +123,8 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
                     `}
                     title={`Drag or click to place "${p.name}" on canvas`}
                   >
-                    <div className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center bg-primary/5">
-                      {p.icon ? <span className="text-xs">{p.icon}</span> : <Bot className="w-3 h-3 text-muted-foreground" />}
+                    <div className="flex-shrink-0 icon-frame-sm bg-primary/5">
+                      <PersonaIcon icon={p.icon} color={p.color} size="w-3 h-3" framed />
                     </div>
                     <span className="text-[11px] font-medium text-foreground truncate flex-1 min-w-0">{p.name}</span>
                     <div className="flex items-center gap-1 flex-shrink-0 min-w-[28px] justify-end">

@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   XCircle,
   Pause,
-  Bot,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -14,6 +13,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { formatRelative } from './libs/cronHelpers';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 
 export default function CronAgentsPage() {
   const { cronAgents, loading, fetchCronAgents } = useOverviewStore(useShallow((s) => ({
@@ -123,15 +123,11 @@ function AgentRow({ agent }: { agent: CronAgent }) {
         : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05]'
     }`}>
       {/* Icon */}
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
-        style={{
+      <PersonaIcon icon={agent.persona_icon} color={agent.persona_color} display="pop"
+        frameStyle={{
           backgroundColor: agent.persona_color ? `${agent.persona_color}20` : 'var(--color-primary-5)',
           color: agent.persona_color || 'var(--color-muted-foreground)',
-        }}
-      >
-        {agent.persona_icon || <Bot className="w-4 h-4" />}
-      </div>
+        }} />
 
       {/* Name + schedule */}
       <div className="flex-1 min-w-0">

@@ -3,8 +3,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, ExternalLink, Unplug, Plug,
-  AlertCircle, Trash2, Pause, Play, Bot, Filter, X, CheckCircle2,
+  AlertCircle, Trash2, Pause, Play, Filter, X, CheckCircle2,
 } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSmeeRelayStatus } from '@/hooks/realtime/useSmeeRelayStatus';
@@ -405,7 +406,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                         )}
                         {persona && (
                           <span className="inline-flex items-center gap-1 text-xs text-foreground/50">
-                            <Bot className="w-3 h-3" style={{ color: persona.color ?? undefined }} />
+                            <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" />
                             {persona.name}
                           </span>
                         )}

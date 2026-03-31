@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
-import { AlertCircle, CheckCircle2, Clock, Server, Bot, Copy, Check } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Server, Copy, Check } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import { EVENT_STATUS_COLORS, EVENT_TYPE_COLORS, formatRelativeTime } from '@/lib/utils/formatters';
-import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+
 import { ROW_SEPARATOR } from '@/lib/design/listTokens';
 import type { PersonaEvent, Persona } from '@/lib/types/types';
 
@@ -173,19 +174,12 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
       <td className="px-4 py-2.5">
         {targetPersona ? (
           <div className="flex items-center gap-2">
-            <div
-              className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-              style={{ backgroundColor: colorWithAlpha(targetPersona.color || '#6366f1', 0.08) }}
-            >
-              {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-foreground/50" />}
-            </div>
+            <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" />
             <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center border border-primary/10 bg-muted/20 flex-shrink-0">
-              <Server className="w-3.5 h-3.5 text-foreground/40" />
-            </div>
+            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground/40" /></div>
             <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
           </div>
         )}
@@ -243,19 +237,12 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
       <div className="px-4 py-2.5 flex items-center min-w-0">
         {targetPersona ? (
           <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-              style={{ backgroundColor: colorWithAlpha(targetPersona.color || '#6366f1', 0.08) }}
-            >
-              {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-foreground/50" />}
-            </div>
+            <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" />
             <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center border border-primary/10 bg-muted/20 flex-shrink-0">
-              <Server className="w-3.5 h-3.5 text-foreground/40" />
-            </div>
+            <div className="icon-frame icon-frame-lg flex-shrink-0"><Server className="text-foreground/40" /></div>
             <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
           </div>
         )}

@@ -16,8 +16,9 @@ import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import { seedMockMessage } from '@/api/overview/messages';
 import { priorityConfig, FILTER_LABELS, GRID_TEMPLATE_COLUMNS, type FilterType, deliveryStatusConfig } from '../libs/messageHelpers';
-import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+
 import { ROW_SEPARATOR, ROW_SEPARATOR_T } from '@/lib/design/listTokens';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { MessageDetailModal } from './MessageDetailModal';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { createLogger } from "@/lib/log";
@@ -256,12 +257,10 @@ export default function MessageList() {
                       <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-muted-foreground/60">
                         {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       </div>
-                      <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha((parent as PersonaMessage).persona_color || '#6366f1', 0.08) }}>
-                        {(parent as PersonaMessage).persona_icon || '?'}
-                      </div>
+                      <PersonaIcon icon={(parent as PersonaMessage).persona_icon ?? null} color={(parent as PersonaMessage).persona_color ?? null} display="framed" />
                       <div className="flex-1 min-w-0">
                         <span className={`text-sm truncate block ${parent.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>
-                          {parent.title || parent.content.slice(0, 80)}
+                          {parent.title || (parent.content ?? '').slice(0, 80)}
                         </span>
                       </div>
                       <span className={`inline-flex px-2 py-0.5 rounded-lg typo-heading text-xs border ${parentPriority.bgColor} ${parentPriority.color} ${parentPriority.borderColor}`}>
@@ -300,12 +299,10 @@ export default function MessageList() {
                                   tabIndex={0}
                                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick(msg); } }}
                                 >
-                                  <div className="w-5 h-5 rounded-md flex items-center justify-center text-xs border border-primary/10 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(msg.persona_color || '#6366f1', 0.06) }}>
-                                    {msg.persona_icon || '?'}
-                                  </div>
+                                  <PersonaIcon icon={msg.persona_icon ?? null} color={msg.persona_color ?? null} display="framed" />
                                   <div className="flex-1 min-w-0">
                                     <span className={`text-sm truncate block ${msg.is_read ? 'text-foreground/70' : 'text-foreground/85 font-medium'}`}>
-                                      {msg.title || msg.content.slice(0, 80)}
+                                      {msg.title || (msg.content ?? '').slice(0, 80)}
                                     </span>
                                   </div>
                                   <span className={`inline-flex px-1.5 py-0.5 rounded text-xs border ${mp.bgColor} ${mp.color} ${mp.borderColor}`}>
@@ -395,10 +392,10 @@ export default function MessageList() {
                         className={`grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40`}
                       >
                         <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
-                          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(message.persona_color || '#6366f1', 0.08) }}>{message.persona_icon || '?'}</div>
+                          <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} display="framed" />
                           <span className="text-sm text-muted-foreground/80 truncate">{message.persona_name || 'Unknown'}</span>
                         </div>
-                        <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || message.content.slice(0, 80)}</span></div>
+                        <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
                         <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-lg typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
                         <div role="gridcell" className="px-4 flex justify-center">
                           {(() => {

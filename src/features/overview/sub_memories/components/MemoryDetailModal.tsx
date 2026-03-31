@@ -1,4 +1,5 @@
-import { X, Tag, ExternalLink, Bot } from 'lucide-react';
+import { X, Tag, ExternalLink } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
@@ -38,12 +39,8 @@ export default function MemoryDetailModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-secondary/20">
           <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }}
-            >
-              <Bot className="w-3.5 h-3.5" style={{ color: personaColor }} />
-            </div>
+            <PersonaIcon icon={null} color={personaColor} display="pop"
+              frameStyle={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }} />
             <div className="min-w-0">
               <h3 className="typo-heading text-foreground/90 truncate">{personaName}</h3>
               <span className="text-xs text-muted-foreground/60">{formatRelativeTime(memory.created_at)}</span>

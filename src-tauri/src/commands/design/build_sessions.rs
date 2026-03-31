@@ -30,6 +30,15 @@ fn infer_credential_type(tool_name: &str, connectors: &[ConnectorDefinition]) ->
     })
 }
 
+/// Generic tool names that act as transport/utility and rely on connector
+/// credentials for the actual API they call. These tools don't carry their
+/// own credential type — they need the agent's connectors to know which
+/// API key to inject.
+const GENERIC_TOOL_NAMES: &[&str] = &[
+    "http_request", "http", "api_call", "rest_api", "api_request",
+    "fetch", "curl", "request",
+];
+
 /// Start a new build session for a persona. Returns the session ID.
 /// Events are streamed back via the Channel parameter.
 /// Optional workflow_json + parser_result_json enable workflow import mode.
@@ -111,6 +120,25 @@ pub async fn answer_build_question(
         .send_answer(&session_id, user_answer)
 }
 
+/// Reset a build session to draft_ready phase (e.g., after test rejection for retry).
+#[tauri::command]
+pub async fn reset_build_session_phase(
+    state: State<'_, Arc<AppState>>,
+    session_id: String,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+
+    build_session_repo::update(
+        &state.db,
+        &session_id,
+        &UpdateBuildSession {
+            phase: Some(BuildPhase::DraftReady.as_str().to_string()),
+            ..Default::default()
+        },
+    )?;
+    Ok(())
+}
+
 /// Cancel an active build session.
 #[tauri::command]
 pub async fn cancel_build_session(
@@ -178,10 +206,29 @@ pub async fn test_build_draft(
         .validate_transition(BuildPhase::Testing)
         .map_err(AppError::Validation)?;
 
-    // Parse agent_ir into typed struct
-    let agent_ir: crate::db::models::AgentIr = session
-        .parse_agent_ir()
-        .ok_or_else(|| AppError::Validation("Build session has no agent_ir".to_string()))?;
+    // Parse agent_ir — try session first, fall back to persona's last_design_result
+    let agent_ir: crate::db::models::AgentIr = if let Some(ref raw) = session.agent_ir {
+        serde_json::from_str(raw).map_err(|e| {
+            tracing::error!(session_id = %session_id, error = %e, raw_len = raw.len(), "Failed to parse agent_ir");
+            AppError::Validation(format!("Build session agent_ir parse error: {e}"))
+        })?
+    } else {
+        // Fallback: try persona's last_design_result (populated after first promotion or adoption seeding)
+        tracing::warn!(session_id = %session_id, persona_id = %persona_id, "Session agent_ir is null, trying persona last_design_result");
+        let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+        let design_result = persona.last_design_result
+            .as_deref()
+            .ok_or_else(|| AppError::Validation("Build session has no agent_ir and persona has no design result".to_string()))?;
+        let ir: crate::db::models::AgentIr = serde_json::from_str(design_result).map_err(|e| {
+            AppError::Validation(format!("Persona design result parse error: {e}"))
+        })?;
+        // Backfill the session so future calls work
+        let _ = build_session_repo::update(&state.db, &session_id, &UpdateBuildSession {
+            agent_ir: Some(Some(design_result.to_string())),
+            ..Default::default()
+        });
+        ir
+    };
 
     // Transition to testing phase
     build_session_repo::update(
@@ -362,6 +409,12 @@ fn prepare_tool_actions(
     let mut tool_names = Vec::new();
     let default_schema = r#"{"type":"object","properties":{},"additionalProperties":true}"#;
 
+    // Pre-extract the first connector from the agent IR for generic tool linkage.
+    // Generic tools like "http_request" are transport utilities that don't inherently
+    // know which API they serve — the agent's connectors define that.
+    let ir_primary_connector: Option<String> = ir.required_connectors.first()
+        .and_then(|c| c.name().map(|n| n.to_string()));
+
     for tool in &ir.tools {
         let name = tool.name().to_string();
         if name.is_empty() { continue; }
@@ -415,7 +468,18 @@ fn prepare_tool_actions(
             }
         };
 
-        let effective_req_cred = req_cred.or_else(|| infer_credential_type(&normalized, all_connectors));
+        // For generic transport tools (http_request, etc.), fall back to the agent's
+        // primary connector when name-based inference fails. This bridges the gap
+        // between "http_request" and "alpha_vantage" in template-adopted agents.
+        let effective_req_cred = req_cred
+            .or_else(|| infer_credential_type(&normalized, all_connectors))
+            .or_else(|| {
+                if GENERIC_TOOL_NAMES.contains(&normalized.as_str()) {
+                    ir_primary_connector.clone()
+                } else {
+                    None
+                }
+            });
 
         tool_actions.push(ToolAction {
             name,
@@ -435,6 +499,41 @@ fn prepare_tool_actions(
     }
 
     (tool_actions, tool_names)
+}
+
+// ============================================================================
+// Step 2b: Auto-fill missing webhook secrets
+// ============================================================================
+
+/// Ensure every webhook trigger has a `webhook_secret` in its config.
+/// Templates and adoption flows generate webhook triggers without a secret
+/// because the user has no UI to provide one pre-promotion. Rather than
+/// blocking promotion, we auto-generate a random secret.
+fn ensure_webhook_secrets(ir: &mut crate::db::models::AgentIr) {
+    for t in &mut ir.triggers {
+        if t.trigger_type.as_deref() != Some("webhook") {
+            continue;
+        }
+
+        let needs_secret = match &t.config {
+            None => true,
+            Some(cfg) => {
+                let secret = cfg.get("webhook_secret")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                secret.trim().is_empty()
+            }
+        };
+
+        if needs_secret {
+            let generated = uuid::Uuid::new_v4().to_string();
+            let config = t.config.get_or_insert_with(|| serde_json::json!({}));
+            if let Some(obj) = config.as_object_mut() {
+                obj.insert("webhook_secret".to_string(), serde_json::Value::String(generated.clone()));
+            }
+            tracing::info!("Auto-generated webhook_secret for webhook trigger (description: {:?})", t.description);
+        }
+    }
 }
 
 // ============================================================================
@@ -513,10 +612,14 @@ fn prepare_notification_channels(ir: &crate::db::models::AgentIr) -> Result<Opti
 // ============================================================================
 
 fn find_connectors_needing_setup(ir: &crate::db::models::AgentIr) -> Vec<String> {
+    use crate::db::models::agent_ir::AgentIrConnector;
     ir.required_connectors
         .iter()
-        .filter(|c| !c.has_credential.unwrap_or(false))
-        .filter_map(|c| c.name.as_deref().map(|n| n.to_string()))
+        .filter(|c| match c {
+            AgentIrConnector::Simple(_) => true, // simple string = no credential info
+            AgentIrConnector::Structured(d) => !d.has_credential.unwrap_or(false),
+        })
+        .filter_map(|c| c.name().map(|n| n.to_string()))
         .collect()
 }
 
@@ -830,9 +933,15 @@ pub async fn promote_build_draft_inner(
         .validate_transition(BuildPhase::Promoted)
         .map_err(AppError::Validation)?;
 
-    let ir: crate::db::models::AgentIr = session
-        .parse_agent_ir()
-        .ok_or_else(|| AppError::Validation("Build session has no agent_ir".to_string()))?;
+    let mut ir: crate::db::models::AgentIr = match &session.agent_ir {
+        None => return Err(AppError::Validation("Build session has no agent_ir (field is null)".to_string())),
+        Some(raw) => {
+            serde_json::from_str(raw).map_err(|e| {
+                tracing::error!(session_id = %session_id, error = %e, "Failed to parse agent_ir for promotion");
+                AppError::Validation(format!("Build session agent_ir parse error: {e}"))
+            })?
+        }
+    };
 
     tracing::info!(
         persona_id = %persona_id,
@@ -842,6 +951,11 @@ pub async fn promote_build_draft_inner(
         has_structured_prompt = ir.structured_prompt.is_some(),
         "promote_build_draft: extracted IR fields"
     );
+
+    // Auto-generate webhook_secret for webhook triggers that lack one.
+    // Templates and adoption flows produce webhook triggers without a secret
+    // since the user has no UI to set one before promotion.
+    ensure_webhook_secrets(&mut ir);
 
     // ================================================================
     // Pre-transaction preparation (read-only + encryption)

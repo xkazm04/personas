@@ -1,25 +1,10 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  PenLine,
-  Sparkles,
-  Code,
-  MessageSquare,
-  Shield,
-  BookOpen,
-  TestTube,
-  Package,
-  Bug,
-  Database,
-  GitPullRequest,
-  FileText,
-  FlaskConical,
-  RefreshCw,
-  Activity,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { PenLine } from 'lucide-react';
 import { TEMPLATE_CATALOG } from '@/lib/personas/templates/templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { iconIdForCategories, toAgentIconValue } from '@/lib/icons/agentIconCatalog';
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: 'All',
@@ -52,27 +37,9 @@ function deriveCategories(): string[] {
 
 const FILTER_CATEGORIES = deriveCategories();
 
-const ICON_MAP: Record<string, LucideIcon> = {
-  code: Code,
-  'message-square': MessageSquare,
-  MessageSquare: MessageSquare,
-  shield: Shield,
-  Shield: Shield,
-  'book-open': BookOpen,
-  'test-tube': TestTube,
-  package: Package,
-  bug: Bug,
-  Bug: Bug,
-  database: Database,
-  GitPullRequest: GitPullRequest,
-  FileText: FileText,
-  FlaskConical: FlaskConical,
-  RefreshCw: RefreshCw,
-  Activity: Activity,
-};
-
-function getIcon(iconName: string): LucideIcon {
-  return ICON_MAP[iconName] || Sparkles;
+/** Derive agent-icon alias from template categories. */
+function templateAgentIcon(template: TemplateCatalogEntry): string {
+  return toAgentIconValue(iconIdForCategories(template.category));
 }
 
 interface TemplatePickerStepProps {
@@ -156,8 +123,6 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
           <AnimatePresence mode="popLayout">
             {filteredTemplates.map((template) => {
-              const Icon = getIcon(template.icon);
-
               return (
                 <motion.button
                   key={template.id}
@@ -170,13 +135,13 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
                   className="flex items-start gap-3 p-3 rounded-xl border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-colors text-left"
                 >
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 border"
+                    className="icon-frame-md icon-frame-pop flex-shrink-0 border"
                     style={{
                       backgroundColor: `${template.color}18`,
                       borderColor: `${template.color}30`,
                     }}
                   >
-                    <Icon className="w-4 h-4" style={{ color: template.color }} />
+                    <PersonaIcon icon={templateAgentIcon(template)} color={template.color} size="w-5 h-5" framed />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground/85 truncate">{template.name}</p>

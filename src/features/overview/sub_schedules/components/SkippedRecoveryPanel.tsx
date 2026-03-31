@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import {
-  AlertTriangle, Play, SkipForward, Bot, Clock,
+  AlertTriangle, Play, SkipForward, Clock,
   CheckCircle2, ChevronDown,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { SkippedExecution, RecoveryPolicy } from '../libs/scheduleHelpers';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { formatRelative, formatInterval } from '../libs/scheduleHelpers';
 
 interface SkippedRecoveryPanelProps {
@@ -84,15 +85,11 @@ export default function SkippedRecoveryPanel({
               return (
                 <div key={agent.trigger_id} className="flex items-center gap-3 px-4 py-3">
                   {/* Agent info */}
-                  <div
-                    className="w-7 h-7 rounded-md flex items-center justify-center text-xs shrink-0"
-                    style={{
+                  <PersonaIcon icon={agent.persona_icon} color={agent.persona_color} display="pop"
+                    frameStyle={{
                       backgroundColor: agent.persona_color ? `${agent.persona_color}15` : 'var(--color-primary-5)',
                       color: agent.persona_color || 'var(--color-muted-foreground)',
-                    }}
-                  >
-                    {agent.persona_icon || <Bot className="w-3.5 h-3.5" />}
-                  </div>
+                    }} />
 
                   <div className="flex-1 min-w-0">
                     <span className="text-sm text-foreground/80 truncate block">

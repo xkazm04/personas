@@ -50,6 +50,8 @@ export interface MatrixBuildSlice {
   buildTestError: string | null;
   buildToolTestResults: ToolTestResult[];
   buildTestSummary: string | null;
+  /** Connector resolution status from last test run */
+  buildTestConnectors: Array<{ name: string; has_credential: boolean }>;
 
   // Actions -- event handlers
   handleBuildCellUpdate: (event: Extract<BuildEvent, { type: "cell_update" }>) => void;
@@ -93,6 +95,7 @@ export interface MatrixBuildSlice {
   setToolTestResults: (results: ToolTestResult[]) => void;
   appendToolTestResult: (result: ToolTestResult) => void;
   setTestSummary: (summary: string) => void;
+  setTestConnectors: (connectors: Array<{ name: string; has_credential: boolean }>) => void;
 
   // Post-build inline editing state
   buildEditState: MatrixEditState;
@@ -152,6 +155,7 @@ export const createMatrixBuildSlice: StateCreator<
   buildTestError: null,
   buildToolTestResults: [],
   buildTestSummary: null,
+  buildTestConnectors: [],
 
   // Post-build inline editing defaults
   buildEditState: {
@@ -354,6 +358,10 @@ export const createMatrixBuildSlice: StateCreator<
 
   setTestSummary: (summary) => {
     set({ buildTestSummary: summary });
+  },
+
+  setTestConnectors: (connectors: Array<{ name: string; has_credential: boolean }>) => {
+    set({ buildTestConnectors: connectors });
   },
 
   // -- Question management --------------------------------------------------

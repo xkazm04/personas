@@ -122,6 +122,8 @@ pub enum ProtocolMessage {
         severity: Option<String>,
         context_data: Option<String>,
         suggested_actions: Option<Vec<String>>,
+        /// Per-item decisions for batch reviews (e.g. multiple stock signals)
+        decisions: Option<Vec<serde_json::Value>>,
     },
     ExecutionFlow {
         flows: serde_json::Value,

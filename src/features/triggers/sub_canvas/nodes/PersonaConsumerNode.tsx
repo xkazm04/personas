@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Bot } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { PersonaConsumerNodeData } from '../libs/eventCanvasReconcile';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -36,12 +36,8 @@ function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
         className="!w-3 !h-3 !bg-emerald-400 !border-2 !border-background !rounded-full"
       />
 
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/15">
-        {d.icon ? (
-          <span className="text-sm">{d.icon}</span>
-        ) : (
-          <Bot className="w-4 h-4 text-muted-foreground" />
-        )}
+      <div className="flex-shrink-0 icon-frame icon-frame-pop bg-emerald-500/15">
+        <PersonaIcon icon={d.icon} color={d.color} size="w-4 h-4" framed />
       </div>
 
       <div className="flex flex-col min-w-0">

@@ -1,6 +1,8 @@
 import { Bot } from 'lucide-react';
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { isAgentIcon, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
+import { useIsDarkTheme } from '@/stores/themeStore';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
 
@@ -28,11 +30,25 @@ export function PersonaAvatar({
   fallbackStyle = 'initial',
   className = '',
 }: PersonaAvatarProps) {
+  const isDark = useIsDarkTheme();
   const cfg = SIZE_CONFIG[size];
   const defaultColor = fallbackStyle === 'bot' ? '#8b5cf6' : '#6B7280';
   const resolvedColor = color || defaultColor;
 
   if (icon) {
+    // Agent icon PNGs (theme-aware)
+    if (isAgentIcon(icon)) {
+      const src = resolveAgentIconSrc(icon, isDark);
+      return (
+        <img
+          src={src}
+          alt=""
+          className={`${cfg.img} ${className}`}
+          loading="lazy"
+        />
+      );
+    }
+
     const safeUrl = sanitizeIconUrl(icon);
     if (safeUrl) {
       return (

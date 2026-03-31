@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import type { AnimationPhase, AnimationMap } from '@/hooks/realtime/useRealtimeEvents';
 
 export const PHASE_DURATIONS: Record<AnimationPhase, number> = {
@@ -24,17 +24,23 @@ interface UseEventPhaseProgressorOptions {
   onTick: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export function useEventPhaseProgressor({ active, animationMapRef, onTick }: UseEventPhaseProgressorOptions) {
+export function useEventPhaseProgressor({ active, animationMapRef, onTick }: UseEventPhaseProgressorOptions): { wake: () => void } {
   const rafRef = useRef<number | null>(null);
+  const stoppedRef = useRef(false);
+  const dormantRef = useRef(true);
+  const tickRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active) {
+      dormantRef.current = true;
+      return;
+    }
 
-    let stopped = false;
+    stoppedRef.current = false;
     let wasHidden = document.hidden;
 
     function tick() {
-      if (stopped) return;
+      if (stoppedRef.current) return;
 
       // Skip ticks when the tab is hidden — no painting happens anyway
       if (document.hidden) {
@@ -64,19 +70,20 @@ export function useEventPhaseProgressor({ active, animationMapRef, onTick }: Use
         }
       }
 
-      // Safety cap: if the map somehow exceeds the limit, drop oldest entries
+      // Safety cap: FIFO eviction using Map insertion order (no sort needed)
       if (map.size > MAX_ANIMATION_ENTRIES) {
-        const entries = [...map.entries()].sort(
-          (a, b) => a[1].phaseStartedAt - b[1].phaseStartedAt
-        );
-        const excess = map.size - MAX_ANIMATION_ENTRIES;
-        for (let i = 0; i < excess; i++) {
-          map.delete(entries[i]![0]);
+        let excess = map.size - MAX_ANIMATION_ENTRIES;
+        for (const key of map.keys()) {
+          if (excess <= 0) break;
+          map.delete(key);
+          excess--;
         }
       }
 
+      // Go dormant when nothing to animate
       if (map.size === 0) {
-        rafRef.current = requestAnimationFrame(tick);
+        rafRef.current = null;
+        dormantRef.current = true;
         return;
       }
 
@@ -121,17 +128,43 @@ export function useEventPhaseProgressor({ active, animationMapRef, onTick }: Use
         onTick((t) => t + 1);
       }
 
+      // After mutations, check if map drained completely
+      if (map.size === 0) {
+        rafRef.current = null;
+        dormantRef.current = true;
+        return;
+      }
+
       rafRef.current = requestAnimationFrame(tick);
     }
 
-    rafRef.current = requestAnimationFrame(tick);
+    tickRef.current = tick;
+
+    // Start dormant if map is empty, otherwise kick off the loop
+    if (animationMapRef.current.size > 0) {
+      dormantRef.current = false;
+      rafRef.current = requestAnimationFrame(tick);
+    } else {
+      dormantRef.current = true;
+    }
 
     return () => {
-      stopped = true;
+      stoppedRef.current = true;
+      tickRef.current = null;
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      dormantRef.current = true;
     };
   }, [active, animationMapRef, onTick]);
+
+  const wake = useCallback(() => {
+    if (dormantRef.current && !stoppedRef.current && tickRef.current) {
+      dormantRef.current = false;
+      rafRef.current = requestAnimationFrame(tickRef.current);
+    }
+  }, []);
+
+  return { wake };
 }

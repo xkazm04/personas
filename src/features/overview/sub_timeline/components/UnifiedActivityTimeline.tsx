@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Activity, RefreshCw, Zap, MessageSquare, Bot } from 'lucide-react';
+import { Activity, RefreshCw, Zap, MessageSquare } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -50,7 +51,7 @@ function EventCard({ item }: { item: TimelineEventItem }) {
         </span>
         {item.personaName && (
           <span className="text-[10px] text-muted-foreground/70 truncate">
-            <Bot className="w-3 h-3 inline mr-0.5 opacity-60" />
+            <PersonaIcon icon={item.personaIcon} color={item.personaColor} display="pop" frameSize="xs" frameClass="mr-0.5" className="inline-flex" />
             {item.personaName}
           </span>
         )}
@@ -78,7 +79,7 @@ function MessageCard({ item }: { item: TimelineMessageItem }) {
 
         {msg.persona_name && (
           <span className="text-[10px] text-muted-foreground/70 shrink-0">
-            <Bot className="w-3 h-3 inline mr-0.5 opacity-60" />
+            <PersonaIcon icon={msg.persona_icon} color={msg.persona_color} display="pop" frameSize="xs" frameClass="mr-0.5" className="inline-flex" />
             {msg.persona_name}
           </span>
         )}

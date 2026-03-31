@@ -1,4 +1,5 @@
-import { Check, GitMerge, ChevronDown, Bot, X } from 'lucide-react';
+import { Check, GitMerge, ChevronDown, X } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import type { MemoryConflict, ConflictResolution } from '../libs/memoryConflicts';
@@ -58,7 +59,7 @@ function MemoryPreview({
       <div className={`px-2.5 py-1.5 typo-caption ${headerCls} bg-secondary/30 border-b ${borderCls} flex items-center justify-between`}>
         <span>{label}</span>
         <span className="flex items-center gap-1 text-muted-foreground/60">
-          <Bot className="w-3 h-3" />
+          <PersonaIcon icon={null} color={null} display="pop" frameSize="xs" />
           {agentName}
         </span>
       </div>

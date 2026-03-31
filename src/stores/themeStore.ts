@@ -19,7 +19,7 @@ export type ThemeId =
   | 'light-news'
   | 'custom';
 
-export type TextScale = 'large' | 'larger';
+export type TextScale = 'compact' | 'default' | 'large' | 'larger';
 
 export type TimezoneMode = 'local' | 'utc' | string; // string for IANA like 'America/New_York'
 
@@ -48,7 +48,9 @@ export const THEMES: ThemeDefinition[] = [
 ];
 
 export const TEXT_SCALES: { id: TextScale; label: string; description: string }[] = [
-  { id: 'large', label: 'Standard', description: 'Default text size' },
+  { id: 'compact', label: 'Compact', description: 'Dense data views' },
+  { id: 'default', label: 'Default', description: 'Balanced readability' },
+  { id: 'large', label: 'Large', description: 'Comfortable reading' },
   { id: 'larger', label: 'Larger', description: 'Maximum readability' },
 ];
 
@@ -115,11 +117,20 @@ interface ThemeState {
   clearCustomTheme: () => void;
 }
 
+/** Derived selector: true when the active theme is dark. */
+export function useIsDarkTheme(): boolean {
+  const themeId = useThemeStore((s) => s.themeId);
+  if (themeId === 'custom') {
+    return useThemeStore.getState().customTheme?.baseMode !== 'light';
+  }
+  return !themeId.startsWith('light');
+}
+
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
       themeId: 'dark-midnight' as ThemeId,
-      textScale: 'large' as TextScale,
+      textScale: 'default' as TextScale,
       timezone: 'local' as TimezoneMode,
       customTheme: null as CustomThemeConfig | null,
       setTheme: (id: ThemeId) => {
@@ -152,7 +163,7 @@ export const useThemeStore = create<ThemeState>()(
             injectCustomThemeStyle(deriveCustomThemeVars(state.customTheme));
           }
           applyThemeToDOM(state.themeId, state.customTheme);
-          applyTextScale(state.textScale ?? 'large');
+          applyTextScale(state.textScale ?? 'default');
         }
       },
     }

@@ -72,8 +72,8 @@ const gridContainerVariants: Variants = {
 };
 
 const gridRowVariants: Variants = {
-  hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.15, ease: EASE_CURVE } },
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.15, ease: EASE_CURVE } },
 };
 
 const gridRowReduced: Variants = {
@@ -184,14 +184,14 @@ export function DataGrid<T>({
           /* Filterable header (hidden in simplified mode) */
           if (!simplified && col.filterOptions && col.onFilterChange) {
             return (
-              <div key={col.key} className="px-2 py-1.5">
+              <div key={col.key} className="px-2 py-2.5 flex items-center">
                 <ThemedSelect
                   filterable
                   options={col.filterOptions}
                   value={col.filterValue ?? ''}
                   onValueChange={col.onFilterChange}
                   placeholder={col.label}
-                  className="!px-2 !py-1 !text-xs !rounded-lg !border-transparent !bg-transparent !text-foreground/80 hover:!bg-secondary/30 hover:!text-foreground uppercase tracking-wider font-semibold"
+                  className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
                 />
               </div>
             );
@@ -218,8 +218,8 @@ export function DataGrid<T>({
           return (
             <div
               key={col.key}
-              className={`px-4 py-2.5 typo-label text-foreground/80 ${
-                col.align === 'right' ? 'text-right' : ''
+              className={`px-4 py-2.5 flex items-center typo-label text-foreground/80 ${
+                col.align === 'right' ? 'justify-end' : ''
               }`}
             >
               {col.label}

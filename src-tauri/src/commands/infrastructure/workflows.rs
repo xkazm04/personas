@@ -44,67 +44,41 @@ pub fn get_workflows_overview(
 ) -> Result<WorkflowsOverview, AppError> {
     require_auth_sync(&state)?;
     let mut jobs: Vec<WorkflowJob> = Vec::new();
+    let mut running_count: usize = 0;
+    let mut completed_count: usize = 0;
+    let mut failed_count: usize = 0;
 
-    // Collect from all four managers
-    for snap in list_n8n_transform_jobs() {
-        jobs.push(WorkflowJob {
-            job_id: snap.job_id,
-            job_type: "n8n_transform".into(),
-            status: snap.status,
-            error: snap.error,
-            line_count: snap.lines.len(),
-            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
-            elapsed_secs: snap.elapsed_secs,
-        });
+    // Sources: (iterator, job_type label)
+    let sources: Vec<(Vec<_>, &str)> = vec![
+        (list_n8n_transform_jobs(), "n8n_transform"),
+        (list_adopt_jobs(), "template_adopt"),
+        (list_generate_jobs(), "template_generate"),
+        (list_query_debug_jobs(), "query_debug"),
+        (list_schema_proposal_jobs(), "schema_proposal"),
+    ];
+
+    // Single collection pass: build jobs and compute counts together
+    for (snapshots, job_type) in sources {
+        for snap in snapshots {
+            match snap.status.as_str() {
+                "running" => running_count += 1,
+                "completed" => completed_count += 1,
+                "failed" => failed_count += 1,
+                _ => {}
+            }
+            jobs.push(WorkflowJob {
+                job_id: snap.job_id,
+                job_type: job_type.into(),
+                status: snap.status,
+                error: snap.error,
+                line_count: snap.lines.len(),
+                output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
+                elapsed_secs: snap.elapsed_secs,
+            });
+        }
     }
 
-    for snap in list_adopt_jobs() {
-        jobs.push(WorkflowJob {
-            job_id: snap.job_id,
-            job_type: "template_adopt".into(),
-            status: snap.status,
-            error: snap.error,
-            line_count: snap.lines.len(),
-            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
-            elapsed_secs: snap.elapsed_secs,
-        });
-    }
-
-    for snap in list_generate_jobs() {
-        jobs.push(WorkflowJob {
-            job_id: snap.job_id,
-            job_type: "template_generate".into(),
-            status: snap.status,
-            error: snap.error,
-            line_count: snap.lines.len(),
-            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
-            elapsed_secs: snap.elapsed_secs,
-        });
-    }
-
-    for snap in list_query_debug_jobs() {
-        jobs.push(WorkflowJob {
-            job_id: snap.job_id,
-            job_type: "query_debug".into(),
-            status: snap.status,
-            error: snap.error,
-            line_count: snap.lines.len(),
-            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
-            elapsed_secs: snap.elapsed_secs,
-        });
-    }
-
-    for snap in list_schema_proposal_jobs() {
-        jobs.push(WorkflowJob {
-            job_id: snap.job_id,
-            job_type: "schema_proposal".into(),
-            status: snap.status,
-            error: snap.error,
-            line_count: snap.lines.len(),
-            output_tail: snap.lines[snap.lines.len().saturating_sub(20)..].to_vec(),
-            elapsed_secs: snap.elapsed_secs,
-        });
-    }
+    let total_count = jobs.len();
 
     // Sort: running first, then by elapsed (most recent first)
     jobs.sort_by(|a, b| {
@@ -112,11 +86,6 @@ pub fn get_workflows_overview(
         let b_running = b.status == "running";
         b_running.cmp(&a_running).then(a.elapsed_secs.cmp(&b.elapsed_secs))
     });
-
-    let running_count = jobs.iter().filter(|j| j.status == "running").count();
-    let completed_count = jobs.iter().filter(|j| j.status == "completed").count();
-    let failed_count = jobs.iter().filter(|j| j.status == "failed").count();
-    let total_count = jobs.len();
 
     Ok(WorkflowsOverview {
         jobs,

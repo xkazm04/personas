@@ -19,6 +19,7 @@ import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPe
 import { trackRecentAgent, removeRecentAgent } from "@/hooks/agents/useRecentAgents";
 import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
 import { storeBus } from "@/lib/storeBus";
+import { autoAssignPersonaIcons } from "@/lib/icons/autoAssignIcons";
 
 const DEGRADATION_THRESHOLD = 3;
 
@@ -125,6 +126,18 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       });
       // Fire-and-forget: load sidebar badge data
       get().fetchPersonaSummaries();
+      // One-time icon assignment for existing personas (idempotent)
+      const needsAssignment = !localStorage.getItem('personas-icon-auto-assigned-v1');
+      if (needsAssignment) {
+        autoAssignPersonaIcons(personas).then(async () => {
+          // Re-fetch to pick up newly assigned icons
+          const updated = await listPersonas();
+          set((s) => ({
+            personas: updated,
+            selectedPersona: deriveSelectedPersona(updated, s.selectedPersonaId, s.detailCache),
+          }));
+        }).catch(() => { /* silent */ });
+      }
     } catch (err) {
       reportError(err, "Failed to fetch personas", set, { stateUpdates: { isLoading: false } });
       throw err;

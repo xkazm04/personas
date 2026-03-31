@@ -3,7 +3,8 @@ import { ChevronDown, ChevronRight, RotateCw } from 'lucide-react';
 import type { GlobalExecution } from '@/lib/types/types';
 import { formatDuration, getStatusEntry } from '@/lib/utils/formatters';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 
 interface ExecutionRowProps {
@@ -31,12 +32,7 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
         </div>
 
         <div className="flex items-center gap-2 w-[140px] sm:w-auto sm:min-w-[140px] flex-shrink-0">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-sm border border-primary/15"
-            style={{ backgroundColor: colorWithAlpha(execution.persona_color || '#6366f1', 0.08) }}
-          >
-            {execution.persona_icon || '?'}
-          </div>
+          <PersonaIcon icon={execution.persona_icon ?? null} color={execution.persona_color ?? null} display="framed" />
           <span className="typo-heading text-foreground/80 truncate max-w-[100px]">
             {execution.persona_name || 'Unknown'}
           </span>

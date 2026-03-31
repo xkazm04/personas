@@ -5,7 +5,8 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Play, X, HelpCircle, CheckCircle2, Send, RefreshCw, Save,
-  XCircle, Eye, RotateCcw, FileText, AlertTriangle,
+  XCircle, Eye, RotateCcw, FileText, AlertTriangle, Copy, Check,
+  Zap, Clock, Shield, Key,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -517,60 +518,55 @@ export function TestResultsPanel({
   summary?: string | null;
 }) {
   const [showReport, setShowReport] = useState(false);
-  const didPass = passed === true;
+  const testConnectors = useAgentStore((s) => s.buildTestConnectors);
+  const missingConnectors = testConnectors.filter((c) => !c.has_credential);
+  const hasConnectorGaps = missingConnectors.length > 0;
+  // Block approval if connectors lack credentials, even if tools somehow passed
+  const didPass = passed === true && !hasConnectorGaps;
   const passedCount = toolResults.filter((r) => r.status === 'passed').length;
   const failedCount = toolResults.filter((r) => r.status === 'failed' || r.status === 'credential_missing').length;
   const skippedCount = toolResults.filter((r) => r.status === 'skipped').length;
 
   return (
-    <div className="flex flex-col items-center gap-3 py-2 w-full">
-      <div className="relative w-12 h-12 flex items-center justify-center">
-        <span className={`absolute inset-0 rounded-full border-2 ${
-          didPass ? 'border-emerald-400/25' : failedCount > 0 ? 'border-red-400/25' : 'border-amber-400/25'
-        }`} />
-        <span className={`absolute inset-[3px] rounded-full bg-gradient-to-br ${
-          didPass
-            ? 'from-emerald-500/15 via-emerald-500/8 to-emerald-400/10'
+    <div className="relative flex flex-col gap-2 py-2 w-full h-full justify-center">
+      {/* Status icon — absolute top-right */}
+      <div className="absolute top-1 right-1 z-10">
+        <div className={`w-7 h-7 rounded-full flex items-center justify-center border ${
+          didPass ? 'border-emerald-400/30 bg-emerald-500/10' : failedCount > 0 ? 'border-red-400/30 bg-red-500/10' : 'border-amber-400/30 bg-amber-500/10'
+        }`}>
+          {didPass
+            ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             : failedCount > 0
-            ? 'from-red-500/15 via-red-500/8 to-red-400/10'
-            : 'from-amber-500/15 via-amber-500/8 to-amber-400/10'
-        }`} />
-        {didPass
-          ? <CheckCircle2 className="w-5 h-5 text-emerald-400 relative z-10" />
-          : failedCount > 0
-          ? <XCircle className="w-5 h-5 text-red-400 relative z-10" />
-          : <AlertTriangle className="w-5 h-5 text-amber-400 relative z-10" />}
+            ? <XCircle className="w-4 h-4 text-red-400" />
+            : <AlertTriangle className="w-4 h-4 text-amber-400" />}
+        </div>
       </div>
 
-      <span className={`text-sm font-medium ${didPass ? 'text-emerald-400' : failedCount > 0 ? 'text-red-400' : 'text-amber-400'}`}>
-        {didPass ? 'All Tests Passed' : failedCount > 0 ? 'Some Tests Failed' : 'Tests Skipped'}
-      </span>
-
-      {/* Brief summary */}
-      {toolResults.length > 0 && (
-        <div className="flex items-center gap-3 text-xs text-muted-foreground/60">
-          {passedCount > 0 && <span className="text-emerald-400">{passedCount} passed</span>}
-          {failedCount > 0 && <span className="text-red-400">{failedCount} failed</span>}
-          {skippedCount > 0 && <span className="text-muted-foreground/40">{skippedCount} skipped</span>}
-        </div>
-      )}
+      {/* Compact status + counts */}
+      <div className="flex items-center gap-2 pr-8">
+        <span className={`text-sm font-medium ${didPass ? 'text-emerald-400' : failedCount > 0 ? 'text-red-400' : 'text-amber-400'}`}>
+          {didPass ? 'Tests Passed' : failedCount > 0 ? 'Tests Failed' : 'Skipped'}
+        </span>
+        {toolResults.length > 0 && (
+          <span className="text-sm text-muted-foreground/40">
+            {passedCount > 0 && <span className="text-emerald-400/70">{passedCount}</span>}
+            {failedCount > 0 && <>{passedCount > 0 && '/'}<span className="text-red-400/70">{failedCount}</span></>}
+            {skippedCount > 0 && <>{(passedCount > 0 || failedCount > 0) && '/'}<span className="text-muted-foreground/40">{skippedCount}</span></>}
+          </span>
+        )}
+      </div>
 
       {error && !toolResults.length && (
-        <p className="text-xs text-red-400/80 text-center leading-relaxed px-2">{error}</p>
+        <p className="text-sm text-red-400/80 leading-snug">{error}</p>
       )}
 
-      {/* View Report button — always show when results OR error exist */}
-      {(toolResults.length > 0 || error) && (
-        <button
-          type="button"
-          onClick={() => setShowReport(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-primary/15 text-foreground/60 hover:bg-primary/5 hover:text-foreground/80 transition-colors"
-        >
-          <FileText className="w-3 h-3" />
-          View Report
-        </button>
+      {hasConnectorGaps && (
+        <p className="text-sm text-amber-400/80 leading-snug">
+          Missing keys: <strong>{missingConnectors.map((c) => c.name).join(', ')}</strong>
+        </p>
       )}
 
+      {/* Action buttons — single row */}
       <div className="flex gap-2 w-full">
         {didPass && onApprove && (
           <button
@@ -583,15 +579,25 @@ export function TestResultsPanel({
             Approve
           </button>
         )}
+        {(toolResults.length > 0 || error) && (
+          <button
+            type="button"
+            onClick={() => setShowReport(true)}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-primary/15 text-foreground/60 hover:bg-primary/5 hover:text-foreground/80 transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Report
+          </button>
+        )}
         {onReject && (
           <button
             type="button"
             onClick={onReject}
             data-testid="agent-reject-btn"
-            className={`${didPass ? 'flex-1' : 'w-full'} flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-primary/15 text-foreground/70 hover:bg-primary/5 transition-colors`}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border border-primary/15 text-foreground/70 hover:bg-primary/5 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            {didPass ? 'Try Again' : 'Refine & Retry'}
+            Retry
           </button>
         )}
       </div>
@@ -609,6 +615,7 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
   const modalRef = useRef<HTMLDivElement>(null);
   useClickOutside(modalRef, true, onClose);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const testConnectors = useAgentStore((s) => s.buildTestConnectors);
 
   const passedCount = results.filter((r) => r.status === 'passed').length;
   const failedCount = results.filter((r) => r.status === 'failed' || r.status === 'credential_missing').length;
@@ -640,17 +647,25 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
             </div>
             <div>
               <h2 className="text-base font-semibold text-foreground/90">Test Report</h2>
-              <div className="flex items-center gap-3 mt-0.5">
+              <div className="flex items-center gap-3 mt-1">
                 {passedCount > 0 && (
-                  <span className="text-xs text-emerald-400/90 font-medium">{passedCount} passed</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-emerald-400/90 font-medium"><CheckCircle2 className="w-3 h-3" />{passedCount} passed</span>
                 )}
                 {failedCount > 0 && (
-                  <span className="text-xs text-red-400/90 font-medium">{failedCount} failed</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-red-400/90 font-medium"><XCircle className="w-3 h-3" />{failedCount} failed</span>
                 )}
                 {skippedCount > 0 && (
-                  <span className="text-xs text-muted-foreground/50">{skippedCount} skipped</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground/50"><AlertTriangle className="w-3 h-3" />{skippedCount} skipped</span>
                 )}
               </div>
+              {/* Health bar */}
+              {results.length > 0 && (
+                <div className="flex gap-0.5 mt-2 h-1.5 w-48 rounded-full overflow-hidden bg-secondary/30">
+                  {passedCount > 0 && <div className="bg-emerald-400/70 rounded-full" style={{ flex: passedCount }} />}
+                  {failedCount > 0 && <div className="bg-red-400/70 rounded-full" style={{ flex: failedCount }} />}
+                  {skippedCount > 0 && <div className="bg-muted-foreground/20 rounded-full" style={{ flex: skippedCount }} />}
+                </div>
+              )}
             </div>
           </div>
           <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-secondary/50 transition-colors">
@@ -687,8 +702,16 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
                   ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                   : r.status === 'skipped'
                   ? <AlertTriangle className="w-3.5 h-3.5 text-muted-foreground/35 flex-shrink-0" />
+                  : r.status === 'credential_missing'
+                  ? <Key className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                   : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />;
                 const label = r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                const latencyLabel = r.latency_ms != null && r.latency_ms > 0
+                  ? r.latency_ms < 500 ? 'Fast' : r.latency_ms < 2000 ? 'OK' : 'Slow'
+                  : null;
+                const latencyColor = r.latency_ms != null
+                  ? r.latency_ms < 500 ? 'text-emerald-400/50' : r.latency_ms < 2000 ? 'text-amber-400/50' : 'text-red-400/50'
+                  : '';
 
                 return (
                   <button
@@ -702,18 +725,28 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
                     }`}
                   >
                     {statusIcon}
-                    <span className={`text-[13px] truncate ${isActive ? 'font-medium text-foreground/90' : 'text-foreground/60'}`}>
-                      {label}
-                    </span>
-                    {r.http_status && (
-                      <span className={`ml-auto text-[10px] font-mono flex-shrink-0 ${
-                        r.http_status >= 200 && r.http_status < 300
-                          ? 'text-emerald-400/60'
-                          : 'text-red-400/60'
-                      }`}>
-                        {r.http_status}
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-[13px] truncate block ${isActive ? 'font-medium text-foreground/90' : 'text-foreground/60'}`}>
+                        {label}
                       </span>
-                    )}
+                      {r.connector && (
+                        <span className="text-[10px] text-muted-foreground/40 truncate block">{r.connector}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                      {r.http_status && (
+                        <span className={`text-[10px] font-mono ${
+                          r.http_status >= 200 && r.http_status < 300
+                            ? 'text-emerald-400/60'
+                            : 'text-red-400/60'
+                        }`}>
+                          {r.http_status}
+                        </span>
+                      )}
+                      {latencyLabel && (
+                        <span className={`text-[9px] ${latencyColor}`}>{latencyLabel}</span>
+                      )}
+                    </div>
                   </button>
                 );
               })}
@@ -731,7 +764,7 @@ function TestReportModal({ results, summary, onClose }: { results: ToolTestResul
               {selectedTool && selectedResult ? (
                 <ToolDetailView result={selectedResult} sections={sections} />
               ) : (
-                <ReportOverview sections={sections} summary={summary} results={results} />
+                <ReportOverview sections={sections} summary={summary} results={results} connectors={testConnectors} />
               )}
             </div>
           </div>
@@ -765,60 +798,181 @@ function parseReportSections(md: string): { overview: string; results: string; n
   return sections;
 }
 
+/** Connector credential handshake card for the test report. */
+function ConnectorHandshakeCard({ connectors }: { connectors: Array<{ name: string; has_credential: boolean }> }) {
+  if (connectors.length === 0) return null;
+  const matched = connectors.filter((c) => c.has_credential);
+  const missing = connectors.filter((c) => !c.has_credential);
+  return (
+    <div className="rounded-xl border border-primary/10 bg-primary/[0.02] px-4 py-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Key className="w-4 h-4 text-primary/50" />
+        <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Connector Credentials</h4>
+      </div>
+      <div className="space-y-1.5">
+        {matched.map((c) => (
+          <div key={c.name} className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+            <span className="text-foreground/70">{c.name}</span>
+            <span className="text-emerald-400/60 text-xs">matched</span>
+          </div>
+        ))}
+        {missing.map((c) => (
+          <div key={c.name} className="flex items-center gap-2 text-sm">
+            <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+            <span className="text-foreground/70">{c.name}</span>
+            <span className="text-red-400/60 text-xs">not found</span>
+          </div>
+        ))}
+      </div>
+      {missing.length > 0 && (
+        <p className="text-[11px] text-amber-400/60 mt-2">Add missing API keys in the Keys section before approving this agent.</p>
+      )}
+    </div>
+  );
+}
+
 /** Render the overview tab with parsed markdown sections. */
-function ReportOverview({ sections, summary, results }: { sections: ReturnType<typeof parseReportSections> | null; summary?: string | null; results: ToolTestResult[] }) {
+function ReportOverview({ sections, summary, results, connectors = [] }: { sections: ReturnType<typeof parseReportSections> | null; summary?: string | null; results: ToolTestResult[]; connectors?: Array<{ name: string; has_credential: boolean }> }) {
   // Build a fallback overview from results when no LLM summary
   if (!sections && !summary) {
     const passed = results.filter((r) => r.status === 'passed');
-    const failed = results.filter((r) => r.status === 'failed' || r.status === 'credential_missing');
+    const failed = results.filter((r) => r.status === 'failed');
+    const credentialMissing = results.filter((r) => r.status === 'credential_missing');
     const skipped = results.filter((r) => r.status === 'skipped');
 
     return (
       <div className="space-y-5">
+        <ConnectorHandshakeCard connectors={connectors} />
         <div>
           <p className="text-sm text-foreground/70 leading-relaxed">
-            {failed.length === 0 && passed.length > 0
-              ? `All ${passed.length} tool${passed.length > 1 ? 's' : ''} connected successfully.${skipped.length > 0 ? ` ${skipped.length} tool${skipped.length > 1 ? 's were' : ' was'} skipped (built-in capabilities that don't need external connections).` : ''}`
-              : failed.length > 0
-              ? `${failed.length} tool${failed.length > 1 ? 's' : ''} had issues connecting.${passed.length > 0 ? ` ${passed.length} tool${passed.length > 1 ? 's' : ''} verified OK.` : ''}${skipped.length > 0 ? ` ${skipped.length} skipped.` : ''}`
-              : `${skipped.length} tool${skipped.length > 1 ? 's were' : ' was'} skipped. These use built-in capabilities and don't need external API verification.`}
+            {failed.length === 0 && credentialMissing.length === 0 && passed.length > 0
+              ? `Your agent successfully connected to ${passed.length === 1 ? 'its service' : `all ${passed.length} services`}.${skipped.length > 0 ? ` ${skipped.length} tool${skipped.length > 1 ? 's use' : ' uses'} built-in capabilities and didn't need testing.` : ''}`
+              : (failed.length > 0 || credentialMissing.length > 0)
+              ? `${failed.length + credentialMissing.length} connection${(failed.length + credentialMissing.length) > 1 ? 's' : ''} need attention.${passed.length > 0 ? ` ${passed.length} verified OK.` : ''}${skipped.length > 0 ? ` ${skipped.length} skipped.` : ''}`
+              : `${skipped.length} tool${skipped.length > 1 ? 's use' : ' uses'} built-in capabilities and didn't need external testing.`}
           </p>
         </div>
-        <div>
-          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-2">Results</h4>
-          <div className="space-y-1.5">
-            {results.map((r, i) => {
-              const icon = r.status === 'passed' ? '\u2705' : r.status === 'skipped' ? '\u23ED' : '\u274C';
-              const label = r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-              const desc = r.status === 'passed'
-                ? 'Connection verified'
-                : r.status === 'skipped'
-                ? 'Uses built-in capabilities'
-                : r.status === 'credential_missing'
-                ? 'Needs credentials'
-                : 'Connection failed';
-              return <MarkdownLine key={i} text={`- ${icon} **${label}** — ${desc}`} />;
-            })}
-          </div>
+
+        {/* Categorized result cards */}
+        <div className="space-y-3">
+          {passed.length > 0 && (
+            <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <h4 className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Connected Successfully</h4>
+              </div>
+              <div className="space-y-1">
+                {passed.map((r) => {
+                  const label = r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                  return (
+                    <div key={r.tool_name} className="flex items-center justify-between text-sm">
+                      <span className="text-foreground/70">{label}{r.connector ? <span className="text-muted-foreground/40 ml-1.5">via {r.connector}</span> : null}</span>
+                      {r.latency_ms != null && r.latency_ms > 0 && (
+                        <span className="text-[10px] text-muted-foreground/40 font-mono">{r.latency_ms}ms</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {credentialMissing.length > 0 && (
+            <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Key className="w-4 h-4 text-amber-400" />
+                <h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Needs Credentials</h4>
+              </div>
+              <div className="space-y-1">
+                {credentialMissing.map((r) => {
+                  const label = r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                  return (
+                    <div key={r.tool_name} className="text-sm text-foreground/70">
+                      {label}{r.connector ? <span className="text-muted-foreground/40 ml-1.5">({r.connector})</span> : null}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-amber-400/60 mt-2">Add the required API keys in the Keys section to enable these tools.</p>
+            </div>
+          )}
+
+          {failed.length > 0 && (
+            <div className="rounded-xl border border-red-500/15 bg-red-500/5 px-4 py-3">
+              <div className="flex items-center gap-2 mb-2">
+                <XCircle className="w-4 h-4 text-red-400" />
+                <h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider">Connection Failed</h4>
+              </div>
+              <div className="space-y-1">
+                {failed.map((r) => {
+                  const label = r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                  const hint = r.http_status ? httpStatusHint(r.http_status) : null;
+                  return (
+                    <div key={r.tool_name} className="text-sm">
+                      <span className="text-foreground/70">{label}</span>
+                      {hint && <span className="text-red-400/50 ml-1.5 text-xs">{hint}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {skipped.length > 0 && (
+            <div className="rounded-xl border border-primary/10 bg-secondary/20 px-4 py-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="w-4 h-4 text-muted-foreground/40" />
+                <h4 className="text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">Built-in (No Test Needed)</h4>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+                {skipped.map((r) => {
+                  const label = r.tool_name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                  return <span key={r.tool_name} className="text-sm text-muted-foreground/50">{label}</span>;
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
   if (!sections) {
-    return <p className="text-sm text-foreground/60 leading-relaxed whitespace-pre-line">{summary}</p>;
+    return (
+      <div className="space-y-5">
+        <ConnectorHandshakeCard connectors={connectors} />
+        <div className="space-y-1.5">
+          {summary!.split('\n').filter(Boolean).map((line, i) => (
+            <MarkdownLine key={i} text={line} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-5">
+      <ConnectorHandshakeCard connectors={connectors} />
       {sections.overview && (
-        <div>
-          <p className="text-sm text-foreground/70 leading-relaxed">{sections.overview.trim()}</p>
+        <div className="rounded-xl border border-primary/10 bg-primary/[0.02] px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="w-4 h-4 text-primary/50" />
+            <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Overview</h4>
+          </div>
+          <div className="space-y-1.5">
+            {sections.overview.trim().split('\n').filter(Boolean).map((line, i) => (
+              <MarkdownLine key={i} text={line} />
+            ))}
+          </div>
         </div>
       )}
       {sections.results && (
         <div>
-          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-2">Results</h4>
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="w-4 h-4 text-foreground/40" />
+            <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Results</h4>
+          </div>
           <div className="space-y-1.5">
             {sections.results.trim().split('\n').filter(Boolean).map((line, i) => (
               <MarkdownLine key={i} text={line} />
@@ -827,8 +981,11 @@ function ReportOverview({ sections, summary, results }: { sections: ReturnType<t
         </div>
       )}
       {sections.nextSteps && (
-        <div>
-          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-2">Next Steps</h4>
+        <div className="rounded-xl border border-primary/10 bg-primary/[0.02] px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-primary/50" />
+            <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Next Steps</h4>
+          </div>
           <div className="space-y-1.5">
             {sections.nextSteps.trim().split('\n').filter(Boolean).map((line, i) => (
               <MarkdownLine key={i} text={line} />
@@ -840,7 +997,7 @@ function ReportOverview({ sections, summary, results }: { sections: ReturnType<t
   );
 }
 
-/** Render a single markdown line with formatting (bold, headings, inline code, emoji). */
+/** Render a single markdown line with formatting (bold, headings, inline code, links). */
 function MarkdownLine({ text }: { text: string }) {
   const trimmed = text.trim();
   if (!trimmed) return null;
@@ -856,24 +1013,36 @@ function MarkdownLine({ text }: { text: string }) {
     return <h3 className="text-base font-bold text-foreground/90 mt-4 mb-1.5">{trimmed.replace(/^##\s+/, '')}</h3>;
   }
 
-  // Parse bullet point prefix
-  const isBullet = /^[-*]\s/.test(trimmed);
-  const content = isBullet ? trimmed.slice(2) : trimmed;
+  // Horizontal rule
+  if (/^---+$/.test(trimmed)) {
+    return <hr className="border-primary/10 my-3" />;
+  }
 
-  // Parse bold and inline code
-  const parts = content.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, i) => {
+  // Parse bullet point or numbered list prefix
+  const isBullet = /^[-*]\s/.test(trimmed);
+  const numberedMatch = trimmed.match(/^(\d+)[.)]\s/);
+  const isNumbered = !!numberedMatch;
+  const content = isBullet ? trimmed.slice(2) : isNumbered ? trimmed.slice(numberedMatch![0].length) : trimmed;
+
+  // Parse inline formatting: bold, inline code, links
+  const parts = content.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={i} className="text-foreground/90 font-semibold">{part.slice(2, -2)}</strong>;
     }
     if (part.startsWith('`') && part.endsWith('`')) {
       return <code key={i} className="px-1 py-0.5 rounded bg-primary/8 text-primary/80 font-mono text-[11px]">{part.slice(1, -1)}</code>;
     }
+    const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (linkMatch) {
+      return <span key={i} className="text-primary/70 underline underline-offset-2">{linkMatch[1]}</span>;
+    }
     return <span key={i}>{part}</span>;
   });
 
   return (
     <div className={`flex gap-2 text-sm text-foreground/60 leading-relaxed`}>
-      {isBullet && <span className="text-primary/40 mt-0.5 flex-shrink-0">&#8226;</span>}
+      {isBullet && <span className="text-primary/40 mt-0.5 flex-shrink-0">&bull;</span>}
+      {isNumbered && <span className="text-primary/40 mt-0.5 flex-shrink-0 font-medium text-xs min-w-[1rem] text-right">{numberedMatch![1]}.</span>}
       <span>{parts}</span>
     </div>
   );
@@ -909,22 +1078,38 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
         isPassed
           ? 'bg-emerald-500/5 border-emerald-500/15'
           : isSkipped
+          ? 'bg-secondary/30 border-primary/10'
+          : result.status === 'credential_missing'
           ? 'bg-amber-500/5 border-amber-500/15'
           : 'bg-red-500/5 border-red-500/15'
       }`}>
         {isPassed
           ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
           : isSkipped
-          ? <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+          ? <Zap className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" />
+          : result.status === 'credential_missing'
+          ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" />
           : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
-        <div>
-          <span className={`text-sm font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-amber-400' : 'text-red-400'}`}>
-            {isPassed ? 'Passed' : isSkipped ? 'Skipped' : result.status === 'credential_missing' ? 'Needs Credential' : 'Failed'}
+        <div className="flex-1">
+          <span className={`text-sm font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-muted-foreground/60' : result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
+            {isPassed ? 'Passed' : isSkipped ? 'Skipped (Built-in)' : result.status === 'credential_missing' ? 'Needs Credential' : 'Failed'}
           </span>
-          {result.latency_ms != null && result.latency_ms > 0 && (
-            <span className="text-xs text-muted-foreground/40 ml-2">{result.latency_ms}ms</span>
+          {result.http_status && (
+            <span className={`text-[10px] font-mono ml-2 px-1.5 py-0.5 rounded ${
+              result.http_status >= 200 && result.http_status < 300
+                ? 'bg-emerald-500/10 text-emerald-400/70'
+                : 'bg-red-500/10 text-red-400/70'
+            }`}>
+              HTTP {result.http_status}
+            </span>
           )}
         </div>
+        {result.latency_ms != null && result.latency_ms > 0 && (
+          <div className="flex items-center gap-1 text-muted-foreground/40">
+            <Clock className="w-3 h-3" />
+            <span className="text-xs font-mono">{result.latency_ms}ms</span>
+          </div>
+        )}
       </div>
 
       {/* Summary — LLM line if available, else human-readable fallback */}
@@ -952,9 +1137,25 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
       {/* Output preview (for passed tools) */}
       {result.output_preview && isPassed && (
         <div>
-          <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-1">Response Preview</h4>
-          <div className="rounded-lg bg-black/20 border border-primary/10 px-3 py-2.5 font-mono text-[11px] leading-relaxed max-h-48 overflow-y-auto">
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Response Preview</h4>
+            <CopyButton text={result.output_preview} />
+          </div>
+          <div className="rounded-lg bg-black/20 border border-primary/10 px-3 py-2.5 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
             <FormattedPreview text={result.output_preview} />
+          </div>
+        </div>
+      )}
+
+      {/* Error detail for failed tools */}
+      {!isPassed && !isSkipped && result.error && (
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Error Detail</h4>
+            <CopyButton text={result.error} />
+          </div>
+          <div className="rounded-lg bg-red-500/5 border border-red-500/10 px-3 py-2.5 font-mono text-[11px] text-red-400/70 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">
+            {result.error}
           </div>
         </div>
       )}
@@ -962,9 +1163,30 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
   );
 }
 
+/** Small copy-to-clipboard button. */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-secondary/30 transition-colors"
+    >
+      {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  );
+}
+
 /** Format response preview — try to pretty-print JSON, fall back to plain text. */
 function FormattedPreview({ text }: { text: string }) {
-  const truncated = text.slice(0, 2000);
+  const truncated = text.slice(0, 5000);
 
   // Try to parse as JSON for pretty-printing
   try {
@@ -997,6 +1219,15 @@ function FormattedPreview({ text }: { text: string }) {
   }
 }
 
+/** Short human hint for HTTP status codes in overview cards. */
+function httpStatusHint(status: number): string | null {
+  if (status === 401 || status === 403) return 'Authentication issue';
+  if (status === 404) return 'Endpoint not found';
+  if (status === 429) return 'Rate limited';
+  if (status >= 500) return 'Service error';
+  return null;
+}
+
 /** Convert raw API errors into user-friendly language. */
 function formatErrorForUser(error: string, httpStatus?: number): string {
   if (httpStatus === 401 || httpStatus === 403) {
@@ -1017,8 +1248,9 @@ function formatErrorForUser(error: string, httpStatus?: number): string {
   if (error.includes('credential') || error.includes('Credential')) {
     return 'Missing credentials. Go to **Keys** to add the required service credentials.';
   }
-  // Truncate raw errors
-  return error.length > 150 ? error.slice(0, 150) + '...' : error;
+  // Truncate raw errors but try to keep them readable
+  if (error.length > 200) return error.slice(0, 200) + '...';
+  return error;
 }
 
 

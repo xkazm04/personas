@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Bot, Zap, Clock, MoreHorizontal, Trash2, Settings, Star, Plug, ShieldCheck } from 'lucide-react';
+import { Bot, Zap, Clock, MoreHorizontal, Trash2, Settings, Star, Plug, ShieldCheck, Calendar } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusShape, mapToShapeStatus } from '@/features/shared/components/display/StatusShape';
 import { useAgentStore } from "@/stores/agentStore";
@@ -23,9 +24,9 @@ const logger = createLogger("persona-overview");
 // -- Status helpers --
 
 const HEALTH_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  healthy:  { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Healthy' },
-  degraded: { bg: 'bg-amber-500/10',   text: 'text-amber-400',   label: 'Degraded' },
-  failing:  { bg: 'bg-red-500/10',     text: 'text-red-400',     label: 'Failing' },
+  healthy: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Healthy' },
+  degraded: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Degraded' },
+  failing: { bg: 'bg-red-500/10', text: 'text-red-400', label: 'Failing' },
 };
 
 function TrustScoreBar({ score }: { score: number }) {
@@ -338,6 +339,10 @@ export default function PersonaOverviewPage() {
             cmp = ta.localeCompare(tb);
             break;
           }
+          case 'created': {
+            cmp = (a.created_at ?? '').localeCompare(b.created_at ?? '');
+            break;
+          }
         }
         return sortDir === 'desc' ? -cmp : cmp;
       });
@@ -371,12 +376,6 @@ export default function PersonaOverviewPage() {
     { value: 'building', label: 'Drafts' },
   ];
 
-  const healthOptions = [
-    { value: 'all', label: 'All Health' },
-    { value: 'healthy', label: 'Healthy' },
-    { value: 'degraded', label: 'Degraded' },
-    { value: 'failing', label: 'Failing' },
-  ];
 
   const columns: DataGridColumn<Persona>[] = [
     {
@@ -388,14 +387,13 @@ export default function PersonaOverviewPage() {
           onClick={(e) => { e.stopPropagation(); handleToggleSelect(persona.id); }}
           className="flex items-center justify-center"
         >
-          <div className={`w-4 h-4 rounded border transition-all flex items-center justify-center cursor-pointer ${
-            selectedIds.has(persona.id)
-              ? 'bg-primary/80 border-primary/60'
-              : 'border-primary/25 hover:border-primary/50'
-          }`}>
+          <div className={`w-4 h-4 rounded border transition-all flex items-center justify-center cursor-pointer ${selectedIds.has(persona.id)
+            ? 'bg-primary/80 border-primary/60'
+            : 'border-primary/25 hover:border-primary/50'
+            }`}>
             {selectedIds.has(persona.id) && (
               <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
-                <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
           </div>
@@ -414,11 +412,10 @@ export default function PersonaOverviewPage() {
           title={isFavorite(persona.id) ? 'Remove from favorites' : 'Add to favorites'}
         >
           <Star
-            className={`w-3.5 h-3.5 transition-colors ${
-              isFavorite(persona.id)
-                ? 'text-amber-400 fill-amber-400'
-                : 'text-muted-foreground/25 hover:text-amber-400/50'
-            }`}
+            className={`w-3.5 h-3.5 transition-colors ${isFavorite(persona.id)
+              ? 'text-amber-400 fill-amber-400'
+              : 'text-muted-foreground/25 hover:text-amber-400/50'
+              }`}
           />
         </button>
       ),
@@ -426,21 +423,21 @@ export default function PersonaOverviewPage() {
     {
       key: 'name',
       label: 'Agent',
-      width: '2fr',
+      width: '400px',
       sortable: true,
       render: (persona) => {
         return (
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center flex-shrink-0"
+            <div className="icon-frame icon-frame-pop bg-primary/10 border border-primary/15 flex-shrink-0"
               style={persona.color ? { borderColor: `${persona.color}30`, backgroundColor: `${persona.color}15` } : undefined}
             >
-              <Bot className="w-4 h-4 text-primary/70" style={persona.color ? { color: persona.color } : undefined} />
+              <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" framed frameSize={"lg"} />
             </div>
             <div className="min-w-0">
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleRowClick(persona); }}
-                className="text-sm font-medium text-foreground/90 truncate block max-w-full text-left hover:text-primary transition-colors"
+                className="text-md font-medium text-foreground/90 truncate block max-w-full text-left hover:text-primary transition-colors"
               >
                 {persona.name}
               </button>
@@ -492,34 +489,13 @@ export default function PersonaOverviewPage() {
       },
     },
     {
-      key: 'health',
-      label: 'Health',
-      width: '110px',
-      filterOptions: healthOptions,
-      filterValue: healthFilter,
-      onFilterChange: (v) => setViewConfig((prev) => ({ ...prev, healthFilter: v })),
-      render: (persona) => {
-        if (!persona.enabled || isDraft(persona)) {
-          return <span className="text-[11px] text-muted-foreground/30">--</span>;
-        }
-        const h = healthMap[persona.id]?.status ?? 'healthy';
-        const style = (HEALTH_STYLES[h] ?? HEALTH_STYLES.healthy)!;
-        return (
-          <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${style.text}`}>
-            <StatusShape status={mapToShapeStatus(h)} size="xs" colorClass="" />
-            {style.label}
-          </span>
-        );
-      },
-    },
-    {
       key: 'trust',
       label: 'Trust',
       width: '140px',
       sortable: true,
       render: (persona) => {
         if (!persona.enabled || isDraft(persona)) {
-          return <span className="text-[11px] text-muted-foreground/30">--</span>;
+          return <span className="text-[11px] text-foreground/30">--</span>;
         }
         return <TrustScoreBar score={persona.trust_score ?? 0} />;
       },
@@ -533,7 +509,7 @@ export default function PersonaOverviewPage() {
       render: (persona) => {
         const count = triggerCounts[persona.id] ?? 0;
         return (
-          <span className="flex items-center justify-end gap-1 text-sm text-muted-foreground/60">
+          <span className="flex items-center justify-end gap-1 text-[11px] text-foreground">
             <Zap className="w-3 h-3" />
             {count}
           </span>
@@ -548,11 +524,27 @@ export default function PersonaOverviewPage() {
       align: 'right',
       render: (persona) => {
         const lastRun = lastRunMap[persona.id];
-        if (!lastRun) return <span className="text-sm text-muted-foreground/30">Never</span>;
+        if (!lastRun) return <span className="text-[11px] text-foreground/30">Never</span>;
         return (
-          <span className="flex items-center justify-end gap-1 text-sm text-muted-foreground/60">
+          <span className="flex items-center justify-end gap-1 text-[11px] text-foreground">
             <Clock className="w-3 h-3" />
             {formatRelativeTime(lastRun)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'created',
+      label: 'Created',
+      width: '120px',
+      sortable: true,
+      align: 'right',
+      render: (persona) => {
+        if (!persona.created_at) return <span className="text-[11px] text-foreground/30">--</span>;
+        return (
+          <span className="flex items-center justify-end gap-1 text-[11px] text-foreground">
+            <Calendar className="w-3 h-3" />
+            {formatRelativeTime(persona.created_at)}
           </span>
         );
       },
@@ -595,11 +587,11 @@ export default function PersonaOverviewPage() {
           getRowKey={(p) => p.id}
           getRowAccent={(p) =>
             selectedIds.has(p.id) ? 'border-l-primary/50 bg-primary/[0.03]' :
-            isBuilding(p.id) ? 'hover:border-l-violet-400' :
-            isDraft(p) ? 'hover:border-l-zinc-400' :
-            healthMap[p.id]?.status === 'failing' ? 'hover:border-l-red-400' :
-            healthMap[p.id]?.status === 'degraded' ? 'hover:border-l-amber-400' :
-            'hover:border-l-emerald-400'
+              isBuilding(p.id) ? 'hover:border-l-violet-400' :
+                isDraft(p) ? 'hover:border-l-zinc-400' :
+                  healthMap[p.id]?.status === 'failing' ? 'hover:border-l-red-400' :
+                    healthMap[p.id]?.status === 'degraded' ? 'hover:border-l-amber-400' :
+                      'hover:border-l-emerald-400'
           }
           sortKey={sortKey}
           sortDirection={sortDir}

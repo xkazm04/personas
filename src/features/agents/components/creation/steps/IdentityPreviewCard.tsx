@@ -1,6 +1,7 @@
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
-import { Bot, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { BuilderState } from './builder/types';
 import { deriveNameFromState } from './identityHelpers';
 
@@ -34,8 +35,8 @@ export function IdentityPreviewCard({ name, description, icon, color, summary, b
             <span className="text-2xl">{icon}</span>
           )
         ) : (
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: colorWithAlpha(color, 0.13) }}>
-            <Bot className="w-4 h-4" style={{ color }} />
+          <div className="icon-frame icon-frame-pop" style={{ backgroundColor: colorWithAlpha(color, 0.13) }}>
+            <PersonaIcon icon={icon} color={color} size="w-4 h-4" framed />
           </div>
         )}
         <div className="min-w-0">

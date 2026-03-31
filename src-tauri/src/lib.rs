@@ -1038,6 +1038,7 @@ pub fn run() {
             commands::design::build_sessions::start_build_session,
             commands::design::build_sessions::answer_build_question,
             commands::design::build_sessions::cancel_build_session,
+            commands::design::build_sessions::reset_build_session_phase,
             commands::design::build_sessions::get_active_build_session,
             commands::design::build_sessions::list_build_sessions,
             commands::design::build_sessions::test_build_draft,

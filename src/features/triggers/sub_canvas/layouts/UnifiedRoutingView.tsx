@@ -10,10 +10,10 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Bot, MoreHorizontal, Plus, X, Zap, Search, Filter,
-  Radio, RefreshCw,
-  type LucideIcon,
+  MoreHorizontal, Plus, X, Zap, Search, Filter,
+  Radio, RefreshCw, type LucideIcon,
 } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
@@ -358,11 +358,11 @@ export function UnifiedRoutingView({ initialTriggers, personas, groups }: Props)
                     key={conn.triggerId}
                     className="flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-lg bg-card border border-emerald-400/20 hover:border-emerald-400/40 group/chip transition-colors"
                   >
-                    <div className="w-5 h-5 rounded flex items-center justify-center bg-emerald-500/10">
+                    <div className="icon-frame-xs bg-emerald-500/10">
                       {conn.persona?.icon ? (
                         <span className="text-xs">{conn.persona.icon}</span>
                       ) : (
-                        <Bot className="w-3 h-3 text-muted-foreground/40" />
+                        <PersonaIcon icon={conn.persona?.icon} color={conn.persona?.color} size="w-3 h-3" framed />
                       )}
                     </div>
                     <span className="text-sm text-foreground/70">

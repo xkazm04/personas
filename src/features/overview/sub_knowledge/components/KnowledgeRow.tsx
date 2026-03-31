@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Network, ChevronDown, ChevronRight, CheckCircle, X, ShieldCheck } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle, X, ShieldCheck } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES, COLOR_MAP, formatDuration, formatCost } from '../libs/knowledgeHelpers';
@@ -155,16 +156,17 @@ function ExecutionSparkline({ results }: { results: boolean[] }) {
 interface KnowledgeRowProps {
   entry: ExecutionKnowledge;
   personaName?: string;
+  personaIcon?: string | null;
+  personaColor?: string | null;
   onMutated?: () => void;
 }
 
-export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProps) {
+export function KnowledgeRow({ entry, personaName, personaIcon, personaColor, onMutated }: KnowledgeRowProps) {
   const [expanded, setExpanded] = useState(false);
   const config = KNOWLEDGE_TYPES[entry.knowledge_type];
   const total = entry.success_count + entry.failure_count;
   const confidencePct = Math.round(entry.confidence * 100);
   const colors = COLOR_MAP[config?.color ?? 'blue'] ?? COLOR_MAP.blue!;
-  const Icon = config?.icon ?? Network;
   const isAnnotation = entry.knowledge_type === 'agent_annotation' || entry.knowledge_type === 'user_annotation';
   const scopeConfig = SCOPE_TYPES[entry.scope_type] ?? SCOPE_TYPES.persona!;
   const ScopeIcon = scopeConfig.icon;
@@ -204,9 +206,7 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
   return (
     <div className="border border-primary/8 rounded-xl bg-background/40 hover:bg-background/60 transition-colors">
       <div role="button" tabIndex={0} onClick={toggleExpanded} onKeyDown={handleRowKeyDown} className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer">
-        <div className={`w-7 h-7 rounded-lg ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
-          <Icon className={`w-3.5 h-3.5 ${colors.text}`} />
-        </div>
+        <PersonaIcon icon={personaIcon ?? null} color={personaColor ?? null} display="framed" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-foreground/90 truncate">

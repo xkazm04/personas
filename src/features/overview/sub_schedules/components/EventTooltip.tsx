@@ -1,4 +1,5 @@
-import { Bot, Clock, AlertTriangle } from 'lucide-react';
+import { Clock, AlertTriangle } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { CalendarEvent, ConflictGroup } from '../libs/calendarHelpers';
 
 export function EventTooltip({
@@ -25,11 +26,7 @@ export function EventTooltip({
       }}
     >
       <div className="flex items-center gap-1.5 mb-1">
-        {event.agentIcon ? (
-          <span>{event.agentIcon}</span>
-        ) : (
-          <Bot className="w-3.5 h-3.5 text-muted-foreground/60" />
-        )}
+        <PersonaIcon icon={event.agentIcon} color={event.agentColor ?? null} display="pop" frameSize="sm" />
         <span className="font-medium text-foreground/90 truncate">{event.agentName}</span>
       </div>
       <div className="text-muted-foreground/60 space-y-0.5">

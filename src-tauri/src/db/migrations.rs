@@ -3420,6 +3420,15 @@ pub fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
     tracing::info!("Ensured composite indexes for team_memories and pipeline_runs hot-path queries");
 
+    // team_memories: get_all, get_total_count filter (team_id, run_id); evict_excess
+    // filters (team_id, run_id IS NOT NULL). A composite index lets SQLite satisfy
+    // these without scanning the full table and then post-filtering by run_id.
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_tm_team_run
+         ON team_memories(team_id, run_id);"
+    )?;
+    tracing::info!("Ensured composite index idx_tm_team_run on team_memories");
+
     // Add composite index for trigger_id + created_at on persona_executions
     // Covers get_by_trigger_id query: WHERE trigger_id = ? ORDER BY created_at DESC
     conn.execute_batch(

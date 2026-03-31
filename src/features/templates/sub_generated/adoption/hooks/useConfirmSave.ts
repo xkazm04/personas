@@ -28,6 +28,8 @@ import {
   waitForPersonaInStore,
 } from '../state/asyncTransformTypes';
 import { SystemTraceSession } from '@/lib/execution/systemTrace';
+import { isAgentIcon } from '@/lib/icons/agentIconCatalog';
+import { resolveTemplateAgentIcon } from '@/lib/icons/templateIconResolver';
 
 interface UseConfirmSaveOptions {
   state: AdoptState;
@@ -103,6 +105,15 @@ export function useConfirmSave({
           maxBudgetUsd: normalized.max_budget_usd,
         });
         normalized.max_budget_usd = budgetEnforced.maxBudgetUsd;
+      }
+
+      // Auto-assign an agent icon if the draft doesn't already have one
+      if (!normalized.icon || !isAgentIcon(normalized.icon)) {
+        const agentIcon = resolveTemplateAgentIcon(reviewTestCaseName ?? state.templateName);
+        if (agentIcon) {
+          normalized.icon = agentIcon.icon;
+          if (!normalized.color) normalized.color = agentIcon.color;
+        }
       }
 
       const response = await confirmTemplateAdoptDraft(stringifyDraft(normalized), reviewTestCaseName);

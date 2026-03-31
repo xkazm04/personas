@@ -89,14 +89,16 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
 
   return (
     <div ref={ref} className="relative inline-flex">
-      <button
-        type="button"
+      <span
+        role="button"
+        tabIndex={0}
         onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-        className="opacity-40 hover:opacity-80 transition-opacity focus:outline-none"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); setOpen((v) => !v); } }}
+        className="opacity-40 hover:opacity-80 transition-opacity focus:outline-none cursor-pointer"
         aria-label={`Help for ${info.label}`}
       >
         <HelpCircle className="w-3 h-3" />
-      </button>
+      </span>
 
       {open && (
         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-64 rounded-xl border border-primary/10 bg-card p-3 shadow-xl text-left">

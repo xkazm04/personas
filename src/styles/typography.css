@@ -219,24 +219,48 @@ body {
 }
 
 /* -- Text Scale Integration --------------------------------------------------
-   Hooks into the existing data-text-scale system in globals.css.
-   Semantic classes scale proportionally. */
+   Hooks into the data-text-scale system in globals.css.
+   All semantic classes scale proportionally across four tiers. */
 
-[data-text-scale="large"] .typo-hero { font-size: 2.5rem; }
-[data-text-scale="large"] .typo-body { font-size: 0.9375rem; }
-[data-text-scale="large"] .typo-body-lg { font-size: 1.0625rem; }
-[data-text-scale="large"] .typo-caption { font-size: 0.8rem; }
-[data-text-scale="large"] .typo-label { font-size: 0.8rem; }
-[data-text-scale="large"] .typo-data { font-size: 0.9375rem; }
-[data-text-scale="large"] .typo-code { font-size: 0.8rem; }
+/* Compact — dense power-user view */
+[data-text-scale="compact"] .typo-hero       { font-size: 2rem; }
+[data-text-scale="compact"] .typo-heading-lg { font-size: 1.125rem; }
+[data-text-scale="compact"] .typo-heading    { font-size: 0.8125rem; }
+[data-text-scale="compact"] .typo-body       { font-size: 0.8125rem; }
+[data-text-scale="compact"] .typo-body-lg    { font-size: 0.9375rem; }
+[data-text-scale="compact"] .typo-caption    { font-size: 0.6875rem; }
+[data-text-scale="compact"] .typo-label      { font-size: 0.6875rem; }
+[data-text-scale="compact"] .typo-data       { font-size: 0.8125rem; }
+[data-text-scale="compact"] .typo-data-lg    { font-size: 1.375rem; }
+[data-text-scale="compact"] .typo-code       { font-size: 0.6875rem; }
 
-[data-text-scale="larger"] .typo-hero { font-size: 2.75rem; }
-[data-text-scale="larger"] .typo-body { font-size: 1rem; }
-[data-text-scale="larger"] .typo-body-lg { font-size: 1.125rem; }
-[data-text-scale="larger"] .typo-caption { font-size: 0.85rem; }
-[data-text-scale="larger"] .typo-label { font-size: 0.85rem; }
-[data-text-scale="larger"] .typo-data { font-size: 1rem; }
-[data-text-scale="larger"] .typo-code { font-size: 0.85rem; }
+/* Default — baseline (no overrides needed for base sizes, only for
+   classes whose authored size assumes 16px root; at 14px root these
+   need a small nudge to stay visually correct) */
+
+/* Large — comfortable reading */
+[data-text-scale="large"] .typo-hero       { font-size: 2.5rem; }
+[data-text-scale="large"] .typo-heading-lg { font-size: 1.375rem; }
+[data-text-scale="large"] .typo-heading    { font-size: 0.9375rem; }
+[data-text-scale="large"] .typo-body       { font-size: 0.9375rem; }
+[data-text-scale="large"] .typo-body-lg    { font-size: 1.0625rem; }
+[data-text-scale="large"] .typo-caption    { font-size: 0.8rem; }
+[data-text-scale="large"] .typo-label      { font-size: 0.8rem; }
+[data-text-scale="large"] .typo-data       { font-size: 0.9375rem; }
+[data-text-scale="large"] .typo-data-lg    { font-size: 1.625rem; }
+[data-text-scale="large"] .typo-code       { font-size: 0.8rem; }
+
+/* Larger — maximum readability / accessibility */
+[data-text-scale="larger"] .typo-hero       { font-size: 2.75rem; }
+[data-text-scale="larger"] .typo-heading-lg { font-size: 1.5rem; }
+[data-text-scale="larger"] .typo-heading    { font-size: 1rem; }
+[data-text-scale="larger"] .typo-body       { font-size: 1rem; }
+[data-text-scale="larger"] .typo-body-lg    { font-size: 1.125rem; }
+[data-text-scale="larger"] .typo-caption    { font-size: 0.85rem; }
+[data-text-scale="larger"] .typo-label      { font-size: 0.85rem; }
+[data-text-scale="larger"] .typo-data       { font-size: 1rem; }
+[data-text-scale="larger"] .typo-data-lg    { font-size: 1.75rem; }
+[data-text-scale="larger"] .typo-code       { font-size: 0.85rem; }
 
 /* -- JSON Viewer Line Numbers -----------------------------------------------
    CSS-counter-based line numbers for HighlightedJson. */

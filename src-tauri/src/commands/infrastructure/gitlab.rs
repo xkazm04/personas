@@ -774,8 +774,22 @@ pub async fn gitlab_rollback_persona(
     // Fetch project metadata once — reused for both AGENTS.md fallback and rollback tagging
     let project = client.get_project(project_id).await?;
 
-    // Attempt to update the existing Duo Agent or create new
-    let deploy_result = match client.create_duo_agent(project_id, &definition).await {
+    // Compute the tag search prefix before spawning concurrent work
+    let slug = persona_name
+        .to_lowercase()
+        .replace(' ', "-")
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '-')
+        .collect::<String>();
+    let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
+
+    // Deploy the agent and fetch existing tags concurrently — they are independent
+    let (agent_result, existing_tags) = tokio::join!(
+        client.create_duo_agent(project_id, &definition),
+        async { client.list_tags(project_id, Some(&search_prefix)).await.unwrap_or_default() },
+    );
+
+    let deploy_result = match agent_result {
         Ok(agent) => GitLabDeployResult {
             agent_id: Some(agent.id),
             web_url: agent.web_url,
@@ -800,19 +814,6 @@ pub async fn gitlab_rollback_persona(
             }
         }
     };
-
-    // Create a rollback tag for audit trail
-    let slug = persona_name
-        .to_lowercase()
-        .replace(' ', "-")
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '-')
-        .collect::<String>();
-    let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
-    let existing_tags = client
-        .list_tags(project_id, Some(&search_prefix))
-        .await
-        .unwrap_or_default();
 
     let max_version = existing_tags
         .iter()

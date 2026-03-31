@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import {
   Play, Clock, Settings2, Pause, ToggleLeft, ToggleRight,
-  Bot, CheckCircle2, AlertTriangle, XCircle,
+  CheckCircle2, AlertTriangle, XCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import { formatRelative } from '../libs/scheduleHelpers';
 import FrequencyEditor from './FrequencyEditor';
 import { useThemeStore } from '@/stores/themeStore';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 
 interface ScheduleRowProps {
   entry: ScheduleEntry;
@@ -56,16 +57,7 @@ export default function ScheduleRow({
           : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05] hover:border-primary/20'
       }`}>
         {/* Agent icon */}
-        <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-sm shrink-0 border"
-          style={{
-            backgroundColor: agent.persona_color ? `${agent.persona_color}15` : 'var(--color-primary-5)',
-            borderColor: agent.persona_color ? `${agent.persona_color}30` : 'var(--color-primary-10)',
-            color: agent.persona_color || 'var(--color-muted-foreground)',
-          }}
-        >
-          {agent.persona_icon || <Bot className="w-4 h-4" />}
-        </div>
+        <PersonaIcon icon={agent.persona_icon} color={agent.persona_color} display="framed" />
 
         {/* Name + schedule */}
         <div className="flex-1 min-w-0">

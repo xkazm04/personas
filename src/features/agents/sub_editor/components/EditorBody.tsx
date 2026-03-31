@@ -139,11 +139,6 @@ export function EditorBody() {
                   <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />
                 </EditorTabContent>
               )}
-              {editorTab === 'prompt' && (
-                <EditorTabContent>
-                  <PersonaPromptEditor />
-                </EditorTabContent>
-              )}
               {editorTab === 'lab' && <LabTab />}
               {editorTab === 'connectors' && (
                 <EditorTabContent>

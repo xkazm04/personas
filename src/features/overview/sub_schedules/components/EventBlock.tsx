@@ -1,4 +1,5 @@
-import { Bot, XCircle, CheckCircle2 } from 'lucide-react';
+import { XCircle, CheckCircle2 } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { CalendarEvent } from '../libs/calendarHelpers';
 
 export function EventBlock({
@@ -48,11 +49,7 @@ export function EventBlock({
         opacity: kindStyles[event.kind].opacity,
       }}
     >
-      {event.agentIcon ? (
-        <span className="shrink-0 text-[10px]">{event.agentIcon}</span>
-      ) : (
-        <Bot className="w-2.5 h-2.5 shrink-0" style={{ color }} />
-      )}
+      <PersonaIcon icon={event.agentIcon} color={color} display="pop" frameSize="xs" />
       {compact ? (
         <span className="truncate" style={{ color }}>{event.agentName}</span>
       ) : (

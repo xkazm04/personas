@@ -3,7 +3,8 @@
  * Features: search, group filtering, categorization.
  */
 import { useMemo, useState } from 'react';
-import { Bot, Search, X, Plus, Users } from 'lucide-react';
+import { Search, X, Plus, Users } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
 
@@ -160,8 +161,8 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                     onClick={() => onAdd(p.id)}
                     className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-card/50 border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
                   >
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/10 flex-shrink-0">
-                      {p.icon ? <span className="text-sm">{p.icon}</span> : <Bot className="w-3.5 h-3.5 text-muted-foreground/40" />}
+                    <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
+                      <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" framed />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] font-medium text-foreground truncate">{p.name}</div>

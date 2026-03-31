@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
 const SIZE_CLASSES = {
@@ -21,6 +22,8 @@ interface BaseModalProps {
   panelClassName?: string;
   containerClassName?: string;
   embedded?: boolean;
+  /** Render via createPortal to document.body — escapes parent transforms/stacking contexts */
+  portal?: boolean;
   children: React.ReactNode;
 }
 
@@ -33,6 +36,7 @@ export function BaseModal({
   panelClassName,
   containerClassName,
   embedded = false,
+  portal = false,
   children,
 }: BaseModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -103,7 +107,7 @@ export function BaseModal({
     );
   }
 
-  return (
+  const content = (
     <div className={containerClassName ?? `fixed inset-0 z-50 flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`}>
       <div
         className="animate-fade-slide-in absolute inset-0 bg-black/60 backdrop-blur-md"
@@ -120,4 +124,6 @@ export function BaseModal({
       </div>
     </div>
   );
+
+  return portal ? createPortal(content, document.body) : content;
 }

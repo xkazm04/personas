@@ -72,7 +72,7 @@ export function MatrixCellRenderer({
   cellBuildStatus,
   onCellRef,
   questionCount = 0,
-  onConfirmUpdate,
+  onConfirmUpdate: _onConfirmUpdate,
   onCellClick,
   isInlineEditing,
   compact = false,
@@ -227,7 +227,7 @@ export function MatrixCellRenderer({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onCellClick(); }}
-          className="absolute bottom-2.5 left-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-primary/50 bg-primary/5 border border-primary/10 hover:text-primary hover:bg-primary/10 hover:border-primary/20 transition-colors"
+          className="absolute bottom-2.5 left-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-primary/50 bg-primary/5 border border-primary/10 hover:text-primary hover:bg-primary/10 hover:border-primary/20 transition-colors"
         >
           <Pencil className="w-2.5 h-2.5" />
           Edit
@@ -237,7 +237,7 @@ export function MatrixCellRenderer({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onCellClick(); }}
-          className="absolute bottom-2.5 left-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-emerald-400/70 bg-emerald-500/10 border border-emerald-500/20 hover:text-emerald-400 transition-colors"
+          className="absolute bottom-2.5 left-3 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-emerald-400/70 bg-emerald-500/10 border border-emerald-500/20 hover:text-emerald-400 transition-colors"
         >
           <CheckCircle2 className="w-2.5 h-2.5" />
           Done
@@ -248,46 +248,42 @@ export function MatrixCellRenderer({
       {cellBuildStatus && (
         <div className="absolute bottom-2.5 right-3 flex items-center gap-1.5 z-10">
           {questionCount > 0 && cellBuildStatus === 'highlighted' && (
-            <span className="text-[9px] font-mono text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-500/15">
+            <span className="text-xs font-mono text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-500/15">
               {questionCount}Q
             </span>
           )}
           {cellBuildStatus === 'pending' && (
-            <span className="flex items-center gap-1 text-[10px] text-cyan-400/70">
+            <span className="flex items-center gap-1 text-xs text-cyan-400/70">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               Analyzing
             </span>
           )}
           {cellBuildStatus === 'filling' && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400/70">
+            <span className="flex items-center gap-1 text-xs text-emerald-400/70">
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
               Answered
             </span>
           )}
           {cellBuildStatus === 'resolved' && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400/70">
+            <span className="flex items-center gap-1 text-xs text-emerald-400/70">
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
               Resolved
             </span>
           )}
           {cellBuildStatus === 'highlighted' && (
-            <span className="flex items-center gap-1 text-[10px] text-amber-400/70">
+            <span className="flex items-center gap-1 text-xs text-amber-400/70">
               <HelpCircle className="w-3 h-3 text-amber-400" />
               Input needed
             </span>
           )}
           {cellBuildStatus === 'updated' && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onConfirmUpdate?.(cell.key); }}
-              className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 transition-colors"
-            >
-              <AlertCircle className="w-3 h-3" />
-              Updated — click to confirm
-            </button>
+            <span className="flex items-center gap-1 text-xs text-red-400/70">
+              <AlertCircle className="w-3 h-3 text-red-400" />
+              Missing credential
+            </span>
           )}
           {cellBuildStatus === 'error' && (
-            <span className="flex items-center gap-1 text-[10px] text-red-400/70">
+            <span className="flex items-center gap-1 text-xs text-red-400/70">
               <AlertCircle className="w-3 h-3 text-red-400" />
               Error
             </span>

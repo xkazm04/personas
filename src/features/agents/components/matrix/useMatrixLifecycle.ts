@@ -12,6 +12,7 @@ import { useCallback, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { EventName } from "@/lib/eventRegistry";
 import { answerBuildQuestion, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
+import { invokeWithTimeout } from "@/lib/tauriInvoke";
 import {
   updatePersona,
   buildUpdateInput,
@@ -67,6 +68,7 @@ export function useMatrixLifecycle({
   const buildTestOutputLines = useAgentStore((s) => s.buildTestOutputLines);
   const buildToolTestResults = useAgentStore((s) => s.buildToolTestResults);
   const buildTestSummary = useAgentStore((s) => s.buildTestSummary);
+  const buildTestConnectors = useAgentStore((s) => s.buildTestConnectors);
 
   // -- Event listeners for per-tool test results ----------------------------
 
@@ -128,10 +130,11 @@ export function useMatrixLifecycle({
     try {
       const report = await testBuildDraft(sessionId, effectivePersonaId);
 
-      // Store full results and summary
+      // Store full results, summary, and connector resolution
       const store = useAgentStore.getState();
       store.setToolTestResults(report.results);
       if (report.summary) store.setTestSummary(report.summary);
+      if (report.connectors_resolved) store.setTestConnectors(report.connectors_resolved);
 
       // All passed = no failures AND at least something ran or was auto-verified
       const totalTools = report.tools_passed + report.tools_failed + report.tools_skipped;
@@ -251,7 +254,10 @@ export function useMatrixLifecycle({
       }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Promotion failed";
+        err instanceof Error ? err.message
+        : typeof err === "string" ? err
+        : (err as Record<string, unknown>)?.error ? String((err as Record<string, unknown>).error)
+        : "Promotion failed";
       logger.error("handlePromote failed", { message });
       return emptyResult;
     }
@@ -260,7 +266,13 @@ export function useMatrixLifecycle({
   // -- handleRejectTest ------------------------------------------------------
 
   const handleRejectTest = useCallback(() => {
-    useAgentStore.getState().handleRejectTest();
+    const state = useAgentStore.getState();
+    state.handleRejectTest();
+    // Also reset the DB session phase back to draft_ready so re-testing works
+    const sessionId = state.buildSessionId;
+    if (sessionId) {
+      invokeWithTimeout("reset_build_session_phase", { sessionId }).catch(() => {});
+    }
   }, []);
 
   // -- Return ----------------------------------------------------------------
@@ -275,6 +287,7 @@ export function useMatrixLifecycle({
     buildTestOutputLines,
     buildToolTestResults,
     buildTestSummary,
+    buildTestConnectors,
     isTesting: buildPhase === "testing",
     isTestComplete: buildPhase === "test_complete",
   };

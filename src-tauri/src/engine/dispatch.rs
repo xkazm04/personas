@@ -275,6 +275,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             severity,
             context_data,
             suggested_actions,
+            decisions,
         } => {
             // Quality gate: use cached config (loaded lazily on first use).
             let gate_config = ctx.quality_gate_config().clone();
@@ -311,6 +312,26 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 }
             }
 
+            // Merge decisions into context_data so they're available in the frontend
+            let effective_context_data = if let Some(ref decs) = decisions {
+                let mut ctx_obj: serde_json::Value = context_data
+                    .as_ref()
+                    .and_then(|s| serde_json::from_str(s).ok())
+                    .unwrap_or_else(|| serde_json::json!({}));
+                if let Some(obj) = ctx_obj.as_object_mut() {
+                    obj.insert("decisions".to_string(), serde_json::json!(decs));
+                    // Also store the original context text if it was a plain string
+                    if let Some(ref cd) = context_data {
+                        if serde_json::from_str::<serde_json::Value>(cd).is_err() {
+                            obj.insert("context_text".to_string(), serde_json::json!(cd));
+                        }
+                    }
+                }
+                Some(serde_json::to_string(&ctx_obj).unwrap_or_default())
+            } else {
+                context_data.clone()
+            };
+
             match review_repo::create(
                 ctx.pool,
                 CreateManualReviewInput {
@@ -319,7 +340,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     title: title.clone(),
                     description: description.clone(),
                     severity: severity.clone(),
-                    context_data: context_data.clone(),
+                    context_data: effective_context_data,
                     suggested_actions: suggested_actions
                         .as_ref()
                         .map(|a| serde_json::json!(a).to_string()),

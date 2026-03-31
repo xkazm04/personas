@@ -84,7 +84,7 @@ export function ChatTab() {
             <ModeButton mode="ops" current={chatMode} onClick={setChatMode} icon={<Wrench className="w-3 h-3" />} label="Ops" />
             <ModeButton mode="agent" current={chatMode} onClick={setChatMode} icon={<Bot className="w-3 h-3" />} label="Agent" />
           </div>
-          <span className="text-[11px] text-muted-foreground/50">
+          <span className="text-sm text-muted-foreground/50">
             {chatMode === 'ops' ? 'Manage, test & improve this agent' : `Chat directly with ${selectedPersona.name}`}
           </span>
         </div>
@@ -103,8 +103,8 @@ export function ChatTab() {
                     <Bot className="w-6 h-6 text-primary/60" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground/80">Chat with {selectedPersona.name}</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">Send a message to start a conversation with this agent.</p>
+                    <p className="text-lg font-medium text-foreground/80">Chat with {selectedPersona.name}</p>
+                    <p className="text-base text-muted-foreground/60 mt-1">Send a message to start a conversation with this agent.</p>
                   </div>
                 </div>
           )}

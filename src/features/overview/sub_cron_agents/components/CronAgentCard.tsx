@@ -1,8 +1,9 @@
 import {
-  Clock, AlertTriangle, CheckCircle2, XCircle, Pause, Bot,
+  Clock, AlertTriangle, CheckCircle2, XCircle, Pause,
 } from 'lucide-react';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { formatInterval, formatRelative } from '../libs/cronHelpers';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 
 function AgentSection({ title, agents }: { title: string; agents: CronAgent[] }) {
   return (
@@ -50,15 +51,11 @@ function AgentRow({ agent }: { agent: CronAgent }) {
         ? 'border-primary/5 bg-primary/[0.02] opacity-60'
         : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05]'
     }`}>
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
-        style={{
+      <PersonaIcon icon={agent.persona_icon} color={agent.persona_color} display="pop"
+        frameStyle={{
           backgroundColor: agent.persona_color ? `${agent.persona_color}20` : 'var(--color-primary-5)',
           color: agent.persona_color || 'var(--color-muted-foreground)',
-        }}
-      >
-        {agent.persona_icon || <Bot className="w-4 h-4" />}
-      </div>
+        }} />
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

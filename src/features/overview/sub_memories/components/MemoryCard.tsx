@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, Bot } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
@@ -59,9 +60,8 @@ export function MemoryRow({
   }, [confirmDelete]);
 
   const agentAvatar = (
-    <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }}>
-      <Bot className="w-3 h-3" style={{ color: personaColor }} />
-    </div>
+    <PersonaIcon icon={null} color={personaColor} display="pop"
+      frameStyle={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }} />
   );
 
   const categoryBadge = (

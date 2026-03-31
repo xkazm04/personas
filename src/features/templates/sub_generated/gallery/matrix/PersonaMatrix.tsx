@@ -173,8 +173,9 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   const buildDraft = useAgentStore((s) => s.buildDraft) as Record<string, unknown> | null;
   const { draftConnectors } = useMatrixCredentialGap();
 
-  // Extract connectors from structured cell data (available before agent_ir)
-  const connectorsCellRaw = useAgentStore((s) => s.buildCellData["connectors"]?.raw);
+  // Extract cell data from store (available before agent_ir for template adoptions)
+  const buildCellData = useAgentStore((s) => s.buildCellData);
+  const connectorsCellRaw = buildCellData["connectors"]?.raw;
   const cellConnectors = useMemo(() => {
     if (draftConnectors.length > 0) return draftConnectors; // prefer agent_ir source
     const structured = connectorsCellRaw?.connectors;
@@ -303,8 +304,20 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         meta: getConnectorMeta(name),
       }));
 
+      // Helper: render seeded cell items from buildCellData (template adoptions)
+      const seededItems = (cellKey: string, color: string) => {
+        const items = buildCellData[cellKey]?.items;
+        if (!items || items.length === 0) return null;
+        return <CellBullets items={items.slice(0, 4)} color={color} />;
+      };
+
+      // Helper: render seeded items or protocol badge fallback
+      const seededOrBadge = (cellKey: string, color: string) => {
+        return seededItems(cellKey, color) ?? badge(cellKey);
+      };
+
       return [
-        { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => null, editRender: editPanel('use-cases') },
+        { key: 'use-cases', label: CELL_LABELS['use-cases'] ?? 'Use Cases', watermark: UseCasesIcon, watermarkColor: 'text-violet-400', render: () => seededItems('use-cases', 'text-foreground/70'), editRender: editPanel('use-cases') },
         { key: 'connectors', label: CELL_LABELS['connectors'] ?? 'Connectors', watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400',
           render: () => {
             if (cellConnectors.length > 0) return <ConnectorsCellContent connectors={cellConnectors} />;
@@ -318,17 +331,17 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
                 ))}
               </div>
             );
-            return null;
+            return seededItems('connectors', 'text-foreground/70');
           },
           editRender: editPanel('connectors') },
         { key: 'triggers', label: CELL_LABELS['triggers'] ?? 'Triggers', watermark: TriggersIcon, watermarkColor: 'text-amber-400',
-          render: () => triggerLines.length > 0 ? <CellBullets items={triggerLines} color="text-amber-400/70" /> : null,
+          render: () => triggerLines.length > 0 ? <CellBullets items={triggerLines} color="text-amber-400/70" /> : seededItems('triggers', 'text-amber-400/70'),
           editRender: editPanel('triggers') },
-        { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => badge('human-review'), editRender: editPanel('human-review') },
-        { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => badge('messages'), editRender: editPanel('messages') },
-        { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => badge('memory'), editRender: editPanel('memory') },
-        { key: 'error-handling', label: CELL_LABELS['error-handling'] ?? 'Error Handling', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => null, editRender: editPanel('error-handling') },
-        { key: 'events', label: CELL_LABELS['events'] ?? 'Events', watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => badge('events'), editRender: editPanel('events') },
+        { key: 'human-review', label: CELL_LABELS['human-review'] ?? 'Human Review', watermark: HumanReviewIcon, watermarkColor: 'text-rose-400', render: () => seededOrBadge('human-review', 'text-foreground/70'), editRender: editPanel('human-review') },
+        { key: 'messages', label: CELL_LABELS['messages'] ?? 'Messages', watermark: MessagesIcon, watermarkColor: 'text-blue-400', render: () => seededOrBadge('messages', 'text-foreground/70'), editRender: editPanel('messages') },
+        { key: 'memory', label: CELL_LABELS['memory'] ?? 'Memory', watermark: MemoryIcon, watermarkColor: 'text-purple-400', render: () => seededOrBadge('memory', 'text-foreground/70'), editRender: editPanel('memory') },
+        { key: 'error-handling', label: CELL_LABELS['error-handling'] ?? 'Error Handling', watermark: ErrorsIcon, watermarkColor: 'text-orange-400', render: () => seededItems('error-handling', 'text-foreground/70'), editRender: editPanel('error-handling') },
+        { key: 'events', label: CELL_LABELS['events'] ?? 'Events', watermark: EventsIcon, watermarkColor: 'text-teal-400', render: () => seededOrBadge('events', 'text-foreground/70'), editRender: editPanel('events') },
       ];
     }
 
@@ -376,7 +389,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
         render: () => { if (events.length === 0) return <CellBullets items={['No event subscriptions']} color="text-muted-foreground/40" />; const bullets = events.slice(0, 3).map((ev) => ev.description && ev.description.length > 3 && ev.description.length <= 40 ? ev.description : ev.event_type); return <CellBullets items={bullets} color="text-foreground/70" />; } },
     ];
   }, [designResult, flows, isEditMode, onNavigateCatalog, hasBuildStates, isCreationMode, draftConnectors, protocolByCellKey,
-    isDraftPhase, buildDraft, cellConnectors, connectorsCellRaw, handleEditDirty, quickConfig, healthyConnectors,
+    isDraftPhase, buildDraft, cellConnectors, connectorsCellRaw, handleEditDirty, quickConfig, healthyConnectors, buildCellData,
     ...(isEditMode ? [(props as PersonaMatrixEditProps).editState, (props as PersonaMatrixEditProps).requiredConnectors, (props as PersonaMatrixEditProps).credentials] : [])]);
 
   // Creation mode is interactive (textarea + launch orb) even without mode="edit"

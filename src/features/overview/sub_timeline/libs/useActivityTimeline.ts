@@ -12,6 +12,7 @@ export interface TimelineEventItem {
   timestamp: string;
   data: PersonaEvent;
   personaName?: string;
+  personaIcon?: string;
   personaColor?: string;
 }
 
@@ -67,6 +68,7 @@ export function useActivityTimeline() {
         timestamp: e.created_at,
         data: e,
         personaName: p?.name,
+        personaIcon: p?.icon ?? undefined,
         personaColor: p?.color ?? undefined,
       };
     });

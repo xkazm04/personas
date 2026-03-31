@@ -169,10 +169,16 @@ pub async fn execute_persona(
         }
     }
 
-    // 6. Parse input data JSON
+    // 6. Parse input data — try JSON first, fall back to wrapping plain text
     let input_json: Option<serde_json::Value> = input_data
         .as_deref()
-        .and_then(|s| serde_json::from_str(s).ok());
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| {
+            serde_json::from_str(s).unwrap_or_else(|_| {
+                // Plain text input (e.g. a URL or user message) — wrap as JSON object
+                serde_json::json!({ "user_input": s })
+            })
+        });
 
     // 7. Check session pool for warm session reuse (if no explicit continuation)
     let continuation = if continuation.is_some() {

@@ -4,6 +4,8 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewportClamp';
 import { IconSelector, EMOJI_PRESETS } from '@/features/shared/components/forms/IconSelector';
 import { sanitizeIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import { isAgentIcon, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
+import { useIsDarkTheme } from '@/stores/themeStore';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 interface PopupIconSelectorProps {
@@ -21,6 +23,8 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
   useClickOutside(containerRef, open, close);
   const clampStyle = useViewportClampAbsolute(popupRef, open);
 
+  const isDark = useIsDarkTheme();
+
   const handleChange = (icon: string) => {
     onChange(icon);
     setOpen(false);
@@ -28,6 +32,7 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
 
   const safeUrl = sanitizeIconUrl(value);
   const isEmoji = EMOJI_PRESETS.includes(value);
+  const isAgent = isAgentIcon(value);
 
   return (
     <div ref={containerRef} className="relative inline-block">
@@ -42,7 +47,9 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
         title="Choose icon"
       >
         {value ? (
-          safeUrl ? (
+          isAgent ? (
+            <img src={resolveAgentIconSrc(value, isDark)} alt="" className="w-5 h-5" loading="lazy" />
+          ) : safeUrl ? (
             <img src={safeUrl} alt="" className="w-5 h-5 rounded" referrerPolicy="no-referrer" crossOrigin="anonymous" />
           ) : isEmoji ? (
             <span className="text-lg leading-none">{value}</span>
@@ -57,7 +64,7 @@ export function PopupIconSelector({ value, onChange, connectors = [], size = 'sm
       {open && (
           <div
             ref={popupRef}
-            className="animate-fade-slide-in absolute top-full mt-1 left-0 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 p-3 min-w-[260px]"
+            className="animate-fade-slide-in absolute top-full mt-1 left-0 bg-background border border-primary/20 rounded-xl shadow-elevation-3 z-50 p-3 min-w-[300px] max-h-[400px] overflow-y-auto"
             style={{ transform: clampStyle.transform }}
           >
             <IconSelector

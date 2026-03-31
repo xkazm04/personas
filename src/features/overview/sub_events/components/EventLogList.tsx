@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Server, Bot, Plus, Search, Bookmark, BookmarkX, X } from 'lucide-react';
+import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Server, Plus, Search, Bookmark, BookmarkX, X } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
@@ -103,12 +104,9 @@ export default function EventLogList() {
         if (targetPersona) {
           return (
             <div className="flex items-center gap-2 min-w-0">
-              <div
-                className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0"
-                style={{ backgroundColor: colorWithAlpha(targetPersona.color || '#6366f1', 0.08) }}
-              >
-                {targetPersona.icon || <Bot className="w-3.5 h-3.5 text-foreground/50" />}
-              </div>
+              <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="pop"
+                frameClass="border border-primary/15"
+                frameStyle={{ backgroundColor: colorWithAlpha(targetPersona.color || '#6366f1', 0.08) }} />
               <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
             </div>
           );

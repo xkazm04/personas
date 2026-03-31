@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
-import { Clock, Calendar, RotateCw, RefreshCw, Search, ListTree, Activity, Zap, Shield, Play } from 'lucide-react';
+import { Clock, Calendar, RotateCw, RefreshCw, Search, ListTree, Activity, Zap, Shield, Play, Loader2, Check, AlertTriangle } from 'lucide-react';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { isTerminalState } from '@/lib/execution/executionState';
 import { useSystemStore } from "@/stores/systemStore";
@@ -18,11 +18,36 @@ interface ExecutionDetailProps {
 }
 
 export function ExecutionDetail({ execution }: ExecutionDetailProps) {
-  const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const selectPersona = useAgentStore((s) => s.selectPersona);
+  const executePersona = useAgentStore((s) => s.executePersona);
+  const fetchExecutions = useAgentStore((s) => s.fetchExecutions);
   const [activeTab, setActiveTab] = useState<'detail' | 'inspector' | 'trace' | 'pipeline' | 'replay'>('detail');
+  const [isRerunning, setIsRerunning] = useState(false);
+  const [rerunResult, setRerunResult] = useState<'success' | 'error' | null>(null);
+
+  const handleRerun = useCallback(async () => {
+    setIsRerunning(true);
+    setRerunResult(null);
+    try {
+      let inputData: object | undefined;
+      if (execution.input_data) {
+        try { inputData = JSON.parse(execution.input_data); } catch { /* empty */ }
+      }
+      const newId = await executePersona(execution.persona_id, inputData);
+      if (newId) {
+        setRerunResult('success');
+        fetchExecutions(execution.persona_id);
+      } else {
+        setRerunResult('error');
+      }
+    } catch {
+      setRerunResult('error');
+    } finally {
+      setIsRerunning(false);
+    }
+  }, [execution.persona_id, execution.input_data, executePersona, fetchExecutions]);
 
   const handleErrorAction = useCallback((action: ErrorAction) => {
     switch (action.navigate) {
@@ -114,8 +139,24 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           {execution.error_message && <ErrorDisplay errorMessage={execution.error_message} showRaw={showRaw} onErrorAction={handleErrorAction} />}
 
           {isTerminalState(execution.status) && (
-            <button onClick={() => setRerunInputData(execution.input_data || '{}')} className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-xl bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
-              <RotateCw className="w-3.5 h-3.5" />{execution.status === 'cancelled' ? 'Re-run execution' : 'Re-run with same input'}
+            <button
+              onClick={handleRerun}
+              disabled={isRerunning}
+              className={`flex items-center gap-2 px-3.5 py-2 typo-heading rounded-xl border transition-colors disabled:opacity-50 ${
+                rerunResult === 'success'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : rerunResult === 'error'
+                  ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                  : 'bg-primary/10 text-primary/80 border-primary/20 hover:bg-primary/20 hover:text-primary'
+              }`}
+            >
+              {isRerunning
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Running...</>
+                : rerunResult === 'success'
+                ? <><Check className="w-3.5 h-3.5" /> Execution started</>
+                : rerunResult === 'error'
+                ? <><AlertTriangle className="w-3.5 h-3.5" /> Re-run failed</>
+                : <><RotateCw className="w-3.5 h-3.5" />{execution.status === 'cancelled' ? 'Re-run execution' : 'Re-run with same input'}</>}
             </button>
           )}
 

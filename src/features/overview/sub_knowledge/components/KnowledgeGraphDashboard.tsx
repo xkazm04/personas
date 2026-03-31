@@ -37,8 +37,8 @@ export default function KnowledgeGraphDashboard() {
   }, [failureDrilldownDate]);
 
   const personaMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const p of personas) map.set(p.id, p.name);
+    const map = new Map<string, { name: string; icon: string | null; color: string | null }>();
+    for (const p of personas) map.set(p.id, { name: p.name, icon: p.icon, color: p.color });
     return map;
   }, [personas]);
 
@@ -295,7 +295,7 @@ export default function KnowledgeGraphDashboard() {
                       style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
                       className="pb-2"
                     >
-                      <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)} onMutated={() => { void fetchData(); }} />
+                      <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} personaIcon={personaMap.get(entry.persona_id)?.icon ?? null} personaColor={personaMap.get(entry.persona_id)?.color ?? null} onMutated={() => { void fetchData(); }} />
                     </div>
                   );
                 })}
@@ -320,7 +320,7 @@ export default function KnowledgeGraphDashboard() {
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
                         className="pb-2"
                       >
-                        <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)} onMutated={() => { void fetchData(); }} />
+                        <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} personaIcon={personaMap.get(entry.persona_id)?.icon ?? null} personaColor={personaMap.get(entry.persona_id)?.color ?? null} onMutated={() => { void fetchData(); }} />
                       </div>
                     );
                   })}

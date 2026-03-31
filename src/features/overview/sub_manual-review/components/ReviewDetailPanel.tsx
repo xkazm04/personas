@@ -1,6 +1,7 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Check, X, Send, Bot, User, Cloud, ExternalLink } from 'lucide-react';
+import { Check, X, Send, User, Cloud, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -76,15 +77,33 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
   const contextData = review.context_data;
   const isPending = review.status === 'pending';
 
+  // Parse multi-decision items from context_data
+  const decisions = useMemo<Array<{ id: string; label: string; description?: string; category?: string }>>(() => {
+    if (!contextData) return [];
+    try {
+      const parsed = JSON.parse(contextData);
+      if (Array.isArray(parsed?.decisions)) return parsed.decisions;
+    } catch { /* not JSON or no decisions */ }
+    return [];
+  }, [contextData]);
+
+  const [decisionStates, setDecisionStates] = useState<Record<string, 'accepted' | 'rejected' | null>>({});
+  const toggleDecision = useCallback((id: string, state: 'accepted' | 'rejected') => {
+    setDecisionStates((prev) => ({ ...prev, [id]: prev[id] === state ? null : state }));
+  }, []);
+
+  const acceptedCount = Object.values(decisionStates).filter((v) => v === 'accepted').length;
+  const rejectedCount = Object.values(decisionStates).filter((v) => v === 'rejected').length;
+  const hasDecisions = decisions.length > 0;
+
   return (
     <div className="flex flex-col h-full">
       {/* Thread Header */}
       <div className="flex-shrink-0 px-4 py-3 border-b border-primary/10 bg-secondary/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(review.persona_color || '#6366f1', 0.08) }}>
-              {review.persona_icon || '?'}
-            </div>
+            <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="pop"
+              frameStyle={{ backgroundColor: colorWithAlpha(review.persona_color || '#6366f1', 0.08) }} />
             <div className="min-w-0">
               <h3 className="typo-heading text-foreground/90 truncate">{review.persona_name || 'Unknown Persona'}</h3>
               <div className="flex items-center gap-2 mt-0.5">
@@ -111,9 +130,8 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         <div className="flex gap-3">
-          <div className="w-7 h-7 rounded-full bg-violet-500/15 border border-violet-500/25 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Bot className="w-3.5 h-3.5 text-violet-400" />
-          </div>
+          <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="pop"
+            frameClass="bg-violet-500/15 border border-violet-500/25 mt-0.5" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="typo-caption text-violet-400">{review.persona_name || 'Agent'}</span>
@@ -128,7 +146,77 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                 <ContextDataPreview raw={contextData} />
               </div>
             )}
-            {suggestedActions.length > 0 && isPending && (
+            {/* Multi-decision items */}
+            {hasDecisions && isPending && (
+              <div className="mt-3 rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-secondary/10">
+                  <span className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Decisions ({decisions.length} items)</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => { const all: Record<string, 'accepted'> = {}; decisions.forEach((d) => { all[d.id] = 'accepted'; }); setDecisionStates(all); }}
+                      className="text-[11px] text-emerald-400/70 hover:text-emerald-400 transition-colors"
+                    >
+                      Accept all
+                    </button>
+                    <span className="text-muted-foreground/30">|</span>
+                    <button
+                      onClick={() => { const all: Record<string, 'rejected'> = {}; decisions.forEach((d) => { all[d.id] = 'rejected'; }); setDecisionStates(all); }}
+                      className="text-[11px] text-red-400/70 hover:text-red-400 transition-colors"
+                    >
+                      Reject all
+                    </button>
+                    <span className="text-muted-foreground/30">|</span>
+                    <button
+                      onClick={() => setDecisionStates({})}
+                      className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div className="divide-y divide-primary/5">
+                  {decisions.map((d) => {
+                    const state = decisionStates[d.id] ?? null;
+                    return (
+                      <div key={d.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/20 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm text-foreground/80">{d.label}</span>
+                          {d.description && <p className="text-xs text-muted-foreground/50 mt-0.5">{d.description}</p>}
+                        </div>
+                        {d.category && (
+                          <span className="text-[10px] text-muted-foreground/40 px-1.5 py-0.5 rounded bg-secondary/40 flex-shrink-0">{d.category}</span>
+                        )}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => toggleDecision(d.id, 'accepted')}
+                            className={`p-1 rounded-lg transition-colors ${state === 'accepted' ? 'bg-emerald-500/15 text-emerald-400' : 'text-muted-foreground/30 hover:text-emerald-400/60 hover:bg-emerald-500/5'}`}
+                            title="Accept"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => toggleDecision(d.id, 'rejected')}
+                            className={`p-1 rounded-lg transition-colors ${state === 'rejected' ? 'bg-red-500/15 text-red-400' : 'text-muted-foreground/30 hover:text-red-400/60 hover:bg-red-500/5'}`}
+                            title="Reject"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {(acceptedCount > 0 || rejectedCount > 0) && (
+                  <div className="flex items-center gap-3 px-3 py-2 border-t border-primary/10 bg-secondary/10">
+                    {acceptedCount > 0 && <span className="text-xs text-emerald-400">{acceptedCount} accepted</span>}
+                    {rejectedCount > 0 && <span className="text-xs text-red-400">{rejectedCount} rejected</span>}
+                    {decisions.length - acceptedCount - rejectedCount > 0 && <span className="text-xs text-muted-foreground/40">{decisions.length - acceptedCount - rejectedCount} undecided</span>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {suggestedActions.length > 0 && isPending && !hasDecisions && (
               <div className="mt-2 flex flex-col gap-1">
                 {suggestedActions.map((action, i) => (
                   <button key={i} onClick={() => setInput(action)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-amber-500/[0.06] text-amber-300 border border-amber-500/15 hover:bg-amber-500/[0.12] hover:border-amber-500/25 transition-colors text-left">
@@ -145,9 +233,14 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           const isUser = msg.role === 'user';
           return (
             <div key={msg.id} className={`animate-fade-slide-in flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border ${isUser ? 'bg-blue-500/15 border-blue-500/25' : 'bg-violet-500/15 border-violet-500/25'}`}>
-                {isUser ? <User className="w-3.5 h-3.5 text-blue-400" /> : <Bot className="w-3.5 h-3.5 text-violet-400" />}
-              </div>
+              {isUser ? (
+                <div className="icon-frame icon-frame-pop flex-shrink-0 mt-0.5 border bg-blue-500/15 border-blue-500/25">
+                  <User className="w-3.5 h-3.5 text-blue-400" />
+                </div>
+              ) : (
+                <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="pop"
+                  frameClass="bg-violet-500/15 border border-violet-500/25 mt-0.5" />
+              )}
               <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : ''}`}>
                   <span className={`typo-caption ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? 'You' : (review.persona_name || 'Agent')}</span>
@@ -194,10 +287,31 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground/50">{isCloud ? 'Approve or reject this cloud review' : 'Enter to send · Shift+Enter for new line'}</span>
             <div className="flex items-center gap-2">
-              <button onClick={() => handleAction('approved', input.trim() || undefined)} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <Check className="w-3.5 h-3.5" />{isProcessing ? 'Processing...' : 'Approve'}
+              <button onClick={() => {
+                // Include per-item decisions in reviewer notes for multi-decision reviews
+                let notes = input.trim() || undefined;
+                if (hasDecisions && (acceptedCount > 0 || rejectedCount > 0)) {
+                  const decisionSummary = decisions
+                    .filter((d) => decisionStates[d.id])
+                    .map((d) => `${decisionStates[d.id] === 'accepted' ? '+' : '-'} ${d.label}`)
+                    .join('\n');
+                  notes = notes ? `${notes}\n\nDecisions:\n${decisionSummary}` : `Decisions:\n${decisionSummary}`;
+                }
+                handleAction('approved', notes);
+              }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <Check className="w-3.5 h-3.5" />{isProcessing ? 'Processing...' : hasDecisions && acceptedCount > 0 ? `Approve (${acceptedCount}/${decisions.length})` : 'Approve'}
               </button>
-              <button onClick={() => handleAction('rejected', input.trim() || undefined)} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={() => {
+                let notes = input.trim() || undefined;
+                if (hasDecisions && (acceptedCount > 0 || rejectedCount > 0)) {
+                  const decisionSummary = decisions
+                    .filter((d) => decisionStates[d.id])
+                    .map((d) => `${decisionStates[d.id] === 'accepted' ? '+' : '-'} ${d.label}`)
+                    .join('\n');
+                  notes = notes ? `${notes}\n\nDecisions:\n${decisionSummary}` : `Decisions:\n${decisionSummary}`;
+                }
+                handleAction('rejected', notes);
+              }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <X className="w-3.5 h-3.5" />{isProcessing ? 'Processing...' : 'Reject'}
               </button>
             </div>

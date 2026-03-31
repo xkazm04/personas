@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
-import { Clock, Calendar, Shield, RotateCw, RefreshCw, Brain, Zap, Copy, Check, Code, MessageSquare, ChevronRight, AlertTriangle, BookOpen, Target } from 'lucide-react';
+import { Clock, Calendar, Shield, RotateCw, RefreshCw, Brain, Zap, Copy, Check, Code, MessageSquare, ChevronRight, AlertTriangle, BookOpen, Target, Loader2 } from 'lucide-react';
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { isTerminalState } from '@/lib/execution/executionState';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
 import { HighlightedJsonBlock } from './inspector/HighlightedJsonBlock';
@@ -209,9 +209,35 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
 // ---------------------------------------------------------------------------
 
 export function ExecutionDetailContent({ execution, hasInputData, hasOutputData }: ExecutionDetailContentProps) {
-  const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
+  const executePersona = useAgentStore((s) => s.executePersona);
+  const fetchExecutions = useAgentStore((s) => s.fetchExecutions);
   const [showRaw, setShowRaw] = useState(false);
   const [activeSection, setActiveSection] = useState<OutputSection>('overview');
+  const [isRerunning, setIsRerunning] = useState(false);
+  const [rerunResult, setRerunResult] = useState<'success' | 'error' | null>(null);
+
+  const handleRerun = useCallback(async () => {
+    setIsRerunning(true);
+    setRerunResult(null);
+    try {
+      let inputData: object | undefined;
+      if (execution.input_data) {
+        try { inputData = JSON.parse(execution.input_data); } catch { /* empty input */ }
+      }
+      const newId = await executePersona(execution.persona_id, inputData);
+      if (newId) {
+        setRerunResult('success');
+        // Refresh execution list so the new execution appears
+        fetchExecutions(execution.persona_id);
+      } else {
+        setRerunResult('error');
+      }
+    } catch {
+      setRerunResult('error');
+    } finally {
+      setIsRerunning(false);
+    }
+  }, [execution.persona_id, execution.input_data, executePersona, fetchExecutions]);
 
   const parsed = useMemo(() => parseOutputData(execution.output_data), [execution.output_data]);
 
@@ -261,10 +287,23 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
           </button>
           {isTerminalState(execution.status) && (
             <button
-              onClick={() => setRerunInputData(execution.input_data || '{}')}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+              onClick={handleRerun}
+              disabled={isRerunning}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                rerunResult === 'success'
+                  ? 'bg-emerald-500/10 text-emerald-400'
+                  : rerunResult === 'error'
+                  ? 'bg-red-500/10 text-red-400'
+                  : 'bg-primary/10 text-primary hover:bg-primary/15'
+              } disabled:opacity-50`}
             >
-              <RotateCw className="w-3 h-3" /> Re-run
+              {isRerunning
+                ? <><Loader2 className="w-3 h-3 animate-spin" /> Running...</>
+                : rerunResult === 'success'
+                ? <><Check className="w-3 h-3" /> Started</>
+                : rerunResult === 'error'
+                ? <><AlertTriangle className="w-3 h-3" /> Failed</>
+                : <><RotateCw className="w-3 h-3" /> Re-run</>}
             </button>
           )}
         </div>

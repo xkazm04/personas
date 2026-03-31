@@ -14,6 +14,7 @@ import { BuildQuestionnaireModal } from "../gallery/matrix/BuildQuestionnaireMod
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
@@ -103,9 +104,10 @@ function extractDimensionData(ir: unknown): CellDataMap {
   return data;
 }
 
-export function MatrixAdoptionView({ review, onClose }: MatrixAdoptionViewProps) {
+export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
+  const [fadeOut, setFadeOut] = useState(false);
   const createPersona = useAgentStore((s) => s.createPersona);
   const seedDone = useRef(false);
 
@@ -193,6 +195,35 @@ export function MatrixAdoptionView({ review, onClose }: MatrixAdoptionViewProps)
   const build = useMatrixBuild({ personaId });
   const lifecycle = useMatrixLifecycle({ personaId });
 
+  // -- Post-promotion: navigate to the promoted agent with fade transition --
+
+  const handleViewAgent = useCallback(() => {
+    if (!personaId) return;
+
+    setFadeOut(true);
+    setTimeout(() => {
+      // Reset build state
+      useAgentStore.getState().resetBuildSession();
+
+      // Navigate to the promoted agent
+      useAgentStore.getState().selectPersona(personaId);
+      useAgentStore.getState().fetchPersonas();
+      useSystemStore.getState().setEditorTab('matrix');
+
+      // Close the adoption modal
+      onPersonaCreated();
+    }, 400);
+  }, [personaId, onPersonaCreated]);
+
+  // Auto-redirect after promotion (matches UnifiedMatrixEntry behavior)
+  const buildPhaseForRedirect = useAgentStore((s) => s.buildPhase);
+  useEffect(() => {
+    if (buildPhaseForRedirect === 'promoted' && personaId && !fadeOut) {
+      const timer = setTimeout(() => handleViewAgent(), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [buildPhaseForRedirect, personaId, fadeOut, handleViewAgent]);
+
   const handleApplyEdits = useCallback(async () => {
     const store = useAgentStore.getState();
     if (!store.buildEditDirty) return;
@@ -225,7 +256,7 @@ export function MatrixAdoptionView({ review, onClose }: MatrixAdoptionViewProps)
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 pt-2">
+    <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
       <PersonaMatrix
         designResult={null}
         variant="creation"
@@ -245,6 +276,9 @@ export function MatrixAdoptionView({ review, onClose }: MatrixAdoptionViewProps)
         testOutputLines={build.buildTestOutputLines}
         testPassed={build.buildTestPassed}
         testError={build.buildTestError}
+        toolTestResults={lifecycle.buildToolTestResults}
+        testSummary={lifecycle.buildTestSummary}
+        onViewAgent={handleViewAgent}
         buildActivity={build.buildActivity}
         onApplyEdits={handleApplyEdits}
         onDiscardEdits={handleDiscardEdits}
