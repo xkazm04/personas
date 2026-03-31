@@ -10,7 +10,10 @@ import { createLogger } from "@/lib/log";
 
 const logger = createLogger("template-adoption");
 import { PersonaMatrix } from "../gallery/matrix/PersonaMatrix";
-import { BuildQuestionnaireModal } from "../gallery/matrix/BuildQuestionnaireModal";
+import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
+import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
+import { QuestionnaireFormGrid } from "./QuestionnaireFormGrid";
+import { Grid3X3, Gem, Ruler } from "lucide-react";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
@@ -104,10 +107,19 @@ function extractDimensionData(ir: unknown): CellDataMap {
   return data;
 }
 
+// -- Matrix variant tab switcher types --
+type MatrixVariant = "original" | "glass" | "blueprint";
+const MATRIX_VARIANTS: { key: MatrixVariant; label: string; icon: React.ElementType }[] = [
+  { key: "original", label: "Grid", icon: Grid3X3 },
+  { key: "glass", label: "Glass", icon: Gem },
+  { key: "blueprint", label: "Blueprint", icon: Ruler },
+];
+
 export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [fadeOut, setFadeOut] = useState(false);
+  const [matrixVariant, setMatrixVariant] = useState<MatrixVariant>("original");
   const createPersona = useAgentStore((s) => s.createPersona);
   const seedDone = useRef(false);
 
@@ -257,37 +269,88 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
   return (
     <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      <PersonaMatrix
-        designResult={null}
-        variant="creation"
-        hideHeader
-        completeness={build.completeness}
-        isRunning={build.isBuilding}
-        buildLocked={false}
-        cellBuildStates={build.cellStates}
-        pendingQuestions={build.pendingQuestions}
-        onAnswerBuildQuestion={build.handleAnswer}
-        hasDesignResult={build.buildPhase === "draft_ready" || build.buildPhase === "test_complete" || build.buildPhase === "promoted"}
-        buildPhase={build.buildPhase}
-        onStartTest={lifecycle.handleStartTest}
-        onApproveTest={lifecycle.handlePromote}
-        onRejectTest={lifecycle.handleRejectTest}
-        onRefine={lifecycle.handleRefine}
-        testOutputLines={build.buildTestOutputLines}
-        testPassed={build.buildTestPassed}
-        testError={build.buildTestError}
-        toolTestResults={lifecycle.buildToolTestResults}
-        testSummary={lifecycle.buildTestSummary}
-        onViewAgent={handleViewAgent}
-        buildActivity={build.buildActivity}
-        onApplyEdits={handleApplyEdits}
-        onDiscardEdits={handleDiscardEdits}
-        onSubmitAllAnswers={build.handleSubmitAnswers}
-      />
+      {/* Matrix variant tab switcher */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1">
+          {MATRIX_VARIANTS.map((v) => {
+            const VIcon = v.icon;
+            return (
+              <button
+                key={v.key}
+                onClick={() => setMatrixVariant(v.key)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+                  matrixVariant === v.key
+                    ? "bg-white/[0.08] text-foreground shadow-sm"
+                    : "text-muted-dark hover:text-foreground/70 hover:bg-white/[0.04]"
+                }`}
+              >
+                <VIcon className="h-3.5 w-3.5" />
+                {v.label}
+              </button>
+            );
+          })}
+        </div>
+        <span className="text-[10px] text-muted-foreground/30 uppercase tracking-wider">Matrix View</span>
+      </div>
 
-      {/* Adoption questions modal — shown before draft_ready when template has pre-defined questions */}
+      {/* Matrix variant rendering */}
+      {matrixVariant === "original" && (
+        <PersonaMatrix
+          designResult={null}
+          variant="creation"
+          hideHeader
+          completeness={build.completeness}
+          isRunning={build.isBuilding}
+          buildLocked={false}
+          cellBuildStates={build.cellStates}
+          pendingQuestions={build.pendingQuestions}
+          onAnswerBuildQuestion={build.handleAnswer}
+          hasDesignResult={build.buildPhase === "draft_ready" || build.buildPhase === "test_complete" || build.buildPhase === "promoted"}
+          buildPhase={build.buildPhase}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onRejectTest={lifecycle.handleRejectTest}
+          onRefine={lifecycle.handleRefine}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
+          onViewAgent={handleViewAgent}
+          buildActivity={build.buildActivity}
+          onApplyEdits={handleApplyEdits}
+          onDiscardEdits={handleDiscardEdits}
+          onSubmitAllAnswers={build.handleSubmitAnswers}
+        />
+      )}
+      {matrixVariant === "glass" && (
+        <PersonaMatrixGlass
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isRunning={build.isBuilding}
+          cellBuildStates={build.cellStates}
+          buildActivity={build.buildActivity}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onViewAgent={handleViewAgent}
+        />
+      )}
+      {matrixVariant === "blueprint" && (
+        <PersonaMatrixBlueprint
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          isRunning={build.isBuilding}
+          cellBuildStates={build.cellStates}
+          buildActivity={build.buildActivity}
+          onStartTest={lifecycle.handleStartTest}
+          onApproveTest={lifecycle.handlePromote}
+          onViewAgent={handleViewAgent}
+        />
+      )}
+
+      {/* Adoption questions — FormGrid variant */}
       {hasAdoptionQuestions && !questionsComplete && seeded && (
-        <BuildQuestionnaireModal
+        <QuestionnaireFormGrid
           questions={adoptionQuestions}
           userAnswers={adoptionAnswers}
           onAnswerUpdated={(id, answer) => setAdoptionAnswers((prev) => ({ ...prev, [id]: answer }))}

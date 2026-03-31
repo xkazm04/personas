@@ -5,6 +5,15 @@ use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+/// Valid importance range for team memories (matches UI expectations).
+const IMPORTANCE_MIN: i32 = 1;
+const IMPORTANCE_MAX: i32 = 10;
+
+/// Clamp importance to the valid 1–10 range.
+fn clamp_importance(value: i32) -> i32 {
+    value.clamp(IMPORTANCE_MIN, IMPORTANCE_MAX)
+}
+
 /// Escape LIKE metacharacters (%, _) so they are matched literally.
 fn escape_like(input: &str) -> String {
     input
@@ -164,7 +173,7 @@ pub fn create(pool: &DbPool, input: CreateTeamMemoryInput) -> Result<TeamMemory,
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let category = input.category.unwrap_or_else(|| "observation".into());
-        let importance = input.importance.unwrap_or(3);
+        let importance = clamp_importance(input.importance.unwrap_or(3));
 
         let conn = pool.get()?;
         conn.execute(
@@ -193,6 +202,7 @@ pub fn create(pool: &DbPool, input: CreateTeamMemoryInput) -> Result<TeamMemory,
 
 pub fn update_importance(pool: &DbPool, id: &str, importance: i32) -> Result<bool, AppError> {
     timed_query!("team_memories", "team_memories::update_importance", {
+        let importance = clamp_importance(importance);
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
         let rows = conn.execute(
@@ -261,7 +271,7 @@ pub fn update(
         let new_title = title.unwrap_or(&existing.title);
         let new_content = content.unwrap_or(&existing.content);
         let new_category = category.unwrap_or(&existing.category);
-        let new_importance = importance.unwrap_or(existing.importance);
+        let new_importance = clamp_importance(importance.unwrap_or(existing.importance));
 
         if new_title.trim().is_empty() {
             return Err(AppError::Validation("Title cannot be empty".into()));

@@ -1510,6 +1510,16 @@ pub fn run() {
             commands::ocr::list_ocr_documents,
             commands::ocr::get_ocr_document,
             commands::ocr::delete_ocr_document,
+            // Artist -- 3D/2D Asset Management
+            commands::artist::artist_check_blender,
+            commands::artist::artist_install_blender_mcp,
+            commands::artist::artist_scan_folder,
+            commands::artist::artist_list_assets,
+            commands::artist::artist_import_asset,
+            commands::artist::artist_delete_asset,
+            commands::artist::artist_update_tags,
+            commands::artist::artist_get_default_folder,
+            commands::artist::artist_ensure_folders,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

@@ -3,6 +3,7 @@ import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { CloudExecutionRow } from './CloudExecutionRow';
 import { useAgentStore } from "@/stores/agentStore";
+import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
 import { cloudListExecutions, cloudExecutionStats, cloudGetExecutionOutput } from '@/api/system/cloud';
 import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
@@ -17,6 +18,7 @@ import { DailyBreakdownChart } from './DailyBreakdownChart';
 
 export function CloudHistoryPanel() {
   const personas = useAgentStore((s) => s.personas);
+  const personaName = usePersonaNameMap();
   const [executions, setExecutions] = useState<CloudExecution[]>([]);
   const [stats, setStats] = useState<CloudExecutionStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,11 +27,6 @@ export function CloudHistoryPanel() {
   const [filterPersona, setFilterPersona] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [period, setPeriod] = useState<number>(7);
-
-  const personaName = useCallback(
-    (id: string) => personas.find((p) => p.id === id)?.name ?? id.slice(0, 8),
-    [personas],
-  );
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);

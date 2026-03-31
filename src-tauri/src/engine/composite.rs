@@ -152,7 +152,10 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
     // Load only enabled composite triggers (filtered at SQL level)
     let composite_triggers = match trigger_repo::get_enabled_by_type(pool, "composite") {
         Ok(t) => t,
-        Err(_) => return,
+        Err(e) => {
+            tracing::error!("Failed to load composite triggers: {e} — composite evaluation skipped this tick");
+            return;
+        }
     };
 
     if composite_triggers.is_empty() {
@@ -177,7 +180,10 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
     let until = Utc::now().to_rfc3339();
     let recent_events = match event_repo::get_in_range(pool, &since, &until, None) {
         Ok((events, _)) => events,
-        Err(_) => return,
+        Err(e) => {
+            tracing::error!("Failed to load recent events for composite evaluation: {e} — composite evaluation skipped this tick");
+            return;
+        }
     };
 
     let now = Utc::now();

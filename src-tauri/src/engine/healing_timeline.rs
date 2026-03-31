@@ -33,8 +33,27 @@ pub fn resolve_knowledge_hint(
         _ => return None,
     };
 
-    let tools = crate::db::repos::resources::tools::get_tools_for_persona(pool, persona_id).ok()?;
-    let connectors = crate::db::repos::resources::connectors::get_all(pool).ok()?;
+    let tools = match crate::db::repos::resources::tools::get_tools_for_persona(pool, persona_id) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::error!(
+                persona_id = %persona_id,
+                error = %e,
+                "Failed to fetch tools for knowledge hint resolution"
+            );
+            return None;
+        }
+    };
+    let connectors = match crate::db::repos::resources::connectors::get_all(pool) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!(
+                error = %e,
+                "Failed to fetch connectors for knowledge hint resolution"
+            );
+            return None;
+        }
+    };
 
     resolve_hint_from_cache(pool, pattern_key, &tools, &connectors)
 }
@@ -132,8 +151,27 @@ pub fn run_healing_analysis(
 
     let consecutive = exec_repo::get_consecutive_failure_count(pool, persona_id)?;
 
-    let tools = crate::db::repos::resources::tools::get_tools_for_persona(pool, persona_id).ok();
-    let connectors = crate::db::repos::resources::connectors::get_all(pool).ok();
+    let tools = match crate::db::repos::resources::tools::get_tools_for_persona(pool, persona_id) {
+        Ok(t) => Some(t),
+        Err(e) => {
+            tracing::warn!(
+                persona_id = %persona_id,
+                error = %e,
+                "Failed to pre-fetch tools for healing analysis knowledge hints"
+            );
+            None
+        }
+    };
+    let connectors = match crate::db::repos::resources::connectors::get_all(pool) {
+        Ok(c) => Some(c),
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                "Failed to pre-fetch connectors for healing analysis knowledge hints"
+            );
+            None
+        }
+    };
 
     for exec in &failures {
         let error = exec.error_message.as_deref().unwrap_or("");

@@ -195,10 +195,6 @@ export default function PersonaOverviewPage() {
   // Convenience destructure
   const { statusFilter, healthFilter, connectorFilter, favoriteOnly, sortKey, sortDirection: sortDir } = viewConfig;
 
-  const setStatusFilter = useCallback((value: string) => {
-    setViewConfig((prev) => ({ ...prev, statusFilter: value }));
-  }, []);
-
   const handleSort = useCallback((key: string) => {
     setViewConfig((prev) => {
       if (prev.sortKey === key) {
@@ -369,13 +365,6 @@ export default function PersonaOverviewPage() {
     }
   }, [allSelected, filteredData]);
 
-  const statusOptions = [
-    { value: 'all', label: 'All' },
-    { value: 'enabled', label: 'Active' },
-    { value: 'disabled', label: 'Disabled' },
-    { value: 'building', label: 'Drafts' },
-  ];
-
 
   const columns: DataGridColumn<Persona>[] = [
     {
@@ -480,9 +469,6 @@ export default function PersonaOverviewPage() {
       label: 'Status',
       width: '120px',
       sortable: true,
-      filterOptions: statusOptions,
-      filterValue: statusFilter,
-      onFilterChange: setStatusFilter,
       render: (persona) => {
         if (isBuilding(persona.id)) return <BuildingBadge />;
         return <StatusBadge enabled={persona.enabled} health={healthMap[persona.id]} isDraft={isDraft(persona)} />;
@@ -566,20 +552,21 @@ export default function PersonaOverviewPage() {
         iconColor="violet"
         title="All Agents"
         subtitle={`${filteredData.length}${filteredData.length !== personas.length ? ` of ${personas.length}` : ''} agent${personas.length !== 1 ? 's' : ''}`}
-      >
-        <div className="flex items-center gap-3">
-          <BatchActionBar
-            count={selectedIds.size}
-            onDelete={handleBatchDelete}
-            onClear={() => setSelectedIds(new Set())}
-          />
-          <ViewPresetBar
-            currentConfig={viewConfig}
-            onApplyConfig={setViewConfig}
-            connectorOptions={allConnectorNames}
-          />
-        </div>
-      </ContentHeader>
+        actions={
+          <div className="flex items-center gap-3">
+            <BatchActionBar
+              count={selectedIds.size}
+              onDelete={handleBatchDelete}
+              onClear={() => setSelectedIds(new Set())}
+            />
+            <ViewPresetBar
+              currentConfig={viewConfig}
+              onApplyConfig={setViewConfig}
+              connectorOptions={allConnectorNames}
+            />
+          </div>
+        }
+      />
       <ContentBody>
         <DataGrid
           columns={columns}

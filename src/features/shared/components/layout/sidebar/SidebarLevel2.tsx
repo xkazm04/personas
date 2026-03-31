@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Users, Sparkles, Plus, List, Star, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Star, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine, Palette } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
@@ -488,6 +488,20 @@ function PluginsSidebarNav() {
         >
           <ScanLine className="w-4 h-4 flex-shrink-0" />
           OCR
+        </button>
+
+        {/* Artist */}
+        <button
+          onClick={() => setPluginTab('artist')}
+          aria-current={pluginTab === 'artist' ? 'page' : undefined}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+            pluginTab === 'artist'
+              ? 'bg-primary/10 text-foreground/90'
+              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+          }`}
+        >
+          <Palette className="w-4 h-4 flex-shrink-0" />
+          Artist
         </button>
 
         {/* Dev Tools */}

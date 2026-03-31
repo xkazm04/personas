@@ -1,7 +1,7 @@
 import { ChevronRight, Cloud } from 'lucide-react';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
-import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { STATUS_LABELS, SEVERITY_LABELS } from '../libs/reviewHelpers';
 import type { ManualReviewItem } from '@/lib/types/types';
 
@@ -74,16 +74,13 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
       }`}
     >
       <div className="flex items-start gap-2.5">
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0 mt-0.5"
-          style={{ backgroundColor: colorWithAlpha(review.persona_color || '#6366f1', 0.08) }}
-        >
-          {review.persona_icon || '?'}
+        <div className="flex-shrink-0 mt-0.5">
+          <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <span className="typo-heading text-foreground/90 truncate">{review.persona_name || 'Unknown'}</span>
-            <span className="text-xs text-muted-foreground/60 flex-shrink-0">{formatRelativeTime(review.created_at)}</span>
+            <span className="text-sm text-muted-foreground/60 flex-shrink-0">{formatRelativeTime(review.created_at)}</span>
           </div>
           <p className="text-sm text-muted-foreground/70 truncate mt-0.5">{review.content.slice(0, 80)}</p>
           <div className="flex items-center gap-2 mt-1">

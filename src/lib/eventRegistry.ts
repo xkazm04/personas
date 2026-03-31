@@ -129,6 +129,11 @@ export const EventName = {
   TASK_EXEC_OUTPUT: 'task-exec-output',
   TASK_EXEC_COMPLETE: 'task-exec-complete',
 
+  // Artist creative session
+  ARTIST_SESSION_STATUS: 'artist-session-status',
+  ARTIST_SESSION_OUTPUT: 'artist-session-output',
+  ARTIST_SESSION_COMPLETE: 'artist-session-complete',
+
   // Recipe
   RECIPE_EXECUTION_STATUS: 'recipe-execution-status',
   RECIPE_GENERATION_STATUS: 'recipe-generation-status',

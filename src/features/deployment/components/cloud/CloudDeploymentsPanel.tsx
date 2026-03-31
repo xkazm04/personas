@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Rocket, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
+import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
 import { Button } from '@/features/shared/components/buttons';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import type { CloudDeployment } from '@/api/system/cloud';
@@ -39,13 +40,11 @@ export function CloudDeploymentsPanel({
   onRefresh,
 }: Props) {
   const personas = useAgentStore((s) => s.personas);
+  const personaName = usePersonaNameMap();
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [selectedBudget, setSelectedBudget] = useState<number | undefined>(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { tests, runTest, dismissResult } = useDeploymentTest();
-
-  const personaName = (id: string) =>
-    personas.find((p) => p.id === id)?.name ?? id.slice(0, 8);
 
   // Which personas are not yet deployed?
   const deployedPersonaIds = new Set(deployments.map((d) => d.persona_id));

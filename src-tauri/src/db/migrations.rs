@@ -3597,6 +3597,35 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             fired_at    TEXT NOT NULL
         );"
     )?;
+    // -- Artist plugin tables -------------------------------------------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS artist_assets (
+            id              TEXT PRIMARY KEY,
+            file_name       TEXT NOT NULL,
+            file_path       TEXT NOT NULL,
+            asset_type      TEXT NOT NULL CHECK(asset_type IN ('2d','3d')),
+            mime_type       TEXT,
+            file_size       INTEGER NOT NULL DEFAULT 0,
+            width           INTEGER,
+            height          INTEGER,
+            thumbnail_path  TEXT,
+            tags            TEXT,
+            source          TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_artist_assets_type ON artist_assets(asset_type);
+        CREATE INDEX IF NOT EXISTS idx_artist_assets_created ON artist_assets(created_at);
+
+        CREATE TABLE IF NOT EXISTS artist_tags (
+            id              TEXT PRIMARY KEY,
+            asset_id        TEXT NOT NULL REFERENCES artist_assets(id) ON DELETE CASCADE,
+            tag             TEXT NOT NULL,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_artist_tags_asset ON artist_tags(asset_id);
+        CREATE INDEX IF NOT EXISTS idx_artist_tags_tag ON artist_tags(tag);"
+    )?;
+
     Ok(())
 }
 

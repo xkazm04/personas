@@ -10,3 +10,4 @@ pub mod recipes;
 pub mod network;
 pub mod ocr;
 pub mod signing;
+pub mod artist;

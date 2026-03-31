@@ -3,8 +3,8 @@ import {
   Cloud, GitBranch, RefreshCw, Activity,
   CheckCircle2, PauseCircle,
 } from 'lucide-react';
-import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
 import { silentCatch } from "@/lib/silentCatch";
 import type { DeployTarget, DeployStatus, SortKey, SortDir, UnifiedDeployment } from './deploymentTypes';
 import { compareValues } from './deploymentTypes';
@@ -16,7 +16,7 @@ import { useDeploymentHealth } from '../hooks/useDeploymentHealth';
 import { useDeploymentTest } from '../hooks/useDeploymentTest';
 
 export function UnifiedDeploymentDashboard() {
-  const personas = useAgentStore((s) => s.personas);
+  const personaName = usePersonaNameMap();
   const cloudDeployments = useSystemStore((s) => s.cloudDeployments);
   const cloudBaseUrl = useSystemStore((s) => s.cloudBaseUrl);
   const cloudConfig = useSystemStore((s) => s.cloudConfig);
@@ -49,11 +49,6 @@ export function UnifiedDeploymentDashboard() {
       gitlabFetchAgents(gitlabSelectedProjectId).catch(silentCatch("DeploymentDashboard:fetchGitlabAgents"));
     }
   }, [cloudConfig?.is_connected, gitlabConfig?.isConnected, gitlabSelectedProjectId, cloudFetchDeployments, gitlabFetchAgents]);
-
-  const personaName = useCallback(
-    (id: string) => personas.find((p) => p.id === id)?.name ?? id.slice(0, 8),
-    [personas],
-  );
 
   const unified = useMemo<UnifiedDeployment[]>(() => {
     const rows: UnifiedDeployment[] = [];
@@ -140,11 +135,17 @@ export function UnifiedDeploymentDashboard() {
     [displayRows, selectedIds],
   );
 
-  const totalCloud = unified.filter((r) => r.target === 'cloud').length;
-  const totalGitlab = unified.filter((r) => r.target === 'gitlab').length;
-  const activeCount = unified.filter((r) => r.status === 'active').length;
-  const pausedCount = unified.filter((r) => r.status === 'paused').length;
-  const totalInvocations = unified.reduce((sum, r) => sum + r.invocations, 0);
+  const { totalCloud, totalGitlab, activeCount, pausedCount, totalInvocations } = useMemo(() => {
+    let cloud = 0, gitlab = 0, active = 0, paused = 0, invocations = 0;
+    for (const r of unified) {
+      if (r.target === 'cloud') cloud++;
+      else if (r.target === 'gitlab') gitlab++;
+      if (r.status === 'active') active++;
+      else if (r.status === 'paused') paused++;
+      invocations += r.invocations;
+    }
+    return { totalCloud: cloud, totalGitlab: gitlab, activeCount: active, pausedCount: paused, totalInvocations: invocations };
+  }, [unified]);
   const cloudConnected = !!cloudConfig?.is_connected;
   const gitlabConnected = !!gitlabConfig?.isConnected;
 

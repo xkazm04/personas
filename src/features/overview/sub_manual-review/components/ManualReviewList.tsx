@@ -194,7 +194,7 @@ export default function ManualReviewList() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
                 <ClipboardCheck className="w-6 h-6 text-muted-foreground/60" />
               </div>
-              <p className="typo-heading text-foreground/70">No review items yet</p>
+              <p className="text-sm font-medium text-foreground/70">No review items yet</p>
               <p className="text-sm text-muted-foreground/60 mt-1">Items requiring approval will appear here</p>
             </div>
           </div>

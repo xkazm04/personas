@@ -8,11 +8,12 @@ import { useAgentStore } from "@/stores/agentStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
-import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
+
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { GlobalExecution } from '@/lib/types/types';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -25,6 +26,15 @@ type FilterStatus = 'all' | 'running' | 'completed' | 'failed';
 const FILTER_LABELS: Record<FilterStatus, string> = {
   all: 'All', running: 'Running', completed: 'Completed', failed: 'Failed',
 };
+
+const EXEC_GRID_COLUMNS = '180px minmax(0,1fr) 120px 140px 120px';
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'running', label: 'Running' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'failed', label: 'Failed' },
+];
 
 export default function GlobalExecutionList() {
   const {
@@ -46,6 +56,11 @@ export default function GlobalExecutionList() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+
+  const personaFilterOptions = useMemo(() => [
+    { value: '', label: 'All personas' },
+    ...personas.map((p) => ({ value: p.id, label: p.name })),
+  ], [personas]);
 
   const { filtered: personaFiltered } = useFilteredCollection(globalExecutions, {
     exact: [{ field: 'persona_id', value: selectedPersonaId || null }],
@@ -121,21 +136,23 @@ export default function GlobalExecutionList() {
         title="Executions"
         subtitle={`${globalExecutionsTotal} execution${globalExecutionsTotal !== 1 ? 's' : ''} recorded`}
         actions={
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowDashboard(!showDashboard)}
-              className={`p-1.5 rounded-lg transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
               title={showDashboard ? 'Show execution list' : 'Show metrics dashboard'}
             >
-              <BarChart3 className="w-3.5 h-3.5" />
+              <BarChart3 className="w-5 h-5" />
+              <span className="text-sm font-medium">{showDashboard ? 'List' : 'Metrics'}</span>
             </button>
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
               title="Refresh"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="text-sm font-medium">Refresh</span>
             </button>
           </div>
         }
@@ -155,7 +172,6 @@ export default function GlobalExecutionList() {
             onChange={setFilter}
             badgeStyle="paren"
             layoutIdPrefix="execution-filter"
-            trailing={<PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />}
             summary={`Showing ${filteredExecutions.length} of ${globalExecutionsTotal}`}
           />
 
@@ -183,23 +199,34 @@ export default function GlobalExecutionList() {
             ) : (
               <div ref={parentRef} className="flex-1 overflow-y-auto">
                 {!IS_MOBILE && (
-                  <table className="w-full border-collapse">
-                    <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-                      <tr className="border-b border-primary/10">
-                        <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Persona</th>
-                        <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Status</th>
-                        <th className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Duration</th>
-                        <th className="text-right text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">Started</th>
-                        <th className="text-left text-sm text-muted-foreground/80 uppercase tracking-wider font-medium px-4 py-2.5">ID</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr style={{ height: `${virtualizer.getTotalSize()}px` }} aria-hidden><td colSpan={5} className="p-0" /></tr>
-                    </tbody>
-                  </table>
+                  <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: EXEC_GRID_COLUMNS }}>
+                    <div role="columnheader" className="px-4 py-1.5">
+                      <ThemedSelect
+                        filterable
+                        options={personaFilterOptions}
+                        value={selectedPersonaId}
+                        onValueChange={setSelectedPersonaId}
+                        placeholder="Persona"
+                        className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                      />
+                    </div>
+                    <div role="columnheader" className="px-4 py-1.5">
+                      <ThemedSelect
+                        filterable
+                        options={STATUS_FILTER_OPTIONS}
+                        value={filter}
+                        onValueChange={(v) => setFilter(v as FilterStatus)}
+                        placeholder="Status"
+                        className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                      />
+                    </div>
+                    <div role="columnheader" className="text-right text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Duration</div>
+                    <div role="columnheader" className="text-right text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Started</div>
+                    <div role="columnheader" className="text-left text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">ID</div>
+                  </div>
                 )}
 
-                <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative', marginTop: IS_MOBILE ? undefined : `-${virtualizer.getTotalSize()}px` }}>
+                <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                   {virtualizer.getVirtualItems().map((virtualRow) => {
                     const exec = filteredExecutions[virtualRow.index]!;
                     const status = getStatusEntry(exec.status);
@@ -217,9 +244,7 @@ export default function GlobalExecutionList() {
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(exec.persona_color || '#6366f1', 0.08) }}>
-                              {exec.persona_icon || '?'}
-                            </div>
+                            <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" />
                             <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
                           </div>
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption flex-shrink-0 ${badgeClass(status)}`}>
@@ -237,24 +262,22 @@ export default function GlobalExecutionList() {
                         key={exec.id} role="row" tabIndex={0}
                         onClick={() => setSelectedExec(exec)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedExec(exec); } }}
-                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px` }}
-                        className={`flex items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: EXEC_GRID_COLUMNS }}
+                        className={`grid items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                       >
-                        <div className="flex items-center gap-2 px-4 w-[25%] min-w-0">
-                          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm border border-primary/15 flex-shrink-0" style={{ backgroundColor: colorWithAlpha(exec.persona_color || '#6366f1', 0.08) }}>
-                            {exec.persona_icon || '?'}
-                          </div>
-                          <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
+                        <div className="flex items-center gap-2 px-4 min-w-0">
+                          <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" />
+                          <span className="text-sm text-muted-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
                         </div>
-                        <div className="px-4 w-[20%]">
+                        <div className="px-4">
                           <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg typo-heading ${badgeClass(status)}`}>
                             {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
                             {status.label}
                           </span>
                         </div>
-                        <div className="px-4 w-[15%] text-right"><span className="text-sm text-muted-foreground/90 font-mono">{formatDuration(exec.duration_ms)}</span></div>
-                        <div className="px-4 w-[20%] text-right"><span className="text-sm text-muted-foreground/80">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
-                        <div className="px-4 w-[20%] min-w-0"><span className="text-sm text-muted-foreground/60 font-mono truncate block">{exec.id.slice(0, 8)}</span></div>
+                        <div className="px-4 text-right"><span className="text-sm text-muted-foreground/90 font-mono">{formatDuration(exec.duration_ms)}</span></div>
+                        <div className="px-4 text-right"><span className="text-sm text-muted-foreground/80">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
+                        <div className="px-4 min-w-0"><span className="text-sm text-muted-foreground/60 font-mono truncate block">{exec.id.slice(0, 8)}</span></div>
                       </div>
                     );
                   })}

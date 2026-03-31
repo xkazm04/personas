@@ -657,6 +657,32 @@ pub async fn run_execution(
                 continue;
             }
 
+            // Early cancellation check: if the user cancelled during arg
+            // building or failover iteration, skip spawning entirely to avoid
+            // starting a process that will be immediately killed.
+            if CliProcessDriver::is_cancelled(&cancelled) {
+                logger.log("[CANCELLED] Execution cancelled before CLI spawn");
+                trace.end_span_error(&spawn_engine_stage, "Cancelled before spawn");
+                logger.close();
+
+                let duration_ms = start_time.elapsed().as_millis() as u64;
+                let _ = app.emit(
+                    event_name::EXECUTION_OUTPUT,
+                    ExecutionOutputEvent {
+                        execution_id: execution_id.clone(),
+                        line: "[CANCELLED] Execution cancelled before CLI spawn".into(),
+                    },
+                );
+
+                return ExecutionResult {
+                    success: false,
+                    error: Some("Cancelled before spawn".into()),
+                    log_file_path: Some(log_file_path),
+                    duration_ms,
+                    ..default_result()
+                };
+            }
+
             // Spawn CLI process via CliProcessDriver
             match CliProcessDriver::spawn(&cli_args, exec_dir.clone()) {
                 Ok(driver) => {
@@ -727,6 +753,41 @@ pub async fn run_execution(
         };
     };
 
+    // Register child PID immediately after spawn to minimise the window where
+    // cancel_execution cannot kill the process (no PID in the map yet).
+    driver.register_pid(&child_pids, &execution_id).await;
+
+    // Check cancellation right after PID registration. This closes the race
+    // window between task start and PID registration: if the user cancelled
+    // during spawn, the flag is set but the process couldn't be killed (PID
+    // wasn't registered). Now that the PID is registered, catch it early —
+    // before trace recording and prompt delivery — to prevent wasting API
+    // credits on an execution the user already cancelled.
+    if CliProcessDriver::is_cancelled(&cancelled) {
+        trace.end_span_error(&spawn_engine_stage, "Cancelled during spawn");
+        logger.log("[CANCELLED] Execution cancelled during spawn, killing process");
+        driver.kill().await;
+        driver.unregister_pid(&child_pids, &execution_id).await;
+        logger.close();
+
+        let duration_ms = start_time.elapsed().as_millis() as u64;
+        let _ = app.emit(
+            event_name::EXECUTION_OUTPUT,
+            ExecutionOutputEvent {
+                execution_id: execution_id.clone(),
+                line: "[CANCELLED] Execution cancelled during spawn".into(),
+            },
+        );
+
+        return ExecutionResult {
+            success: false,
+            error: Some("Cancelled during spawn".into()),
+            log_file_path: Some(log_file_path),
+            duration_ms,
+            ..default_result()
+        };
+    }
+
     // Provider spawn succeeded -- record in trace
     let spawn_span = trace.start_span(
         SpanType::CliSpawn,
@@ -742,7 +803,8 @@ pub async fn run_execution(
     trace.end_span_ok(&spawn_engine_stage);
 
     // -- Pipeline Stage: StreamOutput -------------------------------------
-    // Covers PID registration, stdin delivery, and the main stream processing loop.
+    // Covers stdin delivery and the main stream processing loop.
+    // (PID registration was done immediately after spawn above.)
     let stream_output_stage = trace.start_span(
         SpanType::PipelineStage,
         "Pipeline: Stream Output",
@@ -753,19 +815,15 @@ pub async fn run_execution(
         })),
     );
 
-    // Register child PID so cancel_execution can kill it
-    driver.register_pid(&child_pids, &execution_id).await;
-
-    // Check if cancellation was requested during spawn. If the user cancelled
-    // between task start and PID registration, the cancel_execution call couldn't
-    // kill the process (PID wasn't registered yet). Catch it here to avoid
-    // wasting API credits on an execution the user already cancelled.
+    // Final cancellation gate before prompt delivery. The earlier check (right
+    // after spawn) catches the fast path; this one catches cancellations that
+    // arrived during trace recording. Critically, this runs BEFORE stdin/prompt
+    // delivery to prevent wasting API credits.
     if CliProcessDriver::is_cancelled(&cancelled) {
-        trace.end_span_error(&stream_output_stage, "Cancelled during startup");
-        logger.log("[CANCELLED] Execution cancelled during startup, killing process");
+        trace.end_span_error(&stream_output_stage, "Cancelled before prompt delivery");
+        logger.log("[CANCELLED] Execution cancelled before prompt delivery, killing process");
         driver.kill().await;
         driver.unregister_pid(&child_pids, &execution_id).await;
-        // Stable workspace dirs are not cleaned up (persist across runs)
         logger.close();
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
@@ -773,13 +831,13 @@ pub async fn run_execution(
             event_name::EXECUTION_OUTPUT,
             ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
-                line: "[CANCELLED] Execution cancelled before startup completed".into(),
+                line: "[CANCELLED] Execution cancelled before prompt delivery".into(),
             },
         );
 
         return ExecutionResult {
             success: false,
-            error: Some("Cancelled during startup".into()),
+            error: Some("Cancelled before prompt delivery".into()),
             log_file_path: Some(log_file_path),
             duration_ms,
             ..default_result()

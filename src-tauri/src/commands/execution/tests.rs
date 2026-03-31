@@ -253,6 +253,14 @@ pub async fn test_n8n_draft(
     draft_json: String,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
+
+    // Reject duplicate spawns: if a draft test with this test_id is already running, bail out.
+    if state.process_registry.is_run_registered("draft_test", &test_id) {
+        return Err(AppError::Validation(format!(
+            "A draft test with id '{test_id}' is already running"
+        )));
+    }
+
     let ephemeral = EphemeralPersona::from_draft_json(&draft_json)
         .map_err(AppError::Validation)?;
     let persona = &ephemeral.persona;
@@ -345,10 +353,16 @@ pub async fn test_n8n_draft(
     // Track whether the draft has tools -- confused agents without tool use should fail
     let has_tools = !tools.is_empty();
 
+    // Register in process registry so duplicate spawns are rejected.
+    // The guard auto-unregisters on drop (task completion or panic).
+    let (_cancelled, run_guard) =
+        state.process_registry.register_run_guarded("draft_test", &test_id);
+
     // Background task: read stdout, emit events, determine result
     let test_id_bg = test_id.clone();
     let app_bg = app.clone();
     tokio::spawn(async move {
+        let _guard = run_guard;
         let mut reader = match driver.take_stdout_reader() {
             Some(r) => r.lines(),
             None => {

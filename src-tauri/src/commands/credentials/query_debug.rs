@@ -399,12 +399,14 @@ async fn run_query_debug(params: RunParams) {
                     .await
                 } else {
                     // No session ID -- make a fresh call with full context
+                    // Use the original query_text, not the AI-generated query_to_run,
+                    // so the AI sees the user's original intent on each retry.
                     let fresh_prompt = build_prompt(
                         connector_family,
                         &service_type,
                         language,
                         &schema_context,
-                        &query_to_run,
+                        &query_text,
                         Some(&safe_msg),
                     );
                     run_claude_prompt_text_inner(

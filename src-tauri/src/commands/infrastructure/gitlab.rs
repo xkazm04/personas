@@ -224,18 +224,22 @@ pub async fn gitlab_deploy_persona(
             &persona.name,
         );
 
-        // Push each credential as a masked CI/CD variable
-        for variable in &resolved.variables {
-            client
-                .upsert_variable(project_id, variable)
-                .await
-                .map_err(|e| {
-                    AppError::GitLab(format!(
-                        "Failed to provision credential '{}': {}",
-                        variable.key, e
-                    ))
-                })?;
-        }
+        // Push all credentials as masked CI/CD variables concurrently
+        futures_util::future::try_join_all(resolved.variables.iter().map(|variable| {
+            let client = &client;
+            async move {
+                client
+                    .upsert_variable(project_id, variable)
+                    .await
+                    .map_err(|e| {
+                        AppError::GitLab(format!(
+                            "Failed to provision credential '{}': {}",
+                            variable.key, e
+                        ))
+                    })
+            }
+        }))
+        .await?;
 
         credentials_provisioned = resolved.entries.len() as u32;
         credential_hints = Some(resolved.hints);
@@ -552,17 +556,22 @@ pub async fn gitlab_deploy_persona_versioned(
             &persona.name,
         );
 
-        for variable in &resolved.variables {
-            client
-                .upsert_variable(project_id, variable)
-                .await
-                .map_err(|e| {
-                    AppError::GitLab(format!(
-                        "Failed to provision credential '{}': {}",
-                        variable.key, e
-                    ))
-                })?;
-        }
+        // Push all credentials as masked CI/CD variables concurrently
+        futures_util::future::try_join_all(resolved.variables.iter().map(|variable| {
+            let client = &client;
+            async move {
+                client
+                    .upsert_variable(project_id, variable)
+                    .await
+                    .map_err(|e| {
+                        AppError::GitLab(format!(
+                            "Failed to provision credential '{}': {}",
+                            variable.key, e
+                        ))
+                    })
+            }
+        }))
+        .await?;
 
         credentials_provisioned = resolved.entries.len() as u32;
         credential_hints = Some(resolved.hints);

@@ -15,6 +15,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import { seedMockMessage } from '@/api/overview/messages';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { priorityConfig, FILTER_LABELS, GRID_TEMPLATE_COLUMNS, type FilterType, deliveryStatusConfig } from '../libs/messageHelpers';
 
 import { ROW_SEPARATOR, ROW_SEPARATOR_T } from '@/lib/design/listTokens';
@@ -150,6 +151,16 @@ export default function MessageList() {
   }), [messages, unreadMessageCount]);
 
   const defaultPriority = { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
+
+  const personaFilterOptions = useMemo(() => [
+    { value: '', label: 'All personas' },
+    ...personas.map((p) => ({ value: p.id, label: p.name })),
+  ], [personas]);
+
+  const priorityFilterOptions = useMemo(() => [
+    { value: '', label: 'All priorities' },
+    { value: 'high', label: 'High' },
+  ], []);
 
   const handleToggleThread = useCallback((threadId: string) => {
     if (expandedThreadId === threadId) {
@@ -356,30 +367,30 @@ export default function MessageList() {
             <div ref={parentRef} className="flex-1 overflow-y-auto">
               <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={6} className="w-full">
                 <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}>
-                  <div role="columnheader" className="text-left px-4 py-1.5">
-                    <select
+                  <div role="columnheader" className="px-2 py-2.5 flex items-center">
+                    <ThemedSelect
+                      filterable
+                      options={personaFilterOptions}
                       value={selectedPersonaId}
-                      onChange={(e) => setSelectedPersonaId(e.target.value)}
-                      className="text-[10px] font-semibold uppercase tracking-wider bg-transparent text-foreground/50 outline-none cursor-pointer w-full"
-                    >
-                      <option value="">Persona</option>
-                      {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
+                      onValueChange={setSelectedPersonaId}
+                      placeholder="Persona"
+                      className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                    />
                   </div>
-                  <div role="columnheader" className="text-left text-[10px] text-foreground/50 uppercase tracking-wider font-semibold px-4 py-2.5">Title</div>
-                  <div role="columnheader" className="text-left px-4 py-1.5">
-                    <select
+                  <div role="columnheader" className="text-left text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Title</div>
+                  <div role="columnheader" className="px-2 py-2.5 flex items-center">
+                    <ThemedSelect
+                      filterable
+                      options={priorityFilterOptions}
                       value={filter === 'high' ? 'high' : ''}
-                      onChange={(e) => setFilter(e.target.value === 'high' ? 'high' : 'all')}
-                      className="text-[10px] font-semibold uppercase tracking-wider bg-transparent text-foreground/50 outline-none cursor-pointer w-full"
-                    >
-                      <option value="">Priority</option>
-                      <option value="high">High</option>
-                    </select>
+                      onValueChange={(v) => setFilter(v === 'high' ? 'high' : 'all')}
+                      placeholder="Priority"
+                      className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                    />
                   </div>
-                  <div role="columnheader" className="text-center text-[10px] text-foreground/50 uppercase tracking-wider font-semibold px-4 py-2.5">Delivery</div>
-                  <div role="columnheader" className="text-center text-[10px] text-foreground/50 uppercase tracking-wider font-semibold px-4 py-2.5">Status</div>
-                  <div role="columnheader" className="text-right text-[10px] text-foreground/50 uppercase tracking-wider font-semibold px-4 py-2.5">Created</div>
+                  <div role="columnheader" className="text-center text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Delivery</div>
+                  <div role="columnheader" className="text-center text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Status</div>
+                  <div role="columnheader" className="text-right text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Created</div>
                 </div>
                 <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                   {virtualizer.getVirtualItems().map((virtualRow) => {

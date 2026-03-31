@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Plus } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
+import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
 import { Button } from '@/features/shared/components/buttons';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import {
@@ -21,6 +22,7 @@ interface Props {
 
 export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
   const personas = useAgentStore((s) => s.personas);
+  const personaName = usePersonaNameMap();
 
   const [triggers, setTriggers] = useState<CloudTrigger[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,11 +39,6 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
   const deployedPersonas = useMemo(
     () => personas.filter((p) => deployedPersonaIds.has(p.id)),
     [personas, deployedPersonaIds],
-  );
-
-  const personaName = useCallback(
-    (id: string) => personas.find((p) => p.id === id)?.name ?? id.slice(0, 8),
-    [personas],
   );
 
   const fetchTriggers = useCallback(async () => {

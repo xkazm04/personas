@@ -639,7 +639,13 @@ pub(crate) async fn event_bus_tick(
         "Event bus: batch pre-fetch complete"
     );
 
-    // 4. Match all events against the pre-fetched subscriptions/listeners
+    // 4. Pre-parse trigger configs once (avoids re-deserializing JSON per event).
+    let parsed_listeners: Vec<bus::ParsedTrigger<'_>> = all_listeners
+        .iter()
+        .map(bus::ParsedTrigger::new)
+        .collect();
+
+    // 5. Match all events against the pre-fetched subscriptions/listeners
     //    and collect (event_index, matches) pairs.
     let mut event_matches: Vec<(usize, Vec<bus::EventMatch>)> = Vec::new();
     for (idx, event) in events.iter().enumerate() {
@@ -650,7 +656,7 @@ pub(crate) async fn event_bus_tick(
 
         // Also match event_listener triggers (unified model).
         // Deduplicate by persona_id to avoid double-fire.
-        let listener_matches = bus::match_event_listeners(event, &all_listeners);
+        let listener_matches = bus::match_event(event, &parsed_listeners);
         for lm in listener_matches {
             if !matches.iter().any(|m| m.persona_id == lm.persona_id) {
                 matches.push(lm);

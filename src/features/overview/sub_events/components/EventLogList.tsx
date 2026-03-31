@@ -1,12 +1,11 @@
 import { useState, useCallback } from 'react';
-import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Server, Plus, Search, Bookmark, BookmarkX, X } from 'lucide-react';
+import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
-import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
@@ -75,7 +74,7 @@ export default function EventLogList() {
     {
       key: 'type',
       label: 'Type',
-      width: '1fr',
+      width: 'minmax(200px, 1.2fr)',
       filterOptions: typeOptions,
       filterValue: typeFilter,
       onFilterChange: setTypeFilter,
@@ -85,17 +84,9 @@ export default function EventLogList() {
       },
     },
     {
-      key: 'source',
-      label: 'Source',
-      width: '1fr',
-      render: (event) => (
-        <span className="text-sm text-foreground truncate">{event.source_type}</span>
-      ),
-    },
-    {
       key: 'persona',
       label: 'Persona',
-      width: '1.2fr',
+      width: 'minmax(200px, 1.2fr)',
       filterOptions: personaOptions,
       filterValue: selectedPersonaId,
       onFilterChange: (v) => setSelectedPersonaId(v),
@@ -104,18 +95,14 @@ export default function EventLogList() {
         if (targetPersona) {
           return (
             <div className="flex items-center gap-2 min-w-0">
-              <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="pop"
-                frameClass="border border-primary/15"
-                frameStyle={{ backgroundColor: colorWithAlpha(targetPersona.color || '#6366f1', 0.08) }} />
+              <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" />
               <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
             </div>
           );
         }
         return (
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded-lg flex items-center justify-center border border-primary/10 bg-muted/20 flex-shrink-0">
-              <Server className="w-3.5 h-3.5 text-foreground/40" />
-            </div>
+            <PersonaIcon icon={null} color={null} display="framed" />
             <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
           </div>
         );
@@ -124,7 +111,7 @@ export default function EventLogList() {
     {
       key: 'status',
       label: 'Status',
-      width: '0.8fr',
+      width: 'minmax(200px, 1fr)',
       filterOptions: STATUS_OPTIONS,
       filterValue: statusFilter,
       onFilterChange: setStatusFilter,
@@ -146,7 +133,7 @@ export default function EventLogList() {
     {
       key: 'created',
       label: 'Created',
-      width: '0.8fr',
+      width: 'minmax(120px, 0.8fr)',
       sortable: true,
       align: 'right' as const,
       render: (event) => (

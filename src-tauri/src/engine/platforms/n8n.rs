@@ -93,6 +93,18 @@ impl N8nClient {
             .trim_end_matches('/')
             .to_string();
 
+        if base_url.is_empty() {
+            return Err(AppError::Validation("n8n base_url must not be empty".into()));
+        }
+        let parsed = url::Url::parse(&base_url)
+            .map_err(|e| AppError::Validation(format!("Invalid n8n base_url '{base_url}': {e}")))?;
+        match parsed.scheme() {
+            "http" | "https" => {}
+            other => return Err(AppError::Validation(format!(
+                "n8n base_url must use http or https scheme, got '{other}'"
+            ))),
+        }
+
         let api_key = fields
             .get("api_key")
             .ok_or_else(|| AppError::Validation("n8n credential missing 'api_key' field".into()))?

@@ -16,6 +16,7 @@ import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
 import { createSetupSlice } from "./slices/system/setupSlice";
 import { createAmbientContextSlice } from "./slices/system/ambientContextSlice";
+import { createArtistSlice } from "./slices/system/artistSlice";
 import { TIER_RANK, DEFAULT_TIER } from "@/lib/constants/uiModes";
 
 /** Migrate legacy viewMode values ('simple'|'full'|'dev') persisted before the tier rename. */
@@ -36,6 +37,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createNetworkSlice(...a),
       ...createSetupSlice(...a),
       ...createAmbientContextSlice(...a),
+      ...createArtistSlice(...a),
     }),
     {
       name: "persona-ui-system",
@@ -55,6 +57,8 @@ export const useSystemStore = create<SystemStore>()(
         setupTool: state.setupTool,
         setupGoal: state.setupGoal,
         setupCompleted: state.setupCompleted,
+        artistTab: state.artistTab,
+        artistFolder: state.artistFolder,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

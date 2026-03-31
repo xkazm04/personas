@@ -5,6 +5,7 @@ import {
   ChevronDown, Zap,
 } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -124,7 +125,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
       {/* Left: Queue sidebar */}
       <div className="w-[200px] flex-shrink-0 rounded-xl border border-primary/10 bg-secondary/5 overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-primary/8">
-          <span className="text-[10px] font-semibold text-foreground/40 uppercase tracking-wider">Queue ({total})</span>
+          <span className="text-xs font-semibold text-foreground/40 uppercase tracking-wider">Queue ({total})</span>
         </div>
         <div className="flex-1 overflow-y-auto py-1">
           {pending.map((r, i) => {
@@ -146,7 +147,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
                     {r.title}
                   </span>
                 </div>
-                <span className="text-[10px] text-foreground/30 ml-4 block truncate">{r.persona_name}</span>
+                <span className="text-xs text-foreground/30 ml-4 block truncate">{r.persona_name}</span>
               </button>
             );
           })}
@@ -187,13 +188,16 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
                 <h3 className="text-base font-semibold text-foreground/95 leading-tight">{current.title}</h3>
                 <div className="flex items-center gap-2 mt-1">
                   {current.persona_name && (
-                    <span className="text-xs text-foreground/50">{current.persona_icon} {current.persona_name}</span>
+                    <span className="flex items-center gap-1.5 text-sm text-foreground/50">
+                      <PersonaIcon icon={current.persona_icon ?? null} color={current.persona_color ?? null} size="w-4 h-4" />
+                      {current.persona_name}
+                    </span>
                   )}
                   <Clock className="w-3 h-3 text-foreground/25" />
                   <span className="text-xs text-foreground/30">{formatRelativeTime(current.created_at)}</span>
                 </div>
               </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${sev.bg} ${sev.color} border ${sev.border}`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold uppercase ${sev.bg} ${sev.color} border ${sev.border}`}>
                 {sev.label}
               </span>
             </div>
@@ -208,11 +212,11 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
             {/* Context — collapsible, not prominent */}
             {current.context_data && (
               <details className="group">
-                <summary className="text-[10px] font-semibold text-foreground/35 uppercase tracking-wider cursor-pointer hover:text-foreground/50 transition-colors flex items-center gap-1">
+                <summary className="text-xs font-semibold text-foreground/35 uppercase tracking-wider cursor-pointer hover:text-foreground/50 transition-colors flex items-center gap-1">
                   <ChevronDown className="w-3 h-3 group-open:rotate-180 transition-transform" />
                   Technical Context
                 </summary>
-                <div className="mt-2 px-3 py-2 rounded-lg bg-black/15 border border-primary/8 font-mono text-[11px] text-foreground/40 max-h-24 overflow-y-auto">
+                <div className="mt-2 px-3 py-2 rounded-lg bg-black/15 border border-primary/8 font-mono text-xs text-foreground/40 max-h-24 overflow-y-auto">
                   {current.context_data}
                 </div>
               </details>
@@ -221,7 +225,7 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
             {/* Suggested actions — selectable buttons (mandatory before approve) */}
             {actions.length > 0 && (
               <div className="space-y-2">
-                <span className="text-[10px] font-semibold text-foreground/40 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-xs font-semibold text-foreground/40 uppercase tracking-wider flex items-center gap-1">
                   <Zap className="w-3 h-3" /> Select an action {actions.length > 0 && <span className="text-primary/60">(required)</span>}
                 </span>
                 <div className="flex flex-wrap gap-2">

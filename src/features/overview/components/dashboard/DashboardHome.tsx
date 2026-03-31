@@ -20,7 +20,6 @@ import RemoteControlCard from '@/features/overview/components/dashboard/cards/Re
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
 import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
-import { DASHBOARD_GRID } from '@/features/overview/utils/dashboardGrid';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { DashboardHeaderBadges } from './widgets/DashboardHeaderBadges';
 import { RecentActivityList } from './widgets/RecentActivityList';
@@ -163,17 +162,21 @@ export default function DashboardHome() {
           {isEmptyDashboard ? (
             <DashboardEmptyState />
           ) : (
-            <div className={DASHBOARD_GRID}>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {/* Left: Recent Activity */}
               <div className="relative">
                 <StalenessIndicator fetchedAt={pipelineFetchedAt.globalExecutions} hasError={!!pipelineErrors.globalExecutions} label="Recent activity" />
                 <RecentActivityList recentExecs={stats.recentExecs} onViewAll={handleViewAllExecs} />
               </div>
 
-              <div className="space-y-5">
-                <div className="relative">
-                  <StalenessIndicator fetchedAt={pipelineFetchedAt.executionDashboard} hasError={!!pipelineErrors.executionDashboard} label="Traffic & errors" />
-                  <TrafficErrorsChart chartData={chartData} totalTraffic={chartTotals.totalTraffic} totalErrors={chartTotals.totalErrors} />
-                </div>
+              {/* Center: Charts */}
+              <div className="relative">
+                <StalenessIndicator fetchedAt={pipelineFetchedAt.executionDashboard} hasError={!!pipelineErrors.executionDashboard} label="Traffic & errors" />
+                <TrafficErrorsChart chartData={chartData} totalTraffic={chartTotals.totalTraffic} totalErrors={chartTotals.totalErrors} />
+              </div>
+
+              {/* Right: Health Digest + Deploy */}
+              <div className="space-y-4">
                 <HealthDigestPanel />
                 <DeployFirstAutomationCard />
               </div>

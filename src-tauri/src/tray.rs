@@ -165,6 +165,7 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                     state.tier_config.clone(),
                     state.cloud_client.clone(),
                     state.cloud_webhook_relay_state.clone(),
+                    state.shared_event_relay_state.clone(),
                     #[cfg(feature = "desktop")]
                     state.ambient_context.clone(),
                     #[cfg(feature = "desktop")]

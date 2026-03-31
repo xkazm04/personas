@@ -33,6 +33,7 @@ const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/comp
 const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPage'));
 const DocSigningPage = lazy(() => import('@/features/plugins/doc-signing/DocSigningPage'));
 const OcrPage = lazy(() => import('@/features/plugins/ocr/OcrPage'));
+const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
@@ -216,6 +217,9 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'ocr') {
         return <ErrorBoundary name="OCR"><Suspense fallback={SectionFallback}><OcrPage /></Suspense></ErrorBoundary>;
+      }
+      if (pluginTab === 'artist') {
+        return <ErrorBoundary name="Artist"><Suspense fallback={SectionFallback}><ArtistPage /></Suspense></ErrorBoundary>;
       }
       // Default browse view — placeholder for future plugin marketplace
       return (

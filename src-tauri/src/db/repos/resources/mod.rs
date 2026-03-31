@@ -18,6 +18,7 @@ pub mod tool_audit_log;
 pub mod oauth_token_metrics;
 pub mod ocr;
 pub mod signing;
+pub mod artist;
 pub mod webhook_log;
 pub mod deployment_history;
 pub mod cloud_webhook_watermarks;
