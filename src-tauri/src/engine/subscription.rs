@@ -196,6 +196,15 @@ pub struct CloudWebhookRelaySubscription {
     pub state: Arc<tokio::sync::Mutex<super::cloud_webhook_relay::CloudWebhookRelayState>>,
 }
 
+/// Shared event relay: polls subscribed shared event feeds from the FastAPI
+/// facade and injects them into the local event bus.
+pub struct SharedEventRelaySubscription {
+    pub cloud_client: Arc<tokio::sync::Mutex<Option<Arc<crate::cloud::client::CloudClient>>>>,
+    pub pool: DbPool,
+    pub app: AppHandle,
+    pub state: Arc<tokio::sync::Mutex<super::shared_event_relay::SharedEventRelayState>>,
+}
+
 // ---------------------------------------------------------------------------
 // Implementations
 // ---------------------------------------------------------------------------
@@ -780,6 +789,40 @@ impl ReactiveSubscription for CloudWebhookRelaySubscription {
             .await;
         }
         // Not connected — silently skip
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for SharedEventRelaySubscription {
+    fn name(&self) -> &'static str {
+        "shared_event_relay"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(300) // 5 minutes
+    }
+
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(600) // 10 minutes when idle
+    }
+
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(15) // Let cloud client connect first
+    }
+
+    async fn tick(&self) {
+        let client_guard = self.cloud_client.lock().await;
+        if let Some(ref client) = *client_guard {
+            let client = client.clone();
+            drop(client_guard);
+            super::shared_event_relay::shared_event_relay_tick(
+                &client,
+                &self.pool,
+                &self.app,
+                &self.state,
+            )
+            .await;
+        }
     }
 }
 

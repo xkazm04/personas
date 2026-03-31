@@ -21,7 +21,7 @@ use crate::engine::scheduler as sched_logic;
 use crate::engine::subscription::{
     self, CleanupSubscription, CloudWebhookRelaySubscription, EventBusSubscription,
     PollingSubscription, RotationSubscription, TriggerSchedulerSubscription,
-    CompositeSubscription, OAuthRefreshSubscription,
+    CompositeSubscription, OAuthRefreshSubscription, SharedEventRelaySubscription,
 };
 #[cfg(feature = "desktop")]
 use crate::engine::subscription::{
@@ -354,6 +354,7 @@ pub fn start_loops(
     tier_config: Arc<std::sync::Mutex<super::tier::TierConfig>>,
     cloud_client: Arc<tokio::sync::Mutex<Option<Arc<crate::cloud::client::CloudClient>>>>,
     cloud_webhook_relay_state: Arc<tokio::sync::Mutex<super::cloud_webhook_relay::CloudWebhookRelayState>>,
+    shared_event_relay_state: Arc<tokio::sync::Mutex<super::shared_event_relay::SharedEventRelayState>>,
     #[cfg(feature = "desktop")]
     ambient_ctx: super::ambient_context::AmbientContextHandle,
     #[cfg(feature = "desktop")]
@@ -410,10 +411,16 @@ pub fn start_loops(
             app: app.clone(),
         }),
         Box::new(CloudWebhookRelaySubscription {
-            cloud_client,
+            cloud_client: cloud_client.clone(),
             pool: pool.clone(),
             app: app.clone(),
             state: cloud_webhook_relay_state,
+        }),
+        Box::new(SharedEventRelaySubscription {
+            cloud_client,
+            pool: pool.clone(),
+            app: app.clone(),
+            state: shared_event_relay_state,
         }),
         Box::new(subscription::DigestSubscription {
             pool: pool.clone(),

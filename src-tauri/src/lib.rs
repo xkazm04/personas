@@ -353,6 +353,9 @@ pub struct AppState {
     /// Cloud webhook relay state — shared with the background subscription so
     /// that the `cloud_webhook_relay_status` command can read live counters.
     pub cloud_webhook_relay_state: Arc<tokio::sync::Mutex<engine::cloud_webhook_relay::CloudWebhookRelayState>>,
+    /// Shared event relay state — polls subscribed shared event feeds from
+    /// the FastAPI facade and injects them into the local event bus.
+    pub shared_event_relay_state: Arc<tokio::sync::Mutex<engine::shared_event_relay::SharedEventRelayState>>,
     /// Build session manager for multi-turn agent builder sessions.
     pub build_session_manager: Arc<engine::build_session::BuildSessionManager>,
     /// Composite trigger evaluation state (suppression cache + partial matches).
@@ -682,6 +685,9 @@ pub fn run() {
                 cloud_webhook_relay_state: Arc::new(tokio::sync::Mutex::new(
                     engine::cloud_webhook_relay::CloudWebhookRelayState::load_from_db(&pool),
                 )),
+                shared_event_relay_state: Arc::new(tokio::sync::Mutex::new(
+                    engine::shared_event_relay::SharedEventRelayState::new(),
+                )),
                 build_session_manager: Arc::new(engine::build_session::BuildSessionManager::new()),
                 composite_state: engine::composite::CompositeState::new(),
                 session_pool: Arc::new(engine::session_pool::SessionPool::new()),
@@ -795,6 +801,7 @@ pub fn run() {
             let restore_state = state_arc.clone();
             let startup_cloud_client = state_arc.cloud_client.clone();
             let startup_relay_state = state_arc.cloud_webhook_relay_state.clone();
+            let startup_shared_relay_state = state_arc.shared_event_relay_state.clone();
             let startup_rate_limiter = state_arc.rate_limiter.clone();
             let startup_tier_config = state_arc.tier_config.clone();
             #[cfg(feature = "desktop")]
@@ -814,6 +821,7 @@ pub fn run() {
                     startup_tier_config,
                     startup_cloud_client,
                     startup_relay_state,
+                    startup_shared_relay_state,
                     #[cfg(feature = "desktop")]
                     startup_ambient_ctx,
                     #[cfg(feature = "desktop")]

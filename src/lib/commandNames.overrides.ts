@@ -6,7 +6,6 @@
  * `node scripts/generate-command-names.mjs` and remove it from this list.
  */
 export type UnregisteredCommand =
-  | "reset_build_session_phase"
   | "dev_tools_accept_idea"
   | "dev_tools_batch_create_tasks"
   | "dev_tools_cancel_task"
