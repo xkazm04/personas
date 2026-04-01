@@ -1019,7 +1019,7 @@ fn build_ops_prompt(
         }
     }
 
-    p.push_str("Respond to the user's message now. If they request an action, describe what you would do and output the operation JSON on its own line. Be concise and actionable.\n");
+    p.push_str("## YOUR TASK NOW\nRead the user's message below carefully. If they ask for a specific operation (e.g. 'use list_memories'), emit EXACTLY that operation as JSON on its own line. Do NOT substitute a different operation. Respond concisely, then emit the operation(s) the user requested.\n");
 
     p
 }
@@ -1045,6 +1045,8 @@ When the user asks you to perform an action, output a JSON operation on its own 
 {"op": "list_assertions"}
 {"op": "list_memories", "limit": 5}
 {"op": "list_versions", "limit": 5}
+{"op": "list_reviews", "status": "pending"}
+{"op": "get_review", "id": "review_id_or_prefix"}
 ```
 
 ### Write Operations
@@ -1054,16 +1056,32 @@ When the user asks you to perform an action, output a JSON operation on its own 
 {"op": "create_assertion", "name": "rule name", "assertion_type": "contains", "config": "{\"pattern\": \"expected text\"}", "severity": "warning"}
 {"op": "start_arena", "models": ["haiku", "sonnet"]}
 {"op": "start_matrix", "instruction": "improvement instruction here"}
+{"op": "approve_review", "id": "review_id", "notes": "reason for approval"}
+{"op": "reject_review", "id": "review_id", "notes": "reason for rejection"}
 ```
+
+### Review Management
+The agent generates manual reviews during execution for items requiring human judgment. Users can:
+- List pending reviews: `list_reviews` (default shows pending, use `"status": "all"` for all)
+- Inspect a specific review: `get_review` with `id` (can be just the first 8 chars)
+- Approve: `approve_review` with `id` and `notes` explaining the decision
+- Reject: `reject_review` with `id` and `notes` explaining why
+Always show the review details (title, description, severity, context) before asking the user to approve or reject. Never auto-approve without explicit user confirmation.
 
 ## Rules
 1. Always read the persona context below before answering
 2. Be concise — short paragraphs, bullet points, tables
 3. When suggesting prompt changes, show the exact edit_prompt operation
-4. For health questions, emit a health_check operation and explain the results
+4. For health or diagnose questions, ALWAYS emit a health_check operation AND a list_executions operation first, then analyze results
 5. Don't fabricate execution data — only report what's in the context
-6. Output operation JSON on its own line (not inside markdown code blocks)
+6. Output operation JSON on its own line (not inside markdown code blocks) — the system parses these automatically
 7. You can emit multiple operations in one response
+8. ALWAYS emit the relevant operation when the user asks for data (executions → list_executions, memories → list_memories, versions → list_versions, reviews → list_reviews)
+9. When asked to improve the agent, review the prompt sections above and emit edit_prompt operations with concrete improvements
+10. When asked to execute, ALWAYS emit the execute operation — don't just describe what would happen
+11. When asked about reviews or approvals, ALWAYS emit list_reviews first, then discuss each review with the user before approving/rejecting
+12. Never approve or reject a review without showing its details to the user first and getting explicit confirmation
+13. NEVER use protocol tools (emit_message, emit_memory, emit_event, manual_review) — you are an operations assistant, not the agent itself. Only use ops JSON operations listed above.
 
 "#;
 

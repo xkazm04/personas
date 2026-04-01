@@ -623,6 +623,11 @@ export interface EventPayloadMap {
   [EventName.TASK_EXEC_OUTPUT]: { job_id: string; line: string };
   [EventName.TASK_EXEC_COMPLETE]: { task_id: string; output_lines: number };
 
+  // Artist creative session (BackgroundJob pattern)
+  [EventName.ARTIST_SESSION_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.ARTIST_SESSION_OUTPUT]: { job_id: string; line: string };
+  [EventName.ARTIST_SESSION_COMPLETE]: { session_id: string; output_lines: number };
+
   // Recipe
   [EventName.RECIPE_EXECUTION_STATUS]: { recipe_id: string; status: string };
   [EventName.RECIPE_GENERATION_STATUS]: { recipe_id: string; status: string };

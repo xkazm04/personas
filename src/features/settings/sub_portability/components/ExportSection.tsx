@@ -18,7 +18,7 @@ interface ExportSectionProps {
   showExportModal: boolean;
   onOpenExportModal: () => void;
   onCloseExportModal: () => void;
-  onExportSelective: (personaIds: string[], teamIds: string[], connectorIds: string[]) => void;
+  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[]) => void;
   onImport: () => void;
 }
 
@@ -37,7 +37,7 @@ export function ExportSection({
       <SectionHeading title="Workspace Export & Import" />
       <p className="text-sm text-muted-foreground/70">
         Export your workspace to a portable ZIP archive containing personas, teams,
-        connectors, and related data. Choose exactly what to include. Import restores
+        credentials, and related data. Choose exactly what to include. Import restores
         from a previously exported archive — imported items are created as new entities
         (disabled by default).
       </p>
@@ -106,8 +106,8 @@ export function ExportSection({
             {importResult.groups_created > 0 && (
               <span>{importResult.groups_created} group(s)</span>
             )}
-            {importResult.connectors_created > 0 && (
-              <span>{importResult.connectors_created} connector(s)</span>
+            {importResult.credentials_created > 0 && (
+              <span>{importResult.credentials_created} credential(s)</span>
             )}
           </div>
           {importResult.warnings.length > 0 && (

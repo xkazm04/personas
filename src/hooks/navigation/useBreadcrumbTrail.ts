@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
-import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
+import { useCredentialNav } from '@/features/vault/shared/hooks/CredentialNavContext';
 import {
   sections,
   overviewItems,

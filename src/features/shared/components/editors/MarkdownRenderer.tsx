@@ -44,13 +44,26 @@ function InlineBarChart({ raw }: { raw: string }) {
   );
 }
 
-/** Strip <thinking>, [META], and similar meta-information blocks from content. */
+/** Strip <thinking>, [META], and similar meta-information blocks from content.
+ *  Also normalize raw content for consistent rendering. */
 function filterMetaContent(content: string): string {
-  return content
+  let cleaned = content
     .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
     .replace(/\[META\][\s\S]*?\[\/META\]/gi, '')
     .replace(/---\s*meta\s*---[\s\S]*?---\s*end\s*meta\s*---/gi, '')
     .trim();
+
+  // If the entire content looks like a JSON object/array and isn't already in a code fence, wrap it
+  if (/^\s*[\[{]/.test(cleaned) && /[\]}]\s*$/.test(cleaned) && !cleaned.includes('```')) {
+    try {
+      const parsed = JSON.parse(cleaned);
+      cleaned = '```json\n' + JSON.stringify(parsed, null, 2) + '\n```';
+    } catch {
+      // Not valid JSON, leave as-is
+    }
+  }
+
+  return cleaned;
 }
 
 const components: Components = {

@@ -1,4 +1,4 @@
-import { ConnectorCredentialModal } from '@/features/vault/sub_forms/ConnectorCredentialModal';
+import { ConnectorCredentialModal } from '@/features/vault/sub_credentials/components/forms/ConnectorCredentialModal';
 import { TemplateDetailModal } from './TemplateDetailModal';
 import AdoptionWizardModal from '../../adoption/AdoptionWizardModal';
 import { RebuildModal } from './RebuildModal';

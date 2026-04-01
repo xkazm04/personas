@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Languages, Download, Upload, ExternalLink, Check, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Languages, Download, ExternalLink, Check } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { Button } from '@/features/shared/components/buttons';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
@@ -23,9 +23,6 @@ const ALL_LANGUAGES: { code: Language; label: string; flag: string }[] = [
   { code: 'ko', label: '한국어', flag: '🇰🇷' },
   { code: 'cs', label: 'Cestina', flag: '🇨🇿' },
 ];
-
-/** Launch languages with full translation coverage. */
-const LAUNCH_LANGUAGES = new Set<Language>(['en', 'zh', 'es']);
 
 /** Count total leaf keys in a nested translation object. */
 function countKeys(obj: Record<string, unknown>): number {
@@ -59,46 +56,69 @@ function flatten(obj: Record<string, unknown>, prefix = ''): Record<string, stri
   return result;
 }
 
+/** Dynamic import loaders for each language file — mirrors useTranslation loaders. */
+const langLoaders: Record<Language, () => Promise<Record<string, unknown>>> = {
+  en: () => import('@/i18n/en').then(m => m.en as unknown as Record<string, unknown>),
+  zh: () => import('@/i18n/zh').then(m => m.zh as unknown as Record<string, unknown>),
+  es: () => import('@/i18n/es').then(m => m.es as unknown as Record<string, unknown>),
+  ar: () => import('@/i18n/ar').then(m => m.ar as unknown as Record<string, unknown>),
+  hi: () => import('@/i18n/hi').then(m => m.hi as unknown as Record<string, unknown>),
+  ru: () => import('@/i18n/ru').then(m => m.ru as unknown as Record<string, unknown>),
+  id: () => import('@/i18n/id').then(m => m.id as unknown as Record<string, unknown>),
+  fr: () => import('@/i18n/fr').then(m => m.fr as unknown as Record<string, unknown>),
+  bn: () => import('@/i18n/bn').then(m => m.bn as unknown as Record<string, unknown>),
+  ja: () => import('@/i18n/ja').then(m => m.ja as unknown as Record<string, unknown>),
+  vi: () => import('@/i18n/vi').then(m => m.vi as unknown as Record<string, unknown>),
+  de: () => import('@/i18n/de').then(m => m.de as unknown as Record<string, unknown>),
+  ko: () => import('@/i18n/ko').then(m => m.ko as unknown as Record<string, unknown>),
+  cs: () => import('@/i18n/cs').then(m => m.cs as unknown as Record<string, unknown>),
+};
+
 export default function TranslationContributor() {
   const { language } = useI18nStore();
   useTranslation(); // subscribe to language changes
-  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [coverage, setCoverage] = useState<Record<Language, number>>({} as Record<Language, number>);
+  const [exporting, setExporting] = useState<Language | null>(null);
 
-  const handleExportKeys = useCallback(() => {
-    const flat = flatten(en as unknown as Record<string, unknown>);
-    const blob = new Blob([JSON.stringify(flat, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `personas-i18n-keys-en.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Load all language files and compute real coverage on mount
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const results: Record<string, number> = {};
+      for (const lang of ALL_LANGUAGES) {
+        try {
+          const bundle = await langLoaders[lang.code]();
+          const keys = countKeys(bundle);
+          if (!cancelled) results[lang.code] = keys;
+        } catch {
+          if (!cancelled) results[lang.code] = 0;
+        }
+      }
+      if (!cancelled) setCoverage(results as Record<Language, number>);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
-  const handleImportTranslation = useCallback(() => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const text = await file.text();
-        JSON.parse(text); // Validate it's valid JSON
-        // Save to localStorage for community contributions
-        const key = `personas-community-i18n-${file.name.replace('.json', '')}`;
-        localStorage.setItem(key, text);
-        setImportStatus('success');
-        setTimeout(() => setImportStatus('idle'), 3000);
-      } catch {
-        setImportStatus('error');
-        setTimeout(() => setImportStatus('idle'), 3000);
-      }
-    };
-    input.click();
+  const handleExport = useCallback(async (code: Language) => {
+    setExporting(code);
+    try {
+      const bundle = await langLoaders[code]();
+      const flat = flatten(bundle);
+      const blob = new Blob([JSON.stringify(flat, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `personas-i18n-${code}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(null);
+    }
   }, []);
 
   const currentLang = ALL_LANGUAGES.find(l => l.code === language);
+  const currentCoverage = coverage[language] ?? 0;
+  const currentPct = TOTAL_KEYS > 0 ? Math.round((currentCoverage / TOTAL_KEYS) * 100) : 0;
 
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
@@ -110,98 +130,83 @@ export default function TranslationContributor() {
         <div>
           <p className="typo-heading text-foreground/90">{currentLang?.label}</p>
           <p className="typo-caption text-muted-foreground/60">
-            {LAUNCH_LANGUAGES.has(language)
+            {currentPct === 100
               ? interpolate('{count} translation keys', { count: TOTAL_KEYS })
-              : 'Community translation'
+              : interpolate('{covered} of {total} keys ({pct}%)', { covered: currentCoverage, total: TOTAL_KEYS, pct: currentPct })
             }
           </p>
         </div>
-        {LAUNCH_LANGUAGES.has(language) && (
+        {currentPct === 100 && (
           <span className="ml-auto px-2 py-0.5 typo-label rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
             Full
           </span>
         )}
       </div>
 
-      {/* Language coverage grid */}
+      {/* Language coverage grid — click a language to export its file */}
       <div>
-        <p className="typo-caption text-muted-foreground/60 mb-2">Translation coverage</p>
+        <p className="typo-caption text-muted-foreground/60 mb-2">Translation coverage — click to export</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {ALL_LANGUAGES.map((lang) => {
-            const isLaunch = LAUNCH_LANGUAGES.has(lang.code);
+            const keys = coverage[lang.code] ?? 0;
+            const pct = TOTAL_KEYS > 0 ? Math.round((keys / TOTAL_KEYS) * 100) : 0;
+            const isFull = pct === 100;
             const isActive = language === lang.code;
+            const isExportingThis = exporting === lang.code;
+
             return (
-              <div
+              <button
                 key={lang.code}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                type="button"
+                onClick={() => handleExport(lang.code)}
+                disabled={isExportingThis}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-left group ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
-                    : 'border-primary/8 bg-secondary/20'
+                    : 'border-primary/8 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/15'
                 }`}
               >
                 <span className="text-sm">{lang.flag}</span>
-                <span className={`typo-caption truncate ${isActive ? 'text-foreground' : 'text-muted-foreground/70'}`}>
-                  {lang.label}
-                </span>
-                {isLaunch ? (
-                  <Check className="w-3 h-3 text-emerald-400 ml-auto shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className={`typo-caption truncate block ${isActive ? 'text-foreground' : 'text-muted-foreground/70'}`}>
+                    {lang.label}
+                  </span>
+                  {/* Coverage bar */}
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <div className="flex-1 h-1 rounded-full bg-foreground/[0.06] overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${isFull ? 'bg-emerald-400' : pct > 50 ? 'bg-amber-400/70' : 'bg-foreground/20'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="typo-label text-muted-foreground/50 tabular-nums w-7 text-right">{pct}%</span>
+                  </div>
+                </div>
+                {isFull ? (
+                  <Check className="w-3 h-3 text-emerald-400 shrink-0" />
                 ) : (
-                  <span className="ml-auto typo-label text-muted-foreground/40">--</span>
+                  <Download className="w-3 h-3 text-muted-foreground/30 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Contribution actions */}
+      {/* Contribution link */}
       <div className="border-t border-primary/10 pt-4 space-y-3">
         <p className="typo-heading text-foreground/80">Contribute translations</p>
         <p className="typo-caption text-muted-foreground/60">
-          Help translate Personas into your language. Export the English keys, translate them, and submit via GitHub or import directly.
+          Help translate Personas into your language. Export a language file above, translate the values, and submit via GitHub.
         </p>
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            size="md"
-            icon={<Download className="w-3.5 h-3.5" />}
-            onClick={handleExportKeys}
-          >
-            Export English keys
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="md"
-            icon={<Upload className="w-3.5 h-3.5" />}
-            onClick={handleImportTranslation}
-          >
-            Import translation
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="md"
-            icon={<ExternalLink className="w-3.5 h-3.5" />}
-            onClick={() => window.open('https://github.com/anthropics/personas-desktop/tree/main/src/i18n', '_blank')}
-          >
-            Contribute on GitHub
-          </Button>
-        </div>
-
-        {importStatus === 'success' && (
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-            <Check className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="typo-caption text-emerald-400">Translation file imported successfully</span>
-          </div>
-        )}
-        {importStatus === 'error' && (
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-            <AlertCircle className="w-3.5 h-3.5 text-red-400" />
-            <span className="typo-caption text-red-400">Invalid JSON file. Please check the format and try again.</span>
-          </div>
-        )}
+        <Button
+          variant="ghost"
+          size="md"
+          icon={<ExternalLink className="w-3.5 h-3.5" />}
+          onClick={() => window.open('https://github.com/anthropics/personas-desktop/tree/main/src/i18n', '_blank')}
+        >
+          Contribute on GitHub
+        </Button>
       </div>
     </div>
   );

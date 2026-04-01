@@ -27,7 +27,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": false,
+    "template_enabled": true,
     "summary": "Calendly scheduling for meetings and appointment automation.",
     "auth_type": "pat",
     "auth_type_label": "PAT",

@@ -40,3 +40,13 @@ export function isMutationQuery(queryText: string): boolean {
   if (!match?.[1]) return false;
   return !READ_ONLY_KEYWORDS.has(match[1].toUpperCase());
 }
+
+/** Extract a human-readable error message from a Tauri IPC error. */
+export function extractErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null && 'error' in err) {
+    return String((err as Record<string, unknown>).error);
+  }
+  if (typeof err === 'string') return err;
+  try { return JSON.stringify(err); } catch { return 'Unknown error'; }
+}

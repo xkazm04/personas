@@ -52,7 +52,7 @@ export interface TransformQuestion {
   id: string;
   category?: string;
   question: string;
-  type: 'select' | 'text' | 'boolean';
+  type: 'select' | 'text' | 'boolean' | 'devtools_project';
   options?: string[];
   default?: string;
   context?: string;

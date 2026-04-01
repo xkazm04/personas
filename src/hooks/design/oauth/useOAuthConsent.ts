@@ -4,7 +4,7 @@ import { getGoogleCredentialOAuthStatus, startGoogleCredentialOAuth } from "@/ap
 import type { GoogleCredentialOAuthStatusResult } from "@/api/vault/oauthGatewayApi";
 
 import { useOAuthPolling } from './useOAuthPolling';
-import { OAUTH_FIELD } from '@/features/vault/sub_design/CredentialDesignHelpers';
+import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 
 export interface OAuthConsentState {
   /** Read current credential values (stored in a ref to avoid DevTools/Sentry exposure). */

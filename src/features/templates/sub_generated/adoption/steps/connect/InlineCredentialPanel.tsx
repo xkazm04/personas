@@ -15,9 +15,9 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useCredentialDesign, type CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
-import { AutoCredPanel } from '@/features/vault/sub_autoCred/steps/AutoCredPanel';
+import { AutoCredPanel } from '@/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel';
 import { useVaultStore } from "@/stores/vaultStore";
-import { AnalyzingPhase } from '@/features/vault/sub_design/phases/AnalyzingPhase';
+import { AnalyzingPhase } from '@/features/vault/sub_catalog/components/design/phases/AnalyzingPhase';
 import { useTemplateMotion } from '@/features/templates/animationPresets';
 
 import type { PanelMode, InlineCredentialPanelProps } from './inlineCredentialHelpers';

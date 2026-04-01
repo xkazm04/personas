@@ -4,7 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { DEPLOYMENT_TOKENS } from '@/features/deployment/components/deploymentTokens';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
+import { useCredentialNav } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { PipelineNotificationPrefs } from './PipelineNotificationPrefs';
 
 interface GitLabConnectionFormProps {

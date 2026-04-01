@@ -225,6 +225,11 @@ export default function PersonaOverviewPage() {
     return [...names].sort();
   }, [personas]);
 
+  const connectorFilterOptions = useMemo(() => [
+    { value: 'all', label: 'All Connectors' },
+    ...allConnectorNames.map((name) => ({ value: name, label: name })),
+  ], [allConnectorNames]);
+
   const handleRowClick = useCallback((persona: Persona) => {
     if (isBuilding(persona.id) || isDraft(persona)) {
       useAgentStore.setState({ buildPersonaId: persona.id });
@@ -277,6 +282,26 @@ export default function PersonaOverviewPage() {
       },
     });
   }, [selectedIds, deletePersona, confirm]);
+
+  const draftIds = useMemo(() => personas.filter((p) => isDraft(p)).map((p) => p.id), [personas, isDraft]);
+
+  const handleDeleteDrafts = useCallback(() => {
+    if (draftIds.length === 0) return;
+    const count = draftIds.length;
+    confirm({
+      title: `Delete ${count} Draft${count > 1 ? 's' : ''}`,
+      message: `${count} draft agent${count > 1 ? 's' : ''} will be permanently removed.`,
+      onConfirm: async () => {
+        for (const id of draftIds) {
+          try {
+            await deletePersona(id);
+          } catch (err) {
+            logger.error('Failed to delete draft persona', { id, error: err });
+          }
+        }
+      },
+    });
+  }, [draftIds, deletePersona, confirm]);
 
   const handleEdit = useCallback((id: string) => {
     selectPersona(id);
@@ -442,6 +467,9 @@ export default function PersonaOverviewPage() {
       key: 'connectors',
       label: 'Connectors',
       width: '140px',
+      filterOptions: connectorFilterOptions,
+      filterValue: connectorFilter,
+      onFilterChange: (v) => setViewConfig((prev) => ({ ...prev, connectorFilter: v })),
       render: (persona) => {
         const connectors = extractConnectorNames(persona);
         if (connectors.length === 0) {
@@ -559,10 +587,19 @@ export default function PersonaOverviewPage() {
               onDelete={handleBatchDelete}
               onClear={() => setSelectedIds(new Set())}
             />
+            {draftIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleDeleteDrafts}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete Drafts ({draftIds.length})
+              </button>
+            )}
             <ViewPresetBar
               currentConfig={viewConfig}
               onApplyConfig={setViewConfig}
-              connectorOptions={allConnectorNames}
             />
           </div>
         }

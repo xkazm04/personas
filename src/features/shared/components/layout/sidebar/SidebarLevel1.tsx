@@ -36,6 +36,7 @@ export default function SidebarLevel1({
     connectorTestActive,
     contextScanActive,
     contextScanComplete,
+    creativeSessionRunning,
   } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
@@ -46,6 +47,7 @@ export default function SidebarLevel1({
       connectorTestActive: s.connectorTestActive,
       contextScanActive: s.contextScanActive,
       contextScanComplete: s.contextScanComplete,
+      creativeSessionRunning: s.creativeSessionRunning,
     }))
   );
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -121,6 +123,15 @@ export default function SidebarLevel1({
       ],
       plugins: [
         {
+          id: 'creative-session-active',
+          priority: 2,
+          active: creativeSessionRunning,
+          label: 'Creative session in progress',
+          variant: 'pulse',
+          color: 'bg-orange-500 border-orange-600/50',
+          pingColor: 'bg-orange-500/40',
+        },
+        {
           id: 'context-scan-active',
           priority: 5,
           active: contextScanActive,
@@ -145,7 +156,7 @@ export default function SidebarLevel1({
     pendingReviewCount, isExecuting, isLabRunning, connectorTestActive,
     feedbackImprovementComplete, n8nTransformActive, templateAdoptActive,
     rebuildActive, templateTestActive, contextScanActive, contextScanComplete,
-    setContextScanComplete,
+    setContextScanComplete, creativeSessionRunning,
   ]);
 
   return (

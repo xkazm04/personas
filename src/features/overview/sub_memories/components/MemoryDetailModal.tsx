@@ -39,7 +39,7 @@ export default function MemoryDetailModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-secondary/20">
           <div className="flex items-center gap-3 min-w-0">
-            <PersonaIcon icon={null} color={personaColor} display="pop"
+            <PersonaIcon icon={null} color={personaColor} display="framed"
               frameStyle={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }} />
             <div className="min-w-0">
               <h3 className="typo-heading text-foreground/90 truncate">{personaName}</h3>

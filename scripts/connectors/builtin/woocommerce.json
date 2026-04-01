@@ -43,7 +43,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": false,
+    "template_enabled": true,
     "summary": "WooCommerce open-source e-commerce platform for managing orders, products, and customers via the WooCommerce REST API v3.",
     "auth_type": "api_key",
     "auth_type_label": "API Key",

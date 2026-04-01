@@ -27,7 +27,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": false,
+    "template_enabled": true,
     "summary": "CircleCI continuous integration and delivery platform.",
     "auth_type": "pat",
     "auth_type_label": "PAT",

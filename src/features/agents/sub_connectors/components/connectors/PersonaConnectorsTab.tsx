@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Network, List } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
-import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
+import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ToolsSection } from './ToolsSection';
 import { AutomationsSection } from '../automation/AutomationsSection';

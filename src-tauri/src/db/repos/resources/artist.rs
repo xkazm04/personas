@@ -2,11 +2,12 @@ use crate::db::models::ArtistAsset;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-pub fn insert_asset(pool: &DbPool, asset: &ArtistAsset) -> Result<ArtistAsset, AppError> {
+/// Insert an asset. Skips silently if file_path already exists (returns None).
+pub fn insert_asset(pool: &DbPool, asset: &ArtistAsset) -> Result<Option<ArtistAsset>, AppError> {
     timed_query!("artist_assets", "artist_assets::insert_asset", {
         let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO artist_assets (id, file_name, file_path, asset_type, mime_type, file_size, width, height, thumbnail_path, tags, source, created_at)
+        let rows = conn.execute(
+            "INSERT OR IGNORE INTO artist_assets (id, file_name, file_path, asset_type, mime_type, file_size, width, height, thumbnail_path, tags, source, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
             rusqlite::params![
                 asset.id, asset.file_name, asset.file_path, asset.asset_type,
@@ -14,7 +15,12 @@ pub fn insert_asset(pool: &DbPool, asset: &ArtistAsset) -> Result<ArtistAsset, A
                 asset.thumbnail_path, asset.tags, asset.source, asset.created_at,
             ],
         )?;
-        get_asset(pool, &asset.id)
+        if rows == 0 {
+            // Duplicate file_path — skip
+            Ok(None)
+        } else {
+            Ok(Some(get_asset(pool, &asset.id)?))
+        }
     })
 }
 

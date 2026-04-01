@@ -37,20 +37,64 @@ export function SeverityIndicator({ severity }: { severity: string }) {
   );
 }
 
+interface DecisionItem {
+  id: string;
+  label: string;
+  description?: string;
+  category?: string;
+}
+
+function DecisionCards({ decisions }: { decisions: DecisionItem[] }) {
+  return (
+    <div className="space-y-2">
+      {decisions.map((d) => (
+        <div key={d.id} className="rounded-lg border border-primary/10 bg-secondary/20 px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            {d.category && (
+              <span className="text-xs font-medium text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">{d.category}</span>
+            )}
+            <span className="text-sm font-medium text-foreground">{d.label}</span>
+          </div>
+          {d.description && (
+            <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{d.description}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ContextDataPreview({ raw }: { raw: string | null | undefined }) {
   if (!raw) return null;
   let parsed: Record<string, unknown> | null;
   try { parsed = JSON.parse(raw); }
   catch { return <p className="text-sm text-foreground/70 whitespace-pre-wrap">{raw}</p>; }
   if (!parsed || typeof parsed !== 'object') return null;
+
+  // Detect decisions array and render as readable cards
+  if (Array.isArray(parsed.decisions) && parsed.decisions.length > 0) {
+    return <DecisionCards decisions={parsed.decisions as DecisionItem[]} />;
+  }
+
   return (
-    <div className="space-y-1">
-      {Object.entries(parsed).map(([key, val]) => (
-        <div key={key} className="flex gap-2 text-sm">
-          <span className="text-muted-foreground/60 font-mono flex-shrink-0">{key}:</span>
-          <span className="text-foreground/80 break-all">{typeof val === 'string' ? val : JSON.stringify(val)}</span>
-        </div>
-      ))}
+    <div className="space-y-1.5">
+      {Object.entries(parsed).map(([key, val]) => {
+        // Render arrays of objects as mini-cards
+        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object') {
+          return (
+            <div key={key}>
+              <div className="text-xs font-mono text-foreground/50 uppercase mb-1">{key}</div>
+              <DecisionCards decisions={val as DecisionItem[]} />
+            </div>
+          );
+        }
+        return (
+          <div key={key} className="flex gap-2 text-sm">
+            <span className="text-foreground/50 font-mono flex-shrink-0">{key}:</span>
+            <span className="text-foreground break-all">{typeof val === 'string' ? val : JSON.stringify(val)}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

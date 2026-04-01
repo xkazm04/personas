@@ -39,6 +39,10 @@ pub struct DispatchContext<'a> {
     pub persona_name: &'a str,
     pub notification_channels: Option<&'a str>,
     pub logger: &'a mut ExecutionLogger,
+    /// When true, skip all protocol message storage (messages, memories, events,
+    /// reviews). Used for ops chat executions which are conversational queries,
+    /// not real agent executions.
+    pub ops_mode: bool,
     /// Cached quality-gate config — loaded lazily on first use, then reused for
     /// all subsequent protocol messages in this execution. Avoids O(messages)
     /// DB reads for config that rarely changes.
@@ -71,6 +75,7 @@ impl<'a> DispatchContext<'a> {
             persona_name,
             notification_channels,
             logger,
+            ops_mode: false,
             quality_gate_cache: gate_config,
         }
     }
@@ -94,6 +99,12 @@ impl<'a> DispatchContext<'a> {
 /// - `ManualReview` -> manual_reviews repo + OS notification
 /// - `ExecutionFlow` -> logged only (stored at execution completion)
 pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
+    // Skip all protocol storage for ops chat executions — they are conversational
+    // queries, not real agent executions. No messages, memories, events, or reviews.
+    if ctx.ops_mode {
+        ctx.logger.log(&format!("[OPS] Suppressed protocol dispatch: {:?}", std::mem::discriminant(msg)));
+        return;
+    }
     match msg {
         ProtocolMessage::UserMessage {
             title,

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { CredentialTemplateForm } from '@/features/vault/sub_forms/CredentialTemplateForm';
+import { CredentialTemplateForm } from '@/features/vault/sub_catalog/components/forms/CredentialTemplateForm';
 import { isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
 import { testCredentialDesignHealthcheck } from '@/api/vault/credentialDesign';
 import type { ConnectorDefinition } from '@/lib/types/types';

@@ -27,7 +27,7 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
   all: 'All', running: 'Running', completed: 'Completed', failed: 'Failed',
 };
 
-const EXEC_GRID_COLUMNS = '180px minmax(0,1fr) 120px 140px 120px';
+const EXEC_GRID_COLUMNS = 'minmax(280px,2fr) minmax(0,1fr) 120px 140px 120px';
 
 const STATUS_FILTER_OPTIONS = [
   { value: 'all', label: 'All statuses' },
@@ -36,7 +36,12 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'failed', label: 'Failed' },
 ];
 
-export default function GlobalExecutionList() {
+interface GlobalExecutionListProps {
+  /** Extra action buttons to render in the header (left of Metrics/Refresh) */
+  headerActions?: React.ReactNode;
+}
+
+export default function GlobalExecutionList({ headerActions }: GlobalExecutionListProps) {
   const {
     globalExecutions, globalExecutionsTotal, globalExecutionsOffset,
     globalExecutionsWarning, fetchGlobalExecutions,
@@ -137,6 +142,7 @@ export default function GlobalExecutionList() {
         subtitle={`${globalExecutionsTotal} execution${globalExecutionsTotal !== 1 ? 's' : ''} recorded`}
         actions={
           <div className="flex items-center gap-2">
+            {headerActions}
             <button
               onClick={() => setShowDashboard(!showDashboard)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
@@ -220,9 +226,9 @@ export default function GlobalExecutionList() {
                         className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
                       />
                     </div>
-                    <div role="columnheader" className="text-right text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Duration</div>
-                    <div role="columnheader" className="text-right text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Started</div>
-                    <div role="columnheader" className="text-left text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">ID</div>
+                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Duration</div>
+                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Started</div>
+                    <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">ID</div>
                   </div>
                 )}
 

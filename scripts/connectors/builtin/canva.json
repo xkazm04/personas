@@ -27,7 +27,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": false,
+    "template_enabled": true,
     "summary": "Canva design platform for creating, managing, and exporting designs via the Canva Connect API.",
     "auth_type": "pat",
     "auth_type_label": "PAT",

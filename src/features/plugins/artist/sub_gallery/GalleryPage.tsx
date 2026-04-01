@@ -57,7 +57,7 @@ export default function GalleryPage() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors ${
                 galleryMode === m.id
                   ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                  : 'text-muted-foreground/50 hover:bg-secondary/40 border border-transparent'
+                  : 'text-muted-foreground hover:bg-secondary/40 border border-transparent'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -70,12 +70,12 @@ export default function GalleryPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/30" />
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search..."
-            className="pl-8 pr-3 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-xs text-foreground/70 placeholder:text-muted-foreground/30 focus:outline-none focus:border-rose-500/30 w-48"
+            className="pl-8 pr-3 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-rose-500/30 w-48"
           />
         </div>
 
@@ -83,13 +83,13 @@ export default function GalleryPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-          className="px-2 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-xs text-foreground/70"
+          className="px-2 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-xs text-foreground"
         >
           <option value="date">Date</option>
           <option value="name">Name</option>
           <option value="size">Size</option>
         </select>
-        <button onClick={toggleSort} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground/50">
+        <button onClick={toggleSort} className="p-1.5 rounded-lg hover:bg-secondary/40 text-muted-foreground">
           {sortDir === 'asc' ? <SortAsc className="w-3.5 h-3.5" /> : <SortDesc className="w-3.5 h-3.5" />}
         </button>
 
@@ -106,27 +106,27 @@ export default function GalleryPage() {
 
       {/* Folder info */}
       {artistFolder && (
-        <p className="text-[11px] text-muted-foreground/30 font-mono truncate">
+        <p className="text-[11px] text-muted-foreground font-mono truncate">
           Watching: {artistFolder}
         </p>
       )}
 
       {/* Gallery content */}
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground/40 typo-body">
+        <div className="flex items-center justify-center py-16 text-muted-foreground typo-body">
           Loading assets...
         </div>
       ) : filteredAssets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-rose-500/5 border border-rose-500/10 flex items-center justify-center">
             {galleryMode === '2d' ? (
-              <Image className="w-7 h-7 text-rose-400/40" />
+              <Image className="w-7 h-7 text-rose-400" />
             ) : (
-              <Box className="w-7 h-7 text-rose-400/40" />
+              <Box className="w-7 h-7 text-rose-400" />
             )}
           </div>
-          <p className="typo-heading text-foreground/60">No {galleryMode === '2d' ? 'images' : 'models'} yet</p>
-          <p className="typo-body text-muted-foreground/40 max-w-xs text-center">
+          <p className="typo-heading text-foreground">No {galleryMode === '2d' ? 'images' : 'models'} yet</p>
+          <p className="typo-body text-muted-foreground max-w-xs text-center">
             Click "Scan Folder" to import {galleryMode === '2d' ? 'images' : '3D models'} from your Artist folder,
             or create them using the Blender Studio tab.
           </p>

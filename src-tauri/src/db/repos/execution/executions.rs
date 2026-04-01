@@ -42,8 +42,13 @@ pub fn get_by_persona_id(
     timed_query!("persona_executions", "persona_executions::get_by_persona_id", {
         let limit = limit.unwrap_or(50);
         let conn = pool.get()?;
+        // Exclude ops chat executions (input_data contains "_ops") — those are
+        // conversational queries from the Chat tab, not real agent executions.
         let mut stmt = conn.prepare(
-            "SELECT * FROM persona_executions WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2",
+            "SELECT * FROM persona_executions
+             WHERE persona_id = ?1
+               AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')
+             ORDER BY created_at DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![persona_id, limit], row_to_execution)?;
         rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
@@ -71,6 +76,8 @@ pub fn get_all_global(
 
     let mut qb = crate::db::query_builder::QueryBuilder::new();
 
+    // Exclude ops chat executions from all execution lists
+    qb.where_raw(|_| "(e.input_data IS NULL OR e.input_data NOT LIKE '%\"_ops\"%')".to_string(), vec![]);
     if let Some(s) = status {
         qb.where_eq("e.status", s.to_string());
     }
@@ -726,10 +733,13 @@ pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppErro
         // Include completed, failed, incomplete, and cancelled executions in spend
         // tracking. Cancelled executions may have consumed API credits before the
         // process was killed, and those costs must count toward budget enforcement.
+        // Exclude ops chat executions from spend tracking — they are conversational
+        // queries from the Chat tab, not billable agent executions.
         let spend: f64 = conn.query_row(
             "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
              WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
-             AND created_at >= datetime('now', 'start of month')",
+             AND created_at >= datetime('now', 'start of month')
+             AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')",
             params![persona_id],
             |row| row.get(0),
         )?;

@@ -17,7 +17,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": false,
+    "template_enabled": true,
     "summary": "Microsoft Teams messaging for sending messages, managing channels, and team collaboration via the Microsoft Graph API.",
     "auth_type": "oauth",
     "auth_type_label": "OAuth",

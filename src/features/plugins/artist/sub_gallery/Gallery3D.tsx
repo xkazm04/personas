@@ -51,8 +51,8 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
             <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
               <div className="flex items-center gap-2">
                 <Box className="w-4 h-4 text-rose-400" />
-                <span className="typo-heading text-foreground/80">{selectedAsset.fileName}</span>
-                <span className="text-[10px] text-muted-foreground/30 font-mono">
+                <span className="typo-heading text-foreground">{selectedAsset.fileName}</span>
+                <span className="text-[10px] text-muted-foreground font-mono">
                   {selectedAsset.fileName.split('.').pop()?.toUpperCase()}
                 </span>
               </div>
@@ -61,7 +61,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 <button
                   onClick={toggleAutoRotate}
                   className={`p-1.5 rounded-lg text-xs transition-colors ${
-                    autoRotate ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground/40 hover:bg-secondary/40'
+                    autoRotate ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground hover:bg-secondary/40'
                   }`}
                   title="Auto-rotate"
                 >
@@ -70,7 +70,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 <button
                   onClick={toggleWireframe}
                   className={`p-1.5 rounded-lg text-xs transition-colors ${
-                    wireframe ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground/40 hover:bg-secondary/40'
+                    wireframe ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground hover:bg-secondary/40'
                   }`}
                   title="Wireframe"
                 >
@@ -79,7 +79,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 <select
                   value={lightingPreset}
                   onChange={(e) => setLightingPreset(e.target.value as 'studio' | 'outdoor' | 'soft')}
-                  className="px-2 py-1 rounded-lg bg-background/80 border border-primary/10 text-[11px] text-foreground/60"
+                  className="px-2 py-1 rounded-lg bg-background/80 border border-primary/10 text-[11px] text-foreground"
                 >
                   <option value="studio">Studio</option>
                   <option value="outdoor">Outdoor</option>
@@ -87,7 +87,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 </select>
                 <button
                   onClick={() => setSelectedIndex(null)}
-                  className="p-1.5 rounded-lg text-muted-foreground/40 hover:bg-secondary/40 ml-2"
+                  className="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary/40 ml-2"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -104,11 +104,11 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 />
               ) : (
                 <div className="text-center space-y-3">
-                  <Box className="w-16 h-16 text-rose-400/20 mx-auto" />
-                  <p className="typo-heading text-foreground/50">
+                  <Box className="w-16 h-16 text-rose-400 mx-auto" />
+                  <p className="typo-heading text-foreground">
                     Preview not available for .{selectedAsset.fileName.split('.').pop()} files
                   </p>
-                  <p className="typo-body text-muted-foreground/40 max-w-sm">
+                  <p className="typo-body text-muted-foreground max-w-sm">
                     Only .glb and .gltf files can be previewed inline.
                     Export from Blender as glTF for best compatibility.
                   </p>
@@ -117,7 +117,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
             </div>
 
             {/* Footer metadata */}
-            <div className="px-4 py-2 border-t border-primary/10 flex items-center gap-4 text-[11px] text-muted-foreground/40">
+            <div className="px-4 py-2 border-t border-primary/10 flex items-center gap-4 text-[11px] text-muted-foreground">
               <span>{formatFileSize(selectedAsset.fileSize)}</span>
               <span>{selectedAsset.createdAt}</span>
               {selectedAsset.tags && <span>Tags: {selectedAsset.tags}</span>}
@@ -147,21 +147,21 @@ function ThreeViewer({
   return (
     <div className="text-center space-y-4 p-8">
       <div className="w-24 h-24 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/15 flex items-center justify-center">
-        <Box className="w-12 h-12 text-rose-400/40" />
+        <Box className="w-12 h-12 text-rose-400" />
       </div>
       <div className="space-y-2">
-        <p className="typo-heading text-foreground/60">3D Viewer</p>
-        <p className="typo-body text-muted-foreground/40 max-w-md">
+        <p className="typo-heading text-foreground">3D Viewer</p>
+        <p className="typo-body text-muted-foreground max-w-md">
           Install <code className="text-[11px] bg-secondary/40 px-1.5 py-0.5 rounded">@react-three/fiber</code> and{' '}
           <code className="text-[11px] bg-secondary/40 px-1.5 py-0.5 rounded">@react-three/drei</code> to
           enable interactive 3D previews with orbit controls.
         </p>
-        <p className="text-[11px] text-muted-foreground/30 font-mono break-all mt-2">
+        <p className="text-[11px] text-muted-foreground font-mono break-all mt-2">
           {filePath}
         </p>
-        <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-muted-foreground/30">
-          {wireframe && <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400/50">Wireframe</span>}
-          {autoRotate && <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400/50">Auto-rotate</span>}
+        <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-muted-foreground">
+          {wireframe && <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400">Wireframe</span>}
+          {autoRotate && <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400">Auto-rotate</span>}
         </div>
       </div>
     </div>

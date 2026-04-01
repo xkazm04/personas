@@ -1,5 +1,5 @@
 import { CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
-import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
+import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { ConnectorRailItem } from '../../edit/connectorHealth';
 
 interface ConnectorHealthRailProps {

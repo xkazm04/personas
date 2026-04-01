@@ -156,17 +156,18 @@ function FilterableSelect({
       {open && dropdownPos && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed z-[9990] glass-sm rounded-xl shadow-elevation-3 overflow-hidden"
+          className="fixed z-[9990] rounded-xl shadow-elevation-3 overflow-hidden border border-primary/15"
           style={{
             top: dropdownPos.flipUp ? undefined : dropdownPos.top,
             bottom: dropdownPos.flipUp ? window.innerHeight - dropdownPos.top : undefined,
             left: dropdownPos.left,
-            width: dropdownPos.width,
+            width: Math.max(dropdownPos.width, 200),
+            backgroundColor: 'var(--background)',
           }}
         >
           {/* Search */}
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
-            <Search className="w-3.5 h-3.5 text-muted-foreground/50 flex-shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/15 bg-secondary/30">
+            <Search className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -182,22 +183,29 @@ function FilterableSelect({
             {filtered.length === 0 && (
               <div className="px-3 py-2.5 typo-body text-muted-foreground/50">No matches</div>
             )}
-            {filtered.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => handleSelect(opt.value)}
-                className={`w-full flex items-center gap-2 px-3 py-2 typo-body text-left transition-colors hover:bg-primary/5 ${
-                  opt.value === value ? 'bg-primary/5 text-foreground' : 'text-foreground/80'
-                }`}
-              >
-                <span className="w-4 flex-shrink-0">
-                  {opt.value === value && <Check className="w-3.5 h-3.5 text-primary" />}
-                </span>
-                {opt.iconUrl && <OptionIcon url={opt.iconUrl} color={opt.iconColor} label={opt.label} />}
-                <span className="truncate">{highlightMatch(opt.label, debouncedQuery.trim())}</span>
-              </button>
-            ))}
+            {filtered.map((opt, idx) => {
+              const isSelected = opt.value === value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handleSelect(opt.value)}
+                  className={[
+                    'w-full flex items-center gap-2 px-3 py-2 typo-body text-left transition-colors',
+                    idx < filtered.length - 1 ? 'border-b border-primary/[0.06]' : '',
+                    isSelected
+                      ? 'bg-primary/10 text-foreground border-l-2 border-l-primary'
+                      : 'text-foreground/80 hover:bg-primary/10 hover:text-foreground',
+                  ].join(' ')}
+                >
+                  <span className="w-4 flex-shrink-0">
+                    {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
+                  </span>
+                  {opt.iconUrl && <OptionIcon url={opt.iconUrl} color={opt.iconColor} label={opt.label} />}
+                  <span className="truncate">{highlightMatch(opt.label, debouncedQuery.trim())}</span>
+                </button>
+              );
+            })}
           </div>
         </div>,
         document.body,

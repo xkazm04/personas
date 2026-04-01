@@ -1,5 +1,6 @@
 import { Table2, Pin, Eye, Key, Database } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ColumnList } from './ColumnList';
 import type { IntrospectedTable, IntrospectedColumn } from '@/hooks/database/useTableIntrospection';
 import type { ConnectorFamily } from '@/features/vault/sub_databases/introspectionQueries';
 
@@ -37,7 +38,6 @@ export function TableDetailPanel({
   const displayName = tableEntry?.display_label || selectedTable;
   const HeaderIcon = isApi ? Database : Table2;
 
-  // Column header labels adapt for API connectors
   const columnLabel = isApi ? 'Property' : 'Column';
   const typeLabel = isApi
     ? (family === 'notion' ? 'Notion Type' : family === 'airtable' ? 'Field Type' : 'Type')
@@ -48,16 +48,13 @@ export function TableDetailPanel({
       {/* SQL / API table detail */}
       {!isRedis && selectedTable && (
         <>
-          {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
             <HeaderIcon className="w-4 h-4 text-blue-400/60" />
             <span className={`text-sm font-medium text-foreground/80 flex-1 ${isApi ? '' : 'font-mono'}`}>
               {displayName}
             </span>
             {tables.find((t) => t.table_name === selectedTable)?.table_type === 'VIEW' && (
-              <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-violet-500/10 text-violet-400/70">
-                VIEW
-              </span>
+              <span className="px-1.5 py-0.5 rounded text-sm font-medium bg-violet-500/10 text-violet-400/70">VIEW</span>
             )}
             {!isPinned && (
               <button
@@ -77,78 +74,15 @@ export function TableDetailPanel({
             )}
           </div>
 
-          {/* Columns */}
           <div className="flex-1 min-h-0 overflow-y-auto p-4">
-            {columnsLoading && (
-              <div className="flex items-center gap-2 py-8 justify-center">
-                <LoadingSpinner className="text-muted-foreground/60" />
-                <span className="text-sm text-muted-foreground/60">Loading columns...</span>
-              </div>
-            )}
-
-            {columnsError && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 break-words">
-                {columnsError}
-              </div>
-            )}
-
-            {!columnsLoading && !columnsError && columns.length > 0 && (
-              <div className="rounded-lg border border-primary/10 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-secondary/40 border-b border-primary/10">
-                      <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/3">{columnLabel}</th>
-                      <th className="px-3 py-2 text-left font-semibold text-foreground/70 w-1/4">{typeLabel}</th>
-                      {!isApi && <th className="px-3 py-2 text-center font-semibold text-foreground/70 w-20">Nullable</th>}
-                      {!isApi && <th className="px-3 py-2 text-left font-semibold text-foreground/70">Default</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {columns.map((col, i) => (
-                      <tr
-                        key={col.column_name}
-                        className={`border-b border-primary/5 ${i % 2 === 0 ? 'bg-transparent' : 'bg-secondary/10'}`}
-                      >
-                        <td className="px-3 py-1.5 font-mono text-foreground/80">
-                          {col.column_name}
-                        </td>
-                        <td className="px-3 py-1.5 font-mono text-blue-400/70">
-                          {col.data_type}
-                        </td>
-                        {!isApi && (
-                          <td className="px-3 py-1.5 text-center">
-                            {col.is_nullable === 'YES' ? (
-                              <span className="text-muted-foreground/60">yes</span>
-                            ) : (
-                              <span className="text-amber-400/70 font-medium">NOT NULL</span>
-                            )}
-                          </td>
-                        )}
-                        {!isApi && (
-                          <td className="px-3 py-1.5 text-muted-foreground/50 truncate max-w-[200px]" title={col.column_default ?? ''}>
-                            {col.column_default ?? (
-                              <span className="text-muted-foreground/20">-</span>
-                            )}
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {!columnsLoading && !columnsError && columns.length === 0 && (
-              <p className="text-sm text-muted-foreground/60 text-center py-8">
-                {isApi ? 'No properties found' : 'No columns found'}
-              </p>
-            )}
-
-            {!columnsLoading && !columnsError && columns.length > 0 && (
-              <div className="mt-3 text-sm text-muted-foreground/60">
-                {columns.length} {isApi ? 'propert' : 'column'}{columns.length !== 1 ? (isApi ? 'ies' : 's') : (isApi ? 'y' : '')}
-              </div>
-            )}
+            <ColumnList
+              columns={columns}
+              columnsLoading={columnsLoading}
+              columnsError={columnsError}
+              isApi={isApi}
+              columnLabel={columnLabel}
+              typeLabel={typeLabel}
+            />
           </div>
         </>
       )}
@@ -158,9 +92,7 @@ export function TableDetailPanel({
         <>
           <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
             <Key className="w-4 h-4 text-amber-400/60" />
-            <span className="text-sm font-mono font-medium text-foreground/80 flex-1 truncate">
-              {selectedKey}
-            </span>
+            <span className="text-sm font-mono font-medium text-foreground/80 flex-1 truncate">{selectedKey}</span>
           </div>
           <div className="p-4">
             {keyTypeResult === null ? (
@@ -202,9 +134,7 @@ export function TableDetailPanel({
       {isRedis && !selectedKey && (
         <div className="flex-1 flex flex-col items-center justify-center gap-2">
           <Key className="w-6 h-6 text-muted-foreground/15" />
-          <p className="text-sm text-muted-foreground/60">
-            Select a key to view its type
-          </p>
+          <p className="text-sm text-muted-foreground/60">Select a key to view its type</p>
         </div>
       )}
     </div>

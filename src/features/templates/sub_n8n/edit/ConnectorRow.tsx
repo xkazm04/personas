@@ -1,7 +1,7 @@
 import { Link, CheckCircle2, XCircle, AlertCircle, Activity, Plus, ChevronDown, Wrench } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { PersonaCredential } from '@/lib/types/types';
-import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
+import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import { rankCredentialsForConnector } from './connectorMatching';
 import {
   getStatusKey,

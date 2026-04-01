@@ -60,7 +60,7 @@ export function MemoryRow({
   }, [confirmDelete]);
 
   const agentAvatar = (
-    <PersonaIcon icon={null} color={personaColor} display="pop"
+    <PersonaIcon icon={null} color={personaColor} display="framed"
       frameStyle={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }} />
   );
 

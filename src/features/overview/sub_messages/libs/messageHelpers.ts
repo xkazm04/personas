@@ -15,7 +15,7 @@ export const FILTER_LABELS: Record<FilterType, string> = {
 };
 
 export const COLUMN_WIDTHS = {
-  persona: '140px',
+  persona: '280px',
   priority: '180px',
   delivery: '100px',
   status: '70px',

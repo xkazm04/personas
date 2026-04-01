@@ -41,12 +41,8 @@ export function useArtistAssets() {
       const scanned = await artistScanFolder(folder);
       let imported = 0;
       for (const asset of scanned) {
-        try {
-          await artistImportAsset(asset);
-          imported++;
-        } catch {
-          // Asset may already exist — skip
-        }
+        const result = await artistImportAsset(asset);
+        if (result !== null) imported++;
       }
       useToastStore.getState().addToast(
         `Found ${scanned.length} assets, imported ${imported} new.`,

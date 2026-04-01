@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
+import { useCredentialNav } from '@/features/vault/shared/hooks/CredentialNavContext';
 import type { PersonaToolDefinition } from '@/lib/types/types';
 
 /**

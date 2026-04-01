@@ -19,7 +19,7 @@ use crate::db::repos::core::{
 };
 use crate::db::repos::execution::{test_suites as suite_repo};
 use crate::db::repos::resources::{
-    audit_log, connectors as connector_repo, credentials as cred_repo, teams as team_repo,
+    audit_log, credentials as cred_repo, teams as team_repo,
     tools as tool_repo, triggers as trigger_repo,
 };
 use crate::db::DbPool;
@@ -46,7 +46,7 @@ const MAX_PERSONAS: usize = 200;
 const MAX_GROUPS: usize = 100;
 const MAX_TOOLS: usize = 500;
 const MAX_TEAMS: usize = 50;
-const MAX_CONNECTORS: usize = 100;
+const MAX_CREDENTIALS: usize = 500;
 const MAX_TRIGGERS_PER_PERSONA: usize = MAX_TRIGGERS;
 const MAX_SUBSCRIPTIONS_PER_PERSONA: usize = MAX_SUBSCRIPTIONS;
 const MAX_MEMORIES_PER_PERSONA: usize = MAX_MEMORIES;
@@ -69,7 +69,7 @@ pub struct PortabilityBundle {
     pub groups: Vec<GroupExport>,
     pub tool_definitions: Vec<ToolDefinitionExport>,
     pub teams: Vec<TeamExport>,
-    pub connectors: Vec<ConnectorExport>,
+    pub credentials: Vec<CredentialMetaExport>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -80,7 +80,7 @@ pub enum ExportScope {
         persona_ids: Vec<String>,
         team_ids: Vec<String>,
         #[serde(default)]
-        connector_ids: Vec<String>,
+        credential_ids: Vec<String>,
     },
 }
 
@@ -169,13 +169,13 @@ pub struct TeamConnectionExport {
     pub label: Option<String>,
 }
 
+/// Non-secret credential metadata for workspace export.
+/// Secrets are NOT included — use the separate Credential Vault export for that.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ConnectorExport {
+pub struct CredentialMetaExport {
     pub name: String,
-    pub label: String,
-    pub fields: String,
-    pub services: String,
-    pub category: String,
+    pub service_type: String,
+    pub metadata: Option<String>,
 }
 
 // ============================================================================
@@ -189,7 +189,7 @@ pub struct PortabilityImportResult {
     pub teams_created: u32,
     pub tools_created: u32,
     pub groups_created: u32,
-    pub connectors_created: u32,
+    pub credentials_created: u32,
     pub warnings: Vec<String>,
     pub id_mapping: std::collections::HashMap<String, String>,
 }
@@ -205,7 +205,7 @@ pub struct ExportStats {
     pub group_count: u32,
     pub tool_count: u32,
     pub team_count: u32,
-    pub connector_count: u32,
+    pub credential_count: u32,
     pub memory_count: u32,
     pub test_suite_count: u32,
 }
@@ -225,7 +225,7 @@ pub async fn get_export_stats(
     let groups = group_repo::get_all(pool)?;
     let tools = tool_repo::get_all_definitions(pool)?;
     let teams = team_repo::get_all(pool)?;
-    let connectors = connector_repo::get_all(pool)?;
+    let credentials = cred_repo::get_all(pool)?;
 
     let mut memory_count: u32 = 0;
     let mut test_suite_count: u32 = 0;
@@ -239,7 +239,7 @@ pub async fn get_export_stats(
         group_count: groups.len() as u32,
         tool_count: tools.len() as u32,
         team_count: teams.len() as u32,
-        connector_count: connectors.len() as u32,
+        credential_count: credentials.len() as u32,
         memory_count,
         test_suite_count,
     })
@@ -264,14 +264,14 @@ pub async fn export_selective(
     app: AppHandle,
     persona_ids: Vec<String>,
     team_ids: Vec<String>,
-    connector_ids: Vec<String>,
+    credential_ids: Vec<String>,
 ) -> Result<bool, AppError> {
     require_auth(&state).await?;
     let pool = &state.db;
     let scope = ExportScope::Selective {
         persona_ids: persona_ids.clone(),
         team_ids: team_ids.clone(),
-        connector_ids: connector_ids.clone(),
+        credential_ids: credential_ids.clone(),
     };
     let bundle = build_export_bundle(pool, scope)?;
     save_bundle_to_file(&app, &bundle, "personas_selective_export").await
@@ -384,7 +384,7 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
     let all_groups = group_repo::get_all(pool)?;
     let all_tools = tool_repo::get_all_definitions(pool)?;
     let all_teams = team_repo::get_all(pool)?;
-    let all_connectors = connector_repo::get_all(pool)?;
+    let all_credentials = cred_repo::get_all(pool)?;
 
     let (selected_persona_ids, selected_team_ids) = match &scope {
         ExportScope::Full => (
@@ -576,25 +576,23 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
         });
     }
 
-    // Connector exports (filtered in selective mode when connector_ids is non-empty)
-    let selected_connector_ids: Option<&Vec<String>> = match &scope {
+    // Credential metadata exports (no secrets — filtered in selective mode)
+    let selected_credential_ids: Option<&Vec<String>> = match &scope {
         ExportScope::Full => None,
-        ExportScope::Selective { connector_ids, .. } if connector_ids.is_empty() => None,
-        ExportScope::Selective { connector_ids, .. } => Some(connector_ids),
+        ExportScope::Selective { credential_ids, .. } if credential_ids.is_empty() => None,
+        ExportScope::Selective { credential_ids, .. } => Some(credential_ids),
     };
 
-    let connector_exports: Vec<ConnectorExport> = all_connectors
+    let credential_exports: Vec<CredentialMetaExport> = all_credentials
         .iter()
-        .filter(|c| match &selected_connector_ids {
+        .filter(|c| match &selected_credential_ids {
             None => true,
             Some(ids) => ids.contains(&c.id),
         })
-        .map(|c| ConnectorExport {
+        .map(|c| CredentialMetaExport {
             name: c.name.clone(),
-            label: c.label.clone(),
-            fields: c.fields.clone(),
-            services: c.services.clone(),
-            category: c.category.clone(),
+            service_type: c.service_type.clone(),
+            metadata: c.metadata.clone(),
         })
         .collect();
 
@@ -607,7 +605,7 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
         groups: group_exports,
         tool_definitions: tool_exports,
         teams: team_exports,
-        connectors: connector_exports,
+        credentials: credential_exports,
     })
 }
 
@@ -711,7 +709,7 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
     validation::require_max_count("groups", &bundle.groups, MAX_GROUPS)?;
     validation::require_max_count("tool_definitions", &bundle.tool_definitions, MAX_TOOLS)?;
     validation::require_max_count("teams", &bundle.teams, MAX_TEAMS)?;
-    validation::require_max_count("connectors", &bundle.connectors, MAX_CONNECTORS)?;
+    validation::require_max_count("credentials", &bundle.credentials, MAX_CREDENTIALS)?;
 
     // Validate groups
     for (i, g) in bundle.groups.iter().enumerate() {
@@ -732,14 +730,12 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
         validation::require_optional_max_len(&format!("tool[{i}].implementation_guide"), &t.implementation_guide, MAX_DESIGN_CONTEXT_LEN)?;
     }
 
-    // Validate connectors
-    for (i, c) in bundle.connectors.iter().enumerate() {
-        validation::require_non_empty(&format!("connector[{i}].name"), &c.name)?;
-        validation::require_max_len(&format!("connector[{i}].name"), &c.name, MAX_NAME_LEN)?;
-        validation::require_max_len(&format!("connector[{i}].label"), &c.label, MAX_NAME_LEN)?;
-        validation::require_max_len(&format!("connector[{i}].category"), &c.category, MAX_SHORT_FIELD_LEN)?;
-        validation::require_max_len(&format!("connector[{i}].fields"), &c.fields, MAX_SCHEMA_LEN)?;
-        validation::require_max_len(&format!("connector[{i}].services"), &c.services, MAX_SCHEMA_LEN)?;
+    // Validate credentials
+    for (i, c) in bundle.credentials.iter().enumerate() {
+        validation::require_non_empty(&format!("credential[{i}].name"), &c.name)?;
+        validation::require_max_len(&format!("credential[{i}].name"), &c.name, MAX_NAME_LEN)?;
+        validation::require_max_len(&format!("credential[{i}].service_type"), &c.service_type, MAX_NAME_LEN)?;
+        validation::require_optional_max_len(&format!("credential[{i}].metadata"), &c.metadata, MAX_SCHEMA_LEN)?;
     }
 
     // Validate personas and their sub-entities
@@ -839,7 +835,7 @@ fn import_bundle(
         teams_created: 0,
         tools_created: 0,
         groups_created: 0,
-        connectors_created: 0,
+        credentials_created: 0,
         warnings: Vec::new(),
         id_mapping: std::collections::HashMap::new(),
     };
@@ -915,13 +911,13 @@ fn import_bundle(
         }
     }
 
-    // Phase 3: Import connectors
-    for c in &bundle.connectors {
-        // Skip if connector with same name already exists
+    // Phase 3: Import credential metadata (no secrets — user must re-enter via Credential Vault)
+    for c in &bundle.credentials {
+        // Skip if credential with same name and service_type already exists
         let exists = tx
             .query_row(
-                "SELECT COUNT(*) FROM connector_definitions WHERE name = ?1",
-                rusqlite::params![c.name],
+                "SELECT COUNT(*) FROM persona_credentials WHERE name = ?1 AND service_type = ?2",
+                rusqlite::params![c.name, c.service_type],
                 |row| row.get::<_, i32>(0),
             )
             .unwrap_or(0)
@@ -931,31 +927,26 @@ fn import_bundle(
         }
 
         let id = uuid::Uuid::new_v4().to_string();
+        // Create credential shell with empty encrypted data — secrets must be added separately
+        let empty_encrypted = crypto::encrypt_for_db("{}").map_err(|e| AppError::Internal(e.to_string()))?;
         match tx.execute(
-            "INSERT INTO connector_definitions
-             (id, name, label, icon_url, color, category, fields,
-              healthcheck_config, services, events, metadata, is_builtin,
-              created_at, updated_at)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,0,?12,?12)",
+            "INSERT INTO persona_credentials
+             (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?7)",
             rusqlite::params![
                 id,
-                c.name,
-                c.label,
-                Option::<String>::None,
-                "#6B7280",
-                c.category,
-                c.fields,
-                Option::<String>::None,
-                c.services,
-                "[]",
-                Option::<String>::None,
+                format!("{} (imported)", c.name),
+                c.service_type,
+                empty_encrypted.0,
+                empty_encrypted.1,
+                c.metadata,
                 now,
             ],
         ) {
-            Ok(_) => result.connectors_created += 1,
+            Ok(_) => result.credentials_created += 1,
             Err(e) => result
                 .warnings
-                .push(format!("Connector '{}': {}", c.name, e)),
+                .push(format!("Credential '{}': {}", c.name, e)),
         }
     }
 

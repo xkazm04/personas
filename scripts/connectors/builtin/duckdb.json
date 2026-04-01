@@ -29,7 +29,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": false,
+    "template_enabled": true,
     "summary": "DuckDB embedded analytical database for OLAP workloads, Parquet, CSV, and JSON.",
     "auth_type": "file_path",
     "auth_type_label": "Database Path",

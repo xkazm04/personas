@@ -108,7 +108,7 @@ export const cloudItems: SubNavItem[] = [
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {
   const tier = activeTier ?? TIERS.TEAM;
   return [
-    { id: 'account', label: 'Account', icon: Chrome },
+    { id: 'account', label: 'Account', icon: Chrome, devOnly: true },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },

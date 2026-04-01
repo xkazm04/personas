@@ -14,6 +14,8 @@ import { PersonaMatrixGlass } from "./PersonaMatrixGlass";
 import { PersonaMatrixBlueprint } from "./PersonaMatrixBlueprint";
 import { QuestionnaireFormGrid } from "./QuestionnaireFormGrid";
 import { Grid3X3, Gem, Ruler } from "lucide-react";
+import { useThemeStore } from "@/stores/themeStore";
+import type { ThemeId } from "@/stores/themeStore";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
@@ -115,11 +117,31 @@ const MATRIX_VARIANTS: { key: MatrixVariant; label: string; icon: React.ElementT
   { key: "blueprint", label: "Blueprint", icon: Ruler },
 ];
 
+/** Map themes to their preferred matrix visual variant. */
+const THEME_VARIANT_MAP: Partial<Record<ThemeId, MatrixVariant>> = {
+  "light-ice": "glass",
+  "dark-red": "glass",
+  "dark-cyan": "glass",
+  "light-news": "blueprint",
+  "dark-frost": "blueprint",
+  "dark-matrix": "blueprint",
+};
+
+function getThemeVariant(themeId: ThemeId): MatrixVariant {
+  return THEME_VARIANT_MAP[themeId] ?? "original";
+}
+
 export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: MatrixAdoptionViewProps) {
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [fadeOut, setFadeOut] = useState(false);
-  const [matrixVariant, setMatrixVariant] = useState<MatrixVariant>("original");
+  const themeId = useThemeStore((s) => s.themeId);
+  const [matrixVariant, setMatrixVariant] = useState<MatrixVariant>(() => getThemeVariant(themeId));
+
+  // Sync variant when theme changes
+  useEffect(() => {
+    setMatrixVariant(getThemeVariant(themeId));
+  }, [themeId]);
   const createPersona = useAgentStore((s) => s.createPersona);
   const seedDone = useRef(false);
 

@@ -220,7 +220,6 @@ export default function MessageList() {
           options={(['all', 'unread', 'high'] as FilterType[]).map((id) => ({ id, label: FILTER_LABELS[id], badge: badgeCounts[id] }))}
           value={filter} onChange={setFilter} layoutIdPrefix="message-filter"
           summary={`Showing ${filteredMessages.length} of ${messagesTotal}`}
-          trailing={<PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />}
         />
       )}
       {viewMode === 'threaded' && (
@@ -367,18 +366,19 @@ export default function MessageList() {
             <div ref={parentRef} className="flex-1 overflow-y-auto">
               <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={6} className="w-full">
                 <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}>
-                  <div role="columnheader" className="px-2 py-2.5 flex items-center">
+                  <div role="columnheader" className="px-2 py-1.5 flex items-center">
                     <ThemedSelect
                       filterable
                       options={personaFilterOptions}
                       value={selectedPersonaId}
                       onValueChange={setSelectedPersonaId}
-                      placeholder="Persona"
+                      placeholder="Personas"
+                      wrapperClassName="w-full"
                       className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
                     />
                   </div>
-                  <div role="columnheader" className="text-left text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Title</div>
-                  <div role="columnheader" className="px-2 py-2.5 flex items-center">
+                  <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">Title</div>
+                  <div role="columnheader" className="px-2 py-1.5 flex items-center">
                     <ThemedSelect
                       filterable
                       options={priorityFilterOptions}
@@ -388,9 +388,9 @@ export default function MessageList() {
                       className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
                     />
                   </div>
-                  <div role="columnheader" className="text-center text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Delivery</div>
-                  <div role="columnheader" className="text-center text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Status</div>
-                  <div role="columnheader" className="text-right text-sm text-foreground/60 uppercase tracking-wider font-semibold px-4 py-2.5">Created</div>
+                  <div role="columnheader" className="flex items-center justify-center px-4 py-1.5 typo-label text-foreground/80">Delivery</div>
+                  <div role="columnheader" className="flex items-center justify-center px-4 py-1.5 typo-label text-foreground/80">Status</div>
+                  <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Created</div>
                 </div>
                 <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                   {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -402,9 +402,8 @@ export default function MessageList() {
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
                         className={`grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40`}
                       >
-                        <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
-                          <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} display="framed" />
-                          <span className="text-sm text-muted-foreground/80 truncate">{message.persona_name || 'Unknown'}</span>
+                        <div role="gridcell" className="flex items-center px-4 min-w-0">
+                          <span className="text-sm text-foreground/80 truncate">{message.persona_name || 'Unknown'}</span>
                         </div>
                         <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
                         <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-lg typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Trash2, Tag, Box } from 'lucide-react';
+import { Trash2, Tag, Box, Loader2 } from 'lucide-react';
 import type { ArtistAsset } from '@/api/artist';
+import { useLocalImage } from '../hooks/useLocalImage';
 
 interface AssetCardProps {
   asset: ArtistAsset;
@@ -14,6 +15,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
   const isImage = asset.assetType === '2d';
   const sizeStr = formatFileSize(asset.fileSize);
   const ext = asset.fileName.split('.').pop()?.toUpperCase() ?? '';
+  const dataUrl = useLocalImage(isImage ? asset.filePath : null);
 
   return (
     <div
@@ -24,20 +26,18 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
     >
       {/* Thumbnail area */}
       <div className="relative aspect-square bg-background/60 flex items-center justify-center overflow-hidden">
-        {isImage && asset.filePath ? (
+        {isImage && dataUrl ? (
           <img
-            src={`asset://localhost/${encodeURIComponent(asset.filePath)}`}
+            src={dataUrl}
             alt={asset.fileName}
             className="w-full h-full object-cover"
-            loading="lazy"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
           />
+        ) : isImage && !dataUrl ? (
+          <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <Box className="w-10 h-10 text-rose-400/30" />
-            <span className="text-[10px] font-mono text-muted-foreground/30 uppercase">{ext}</span>
+            <Box className="w-10 h-10 text-rose-400" />
+            <span className="text-[10px] font-mono text-muted-foreground uppercase">{ext}</span>
           </div>
         )}
 
@@ -71,8 +71,8 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
 
       {/* Info */}
       <div className="px-3 py-2 space-y-0.5">
-        <p className="text-xs text-foreground/70 truncate font-medium">{asset.fileName}</p>
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40">
+        <p className="text-xs text-foreground truncate font-medium">{asset.fileName}</p>
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>{ext}</span>
           <span>&middot;</span>
           <span>{sizeStr}</span>
@@ -82,7 +82,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
             {asset.tags.split(',').map((t) => t.trim()).filter(Boolean).map((t) => (
               <span
                 key={t}
-                className="px-1.5 py-0.5 rounded text-[9px] bg-rose-500/10 text-rose-400/60"
+                className="px-1.5 py-0.5 rounded text-[9px] bg-rose-500/10 text-rose-400"
               >
                 {t}
               </span>

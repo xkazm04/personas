@@ -224,6 +224,13 @@ pub async fn run_execution(
     let mut input_data = input_data;
     let is_session_resume = matches!(continuation, Some(Continuation::SessionResume(_)));
 
+    // Detect ops chat mode — suppresses protocol dispatch (no messages, memories, events)
+    let is_ops_mode = input_data
+        .as_ref()
+        .and_then(|d| d.get("_ops"))
+        .and_then(|f| f.as_bool())
+        .unwrap_or(false);
+
     if let Some(Continuation::PromptHint(ref hint)) = continuation {
         let mut obj = input_data
             .as_ref()
@@ -945,6 +952,7 @@ pub async fn run_execution(
     let pool_for_stream = pool.clone();
     let persona_name_for_stream = persona.name.clone();
     let notif_channels_for_stream = persona.notification_channels.clone();
+    let is_ops_for_stream = is_ops_mode;
 
     // Pre-load quality gate config once per execution (avoids O(messages) DB reads).
     let gate_config = super::quality_gate::load(&pool_for_stream);
@@ -1139,6 +1147,7 @@ pub async fn run_execution(
                                                 &mut logger,
                                                 Some(gate_config.clone()),
                                             );
+                                            dispatch_ctx.ops_mode = is_ops_for_stream;
                                             super::dispatch::dispatch(&mut dispatch_ctx, &msg);
                                         }
                                     }
@@ -1274,6 +1283,7 @@ pub async fn run_execution(
                                             &mut logger,
                                             Some(gate_config.clone()),
                                         );
+                                        dispatch_ctx.ops_mode = is_ops_for_stream;
                                         use super::protocol::ExecutionProtocol;
                                         dispatch_ctx.dispatch_message(&protocol_msg);
                                         trace.end_span_ok(&dispatch_span);
@@ -1409,6 +1419,7 @@ pub async fn run_execution(
                 &mut logger,
                 None, // lazy-loaded on first use (context persists across loop)
             );
+            dispatch_ctx.ops_mode = is_ops_mode;
             use super::protocol::ExecutionProtocol;
             for line in assistant_text.split('\n') {
                 let trimmed = line.trim();

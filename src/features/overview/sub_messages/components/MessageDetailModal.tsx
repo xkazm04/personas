@@ -164,8 +164,8 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
     >
       <div className="space-y-6">
         <div>
-          <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-2">Content</div>
-          <MarkdownRenderer content={message.content} className="text-sm" />
+          <div className="text-sm font-mono text-foreground/60 uppercase mb-2">Content</div>
+          <MarkdownRenderer content={message.content} className="text-sm leading-relaxed" />
         </div>
 
         {/* Improve from feedback */}
@@ -186,7 +186,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
             </button>
           ) : (
             <div className="space-y-2.5">
-              <div className="text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">What could be better?</div>
+              <div className="text-xs font-semibold text-foreground/60 uppercase tracking-wider">What could be better?</div>
               <textarea
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
@@ -218,7 +218,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
         </div>
 
         <div>
-          <div className="text-sm font-mono text-muted-foreground/90 uppercase mb-2 flex items-center gap-1.5">
+          <div className="text-sm font-mono text-foreground/60 uppercase mb-2 flex items-center gap-1.5">
             <Send className="w-3 h-3" /> Delivery Status
           </div>
           {deliveriesLoading ? (

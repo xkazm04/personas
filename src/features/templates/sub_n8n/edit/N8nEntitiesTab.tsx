@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, CheckCircle2, AlertCircle, RefreshCw, Wrench, Zap, ListChecks } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
-import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
+import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import {
   useConnectorStatuses,
 } from './useConnectorStatuses';

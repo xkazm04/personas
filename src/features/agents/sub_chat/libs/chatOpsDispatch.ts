@@ -27,12 +27,18 @@ export interface OpsResult {
 
 // ── Extraction ─────────────────────────────────────────────────────────
 
-/** Extract operation JSON objects from assistant response text. */
+/** Extract operation JSON objects from assistant response text (deduplicated). */
 export function extractOperations(text: string): OpsOperation[] {
   const ops: OpsOperation[] = [];
+  const seen = new Set<string>();
+  let inCodeBlock = false;
   for (const line of text.split("\n")) {
     const trimmed = line.trim();
-    if (!trimmed.startsWith('{"op":') && !trimmed.startsWith('{"op" :')) continue;
+    if (trimmed.startsWith("```")) { inCodeBlock = !inCodeBlock; continue; }
+    if (!trimmed.startsWith('{"op"')) continue;
+    // Deduplicate identical operation lines
+    if (seen.has(trimmed)) continue;
+    seen.add(trimmed);
     try {
       const parsed = JSON.parse(trimmed);
       if (parsed && typeof parsed.op === "string") {
@@ -52,22 +58,38 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
   try {
     switch (op.op) {
       case "health_check": {
-        // Health check uses design_context from the persona
-        const persona = await invokeWithTimeout<{ design_context?: string | null }>("get_persona", { id: personaId });
-        const designResult = persona.design_context || "{}";
+        // Health check uses last_design_result (richer agent IR) or design_context as fallback
+        const persona = await invokeWithTimeout<{
+          design_context?: string | null;
+          last_design_result?: string | null;
+          name?: string;
+          enabled?: boolean;
+          system_prompt?: string;
+        }>("get_persona", { id: personaId });
+        const designResult = persona.last_design_result || persona.design_context || "{}";
+
+        // Run feasibility check
         const result = await invokeWithTimeout<{ status: string; confirmed_capabilities?: string[]; issues?: { description: string; severity: string }[] }>(
           "test_design_feasibility",
           { designResult },
         );
         const issues = result.issues ?? [];
         const caps = result.confirmed_capabilities ?? [];
+
+        // Build a richer summary with persona state
+        const statusLine = `Health: ${result.status}`;
+        const capsLine = caps.length > 0 ? `Capabilities: ${caps.join(", ")}` : "No capabilities confirmed";
+        const issuesLines = issues.length > 0
+          ? issues.map((i) => `[${i.severity}] ${i.description}`).join("\n")
+          : "No issues found.";
+        const enabledLine = `Agent enabled: ${persona.enabled ?? "unknown"}`;
+        const promptLine = persona.system_prompt ? `Prompt length: ${persona.system_prompt.length} chars` : "No system prompt";
+
         return {
           op: "health_check",
           success: true,
-          summary: `Health: ${result.status} — ${caps.length} capabilities confirmed, ${issues.length} issues found`,
-          detail: issues.length > 0
-            ? issues.map((i) => `[${i.severity}] ${i.description}`).join("\n")
-            : "No issues found.",
+          summary: `${statusLine} — ${caps.length} capabilities, ${issues.length} issues`,
+          detail: `${enabledLine}\n${promptLine}\n${capsLine}\n\nIssues:\n${issuesLines}`,
         };
       }
 
@@ -209,6 +231,69 @@ async function dispatchOne(op: OpsOperation, personaId: string): Promise<OpsResu
         return { op: "start_matrix", success: true, summary: `Matrix improvement started: "${instruction.slice(0, 60)}..."` };
       }
 
+      case "list_reviews": {
+        const status = typeof op.status === "string" ? op.status : "pending";
+        const reviews = await invokeWithTimeout<Array<{
+          id: string; title: string; description: string | null; severity: string;
+          status: string; context_data: string | null; suggested_actions: string | null;
+          created_at: string; execution_id: string;
+        }>>("list_manual_reviews", { personaId, status: status === "all" ? null : status });
+        if (reviews.length === 0) {
+          return { op: "list_reviews", success: true, summary: `No ${status === "all" ? "" : status + " "}reviews found.` };
+        }
+        const rows = reviews.map((r) => {
+          const time = new Date(r.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+          const sev = r.severity === "critical" ? "\u{1F534}" : r.severity === "warning" ? "\u{1F7E1}" : "\u{1F535}";
+          const desc = r.description ? r.description.slice(0, 80) : "No description";
+          return { id: r.id, sev, title: r.title, desc, status: r.status, time };
+        });
+        const detail = rows.map((r) =>
+          `${r.sev} **${r.title}** (\`${r.id.slice(0, 8)}\`)\n  ${r.desc}\n  Status: ${r.status} | ${r.time}`
+        ).join("\n\n");
+        return {
+          op: "list_reviews",
+          success: true,
+          summary: `${reviews.length} ${status === "all" ? "" : status + " "}review(s):`,
+          detail,
+        };
+      }
+
+      case "get_review": {
+        const reviewId = typeof op.id === "string" ? op.id : "";
+        if (!reviewId) return { op: "get_review", success: false, summary: "Missing review id." };
+        // Find the review from the list (no dedicated get endpoint, filter from list)
+        const allReviews = await invokeWithTimeout<Array<{
+          id: string; title: string; description: string | null; severity: string;
+          status: string; context_data: string | null; suggested_actions: string | null;
+          reviewer_notes: string | null; created_at: string;
+        }>>("list_manual_reviews", { personaId, status: null });
+        const review = allReviews.find((r) => r.id === reviewId || r.id.startsWith(reviewId));
+        if (!review) return { op: "get_review", success: false, summary: `Review "${reviewId}" not found.` };
+        const parts = [
+          `**${review.title}** | ${review.severity} | ${review.status}`,
+          review.description ? `\n${review.description}` : "",
+          review.context_data ? `\n\n**Context:**\n\`\`\`\n${review.context_data.slice(0, 500)}\n\`\`\`` : "",
+          review.suggested_actions ? `\n\n**Suggested actions:** ${review.suggested_actions}` : "",
+          review.reviewer_notes ? `\n\n**Reviewer notes:** ${review.reviewer_notes}` : "",
+        ];
+        return { op: "get_review", success: true, summary: parts.join("") };
+      }
+
+      case "approve_review":
+      case "reject_review": {
+        const reviewId = typeof op.id === "string" ? op.id : "";
+        if (!reviewId) return { op: op.op, success: false, summary: "Missing review id." };
+        const newStatus = op.op === "approve_review" ? "approved" : "rejected";
+        const notes = typeof op.notes === "string" ? op.notes : undefined;
+        await invokeWithTimeout("update_manual_review_status", {
+          id: reviewId, status: newStatus, reviewerNotes: notes ?? null,
+        });
+        return {
+          op: op.op, success: true,
+          summary: `Review \`${reviewId.slice(0, 8)}\` ${newStatus}${notes ? ` — "${notes}"` : ""}.`,
+        };
+      }
+
       default:
         return { op: op.op, success: false, summary: `Unknown operation: ${op.op}` };
     }
@@ -230,15 +315,116 @@ export async function dispatchOperations(ops: OpsOperation[], personaId: string)
   return results;
 }
 
-/** Format operation results as a readable text block for display in chat. */
+/** Format operation results as rich markdown for display in chat. */
 export function formatResults(results: OpsResult[]): string {
   if (results.length === 0) return "";
-  return results
-    .map((r) => {
-      const icon = r.success ? "\u2705" : "\u274c";
-      let text = `${icon} **${r.op}**: ${r.summary}`;
-      if (r.detail) text += `\n\`\`\`\n${r.detail}\n\`\`\``;
-      return text;
+  return results.map((r) => formatOneResult(r)).join("\n\n---\n\n");
+}
+
+function formatOneResult(r: OpsResult): string {
+  const icon = r.success ? "\u2705" : "\u274c";
+  const header = `${icon} **${friendlyOpName(r.op)}**`;
+
+  // Render per-operation with tailored formatting
+  switch (r.op) {
+    case "list_executions":
+      return r.detail ? `${header}\n\n${formatExecutionTable(r.detail)}` : `${header}: ${r.summary}`;
+    case "health_check":
+      return r.detail ? `${header}\n\n${formatHealthCard(r.summary, r.detail)}` : `${header}: ${r.summary}`;
+    case "list_memories":
+      return r.detail ? `${header}\n\n${formatMemoryList(r.detail)}` : `${header}: ${r.summary}`;
+    case "list_versions":
+      return r.detail ? `${header}\n\n${formatVersionList(r.detail)}` : `${header}: ${r.summary}`;
+    case "list_reviews":
+      return r.detail ? `${header} — ${r.summary}\n\n${r.detail}` : `${header}: ${r.summary}`;
+    case "get_review":
+    case "approve_review":
+    case "reject_review":
+      return `${header}: ${r.summary}`;
+    default:
+      return r.detail ? `${header}: ${r.summary}\n\n\`\`\`\n${r.detail}\n\`\`\`` : `${header}: ${r.summary}`;
+  }
+}
+
+function friendlyOpName(op: string): string {
+  const names: Record<string, string> = {
+    list_executions: "Recent Executions",
+    health_check: "Health Check",
+    list_memories: "Agent Memories",
+    list_versions: "Prompt Versions",
+    list_assertions: "Assertions",
+    list_reviews: "Pending Reviews",
+    get_review: "Review Detail",
+    approve_review: "Approve Review",
+    reject_review: "Reject Review",
+    execute: "Execute",
+    edit_prompt: "Edit Prompt",
+    start_arena: "Arena Test",
+    start_matrix: "Matrix Improvement",
+    create_assertion: "Create Assertion",
+  };
+  return names[op] ?? op;
+}
+
+/** Convert execution list detail into a markdown table. */
+function formatExecutionTable(detail: string): string {
+  const lines = detail.split("\n").filter((l) => l.trim());
+  if (lines.length < 2) return `\`\`\`\n${detail}\n\`\`\``;
+
+  // Parse header + data rows from the padded text format
+  const rows: string[][] = [];
+  for (const line of lines) {
+    const parts = line.trim().split(/\s{2,}/);
+    if (parts.length >= 3) rows.push(parts);
+  }
+  if (rows.length < 2) return `\`\`\`\n${detail}\n\`\`\``;
+
+  // First row is header
+  const header = rows[0]!;
+  const data = rows.slice(1);
+  const md = [
+    `| ${header.join(" | ")} |`,
+    `| ${header.map(() => "---").join(" | ")} |`,
+    ...data.map((r) => `| ${r.join(" | ")} |`),
+  ];
+  return md.join("\n");
+}
+
+/** Format health check as a structured card. */
+function formatHealthCard(summary: string, detail: string): string {
+  const lines = detail.split("\n").filter((l) => l.trim());
+  const parts: string[] = [`> ${summary}`];
+
+  for (const line of lines) {
+    if (line.startsWith("Agent enabled:")) parts.push(`- **Status**: ${line.replace("Agent enabled: ", "")}`);
+    else if (line.startsWith("Prompt length:")) parts.push(`- **Prompt**: ${line.replace("Prompt length: ", "")}`);
+    else if (line.startsWith("Capabilities:")) parts.push(`- **Capabilities**: ${line.replace("Capabilities: ", "")}`);
+    else if (line.startsWith("[")) parts.push(`- \u26A0\uFE0F ${line}`);
+    else if (line === "No issues found.") parts.push(`- \u2705 No issues found`);
+  }
+  return parts.join("\n");
+}
+
+/** Format memories as a bulleted list with category badges. */
+function formatMemoryList(detail: string): string {
+  const lines = detail.split("\n").filter((l) => l.trim());
+  return lines
+    .map((l) => {
+      const match = l.trim().match(/^\[([^\]]+)\]\s*(.*)/);
+      if (match) return `- **\`${match[1]}\`** ${match[2]}`;
+      return `- ${l.trim()}`;
     })
-    .join("\n\n");
+    .join("\n");
+}
+
+/** Format versions as a timeline list. */
+function formatVersionList(detail: string): string {
+  const lines = detail.split("\n").filter((l) => l.trim());
+  return lines
+    .map((l) => {
+      const match = l.trim().match(/^(\w+ \d+)(.*)/);
+      if (match) return `- **${match[1]}**${match[2]}`;
+      return `- ${l.trim()}`;
+    })
+    .join("\n");
 }

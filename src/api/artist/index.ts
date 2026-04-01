@@ -42,8 +42,9 @@ export const artistScanFolder = (folder: string) =>
 export const artistListAssets = (assetType?: string | null) =>
   invoke<ArtistAsset[]>("artist_list_assets", { assetType: assetType ?? null });
 
+/** Import asset. Returns null if file_path already exists in DB. */
 export const artistImportAsset = (asset: ArtistAsset) =>
-  invoke<ArtistAsset>("artist_import_asset", { asset });
+  invoke<ArtistAsset | null>("artist_import_asset", { asset });
 
 export const artistDeleteAsset = (id: string) =>
   invoke<boolean>("artist_delete_asset", { id });
@@ -58,3 +59,25 @@ export const artistGetDefaultFolder = () =>
 
 export const artistEnsureFolders = (folder: string) =>
   invoke<void>("artist_ensure_folders", { folder });
+
+/** Read a local image file and return a base64 data URL for rendering. */
+export const artistReadImageBase64 = (filePath: string) =>
+  invoke<string>("artist_read_image_base64", { filePath });
+
+// -- Creative Session -------------------------------------------------------
+
+export const artistRunCreativeSession = (
+  sessionId: string,
+  userPrompt: string,
+  tools: string[],
+  outputFolder?: string | null,
+) =>
+  invoke<{ session_id: string }>("artist_run_creative_session", {
+    sessionId,
+    userPrompt,
+    tools,
+    outputFolder: outputFolder ?? null,
+  });
+
+export const artistCancelCreativeSession = (sessionId: string) =>
+  invoke<boolean>("artist_cancel_creative_session", { sessionId });

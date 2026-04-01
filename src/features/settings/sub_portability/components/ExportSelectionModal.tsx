@@ -4,7 +4,7 @@ import {
   ChevronRight,
   Bot,
   Users,
-  Plug,
+  Key,
   Info,
   Check,
   Minus,
@@ -13,10 +13,10 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { listPersonas } from '@/api/agents/personas';
 import { listTeams } from '@/api/pipeline/teams';
-import { listConnectors } from '@/api/auth/connectors';
+import { listCredentials } from '@/api/vault/credentials';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
-import type { ConnectorDefinition } from '@/lib/bindings/ConnectorDefinition';
+import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,7 +43,7 @@ interface CategoryConfig {
 interface ExportSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (personaIds: string[], teamIds: string[], connectorIds: string[]) => void;
+  onExport: (personaIds: string[], teamIds: string[], credentialIds: string[]) => void;
   exporting: boolean;
 }
 
@@ -208,26 +208,26 @@ export function ExportSelectionModal({
 }: ExportSelectionModalProps) {
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [teams, setTeams] = useState<PersonaTeam[]>([]);
-  const [connectors, setConnectors] = useState<ConnectorDefinition[]>([]);
+  const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<Set<string>>(new Set());
   const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(new Set());
-  const [selectedConnectorIds, setSelectedConnectorIds] = useState<Set<string>>(new Set());
+  const [selectedCredentialIds, setSelectedCredentialIds] = useState<Set<string>>(new Set());
 
   // Load data when modal opens
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
-    Promise.all([listPersonas(), listTeams(), listConnectors()])
+    Promise.all([listPersonas(), listTeams(), listCredentials()])
       .then(([p, t, c]) => {
         setPersonas(p);
         setTeams(t);
-        setConnectors(c);
+        setCredentials(c);
         // Select all by default
         setSelectedPersonaIds(new Set(p.map((x) => x.id)));
         setSelectedTeamIds(new Set(t.map((x) => x.id)));
-        setSelectedConnectorIds(new Set(c.map((x) => x.id)));
+        setSelectedCredentialIds(new Set(c.map((x) => x.id)));
       })
       .finally(() => setLoading(false));
   }, [isOpen]);
@@ -262,26 +262,25 @@ export function ExportSelectionModal({
         })),
       },
       {
-        key: 'connectors',
-        label: 'Connectors',
-        icon: <Plug className="w-4 h-4" />,
+        key: 'credentials',
+        label: 'Credentials',
+        icon: <Key className="w-4 h-4" />,
         color: 'bg-amber-500/15 text-amber-400',
-        items: connectors.map((c) => ({
+        items: credentials.map((c) => ({
           id: c.id,
-          name: c.label,
-          description: c.category,
-          color: c.color,
+          name: c.name,
+          description: c.service_type,
         })),
       },
     ],
-    [personas, teams, connectors],
+    [personas, teams, credentials],
   );
 
   // Selection helpers
   const stateMap: Record<string, [Set<string>, React.Dispatch<React.SetStateAction<Set<string>>>]> = {
     personas: [selectedPersonaIds, setSelectedPersonaIds],
     teams: [selectedTeamIds, setSelectedTeamIds],
-    connectors: [selectedConnectorIds, setSelectedConnectorIds],
+    credentials: [selectedCredentialIds, setSelectedCredentialIds],
   };
 
   const toggleAll = useCallback(
@@ -294,7 +293,7 @@ export function ExportSelectionModal({
         setSelected(new Set(items.map((i) => i.id)));
       }
     },
-    [selectedPersonaIds, selectedTeamIds, selectedConnectorIds],
+    [selectedPersonaIds, selectedTeamIds, selectedCredentialIds],
   );
 
   const toggleItem = useCallback(
@@ -308,12 +307,12 @@ export function ExportSelectionModal({
       }
       setSelected(next);
     },
-    [selectedPersonaIds, selectedTeamIds, selectedConnectorIds],
+    [selectedPersonaIds, selectedTeamIds, selectedCredentialIds],
   );
 
   // Global select/deselect all
-  const totalItems = personas.length + teams.length + connectors.length;
-  const totalSelected = selectedPersonaIds.size + selectedTeamIds.size + selectedConnectorIds.size;
+  const totalItems = personas.length + teams.length + credentials.length;
+  const totalSelected = selectedPersonaIds.size + selectedTeamIds.size + selectedCredentialIds.size;
   const allGlobalSelected = totalItems > 0 && totalSelected === totalItems;
   const someGlobalSelected = totalSelected > 0;
 
@@ -321,19 +320,19 @@ export function ExportSelectionModal({
     if (allGlobalSelected) {
       setSelectedPersonaIds(new Set());
       setSelectedTeamIds(new Set());
-      setSelectedConnectorIds(new Set());
+      setSelectedCredentialIds(new Set());
     } else {
       setSelectedPersonaIds(new Set(personas.map((p) => p.id)));
       setSelectedTeamIds(new Set(teams.map((t) => t.id)));
-      setSelectedConnectorIds(new Set(connectors.map((c) => c.id)));
+      setSelectedCredentialIds(new Set(credentials.map((c) => c.id)));
     }
-  }, [allGlobalSelected, personas, teams, connectors]);
+  }, [allGlobalSelected, personas, teams, credentials]);
 
   const handleExport = () => {
     onExport(
       Array.from(selectedPersonaIds),
       Array.from(selectedTeamIds),
-      Array.from(selectedConnectorIds),
+      Array.from(selectedCredentialIds),
     );
   };
 
@@ -341,7 +340,7 @@ export function ExportSelectionModal({
     totalItems > 0 &&
     selectedPersonaIds.size === personas.length &&
     selectedTeamIds.size === teams.length &&
-    selectedConnectorIds.size === connectors.length;
+    selectedCredentialIds.size === credentials.length;
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} titleId="export-selection-title" size="lg">
@@ -408,7 +407,8 @@ export function ExportSelectionModal({
               <Info className="w-4 h-4 text-blue-400/70 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground/60 leading-relaxed">
                 Groups, tools, memories, and test suites linked to selected personas are automatically
-                included. Credential secrets are never included — use the separate Credential Vault export.
+                included. Credential secrets are never included — use the separate Credential Vault export
+                to transfer secrets between machines.
               </p>
             </div>
           </>

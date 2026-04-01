@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { getOAuthStatus, startOAuth, type OAuthStatusResult, type StartOAuthParams } from "@/api/vault/oauthGatewayApi";
 
 import { useOAuthPolling } from './useOAuthPolling';
-import { OAUTH_FIELD } from '@/features/vault/sub_design/CredentialDesignHelpers';
+import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 
 export interface UniversalOAuthState {
   /** Read current credential values (stored in a ref to avoid DevTools/Sentry exposure). */

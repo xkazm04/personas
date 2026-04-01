@@ -1,19 +1,29 @@
 import { useState, useCallback, useEffect } from 'react';
-import { artistCheckBlender, artistInstallBlenderMcp, type BlenderMcpStatus } from '@/api/artist';
+import { artistCheckBlender, artistInstallBlenderMcp } from '@/api/artist';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 
+/** Cache TTL: 5 minutes before re-checking blender status */
+const STATUS_CACHE_TTL = 5 * 60 * 1000;
+
 export function useBlenderMcp() {
-  const [status, setStatus] = useState<BlenderMcpStatus | null>(null);
   const [checking, setChecking] = useState(false);
   const [installing, setInstalling] = useState(false);
   const setBlenderMcpState = useSystemStore((s) => s.setBlenderMcpState);
+  const cachedStatus = useSystemStore((s) => s.cachedBlenderStatus);
+  const checkedAt = useSystemStore((s) => s.blenderStatusCheckedAt);
+  const setCachedBlenderStatus = useSystemStore((s) => s.setCachedBlenderStatus);
 
-  const check = useCallback(async () => {
+  const check = useCallback(async (force = false) => {
+    // Skip if we have a recent cached result
+    if (!force && cachedStatus && checkedAt && Date.now() - checkedAt < STATUS_CACHE_TTL) {
+      return;
+    }
+
     setChecking(true);
     try {
       const result = await artistCheckBlender();
-      setStatus(result);
+      setCachedBlenderStatus(result);
       if (result.mcpRunning) {
         setBlenderMcpState('running');
       } else if (result.mcpInstalled) {
@@ -30,15 +40,14 @@ export function useBlenderMcp() {
     } finally {
       setChecking(false);
     }
-  }, [setBlenderMcpState]);
+  }, [cachedStatus, checkedAt, setCachedBlenderStatus, setBlenderMcpState]);
 
   const installMcp = useCallback(async () => {
     setInstalling(true);
     try {
       await artistInstallBlenderMcp();
       useToastStore.getState().addToast('blender-mcp package installed successfully.', 'success');
-      // Re-check status after install
-      await check();
+      await check(true);
     } catch (err) {
       setBlenderMcpState('error');
       useToastStore.getState().addToast(
@@ -50,8 +59,8 @@ export function useBlenderMcp() {
     }
   }, [check, setBlenderMcpState]);
 
-  // Auto-check on mount
+  // Auto-check on mount (uses cache if available)
   useEffect(() => { check(); }, [check]);
 
-  return { status, checking, installing, check, installMcp };
+  return { status: cachedStatus, checking, installing, check: () => check(true), installMcp };
 }

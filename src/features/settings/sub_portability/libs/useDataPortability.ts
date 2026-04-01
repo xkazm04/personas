@@ -61,12 +61,12 @@ export function useDataPortability() {
   const handleExportSelective = useCallback(async (
     personaIds: string[],
     teamIds: string[],
-    connectorIds: string[],
+    credentialIds: string[],
   ) => {
     setExportStatus('loading');
     setErrorMsg('');
     try {
-      const saved = await exportSelective(personaIds, teamIds, connectorIds);
+      const saved = await exportSelective(personaIds, teamIds, credentialIds);
       setExportStatus(saved ? 'success' : 'idle');
       if (saved) setShowExportModal(false);
     } catch (e) {

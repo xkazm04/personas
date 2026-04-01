@@ -1,0 +1,92 @@
+import { useMemo } from 'react';
+import { Database, Table2, Code2 } from 'lucide-react';
+import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
+import { formatRelativeTime } from '@/lib/utils/formatters';
+import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
+
+export interface DbRow {
+  credential: CredentialMetadata;
+  connector: ConnectorDefinition | undefined;
+  tableCount: number;
+  queryCount: number;
+}
+
+export function useDbGridColumns(
+  typeOptions: { value: string; label: string }[],
+  typeFilter: string,
+  setTypeFilter: (v: string) => void,
+): DataGridColumn<DbRow>[] {
+  return useMemo(() => [
+    {
+      key: 'name',
+      label: 'Database',
+      width: '1.5fr',
+      sortable: true,
+      render: (row) => (
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div
+            className="w-6 h-6 rounded-md flex items-center justify-center border border-primary/15 shrink-0"
+            style={{ backgroundColor: `${row.connector?.color || '#6B7280'}15` }}
+          >
+            {row.connector?.icon_url ? (
+              <ThemedConnectorIcon url={row.connector.icon_url} label={row.connector.label} color={row.connector.color} size="w-3.5 h-3.5" />
+            ) : (
+              <Database className="w-3.5 h-3.5 text-blue-400/60" />
+            )}
+          </div>
+          <span className="text-sm font-medium text-foreground truncate">{row.credential.name}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      width: '0.8fr',
+      filterOptions: typeOptions,
+      filterValue: typeFilter,
+      onFilterChange: setTypeFilter,
+      render: (row) => (
+        <span className="text-sm text-foreground/70 truncate">{row.connector?.label || row.credential.service_type}</span>
+      ),
+    },
+    {
+      key: 'tables',
+      label: 'Tables',
+      width: '0.5fr',
+      sortable: true,
+      render: (row) => row.tableCount > 0 ? (
+        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-lg bg-blue-500/10 text-blue-400/80">
+          <Table2 className="w-3 h-3" />
+          {row.tableCount}
+        </span>
+      ) : (
+        <span className="text-xs text-muted-foreground/40">--</span>
+      ),
+    },
+    {
+      key: 'queries',
+      label: 'Queries',
+      width: '0.5fr',
+      sortable: true,
+      render: (row) => row.queryCount > 0 ? (
+        <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-lg bg-violet-500/10 text-violet-400/80">
+          <Code2 className="w-3 h-3" />
+          {row.queryCount}
+        </span>
+      ) : (
+        <span className="text-xs text-muted-foreground/40">--</span>
+      ),
+    },
+    {
+      key: 'created',
+      label: 'Created',
+      width: '0.7fr',
+      sortable: true,
+      align: 'right' as const,
+      render: (row) => (
+        <span className="text-sm text-foreground/60">{formatRelativeTime(row.credential.created_at)}</span>
+      ),
+    },
+  ], [typeOptions, typeFilter, setTypeFilter]);
+}

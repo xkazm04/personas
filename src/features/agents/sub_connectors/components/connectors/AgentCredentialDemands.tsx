@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Key, Plug, ArrowRight, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { CredentialDesignModal } from '@/features/vault/sub_design/CredentialDesignModal';
+import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { silentCatch } from "@/lib/silentCatch";
 import { useUnfulfilledCredentials, type UnfulfilledCredential } from '../../libs/useUnfulfilledCredentials';

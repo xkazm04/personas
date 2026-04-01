@@ -37,7 +37,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": false,
+    "template_enabled": true,
     "summary": "Crisp customer messaging platform for live chat, helpdesk, and knowledge base via the Crisp REST API.",
     "auth_type": "basic",
     "auth_type_label": "Token Pair",

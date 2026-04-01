@@ -7,7 +7,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, EventBusTab } from '@/lib/types/types';
-import { useCredentialNav, type CredentialNavKey } from '@/features/vault/hooks/CredentialNavContext';
+import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 
 import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/useFavoriteAgents';
@@ -195,7 +195,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
           items={settingsItems}
           activeId={settingsTab}
           onSelect={(id) => setSettingsTab(id as SettingsTab)}
-          devItems={isDev ? new Set(['engine', 'byom', 'network', 'config', 'admin']) : undefined}
+          devItems={isDev ? new Set(['account', 'engine', 'byom', 'network', 'quality-gates', 'config', 'admin']) : undefined}
         />
       );
 
@@ -436,6 +436,7 @@ function PluginsSidebarNav() {
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
+  const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
 
   const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
 
@@ -502,6 +503,12 @@ function PluginsSidebarNav() {
         >
           <Palette className="w-4 h-4 flex-shrink-0" />
           Artist
+          {creativeSessionRunning && (
+            <span className="relative ml-auto flex h-2.5 w-2.5">
+              <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />
+              <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
+            </span>
+          )}
         </button>
 
         {/* Dev Tools */}

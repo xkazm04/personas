@@ -37,7 +37,7 @@
   "services": [],
   "events": [],
   "metadata": {
-    "template_enabled": false,
+    "template_enabled": true,
     "summary": "Twilio Segment customer data platform for event tracking and routing.",
     "auth_type": "write_key",
     "auth_type_label": "Write Key",

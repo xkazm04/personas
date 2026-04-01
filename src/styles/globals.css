@@ -1029,11 +1029,11 @@ input[type="number"] {
   --primary: #00ff41;
   --accent: #20c20e;
   --background: #050505;
-  --foreground: #d4d4d4;
+  --foreground: #e8e8e8;
   --secondary: #0e0e0e;
   --muted: #3a3a3a;
-  --muted-dark: #252525;
-  --muted-foreground: #808080;
+  --muted-dark: #353535;
+  --muted-foreground: #a0a0a0;
   --border: #0f1a0f;
   --card-bg: rgba(255, 255, 255, 0.02);
   --card-border: rgba(0, 255, 65, 0.08);
@@ -1562,13 +1562,14 @@ input[type="number"] {
   background-image: radial-gradient(circle, rgba(0, 255, 65, 0.04) 1px, transparent 1px);
 }
 
-/* Digital rain: faint vertical scan-lines — very subtle, mostly dark. */
+/* Digital rain: faint vertical scan-lines — very subtle, mostly dark.
+   z-index: -1 keeps overlays behind all content to avoid contrast reduction. */
 [data-theme="dark-matrix"] body::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
   background-image:
     repeating-linear-gradient(90deg,
       transparent,
@@ -1583,7 +1584,7 @@ input[type="number"] {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
   background: linear-gradient(180deg,
       rgba(0, 255, 65, 0.015) 0%,
       transparent 25%,
@@ -3279,3 +3280,106 @@ input[type="number"] {
 .oauth-icon-pulse {
   animation: oauth-icon-pulse 1.6s ease-in-out infinite;
 }
+
+/* -- Chat User Bubble -- Darkened primary for white-text contrast across all themes */
+.chat-user-bubble {
+  background: color-mix(in srgb, var(--primary) 85%, #000);
+  color: #fff;
+}
+
+/* -- Chat Markdown -- Rich content styling inside chat bubbles */
+.chat-markdown {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: inherit;
+}
+.chat-markdown > *:first-child { margin-top: 0; }
+.chat-markdown > *:last-child { margin-bottom: 0; }
+.chat-markdown p { margin: 0.35em 0; }
+
+/* Headings — clear visual hierarchy */
+.chat-markdown h1 { font-size: 1.25rem; font-weight: 700; margin: 1em 0 0.4em; color: var(--color-foreground); }
+.chat-markdown h2 { font-size: 1.1rem; font-weight: 600; margin: 0.8em 0 0.3em; color: var(--color-foreground); }
+.chat-markdown h3 { font-size: 1rem; font-weight: 600; margin: 0.6em 0 0.2em; color: var(--color-foreground); opacity: 0.9; }
+.chat-markdown h4 { font-size: 0.875rem; font-weight: 600; margin: 0.5em 0 0.2em; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.6; }
+
+/* Lists — comfortable indent and spacing */
+.chat-markdown ul, .chat-markdown ol { padding-left: 1.5em; margin: 0.4em 0; }
+.chat-markdown li { margin: 0.2em 0; }
+.chat-markdown li::marker { color: color-mix(in srgb, var(--color-foreground) 35%, transparent); }
+.chat-markdown ul ul, .chat-markdown ol ol { margin: 0.1em 0; }
+
+/* Blockquote — info card style */
+.chat-markdown blockquote {
+  border-left: 2px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  padding: 0.5em 0.875em;
+  margin: 0.5em 0;
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+/* Tables — clean data presentation */
+.chat-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  margin: 0.6em 0;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+.chat-markdown th {
+  text-align: left;
+  padding: 0.5rem 0.625rem;
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 12%, transparent);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--color-foreground) 60%, transparent);
+}
+.chat-markdown td {
+  padding: 0.4rem 0.625rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 5%, transparent);
+}
+.chat-markdown tr:last-child td { border-bottom: none; }
+.chat-markdown tr:nth-child(even) td { background: color-mix(in srgb, var(--color-primary) 2%, transparent); }
+
+/* Code blocks — dark inset panels */
+.chat-markdown pre {
+  margin: 0.6em 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.625rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 8%, transparent);
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.chat-markdown code:not(pre code) {
+  padding: 0.15em 0.4em;
+  border-radius: 0.3rem;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  font-size: 0.85em;
+}
+
+/* Horizontal rule */
+.chat-markdown hr {
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--color-primary) 12%, transparent);
+  margin: 1em 0;
+}
+
+/* Inline styles */
+.chat-markdown strong { color: var(--color-foreground); font-weight: 600; }
+.chat-markdown a {
+  color: color-mix(in srgb, var(--color-primary) 80%, var(--color-foreground));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s;
+}
+.chat-markdown a:hover { opacity: 0.8; }
+
+/* Images */
+.chat-markdown img { max-width: 100%; border-radius: 0.5rem; margin: 0.5em 0; }

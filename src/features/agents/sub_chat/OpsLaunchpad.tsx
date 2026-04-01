@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Send, Heart, Play, FlaskConical, Shield, Brain, Pencil, Wand2, ListChecks, History, Zap } from 'lucide-react';
-import type { ChatMode } from '@/stores/slices/agents/chatSlice';
+import { Send, Play, FlaskConical, Brain, Wand2, History, Zap, ListChecks, ClipboardCheck } from 'lucide-react';
 
 // ── Ops Preset Cards ────────────────────────────────────────────────────
 
@@ -16,68 +15,55 @@ interface OpsPreset {
 
 const OPS_PRESETS: OpsPreset[] = [
   {
-    id: 'health', icon: <Heart className="w-4 h-4" />, label: 'Health Check',
-    description: 'Run diagnostics and find config issues',
-    prompt: 'Run a health check on this agent and report any issues with suggested fixes.',
+    id: 'diagnose', icon: <Zap className="w-5 h-5" />, label: 'Diagnose',
+    description: 'Analyze health, performance and find issues',
+    prompt: 'Run a full diagnosis on this agent. First use the health_check operation, then list_executions to review recent runs. Analyze the results and tell me: what\'s working well, what\'s failing, and what should I fix. Be specific with actionable recommendations.',
     color: 'emerald',
   },
   {
-    id: 'execute', icon: <Play className="w-4 h-4" />, label: 'Execute',
+    id: 'execute', icon: <Play className="w-5 h-5" />, label: 'Execute',
     description: 'Run the agent with optional input',
-    prompt: 'Execute this agent now.',
+    prompt: 'Execute this agent now using the execute operation. After starting it, briefly explain what the agent will do based on its current configuration.',
     color: 'blue',
     options: [{ key: 'input', label: 'Input (optional)', placeholder: 'Custom input data for this execution...' }],
   },
   {
-    id: 'arena', icon: <FlaskConical className="w-4 h-4" />, label: 'Arena Test',
+    id: 'arena', icon: <FlaskConical className="w-5 h-5" />, label: 'Arena Test',
     description: 'Compare models head-to-head',
-    prompt: 'Start an arena test comparing haiku and sonnet models on this agent.',
+    prompt: 'Start an arena test for this agent using the start_arena operation. Explain what will be compared and what to look for in the results.',
     color: 'violet',
     options: [{ key: 'models', label: 'Models', placeholder: 'haiku, sonnet', defaultValue: 'haiku, sonnet' }],
   },
   {
-    id: 'improve', icon: <Wand2 className="w-4 h-4" />, label: 'Improve Prompt',
-    description: 'AI-driven prompt refinement',
-    prompt: 'Start a matrix improvement to make the prompt more specific and actionable.',
+    id: 'improve', icon: <Wand2 className="w-5 h-5" />, label: 'Improve',
+    description: 'AI-driven persona refinement',
+    prompt: 'Review this agent\'s current prompt sections, tools, and design. Identify the top 3 weaknesses and for each one, show me the exact edit_prompt operation to fix it. Focus on making the agent more reliable and its output more useful.',
     color: 'amber',
-    options: [{ key: 'instruction', label: 'Improvement focus', placeholder: 'e.g., Add error handling, improve output format...' }],
+    options: [{ key: 'instruction', label: 'Focus area', placeholder: 'e.g., Better error handling, improve output format, add web search fallback...' }],
   },
   {
-    id: 'assertions', icon: <Shield className="w-4 h-4" />, label: 'Assertions',
-    description: 'Manage output validation rules',
-    prompt: 'List all assertions for this agent and show their pass rates.',
-    color: 'rose',
-  },
-  {
-    id: 'history', icon: <History className="w-4 h-4" />, label: 'Executions',
+    id: 'history', icon: <History className="w-5 h-5" />, label: 'Executions',
     description: 'Review recent execution history',
-    prompt: 'Show the last 5 executions with status, duration, and cost.',
+    prompt: 'Use the list_executions operation to show the last 5 runs. Analyze the results: which succeeded, which failed, average duration, and any patterns in failures.',
     color: 'sky',
   },
   {
-    id: 'knowledge', icon: <Brain className="w-4 h-4" />, label: 'Knowledge',
+    id: 'knowledge', icon: <Brain className="w-5 h-5" />, label: 'Knowledge',
     description: 'View memories and learned patterns',
-    prompt: 'Show this agent\'s memories and knowledge annotations.',
+    prompt: 'Use the list_memories operation to show what this agent has learned. Summarize the key patterns: what categories dominate, which are high-importance, and whether the memories are helping the agent improve.',
     color: 'purple',
   },
   {
-    id: 'edit', icon: <Pencil className="w-4 h-4" />, label: 'Edit Prompt',
-    description: 'Modify prompt sections directly',
-    prompt: 'Show me the current prompt sections and suggest improvements.',
-    color: 'orange',
-    options: [{ key: 'section', label: 'Section', placeholder: 'instructions, identity, toolGuidance, examples, errorHandling', defaultValue: 'instructions' }],
+    id: 'reviews', icon: <ClipboardCheck className="w-5 h-5" />, label: 'Reviews',
+    description: 'Pending approvals and decisions',
+    prompt: 'Use the list_reviews operation to show all pending manual reviews for this agent. For each review, show the title, severity, description, and context. Then ask me which ones I want to approve or reject.',
+    color: 'rose',
   },
   {
-    id: 'versions', icon: <ListChecks className="w-4 h-4" />, label: 'Versions',
+    id: 'versions', icon: <ListChecks className="w-5 h-5" />, label: 'Versions',
     description: 'Prompt version history and rollback',
-    prompt: 'List prompt versions and show which is tagged as production.',
+    prompt: 'Use the list_versions operation to show the prompt version history. Tell me which version is in production, what changed between versions, and whether a rollback might be warranted.',
     color: 'teal',
-  },
-  {
-    id: 'diagnose', icon: <Zap className="w-4 h-4" />, label: 'Diagnose',
-    description: 'Deep analysis of agent performance',
-    prompt: 'Analyze this agent\'s recent performance. Check health, review last executions, and identify areas for improvement.',
-    color: 'cyan',
   },
 ];
 
@@ -86,12 +72,10 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string; hove
   blue:    { bg: 'bg-blue-500/8',    border: 'border-blue-500/20',    text: 'text-blue-400',    hover: 'hover:bg-blue-500/15 hover:border-blue-500/30' },
   violet:  { bg: 'bg-violet-500/8',  border: 'border-violet-500/20',  text: 'text-violet-400',  hover: 'hover:bg-violet-500/15 hover:border-violet-500/30' },
   amber:   { bg: 'bg-amber-500/8',   border: 'border-amber-500/20',   text: 'text-amber-400',   hover: 'hover:bg-amber-500/15 hover:border-amber-500/30' },
-  rose:    { bg: 'bg-rose-500/8',    border: 'border-rose-500/20',    text: 'text-rose-400',    hover: 'hover:bg-rose-500/15 hover:border-rose-500/30' },
   sky:     { bg: 'bg-sky-500/8',     border: 'border-sky-500/20',     text: 'text-sky-400',     hover: 'hover:bg-sky-500/15 hover:border-sky-500/30' },
   purple:  { bg: 'bg-purple-500/8',  border: 'border-purple-500/20',  text: 'text-purple-400',  hover: 'hover:bg-purple-500/15 hover:border-purple-500/30' },
-  orange:  { bg: 'bg-orange-500/8',  border: 'border-orange-500/20',  text: 'text-orange-400',  hover: 'hover:bg-orange-500/15 hover:border-orange-500/30' },
   teal:    { bg: 'bg-teal-500/8',    border: 'border-teal-500/20',    text: 'text-teal-400',    hover: 'hover:bg-teal-500/15 hover:border-teal-500/30' },
-  cyan:    { bg: 'bg-cyan-500/8',    border: 'border-cyan-500/20',    text: 'text-cyan-400',    hover: 'hover:bg-cyan-500/15 hover:border-cyan-500/30' },
+  rose:    { bg: 'bg-rose-500/8',    border: 'border-rose-500/20',    text: 'text-rose-400',    hover: 'hover:bg-rose-500/15 hover:border-rose-500/30' },
 };
 
 export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onSelect?: (prompt: string) => void; onSend: (prompt: string) => void }) {
@@ -114,10 +98,24 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
   const handleOptionSend = () => {
     if (!selectedPreset) return;
     let prompt = selectedPreset.prompt;
-    for (const opt of selectedPreset.options ?? []) {
-      const val = optionValues[opt.key]?.trim();
-      if (val) {
-        prompt += `\n${opt.label}: ${val}`;
+
+    // For execute preset, embed input directly in the operation instruction
+    if (selectedPreset.id === 'execute') {
+      const input = optionValues['input']?.trim();
+      if (input) {
+        prompt = `Execute this agent now with this input: "${input}". Use the execute operation with the input field set to exactly that value.`;
+      }
+    } else if (selectedPreset.id === 'improve') {
+      const instruction = optionValues['instruction']?.trim();
+      if (instruction) {
+        prompt += `\n\nFocus specifically on: ${instruction}. Show edit_prompt operations for improvements in this area.`;
+      }
+    } else {
+      for (const opt of selectedPreset.options ?? []) {
+        const val = optionValues[opt.key]?.trim();
+        if (val) {
+          prompt += `\n${opt.label}: ${val}`;
+        }
       }
     }
     setSelectedPreset(null);
@@ -125,38 +123,41 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Top half: Card grid */}
-      <div className="flex-1 flex flex-col justify-center px-2">
-        <div className="text-center mb-4">
-          <p className="text-lg font-medium text-foreground/70">Operations for <span className="text-primary">{personaName}</span></p>
-          <p className="text-sm text-muted-foreground/50 mt-0.5">Select an action or type a command below</p>
+    <div className="flex flex-col h-full" data-testid="chat-launchpad">
+      {/* Card grid */}
+      <div className="flex-1 flex flex-col justify-center px-4 py-4">
+        <div className="text-center mb-5">
+          <p className="text-xl font-semibold text-foreground/80" data-testid="chat-launchpad-title">
+            <span className="text-primary">{personaName}</span>
+          </p>
+          <p className="text-sm text-muted-foreground/40 mt-1">Choose an action or type a message below</p>
         </div>
-        <div className="grid grid-cols-5 gap-2 max-w-[640px] mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-w-3xl mx-auto">
           {OPS_PRESETS.map((preset) => {
             const c = COLOR_MAP[preset.color] || COLOR_MAP['blue']!;
             const isSelected = selectedPreset?.id === preset.id;
             return (
               <button
                 key={preset.id}
+                data-testid={`chat-preset-${preset.id}`}
                 onClick={() => handleCardClick(preset)}
-                className={`group flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all duration-150 cursor-pointer text-center ${c.bg} ${c.border} ${c.hover} ${isSelected ? 'ring-1 ring-primary/40 scale-[1.02]' : ''}`}
+                className={`group flex flex-col items-center gap-2.5 p-4 rounded-xl border transition-all duration-200 cursor-pointer text-center ${c.bg} ${c.border} ${c.hover} ${isSelected ? 'ring-2 ring-primary/30 scale-[1.03]' : 'hover:scale-[1.02]'}`}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${c.bg} ${c.text} group-hover:scale-110 transition-transform`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${c.text} transition-transform duration-200 group-hover:scale-110`}>
                   {preset.icon}
                 </div>
-                <span className="text-sm font-medium text-foreground/80 leading-tight">{preset.label}</span>
-                <span className="text-xs text-muted-foreground/50 leading-tight line-clamp-2">{preset.description}</span>
+                <span className="text-sm font-semibold text-foreground/80 leading-tight">{preset.label}</span>
+                <span className="text-xs text-muted-foreground/45 leading-snug line-clamp-2">{preset.description}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Bottom half: Options panel for selected preset */}
-      <div className="border-t border-primary/10 px-4 py-3 min-h-[100px]">
-        {selectedPreset ? (
-          <div className="max-w-[640px] mx-auto space-y-2.5">
+      {/* Options panel for selected preset */}
+      {selectedPreset && (
+        <div className="border-t border-primary/10 px-4 py-3" data-testid="chat-preset-options">
+          <div className="max-w-[680px] mx-auto space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className={`${COLOR_MAP[selectedPreset.color]?.text ?? 'text-primary'}`}>{selectedPreset.icon}</span>
@@ -165,13 +166,15 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setSelectedPreset(null)}
-                  className="px-2.5 py-1 text-xs text-muted-foreground/60 hover:text-muted-foreground/80 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
+                  data-testid="chat-preset-cancel"
+                  className="px-2.5 py-1 text-sm text-muted-foreground/60 hover:text-muted-foreground/80 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleOptionSend}
-                  className="flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors cursor-pointer"
+                  data-testid="chat-preset-run"
+                  className="flex items-center gap-1 px-3 py-1 text-sm font-medium rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors cursor-pointer"
                 >
                   <Send className="w-3 h-3" /> Run
                 </button>
@@ -182,6 +185,7 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
                 <label className="text-sm font-medium text-muted-foreground/60">{opt.label}</label>
                 <input
                   type="text"
+                  data-testid={`chat-preset-option-${opt.key}`}
                   value={optionValues[opt.key] ?? ''}
                   onChange={(e) => setOptionValues((p) => ({ ...p, [opt.key]: e.target.value }))}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleOptionSend(); }}
@@ -193,30 +197,8 @@ export function OpsLaunchpad({ personaName, onSend }: { personaName: string; onS
             ))}
             <p className="text-xs text-muted-foreground/40 italic">{selectedPreset.prompt}</p>
           </div>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-muted-foreground/40">Click a card above to configure and run, or type a command directly</p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
-  );
-}
-
-// ── Mode Toggle Button ──────────────────────────────────────────────────
-
-export function ModeButton({ mode, current, onClick, icon, label }: {
-  mode: ChatMode; current: ChatMode; onClick: (m: ChatMode) => void; icon: React.ReactNode; label: string;
-}) {
-  const active = mode === current;
-  return (
-    <button
-      onClick={() => onClick(mode)}
-      className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-        active ? 'bg-primary/15 text-primary shadow-elevation-1' : 'text-muted-foreground/60 hover:text-muted-foreground/80'
-      }`}
-    >
-      {icon} {label}
-    </button>
   );
 }

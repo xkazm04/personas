@@ -1,55 +1,15 @@
 import { useState, useCallback } from 'react';
-import { Zap, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { useVaultStore } from "@/stores/vaultStore";
 import { getSelectAllQuery, isApiFamily } from '../introspectionQueries';
 import { TableContextMenu, type TableContextMenuState } from './TableContextMenu';
 import { useTableIntrospection, getCachedColumns } from '@/hooks/database/useTableIntrospection';
-import { useCredentialHealth } from '@/features/vault/hooks/health/useCredentialHealth';
 import { TableListSidebar } from './TableListSidebar';
 import { TableDetailPanel } from './TableDetailPanel';
+import { TestConnectionButton } from './TableActions';
 
 interface TablesTabProps {
   credentialId: string;
   serviceType: string;
-}
-
-/** Inline test-connection widget reused in empty/unsupported states. */
-function TestConnectionButton({ credentialId }: { credentialId: string }) {
-  const { result, isHealthchecking, checkStored } = useCredentialHealth(credentialId);
-
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <button
-        onClick={checkStored}
-        disabled={isHealthchecking}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"
-      >
-        {isHealthchecking ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-        ) : (
-          <Zap className="w-3.5 h-3.5" />
-        )}
-        {isHealthchecking ? 'Testing...' : 'Test Connection'}
-      </button>
-
-      {result && !isHealthchecking && (
-        <div
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
-            result.success
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
-          }`}
-        >
-          {result.success ? (
-            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-          ) : (
-            <XCircle className="w-3.5 h-3.5 shrink-0" />
-          )}
-          <span className="truncate max-w-xs">{result.message}</span>
-        </div>
-      )}
-    </div>
-  );
 }
 
 export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
@@ -58,38 +18,24 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
   const createTable = useVaultStore((s) => s.createDbSchemaTable);
 
   const {
-    tables,
-    redisKeys,
-    loading,
-    error,
-    isRedis,
-    family,
-    fetchTables,
-    fetchColumns,
-    columns,
-    columnsLoading,
-    columnsError,
-    clearCache,
+    tables, redisKeys, loading, error, isRedis, family,
+    fetchTables, fetchColumns, columns, columnsLoading, columnsError, clearCache,
   } = useTableIntrospection({ credentialId, serviceType });
 
   const isApi = isApiFamily(family);
 
-  // Selection state
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [keyTypeResult, setKeyTypeResult] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<TableContextMenuState | null>(null);
   const [filter, setFilter] = useState('');
 
-  // Fetch Redis key type
   const fetchKeyType = useCallback(async (key: string) => {
     try {
       const result = await executeDbQuery(credentialId, `TYPE ${key}`);
       const val = result.rows[0]?.[0];
       setKeyTypeResult(val != null ? String(val) : 'unknown');
-    } catch {
-      setKeyTypeResult('error');
-    }
+    } catch { setKeyTypeResult('error'); }
   }, [credentialId, executeDbQuery]);
 
   const handleSelectTable = useCallback((tableName: string) => {
@@ -114,17 +60,10 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
   const handlePinTable = useCallback(async (tableName: string) => {
     const cached = getCachedColumns(credentialId, tableName);
     const hints = cached
-      ? JSON.stringify(cached.map((c) => ({
-          name: c.column_name,
-          type: c.data_type,
-          nullable: c.is_nullable === 'YES',
-          default: c.column_default,
-        })))
+      ? JSON.stringify(cached.map((c) => ({ name: c.column_name, type: c.data_type, nullable: c.is_nullable === 'YES', default: c.column_default })))
       : null;
     const alreadyPinned = pinnedTables.some((t) => t.table_name === tableName);
-    if (!alreadyPinned) {
-      await createTable(credentialId, tableName, null, hints);
-    }
+    if (!alreadyPinned) await createTable(credentialId, tableName, null, hints);
   }, [credentialId, pinnedTables, createTable]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent, tableName: string) => {
@@ -133,15 +72,13 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
   }, []);
 
   const handleCopyQuery = useCallback((tableName: string) => {
-    const query = getSelectAllQuery(serviceType, tableName);
-    navigator.clipboard.writeText(query);
+    navigator.clipboard.writeText(getSelectAllQuery(serviceType, tableName));
   }, [serviceType]);
 
   const handleCopyName = useCallback((tableName: string) => {
     navigator.clipboard.writeText(tableName);
   }, []);
 
-  // Unsupported connector -- show test connection fallback
   if (family === 'unsupported') {
     return (
       <div className="flex flex-col items-center justify-center gap-4 h-full min-h-[300px]">
@@ -158,40 +95,22 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
   return (
     <div className="flex h-full min-h-[500px]">
       <TableListSidebar
-        tables={tables}
-        redisKeys={redisKeys}
-        loading={loading}
-        error={error}
-        isRedis={isRedis}
-        isApi={isApi}
-        filter={filter}
-        onFilterChange={setFilter}
-        selectedTable={selectedTable}
-        selectedKey={selectedKey}
+        tables={tables} redisKeys={redisKeys} loading={loading} error={error}
+        isRedis={isRedis} isApi={isApi} filter={filter} onFilterChange={setFilter}
+        selectedTable={selectedTable} selectedKey={selectedKey}
         pinnedTableNames={pinnedTableNames}
-        onSelectTable={handleSelectTable}
-        onSelectKey={handleSelectKey}
-        onRefresh={handleRefresh}
-        onContextMenu={handleContextMenu}
+        onSelectTable={handleSelectTable} onSelectKey={handleSelectKey}
+        onRefresh={handleRefresh} onContextMenu={handleContextMenu}
         credentialId={credentialId}
       />
-
       <TableDetailPanel
-        isRedis={isRedis}
-        isApi={isApi}
-        selectedTable={selectedTable}
-        selectedKey={selectedKey}
-        keyTypeResult={keyTypeResult}
-        tables={tables}
-        columns={columns}
-        columnsLoading={columnsLoading}
-        columnsError={columnsError}
+        isRedis={isRedis} isApi={isApi}
+        selectedTable={selectedTable} selectedKey={selectedKey}
+        keyTypeResult={keyTypeResult} tables={tables}
+        columns={columns} columnsLoading={columnsLoading} columnsError={columnsError}
         isPinned={selectedTable ? pinnedTableNames.has(selectedTable) : false}
-        onPinTable={handlePinTable}
-        family={family}
+        onPinTable={handlePinTable} family={family}
       />
-
-      {/* Context menu */}
       {contextMenu && (
         <TableContextMenu
           menu={contextMenu}

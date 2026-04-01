@@ -15,6 +15,9 @@ import {
 import { executePersona, getExecution } from "@/api/agents/executions";
 import type { Continuation } from "@/lib/bindings/Continuation";
 
+/** Active chat execution listener cleanup functions */
+let chatExecCleanup: (() => void) | null = null;
+
 export type ChatMode = 'ops' | 'agent';
 
 export interface ChatSlice {
@@ -166,12 +169,18 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       });
     }
 
-    // 4. Start execution
-    set({ chatStreaming: true });
+    // 4. Start execution — set executionPersonaId so useExecutionStream can match output
+    set({ chatStreaming: true, executionPersonaId: personaId, executionOutput: [], isExecuting: true });
     try {
-      await executePersona(personaId, undefined, conversationInput, undefined, continuation, crypto.randomUUID());
+      const exec = await executePersona(personaId, undefined, conversationInput, undefined, continuation, crypto.randomUUID());
+      if (exec?.id) {
+        set({ activeExecutionId: exec.id });
+        // Register Tauri event listeners for this execution's output + status.
+        // These are needed because the Chat tab doesn't mount usePersonaExecution.
+        setupChatExecListeners(exec.id, personaId, sessionId, set, get);
+      }
     } catch (err) {
-      reportError(err, "Failed to send chat message", set, { stateUpdates: { chatStreaming: false } });
+      reportError(err, "Failed to send chat message", set, { stateUpdates: { chatStreaming: false, isExecuting: false } });
     }
   },
 
@@ -301,3 +310,66 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     }
   },
 });
+
+// ---------------------------------------------------------------------------
+// Chat execution event listeners — registered per-execution in sendChatMessage
+// ---------------------------------------------------------------------------
+
+type SetFn = (partial: Partial<AgentStore> | ((s: AgentStore) => Partial<AgentStore>)) => void;
+type GetFn = () => AgentStore;
+
+function setupChatExecListeners(
+  executionId: string,
+  personaId: string,
+  sessionId: string,
+  set: SetFn,
+  get: GetFn,
+) {
+  // Clean up any previous listeners
+  chatExecCleanup?.();
+  chatExecCleanup = null;
+
+  let unlistenOutput: (() => void) | null = null;
+  let unlistenStatus: (() => void) | null = null;
+  let finalized = false;
+
+  const cleanup = () => {
+    unlistenOutput?.();
+    unlistenStatus?.();
+    unlistenOutput = null;
+    unlistenStatus = null;
+  };
+
+  (async () => {
+    // Dynamic imports to avoid breaking store initialization
+    const { listen } = await import("@tauri-apps/api/event");
+    const { EventName } = await import("@/lib/eventRegistry");
+    const { isTerminalState } = await import("@/lib/execution/executionState");
+    const { classifyLine } = await import("@/lib/utils/terminalColors");
+
+    unlistenOutput = await listen<{ execution_id: string; line: string }>(
+      EventName.EXECUTION_OUTPUT,
+      (event) => {
+        if (event.payload.execution_id !== executionId || finalized) return;
+        get().appendExecutionOutput(event.payload.line);
+      },
+    );
+    unlistenStatus = await listen<{ execution_id: string; status: string }>(
+      EventName.EXECUTION_STATUS,
+      (event) => {
+        if (event.payload.execution_id !== executionId || finalized) return;
+        if (!isTerminalState(event.payload.status)) return;
+        finalized = true;
+        const output = get().executionOutput;
+        const textLines = output.filter((l) => classifyLine(l) === 'text');
+        const fullResponse = textLines.join('\n').trim();
+        void get().finishChatStream(fullResponse, personaId, sessionId, executionId);
+        set({ isExecuting: false, activeExecutionId: null, executionPersonaId: null });
+        cleanup();
+        chatExecCleanup = null;
+      },
+    );
+  })();
+
+  chatExecCleanup = cleanup;
+}

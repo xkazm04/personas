@@ -3,8 +3,8 @@ import { Play, Shield, ShieldOff, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useVaultStore } from "@/stores/vaultStore";
 import { SqlEditor } from '../SqlEditor';
-import { QueryResultTable } from '../QueryResultTable';
 import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
+import { ConsoleOutput } from './ConsoleOutput';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 
 /** Extract a human-readable error message from a Tauri IPC error. */
@@ -35,11 +35,9 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
   const [result, setResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const runQuery = useCallback(async (text: string, allowMutation: boolean) => {
-    setExecuting(true);
-    setError(null);
-    setResult(null);
 
+  const runQuery = useCallback(async (text: string, allowMutation: boolean) => {
+    setExecuting(true); setError(null); setResult(null);
     try {
       const res = await executeDbQuery(credentialId, text, undefined, allowMutation);
       setResult(res);
@@ -62,9 +60,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
     await guardedExecute(text);
   }, [query, executing, guardedExecute]);
 
-  const handleHistoryClick = useCallback((q: string) => {
-    setQuery(q);
-  }, []);
+  const handleHistoryClick = useCallback((q: string) => { setQuery(q); }, []);
 
   return (
     <div className="flex flex-col h-full min-h-[500px]">
@@ -91,16 +87,10 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
             disabled={executing || !query.trim()}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {executing ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <Play className="w-3.5 h-3.5" />
-            )}
+            {executing ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
             {executing ? 'Running...' : 'Run Query'}
           </button>
-
           <span className="text-sm text-muted-foreground/60">Ctrl+Enter</span>
-
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={() => setSafeMode((v) => !v)}
@@ -117,7 +107,6 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           </div>
         </div>
 
-        {/* History chips */}
         {history.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-sm text-muted-foreground/60">Recent:</span>
@@ -141,9 +130,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="space-y-1 min-w-0">
-              <p className="text-sm font-medium text-amber-300/90">
-                This query modifies data
-              </p>
+              <p className="text-sm font-medium text-amber-300/90">This query modifies data</p>
               <p className="text-sm text-muted-foreground/60">
                 The statement appears to be a write operation (INSERT, UPDATE, DELETE, DROP, etc.).
                 Are you sure you want to execute it?
@@ -170,35 +157,13 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
         </div>
       )}
 
-      {/* Results area */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 border-t border-primary/5">
-        {error && (
-          <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-sm text-red-400 whitespace-pre-wrap font-mono">
-            {error}
-          </div>
-        )}
-
-        {result && (
-          <div className="mt-4">
-            <QueryResultTable result={result} />
-          </div>
-        )}
-
-        {!result && !error && !executing && !pendingMutation && (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-muted-foreground/60">
-              {language === 'redis' ? 'Enter a Redis command and click Run' : 'Write a query and press Run or Ctrl+Enter'}
-            </p>
-          </div>
-        )}
-
-        {executing && (
-          <div className="flex items-center justify-center h-full gap-2">
-            <LoadingSpinner className="text-muted-foreground/60" />
-            <span className="text-sm text-muted-foreground/60">Executing query...</span>
-          </div>
-        )}
-      </div>
+      <ConsoleOutput
+        result={result}
+        error={error}
+        executing={executing}
+        pendingMutation={pendingMutation}
+        language={language}
+      />
     </div>
   );
 }

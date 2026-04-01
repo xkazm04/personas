@@ -59,10 +59,9 @@ const SMART_PRESETS: SmartPreset[] = [
 interface ViewPresetBarProps {
   currentConfig: AgentListViewConfig;
   onApplyConfig: (config: AgentListViewConfig) => void;
-  connectorOptions: string[];
 }
 
-export function ViewPresetBar({ currentConfig, onApplyConfig, connectorOptions }: ViewPresetBarProps) {
+export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarProps) {
   const [views, setViews] = useState<SavedView[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -178,29 +177,6 @@ export function ViewPresetBar({ currentConfig, onApplyConfig, connectorOptions }
           >
             <X className="w-3 h-3" />
           </button>
-        </div>
-      )}
-
-      {/* Connector quick-filter pills */}
-      {connectorOptions.length > 0 && (
-        <div className="flex items-center gap-1">
-          {connectorOptions.slice(0, 4).map((name) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => onApplyConfig({
-                ...currentConfig,
-                connectorFilter: currentConfig.connectorFilter === name ? 'all' : name,
-              })}
-              className={`px-2 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${
-                currentConfig.connectorFilter === name
-                  ? 'bg-primary/15 border-primary/30 text-primary'
-                  : 'bg-secondary/30 border-primary/10 text-muted-foreground/60 hover:border-primary/20 hover:text-muted-foreground/80'
-              }`}
-            >
-              {name}
-            </button>
-          ))}
         </div>
       )}
 

@@ -72,18 +72,6 @@ export default function EventLogList() {
 
   const columns: DataGridColumn<PersonaEvent>[] = [
     {
-      key: 'type',
-      label: 'Type',
-      width: 'minmax(200px, 1.2fr)',
-      filterOptions: typeOptions,
-      filterValue: typeFilter,
-      onFilterChange: setTypeFilter,
-      render: (event) => {
-        const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
-        return <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>;
-      },
-    },
-    {
       key: 'persona',
       label: 'Persona',
       width: 'minmax(200px, 1.2fr)',
@@ -95,17 +83,29 @@ export default function EventLogList() {
         if (targetPersona) {
           return (
             <div className="flex items-center gap-2 min-w-0">
-              <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" />
+              <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" frameSize="md" />
               <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
             </div>
           );
         }
         return (
           <div className="flex items-center gap-2 min-w-0">
-            <PersonaIcon icon={null} color={null} display="framed" />
+            <PersonaIcon icon={null} color={null} display="framed" frameSize="md" />
             <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
           </div>
         );
+      },
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      width: 'minmax(200px, 1.2fr)',
+      filterOptions: typeOptions,
+      filterValue: typeFilter,
+      onFilterChange: setTypeFilter,
+      render: (event) => {
+        const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground/80';
+        return <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>;
       },
     },
     {

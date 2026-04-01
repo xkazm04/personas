@@ -1,0 +1,159 @@
+import {
+  Bot,
+  Workflow,
+  TrendingDown,
+  ArrowRightLeft,
+  CheckCircle2,
+  XCircle,
+  HelpCircle,
+  AlertTriangle,
+} from 'lucide-react';
+import type { SimulationResult } from './credentialGraph';
+
+const GRADE_ICON: Record<string, typeof CheckCircle2> = {
+  healthy: CheckCircle2,
+  degraded: AlertTriangle,
+  critical: XCircle,
+  unknown: HelpCircle,
+};
+
+const GRADE_COLOR: Record<string, string> = {
+  healthy: 'text-emerald-400',
+  degraded: 'text-amber-400',
+  critical: 'text-red-400',
+  unknown: 'text-muted-foreground/50',
+};
+
+interface AffectedPersonasProps {
+  personas: SimulationResult['affectedPersonas'];
+}
+
+export function AffectedPersonas({ personas }: AffectedPersonasProps) {
+  if (personas.length === 0) return null;
+
+  return (
+    <div>
+      <div className="text-xs font-medium text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
+        <Bot className="w-3 h-3" />
+        Personas That Would Stop ({personas.length})
+      </div>
+      <div className="space-y-1 max-h-[140px] overflow-y-auto">
+        {personas.map((persona) => {
+          const GradeIcon = GRADE_ICON[persona.grade] ?? HelpCircle;
+          const gradeColor = GRADE_COLOR[persona.grade] ?? GRADE_COLOR.unknown;
+          return (
+            <div
+              key={persona.id}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-secondary/30 border border-primary/8"
+            >
+              <GradeIcon className={`w-3 h-3 flex-shrink-0 ${gradeColor}`} />
+              <span className="text-xs text-foreground/80 flex-1 truncate">{persona.name}</span>
+              {persona.via && (
+                <span className="text-[10px] text-muted-foreground/50 font-mono">{persona.via}</span>
+              )}
+              <span className="text-[10px] text-muted-foreground/50">
+                {Math.round(persona.recentExecutions / 7)}/day
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+interface AffectedWorkflowsProps {
+  workflows: SimulationResult['affectedWorkflows'];
+}
+
+export function AffectedWorkflows({ workflows }: AffectedWorkflowsProps) {
+  if (workflows.length === 0) return null;
+
+  return (
+    <div>
+      <div className="text-xs font-medium text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
+        <Workflow className="w-3 h-3" />
+        Workflows That Would Break ({workflows.length})
+      </div>
+      <div className="space-y-1 max-h-[100px] overflow-y-auto">
+        {workflows.map((wf) => (
+          <div
+            key={wf.workflowId}
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-red-500/5 border border-red-500/10"
+          >
+            <TrendingDown className="w-3 h-3 text-red-400/60 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs text-foreground/80 block truncate">{wf.workflowName}</span>
+              <span className="text-[10px] text-muted-foreground/50">
+                {wf.brokenNodeLabels.length}/{wf.totalNodes} nodes broken
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface FailoverSuggestionsProps {
+  suggestions: SimulationResult['failoverSuggestions'];
+}
+
+export function FailoverSuggestions({ suggestions }: FailoverSuggestionsProps) {
+  if (suggestions.length === 0) return null;
+
+  return (
+    <div>
+      <div className="text-xs font-medium text-muted-foreground/60 mb-1.5 flex items-center gap-1.5">
+        <ArrowRightLeft className="w-3 h-3" />
+        Failover Credentials ({suggestions.length})
+      </div>
+      <div className="space-y-1">
+        {suggestions.map((fo) => (
+          <div
+            key={fo.credentialId}
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/10"
+          >
+            {fo.healthOk === true ? (
+              <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+            ) : fo.healthOk === false ? (
+              <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+            ) : (
+              <HelpCircle className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />
+            )}
+            <span className="text-xs text-foreground/80 flex-1 truncate">{fo.credentialName}</span>
+            <span className="text-[10px] text-muted-foreground/50 font-mono">{fo.serviceType}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface MitigationSummaryProps {
+  simulation: SimulationResult;
+}
+
+export function MitigationSummary({ simulation }: MitigationSummaryProps) {
+  if (simulation.severity === 'low') return null;
+
+  return (
+    <div className="rounded-lg bg-primary/5 border border-primary/10 p-2">
+      <div className="text-[10px] font-medium text-muted-foreground/60 mb-1">Suggested Mitigations</div>
+      <ul className="text-xs text-muted-foreground/70 space-y-0.5 list-disc list-inside">
+        {simulation.failoverSuggestions.some((f) => f.healthOk === true) && (
+          <li>Switch affected personas to a healthy failover credential</li>
+        )}
+        {simulation.affectedWorkflows.length > 0 && (
+          <li>Pause affected workflows before revoking</li>
+        )}
+        {simulation.estimatedDailyExecutionsLost > 10 && (
+          <li>Schedule revocation during low-traffic hours</li>
+        )}
+        {simulation.failoverSuggestions.length === 0 && (
+          <li>Create a replacement credential for <strong>{simulation.serviceType}</strong> before revoking</li>
+        )}
+      </ul>
+    </div>
+  );
+}

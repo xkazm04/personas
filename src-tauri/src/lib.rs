@@ -1520,6 +1520,9 @@ pub fn run() {
             commands::artist::artist_update_tags,
             commands::artist::artist_get_default_folder,
             commands::artist::artist_ensure_folders,
+            commands::artist::artist_read_image_base64,
+            commands::artist::artist_run_creative_session,
+            commands::artist::artist_cancel_creative_session,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

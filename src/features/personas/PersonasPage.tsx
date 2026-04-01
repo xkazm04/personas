@@ -9,7 +9,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import Sidebar from '@/features/shared/components/layout/sidebar/Sidebar';
 import { sections } from '@/features/shared/components/layout/sidebar/sidebarData';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
-import { CredentialNavProvider } from '@/features/vault/hooks/CredentialNavContext';
+import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
@@ -22,7 +22,7 @@ const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m =
 const PersonaOverviewPage = lazy(() => import('@/features/agents/components/persona/PersonaOverviewPage'));
 const UnifiedMatrixEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedMatrixEntry').then(m => ({ default: m.UnifiedMatrixEntry })));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
-const CredentialManager = lazy(() => import('@/features/vault/sub_manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
+const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
@@ -116,7 +116,7 @@ export default function PersonasPage() {
     const id = requestIdleCallback(() => {
       // Tier 1: most frequently visited sections
       import('@/features/overview/components/dashboard/OverviewPage').catch(silentCatch("PersonasPage:prefetchOverview"));
-      import('@/features/vault/sub_manager/CredentialManager').catch(silentCatch("PersonasPage:prefetchCredentialManager"));
+      import('@/features/vault/sub_credentials/manager/CredentialManager').catch(silentCatch("PersonasPage:prefetchCredentialManager"));
       import('@/features/settings/components/SettingsPage').catch(silentCatch("PersonasPage:prefetchSettings"));
     });
     // Tier 2: prefetch after a short delay so tier 1 chunks land first

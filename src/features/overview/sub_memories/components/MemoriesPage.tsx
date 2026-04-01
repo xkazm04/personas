@@ -1,22 +1,27 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Brain, Plus, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { Brain, Plus, Search, X, Sparkles, Shield } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { MemoryRow } from './MemoryCard';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
-import { MemoryFilterBar } from './MemoryFilterBar';
 import { MemoryConflictReview } from './MemoryConflictReview';
 import ReviewResultsModal from './ReviewResultsModal';
 import MemoryDetailModal from './MemoryDetailModal';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import type { MemoryReviewResult } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/types/types';
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 interface SortState { column: SortColumn; direction: SortDirection }
+
+type ViewTab = 'memories' | 'conflicts';
+
+const GRID_COLUMNS = '180px minmax(0,2fr) 100px 80px 100px 40px';
 
 export default function MemoriesPage() {
   const personas = useAgentStore((s) => s.personas);
@@ -34,8 +39,9 @@ export default function MemoriesPage() {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const latestFilterRequestRef = useRef(0);
-  const [sort, setSort] = useState<SortState>({ column: 'created_at', direction: 'desc' });
+  const [sort] = useState<SortState>({ column: 'created_at', direction: 'desc' });
   const [showAddForm, setShowAddForm] = useState(false);
+  const [viewTab, setViewTab] = useState<ViewTab>('memories');
 
   const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -66,14 +72,6 @@ export default function MemoriesPage() {
   const hasFilters = !!selectedPersonaId || !!selectedCategory || !!search;
   const clearFilters = useCallback(() => { setSearch(''); setSelectedPersonaId(null); setSelectedCategory(null); }, []);
 
-  const toggleSort = useCallback((column: SortColumn) => {
-    setSort((prev) =>
-      prev.column === column
-        ? { column, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
-        : { column, direction: 'desc' },
-    );
-  }, []);
-
   const { parentRef: memoryListRef, virtualizer } = useVirtualList(memories, 48);
 
   const handleReview = useCallback(async () => {
@@ -88,6 +86,19 @@ export default function MemoriesPage() {
 
   const closeReviewModal = useCallback(() => { setReviewResult(null); setReviewError(null); }, []);
 
+  const personaFilterOptions = useMemo(() => [
+    { value: '', label: 'All agents' },
+    ...personas.map((p) => ({ value: p.id, label: p.name })),
+  ], [personas]);
+
+  const categoryFilterOptions = useMemo(() => [
+    { value: '', label: 'All categories' },
+    ...ALL_MEMORY_CATEGORIES.map((cat) => ({
+      value: cat,
+      label: MEMORY_CATEGORY_COLORS[cat]?.label ?? cat,
+    })),
+  ], []);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -97,70 +108,144 @@ export default function MemoriesPage() {
         subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} title={isReviewing ? 'Review in progress...' : memoriesTotal === 0 ? 'No memories to review' : undefined} className="flex items-center gap-1.5 px-3 py-2 typo-heading rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
+            {/* Tab toggles */}
+            <button
+              onClick={() => setViewTab('memories')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors ${
+                viewTab === 'memories'
+                  ? 'bg-primary/10 text-foreground border border-primary/20'
+                  : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'
+              }`}
+            >
+              <Brain className="w-4 h-4" />
+              <span className="text-sm font-medium">Memories</span>
+            </button>
+            <button
+              onClick={() => setViewTab('conflicts')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-colors ${
+                viewTab === 'conflicts'
+                  ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25'
+                  : 'text-muted-foreground/80 hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'
+              }`}
+            >
+              <Shield className="w-4 h-4" />
+              <span className="text-sm font-medium">Conflicts</span>
+            </button>
+
+            <div className="w-px h-6 bg-primary/10" />
+
+            <button onClick={handleReview} disabled={isReviewing || memoriesTotal === 0} title={isReviewing ? 'Review in progress...' : memoriesTotal === 0 ? 'No memories to review' : undefined} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
               {isReviewing ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {isReviewing ? 'Reviewing...' : 'Review with AI'}
+              {isReviewing ? 'Reviewing...' : 'Review'}
             </button>
             <button
               onClick={() => setShowAddForm((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-2 typo-heading rounded-xl border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-xl border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}
             >
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
-              Add Memory
+              Add
             </button>
           </div>
         }
-      >
-        <div className="mt-4">
-          <MemoryFilterBar
-            search={search} onSearchChange={setSearch}
-            selectedPersonaId={selectedPersonaId} onPersonaChange={setSelectedPersonaId}
-            selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory}
-            hasFilters={hasFilters} onClearFilters={clearFilters} personas={personas}
-          />
-        </div>
-      </ContentHeader>
+      />
 
       {showAddForm && <InlineAddMemoryForm onClose={() => setShowAddForm(false)} />}
 
-      {memories.length > 1 && <div className="py-2"><MemoryConflictReview /></div>}
-
-      <ContentBody flex>
-        <div className="px-4 md:px-6 py-2 text-sm font-mono text-muted-foreground/80 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
-          Showing {memories.length} of {memoriesTotal} memories
-        </div>
-
-        {memories.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground/80">
-            <div className="w-16 h-16 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
-              <Brain className="w-8 h-8 text-violet-400/40" />
-            </div>
-            <div className="text-center">
-              <p className="typo-heading">No memories yet</p>
-              <p className="text-sm text-muted-foreground/80 mt-1 max-w-xs">
-                {hasFilters ? 'No memories match your filters. Try adjusting your search.' : 'When agents run, they can store valuable notes and learnings here.'}
-              </p>
-            </div>
+      {viewTab === 'conflicts' ? (
+        <ContentBody flex>
+          <div className="flex-1 overflow-y-auto p-4">
+            <MemoryConflictReview />
           </div>
-        ) : (
-          <>
-            <MemoryTableHeader sort={sort} onToggleSort={toggleSort} />
-            <div ref={memoryListRef} className="flex-1 overflow-y-auto">
-              <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                {virtualizer.getVirtualItems().map((virtualRow) => {
-                  const memory = memories[virtualRow.index]!;
-                  const persona = personaMap.get(memory.persona_id);
-                  return (
-                    <div key={memory.id} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}>
-                      <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} personaColor={persona?.color || '#6B7280'} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
-                    </div>
-                  );
-                })}
+        </ContentBody>
+      ) : (
+        <ContentBody flex>
+          {/* Search + count bar */}
+          <div className="flex items-center gap-3 px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
+            <span className="text-sm font-mono text-foreground/60 flex-shrink-0">
+              Showing {memories.length} of {memoriesTotal}
+            </span>
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search memories..."
+                className="w-full pl-8 pr-8 py-1.5 text-sm rounded-lg bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground/40 hover:text-foreground/70">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            {hasFilters && (
+              <button onClick={clearFilters} className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors">
+                <X className="w-3 h-3" /> Clear
+              </button>
+            )}
+          </div>
+
+          {memories.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-foreground/60">
+              <div className="w-16 h-16 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
+                <Brain className="w-8 h-8 text-violet-400/40" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-foreground/80">No memories yet</p>
+                <p className="text-sm text-foreground/60 mt-1 max-w-xs">
+                  {hasFilters ? 'No memories match your filters. Try adjusting your search.' : 'When agents run, they can store valuable notes and learnings here.'}
+                </p>
               </div>
             </div>
-          </>
-        )}
-      </ContentBody>
+          ) : (
+            <>
+              {/* Column headers with inline filters */}
+              <div className="hidden md:grid gap-0 border-b border-primary/10 bg-background sticky top-0 z-10" style={{ gridTemplateColumns: GRID_COLUMNS }}>
+                <div className="px-2 py-1.5 flex items-center">
+                  <ThemedSelect
+                    filterable
+                    options={personaFilterOptions}
+                    value={selectedPersonaId ?? ''}
+                    onValueChange={(v) => setSelectedPersonaId(v || null)}
+                    placeholder="Agent"
+                    wrapperClassName="w-full"
+                    className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                  />
+                </div>
+                <div className="flex items-center px-4 py-1.5 typo-label text-foreground/80">Title</div>
+                <div className="px-2 py-1.5 flex items-center">
+                  <ThemedSelect
+                    filterable
+                    options={categoryFilterOptions}
+                    value={selectedCategory ?? ''}
+                    onValueChange={(v) => setSelectedCategory(v || null)}
+                    placeholder="Category"
+                    wrapperClassName="w-full"
+                    className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                  />
+                </div>
+                <div className="flex items-center px-4 py-1.5 typo-label text-foreground/80">Priority</div>
+                <div className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Created</div>
+                <div className="px-2 py-1.5" />
+              </div>
+
+              <div ref={memoryListRef} className="flex-1 overflow-y-auto">
+                <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+                  {virtualizer.getVirtualItems().map((virtualRow) => {
+                    const memory = memories[virtualRow.index]!;
+                    const persona = personaMap.get(memory.persona_id);
+                    return (
+                      <div key={memory.id} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}>
+                        <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} personaColor={persona?.color || '#6B7280'} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+        </ContentBody>
+      )}
 
       <ReviewResultsModal reviewResult={reviewResult} reviewError={reviewError} onClose={closeReviewModal} />
 
@@ -177,30 +262,5 @@ export default function MemoriesPage() {
           );
         })()}
     </ContentBox>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Table header (desktop only)
-// ---------------------------------------------------------------------------
-
-function MemoryTableHeader({ sort, onToggleSort }: { sort: SortState; onToggleSort: (col: SortColumn) => void }) {
-  const SortIcon = ({ col }: { col: SortColumn }) =>
-    sort.column === col
-      ? sort.direction === 'asc' ? <ChevronUp className="w-3 h-3 transition-transform duration-200" /> : <ChevronDown className="w-3 h-3 transition-transform duration-200" />
-      : <ChevronDown className="w-3 h-3 opacity-30 transition-transform duration-200" />;
-
-  const sortBtnCls = (col: SortColumn) =>
-    `flex items-center gap-0.5 text-sm font-mono uppercase flex-shrink-0 transition-colors rounded-lg px-1.5 py-0.5 hover:bg-secondary/30 ${sort.column === col ? 'text-foreground/90 font-semibold border-b-2 border-primary/40' : 'text-muted-foreground/80 hover:text-muted-foreground'}`;
-
-  return (
-    <div className="hidden md:flex items-center gap-4 px-6 py-2 bg-secondary/30 border-b border-primary/10 sticky top-0 z-10">
-      <span className="w-[140px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Agent</span>
-      <span className="flex-1 text-sm font-mono uppercase text-muted-foreground/80">Title</span>
-      <span className="w-[70px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0">Category</span>
-      <button onClick={() => onToggleSort('importance')} className={`w-[60px] ${sortBtnCls('importance')}`}>Priority<SortIcon col="importance" /></button>
-      <span className="w-[60px] text-sm font-mono uppercase text-muted-foreground/80 flex-shrink-0 text-right">Created</span>
-      <span className="w-[32px] flex-shrink-0" />
-    </div>
   );
 }

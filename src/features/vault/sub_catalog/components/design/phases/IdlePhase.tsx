@@ -1,0 +1,138 @@
+import { Sparkles, Bot, Import, Globe } from 'lucide-react';
+import { QUICK_SERVICE_HINTS, HINT_COLORS } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
+import type { ConnectorDefinition } from '@/lib/types/types';
+import { IdleSuggestions } from './IdleSuggestions';
+
+interface IdlePhaseProps {
+  instruction: string;
+  onInstructionChange: (value: string) => void;
+  onStart: () => void;
+  onAutoSetup?: () => void;
+  onImportFrom?: () => void;
+  onUniversalSetup?: () => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
+  showTemplates: boolean;
+  onToggleTemplates: () => void;
+  templateSearch: string;
+  onTemplateSearchChange: (value: string) => void;
+  templateConnectors: ConnectorDefinition[];
+  expandedTemplateId: string | null;
+  onExpandTemplate: (id: string | null) => void;
+  onApplyTemplate: (connectorName: string) => void | Promise<void>;
+}
+
+export function IdlePhase({
+  instruction,
+  onInstructionChange,
+  onStart,
+  onAutoSetup,
+  onImportFrom,
+  onUniversalSetup,
+  onKeyDown,
+  showTemplates,
+  onToggleTemplates,
+  templateSearch,
+  onTemplateSearchChange,
+  templateConnectors,
+  expandedTemplateId,
+  onExpandTemplate,
+  onApplyTemplate,
+}: IdlePhaseProps) {
+  return (
+    <div
+      key="input"
+      className="animate-fade-slide-in space-y-4"
+    >
+      <div className="text-sm text-muted-foreground/80">
+        Describe the tool and credential type. Claude will generate the exact fields you need, then you can save them securely.
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={onToggleTemplates}
+          className="px-2.5 py-1 text-sm rounded-xl border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
+        >
+          From Catalog
+        </button>
+
+        {onUniversalSetup && (
+          <button
+            onClick={onUniversalSetup}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            Any Service...
+          </button>
+        )}
+
+        {onImportFrom && (
+          <button
+            onClick={onImportFrom}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+          >
+            <Import className="w-3.5 h-3.5" />
+            Import from...
+          </button>
+        )}
+
+        {QUICK_SERVICE_HINTS.map((hint) => (
+          <button
+            key={hint}
+            onClick={() => onInstructionChange(hint)}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-sm rounded-xl border border-primary/15 text-foreground/85 hover:bg-secondary/60 transition-colors"
+            data-testid={`hint-chip-${hint.split(' ')[0]?.toLowerCase()}`}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: HINT_COLORS[hint] ?? '#888' }}
+            />
+            {hint}
+          </button>
+        ))}
+      </div>
+
+      {showTemplates && (
+        <IdleSuggestions
+          templateSearch={templateSearch}
+          onTemplateSearchChange={onTemplateSearchChange}
+          templateConnectors={templateConnectors}
+          expandedTemplateId={expandedTemplateId}
+          onExpandTemplate={onExpandTemplate}
+          onApplyTemplate={onApplyTemplate}
+        />
+      )}
+
+      <textarea
+        value={instruction}
+        onChange={(e) => onInstructionChange(e.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder="e.g. Slack, OpenAI, GitHub, Stripe..."
+        rows={3}
+        autoFocus
+        data-testid="vault-design-input"
+        className="w-full px-4 py-3 bg-secondary/40 border border-primary/15 rounded-xl text-foreground text-sm placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all resize-none"
+      />
+      <div className="flex justify-end gap-2.5">
+        {onAutoSetup && (
+          <button
+            onClick={onAutoSetup}
+            disabled={!instruction.trim()}
+            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-cyan-600/20"
+          >
+            <Bot className="w-4 h-4" />
+            Auto-Setup
+          </button>
+        )}
+        <button
+          onClick={onStart}
+          disabled={!instruction.trim()}
+          data-testid="vault-design-submit"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20"
+        >
+          <Sparkles className="w-4 h-4" />
+          Design Credential
+        </button>
+      </div>
+    </div>
+  );
+}

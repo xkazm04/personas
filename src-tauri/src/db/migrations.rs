@@ -3616,6 +3616,12 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_artist_assets_type ON artist_assets(asset_type);
         CREATE INDEX IF NOT EXISTS idx_artist_assets_created ON artist_assets(created_at);
 
+        -- Deduplicate before creating unique index (keep earliest row per file_path)
+        DELETE FROM artist_assets WHERE rowid NOT IN (
+            SELECT MIN(rowid) FROM artist_assets GROUP BY file_path
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_artist_assets_path ON artist_assets(file_path);
+
         CREATE TABLE IF NOT EXISTS artist_tags (
             id              TEXT PRIMARY KEY,
             asset_id        TEXT NOT NULL REFERENCES artist_assets(id) ON DELETE CASCADE,

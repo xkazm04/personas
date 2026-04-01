@@ -3,7 +3,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
-import { useCredentialNav } from '@/features/vault/hooks/CredentialNavContext';
+import { useCredentialNav } from '@/features/vault/shared/hooks/CredentialNavContext';
 
 export function useToolSelectorState() {
   const selectedPersona = useAgentStore((state) => state.selectedPersona);

@@ -109,12 +109,13 @@ function GlassCell({ dim, items, status }: {
         <div className="absolute top-0 left-0 w-1/2 h-1/3 pointer-events-none" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)' }} />
 
         <div className="relative z-10">
-          {/* Label with accent dot */}
+          {/* Label with accent dot + status */}
           <div className="flex items-center gap-2.5 mb-3">
             <span className={`w-2 h-2 rounded-full ${dim.dotCls}`} />
             <span className="text-[12px] font-semibold uppercase tracking-[0.2em] text-foreground/70">
               {CELL_LABELS[dim.key] ?? dim.key}
             </span>
+            <div className="ml-auto"><StatusPill status={status} /></div>
           </div>
 
           {/* Watermark icon */}
@@ -136,10 +137,6 @@ function GlassCell({ dim, items, status }: {
             <p className="text-[13px] text-muted-foreground italic mt-2">No data yet</p>
           )}
 
-          {/* Status pill */}
-          <div className="absolute bottom-3 right-3">
-            <StatusPill status={status} />
-          </div>
         </div>
       </div>
     </motion.div>

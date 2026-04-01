@@ -5,7 +5,6 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { SEVERITY_LABELS, parseSuggestedActions } from '../libs/reviewHelpers';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -102,16 +101,14 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
       <div className="flex-shrink-0 px-4 py-3 border-b border-primary/10 bg-secondary/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="pop"
-              frameStyle={{ backgroundColor: colorWithAlpha(review.persona_color || '#6366f1', 0.08) }} />
             <div className="min-w-0">
-              <h3 className="typo-heading text-foreground/90 truncate">{review.persona_name || 'Unknown Persona'}</h3>
+              <h3 className="typo-heading text-foreground truncate">{review.persona_name || 'Unknown Persona'}</h3>
               <div className="flex items-center gap-2 mt-0.5">
                 <SeverityIndicator severity={review.severity} />
-                <span className="text-xs text-muted-foreground/60">{SEVERITY_LABELS[review.severity] ?? 'Info'} severity</span>
-                <span className="text-xs text-muted-foreground/50">·</span>
-                <span className="text-xs text-muted-foreground/60">{formatRelativeTime(review.created_at)}</span>
-                {isCloud && (<><span className="text-xs text-muted-foreground/40">·</span><span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"><Cloud className="w-2.5 h-2.5" />Cloud</span></>)}
+                <span className="text-sm text-foreground/70">{SEVERITY_LABELS[review.severity] ?? 'Info'} severity</span>
+                <span className="text-sm text-foreground/40">·</span>
+                <span className="text-sm text-foreground/70">{formatRelativeTime(review.created_at)}</span>
+                {isCloud && (<><span className="text-sm text-foreground/40">·</span><span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"><Cloud className="w-2.5 h-2.5" />Cloud</span></>)}
               </div>
             </div>
           </div>
@@ -130,19 +127,18 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         <div className="flex gap-3">
-          <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="pop"
-            frameClass="bg-violet-500/15 border border-violet-500/25 mt-0.5" />
+          <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="framed" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="typo-caption text-violet-400">{review.persona_name || 'Agent'}</span>
-              <span className="text-xs text-muted-foreground/60">{formatRelativeTime(review.created_at)}</span>
+              <span className="text-sm font-medium text-violet-400">{review.persona_name || 'Agent'}</span>
+              <span className="text-sm text-foreground/60">{formatRelativeTime(review.created_at)}</span>
             </div>
             <div className="rounded-xl bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
-              <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap">{review.content}</p>
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{review.content}</p>
             </div>
             {contextData && (
               <div className="mt-2 rounded-lg bg-secondary/30 border border-primary/10 px-3 py-2">
-                <div className="text-xs font-mono text-muted-foreground/60 uppercase mb-1">Context</div>
+                <div className="text-xs font-mono text-foreground/50 uppercase mb-1">Context</div>
                 <ContextDataPreview raw={contextData} />
               </div>
             )}
@@ -150,25 +146,25 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             {hasDecisions && isPending && (
               <div className="mt-3 rounded-xl border border-primary/10 bg-secondary/20 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-secondary/10">
-                  <span className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Decisions ({decisions.length} items)</span>
+                  <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Decisions ({decisions.length} items)</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => { const all: Record<string, 'accepted'> = {}; decisions.forEach((d) => { all[d.id] = 'accepted'; }); setDecisionStates(all); }}
-                      className="text-[11px] text-emerald-400/70 hover:text-emerald-400 transition-colors"
+                      className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
                     >
                       Accept all
                     </button>
-                    <span className="text-muted-foreground/30">|</span>
+                    <span className="text-foreground/30">|</span>
                     <button
                       onClick={() => { const all: Record<string, 'rejected'> = {}; decisions.forEach((d) => { all[d.id] = 'rejected'; }); setDecisionStates(all); }}
-                      className="text-[11px] text-red-400/70 hover:text-red-400 transition-colors"
+                      className="text-xs text-red-400 hover:text-red-300 transition-colors"
                     >
                       Reject all
                     </button>
-                    <span className="text-muted-foreground/30">|</span>
+                    <span className="text-foreground/30">|</span>
                     <button
                       onClick={() => setDecisionStates({})}
-                      className="text-[11px] text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+                      className="text-xs text-foreground/60 hover:text-foreground/80 transition-colors"
                     >
                       Clear
                     </button>
@@ -180,11 +176,11 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                     return (
                       <div key={d.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/20 transition-colors">
                         <div className="flex-1 min-w-0">
-                          <span className="text-sm text-foreground/80">{d.label}</span>
-                          {d.description && <p className="text-xs text-muted-foreground/50 mt-0.5">{d.description}</p>}
+                          <span className="text-sm text-foreground">{d.label}</span>
+                          {d.description && <p className="text-xs text-foreground/60 mt-0.5">{d.description}</p>}
                         </div>
                         {d.category && (
-                          <span className="text-[10px] text-muted-foreground/40 px-1.5 py-0.5 rounded bg-secondary/40 flex-shrink-0">{d.category}</span>
+                          <span className="text-xs text-foreground/50 px-1.5 py-0.5 rounded bg-secondary/40 flex-shrink-0">{d.category}</span>
                         )}
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
@@ -210,7 +206,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   <div className="flex items-center gap-3 px-3 py-2 border-t border-primary/10 bg-secondary/10">
                     {acceptedCount > 0 && <span className="text-xs text-emerald-400">{acceptedCount} accepted</span>}
                     {rejectedCount > 0 && <span className="text-xs text-red-400">{rejectedCount} rejected</span>}
-                    {decisions.length - acceptedCount - rejectedCount > 0 && <span className="text-xs text-muted-foreground/40">{decisions.length - acceptedCount - rejectedCount} undecided</span>}
+                    {decisions.length - acceptedCount - rejectedCount > 0 && <span className="text-xs text-foreground/50">{decisions.length - acceptedCount - rejectedCount} undecided</span>}
                   </div>
                 )}
               </div>
@@ -234,20 +230,19 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           return (
             <div key={msg.id} className={`animate-fade-slide-in flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
               {isUser ? (
-                <div className="icon-frame icon-frame-pop flex-shrink-0 mt-0.5 border bg-blue-500/15 border-blue-500/25">
+                <div className="icon-frame flex-shrink-0 mt-0.5 border bg-blue-500/15 border-blue-500/25">
                   <User className="w-3.5 h-3.5 text-blue-400" />
                 </div>
               ) : (
-                <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="pop"
-                  frameClass="bg-violet-500/15 border border-violet-500/25 mt-0.5" />
+                <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="framed" />
               )}
               <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : ''}`}>
-                  <span className={`typo-caption ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? 'You' : (review.persona_name || 'Agent')}</span>
-                  <span className="text-xs text-muted-foreground/60">{formatRelativeTime(msg.created_at)}</span>
+                  <span className={`text-sm font-medium ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? 'You' : (review.persona_name || 'Agent')}</span>
+                  <span className="text-sm text-foreground/60">{formatRelativeTime(msg.created_at)}</span>
                 </div>
                 <div className={`rounded-xl px-3.5 py-2.5 max-w-[85%] ${isUser ? 'bg-blue-500/[0.08] border border-blue-500/15' : 'bg-violet-500/[0.06] border border-violet-500/15'}`}>
-                  <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
             </div>
@@ -257,10 +252,10 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
         {!isPending && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/30 border border-primary/10">
             <Check className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-sm text-muted-foreground/70">
+            <span className="text-sm text-foreground/80">
               Review {review.status} {review.resolved_at ? `on ${new Date(review.resolved_at).toLocaleString()}` : ''}
             </span>
-            {review.reviewer_notes && <span className="text-sm text-foreground/70 italic ml-1">-- {review.reviewer_notes}</span>}
+            {review.reviewer_notes && <span className="text-sm text-foreground italic ml-1">-- {review.reviewer_notes}</span>}
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -285,7 +280,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             )}
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground/50">{isCloud ? 'Approve or reject this cloud review' : 'Enter to send · Shift+Enter for new line'}</span>
+            <span className="text-xs text-foreground/50">{isCloud ? 'Approve or reject this cloud review' : 'Enter to send · Shift+Enter for new line'}</span>
             <div className="flex items-center gap-2">
               <button onClick={() => {
                 // Include per-item decisions in reviewer notes for multi-decision reviews

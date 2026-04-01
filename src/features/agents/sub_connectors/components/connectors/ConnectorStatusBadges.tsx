@@ -1,5 +1,5 @@
 import { Star, ArrowLeftRight, AlertCircle, X, CheckCircle2, XCircle } from 'lucide-react';
-import { translateHealthcheckMessage } from '@/features/vault/sub_design/CredentialDesignHelpers';
+import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
 
