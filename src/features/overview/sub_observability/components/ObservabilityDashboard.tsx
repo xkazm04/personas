@@ -76,8 +76,8 @@ export default function ObservabilityDashboard() {
       <ContentHeader
         icon={<Stethoscope className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
-        title={t.overview.observability_page.title}
-        subtitle={t.overview.observability_page.subtitle}
+        title={"title"}
+        subtitle={"subtitle"}
         actions={
           <>
             <button
@@ -85,7 +85,7 @@ export default function ObservabilityDashboard() {
               className={`relative p-1.5 rounded-lg border transition-colors ${
                 showAlerts ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-primary/15 text-muted-foreground/90 hover:bg-secondary/50'
               }`}
-              title={t.overview.observability_page.alert_rules}
+              title={"alert_rules"}
             >
               <Bell className="w-3.5 h-3.5" />
               {activeAlertCount > 0 && (
@@ -97,7 +97,7 @@ export default function ObservabilityDashboard() {
             <button
               onClick={d.refreshAll}
               className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
-              title={t.overview.observability_page.refresh_metrics}
+              title={"refresh_metrics"}
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -106,7 +106,7 @@ export default function ObservabilityDashboard() {
               className={`p-1.5 rounded-lg border transition-colors ${
                 d.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/90'
               }`}
-              title={d.autoRefresh ? t.overview.analytics.auto_refresh_on : t.overview.analytics.auto_refresh_off}
+              title={d.autoRefresh ? "Auto-refresh on" : "Auto-refresh off"}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${d.autoRefresh ? 'animate-spin motion-reduce:animate-none' : ''}`} style={d.autoRefresh ? { animationDuration: '3s' } : {}} />
             </button>

@@ -295,49 +295,47 @@ pub fn next_fire_time_local(schedule: &CronSchedule, from: DateTime<Utc>) -> Opt
             return Some(current);
         }
 
-        // Optimization: skip ahead using local-time components
+        // Optimization: skip ahead using local-time components.
+        // All with_hour/with_minute/with_day/with_month calls use unwrap_or_else
+        // to fall back to simple minute-level advancement during DST gaps where
+        // certain local times do not exist.
         let local = current.with_timezone(&Local);
 
         if !schedule.has_month(local.month()) {
             let next_month = if local.month() == 12 {
                 local
                     .with_year(local.year() + 1)
-                    .unwrap()
-                    .with_month(1)
-                    .unwrap()
-                    .with_day(1)
-                    .unwrap()
+                    .and_then(|d| d.with_month(1))
+                    .and_then(|d| d.with_day(1))
             } else {
                 local
                     .with_month(local.month() + 1)
-                    .unwrap()
-                    .with_day(1)
-                    .unwrap()
+                    .and_then(|d| d.with_day(1))
             };
-            current = next_month
-                .with_hour(0)
-                .unwrap()
-                .with_minute(0)
-                .unwrap()
-                .with_timezone(&Utc);
+            current = match next_month.and_then(|d| d.with_hour(0)).and_then(|d| d.with_minute(0)) {
+                Some(t) => t.with_timezone(&Utc),
+                None => current + Duration::minutes(1),
+            };
             continue;
         }
 
         if !day_matches(schedule, local.day(), local.weekday().num_days_from_sunday()) {
-            current = (local + Duration::days(1))
+            let next_day = (local + Duration::days(1))
                 .with_hour(0)
-                .unwrap()
-                .with_minute(0)
-                .unwrap()
-                .with_timezone(&Utc);
+                .and_then(|d| d.with_minute(0));
+            current = match next_day {
+                Some(t) => t.with_timezone(&Utc),
+                None => current + Duration::minutes(1),
+            };
             continue;
         }
 
         if !schedule.has_hour(local.hour()) {
-            current = (local + Duration::hours(1))
-                .with_minute(0)
-                .unwrap()
-                .with_timezone(&Utc);
+            let next_hour = (local + Duration::hours(1)).with_minute(0);
+            current = match next_hour {
+                Some(t) => t.with_timezone(&Utc),
+                None => current + Duration::minutes(1),
+            };
             continue;
         }
 

@@ -111,18 +111,22 @@ fn validate_mdns_peer(
         return None;
     }
 
-    // 4. Cross-reference with trusted_peers
+    // 4. Cross-reference with trusted_peers.
+    // Mark non-trusted peers as "unverified" rather than "unknown" to signal
+    // that the advertised peer_id has NOT been proven via Hello/HelloAck
+    // handshake yet. The UI should display unverified peers with a warning
+    // until post-handshake identity verification upgrades their status.
     let trust_status = if is_trusted_peer(pool, raw_peer_id) {
         "trusted".to_string()
     } else {
-        "unknown".to_string()
+        "unverified".to_string()
     };
 
-    if trust_status == "unknown" {
+    if trust_status == "unverified" {
         tracing::info!(
             peer_id = %raw_peer_id,
             display_name = %display_name,
-            "mDNS: discovered untrusted peer"
+            "mDNS: discovered unverified peer (identity not yet proven via handshake)"
         );
     }
 

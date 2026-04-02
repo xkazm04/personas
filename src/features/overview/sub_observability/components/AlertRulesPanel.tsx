@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
@@ -45,7 +44,6 @@ function RuleForm({
   onSubmit: (data: RuleFormData) => void;
   onCancel: () => void;
 }) {
-  const { t } = useTranslation();
   const [form, setForm] = useState<RuleFormData>(initial ?? DEFAULT_FORM);
   const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === form.metric);
 
@@ -55,7 +53,7 @@ function RuleForm({
       <input
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
-        placeholder={t.overview.observability_page.rule_name_placeholder}
+        placeholder={"rule_name_placeholder"}
         className="w-full px-3 py-2 typo-body rounded-lg bg-secondary/40 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
       />
 
@@ -160,7 +158,6 @@ function RuleRow({
   onDelete: () => void;
   onEdit: () => void;
 }) {
-  const { t } = useTranslation();
   const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === rule.metric);
   const sevInfo = ALERT_SEVERITY_OPTIONS.find(s => s.value === rule.severity);
   const scopeName = rule.persona_id ? personas.find(p => p.id === rule.persona_id)?.name ?? 'Unknown' : 'Global';
@@ -187,10 +184,10 @@ function RuleRow({
           {metricInfo?.label ?? rule.metric} {rule.operator} {rule.threshold}{metricInfo?.unit ?? ''} &middot; {scopeName}
         </p>
       </div>
-      <button onClick={onEdit} className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors" title={t.overview.observability_page.edit}>
+      <button onClick={onEdit} className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors" title={"edit"}>
         <Pencil className="w-3.5 h-3.5" />
       </button>
-      <button onClick={onDelete} className="p-1 text-muted-foreground/50 hover:text-red-400 transition-colors" title={t.common.delete}>
+      <button onClick={onDelete} className="p-1 text-muted-foreground/50 hover:text-red-400 transition-colors" title="Delete">
         <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>

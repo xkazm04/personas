@@ -383,10 +383,11 @@ pub async fn gitlab_list_agents(
     let client = get_gitlab_client(&state).await?;
     match client.list_duo_agents(project_id).await {
         Ok(agents) => Ok(agents),
-        Err(_) => {
-            // Duo Agent API not available -- return empty list
+        Err(ref e) if e.to_string().contains("404") || e.to_string().contains("501") => {
+            // Duo Agent API not available on this GitLab instance — return empty list
             Ok(vec![])
         }
+        Err(e) => Err(e),
     }
 }
 
@@ -645,48 +646,63 @@ pub async fn gitlab_deploy_persona_versioned(
         }
     };
 
-    // Compute next version number
+    // Compute next version number with retry on tag conflict
     let max_version = existing_tags
         .iter()
         .filter_map(|t| parse_persona_tag(&t.name))
         .filter_map(|(_, v, _)| v.strip_prefix('v').and_then(|n| n.parse::<u32>().ok()))
         .max()
         .unwrap_or(0);
-    let next_version = max_version + 1;
-
-    let tag_name = build_persona_tag(&persona.name, next_version, environment.as_deref());
     let default_branch = project.default_branch.as_deref().unwrap_or("main");
 
-    let tag_message = format!(
-        "Deploy {} v{} via Personas Desktop{}",
-        persona.name,
-        next_version,
-        environment
-            .as_ref()
-            .map(|e| format!(" ({})", e))
-            .unwrap_or_default()
-    );
+    // Retry tag creation up to 3 times with incremented version on conflict
+    let mut version = max_version + 1;
+    let max_tag_attempts = 3u32;
+    for attempt in 0..max_tag_attempts {
+        let tag_name = build_persona_tag(&persona.name, version, environment.as_deref());
+        let tag_message = format!(
+            "Deploy {} v{} via Personas Desktop{}",
+            persona.name,
+            version,
+            environment
+                .as_ref()
+                .map(|e| format!(" ({})", e))
+                .unwrap_or_default()
+        );
 
-    match client
-        .create_tag(project_id, &tag_name, default_branch, Some(&tag_message))
-        .await
-    {
-        Ok(_tag) => {
-            tracing::info!(
-                persona_id = %persona_id,
-                project_id = project_id,
-                tag = %tag_name,
-                "Created version tag for persona deployment"
-            );
-        }
-        Err(e) => {
-            tracing::warn!(
-                persona_id = %persona_id,
-                project_id = project_id,
-                tag = %tag_name,
-                "Failed to create version tag (deploy succeeded): {}",
-                e
-            );
+        match client
+            .create_tag(project_id, &tag_name, default_branch, Some(&tag_message))
+            .await
+        {
+            Ok(_tag) => {
+                tracing::info!(
+                    persona_id = %persona_id,
+                    project_id = project_id,
+                    tag = %tag_name,
+                    "Created version tag for persona deployment"
+                );
+                break;
+            }
+            Err(e) => {
+                if attempt + 1 < max_tag_attempts {
+                    tracing::info!(
+                        persona_id = %persona_id,
+                        tag = %tag_name,
+                        "Tag conflict, retrying with incremented version: {}",
+                        e
+                    );
+                    version += 1;
+                } else {
+                    tracing::warn!(
+                        persona_id = %persona_id,
+                        project_id = project_id,
+                        tag = %tag_name,
+                        "Failed to create version tag after {} attempts (deploy succeeded): {}",
+                        max_tag_attempts,
+                        e
+                    );
+                }
+            }
         }
     }
 

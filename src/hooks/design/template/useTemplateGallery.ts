@@ -46,11 +46,11 @@ export interface UseTemplateGalleryReturn {
 export function useTemplateGallery(coverageServiceTypes?: string[], perPage?: number): UseTemplateGalleryReturn {
   // Ref to break the circular dependency: AI search needs to write into query state,
   // but query needs aiSearchActive from AI search.
-  const queryRef = useRef<UseGalleryQueryReturn>(null!);
+  const queryRef = useRef<UseGalleryQueryReturn | null>(null);
 
   const handleAiResults = useCallback((items: PersonaDesignReview[], total: number) => {
-    queryRef.current.setItems(items);
-    queryRef.current.setTotal(total);
+    queryRef.current?.setItems(items);
+    queryRef.current?.setTotal(total);
   }, []);
 
   const ai = useAiSearch(handleAiResults);
@@ -60,7 +60,7 @@ export function useTemplateGallery(coverageServiceTypes?: string[], perPage?: nu
 
   // Compose search setter: in AI mode clear AI state on empty input
   const setSearch = useCallback((value: string) => {
-    queryRef.current.setSearch(value);
+    queryRef.current?.setSearch(value);
     if (ai.aiSearchMode && !value.trim()) {
       ai.clearAiSearch();
     }
@@ -70,7 +70,7 @@ export function useTemplateGallery(coverageServiceTypes?: string[], perPage?: nu
   // refetch doesn't use the stale AI query as a keyword filter.
   const clearAiSearch = useCallback(() => {
     ai.clearAiSearch();
-    queryRef.current.setSearch('');
+    queryRef.current?.setSearch('');
   }, [ai.clearAiSearch]);
 
   return {

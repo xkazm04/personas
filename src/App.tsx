@@ -17,12 +17,33 @@ import { useTranslation } from '@/i18n/useTranslation';
  * Logs the failure but doesn't show UI — used for BackgroundServices which
  * normally renders nothing.
  */
-class SilentErrorBoundary extends Component<{ name: string; children: ReactNode }, { hasError: boolean }> {
-  state = { hasError: false };
+class SilentErrorBoundary extends Component<
+  { name: string; children: ReactNode },
+  { hasError: boolean; retryCount: number }
+> {
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private static readonly MAX_RETRIES = 3;
+  private static readonly BACKOFF_MS = [5_000, 15_000, 45_000];
+
+  state = { hasError: false, retryCount: 0 };
+
   static getDerivedStateFromError() { return { hasError: true }; }
+
   componentDidCatch(error: Error) {
-    console.error(`[${this.props.name}] silently failed:`, error);
+    console.error(`[${this.props.name}] silently failed (attempt ${this.state.retryCount + 1}):`, error);
+
+    if (this.state.retryCount < SilentErrorBoundary.MAX_RETRIES) {
+      const delay = SilentErrorBoundary.BACKOFF_MS[this.state.retryCount] ?? 45_000;
+      this.retryTimer = setTimeout(() => {
+        this.setState((prev) => ({ hasError: false, retryCount: prev.retryCount + 1 }));
+      }, delay);
+    }
   }
+
+  componentWillUnmount() {
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+  }
+
   render() { return this.state.hasError ? null : this.props.children; }
 }
 

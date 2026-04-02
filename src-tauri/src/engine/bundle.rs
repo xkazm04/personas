@@ -313,7 +313,7 @@ pub fn preview_bundle(
     let (manifest, sig) = parse_bundle(bundle_bytes)?;
 
     // Verify signature against a trusted stored key (not the embedded key).
-    let manifest_bytes = serde_json::to_string(&manifest)?;
+    let manifest_bytes = serde_json::to_string_pretty(&manifest)?;
     let (sig_valid, signer_trusted) =
         verify_against_trusted_key(pool, &sig, manifest_bytes.as_bytes());
 
@@ -476,7 +476,7 @@ pub fn verify_bundle(
     let (manifest, sig) = parse_bundle(bundle_bytes)?;
 
     // Verify signature against a trusted stored key (not the embedded key).
-    let manifest_bytes = serde_json::to_string(&manifest)?;
+    let manifest_bytes = serde_json::to_string_pretty(&manifest)?;
     let (sig_valid, signer_trusted) =
         verify_against_trusted_key(pool, &sig, manifest_bytes.as_bytes());
 

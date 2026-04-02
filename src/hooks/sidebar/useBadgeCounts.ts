@@ -21,8 +21,10 @@ export function useBadgeCounts(): BadgeCounts {
 
   useEffect(() => {
     let unsub: (() => void) | undefined;
+    let cancelled = false;
 
     void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+      if (cancelled) return;
       // Initial read
       const state = useOverviewStore.getState();
       setCounts({
@@ -60,7 +62,10 @@ export function useBadgeCounts(): BadgeCounts {
       });
     });
 
-    return () => unsub?.();
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
   }, []);
 
   return counts;

@@ -60,11 +60,24 @@ pub async fn invoke_automation(
 
     let mut result = invoke_webhook(webhook_url, method, body, &auth_resolution.headers, timeout_ms).await;
 
-    // Retry on transient errors with exponential backoff (capped at 30s)
+    // Retry on transient errors with exponential backoff (capped at 30s).
+    // On HTTP 401, re-resolve auth headers to pick up rotated/refreshed credentials.
     const MAX_BACKOFF_MS: u64 = 30_000;
+    let mut current_headers = auth_resolution.headers;
     if max_attempts > 1 {
         let mut attempt = 1u32;
         while attempt < max_attempts && is_retryable_error(&result) {
+            if is_auth_failure(&result) {
+                match resolve_auth_headers(pool, automation).await {
+                    Ok(fresh) => {
+                        current_headers = fresh.headers;
+                        warnings.extend(fresh.warnings);
+                    }
+                    Err(e) => {
+                        warnings.push(format!("Failed to refresh auth on retry: {e}"));
+                    }
+                }
+            }
             let backoff_ms = (1000u64 * 2u64.pow(attempt - 1)).min(MAX_BACKOFF_MS);
             let backoff = std::time::Duration::from_millis(backoff_ms);
             tracing::info!(
@@ -75,7 +88,7 @@ pub async fn invoke_automation(
                 "Retrying webhook after transient failure"
             );
             tokio::time::sleep(backoff).await;
-            result = invoke_webhook(webhook_url, method, body, &auth_resolution.headers, timeout_ms).await;
+            result = invoke_webhook(webhook_url, method, body, &current_headers, timeout_ms).await;
             attempt += 1;
         }
         if attempt > 1 {
@@ -293,7 +306,15 @@ fn is_retryable_error(result: &Result<(String, u16, Vec<String>), AppError>) -> 
             msg.contains("timed out")
                 || msg.contains("Failed to connect")
                 || msg.contains("HTTP 5")
+                || msg.contains("HTTP 401")
         }
+        _ => false,
+    }
+}
+
+fn is_auth_failure(result: &Result<(String, u16, Vec<String>), AppError>) -> bool {
+    match result {
+        Err(AppError::Execution(msg)) => msg.contains("HTTP 401"),
         _ => false,
     }
 }

@@ -72,6 +72,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         loginTimeoutId = null;
         const s = useAuthStore.getState();
         if (s.isLoading && !s.isAuthenticated) {
+          void invoke("clear_pending_oauth");
           set({
             isLoading: false,
             error: "Login timed out. Please try again.",
@@ -80,6 +81,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       }, 120_000);
     } catch (err) {
       clearLoginTimeout();
+      void invoke("clear_pending_oauth");
       set({ isLoading: false, error: extractError(err) });
     }
   },

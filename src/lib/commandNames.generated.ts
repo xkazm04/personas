@@ -324,6 +324,7 @@ export type CommandName =
   | "get_assertion_result_history"
   | "get_assertion_results_for_execution"
   | "get_auth_state"
+  | "clear_pending_oauth"
   | "get_automation"
   | "get_automation_runs"
   | "get_bulk_delivery_summaries"

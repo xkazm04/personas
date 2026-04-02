@@ -452,17 +452,26 @@ pub fn evict_excess(
 
         let conn = pool.get()?;
 
-        let total: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM team_memories WHERE team_id = ?1",
+        // Count only auto-generated memories (eligible for eviction) separately
+        // to avoid computing excess when all memories are manual-only.
+        let auto_count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM team_memories WHERE team_id = ?1 AND run_id IS NOT NULL",
             params![team_id],
             |row| row.get(0),
         )?;
+        let manual_count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM team_memories WHERE team_id = ?1 AND run_id IS NULL",
+            params![team_id],
+            |row| row.get(0),
+        )?;
+        let total = auto_count + manual_count;
 
         if total <= cap {
             return Ok(0);
         }
 
-        let excess = total - cap;
+        // Only evict from auto-generated pool; cap the excess to what is evictable
+        let excess = std::cmp::min(total - cap, auto_count);
 
         // Delete the `excess` lowest-value auto-generated memories.
         // Eviction order: lowest importance first, then oldest first.

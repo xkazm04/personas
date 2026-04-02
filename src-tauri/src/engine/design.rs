@@ -34,7 +34,7 @@ pub struct FeasibilityResult {
 // ============================================================================
 
 /// Build a prompt that instructs Claude to produce a DesignAnalysisResult JSON.
-pub fn build_design_prompt(
+pub(crate) fn build_design_prompt(
     persona: &Persona,
     tools: &[PersonaToolDefinition],
     connectors: &[ConnectorDefinition],
@@ -122,7 +122,7 @@ pub fn build_design_prompt(
 /// Build a refinement prompt that includes conversation history for richer multi-turn context.
 /// When `conversation_history` is provided, earlier exchanges are injected so the LLM
 /// can see the full thread of instructions, questions, answers, and intermediate results.
-pub fn build_refinement_prompt_with_history(
+pub(crate) fn build_refinement_prompt_with_history(
     current_result_json: &str,
     feedback: &str,
     design_context: Option<&str>,

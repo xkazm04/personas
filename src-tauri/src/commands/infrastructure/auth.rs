@@ -70,10 +70,18 @@ pub struct AuthStateInner {
 }
 
 impl AuthStateInner {
+    fn is_token_expired(&self) -> bool {
+        match self.token_expires_at {
+            Some(expires_at) => std::time::Instant::now() >= expires_at,
+            None => false,
+        }
+    }
+
     pub fn to_response(&self) -> AuthStateResponse {
         let offline_authed = self.is_offline && self.user.is_some() && self.access_token.is_none();
+        let token_valid = self.access_token.is_some() && !self.is_token_expired();
         AuthStateResponse {
-            is_authenticated: self.access_token.is_some() || offline_authed,
+            is_authenticated: token_valid || offline_authed,
             is_offline: self.is_offline,
             is_offline_authenticated: offline_authed,
             user: self.user.clone(),
@@ -440,6 +448,17 @@ pub async fn get_auth_state(
 ) -> Result<AuthStateResponse, AppError> {
     let auth = state.auth.lock().await;
     Ok(auth.to_response())
+}
+
+/// Clear a stale pending OAuth state that blocks new login attempts.
+#[tauri::command]
+pub async fn clear_pending_oauth(
+    state: tauri::State<'_, Arc<AppState>>,
+) -> Result<(), AppError> {
+    let mut auth = state.auth.lock().await;
+    auth.pending_oauth_state = None;
+    tracing::info!("Cleared pending OAuth state");
+    Ok(())
 }
 
 /// Log out: clear tokens from keyring and reset in-memory state.

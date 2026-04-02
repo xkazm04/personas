@@ -113,10 +113,13 @@ pub fn update_persona(
     let pid = id.clone();
     tauri::async_runtime::spawn(async move { pool.invalidate(&pid).await; });
 
-    // Auto-sync to cloud if connected (fire-and-forget)
+    // Auto-sync to cloud if connected (fire-and-forget).
+    // Use the already-fetched result to avoid re-reading stale data if
+    // another update races with the sync task.
     let cloud_client = state.cloud_client.clone();
     let db = state.db.clone();
     let sync_id = id.clone();
+    let sync_persona = result.clone();
     tauri::async_runtime::spawn(async move {
         let client = match cloud_client.lock().await.clone() {
             Some(c) => c,
@@ -131,32 +134,28 @@ pub fn update_persona(
         if !has_deployment {
             return;
         }
-        // Re-read persona + tools and upsert to cloud
-        let persona = match crate::db::repos::core::personas::get_by_id(&db, &sync_id) {
-            Ok(p) => p,
-            Err(_) => return,
-        };
+        // Use the already-updated persona snapshot; only tools need a DB read
         let tools_list = match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
             Ok(t) => t,
             Err(_) => return,
         };
-        let prompt = engine::prompt::assemble_prompt(&persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = engine::prompt::assemble_prompt(&sync_persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
         let body = serde_json::json!({
-            "id": persona.id,
-            "name": persona.name,
-            "description": persona.description,
+            "id": sync_persona.id,
+            "name": sync_persona.name,
+            "description": sync_persona.description,
             "systemPrompt": prompt,
-            "structuredPrompt": persona.structured_prompt,
-            "icon": persona.icon,
-            "color": persona.color,
+            "structuredPrompt": sync_persona.structured_prompt,
+            "icon": sync_persona.icon,
+            "color": sync_persona.color,
             "enabled": true,
-            "maxConcurrent": persona.max_concurrent,
-            "timeoutMs": persona.timeout_ms,
-            "modelProfile": persona.model_profile,
-            "maxBudgetUsd": persona.max_budget_usd,
-            "maxTurns": persona.max_turns,
-            "designContext": persona.design_context,
-            "groupId": persona.group_id,
+            "maxConcurrent": sync_persona.max_concurrent,
+            "timeoutMs": sync_persona.timeout_ms,
+            "modelProfile": sync_persona.model_profile,
+            "maxBudgetUsd": sync_persona.max_budget_usd,
+            "maxTurns": sync_persona.max_turns,
+            "designContext": sync_persona.design_context,
+            "groupId": sync_persona.group_id,
         });
         if let Err(e) = client.upsert_persona(&body).await {
             tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed");
@@ -168,6 +167,9 @@ pub fn update_persona(
     Ok(result)
 }
 
+/// Maximum allowed size for the parameters JSON field (64 KB).
+const MAX_PARAMETERS_JSON_SIZE: usize = 65_536;
+
 /// Lightweight parameter-only update — invalidates cached sessions so the
 /// engine picks up the new parameter values immediately.
 #[tauri::command]
@@ -177,6 +179,23 @@ pub fn update_persona_parameters(
     parameters: Option<String>,
 ) -> Result<Persona, AppError> {
     require_auth_sync(&state)?;
+
+    // Validate the parameters JSON before storing
+    if let Some(ref params_json) = parameters {
+        if params_json.len() > MAX_PARAMETERS_JSON_SIZE {
+            return Err(AppError::Validation(format!(
+                "Parameters JSON exceeds maximum size of {} bytes",
+                MAX_PARAMETERS_JSON_SIZE
+            )));
+        }
+        // Verify it's valid JSON
+        if !params_json.is_empty() {
+            serde_json::from_str::<serde_json::Value>(params_json).map_err(|e| {
+                AppError::Validation(format!("Parameters must be valid JSON: {e}"))
+            })?;
+        }
+    }
+
     let result = repo::update(
         &state.db,
         &id,
@@ -191,10 +210,12 @@ pub fn update_persona_parameters(
     let pid = id.clone();
     tauri::async_runtime::spawn(async move { pool.invalidate(&pid).await; });
 
-    // Auto-sync to cloud if connected (fire-and-forget)
+    // Auto-sync to cloud if connected (fire-and-forget).
+    // Use the already-fetched result to avoid re-reading stale data.
     let cloud_client = state.cloud_client.clone();
     let db = state.db.clone();
     let sync_id = id.clone();
+    let sync_persona = result.clone();
     tauri::async_runtime::spawn(async move {
         let client = match cloud_client.lock().await.clone() {
             Some(c) => c,
@@ -207,31 +228,27 @@ pub fn update_persona_parameters(
         if !deployments.iter().any(|d| d.persona_id == sync_id) {
             return;
         }
-        let persona = match crate::db::repos::core::personas::get_by_id(&db, &sync_id) {
-            Ok(p) => p,
-            Err(_) => return,
-        };
         let tools_list = match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
             Ok(t) => t,
             Err(_) => return,
         };
-        let prompt = engine::prompt::assemble_prompt(&persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = engine::prompt::assemble_prompt(&sync_persona, &tools_list, None, None, None, #[cfg(feature = "desktop")] None);
         let body = serde_json::json!({
-            "id": persona.id,
-            "name": persona.name,
-            "description": persona.description,
+            "id": sync_persona.id,
+            "name": sync_persona.name,
+            "description": sync_persona.description,
             "systemPrompt": prompt,
-            "structuredPrompt": persona.structured_prompt,
-            "icon": persona.icon,
-            "color": persona.color,
+            "structuredPrompt": sync_persona.structured_prompt,
+            "icon": sync_persona.icon,
+            "color": sync_persona.color,
             "enabled": true,
-            "maxConcurrent": persona.max_concurrent,
-            "timeoutMs": persona.timeout_ms,
-            "modelProfile": persona.model_profile,
-            "maxBudgetUsd": persona.max_budget_usd,
-            "maxTurns": persona.max_turns,
-            "designContext": persona.design_context,
-            "groupId": persona.group_id,
+            "maxConcurrent": sync_persona.max_concurrent,
+            "timeoutMs": sync_persona.timeout_ms,
+            "modelProfile": sync_persona.model_profile,
+            "maxBudgetUsd": sync_persona.max_budget_usd,
+            "maxTurns": sync_persona.max_turns,
+            "designContext": sync_persona.design_context,
+            "groupId": sync_persona.group_id,
         });
         if let Err(e) = client.upsert_persona(&body).await {
             tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed after parameter update");
@@ -249,7 +266,24 @@ pub fn duplicate_persona(
     source_id: String,
 ) -> Result<Persona, AppError> {
     require_auth_sync(&state)?;
-    repo::duplicate(&state.db, &source_id)
+    let result = repo::duplicate(&state.db, &source_id)?;
+
+    // Validate the duplicated persona against current rules. The source may
+    // pre-date stricter validation, and the " (Copy)" suffix could push the
+    // name beyond limits. Log warnings but don't fail the duplication.
+    let mut warnings = Vec::new();
+    warnings.extend(pv::validate_name(&result.name));
+    warnings.extend(pv::validate_system_prompt(&result.system_prompt));
+    if !warnings.is_empty() {
+        tracing::warn!(
+            source_id = %source_id,
+            new_id = %result.id,
+            warnings = ?warnings,
+            "Duplicated persona has validation warnings against current rules"
+        );
+    }
+
+    Ok(result)
 }
 
 #[tauri::command]
@@ -502,14 +536,11 @@ async fn delete_persona_inner(
             .engine
             .force_cancel_all_for_persona(id, &state.db)
             .await;
-        for exec_id in &force_cancelled {
-            // The earlier force_cancelled list already counted; only add
-            // new ones discovered in the tracker after the drain loop.
-            let _ = exec_id;
+        // Extend the force_cancelled list with placeholder IDs for the
+        // post-timeout sweep so the count is accurately reported.
+        for i in 0..force_count {
+            force_cancelled.push(format!("post-timeout-{i}"));
         }
-        // Add force-cancelled count from the post-timeout sweep
-        force_cancelled.reserve(force_count);
-        // Note: individual IDs were already logged inside force_cancel_all_for_persona
     }
 
     // ── Phase 2c: Finalize the delete ──

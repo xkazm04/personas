@@ -28,22 +28,31 @@ impl BinaryProbeCache {
     }
 
     /// Get a cached probe result for `command`, or run the probe and cache it.
+    ///
+    /// Uses a compute-then-insert pattern to avoid holding the mutex during
+    /// blocking process spawns (where.exe / which / --version), which can be
+    /// slow on Windows with large PATH variables.
     pub fn get_or_probe(&self, command: &str) -> BinaryProbeResult {
-        let mut map = self.entries.lock().unwrap_or_else(|e| e.into_inner());
-
-        if let Some((ts, result)) = map.get(command) {
-            if ts.elapsed() < self.ttl {
-                return result.clone();
+        // Check cache under lock
+        {
+            let map = self.entries.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some((ts, result)) = map.get(command) {
+                if ts.elapsed() < self.ttl {
+                    return result.clone();
+                }
             }
         }
 
-        // Cache miss or expired — run the actual probe
+        // Cache miss or expired — run the actual probe WITHOUT holding the lock
         let exists = command_exists_in_path(command);
         let version = command_version(command).ok();
         let result = BinaryProbeResult {
             exists_in_path: exists,
             version,
         };
+
+        // Re-acquire lock to insert
+        let mut map = self.entries.lock().unwrap_or_else(|e| e.into_inner());
         map.insert(command.to_string(), (Instant::now(), result.clone()));
         result
     }

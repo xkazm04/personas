@@ -615,7 +615,8 @@ pub fn import_foraged_credential(
     service_type: String,
 ) -> Result<serde_json::Value, String> {
     require_privileged_sync(&state, "import_foraged_credential").map_err(|e| e.to_string())?;
-    // Re-read the actual values from the source
+    // Re-read the actual values from the source.
+    // The fields HashMap contains raw secret material -- never log or emit it.
     let fields = resolve_real_values(&foraged_id, &service_type)
         .map_err(|e| format!("Failed to read credential values: {e}"))?;
 
@@ -848,6 +849,8 @@ impl ForageSourceResolver for NpmrcResolver {
 }
 
 /// Re-read the actual (unmasked) credential values from the original source.
+/// Return value contains raw secret material -- callers must never log or emit it.
+#[tracing::instrument(skip_all)]
 fn resolve_real_values(
     foraged_id: &str,
     _service_type: &str,

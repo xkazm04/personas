@@ -384,7 +384,7 @@ async fn run_idea_scan(
     app: &tauri::AppHandle,
     scan_id: &str,
     pool: &crate::db::DbPool,
-    _project_id: &str,
+    project_id: &str,
     root_path: &str,
     prompt_text: String,
 ) -> Result<i32, AppError> {
@@ -477,7 +477,7 @@ async fn run_idea_scan(
                     if let Some(protocol) = parse_idea_protocol(proto_trimmed) {
                         match protocol {
                             IdeaProtocol::Idea {
-                                project_id: pid,
+                                project_id: _pid,
                                 scan_type,
                                 category,
                                 title,
@@ -487,9 +487,12 @@ async fn run_idea_scan(
                                 impact,
                                 risk,
                             } => {
+                                // Use the caller-supplied project_id, not the
+                                // LLM-parsed one, to prevent data integrity
+                                // violations from hallucinated project IDs.
                                 match repo::create_idea(
                                     pool,
-                                    Some(&pid),
+                                    Some(project_id),
                                     None, // context_id
                                     &scan_type,
                                     Some(&category),

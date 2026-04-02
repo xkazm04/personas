@@ -307,6 +307,17 @@ pub async fn run_execution(
             },
         );
 
+        let _ = exec_repo::update_status(
+            &pool,
+            &execution_id,
+            crate::db::models::UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                error_message: Some(msg.clone()),
+                duration_ms: Some(duration_ms as i64),
+                ..Default::default()
+            },
+        );
+
         return ExecutionResult {
             success: false,
             error: Some(msg),
@@ -493,10 +504,21 @@ pub async fn run_execution(
         }
     };
     if let Err(e) = std::fs::create_dir_all(&exec_dir) {
+        let err_msg = format!("Failed to create execution directory: {e}");
         logger.log(&format!("Failed to create exec dir: {e}"));
+        let _ = exec_repo::update_status(
+            &pool,
+            &execution_id,
+            crate::db::models::UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                error_message: Some(err_msg.clone()),
+                duration_ms: Some(start_time.elapsed().as_millis() as i64),
+                ..Default::default()
+            },
+        );
         return ExecutionResult {
             success: false,
-            error: Some(format!("Failed to create execution directory: {e}")),
+            error: Some(err_msg),
             log_file_path: Some(log_file_path),
             duration_ms: start_time.elapsed().as_millis() as u64,
             ..default_result()
@@ -517,12 +539,21 @@ pub async fn run_execution(
         Err(e) => {
             tracing::error!(error = %e, "BYOM policy is corrupt — blocking execution");
             logger.log(&format!("BYOM policy is corrupt — execution blocked: {e}"));
+            let err_msg = "BYOM policy is corrupt and cannot be loaded. \
+                     Please reset or fix the policy in Settings → BYOM before running executions.".to_string();
+            let _ = exec_repo::update_status(
+                &pool,
+                &execution_id,
+                crate::db::models::UpdateExecutionStatus {
+                    status: ExecutionState::Failed,
+                    error_message: Some(err_msg.clone()),
+                    duration_ms: Some(start_time.elapsed().as_millis() as i64),
+                    ..Default::default()
+                },
+            );
             return ExecutionResult {
                 success: false,
-                error: Some(
-                    "BYOM policy is corrupt and cannot be loaded. \
-                     Please reset or fix the policy in Settings → BYOM before running executions.".to_string()
-                ),
+                error: Some(err_msg),
                 log_file_path: Some(log_file_path),
                 duration_ms: start_time.elapsed().as_millis() as u64,
                 ..default_result()
@@ -750,6 +781,17 @@ pub async fn run_execution(
             },
         );
 
+        let _ = exec_repo::update_status(
+            &pool,
+            &execution_id,
+            crate::db::models::UpdateExecutionStatus {
+                status: ExecutionState::Failed,
+                error_message: Some(error_msg.clone()),
+                duration_ms: Some(start_time.elapsed().as_millis() as i64),
+                ..Default::default()
+            },
+        );
+
         return ExecutionResult {
             success: false,
             error: Some(error_msg),
@@ -783,6 +825,17 @@ pub async fn run_execution(
             ExecutionOutputEvent {
                 execution_id: execution_id.clone(),
                 line: "[CANCELLED] Execution cancelled during spawn".into(),
+            },
+        );
+
+        let _ = exec_repo::update_status(
+            &pool,
+            &execution_id,
+            crate::db::models::UpdateExecutionStatus {
+                status: ExecutionState::Cancelled,
+                error_message: Some("Cancelled during spawn".into()),
+                duration_ms: Some(duration_ms as i64),
+                ..Default::default()
             },
         );
 
@@ -953,6 +1006,12 @@ pub async fn run_execution(
     let persona_name_for_stream = persona.name.clone();
     let notif_channels_for_stream = persona.notification_channels.clone();
     let is_ops_for_stream = is_ops_mode;
+
+    // Track mid-stream protocol dispatches for execution-scoped dedup in post-mortem
+    let stream_events_dispatched = Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let stream_memories_dispatched = Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let events_counter = stream_events_dispatched.clone();
+    let memories_counter = stream_memories_dispatched.clone();
 
     // Pre-load quality gate config once per execution (avoids O(messages) DB reads).
     let gate_config = super::quality_gate::load(&pool_for_stream);
@@ -1285,6 +1344,15 @@ pub async fn run_execution(
                                         );
                                         dispatch_ctx.ops_mode = is_ops_for_stream;
                                         use super::protocol::ExecutionProtocol;
+                                        match &protocol_msg {
+                                            ProtocolMessage::EmitEvent { .. } => {
+                                                events_counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                            }
+                                            ProtocolMessage::AgentMemory { .. } => {
+                                                memories_counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                            }
+                                            _ => {}
+                                        }
                                         dispatch_ctx.dispatch_message(&protocol_msg);
                                         trace.end_span_ok(&dispatch_span);
                                     }
@@ -1395,15 +1463,15 @@ pub async fn run_execution(
 
     // Post-mortem protocol extraction: catch emit_event and agent_memory messages
     // that were missed during streaming (e.g. because they spanned multiple deltas).
-    // Check DB first to avoid duplicating messages that were already dispatched.
+    // Use execution-scoped counters from mid-stream dispatch to avoid persona-wide
+    // dedup that would either skip recovery or duplicate across executions.
     {
-        use crate::db::repos::communication::events as event_repo_check;
         use crate::db::repos::core::memories as mem_repo_check;
 
-        let existing_events = event_repo_check::count_by_source(&pool, &persona.id).unwrap_or(0);
+        let mid_stream_events = stream_events_dispatched.load(std::sync::atomic::Ordering::Relaxed);
         let existing_memories = mem_repo_check::count_by_execution(&pool, &execution_id).unwrap_or(0);
 
-        let need_events = existing_events == 0;
+        let need_events = mid_stream_events == 0;
         let need_memories = existing_memories == 0;
 
         if need_events || need_memories {

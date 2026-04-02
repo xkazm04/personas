@@ -105,6 +105,18 @@ pub fn delete_recipe(
     id: String,
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
+
+    // Check for in-flight tasks referencing this recipe and reject deletion
+    // to prevent orphaned background processes and confusing UI errors.
+    for domain in &["recipe_execution", "recipe_generation", "recipe_versioning"] {
+        if state.process_registry.get_id(domain).is_some() {
+            return Err(AppError::Validation(format!(
+                "Cannot delete recipe while a {} task is in progress. Cancel it first.",
+                domain.replace('_', " ")
+            )));
+        }
+    }
+
     repo::delete(&state.db, &id)
 }
 
@@ -178,6 +190,11 @@ pub async fn start_recipe_execution(
     let execution_id = uuid::Uuid::new_v4().to_string();
 
     let registry = state.process_registry.clone();
+    if registry.get_id("recipe_execution").is_some() {
+        return Err(AppError::Validation(
+            "A recipe execution is already in progress. Cancel it first or wait for it to complete.".into(),
+        ));
+    }
     registry.set_id("recipe_execution", execution_id.clone());
 
     spawn_ai_artifact_task(AiArtifactParams {
@@ -249,6 +266,11 @@ pub async fn start_recipe_generation(
     let generation_id = uuid::Uuid::new_v4().to_string();
 
     let registry = state.process_registry.clone();
+    if registry.get_id("recipe_generation").is_some() {
+        return Err(AppError::Validation(
+            "A recipe generation is already in progress. Cancel it first or wait for it to complete.".into(),
+        ));
+    }
     registry.set_id("recipe_generation", generation_id.clone());
 
     spawn_ai_artifact_task(AiArtifactParams {
@@ -372,6 +394,11 @@ pub async fn start_recipe_versioning(
     let versioning_id = uuid::Uuid::new_v4().to_string();
 
     let registry = state.process_registry.clone();
+    if registry.get_id("recipe_versioning").is_some() {
+        return Err(AppError::Validation(
+            "A recipe versioning is already in progress. Cancel it first or wait for it to complete.".into(),
+        ));
+    }
     registry.set_id("recipe_versioning", versioning_id.clone());
 
     spawn_ai_artifact_task(AiArtifactParams {

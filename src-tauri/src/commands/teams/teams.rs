@@ -54,6 +54,11 @@ pub fn update_team(
 #[tauri::command]
 pub fn delete_team(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
+    if repo::has_running_pipeline(&state.db, &id)? {
+        return Err(AppError::Validation(
+            "Cannot delete team while a pipeline is running. Please wait for the pipeline to finish or cancel it first.".into(),
+        ));
+    }
     repo::delete(&state.db, &id)
 }
 

@@ -8,7 +8,6 @@ import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
 import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
-import { useTranslation } from '@/i18n/useTranslation';
 
 interface HealingIssuesPanelProps {
   healingIssues: PersonaHealingIssue[];
@@ -49,7 +48,6 @@ export function HealingIssuesPanel({
   viewMode, setViewMode, timelineEvents, timelineLoading,
   selectedPersonaId,
 }: HealingIssuesPanelProps) {
-  const { t } = useTranslation();
   const handleTimelineSelectIssue = (issueId: string) => {
     const issue = healingIssues.find(i => i.id === issueId);
     if (issue) setSelectedIssue(issue);
@@ -104,14 +102,14 @@ export function HealingIssuesPanel({
             <button
               onClick={() => setViewMode('list')}
               className={`p-1.5 transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
-              title={t.overview.observability_page.list_view}
+              title={"list_view"}
             >
               <List className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setViewMode('timeline')}
               className={`p-1.5 transition-colors ${viewMode === 'timeline' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
-              title={t.overview.observability_page.timeline_view}
+              title={"timeline_view"}
             >
               <GitBranch className="w-3.5 h-3.5" />
             </button>

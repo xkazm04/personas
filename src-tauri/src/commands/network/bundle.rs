@@ -85,7 +85,14 @@ pub fn apply_bundle_import(
         return Err(AppError::Validation("Bundle file is empty or unreadable".into()));
     }
 
-    // TOCTOU mitigation: verify the bundle hash matches what was shown at preview time.
+    // TOCTOU mitigation: when a preview was performed, the hash check is mandatory.
+    if options.preview_id.is_some() && options.expected_bundle_hash.is_none() {
+        return Err(AppError::Validation(
+            "Bundle hash is required when importing a previewed bundle. \
+             Please re-preview the bundle before importing."
+                .into(),
+        ));
+    }
     if let Some(ref expected_hash) = options.expected_bundle_hash {
         let actual_hash = hex::encode(sha2::Sha256::digest(&bytes));
         if actual_hash != *expected_hash {

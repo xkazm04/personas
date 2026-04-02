@@ -47,12 +47,28 @@ pub async fn execute_desktop_bridge(
             let action = serde_json::from_value(action)
                 .map_err(|e| AppError::Validation(format!("Invalid VS Code action: {e}")))?;
             let binary = config.vscode_binary.as_deref().unwrap_or("code");
+            if let Some(manifest) = desktop_security::get_manifest(&connector_name)
+                .or_else(|| desktop_security::get_manifest("desktop_vscode")) {
+                if !manifest.is_binary_allowed(binary) {
+                    return Err(AppError::Validation(format!(
+                        "Binary '{}' is not in the allowed list for {}", binary, connector_name
+                    )));
+                }
+            }
             crate::engine::desktop_bridges::vscode::execute(binary, action).await
         }
         "docker" => {
             let action = serde_json::from_value(action)
                 .map_err(|e| AppError::Validation(format!("Invalid Docker action: {e}")))?;
             let binary = config.docker_binary.as_deref().unwrap_or("docker");
+            if let Some(manifest) = desktop_security::get_manifest(&connector_name)
+                .or_else(|| desktop_security::get_manifest("desktop_docker")) {
+                if !manifest.is_binary_allowed(binary) {
+                    return Err(AppError::Validation(format!(
+                        "Binary '{}' is not in the allowed list for {}", binary, connector_name
+                    )));
+                }
+            }
             crate::engine::desktop_bridges::docker::execute(binary, action).await
         }
         "terminal" => {

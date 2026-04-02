@@ -1,4 +1,5 @@
-use std::sync::Arc;
+use std::collections::HashSet;
+use std::sync::{Arc, LazyLock, Mutex};
 use tauri::State;
 
 use crate::db::models::{AutomationRun, CreateAutomationInput, PersonaAutomation, UpdateAutomationInput};
@@ -8,6 +9,9 @@ use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use crate::commands::core::personas::BlastRadiusItem;
+
+static INFLIGHT_TRIGGERS: LazyLock<Mutex<HashSet<String>>> =
+    LazyLock::new(|| Mutex::new(HashSet::new()));
 
 /// Generate a sample payload from a schema definition string.
 ///
@@ -108,6 +112,21 @@ pub fn delete_automation(
     id: String,
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
+    let active_runs = repo::get_runs_by_automation(&state.db, &id, Some(50))?;
+    let in_flight = active_runs.iter().any(|r| {
+        matches!(
+            r.status,
+            crate::db::models::AutomationRunStatus::Pending
+                | crate::db::models::AutomationRunStatus::Running
+        )
+    });
+    if in_flight {
+        return Err(AppError::Validation(
+            "Cannot delete automation while it has pending or running executions. \
+             Wait for them to complete or cancel them first."
+                .into(),
+        ));
+    }
     repo::delete(&state.db, &id)
 }
 
@@ -128,13 +147,30 @@ pub async fn trigger_automation(
         )));
     }
 
-    crate::engine::automation_runner::invoke_automation(
+    {
+        let mut inflight = INFLIGHT_TRIGGERS.lock().unwrap_or_else(|e| e.into_inner());
+        if !inflight.insert(id.clone()) {
+            return Err(AppError::Validation(format!(
+                "Automation '{}' is already being triggered. Please wait for the current run to complete.",
+                automation.name
+            )));
+        }
+    }
+
+    let result = crate::engine::automation_runner::invoke_automation(
         &state.db,
         &automation,
         input_data.as_deref(),
         execution_id.as_deref(),
     )
-    .await
+    .await;
+
+    {
+        let mut inflight = INFLIGHT_TRIGGERS.lock().unwrap_or_else(|e| e.into_inner());
+        inflight.remove(&id);
+    }
+
+    result
 }
 
 #[tauri::command]

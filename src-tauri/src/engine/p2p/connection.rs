@@ -491,6 +491,11 @@ impl ConnectionManager {
     /// handler (Pong for Ping, ManifestResponse for ManifestRequest, store
     /// for AgentMessage). Each stream is handled in its own task so slow
     /// operations don't block stream acceptance.
+    /// Maximum inbound messages per peer per rate-limit window before disconnecting.
+    const PEER_MSG_RATE_LIMIT: u64 = 100;
+    /// Rate-limit window duration.
+    const PEER_MSG_RATE_WINDOW: std::time::Duration = std::time::Duration::from_secs(10);
+
     fn spawn_inbound_dispatch(
         quinn_conn: quinn::Connection,
         peer_id: String,
@@ -498,6 +503,9 @@ impl ConnectionManager {
         messages: Arc<MessageRouter>,
     ) {
         tokio::spawn(async move {
+            let mut rate_window_start = std::time::Instant::now();
+            let mut rate_msg_count: u64 = 0;
+
             loop {
                 let (send, recv) = match quinn_conn.accept_bi().await {
                     Ok(pair) => pair,
@@ -517,6 +525,25 @@ impl ConnectionManager {
                         break;
                     }
                 };
+
+                // Per-peer rate limiting: reset window or check threshold
+                if rate_window_start.elapsed() > Self::PEER_MSG_RATE_WINDOW {
+                    rate_window_start = std::time::Instant::now();
+                    rate_msg_count = 0;
+                }
+                rate_msg_count += 1;
+                if rate_msg_count > Self::PEER_MSG_RATE_LIMIT {
+                    tracing::warn!(
+                        peer_id = %peer_id,
+                        msg_count = rate_msg_count,
+                        "Peer exceeded message rate limit, disconnecting"
+                    );
+                    quinn_conn.close(
+                        quinn::VarInt::from_u32(3),
+                        b"rate limit exceeded",
+                    );
+                    break;
+                }
 
                 let peer_id = peer_id.clone();
                 let manifest_sync = manifest_sync.clone();

@@ -9,6 +9,16 @@ import { STEP_META, WIZARD_STEPS } from '../hooks/useN8nImportReducer';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SESSION_STATUS_STYLES } from '../colorTokens';
 
+function isValidAgentIR(v: unknown): v is AgentIR {
+  return v != null && typeof v === 'object' && 'name' in (v as Record<string, unknown>);
+}
+function isValidDraft(v: unknown): v is N8nPersonaDraft {
+  return v != null && typeof v === 'object' && 'name' in (v as Record<string, unknown>);
+}
+function isValidQuestions(v: unknown): v is TransformQuestion[] {
+  return Array.isArray(v) && v.every((q) => q != null && typeof q === 'object' && 'id' in q);
+}
+
 interface N8nSessionListProps {
   onLoadSession: (payload: SessionLoadedPayload) => void;
 }
@@ -85,10 +95,12 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
       // If aborted (deleted while loading), discard the result
       if (abortController.signal.aborted) return;
 
-      const parsedResult = (full.parser_result as AgentIR | null) ?? null;
-      const draft = (full.draft_json as N8nPersonaDraft | null) ?? null;
-      const questions = (full.questions_json as TransformQuestion[] | null) ?? null;
-      const rawUserAnswers = (full.user_answers as Record<string, string> | null) ?? null;
+      const parsedResult = isValidAgentIR(full.parser_result) ? full.parser_result : null;
+      const draft = isValidDraft(full.draft_json) ? (full.draft_json as N8nPersonaDraft) : null;
+      const questions = isValidQuestions(full.questions_json) ? (full.questions_json as TransformQuestion[]) : null;
+      const rawUserAnswers = (full.user_answers && typeof full.user_answers === 'object' && !Array.isArray(full.user_answers))
+        ? (full.user_answers as Record<string, string>)
+        : null;
 
       const transformId = full.transform_id ?? null;
 

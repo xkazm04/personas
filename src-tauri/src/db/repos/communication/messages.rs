@@ -356,6 +356,7 @@ pub fn get_delivery_by_id(pool: &DbPool, id: &str) -> Result<PersonaMessageDeliv
 }
 
 /// Returns delivery status summary (delivered, pending, failed counts) for a batch of message IDs.
+/// Chunks into batches of 500 to stay within SQLite's SQLITE_MAX_VARIABLE_NUMBER limit (999).
 pub fn get_bulk_delivery_summaries(
     pool: &DbPool,
     message_ids: &[String],
@@ -365,29 +366,32 @@ pub fn get_bulk_delivery_summaries(
     }
     timed_query!("persona_messages", "persona_messages::get_bulk_delivery_summaries", {
     let conn = pool.get()?;
-    let placeholders: String = message_ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect::<Vec<_>>().join(", ");
-    let sql = format!(
-        "SELECT message_id,
-                SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered,
-                SUM(CASE WHEN status IN ('pending', 'queued') THEN 1 ELSE 0 END) AS pending,
-                SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
-         FROM persona_message_deliveries
-         WHERE message_id IN ({})
-         GROUP BY message_id",
-        placeholders,
-    );
-    let mut stmt = conn.prepare(&sql)?;
-    let params_vec: Vec<&dyn rusqlite::ToSql> = message_ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
-    let rows = stmt.query_map(params_vec.as_slice(), |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, i64>(1)?,
-            row.get::<_, i64>(2)?,
-            row.get::<_, i64>(3)?,
-        ))
-    })?;
-    let result = collect_rows(rows, "messages::get_bulk_delivery_summaries");
-    Ok(result)
+    let mut all_results = Vec::new();
+    for chunk in message_ids.chunks(500) {
+        let placeholders: String = chunk.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect::<Vec<_>>().join(", ");
+        let sql = format!(
+            "SELECT message_id,
+                    SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) AS delivered,
+                    SUM(CASE WHEN status IN ('pending', 'queued') THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed
+             FROM persona_message_deliveries
+             WHERE message_id IN ({})
+             GROUP BY message_id",
+            placeholders,
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let params_vec: Vec<&dyn rusqlite::ToSql> = chunk.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let rows = stmt.query_map(params_vec.as_slice(), |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, i64>(3)?,
+            ))
+        })?;
+        all_results.extend(collect_rows(rows, "messages::get_bulk_delivery_summaries"));
+    }
+    Ok(all_results)
     })
 }
 

@@ -519,12 +519,12 @@ pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppErr
     timed_query!("persona_events", "persona_events::retry_dead_letter", {
         let conn = pool.get()?;
 
-        // Check current retry_count before allowing the retry.
-        let current_retries: i32 = conn
+        // Check current retry_count and preserve the original error before retry.
+        let (current_retries, original_error): (i32, Option<String>) = conn
             .query_row(
-                "SELECT retry_count FROM persona_events WHERE id = ?1 AND status = 'dead_letter'",
+                "SELECT retry_count, error_message FROM persona_events WHERE id = ?1 AND status = 'dead_letter'",
                 params![id],
-                |row| row.get(0),
+                |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .map_err(|_| AppError::NotFound(format!("Dead-lettered PersonaEvent {id}")))?;
 
@@ -534,12 +534,16 @@ pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppErr
             )));
         }
 
+        let preserved_error = original_error.map(|err| {
+            format!("[Retry #{} — previous error: {}]", current_retries + 1, err)
+        });
+
         conn.execute(
             "UPDATE persona_events
              SET status = 'pending', retry_count = retry_count + 1,
-                 error_message = NULL, processed_at = NULL
+                 error_message = ?2, processed_at = NULL
              WHERE id = ?1 AND status = 'dead_letter'",
-            params![id],
+            params![id, preserved_error],
         )?;
         get_by_id(pool, id)
     })

@@ -223,14 +223,25 @@ impl CliProvider for CodexProvider {
                 )
             }
 
-            // Error
+            // Error -- surface as a result with error display text so the
+            // user sees auth failures, rate limits, etc. instead of silence.
             "error" => {
                 let msg = value
                     .get("message")
                     .and_then(|m| m.as_str())
                     .unwrap_or("Unknown error");
                 tracing::warn!("Codex CLI error: {}", msg);
-                (StreamLineType::Unknown, None)
+                (
+                    StreamLineType::Result {
+                        duration_ms: None,
+                        total_cost_usd: None,
+                        total_input_tokens: None,
+                        total_output_tokens: None,
+                        model: None,
+                        session_id: None,
+                    },
+                    Some(format!("[Codex Error] {msg}")),
+                )
             }
 
             _ => (StreamLineType::Unknown, None),

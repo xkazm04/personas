@@ -31,8 +31,9 @@ interface NamedFetch {
 }
 
 /** Run fetches with allSettled and report per-source errors to the store. */
-function settleAndReport(fetches: NamedFetch[], tag: string) {
+function settleAndReport(fetches: NamedFetch[], tag: string, signal?: { cancelled: boolean }) {
   return Promise.allSettled(fetches.map((f) => f.fn())).then((results) => {
+    if (signal?.cancelled) return;
     const store = useOverviewStore.getState();
     for (let i = 0; i < results.length; i++) {
       const name = fetches[i]!.name;
@@ -66,13 +67,15 @@ export function useExecutionDashboardPipeline() {
   const fetchToolUsage = useAgentStore((s) => s.fetchToolUsage);
 
   const fetchDays = compareEnabled ? previousPeriodDays : effectiveDays;
+  const mountedRef = useRef({ cancelled: false });
 
   // ── Mount-only: alert data is global and not filter-dependent ──
   useEffect(() => {
+    const signal = mountedRef.current;
     void settleAndReport([
       { name: 'alertRules', fn: fetchAlertRules },
       { name: 'alertHistory', fn: fetchAlertHistory },
-    ], 'DashboardPipeline');
+    ], 'DashboardPipeline', signal);
   }, [fetchAlertRules, fetchAlertHistory]);
 
   // ── Filter-dependent refresh (re-runs when days/persona/compare change) ──
@@ -83,7 +86,7 @@ export function useExecutionDashboardPipeline() {
       { name: 'toolUsage', fn: () => fetchToolUsage(effectiveDays, selectedPersonaId || undefined) },
       { name: 'healingIssues', fn: fetchHealingIssues },
       { name: 'globalExecutions', fn: () => fetchGlobalExecutions(true, undefined, selectedPersonaId || undefined) },
-    ], 'DashboardPipeline'),
+    ], 'DashboardPipeline', mountedRef.current),
     [fetchExecutionDashboard, fetchObservabilityMetrics, fetchToolUsage, fetchHealingIssues, fetchGlobalExecutions, fetchDays, effectiveDays, selectedPersonaId],
   );
 
@@ -94,7 +97,10 @@ export function useExecutionDashboardPipeline() {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => { void refresh(); }, 250);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      mountedRef.current.cancelled = true;
+    };
   }, [refresh]);
 
   return { refresh };

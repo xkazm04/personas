@@ -62,10 +62,12 @@ pub struct N8nActivateResult {
     pub active: bool,
 }
 
-/// Wrapper for the n8n API list response.
+/// Wrapper for the n8n API list response (supports cursor-based pagination).
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct N8nListResponse {
     data: Vec<N8nWorkflow>,
+    next_cursor: Option<String>,
 }
 
 impl N8nClient {
@@ -113,25 +115,42 @@ impl N8nClient {
         Ok(Self { base_url, api_key, http: crate::SHARED_HTTP.clone() })
     }
 
-    /// List all workflows.
+    /// List all workflows, following cursor-based pagination.
     pub async fn list_workflows(&self) -> Result<Vec<N8nWorkflow>, AppError> {
-        let url = format!("{}/api/v1/workflows", self.base_url);
-        let resp = self
-            .http
-            .get(&url)
-            .header("X-N8N-API-KEY", &self.api_key)
-            .send()
-            .await
-            .map_err(|e| AppError::Execution(format!("n8n API request failed: {e}")))?;
+        let mut all_workflows = Vec::new();
+        let mut cursor: Option<String> = None;
+        const MAX_PAGES: usize = 50;
 
-        let resp = Self::check_response(resp, "n8n API").await?;
+        for _ in 0..MAX_PAGES {
+            let mut url = format!("{}/api/v1/workflows", self.base_url);
+            if let Some(ref c) = cursor {
+                url = format!("{}?cursor={}", url, urlencoding::encode(c));
+            }
 
-        let list: N8nListResponse = resp
-            .json()
-            .await
-            .map_err(|e| AppError::Execution(format!("Failed to parse n8n workflow list: {e}")))?;
+            let resp = self
+                .http
+                .get(&url)
+                .header("X-N8N-API-KEY", &self.api_key)
+                .send()
+                .await
+                .map_err(|e| AppError::Execution(format!("n8n API request failed: {e}")))?;
 
-        Ok(list.data)
+            let resp = Self::check_response(resp, "n8n API").await?;
+
+            let list: N8nListResponse = resp
+                .json()
+                .await
+                .map_err(|e| AppError::Execution(format!("Failed to parse n8n workflow list: {e}")))?;
+
+            all_workflows.extend(list.data);
+
+            match list.next_cursor {
+                Some(c) if !c.is_empty() => cursor = Some(c),
+                _ => break,
+            }
+        }
+
+        Ok(all_workflows)
     }
 
     /// Get a single workflow by ID.

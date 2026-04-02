@@ -338,6 +338,7 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         tx.execute("DELETE FROM credential_rotation_history WHERE credential_id = ?1", params![id])?;
         tx.execute("DELETE FROM credential_rotation_policies WHERE credential_id = ?1", params![id])?;
         tx.execute("DELETE FROM credential_events WHERE credential_id = ?1", params![id])?;
+        tx.execute("DELETE FROM oauth_token_metrics WHERE credential_id = ?1", params![id])?;
         let rows = tx.execute("DELETE FROM persona_credentials WHERE id = ?1", params![id])?;
 
         tx.commit().map_err(AppError::Database)?;

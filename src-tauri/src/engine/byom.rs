@@ -438,9 +438,21 @@ impl ByomPolicy {
                 continue;
             }
             if rule.task_complexity == effective_complexity {
-                preferred_provider = rule.provider.parse().ok();
-                preferred_model = rule.model.clone();
-                routing_rule_name = Some(rule.name.clone());
+                // Only set preferred_provider if it is NOT blocked by compliance rules
+                if let Ok(kind) = rule.provider.parse::<EngineKind>() {
+                    if !blocked.contains(&kind) {
+                        preferred_provider = Some(kind);
+                        preferred_model = rule.model.clone();
+                        routing_rule_name = Some(rule.name.clone());
+                    } else {
+                        tracing::warn!(
+                            rule = %rule.name,
+                            provider = %rule.provider,
+                            "Routing rule matched but provider is blocked by compliance rules"
+                        );
+                        routing_rule_name = Some(rule.name.clone());
+                    }
+                }
                 break;
             }
         }

@@ -572,17 +572,12 @@ pub async fn execute_test_curl(
         };
     }
 
-    // Substitute $ENV_VAR placeholders with real credential values
+    // Substitute $ENV_VAR placeholders with real credential values.
+    // Use resolve_placeholders (same two-pass approach as invoke_api) to
+    // prevent cross-expansion where one env var value contains ${OTHER_VAR}.
     let resolved_tokens: Vec<String> = raw_tokens[1..]
         .iter()
-        .map(|token| {
-            let mut resolved = token.to_string();
-            for (k, v) in env_map {
-                resolved = resolved.replace(&format!("${{{}}}", k), v);
-                resolved = resolved.replace(&format!("${}", k), v);
-            }
-            resolved
-        })
+        .map(|token| resolve_placeholders(token, env_map, None))
         .collect();
 
     // Validate against dangerous flags

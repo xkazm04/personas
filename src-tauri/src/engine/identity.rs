@@ -85,11 +85,14 @@ fn store_private_key(signing_key: &SigningKey) -> Result<(), AppError> {
 
     #[cfg(not(feature = "desktop"))]
     {
-        // Fallback for non-desktop (mobile): store in app data directory
-        // This is less secure but allows the feature to work without OS keyring
-        tracing::warn!("No OS keyring available -- identity key stored in memory only (non-desktop build)");
+        return Err(AppError::Internal(
+            "Cannot persist identity key: OS keyring is not available in non-desktop builds. \
+             Identity features require a desktop build with keyring support."
+                .into(),
+        ));
     }
 
+    #[allow(unreachable_code)]
     Ok(())
 }
 
