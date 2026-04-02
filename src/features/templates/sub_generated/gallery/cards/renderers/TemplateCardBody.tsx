@@ -34,15 +34,15 @@ export function TemplateCardBody({
     <>
       {/* Compact Body (mobile) */}
       <div className="px-4 py-3 md:hidden border-t border-primary/5 space-y-2">
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between typo-body">
           <span className="text-muted-foreground/60">Use Cases</span>
           <span className="text-foreground/80">{displayFlows.length}</span>
         </div>
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between typo-body">
           <span className="text-muted-foreground/60">Connectors</span>
           <span className="text-foreground/80">{connectors.length}</span>
         </div>
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between typo-body">
           <span className="text-muted-foreground/60">Triggers</span>
           <span className="text-foreground/80">{suggestedTriggers.length > 0 ? suggestedTriggers.length : triggerTypes.length}</span>
         </div>
@@ -62,22 +62,22 @@ export function TemplateCardBody({
                     e.stopPropagation();
                     onViewFlows();
                   }}
-                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors"
+                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors rounded-md focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                 >
                   <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0" />
-                  <span className="text-sm text-foreground/70 group-hover/flow:text-violet-300 truncate">
+                  <span className="typo-body text-foreground/70 group-hover/flow:text-violet-300 truncate">
                     {flow.name}
                   </span>
                 </button>
               ))}
               {displayFlows.length > 4 && (
-                <span className="text-sm text-muted-foreground/50 pl-5">
+                <span className="typo-body text-muted-foreground/50 pl-5">
                   +{displayFlows.length - 4} more
                 </span>
               )}
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground/60 italic">No flows</span>
+            <span className="typo-body text-muted-foreground/60 italic">No flows</span>
           )}
         </div>
 
@@ -106,7 +106,7 @@ export function TemplateCardBody({
               })}
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground/60 italic">None</span>
+            <span className="typo-body text-muted-foreground/60 italic">None</span>
           )}
         </div>
 
@@ -120,7 +120,7 @@ export function TemplateCardBody({
                 return (
                   <div key={i} className="flex items-center gap-2">
                     <TriggerIcon className="w-3.5 h-3.5 text-blue-400/60 flex-shrink-0" />
-                    <span className="text-sm text-foreground/70 truncate">
+                    <span className="typo-body text-foreground/70 truncate">
                       {trigger.description || trigger.trigger_type}
                     </span>
                   </div>
@@ -128,7 +128,7 @@ export function TemplateCardBody({
               })}
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground/60 italic">None</span>
+            <span className="typo-body text-muted-foreground/60 italic">None</span>
           )}
         </div>
       </div>

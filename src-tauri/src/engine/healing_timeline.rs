@@ -143,6 +143,11 @@ pub fn run_healing_analysis(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<(HealingAnalysisResult, Vec<HealingRetryRequest>), AppError> {
+    // Revert stale auto_fix_pending issues back to open (TTL: 10 minutes).
+    // This prevents zombie healing issues when the retry job crashes or the
+    // app closes mid-healing.
+    repo::revert_stale_auto_fix_pending(pool, persona_id, 10);
+
     let failures = exec_repo::get_recent_failures(pool, persona_id, 10)?;
 
     let mut created = 0u32;

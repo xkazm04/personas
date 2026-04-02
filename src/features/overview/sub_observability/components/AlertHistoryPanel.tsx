@@ -3,6 +3,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import type { FiredAlert } from '@/lib/bindings/FiredAlert';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const SEVERITY_CONFIG: Record<string, { icon: typeof Info; color: string }> = {
   info: { icon: Info, color: '#3b82f6' },
@@ -20,6 +21,7 @@ function formatTime(iso: string): string {
 }
 
 function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => void }) {
+  const { t } = useTranslation();
   const cfg = SEVERITY_CONFIG[alert.severity] ?? SEVERITY_CONFIG.info!;
   const Icon = cfg.icon;
 
@@ -35,13 +37,13 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
           <span className="typo-heading text-foreground truncate">{alert.rule_name}</span>
           <span className="text-[10px] text-muted-foreground/50">{formatTime(alert.fired_at)}</span>
         </div>
-        <p className="text-xs text-muted-foreground/70 mt-0.5">{alert.message}</p>
+        <p className="typo-caption text-muted-foreground/70 mt-0.5">{alert.message}</p>
       </div>
       {!alert.dismissed && (
         <button
           onClick={onDismiss}
           className="p-1 text-muted-foreground/40 hover:text-emerald-400 transition-colors shrink-0"
-          title="Dismiss"
+          title={t.common.dismiss}
         >
           <CheckCircle2 className="w-3.5 h-3.5" />
         </button>
@@ -74,8 +76,8 @@ export function AlertHistoryPanel() {
         </div>
         {alertHistory.length > 0 && (
           <button
-            onClick={() => void clearAlertHistory()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border border-primary/15 text-muted-foreground/60 hover:text-red-400 hover:border-red-500/20 transition-colors"
+            onClick={() => { clearAlertHistory().catch(() => {}); }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-lg border border-primary/15 text-muted-foreground/60 hover:text-red-400 hover:border-red-500/20 transition-colors"
           >
             <Trash2 className="w-3 h-3" /> Clear
           </button>
@@ -88,7 +90,7 @@ export function AlertHistoryPanel() {
 
       <div className="space-y-2 max-h-[400px] overflow-y-auto">
         {alertHistory.slice(0, 50).map((alert) => (
-            <AlertRow key={alert.id} alert={alert} onDismiss={() => void dismissAlert(alert.id)} />
+            <AlertRow key={alert.id} alert={alert} onDismiss={() => { dismissAlert(alert.id).catch(() => {}); }} />
           ))}
       </div>
     </div>

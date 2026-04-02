@@ -29,6 +29,23 @@ pub struct AutoRollbackEvent {
     pub previous_error_rate: f64,
 }
 
+/// Compute the execution-weighted average error rate across a set of daily
+/// performance points.  Returns 0.0 when the total execution count is zero.
+fn compute_weighted_error_rate(
+    points: &[&crate::db::models::PromptPerformancePoint],
+) -> f64 {
+    let total = points.iter().map(|p| p.total_executions as f64).sum::<f64>();
+    if total > 0.0 {
+        points
+            .iter()
+            .map(|p| p.error_rate * p.total_executions as f64)
+            .sum::<f64>()
+            / total
+    } else {
+        0.0
+    }
+}
+
 /// Check all personas that have auto-rollback enabled and trigger rollback
 /// when the current prompt version's error rate exceeds 2x the previous version's.
 pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
@@ -41,6 +58,15 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
         }
     };
 
+    // Batch-load all auto-rollback settings in a single query to avoid N
+    // per-persona settings lookups.
+    let enabled_ids: std::collections::HashSet<String> = settings::get_by_prefix(pool, settings_keys::AUTO_ROLLBACK_PREFIX)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(_, v)| v == "true")
+        .map(|(k, _)| k.strip_prefix(settings_keys::AUTO_ROLLBACK_PREFIX).unwrap_or(&k).to_string())
+        .collect();
+
     let total_personas = personas.len();
     let mut checked: u32 = 0;
     let mut skipped: u32 = 0;
@@ -49,14 +75,7 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
 
     for persona in &personas {
         // 2. Check if auto-rollback is enabled for this persona
-        let key = format!("{}{}", settings_keys::AUTO_ROLLBACK_PREFIX, persona.id);
-        let enabled = settings::get(pool, &key)
-            .ok()
-            .flatten()
-            .map(|v| v == "true")
-            .unwrap_or(false);
-
-        if !enabled {
+        if !enabled_ids.contains(&persona.id) {
             continue;
         }
 
@@ -223,23 +242,8 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
             continue;
         }
 
-        let current_error_rate: f64 = {
-            let total = current_points.iter().map(|p| p.total_executions as f64).sum::<f64>();
-            if total > 0.0 {
-                current_points.iter().map(|p| p.error_rate * p.total_executions as f64).sum::<f64>() / total
-            } else {
-                0.0
-            }
-        };
-
-        let previous_error_rate: f64 = {
-            let total = previous_points.iter().map(|p| p.total_executions as f64).sum::<f64>();
-            if total > 0.0 {
-                previous_points.iter().map(|p| p.error_rate * p.total_executions as f64).sum::<f64>() / total
-            } else {
-                0.0
-            }
-        };
+        let current_error_rate = compute_weighted_error_rate(&current_points);
+        let previous_error_rate = compute_weighted_error_rate(&previous_points);
 
         // 5. Check if current error rate exceeds 2x the previous version's rate
         // Use a minimum threshold to avoid rolling back on noise (e.g. 0->0.01)

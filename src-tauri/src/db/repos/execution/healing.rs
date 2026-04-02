@@ -182,6 +182,40 @@ pub fn revert_auto_fix_pending(pool: &DbPool, id: &str) -> Result<(), AppError> 
     })
 }
 
+/// Revert stale `auto_fix_pending` issues back to `open` if they have been
+/// stuck for longer than `ttl_minutes`.  This prevents zombie issues when
+/// the retry job crashes or the app closes mid-healing.
+pub fn revert_stale_auto_fix_pending(pool: &DbPool, persona_id: &str, ttl_minutes: i64) {
+    let cutoff = (chrono::Utc::now() - chrono::Duration::minutes(ttl_minutes)).to_rfc3339();
+    match pool.get() {
+        Ok(conn) => {
+            match conn.execute(
+                "UPDATE persona_healing_issues SET auto_fixed = 0, status = 'open' \
+                 WHERE persona_id = ?1 AND status = 'auto_fix_pending' AND created_at <= ?2",
+                params![persona_id, cutoff],
+            ) {
+                Ok(n) if n > 0 => {
+                    tracing::info!(
+                        persona_id = %persona_id,
+                        reverted = n,
+                        ttl_minutes,
+                        "Reverted stale auto_fix_pending issues back to open",
+                    );
+                    create_audit_entry(
+                        pool, Some(persona_id), None,
+                        "stale_pending_reverted", "healing_analysis",
+                        &format!("Reverted {} stale auto_fix_pending issue(s) (TTL {}m)", n, ttl_minutes),
+                        None,
+                    );
+                }
+                Ok(_) => {}
+                Err(e) => tracing::warn!("Failed to revert stale auto_fix_pending: {}", e),
+            }
+        }
+        Err(e) => tracing::warn!("Failed to get DB connection for stale pending revert: {}", e),
+    }
+}
+
 /// Find healing issues associated with an execution ID (used to update status
 /// after a retry completes).
 pub fn get_by_execution_id(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaHealingIssue>, AppError> {

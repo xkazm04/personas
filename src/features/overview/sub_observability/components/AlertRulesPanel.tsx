@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2, ToggleLeft, ToggleRight, Pencil, X, Check, Activity } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
@@ -44,6 +45,7 @@ function RuleForm({
   onSubmit: (data: RuleFormData) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<RuleFormData>(initial ?? DEFAULT_FORM);
   const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === form.metric);
 
@@ -53,8 +55,8 @@ function RuleForm({
       <input
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
-        placeholder="Rule name (e.g. High error rate)"
-        className="w-full px-3 py-2 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
+        placeholder={t.overview.observability_page.rule_name_placeholder}
+        className="w-full px-3 py-2 typo-body rounded-lg bg-secondary/40 border border-primary/15 text-foreground placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:border-primary/30"
       />
 
       {/* Metric + Operator + Threshold */}
@@ -62,7 +64,7 @@ function RuleForm({
         <select
           value={form.metric}
           onChange={(e) => setForm({ ...form, metric: e.target.value as AlertMetric })}
-          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
+          className="px-2.5 py-1.5 typo-body rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
         >
           {ALERT_METRIC_OPTIONS.map(m => (
             <option key={m.value} value={m.value}>{m.label}</option>
@@ -72,7 +74,7 @@ function RuleForm({
         <select
           value={form.operator}
           onChange={(e) => setForm({ ...form, operator: e.target.value as AlertOperator })}
-          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none w-16"
+          className="px-2.5 py-1.5 typo-body rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none w-16"
         >
           <option value=">">&gt;</option>
           <option value="<">&lt;</option>
@@ -85,11 +87,11 @@ function RuleForm({
             type="number"
             value={form.threshold}
             onChange={(e) => setForm({ ...form, threshold: e.target.value })}
-            className="w-24 px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none pr-6"
+            className="w-24 px-2.5 py-1.5 typo-body rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none pr-6"
             step="any"
           />
           {metricInfo?.unit && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/50">
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 typo-caption text-muted-foreground/50">
               {metricInfo.unit}
             </span>
           )}
@@ -101,7 +103,7 @@ function RuleForm({
         <select
           value={form.severity}
           onChange={(e) => setForm({ ...form, severity: e.target.value as AlertSeverity })}
-          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
+          className="px-2.5 py-1.5 typo-body rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none"
         >
           {ALERT_SEVERITY_OPTIONS.map(s => (
             <option key={s.value} value={s.value}>{s.label}</option>
@@ -111,7 +113,7 @@ function RuleForm({
         <select
           value={form.personaId ?? '__global__'}
           onChange={(e) => setForm({ ...form, personaId: e.target.value === '__global__' ? null : e.target.value })}
-          className="px-2.5 py-1.5 text-sm rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none flex-1 min-w-[120px]"
+          className="px-2.5 py-1.5 typo-body rounded-lg bg-secondary/40 border border-primary/15 text-foreground focus-visible:outline-none flex-1 min-w-[120px]"
         >
           <option value="__global__">All agents (global)</option>
           {personas.map(p => (
@@ -128,13 +130,13 @@ function RuleForm({
             onSubmit(form);
           }}
           disabled={!form.name.trim() || !form.threshold}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-lg bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Check className="w-3.5 h-3.5" /> Save
         </button>
         <button
           onClick={onCancel}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-primary/15 text-muted-foreground hover:bg-secondary/40 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-lg border border-primary/15 text-muted-foreground hover:bg-secondary/40 transition-colors"
         >
           <X className="w-3.5 h-3.5" /> Cancel
         </button>
@@ -158,6 +160,7 @@ function RuleRow({
   onDelete: () => void;
   onEdit: () => void;
 }) {
+  const { t } = useTranslation();
   const metricInfo = ALERT_METRIC_OPTIONS.find(m => m.value === rule.metric);
   const sevInfo = ALERT_SEVERITY_OPTIONS.find(s => s.value === rule.severity);
   const scopeName = rule.persona_id ? personas.find(p => p.id === rule.persona_id)?.name ?? 'Unknown' : 'Global';
@@ -180,14 +183,14 @@ function RuleRow({
             {sevInfo?.label ?? rule.severity}
           </span>
         </div>
-        <p className="text-xs text-muted-foreground/60 mt-0.5">
+        <p className="typo-caption text-muted-foreground/60 mt-0.5">
           {metricInfo?.label ?? rule.metric} {rule.operator} {rule.threshold}{metricInfo?.unit ?? ''} &middot; {scopeName}
         </p>
       </div>
-      <button onClick={onEdit} className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors" title="Edit">
+      <button onClick={onEdit} className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors" title={t.overview.observability_page.edit}>
         <Pencil className="w-3.5 h-3.5" />
       </button>
-      <button onClick={onDelete} className="p-1 text-muted-foreground/50 hover:text-red-400 transition-colors" title="Delete">
+      <button onClick={onDelete} className="p-1 text-muted-foreground/50 hover:text-red-400 transition-colors" title={t.common.delete}>
         <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -210,7 +213,7 @@ function EvalHealthIndicator({ health }: { health: AlertEvalHealth }) {
   const dotColor = isHealthy ? 'bg-emerald-400' : 'bg-red-400';
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60" title={
+    <div className="flex items-center gap-1.5 typo-caption text-muted-foreground/60" title={
       health.lastError
         ? `Last error: ${health.lastError} (${health.totalFailures} total failures)`
         : `Evaluated ${health.rulesEvaluated} rules in ${health.lastEvalDurationMs}ms, ${health.rulesTriggered} triggered`
@@ -244,33 +247,41 @@ export function AlertRulesPanel() {
 
   const personaList = personas.map(p => ({ id: p.id, name: p.name }));
 
-  const handleAdd = (data: RuleFormData) => {
+  const handleAdd = async (data: RuleFormData) => {
     const threshold = parseFloat(data.threshold);
     if (!Number.isFinite(threshold)) return;
-    void addAlertRule({
-      name: data.name.trim(),
-      metric: data.metric,
-      operator: data.operator,
-      threshold,
-      severity: data.severity,
-      persona_id: data.personaId,
-      enabled: true,
-    });
-    setShowForm(false);
+    try {
+      await addAlertRule({
+        name: data.name.trim(),
+        metric: data.metric,
+        operator: data.operator,
+        threshold,
+        severity: data.severity,
+        persona_id: data.personaId,
+        enabled: true,
+      });
+      setShowForm(false);
+    } catch {
+      // Store already handles error state; form stays open so user can retry
+    }
   };
 
-  const handleEdit = (id: string, data: RuleFormData) => {
+  const handleEdit = async (id: string, data: RuleFormData) => {
     const threshold = parseFloat(data.threshold);
     if (!Number.isFinite(threshold)) return;
-    void updateAlertRule(id, {
-      name: data.name.trim(),
-      metric: data.metric,
-      operator: data.operator,
-      threshold,
-      severity: data.severity,
-      persona_id: data.personaId,
-    });
-    setEditingId(null);
+    try {
+      await updateAlertRule(id, {
+        name: data.name.trim(),
+        metric: data.metric,
+        operator: data.operator,
+        threshold,
+        severity: data.severity,
+        persona_id: data.personaId,
+      });
+      setEditingId(null);
+    } catch {
+      // Store already handles error state; form stays open so user can retry
+    }
   };
 
   return (
@@ -282,7 +293,7 @@ export function AlertRulesPanel() {
         </div>
         <button
           onClick={() => { setShowForm(true); setEditingId(null); }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border border-primary/15 text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-lg border border-primary/15 text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
         >
           <Plus className="w-3 h-3" /> Add Rule
         </button>
@@ -295,7 +306,7 @@ export function AlertRulesPanel() {
         )}
 
       {alertRules.length === 0 && !showForm && (
-        <p className="text-sm text-muted-foreground/50 text-center py-6">
+        <p className="typo-body text-muted-foreground/50 text-center py-6">
           No alert rules configured. Add a rule to get notified when metrics cross a threshold.
         </p>
       )}
@@ -314,8 +325,8 @@ export function AlertRulesPanel() {
               key={rule.id}
               rule={rule}
               personas={personaList}
-              onToggle={() => void toggleAlertRule(rule.id)}
-              onDelete={() => void deleteAlertRule(rule.id)}
+              onToggle={() => { toggleAlertRule(rule.id).catch(() => {}); }}
+              onDelete={() => { deleteAlertRule(rule.id).catch(() => {}); }}
               onEdit={() => { setEditingId(rule.id); setShowForm(false); }}
             />
           )

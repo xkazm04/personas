@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use serde::Serialize;
 use tauri::State;
-use tracing::{info, instrument};
+use tracing::instrument;
 use ts_rs::TS;
 
 use crate::db::models::PersonaPromptVersion;
@@ -119,10 +119,7 @@ pub fn get_prompt_error_rate(
     window: Option<i64>,
 ) -> Result<f64, AppError> {
     require_auth_sync(&state)?;
-    let start = std::time::Instant::now();
-    let result = repo::get_recent_error_rate(&state.db, &persona_id, window.unwrap_or(10));
-    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_prompt_error_rate");
-    result
+    repo::get_recent_error_rate(&state.db, &persona_id, window.unwrap_or(10))
 }
 
 // =============================================================================

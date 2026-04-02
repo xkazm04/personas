@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 
 interface UseHealingPanelStateParams {
@@ -43,10 +43,17 @@ export function useHealingPanelState({
     }
   }, [triggerHealing, selectedPersonaId, personas]);
 
+  const timelineCacheRef = useRef<{ pid: string | null; ts: number }>({ pid: null, ts: 0 });
   useEffect(() => {
     if (healingViewMode === 'timeline') {
       const pid = selectedPersonaId || personas[0]?.id;
-      if (pid) fetchHealingTimeline(pid);
+      if (pid) {
+        const now = Date.now();
+        if (timelineCacheRef.current.pid !== pid || now - timelineCacheRef.current.ts >= 30_000) {
+          fetchHealingTimeline(pid);
+          timelineCacheRef.current = { pid, ts: now };
+        }
+      }
     }
   }, [healingViewMode, selectedPersonaId, personas, fetchHealingTimeline]);
 

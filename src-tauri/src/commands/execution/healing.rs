@@ -117,8 +117,9 @@ pub async fn trigger_ai_healing(
     let pool = &state.db;
     let execution = exec_repo::get_by_id(pool, &execution_id)?;
 
-    // Per-persona concurrency guard: prevent overlapping healing sessions
-    if state.engine.is_healing(&execution.persona_id).await {
+    // Per-persona concurrency guard: atomically acquire the healing slot before
+    // returning "started" to avoid TOCTOU where two callers both see is_healing=false.
+    if !state.engine.try_start_healing(&execution.persona_id).await {
         return Err(AppError::Internal(
             "A healing session is already in progress for this persona".into(),
         ));

@@ -39,11 +39,8 @@ pub fn get_metrics_summary(
     persona_id: Option<String>,
 ) -> Result<MetricsSummary, AppError> {
     require_auth_sync(&state)?;
-    let start = std::time::Instant::now();
     let days = days.map(|d| d.clamp(1, 365));
-    let result = repo::get_summary(&state.db, days, persona_id.as_deref());
-    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_metrics_summary");
-    result
+    repo::get_summary(&state.db, days, persona_id.as_deref())
 }
 
 #[tauri::command]
@@ -54,11 +51,8 @@ pub fn get_metrics_chart_data(
     persona_id: Option<String>,
 ) -> Result<MetricsChartData, AppError> {
     require_auth_sync(&state)?;
-    let start = std::time::Instant::now();
     let days = days.map(|d| d.clamp(1, 365));
-    let result = repo::get_chart_data(&state.db, days, persona_id.as_deref());
-    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_metrics_chart_data");
-    result
+    repo::get_chart_data(&state.db, days, persona_id.as_deref())
 }
 
 /// Returns per-persona monthly spend.
@@ -111,8 +105,8 @@ pub fn get_all_monthly_spend(
          LEFT JOIN (
              SELECT persona_id, SUM(cost_usd) AS spend
              FROM persona_executions
-             WHERE status = 'completed'
-               AND created_at >= ?1
+             WHERE created_at >= ?1
+               AND status IN ('completed', 'failed')
              GROUP BY persona_id
          ) e ON e.persona_id = p.id
          ORDER BY p.name",
@@ -143,10 +137,7 @@ pub fn get_prompt_performance(
     days: Option<i64>,
 ) -> Result<crate::db::models::PromptPerformanceData, AppError> {
     require_auth_sync(&state)?;
-    let start = std::time::Instant::now();
-    let result = repo::get_prompt_performance(&state.db, &persona_id, days.unwrap_or(30).clamp(1, 365));
-    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_prompt_performance");
-    result
+    repo::get_prompt_performance(&state.db, &persona_id, days.unwrap_or(30).clamp(1, 365))
 }
 
 /// Returns aggregated dashboard data across all personas for the last N days,
@@ -159,10 +150,7 @@ pub fn get_execution_dashboard(
     days: Option<i64>,
 ) -> Result<ExecutionDashboardData, AppError> {
     require_auth_sync(&state)?;
-    let start = std::time::Instant::now();
-    let result = repo::get_execution_dashboard(&state.db, days.unwrap_or(30).clamp(1, 365));
-    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_execution_dashboard");
-    result
+    repo::get_execution_dashboard(&state.db, days.unwrap_or(30).clamp(1, 365))
 }
 
 /// Returns correlated events and root-cause suggestions for a specific anomaly.
@@ -178,8 +166,7 @@ pub fn get_anomaly_drilldown(
     persona_id: Option<String>,
 ) -> Result<AnomalyDrilldownData, AppError> {
     require_auth_sync(&state)?;
-    let start = std::time::Instant::now();
-    let result = repo::get_anomaly_drilldown(
+    repo::get_anomaly_drilldown(
         &state.db,
         &anomaly_date,
         &anomaly_metric,
@@ -187,7 +174,5 @@ pub fn get_anomaly_drilldown(
         anomaly_baseline,
         anomaly_deviation_pct,
         persona_id.as_deref(),
-    );
-    info!(duration_ms = start.elapsed().as_millis() as u64, "cmd::get_anomaly_drilldown");
-    result
+    )
 }

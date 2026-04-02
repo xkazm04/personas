@@ -45,20 +45,20 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
 
   return (
     <div className="px-4 py-3 border-b border-primary/10 bg-secondary/20">
-      <div className="flex items-center gap-4 flex-wrap text-sm">
+      <div className="flex items-center gap-3 flex-wrap typo-body">
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-foreground/90">{stats.openIssues}</span>
           <span className="text-muted-foreground/90">open</span>
         </div>
 
-        <span className="text-primary/15">|</span>
+        <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
 
         <div className="flex items-center gap-1.5">
           <span className="font-medium text-emerald-400">{stats.autoFixedThisWeek}</span>
           <span className="text-muted-foreground/90">auto-fixed this week</span>
         </div>
 
-        <span className="text-primary/15">|</span>
+        <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
 
         <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-lg ${trendBg}`}>
           <TrendIcon className={`w-3 h-3 ${trendColor}`} />
@@ -67,7 +67,7 @@ export function HealingIssueSummary({ issues }: { issues: PersonaHealingIssue[] 
 
         {stats.recurring.length > 0 && (
           <>
-            <span className="text-primary/15">|</span>
+            <span className="inline-block w-1 h-1 rounded-full bg-primary/20" />
             {stats.recurring.map(([category, count]) => (
               <span key={category} className="text-amber-400/80">
                 {count} {category} issues in 7d

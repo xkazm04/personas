@@ -124,6 +124,9 @@ export function useGalleryQuery(
   const fetchMoreQueuedRef = useRef(false);
   /** Session flag — ensures backfillReviewCategories only runs once per app session. */
   const backfillRanRef = useRef(false);
+  /** Ref tracking items.length to avoid stale closure in fetchMore's recursive drain. */
+  const itemsLengthRef = useRef(0);
+  itemsLengthRef.current = items.length;
 
   const setSearch = useCallback((value: string) => {
     setSearchRaw(value);
@@ -200,9 +203,12 @@ export function useGalleryQuery(
   // Uses a synchronous ref lock to prevent concurrent fetches from racing.
   // If called while a fetch is in-flight, the request is queued and runs after
   // the current fetch completes — this guarantees pages arrive in order.
+  const totalRef = useRef(total);
+  totalRef.current = total;
+
   const fetchMore = useCallback(() => {
     if (isLoading || aiSearchActive) return;
-    if (items.length >= total) return;
+    if (itemsLengthRef.current >= totalRef.current) return;
 
     if (fetchMoreLockRef.current) {
       fetchMoreQueuedRef.current = true;
@@ -223,18 +229,37 @@ export function useGalleryQuery(
       // If another fetchMore was requested while we were fetching, drain the queue
       if (fetchMoreQueuedRef.current) {
         fetchMoreQueuedRef.current = false;
-        // Re-check conditions before recursing
-        fetchMore();
+        // Re-check conditions via refs to avoid stale closure values
+        if (itemsLengthRef.current < totalRef.current) {
+          fetchMore();
+        }
       }
     });
-  }, [isLoading, aiSearchActive, items.length, total, fetchPage]);
+  }, [isLoading, aiSearchActive, fetchPage]);
 
   const hasMore = items.length < total;
+
+  // Shared helper: fetch sidebar data (connectors, categories, trending).
+  // Used by both the mount effect and the refresh callback to avoid duplication.
+  const fetchSidebarData = useCallback((cancelled: { current: boolean }) => {
+    const fetches: Promise<void>[] = [
+      listReviewConnectors()
+        .then((data) => { if (!cancelled.current) setAvailableConnectors(data); })
+        .catch(silentCatch("galleryQuery:listConnectors")),
+      listReviewCategories()
+        .then((data) => { if (!cancelled.current) setAvailableCategories(data); })
+        .catch(silentCatch("galleryQuery:listCategories")),
+      getTrendingTemplates(5)
+        .then((data) => { if (!cancelled.current) setTrendingTemplates(data); })
+        .catch(silentCatch("galleryQuery:getTrending")),
+    ];
+    return fetches;
+  }, []);
 
   // Fetch available connectors, categories, and trending templates.
   // All independent fetches are batched with Promise.all to avoid a serial waterfall.
   useEffect(() => {
-    let cancelled = false;
+    const cancelled = { current: false };
 
     // Gate backfill behind a session flag so it only runs once per app session.
     if (!backfillRanRef.current) {
@@ -242,17 +267,7 @@ export function useGalleryQuery(
       backfillReviewCategories().catch(silentCatch("galleryQuery:backfillCategories"));
     }
 
-    const fetches: Promise<void>[] = [
-      listReviewConnectors()
-        .then((data) => { if (!cancelled) setAvailableConnectors(data); })
-        .catch(silentCatch("galleryQuery:listConnectors")),
-      listReviewCategories()
-        .then((data) => { if (!cancelled) setAvailableCategories(data); })
-        .catch(silentCatch("galleryQuery:listCategories")),
-      getTrendingTemplates(5)
-        .then((data) => { if (!cancelled) setTrendingTemplates(data); })
-        .catch(silentCatch("galleryQuery:getTrending")),
-    ];
+    const fetches = fetchSidebarData(cancelled);
 
     // unfilteredTotal is now derived from the initial fetchPage(0) call which runs
     // on mount with no filters active — no separate request needed here.
@@ -267,7 +282,7 @@ export function useGalleryQuery(
           coverageFilter: 'full',
           coverageServiceTypes: stableCoverageServiceTypes,
         })
-          .then((r) => { if (!cancelled) setReadyTemplates(r.items); })
+          .then((r) => { if (!cancelled.current) setReadyTemplates(r.items); })
           .catch(silentCatch("galleryQuery:readyTemplates")),
         listDesignReviewsPaginated({
           sortBy: 'trending',
@@ -278,7 +293,7 @@ export function useGalleryQuery(
           coverageServiceTypes: stableCoverageServiceTypes,
         })
           .then((r) => {
-            if (!cancelled) {
+            if (!cancelled.current) {
               const scored = scoreRecommendations(r.items, stableCoverageServiceTypes);
               setRecommendedTemplates(scored);
             }
@@ -289,22 +304,15 @@ export function useGalleryQuery(
 
     Promise.all(fetches).catch(silentCatch("galleryQuery:mountBatch"));
 
-    return () => { cancelled = true; };
-  }, [stableCoverageServiceTypes]);
+    return () => { cancelled.current = true; };
+  }, [stableCoverageServiceTypes, fetchSidebarData]);
 
   const refresh = useCallback(() => {
     if (aiSearchActive) return;
     currentPageRef.current = 0;
     fetchPage(0, false);
-    listReviewConnectors()
-      .then(setAvailableConnectors)
-      .catch(silentCatch("galleryQuery:refreshConnectors"));
-    listReviewCategories()
-      .then(setAvailableCategories)
-      .catch(silentCatch("galleryQuery:refreshCategories"));
-    getTrendingTemplates(5)
-      .then(setTrendingTemplates)
-      .catch(silentCatch("galleryQuery:refreshTrending"));
+    const cancelled = { current: false };
+    fetchSidebarData(cancelled);
     // fetchPage already sets unfilteredTotal when no filters are active.
     // Only make a separate call when filters are applied so the "All" count stays fresh.
     const hasFilters = !!(debouncedSearch || connectorFilter.length > 0 || categoryFilter.length > 0);
@@ -313,7 +321,7 @@ export function useGalleryQuery(
         .then((r) => setUnfilteredTotal(r.total))
         .catch(silentCatch("galleryQuery:refreshUnfilteredTotal"));
     }
-  }, [fetchPage, aiSearchActive, debouncedSearch, connectorFilter, categoryFilter]);
+  }, [fetchPage, fetchSidebarData, aiSearchActive, debouncedSearch, connectorFilter, categoryFilter]);
 
   return {
     items,

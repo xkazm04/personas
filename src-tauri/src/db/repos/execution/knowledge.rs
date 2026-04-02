@@ -236,32 +236,26 @@ pub fn list_by_scope(
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
     timed_query!("knowledge_entries", "knowledge_entries::list_by_scope", {
         let conn = pool.get()?;
-        let limit = limit.unwrap_or(50);
 
+        let mut qb = crate::db::query_builder::QueryBuilder::new();
+        qb.where_eq("scope_type", scope_type.to_string());
         if let Some(sid) = scope_id {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM execution_knowledge
-                 WHERE scope_type = ?1 AND scope_id = ?2
-                 ORDER BY is_verified DESC, confidence DESC, updated_at DESC
-                 LIMIT ?3",
-            )?;
-            let rows = stmt.query_map(params![scope_type, sid, limit], row_to_knowledge)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-        } else {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM execution_knowledge
-                 WHERE scope_type = ?1
-                 ORDER BY is_verified DESC, confidence DESC, updated_at DESC
-                 LIMIT ?2",
-            )?;
-            let rows = stmt.query_map(params![scope_type, limit], row_to_knowledge)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            qb.where_eq("scope_id", sid.to_string());
         }
+        qb.order_by_multiple(&[("is_verified", "DESC"), ("confidence", "DESC"), ("updated_at", "DESC")]);
+        qb.limit(limit.unwrap_or(50));
+
+        let sql = qb.build_select("SELECT * FROM execution_knowledge");
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_knowledge)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
     })
 }
 
 /// Get cross-persona knowledge for prompt injection based on tool/connector assignments.
 /// Returns high-confidence, tool/connector/global scoped knowledge entries.
+///
+/// Uses batched IN clauses instead of per-item queries to avoid N+1 overhead.
 pub fn get_shared_injection(
     pool: &DbPool,
     tool_names: &[&str],
@@ -272,45 +266,48 @@ pub fn get_shared_injection(
 
     let mut results = Vec::new();
 
-    // Tool-scoped knowledge
-    for tool_name in tool_names {
-        let mut stmt = conn.prepare(
+    // Helper: build a batched query with dynamic IN clause placeholders
+    fn fetch_scoped(
+        conn: &rusqlite::Connection,
+        scope_type: &str,
+        scope_ids: &[&str],
+        min_confidence: f64,
+    ) -> Result<Vec<ExecutionKnowledge>, AppError> {
+        if scope_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let placeholders: Vec<String> = (0..scope_ids.len()).map(|i| format!("?{}", i + 3)).collect();
+        let sql = format!(
             "SELECT * FROM execution_knowledge
-             WHERE scope_type = 'tool' AND scope_id = ?1
-               AND confidence >= 0.5
+             WHERE scope_type = ?1 AND scope_id IN ({})
+               AND confidence >= ?2
                AND (success_count + failure_count) >= 2
-             ORDER BY is_verified DESC, confidence DESC
-             LIMIT 5",
-        )?;
-        let rows = stmt.query_map(params![tool_name], row_to_knowledge)?;
-        results.extend(rows.filter_map(|r| match r {
+             ORDER BY is_verified DESC, confidence DESC",
+            placeholders.join(", "),
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::with_capacity(scope_ids.len() + 2);
+        param_values.push(Box::new(scope_type.to_string()));
+        param_values.push(Box::new(min_confidence));
+        for id in scope_ids {
+            param_values.push(Box::new(id.to_string()));
+        }
+        let param_refs: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
+        let rows = stmt.query_map(param_refs.as_slice(), row_to_knowledge)?;
+        Ok(rows.filter_map(|r| match r {
             Ok(v) => Some(v),
             Err(e) => {
-                warn!(scope = "tool", scope_id = tool_name, error = %e, "Failed to read knowledge row");
+                warn!(scope = scope_type, error = %e, "Failed to read knowledge row");
                 None
             }
-        }));
+        }).collect())
     }
 
-    // Connector-scoped knowledge
-    for svc in connector_types {
-        let mut stmt = conn.prepare(
-            "SELECT * FROM execution_knowledge
-             WHERE scope_type = 'connector' AND scope_id = ?1
-               AND confidence >= 0.5
-               AND (success_count + failure_count) >= 2
-             ORDER BY is_verified DESC, confidence DESC
-             LIMIT 5",
-        )?;
-        let rows = stmt.query_map(params![svc], row_to_knowledge)?;
-        results.extend(rows.filter_map(|r| match r {
-            Ok(v) => Some(v),
-            Err(e) => {
-                warn!(scope = "connector", scope_id = svc, error = %e, "Failed to read knowledge row");
-                None
-            }
-        }));
-    }
+    // Tool-scoped knowledge (single batched query)
+    results.extend(fetch_scoped(&conn, "tool", tool_names, 0.5)?);
+
+    // Connector-scoped knowledge (single batched query)
+    results.extend(fetch_scoped(&conn, "connector", connector_types, 0.5)?);
 
     // Global knowledge
     let mut stmt = conn.prepare(
@@ -346,27 +343,19 @@ pub fn list_for_persona(
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
     timed_query!("knowledge_entries", "knowledge_entries::list_for_persona", {
         let conn = pool.get()?;
-        let limit = limit.unwrap_or(50);
 
+        let mut qb = crate::db::query_builder::QueryBuilder::new();
+        qb.where_eq("persona_id", persona_id.to_string());
         if let Some(kt) = knowledge_type {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM execution_knowledge
-                 WHERE persona_id = ?1 AND knowledge_type = ?2
-                 ORDER BY confidence DESC, updated_at DESC
-                 LIMIT ?3",
-            )?;
-            let rows = stmt.query_map(params![persona_id, kt, limit], row_to_knowledge)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-        } else {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM execution_knowledge
-                 WHERE persona_id = ?1
-                 ORDER BY confidence DESC, updated_at DESC
-                 LIMIT ?2",
-            )?;
-            let rows = stmt.query_map(params![persona_id, limit], row_to_knowledge)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            qb.where_eq("knowledge_type", kt.to_string());
         }
+        qb.order_by_multiple(&[("confidence", "DESC"), ("updated_at", "DESC")]);
+        qb.limit(limit.unwrap_or(50));
+
+        let sql = qb.build_select("SELECT * FROM execution_knowledge");
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_knowledge)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
     })
 }
 

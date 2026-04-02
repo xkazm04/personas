@@ -71,8 +71,8 @@ function BuildQuestionnaire({
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <HelpCircle className="w-4 h-4 text-primary flex-shrink-0" />
-        <h4 className="text-sm font-semibold text-foreground/80">Setup Questions</h4>
-        <span className="text-xs text-muted-foreground/50 tabular-nums ml-auto">{activeIndex + 1} / {questions.length}</span>
+        <h4 className="typo-heading text-foreground/80">Setup Questions</h4>
+        <span className="typo-caption text-muted-foreground/50 tabular-nums ml-auto">{activeIndex + 1} / {questions.length}</span>
       </div>
 
       <div className="flex items-center gap-2">
@@ -80,7 +80,7 @@ function BuildQuestionnaire({
           onClick={() => goTo(activeIndex - 1)}
           disabled={!canPrev}
           aria-label="Previous question"
-          className={`flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition-all ${
+          className={`flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
             canPrev ? `${BORDER_EMPHASIS} hover:bg-secondary/50 text-foreground/70` : `${BORDER_SUBTLE} text-foreground/15 cursor-default`
           }`}
         >
@@ -99,8 +99,8 @@ function BuildQuestionnaire({
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className={`${CARD_PADDING.standard} rounded-xl border ${tone.border} ${tone.bg}`}
             >
-              <p className="text-sm font-medium text-foreground/90 leading-relaxed mb-1">{q.question}</p>
-              {q.context && <p className="text-xs text-foreground/50 mb-3 leading-relaxed">{q.context}</p>}
+              <p className="typo-body text-foreground/90 leading-relaxed mb-1">{q.question}</p>
+              {q.context && <p className="typo-caption text-foreground/50 mb-3 leading-relaxed">{q.context}</p>}
 
               <div className="mt-2">
                 {q.type === 'select' && q.options && (
@@ -109,7 +109,7 @@ function BuildQuestionnaire({
                       const isSelected = (userAnswers[q.id] ?? q.default ?? '') === opt;
                       return (
                         <button key={opt} type="button" onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`w-full text-left px-3 py-1.5 text-sm rounded-lg border transition-all ${
+                          className={`w-full text-left px-3 py-1.5 typo-body rounded-lg border transition-all${
                             isSelected ? `${tone.selectBg} font-medium` : `text-foreground/70 ${BORDER_SUBTLE} hover:bg-secondary/40`
                           }`}>
                           {opt}
@@ -124,7 +124,7 @@ function BuildQuestionnaire({
                     value={userAnswers[q.id] ?? q.default ?? ''}
                     onChange={(e) => onAnswerUpdated(q.id, e.target.value)}
                     placeholder={q.default ?? 'Type your answer...'}
-                    className={`w-full px-3 py-2 text-sm rounded-xl border ${BORDER_DEFAULT} bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring transition-all`}
+                    className={`w-full px-3 py-2 typo-body rounded-xl border${BORDER_DEFAULT} bg-background/60 text-foreground placeholder-muted-foreground/40 focus-ring transition-all`}
                   />
                 )}
                 {q.type === 'boolean' && (
@@ -133,7 +133,7 @@ function BuildQuestionnaire({
                       const isSelected = (userAnswers[q.id] ?? q.default ?? '') === opt;
                       return (
                         <button key={opt} type="button" onClick={() => onAnswerUpdated(q.id, opt)}
-                          className={`px-3 py-1.5 text-sm rounded-xl border transition-all ${
+                          className={`px-3 py-1.5 typo-body rounded-xl border transition-all${
                             isSelected ? `${tone.selectBg} font-medium` : `text-foreground/70 ${BORDER_SUBTLE} hover:bg-secondary/40`
                           }`}>
                           {opt}
@@ -151,7 +151,7 @@ function BuildQuestionnaire({
           onClick={() => goTo(activeIndex + 1)}
           disabled={!canNext}
           aria-label="Next question"
-          className={`flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition-all ${
+          className={`flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
             canNext ? `${BORDER_EMPHASIS} hover:bg-secondary/50 text-foreground/70` : `${BORDER_SUBTLE} text-foreground/15 cursor-default`
           }`}
         >
@@ -166,7 +166,8 @@ function BuildQuestionnaire({
           const isAnswered = !!userAnswers[questions[i]!.id];
           return (
             <button key={i} type="button" onClick={() => goTo(i)}
-              className={`rounded-full transition-all duration-200 ${
+              aria-label={`Go to question ${i + 1}`}
+              className={`rounded-full transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                 isActive ? 'w-5 h-1.5 bg-primary' : isAnswered ? 'w-1.5 h-1.5 bg-primary/50' : 'w-1.5 h-1.5 bg-foreground/15'
               }`}
             />
@@ -180,7 +181,7 @@ function BuildQuestionnaire({
           type="button"
           onClick={onSubmit}
           disabled={!allAnswered}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl typo-body transition-all${
             allAnswered
               ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'bg-primary/30 text-primary-foreground/50 cursor-not-allowed'
@@ -203,30 +204,39 @@ const DIMENSION_PROMPTS = [
 ] as const;
 
 function DimensionAdjustmentPanel({
-  adjustmentRequest,
   onSetAdjustment,
 }: {
-  adjustmentRequest: string;
   onSetAdjustment: (value: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [dimensionNotes, setDimensionNotes] = useState<Record<string, string>>({});
+  const [freeformText, setFreeformText] = useState('');
 
-  // Build combined adjustment from dimension notes + freeform
+  // Build combined adjustment from dimension notes + freeform, keeping both in sync
+  const buildCombined = useCallback((notes: Record<string, string>, freeform: string) => {
+    const parts = Object.entries(notes)
+      .filter(([, v]) => v.trim())
+      .map(([k, v]) => {
+        const dim = DIMENSION_PROMPTS.find(d => d.key === k);
+        return `[${dim?.label ?? k}]: ${v.trim()}`;
+      });
+    const dimensionBlock = parts.join('\n');
+    const combined = [dimensionBlock, freeform].filter(Boolean).join('\n');
+    onSetAdjustment(combined);
+  }, [onSetAdjustment]);
+
   const handleDimensionNote = useCallback((key: string, value: string) => {
     setDimensionNotes(prev => {
       const next = { ...prev, [key]: value };
-      // Build combined adjustment text
-      const parts = Object.entries(next)
-        .filter(([, v]) => v.trim())
-        .map(([k, v]) => {
-          const dim = DIMENSION_PROMPTS.find(d => d.key === k);
-          return `[${dim?.label ?? k}]: ${v.trim()}`;
-        });
-      onSetAdjustment(parts.join('\n'));
+      buildCombined(next, freeformText);
       return next;
     });
-  }, [onSetAdjustment]);
+  }, [buildCombined, freeformText]);
+
+  const handleFreeformChange = useCallback((value: string) => {
+    setFreeformText(value);
+    buildCombined(dimensionNotes, value);
+  }, [buildCombined, dimensionNotes]);
 
   return (
     <div className="space-y-2">
@@ -235,7 +245,7 @@ function DimensionAdjustmentPanel({
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
         aria-label="Refine persona options"
-        className="flex items-center gap-2 text-sm font-medium text-muted-foreground/70 hover:text-foreground/80 transition-colors"
+        className="flex items-center gap-2 typo-body text-muted-foreground/70 hover:text-foreground/80 transition-colors"
       >
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? '' : '-rotate-90'}`} aria-hidden="true" />
         Refine persona (optional)
@@ -243,14 +253,14 @@ function DimensionAdjustmentPanel({
 
       {expanded && (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground/50">
+          <p className="typo-caption text-muted-foreground/50">
             Target specific dimensions to adjust, or use freeform below.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {DIMENSION_PROMPTS.map(dim => (
               <div key={dim.key} className={`rounded-lg border border-${dim.color}-500/10 bg-${dim.color}-500/[0.03] p-2.5`}>
-                <label className="text-xs font-medium text-foreground/70 block mb-1">
+                <label className="typo-caption font-medium text-foreground/70 block mb-1">
                   {dim.label}
                 </label>
                 <input
@@ -258,7 +268,7 @@ function DimensionAdjustmentPanel({
                   value={dimensionNotes[dim.key] ?? ''}
                   onChange={e => handleDimensionNote(dim.key, e.target.value)}
                   placeholder={dim.hint}
-                  className={`w-full px-2 py-1.5 text-xs rounded-lg border ${BORDER_SUBTLE} bg-background/40 text-foreground/75 placeholder-muted-foreground/30`}
+                  className={`w-full px-2 py-1.5 typo-caption rounded-lg border${BORDER_SUBTLE} bg-background/40 text-foreground/75 placeholder-muted-foreground/30`}
                 />
               </div>
             ))}
@@ -266,10 +276,10 @@ function DimensionAdjustmentPanel({
 
           {/* Freeform fallback */}
           <textarea
-            value={adjustmentRequest}
-            onChange={e => onSetAdjustment(e.target.value)}
+            value={freeformText}
+            onChange={e => handleFreeformChange(e.target.value)}
             placeholder="Or describe adjustments in your own words..."
-            className={`w-full h-16 p-2.5 rounded-xl border ${BORDER_SUBTLE} bg-background/40 text-xs text-foreground/75 resize-y placeholder-muted-foreground/30`}
+            className={`w-full h-16 p-2.5 rounded-xl border ${BORDER_SUBTLE}bg-background/40 typo-caption text-foreground/75 resize-y placeholder-muted-foreground/30`}
           />
         </div>
       )}
@@ -310,8 +320,8 @@ export function BuildStep() {
     <div className="space-y-3">
       {/* Step header */}
       <div>
-        <h3 className="text-base font-semibold text-foreground">Build Persona</h3>
-        <p className="text-sm text-muted-foreground/60 mt-0.5">
+        <h3 className="typo-body-lg font-semibold text-foreground">Build Persona</h3>
+        <p className="typo-body text-muted-foreground/60 mt-0.5">
           Generating persona prompt, tools, triggers, and connectors based on your selections.
         </p>
       </div>
@@ -320,9 +330,9 @@ export function BuildStep() {
       {state.transforming && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-500/5 border border-violet-500/10" aria-busy="true">
           <RefreshCw className="w-3.5 h-3.5 text-violet-400 animate-spin flex-shrink-0" aria-hidden="true" />
-          <span className="text-sm text-violet-300/80" aria-live="polite">{phaseLabel}</span>
+          <span className="typo-body text-violet-300/80" aria-live="polite">{phaseLabel}</span>
           {connectorCount > 0 && (
-            <span className="text-sm text-muted-foreground/60 ml-auto">{connectorCount} connectors</span>
+            <span className="typo-body text-muted-foreground/60 ml-auto">{connectorCount} connectors</span>
           )}
         </div>
       )}
@@ -351,12 +361,12 @@ export function BuildStep() {
         <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20" aria-live="assertive" role="alert">
           <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div className="flex-1">
-            <p className="text-sm text-red-400/80">{state.error}</p>
+            <p className="typo-body text-red-400/80">{state.error}</p>
             <button
               type="button"
               onClick={() => void startTransform()}
               aria-label="Retry building persona"
-              className="mt-1.5 text-sm text-red-300 hover:text-red-200 transition-colors underline underline-offset-2"
+              className="mt-1.5 typo-body text-red-300 hover:text-red-200 transition-colors underline underline-offset-2"
             >
               Retry
             </button>
@@ -368,7 +378,7 @@ export function BuildStep() {
       {state.transforming && (
         <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
           <Sparkles className="w-4 h-4 text-blue-400/60 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-blue-300/60 leading-relaxed">
+          <p className="typo-body text-blue-300/60 leading-relaxed">
             You can close this dialog -- processing continues in the background.
           </p>
         </div>
@@ -377,7 +387,6 @@ export function BuildStep() {
       {/* Dimension-targeted adjustment (post-build) */}
       {state.draft && !state.transforming && (
         <DimensionAdjustmentPanel
-          adjustmentRequest={state.adjustmentRequest}
           onSetAdjustment={wizard.setAdjustment}
         />
       )}
@@ -388,7 +397,7 @@ export function BuildStep() {
           type="button"
           onClick={discardDraft}
           aria-label="Discard draft and start over"
-          className="flex items-center gap-1.5 text-sm text-muted-foreground/40 hover:text-red-400/70 transition-colors"
+          className="flex items-center gap-1.5 typo-body text-muted-foreground/40 hover:text-red-400/70 transition-colors"
         >
           <Trash2 className="w-3 h-3" aria-hidden="true" />
           Discard draft and start over

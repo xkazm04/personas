@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use rusqlite::{params, Row};
-use tracing::{info, instrument};
+use tracing::{info, warn, instrument};
 
 use crate::db::models::{
     MetricsChartData, MetricsChartPoint, MetricsPersonaBreakdown,
@@ -77,30 +77,45 @@ pub fn create_prompt_version_with_snapshot(
 
     let conn = pool.get()?;
 
-    let version_number: i32 = conn
-        .query_row(
-            "SELECT COALESCE(MAX(version_number), 0) + 1 FROM persona_prompt_versions WHERE persona_id = ?1",
-            params![persona_id],
-            |row| row.get(0),
+    // Wrap SELECT MAX + INSERT in a transaction to prevent concurrent callers
+    // from reading the same MAX and inserting duplicate version numbers.
+    conn.execute_batch("BEGIN IMMEDIATE")?;
+    let result = (|| -> Result<(i32,), AppError> {
+        let version_number: i32 = conn
+            .query_row(
+                "SELECT COALESCE(MAX(version_number), 0) + 1 FROM persona_prompt_versions WHERE persona_id = ?1",
+                params![persona_id],
+                |row| row.get(0),
+            )?;
+
+        conn.execute(
+            "INSERT INTO persona_prompt_versions
+             (id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, created_at,
+              design_context, last_design_result, resolved_cells, icon, color)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)",
+            params![
+                id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, now,
+                snapshot.design_context, snapshot.last_design_result, snapshot.resolved_cells, snapshot.icon, snapshot.color,
+            ],
         )?;
+        Ok((version_number,))
+    })();
 
-    conn.execute(
-        "INSERT INTO persona_prompt_versions
-         (id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, created_at,
-          design_context, last_design_result, resolved_cells, icon, color)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)",
-        params![
-            id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, now,
-            snapshot.design_context, snapshot.last_design_result, snapshot.resolved_cells, snapshot.icon, snapshot.color,
-        ],
-    )?;
-
-    Ok(PersonaPromptVersion {
-        id, persona_id: persona_id.to_string(), version_number,
-        structured_prompt, system_prompt, change_summary, tag, created_at: now,
-        design_context: snapshot.design_context, last_design_result: snapshot.last_design_result,
-        resolved_cells: snapshot.resolved_cells, icon: snapshot.icon, color: snapshot.color,
-    })
+    match result {
+        Ok((version_number,)) => {
+            conn.execute_batch("COMMIT")?;
+            Ok(PersonaPromptVersion {
+                id, persona_id: persona_id.to_string(), version_number,
+                structured_prompt, system_prompt, change_summary, tag, created_at: now,
+                design_context: snapshot.design_context, last_design_result: snapshot.last_design_result,
+                resolved_cells: snapshot.resolved_cells, icon: snapshot.icon, color: snapshot.color,
+            })
+        }
+        Err(e) => {
+            let _ = conn.execute_batch("ROLLBACK");
+            Err(e)
+        }
+    }
     })
 }
 
@@ -155,7 +170,10 @@ pub fn get_prompt_versions(
             "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![persona_id, limit], row_to_prompt_version)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(rows.filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => { warn!("get_prompt_versions: row deserialization failed: {e}"); None }
+        }).collect())
     })
 }
 
@@ -360,7 +378,10 @@ pub fn get_chart_data(
                 active_personas: row.get("active_personas")?,
             })
         })?;
-        rows.filter_map(|r| r.ok()).collect()
+        rows.filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => { warn!("get_chart_data: chart_points row deserialization failed: {e}"); None }
+        }).collect()
     };
 
     // 2) Per-persona breakdown (for pie chart)
@@ -384,7 +405,10 @@ pub fn get_chart_data(
                 cost: row.get("cost")?,
             })
         })?;
-        rows.filter_map(|r| r.ok()).collect()
+        rows.filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => { warn!("get_chart_data: persona_breakdown row deserialization failed: {e}"); None }
+        }).collect()
     };
 
     let anomalies = detect_chart_anomalies(&chart_points);
@@ -463,7 +487,7 @@ fn detect_chart_anomalies(points: &[MetricsChartPoint]) -> Vec<MetricAnomaly> {
         }
 
         let deviation_pct = ((value - baseline) / baseline) * 100.0;
-        if deviation_pct > 100.0 {
+        if deviation_pct > 100.0 || deviation_pct < -50.0 {
             anomalies.push(MetricAnomaly {
                 date: points[i].date.clone(),
                 metric: "cost".to_string(),
@@ -523,8 +547,8 @@ fn detect_anomalies(
 
             let deviation_pct = ((value - baseline) / baseline) * 100.0;
 
-            // Flag if deviation > 100% (2x baseline)
-            if deviation_pct > 100.0 {
+            // Flag if deviation > 100% (2x baseline) or < -50% (sudden drop)
+            if deviation_pct > 100.0 || deviation_pct < -50.0 {
                 let exec_id = worst_map
                     .get(&daily_points[i].date)
                     .map(|(id, _)| id.clone());
@@ -587,7 +611,10 @@ pub fn get_prompt_performance(
                 id: row.get(6)?,
             })
         })?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => { warn!("get_prompt_performance: exec row deserialization failed: {e}"); None }
+        })
         .collect();
 
     // 2) Bucket by date
@@ -672,7 +699,10 @@ pub fn get_prompt_performance(
                 change_summary: row.get(4)?,
             })
         })?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => { warn!("get_prompt_performance: version_marker row deserialization failed: {e}"); None }
+        })
         .collect();
 
     // 5) Detect anomalies
@@ -761,7 +791,10 @@ pub fn get_execution_dashboard(
                 exec_id: row.get(8)?,
             })
         })?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => { warn!("get_execution_dashboard: row deserialization failed: {e}"); None }
+        })
         .collect();
 
     if rows.is_empty() {

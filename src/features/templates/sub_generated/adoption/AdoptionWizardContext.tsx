@@ -64,6 +64,33 @@ export function AdoptionWizardProvider({
   onPersonaCreated,
   children,
 }: AdoptionWizardProviderProps) {
+  // When the wizard is closed, skip the entire heavy hook tree.
+  // This avoids running 5 hooks + verification + safety scan on every gallery re-render.
+  if (!isOpen) {
+    return <>{children}</>;
+  }
+
+  return (
+    <AdoptionWizardProviderInner
+      isOpen={isOpen}
+      review={review}
+      credentials={credentials}
+      connectorDefinitions={connectorDefinitions}
+      onPersonaCreated={onPersonaCreated}
+    >
+      {children}
+    </AdoptionWizardProviderInner>
+  );
+}
+
+function AdoptionWizardProviderInner({
+  isOpen,
+  review,
+  credentials,
+  connectorDefinitions,
+  onPersonaCreated,
+  children,
+}: AdoptionWizardProviderProps) {
   const storeCredentials = useVaultStore((s) => s.credentials);
   const wizard = useAdoptReducer();
   const { state } = wizard;

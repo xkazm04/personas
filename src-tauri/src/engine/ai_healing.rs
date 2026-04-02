@@ -8,7 +8,6 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::db::repos::execution::healing as healing_repo;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -246,6 +245,18 @@ fn apply_db_fixes(
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
 
+    // Write audit entries into the active transaction so they commit/rollback
+    // atomically with the fixes they describe.
+    let tx_audit = |tx: &rusqlite::Transaction<'_>, event_type: &str, message: &str, detail: Option<&str>| {
+        let id = uuid::Uuid::new_v4().to_string();
+        let ts = chrono::Utc::now().to_rfc3339();
+        let _ = tx.execute(
+            "INSERT INTO healing_audit_log (id, persona_id, execution_id, event_type, subsystem, message, detail, created_at)
+             VALUES (?1, ?2, NULL, ?3, 'ai_healing', ?4, ?5, ?6)",
+            params![id, persona_id, event_type, message, detail, ts],
+        );
+    };
+
     for fix in fixes {
         match fix.fix_type.as_str() {
             "modify_prompt" => {
@@ -291,42 +302,33 @@ fn apply_db_fixes(
                                         "AI healing: section '{}' not found in structured_prompt",
                                         other
                                     );
-                                    healing_repo::create_audit_entry(
-                                        pool, Some(persona_id), None,
-                                        "ai_heal_section_missing", "ai_healing",
+                                    tx_audit(&tx, "ai_heal_section_missing",
                                         &format!("Section '{}' not found in structured_prompt", other),
-                                        Some(&fix.description),
-                                    );
+                                        Some(&fix.description));
                                 }
                             } else {
                                 tracing::error!(
                                     "AI healing: structured_prompt is valid JSON but not an object, cannot patch section '{}'",
                                     other
                                 );
-                                healing_repo::create_audit_entry(
-                                    pool, Some(persona_id), None,
-                                    "ai_heal_not_object", "ai_healing",
+                                tx_audit(&tx, "ai_heal_not_object",
                                     &format!(
                                         "structured_prompt is not a JSON object, cannot patch section '{}'",
                                         other
                                     ),
-                                    Some(&fix.description),
-                                );
+                                    Some(&fix.description));
                             }
                         } else {
                             tracing::error!(
                                 "AI healing: structured_prompt is not valid JSON, cannot patch section '{}'",
                                 other
                             );
-                            healing_repo::create_audit_entry(
-                                pool, Some(persona_id), None,
-                                "ai_heal_invalid_json", "ai_healing",
+                            tx_audit(&tx, "ai_heal_invalid_json",
                                 &format!(
                                     "structured_prompt is not valid JSON, cannot patch section '{}'",
                                     other
                                 ),
-                                Some(&fix.description),
-                            );
+                                Some(&fix.description));
                         }
                     }
                 }
@@ -339,15 +341,12 @@ fn apply_db_fixes(
                                 "AI healing: timeout_ms {} out of bounds [{}, {}], rejecting",
                                 timeout, TIMEOUT_MS_MIN, TIMEOUT_MS_MAX,
                             );
-                            healing_repo::create_audit_entry(
-                                pool, Some(persona_id), None,
-                                "ai_heal_value_rejected", "ai_healing",
+                            tx_audit(&tx, "ai_heal_value_rejected",
                                 &format!(
                                     "Rejected timeout_ms={} (must be {}-{})",
                                     timeout, TIMEOUT_MS_MIN, TIMEOUT_MS_MAX,
                                 ),
-                                Some(&fix.description),
-                            );
+                                Some(&fix.description));
                         } else {
                             tx.execute(
                                 "UPDATE personas SET timeout_ms = ?1, updated_at = ?2 WHERE id = ?3",
@@ -364,15 +363,12 @@ fn apply_db_fixes(
                                 "AI healing: max_turns {} out of bounds [{}, {}], rejecting",
                                 turns, MAX_TURNS_MIN, MAX_TURNS_MAX,
                             );
-                            healing_repo::create_audit_entry(
-                                pool, Some(persona_id), None,
-                                "ai_heal_value_rejected", "ai_healing",
+                            tx_audit(&tx, "ai_heal_value_rejected",
                                 &format!(
                                     "Rejected max_turns={} (must be {}-{})",
                                     turns, MAX_TURNS_MIN, MAX_TURNS_MAX,
                                 ),
-                                Some(&fix.description),
-                            );
+                                Some(&fix.description));
                         } else {
                             tx.execute(
                                 "UPDATE personas SET max_turns = ?1, updated_at = ?2 WHERE id = ?3",
@@ -391,12 +387,9 @@ fn apply_db_fixes(
                                 "AI healing: blocked attempt to disable persona {}",
                                 persona_id,
                             );
-                            healing_repo::create_audit_entry(
-                                pool, Some(persona_id), None,
-                                "ai_heal_disable_blocked", "ai_healing",
+                            tx_audit(&tx, "ai_heal_disable_blocked",
                                 "Blocked AI healing from setting enabled=false (requires human approval)",
-                                Some(&fix.description),
-                            );
+                                Some(&fix.description));
                         } else {
                             let enabled_int = 1;
                             tx.execute(
@@ -409,12 +402,9 @@ fn apply_db_fixes(
                 }
                 other => {
                     tracing::warn!("AI healing: unknown config target '{}'", other);
-                    healing_repo::create_audit_entry(
-                        pool, Some(persona_id), None,
-                        "ai_heal_unknown_target", "ai_healing",
+                    tx_audit(&tx, "ai_heal_unknown_target",
                         &format!("Unknown config target '{}'", other),
-                        Some(&fix.description),
-                    );
+                        Some(&fix.description));
                 }
             },
             "modify_file" | "run_command" => {
@@ -427,12 +417,9 @@ fn apply_db_fixes(
             }
             other => {
                 tracing::warn!("AI healing: unknown fix type '{}'", other);
-                healing_repo::create_audit_entry(
-                    pool, Some(persona_id), None,
-                    "ai_heal_unknown_fix_type", "ai_healing",
+                tx_audit(&tx, "ai_heal_unknown_fix_type",
                     &format!("Unknown fix type '{}'", other),
-                    Some(&fix.description),
-                );
+                    Some(&fix.description));
             }
         }
     }

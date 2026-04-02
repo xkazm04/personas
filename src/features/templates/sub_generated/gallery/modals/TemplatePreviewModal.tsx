@@ -100,10 +100,10 @@ export function TemplatePreviewModal({
         {/* Header */}
         <div className={`px-6 py-4 border-b ${BORDER_SUBTLE} flex items-center justify-between gap-4 flex-shrink-0`}>
           <div className="min-w-0 flex-1">
-            <h2 id="template-preview-title" className="text-lg font-semibold text-foreground/90 truncate">
+            <h2 id="template-preview-title" className="typo-heading-lg text-foreground/90 truncate">
               Preview: {review.test_case_name}
             </h2>
-            <p className="text-sm text-muted-foreground/60 mt-0.5">
+            <p className="typo-body text-muted-foreground/60 mt-0.5">
               Sandboxed single-turn execution -- no persona created
             </p>
           </div>
@@ -124,10 +124,10 @@ export function TemplatePreviewModal({
                 <Play className="w-7 h-7 text-violet-400" />
               </div>
               <div className="text-center max-w-md">
-                <h3 className="text-base font-medium text-foreground/85 mb-1.5">
+                <h3 className="typo-body-lg font-medium text-foreground/85 mb-1.5">
                   Try this template
                 </h3>
-                <p className="text-sm text-muted-foreground/60 leading-relaxed">
+                <p className="typo-body text-muted-foreground/60 leading-relaxed">
                   Run a sandboxed single-turn execution to see how this persona behaves.
                   Uses the template's system prompt with mock inputs -- nothing is saved.
                 </p>
@@ -135,13 +135,13 @@ export function TemplatePreviewModal({
               <button
                 onClick={handleRun}
                 disabled={!designResult}
-                className="px-4 py-2.5 text-sm rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2.5 typo-body rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
               >
                 <Play className="w-4 h-4" />
                 Run Preview
               </button>
               {!designResult && (
-                <p className="text-sm text-red-400/70">
+                <p className="typo-body text-red-400/70">
                   No design data available for this template.
                 </p>
               )}
@@ -164,19 +164,19 @@ export function TemplatePreviewModal({
         <div className={`px-6 py-3 border-t ${BORDER_SUBTLE} flex items-center justify-between flex-shrink-0`}>
           <div className="flex items-center gap-2">
             {phase === 'idle' && hasStarted && (
-              <span className="text-sm text-muted-foreground/50">Ready</span>
+              <span className="typo-body text-muted-foreground/50">Ready</span>
             )}
             {isRunning && (
-              <span className="text-sm text-blue-400/80 flex items-center gap-1.5">
+              <span className="typo-body text-blue-400/80 flex items-center gap-1.5">
                 <ThinkingLoader size={20} />
                 Running...
               </span>
             )}
             {phase === 'completed' && (
-              <span className="text-sm text-emerald-400/80">Completed</span>
+              <span className="typo-body text-emerald-400/80">Completed</span>
             )}
             {phase === 'failed' && (
-              <span className="text-sm text-red-400/80">
+              <span className="typo-body text-red-400/80">
                 {error || 'Execution failed'}
               </span>
             )}
@@ -185,20 +185,20 @@ export function TemplatePreviewModal({
             {isDone && (
               <button
                 onClick={handleRetry}
-                className="px-3.5 py-2 text-sm rounded-xl bg-secondary/50 text-foreground/70 hover:bg-secondary/80 transition-colors flex items-center gap-1.5"
+                className="px-3.5 py-2 typo-body rounded-xl bg-secondary/50 text-foreground/70 hover:bg-secondary/80 transition-colors flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Run Again
               </button>
             )}
             {isRunning && (
-              <span className="text-sm text-muted-foreground/60">
+              <span className="typo-body text-muted-foreground/60">
                 You can close -- test will continue in background
               </span>
             )}
             <button
               onClick={onClose}
-              className="px-3.5 py-2 text-sm rounded-xl text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors"
+              className="px-3.5 py-2 typo-body rounded-xl text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/50 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
             >
               Close
             </button>

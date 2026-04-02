@@ -3,7 +3,7 @@ export { default } from './components/ObservabilityDashboard';
 export { MetricsCharts } from './components/MetricsCharts';
 export type { PieDataPoint } from './components/MetricsCharts';
 export { OverviewStatCard, type TrendData, type OverviewStatCardProps } from './components/OverviewStatCard';
-export { SummaryCard, type SummaryCardProps } from './components/SpendOverview';
+export { OverviewStatCard as SummaryCard, type OverviewStatCardProps as SummaryCardProps } from './components/OverviewStatCard';
 export { default as HealingIssueModal } from './components/HealingIssueModal';
 export { default as IpcPerformancePanel } from './components/IpcPerformancePanel';
 export type { ChartAnnotationRecord, AnnotationType } from './libs/chartAnnotations';

@@ -130,7 +130,7 @@ export function SearchAutocomplete({
           id="search-suggestions-listbox"
           aria-label="Search suggestions"
         >
-          <div className="px-3 py-1.5 text-sm uppercase tracking-wider text-muted-foreground/50 border-b border-primary/10">
+          <div className="px-3 py-1.5 typo-body uppercase tracking-wider text-muted-foreground/50 border-b border-primary/10">
             {prefix.startsWith('category') ? 'Categories'
               : prefix.startsWith('difficulty') ? 'Difficulty'
               : prefix.startsWith('setup') ? 'Setup Time'
@@ -147,7 +147,7 @@ export function SearchAutocomplete({
                   role="option"
                   aria-selected={isFocused}
                   onClick={() => onSelect(suggestion.chip)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg outline-none ${
                     isFocused
                       ? 'bg-violet-500/10 text-foreground/90'
                       : 'text-foreground/80 hover:bg-primary/5'

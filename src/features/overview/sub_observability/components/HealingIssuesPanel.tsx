@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Stethoscope, CheckCircle, CheckCircle2, AlertTriangle, X, List, GitBranch, FileWarning, ChevronDown, ChevronRight } from 'lucide-react';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
@@ -8,6 +8,7 @@ import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
 import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface HealingIssuesPanelProps {
   healingIssues: PersonaHealingIssue[];
@@ -48,23 +49,31 @@ export function HealingIssuesPanel({
   viewMode, setViewMode, timelineEvents, timelineLoading,
   selectedPersonaId,
 }: HealingIssuesPanelProps) {
+  const { t } = useTranslation();
   const handleTimelineSelectIssue = (issueId: string) => {
     const issue = healingIssues.find(i => i.id === issueId);
     if (issue) setSelectedIssue(issue);
   };
 
-  // Audit log state
+  // Audit log state with 30-second cache to avoid duplicate API calls on toggle
   const [auditExpanded, setAuditExpanded] = useState(false);
   const [auditEntries, setAuditEntries] = useState<HealingAuditEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
+  const auditCacheRef = useRef<{ personaId: string | null; ts: number }>({ personaId: null, ts: 0 });
 
   const fetchAudit = useCallback(async () => {
+    const cacheKey = selectedPersonaId ?? null;
+    const now = Date.now();
+    if (auditCacheRef.current.personaId === cacheKey && now - auditCacheRef.current.ts < 30_000) {
+      return;
+    }
     setAuditLoading(true);
     try {
       const entries = await listHealingAuditLog(selectedPersonaId ?? undefined, 50);
       setAuditEntries(entries);
+      auditCacheRef.current = { personaId: cacheKey, ts: Date.now() };
     } catch {
-      // non-critical — silently degrade
+      // non-critical -- silently degrade
     } finally {
       setAuditLoading(false);
     }
@@ -84,7 +93,7 @@ export function HealingIssuesPanel({
           </div>
           <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">Health Issues</h3>
           {healingIssues.length > 0 && (
-            <span className="px-2 py-0.5 text-sm font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
+            <span className="px-2 py-0.5 typo-body font-black tracking-wide rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
               {healingIssues.length}
             </span>
           )}
@@ -95,14 +104,14 @@ export function HealingIssuesPanel({
             <button
               onClick={() => setViewMode('list')}
               className={`p-1.5 transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
-              title="List view"
+              title={t.overview.observability_page.list_view}
             >
               <List className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setViewMode('timeline')}
               className={`p-1.5 transition-colors ${viewMode === 'timeline' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-muted-foreground'}`}
-              title="Timeline view"
+              title={t.overview.observability_page.timeline_view}
             >
               <GitBranch className="w-3.5 h-3.5" />
             </button>
@@ -133,7 +142,7 @@ export function HealingIssuesPanel({
         <div className="flex items-center justify-between px-4 py-2.5 bg-cyan-500/10 border-b border-cyan-500/20">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-sm text-cyan-300">
+            <span className="typo-body text-cyan-300">
               Analysis complete: {analysisResult.issues_created} issue{analysisResult.issues_created !== 1 ? 's' : ''} found
               {analysisResult.auto_fixed > 0 && ` (${analysisResult.auto_fixed} auto-fixed)`}
               , {analysisResult.failures_analyzed} execution{analysisResult.failures_analyzed !== 1 ? 's' : ''} scanned
@@ -149,7 +158,7 @@ export function HealingIssuesPanel({
         <div className="flex items-center justify-between px-4 py-2.5 bg-red-500/10 border-b border-red-500/20">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-            <span className="text-sm text-red-300">{analysisError}</span>
+            <span className="typo-body text-red-300">{analysisError}</span>
           </div>
           <button onClick={() => setAnalysisError(null)} className="p-1 rounded hover:bg-red-500/20 text-red-400/50 hover:text-red-300 transition-colors">
             <X className="w-3 h-3" />
@@ -206,7 +215,7 @@ export function HealingIssuesPanel({
               <CheckCircle2 className="w-6 h-6 text-emerald-400" />
             </div>
             <p className="typo-heading text-foreground/80">No open issues</p>
-            <p className="text-sm text-muted-foreground mt-1">Run analysis to check for problems.</p>
+            <p className="typo-body text-muted-foreground mt-1">Run analysis to check for problems.</p>
           </div>
         </div>
       ) : (
@@ -225,9 +234,9 @@ export function HealingIssuesPanel({
         >
           {auditExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/70" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/70" />}
           <FileWarning className="w-3.5 h-3.5 text-amber-400/70" />
-          <span className="text-sm typo-heading text-muted-foreground/90">Healing Audit Log</span>
+          <span className="typo-body typo-heading text-muted-foreground/90">Healing Audit Log</span>
           {auditEntries.length > 0 && auditExpanded && (
-            <span className="px-1.5 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-400/80 border border-amber-500/15">
+            <span className="px-1.5 py-0.5 typo-caption rounded-full bg-amber-500/10 text-amber-400/80 border border-amber-500/15">
               {auditEntries.length}
             </span>
           )}
@@ -240,27 +249,27 @@ export function HealingIssuesPanel({
                 <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
               </div>
             ) : auditEntries.length === 0 ? (
-              <p className="text-sm text-muted-foreground/70 py-3 text-center">No silent failures recorded.</p>
+              <p className="typo-body text-muted-foreground/70 py-3 text-center">No silent failures recorded.</p>
             ) : (
               <div className="space-y-1">
                 {auditEntries.map((entry) => (
                   <div
                     key={entry.id}
-                    className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-primary/5 text-sm"
+                    className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-secondary/30 border border-primary/5 typo-body"
                   >
-                    <span className="shrink-0 px-1.5 py-0.5 text-xs rounded bg-amber-500/10 text-amber-400/90 border border-amber-500/15 mt-0.5">
+                    <span className="shrink-0 px-1.5 py-0.5 typo-caption rounded bg-amber-500/10 text-amber-400/90 border border-amber-500/15 mt-0.5">
                       {AUDIT_EVENT_LABELS[entry.eventType] ?? entry.eventType}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-foreground/80 truncate">{entry.message}</p>
                       {entry.detail && (
-                        <p className="text-muted-foreground/70 text-xs truncate mt-0.5">{entry.detail}</p>
+                        <p className="text-muted-foreground/70 typo-caption truncate mt-0.5">{entry.detail}</p>
                       )}
                     </div>
-                    <span className="shrink-0 text-xs text-muted-foreground/50 mt-0.5">
+                    <span className="shrink-0 typo-caption text-muted-foreground/50 mt-0.5">
                       {entry.subsystem}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground/40 mt-0.5">
+                    <span className="shrink-0 typo-caption text-muted-foreground/40 mt-0.5">
                       {new Date(entry.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>

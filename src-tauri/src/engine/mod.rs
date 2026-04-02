@@ -536,6 +536,16 @@ impl ExecutionEngine {
             .contains(persona_id)
     }
 
+    /// Atomically try to acquire the healing slot for a persona.
+    /// Returns `true` if the slot was acquired (no existing session),
+    /// `false` if a session is already in progress.
+    pub async fn try_start_healing(&self, persona_id: &str) -> bool {
+        self.healing_personas
+            .lock()
+            .await
+            .insert(persona_id.to_string())
+    }
+
     /// Register a oneshot receiver that fires when the given execution
     /// reaches a terminal state (completed, failed, cancelled, etc.).
     /// Multiple callers can subscribe to the same execution.

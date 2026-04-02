@@ -36,6 +36,21 @@ pub fn set(pool: &DbPool, key: &str, value: &str) -> Result<(), AppError> {
     })
 }
 
+/// Get all settings matching a key prefix.  Returns `(key, value)` pairs.
+pub fn get_by_prefix(pool: &DbPool, prefix: &str) -> Result<Vec<(String, String)>, AppError> {
+    timed_query!("app_settings", "app_settings::get_by_prefix", {
+        let conn = pool.get()?;
+        let pattern = format!("{prefix}%");
+        let mut stmt = conn.prepare(
+            "SELECT key, value FROM app_settings WHERE key LIKE ?1",
+        )?;
+        let rows = stmt.query_map(params![pattern], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
 /// Delete a setting by key. Returns true if a row was deleted.
 pub fn delete(pool: &DbPool, key: &str) -> Result<bool, AppError> {
     timed_query!("app_settings", "app_settings::delete", {

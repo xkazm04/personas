@@ -13,12 +13,9 @@ use crate::db::DbPool;
 
 /// Tool call step parsed from the execution's tool_steps JSON.
 #[derive(Debug, Deserialize)]
-#[allow(dead_code)]
 struct ToolCallStep {
     #[serde(default)]
     tool_name: String,
-    #[serde(default)]
-    status: String,
 }
 
 /// Bundles the common parameters threaded through all knowledge extraction functions.
@@ -30,6 +27,39 @@ pub struct ExecutionContext<'a> {
     pub success: bool,
     pub cost_usd: f64,
     pub duration_ms: f64,
+}
+
+/// Persist a knowledge entry, logging and auditing on failure.
+fn persist_knowledge(
+    ctx: &ExecutionContext<'_>,
+    knowledge_type: &str,
+    pattern_key: &str,
+    pattern_data: &str,
+    success: bool,
+) {
+    if let Err(e) = knowledge_repo::upsert(
+        ctx.pool,
+        ctx.persona_id,
+        ctx.use_case_id,
+        knowledge_type,
+        pattern_key,
+        pattern_data,
+        success,
+        ctx.cost_usd,
+        ctx.duration_ms,
+        ctx.execution_id,
+    ) {
+        warn!("Failed to persist {} knowledge: {}", knowledge_type, e);
+        healing_repo::create_audit_entry(
+            ctx.pool,
+            Some(ctx.persona_id),
+            Some(ctx.execution_id),
+            "knowledge_persist_error",
+            "knowledge_extraction",
+            &format!("Failed to persist {} knowledge", knowledge_type),
+            Some(&format!("{e}")),
+        );
+    }
 }
 
 /// Extract knowledge from a completed execution and persist it.
@@ -114,25 +144,7 @@ fn extract_tool_sequence(ctx: &ExecutionContext<'_>, steps_json: &str) {
     })
     .to_string();
 
-    if let Err(e) = knowledge_repo::upsert(
-        ctx.pool,
-        ctx.persona_id,
-        ctx.use_case_id,
-        "tool_sequence",
-        &pattern_key,
-        &pattern_data,
-        ctx.success,
-        ctx.cost_usd,
-        ctx.duration_ms,
-        ctx.execution_id,
-    ) {
-        tracing::warn!("Failed to persist tool_sequence knowledge: {}", e);
-        healing_repo::create_audit_entry(
-            ctx.pool, Some(ctx.persona_id), Some(ctx.execution_id),
-            "knowledge_persist_error", "knowledge_extraction",
-            "Failed to persist tool_sequence knowledge", Some(&format!("{e}")),
-        );
-    }
+    persist_knowledge(ctx, "tool_sequence", &pattern_key, &pattern_data, ctx.success);
 }
 
 /// Extract a failure pattern from the error message.
@@ -150,25 +162,7 @@ fn extract_failure_pattern(ctx: &ExecutionContext<'_>, error_message: &str) {
     })
     .to_string();
 
-    if let Err(e) = knowledge_repo::upsert(
-        ctx.pool,
-        ctx.persona_id,
-        ctx.use_case_id,
-        "failure_pattern",
-        &pattern_key,
-        &pattern_data,
-        false,
-        ctx.cost_usd,
-        ctx.duration_ms,
-        ctx.execution_id,
-    ) {
-        tracing::warn!("Failed to persist failure_pattern knowledge: {}", e);
-        healing_repo::create_audit_entry(
-            ctx.pool, Some(ctx.persona_id), Some(ctx.execution_id),
-            "knowledge_persist_error", "knowledge_extraction",
-            "Failed to persist failure_pattern knowledge", Some(&format!("{e}")),
-        );
-    }
+    persist_knowledge(ctx, "failure_pattern", &pattern_key, &pattern_data, false);
 }
 
 /// Extract model performance data.
@@ -178,25 +172,7 @@ fn extract_model_performance(ctx: &ExecutionContext<'_>, model: &str) {
     })
     .to_string();
 
-    if let Err(e) = knowledge_repo::upsert(
-        ctx.pool,
-        ctx.persona_id,
-        ctx.use_case_id,
-        "model_performance",
-        model,
-        &pattern_data,
-        ctx.success,
-        ctx.cost_usd,
-        ctx.duration_ms,
-        ctx.execution_id,
-    ) {
-        tracing::warn!("Failed to persist model_performance knowledge: {}", e);
-        healing_repo::create_audit_entry(
-            ctx.pool, Some(ctx.persona_id), Some(ctx.execution_id),
-            "knowledge_persist_error", "knowledge_extraction",
-            "Failed to persist model_performance knowledge", Some(&format!("{e}")),
-        );
-    }
+    persist_knowledge(ctx, "model_performance", model, &pattern_data, ctx.success);
 }
 
 /// Extract cost-quality tradeoff data (overall persona performance).
@@ -212,25 +188,7 @@ fn extract_cost_quality(ctx: &ExecutionContext<'_>) {
     })
     .to_string();
 
-    if let Err(e) = knowledge_repo::upsert(
-        ctx.pool,
-        ctx.persona_id,
-        ctx.use_case_id,
-        "cost_quality",
-        &key,
-        &pattern_data,
-        ctx.success,
-        ctx.cost_usd,
-        ctx.duration_ms,
-        ctx.execution_id,
-    ) {
-        tracing::warn!("Failed to persist cost_quality knowledge: {}", e);
-        healing_repo::create_audit_entry(
-            ctx.pool, Some(ctx.persona_id), Some(ctx.execution_id),
-            "knowledge_persist_error", "knowledge_extraction",
-            "Failed to persist cost_quality knowledge", Some(&format!("{e}")),
-        );
-    }
+    persist_knowledge(ctx, "cost_quality", &key, &pattern_data, ctx.success);
 }
 
 /// Normalize an error message into a pattern key by stripping UUIDs, hex, and numbers.

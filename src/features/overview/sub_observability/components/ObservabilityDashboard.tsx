@@ -1,4 +1,5 @@
 import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, Bell, Activity } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
@@ -7,7 +8,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { MetricsCharts } from './MetricsCharts';
-import { SummaryCard } from './SpendOverview';
+import { OverviewStatCard as SummaryCard } from './OverviewStatCard';
 import IpcPerformancePanel from './IpcPerformancePanel';
 import HealingIssueModal from './HealingIssueModal';
 import { HealingIssuesPanel } from './HealingIssuesPanel';
@@ -23,6 +24,7 @@ import AnomalyDrilldownPanel from './AnomalyDrilldownPanel';
 import SystemTraceViewer from './SystemTraceViewer';
 
 export default function ObservabilityDashboard() {
+  const { t } = useTranslation();
   const d = useObservabilityData();
   const [showAlerts, setShowAlerts] = useState(false);
   const activeAlertCount = useOverviewStore(selectActiveAlertCount);
@@ -74,8 +76,8 @@ export default function ObservabilityDashboard() {
       <ContentHeader
         icon={<Stethoscope className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
-        title="Observability"
-        subtitle="Performance metrics, cost tracking, execution health"
+        title={t.overview.observability_page.title}
+        subtitle={t.overview.observability_page.subtitle}
         actions={
           <>
             <button
@@ -83,7 +85,7 @@ export default function ObservabilityDashboard() {
               className={`relative p-1.5 rounded-lg border transition-colors ${
                 showAlerts ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-primary/15 text-muted-foreground/90 hover:bg-secondary/50'
               }`}
-              title="Alert rules &amp; history"
+              title={t.overview.observability_page.alert_rules}
             >
               <Bell className="w-3.5 h-3.5" />
               {activeAlertCount > 0 && (
@@ -95,7 +97,7 @@ export default function ObservabilityDashboard() {
             <button
               onClick={d.refreshAll}
               className="p-1.5 rounded-lg text-muted-foreground/80 hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
-              title="Refresh metrics"
+              title={t.overview.observability_page.refresh_metrics}
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -104,7 +106,7 @@ export default function ObservabilityDashboard() {
               className={`p-1.5 rounded-lg border transition-colors ${
                 d.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-muted-foreground/90'
               }`}
-              title={d.autoRefresh ? 'Auto-refresh ON (30s)' : 'Auto-refresh OFF'}
+              title={d.autoRefresh ? t.overview.analytics.auto_refresh_on : t.overview.analytics.auto_refresh_off}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${d.autoRefresh ? 'animate-spin motion-reduce:animate-none' : ''}`} style={d.autoRefresh ? { animationDuration: '3s' } : {}} />
             </button>
@@ -125,7 +127,7 @@ export default function ObservabilityDashboard() {
       {d.observabilityError && (
         <InlineErrorBanner
           severity="error"
-          title="Metrics unavailable -- data shown may be stale"
+          title={t.overview.observability.metrics_unavailable}
           message={d.observabilityError}
           onRetry={d.refreshAll}
           actions={
@@ -153,13 +155,13 @@ export default function ObservabilityDashboard() {
             style={{ overflow: "hidden" }}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
+              <div className="p-4 rounded-xl border border-primary/10 bg-secondary/20">
                 <div className="flex items-center justify-end mb-2">
                   <StalenessIndicator fetchedAt={pipelineFetchedAt.alertRules} hasError={!!pipelineErrors.alertRules} label="Alert rules" />
                 </div>
                 <AlertRulesPanel />
               </div>
-              <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10">
+              <div className="p-4 rounded-xl border border-primary/10 bg-secondary/20">
                 <div className="flex items-center justify-end mb-2">
                   <StalenessIndicator fetchedAt={pipelineFetchedAt.alertHistory} hasError={!!pipelineErrors.alertHistory} label="Alert history" />
                 </div>
@@ -183,7 +185,7 @@ export default function ObservabilityDashboard() {
       <IpcPerformancePanel />
 
       {/* System Trace Timeline */}
-      <div className="p-4 rounded-xl border border-primary/10 bg-secondary/10 space-y-3">
+      <div className="p-4 rounded-xl border border-primary/10 bg-secondary/20 space-y-3">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-cyan-400" />
           <h3 className="typo-heading text-foreground/90">System Trace Timeline</h3>

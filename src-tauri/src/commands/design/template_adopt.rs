@@ -3,7 +3,8 @@ use serde_json::json;
 use tauri::State;
 use tokio_util::sync::CancellationToken;
 
-use std::sync::Arc;
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
 
 use crate::background_job::BackgroundJobManager;
 use crate::db::repos::communication::reviews as reviews_repo;
@@ -415,6 +416,30 @@ pub fn cancel_template_adopt(
     ADOPT_JOBS.cancel(&app, &adopt_id)
 }
 
+/// Guard against double-submission of confirm_template_adopt_draft.
+/// Holds content hashes of in-flight draft confirmations so concurrent calls
+/// with the same draft are rejected.
+static CONFIRM_INFLIGHT: Mutex<Option<HashSet<u64>>> = Mutex::new(None);
+
+fn confirm_inflight_insert(hash: u64) -> bool {
+    let mut guard = CONFIRM_INFLIGHT.lock().unwrap_or_else(|e| e.into_inner());
+    guard.get_or_insert_with(HashSet::new).insert(hash)
+}
+
+fn confirm_inflight_remove(hash: u64) {
+    let mut guard = CONFIRM_INFLIGHT.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(set) = guard.as_mut() {
+        set.remove(&hash);
+    }
+}
+
+fn simple_hash(s: &str) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    s.hash(&mut hasher);
+    hasher.finish()
+}
+
 #[tauri::command]
 pub fn confirm_template_adopt_draft(
     state: State<'_, Arc<AppState>>,
@@ -425,34 +450,48 @@ pub fn confirm_template_adopt_draft(
     let tpl_name = template_name.as_deref().unwrap_or("unknown");
     tracing::info!(template_id = %tpl_name, "confirm_template_adopt_draft: start");
     validate_json_field("draft_json", &draft_json)?;
-    let draft: N8nPersonaOutput = serde_json::from_str(&draft_json)
-        .map_err(|e| AppError::Validation(format!("Invalid draft JSON: {e}")))?;
 
-    let draft = normalize_n8n_persona_draft(draft, "Adopted Template");
-
-    if draft.system_prompt.trim().is_empty() {
+    // Prevent double-submission: reject if an identical draft is already being processed
+    let draft_hash = simple_hash(&draft_json);
+    if !confirm_inflight_insert(draft_hash) {
         return Err(AppError::Validation(
-            "Draft system_prompt cannot be empty".into(),
+            "This draft is already being processed. Please wait.".into(),
         ));
     }
 
-    // Atomic import: persona + tools + triggers in a single SQLite transaction
-    let (response, _import_result) = super::n8n_transform::confirmation::create_persona_atomically(
-        &state.db,
-        &draft,
-        None, // no n8n session for template adopt
-    )?;
+    let result = (|| {
+        let draft: N8nPersonaOutput = serde_json::from_str(&draft_json)
+            .map_err(|e| AppError::Validation(format!("Invalid draft JSON: {e}")))?;
 
-    // Track adoption count for the source template (with audit log)
-    let created_persona_id = response.get("persona").and_then(|p| p.get("id")).and_then(|v| v.as_str());
-    if let Some(name) = template_name.as_deref().or(draft.name.as_deref()) {
-        if let Err(e) = reviews_repo::increment_adoption_count(&state.db, name, created_persona_id) {
-            tracing::warn!(template = %name, error = %e, "Failed to increment adoption count");
+        let draft = normalize_n8n_persona_draft(draft, "Adopted Template");
+
+        if draft.system_prompt.trim().is_empty() {
+            return Err(AppError::Validation(
+                "Draft system_prompt cannot be empty".into(),
+            ));
         }
-    }
 
-    tracing::info!(template_id = %tpl_name, outcome = "success", "confirm_template_adopt_draft: completed");
-    Ok(response)
+        // Atomic import: persona + tools + triggers in a single SQLite transaction
+        let (response, _import_result) = super::n8n_transform::confirmation::create_persona_atomically(
+            &state.db,
+            &draft,
+            None, // no n8n session for template adopt
+        )?;
+
+        // Track adoption count for the source template (with audit log)
+        let created_persona_id = response.get("persona").and_then(|p| p.get("id")).and_then(|v| v.as_str());
+        if let Some(name) = template_name.as_deref().or(draft.name.as_deref()) {
+            if let Err(e) = reviews_repo::increment_adoption_count(&state.db, name, created_persona_id) {
+                tracing::warn!(template = %name, error = %e, "Failed to increment adoption count");
+            }
+        }
+
+        tracing::info!(template_id = %tpl_name, outcome = "success", "confirm_template_adopt_draft: completed");
+        Ok(response)
+    })();
+
+    confirm_inflight_remove(draft_hash);
+    result
 }
 
 // -- Instant Adopt (no AI transform -- creates persona directly from design) --
