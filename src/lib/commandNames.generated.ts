@@ -485,6 +485,7 @@ export type CommandName =
   | "import_claude_mcp_servers"
   | "import_credentials"
   | "import_design_review"
+  | "batch_import_design_reviews"
   | "import_foraged_credential"
   | "import_from_share_link"
   | "import_persona"

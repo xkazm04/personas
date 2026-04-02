@@ -153,8 +153,14 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
     let mut refreshed: usize = 0;
     let mut failed: usize = 0;
 
-    for cred in &all_creds {
-        let meta = parse_credential_metadata(cred);
+    // Pre-parse all credential metadata once (avoids double parse per credential)
+    let parsed_meta: Vec<Option<serde_json::Value>> = all_creds
+        .iter()
+        .map(|c| parse_credential_metadata(c))
+        .collect();
+
+    for (i, cred) in all_creds.iter().enumerate() {
+        let meta = &parsed_meta[i];
 
         let expires_at = meta.as_ref().and_then(extract_expires_at);
 
@@ -291,8 +297,9 @@ pub async fn refresh_single_credential(
 
     let previous_predicted_secs = ledger.oauth_predicted_lifetime_secs;
 
-    // Get connector metadata for strategy resolution
-    let connector_meta = get_connector_metadata(pool, &cred.service_type);
+    // Get connector metadata for strategy resolution (cached per service_type
+    // within the refresh cycle via the static map below)
+    let connector_meta = get_connector_metadata_cached(pool, &cred.service_type);
 
     // Resolve strategy and get fresh token
     let registry = super::connector_strategy::registry()?;
@@ -546,6 +553,22 @@ fn emit_reauth_required(
             credential_name, service_type,
         ),
     );
+}
+
+/// Cached connector metadata lookups within a refresh cycle.
+/// The cache is populated lazily and never grows beyond the number of distinct service types.
+fn get_connector_metadata_cached(pool: &DbPool, service_type: &str) -> Option<String> {
+    use std::sync::Mutex;
+    static CACHE: std::sync::LazyLock<Mutex<std::collections::HashMap<String, Option<String>>>> =
+        std::sync::LazyLock::new(|| Mutex::new(std::collections::HashMap::new()));
+
+    let mut cache = CACHE.lock().unwrap();
+    if let Some(cached) = cache.get(service_type) {
+        return cached.clone();
+    }
+    let result = get_connector_metadata(pool, service_type);
+    cache.insert(service_type.to_string(), result.clone());
+    result
 }
 
 /// Look up the connector_definitions row to get metadata for strategy resolution.

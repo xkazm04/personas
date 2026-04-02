@@ -214,16 +214,25 @@ export default function PersonaOverviewPage() {
     return id === buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
   }, [buildPersonaId, buildPhase]);
 
+  // Pre-compute connector names per persona once to avoid redundant JSON.parse calls
+  const connectorNamesMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const p of personas) {
+      map.set(p.id, extractConnectorNames(p, 10));
+    }
+    return map;
+  }, [personas]);
+
   // Extract unique connector names across all personas for filter pills
   const allConnectorNames = useMemo(() => {
     const names = new Set<string>();
-    for (const p of personas) {
-      for (const c of extractConnectorNames(p, 10)) {
+    for (const connectors of connectorNamesMap.values()) {
+      for (const c of connectors) {
         names.add(c);
       }
     }
     return [...names].sort();
-  }, [personas]);
+  }, [connectorNamesMap]);
 
   const connectorFilterOptions = useMemo(() => [
     { value: 'all', label: 'All Connectors' },
@@ -335,7 +344,7 @@ export default function PersonaOverviewPage() {
     // Connector filter
     if (connectorFilter !== 'all') {
       data = data.filter((p) => {
-        const connectors = extractConnectorNames(p, 10);
+        const connectors = connectorNamesMap.get(p.id) ?? [];
         return connectors.includes(connectorFilter);
       });
     }
@@ -369,7 +378,7 @@ export default function PersonaOverviewPage() {
       });
     }
     return data;
-  }, [personas, statusFilter, healthFilter, connectorFilter, favoriteOnly, sortKey, sortDir, isBuilding, isDraft, isFavorite, triggerCounts, lastRunMap, healthMap]);
+  }, [personas, statusFilter, healthFilter, connectorFilter, favoriteOnly, sortKey, sortDir, isBuilding, isDraft, isFavorite, triggerCounts, lastRunMap, healthMap, connectorNamesMap]);
 
   // Clear selection when data changes (e.g. filter changes)
   useEffect(() => {
@@ -391,12 +400,16 @@ export default function PersonaOverviewPage() {
   }, [allSelected, filteredData]);
 
 
-  const columns: DataGridColumn<Persona>[] = [
+  const handleConnectorFilterChange = useCallback((v: string) => {
+    setViewConfig((prev) => ({ ...prev, connectorFilter: v }));
+  }, []);
+
+  const columns: DataGridColumn<Persona>[] = useMemo(() => [
     {
       key: 'select',
       label: '',
       width: '40px',
-      render: (persona) => (
+      render: (persona: Persona) => (
         <div
           onClick={(e) => { e.stopPropagation(); handleToggleSelect(persona.id); }}
           className="flex items-center justify-center"
@@ -418,7 +431,7 @@ export default function PersonaOverviewPage() {
       key: 'favorite',
       label: '',
       width: '36px',
-      render: (persona) => (
+      render: (persona: Persona) => (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); toggleFavorite(persona.id); }}
@@ -439,7 +452,7 @@ export default function PersonaOverviewPage() {
       label: 'Agent',
       width: '400px',
       sortable: true,
-      render: (persona) => {
+      render: (persona: Persona) => {
         return (
           <div className="flex items-center gap-3 min-w-0">
             <div className="icon-frame icon-frame-pop bg-primary/10 border border-primary/15 flex-shrink-0"
@@ -469,9 +482,9 @@ export default function PersonaOverviewPage() {
       width: '140px',
       filterOptions: connectorFilterOptions,
       filterValue: connectorFilter,
-      onFilterChange: (v) => setViewConfig((prev) => ({ ...prev, connectorFilter: v })),
-      render: (persona) => {
-        const connectors = extractConnectorNames(persona);
+      onFilterChange: handleConnectorFilterChange,
+      render: (persona: Persona) => {
+        const connectors = connectorNamesMap.get(persona.id) ?? extractConnectorNames(persona);
         if (connectors.length === 0) {
           return <span className="text-muted-foreground/20"><Plug className="w-3.5 h-3.5" /></span>;
         }
@@ -497,7 +510,7 @@ export default function PersonaOverviewPage() {
       label: 'Status',
       width: '120px',
       sortable: true,
-      render: (persona) => {
+      render: (persona: Persona) => {
         if (isBuilding(persona.id)) return <BuildingBadge />;
         return <StatusBadge enabled={persona.enabled} health={healthMap[persona.id]} isDraft={isDraft(persona)} />;
       },
@@ -507,7 +520,7 @@ export default function PersonaOverviewPage() {
       label: 'Trust',
       width: '140px',
       sortable: true,
-      render: (persona) => {
+      render: (persona: Persona) => {
         if (!persona.enabled || isDraft(persona)) {
           return <span className="text-[11px] text-foreground/30">--</span>;
         }
@@ -520,7 +533,7 @@ export default function PersonaOverviewPage() {
       width: '80px',
       sortable: true,
       align: 'right',
-      render: (persona) => {
+      render: (persona: Persona) => {
         const count = triggerCounts[persona.id] ?? 0;
         return (
           <span className="flex items-center justify-end gap-1 text-[11px] text-foreground">
@@ -536,7 +549,7 @@ export default function PersonaOverviewPage() {
       width: '120px',
       sortable: true,
       align: 'right',
-      render: (persona) => {
+      render: (persona: Persona) => {
         const lastRun = lastRunMap[persona.id];
         if (!lastRun) return <span className="text-[11px] text-foreground/30">Never</span>;
         return (
@@ -553,7 +566,7 @@ export default function PersonaOverviewPage() {
       width: '120px',
       sortable: true,
       align: 'right',
-      render: (persona) => {
+      render: (persona: Persona) => {
         if (!persona.created_at) return <span className="text-[11px] text-foreground/30">--</span>;
         return (
           <span className="flex items-center justify-end gap-1 text-[11px] text-foreground">
@@ -567,11 +580,11 @@ export default function PersonaOverviewPage() {
       key: 'actions',
       label: '',
       width: '40px',
-      render: (persona) => (
+      render: (persona: Persona) => (
         <RowActionMenu persona={persona} onDelete={handleDelete} onEdit={handleEdit} />
       ),
     },
-  ];
+  ], [selectedIds, handleToggleSelect, toggleFavorite, isFavorite, handleRowClick, connectorFilterOptions, connectorFilter, handleConnectorFilterChange, connectorNamesMap, isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, handleDelete, handleEdit]);
 
   return (
     <ContentBox>

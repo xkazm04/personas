@@ -10,7 +10,6 @@ import type { SidebarSection } from '@/lib/types/types';
 import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
-import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { sections } from './sidebarData';
 import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/components/layout/DesktopFooter';
 import SidebarLevel1 from './SidebarLevel1';
@@ -48,7 +47,6 @@ export default function Sidebar() {
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
   const { pendingReviewCount, unreadMessageCount, pendingEventCount } = useBadgeCounts();
   const selectPersona = useAgentStore((s) => s.selectPersona);
-  const fetchBudgetSpend = useAgentStore((s) => s.fetchBudgetSpend);
 
   const isDev = import.meta.env.DEV;
   const [appVersion, setAppVersion] = useState('');
@@ -99,17 +97,7 @@ export default function Sidebar() {
     getVersion().then(setAppVersion).catch(silentCatch("Sidebar:getVersion"));
   }, []);
 
-  // Centralized 30s polling for budget data.
-  // Badge counts (reviews, messages, events) are polled by useBadgeCounts.
-  const pollingFetch = useCallback(() => {
-    fetchBudgetSpend();
-  }, [fetchBudgetSpend]);
-
-  usePolling(pollingFetch, {
-    interval: POLLING_CONFIG.dashboardRefresh.interval,
-    enabled: true,
-    maxBackoff: POLLING_CONFIG.dashboardRefresh.maxBackoff,
-  });
+  // Budget polling is now consolidated into useBadgeCounts alongside badge fetches.
 
   const handleCreatePersona = useCallback(() => {
     // Reset build state so user gets a fresh creation form

@@ -317,6 +317,8 @@ pub struct AppState {
     pub cloud_exec_ids: Arc<tokio::sync::Mutex<HashMap<String, String>>>,
     /// GitLab API client (None when not connected).
     pub gitlab_client: Arc<tokio::sync::Mutex<Option<Arc<gitlab::client::GitLabClient>>>>,
+    /// Cached GitLab token validation result (username, timestamp). TTL: 60s.
+    pub gitlab_config_cache: Arc<tokio::sync::Mutex<Option<(std::time::Instant, String)>>>,
     /// Rate limiter for event publishing and webhook intake.
     pub rate_limiter: Arc<engine::rate_limiter::RateLimiter>,
     /// Session-specific RSA key pair for encrypted IPC.
@@ -665,6 +667,7 @@ pub fn run() {
                 cloud_connecting: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 cloud_exec_ids: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 gitlab_client: Arc::new(tokio::sync::Mutex::new(gitlab_client_opt)),
+                gitlab_config_cache: Arc::new(tokio::sync::Mutex::new(None)),
                 rate_limiter: Arc::new(engine::rate_limiter::RateLimiter::new()),
                 session_key: Arc::new(engine::crypto::SessionKeyPair::generate()?),
                 tier_config: Arc::new(Mutex::new(engine::tier::TierConfig::default())),
@@ -1128,6 +1131,7 @@ pub fn run() {
             commands::design::reviews::delete_stale_seed_templates,
             commands::design::reviews::start_design_review_run,
             commands::design::reviews::import_design_review,
+            commands::design::reviews::batch_import_design_reviews,
             commands::design::reviews::cancel_design_review_run,
             commands::design::reviews::rebuild_design_review,
             commands::design::reviews::get_rebuild_snapshot,

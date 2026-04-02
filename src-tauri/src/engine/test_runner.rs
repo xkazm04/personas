@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Instant;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
@@ -8,6 +9,30 @@ use super::event_registry::event_name;
 use super::cli_process::CliProcessDriver;
 
 use serde::{Deserialize, Serialize};
+
+/// TTL-based in-memory cache for generated scenarios. Key is a hash of
+/// (persona_id, system_prompt, tools, use_case_filter). Avoids re-running
+/// the expensive CLI+LLM scenario generation during iterative model comparison.
+static SCENARIO_CACHE: std::sync::LazyLock<Mutex<HashMap<u64, (Instant, Vec<TestScenario>)>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
+
+const SCENARIO_CACHE_TTL_SECS: u64 = 600;
+
+fn scenario_cache_key(persona: &crate::db::models::Persona, tools: &[crate::db::models::PersonaToolDefinition], use_case_filter: Option<&str>) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    persona.id.hash(&mut hasher);
+    persona.system_prompt.hash(&mut hasher);
+    persona.structured_prompt.hash(&mut hasher);
+    for t in tools {
+        t.name.hash(&mut hasher);
+        t.description.hash(&mut hasher);
+    }
+    if let Some(f) = use_case_filter {
+        f.hash(&mut hasher);
+    }
+    hasher.finish()
+}
 
 use crate::db::models::{
     CreateTestResultInput, CreateArenaResultInput, CreateAbResultInput, CreateMatrixResultInput,
@@ -222,19 +247,81 @@ pub async fn run_test(
             }));
         }
 
-        // Collect results and persist
+        // Collect results from all model handles for this scenario
+        let mut scenario_results: Vec<(usize, String, ScoreResult)> = Vec::new();
         for handle in handles {
-            let (mi, status, scores) = match handle.await {
-                Ok(r) => r,
+            match handle.await {
+                Ok(r) => scenario_results.push(r),
                 Err(e) => {
                     tracing::error!("Test task panicked: {e}");
-                    continue;
                 }
             };
+        }
+
+        // Build batch inputs for DB write
+        let batch_inputs: Vec<CreateTestResultInput> = scenario_results.iter().map(|(mi, status, scores)| {
+            let model = &model_configs[*mi];
+            CreateTestResultInput {
+                test_run_id: run_id.clone(),
+                scenario_name: scenario.name.clone(),
+                model_id: model.id.clone(),
+                provider: model.provider.clone(),
+                status: status.clone(),
+                output_preview: scores.output_preview.clone(),
+                tool_calls_expected: scenario
+                    .expected_tool_sequence
+                    .as_ref()
+                    .map(|v| crate::db::models::Json(v.clone())),
+                tool_calls_actual: scores.tool_calls_actual.clone(),
+                tool_accuracy_score: scores.tool_accuracy,
+                output_quality_score: scores.output_quality,
+                protocol_compliance: scores.protocol_compliance,
+                input_tokens: scores.input_tokens,
+                output_tokens: scores.output_tokens,
+                cost_usd: scores.cost_usd,
+                duration_ms: scores.duration_ms,
+                error_message: scores.error_message.clone(),
+            }
+        }).collect();
+
+        // Batch-write all results for this scenario in a single transaction
+        if let Err(e) = repo::batch_create_results(&pool, &batch_inputs) {
+            let msg = format!("Failed to persist test results: {e}");
+            let _ = repo::update_run_status(
+                &pool,
+                &run_id,
+                LabRunStatus::Failed,
+                Some(scenario_count as i32),
+                None,
+                None,
+                Some(msg.as_str()),
+            );
+            let _ = app.emit(
+                event_name::TEST_RUN_STATUS,
+                TestRunStatusEvent {
+                    run_id: run_id.clone(),
+                    phase: "failed".into(),
+                    scenarios_count: Some(scenario_count),
+                    current: Some(current),
+                    total: Some(total),
+                    model_id: None,
+                    scenario_name: Some(scenario.name.clone()),
+                    status: Some("error".into()),
+                    scores: None,
+                    summary: None,
+                    error: Some(msg),
+                    scenarios: None,
+                    elapsed_ms: None,
+                },
+            );
+            return;
+        }
+
+        // Track for summary and emit progress for each result
+        for (mi, status, scores) in scenario_results {
             current += 1;
             let model = &model_configs[mi];
 
-            // Track for summary
             {
                 let mut tracker = results_tracker.lock().await;
                 tracker.push((
@@ -247,63 +334,6 @@ pub async fn run_test(
                 ));
             }
 
-            // Write result to DB. Persistence failures are fatal for run integrity.
-            if let Err(e) = repo::create_result(
-                &pool,
-                &CreateTestResultInput {
-                    test_run_id: run_id.clone(),
-                    scenario_name: scenario.name.clone(),
-                    model_id: model.id.clone(),
-                    provider: model.provider.clone(),
-                    status: status.clone(),
-                    output_preview: scores.output_preview.clone(),
-                    tool_calls_expected: scenario
-                        .expected_tool_sequence
-                        .as_ref()
-                        .map(|v| crate::db::models::Json(v.clone())),
-                    tool_calls_actual: scores.tool_calls_actual.clone(),
-                    tool_accuracy_score: scores.tool_accuracy,
-                    output_quality_score: scores.output_quality,
-                    protocol_compliance: scores.protocol_compliance,
-                    input_tokens: scores.input_tokens,
-                    output_tokens: scores.output_tokens,
-                    cost_usd: scores.cost_usd,
-                    duration_ms: scores.duration_ms,
-                    error_message: scores.error_message.clone(),
-                },
-            ) {
-                let msg = format!("Failed to persist test result: {e}");
-                let _ = repo::update_run_status(
-                    &pool,
-                    &run_id,
-                    LabRunStatus::Failed,
-                    Some(scenario_count as i32),
-                    None,
-                    None,
-                    Some(msg.as_str()),
-                );
-                let _ = app.emit(
-                    event_name::TEST_RUN_STATUS,
-                    TestRunStatusEvent {
-                        run_id: run_id.clone(),
-                        phase: "failed".into(),
-                        scenarios_count: Some(scenario_count),
-                        current: Some(current),
-                        total: Some(total),
-                        model_id: Some(model.id.clone()),
-                        scenario_name: Some(scenario.name.clone()),
-                        status: Some("error".into()),
-                        scores: None,
-                        summary: None,
-                        error: Some(msg),
-                        scenarios: None,
-                        elapsed_ms: None,
-                    },
-                );
-                return;
-            }
-
-            // Emit progress
             let _ = app.emit(
                 event_name::TEST_RUN_STATUS,
                 TestRunStatusEvent {
@@ -366,17 +396,38 @@ pub(crate) async fn generate_scenarios(
     use_case_filter: Option<&str>,
     fixture_inputs: Option<&str>,
 ) -> Result<Vec<TestScenario>, String> {
+    // Check cache when no fixture inputs (fixtures imply custom data, not cacheable)
+    if fixture_inputs.is_none() {
+        let key = scenario_cache_key(persona, tools, use_case_filter);
+        let cache = SCENARIO_CACHE.lock().await;
+        if let Some((created, scenarios)) = cache.get(&key) {
+            if created.elapsed().as_secs() < SCENARIO_CACHE_TTL_SECS {
+                tracing::debug!(persona_id = %persona.id, "Using cached scenarios");
+                return Ok(scenarios.clone());
+            }
+        }
+        drop(cache);
+    }
+
     let coordinator_prompt = build_coordinator_prompt(persona, tools, use_case_filter, fixture_inputs);
 
     let mut cli_args = prompt::build_cli_args(None, None);
-    // Limit to 1 turn -- we just want the JSON output
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
     let output = spawn_cli_and_collect(&cli_args, &coordinator_prompt).await?;
+    let scenarios = parse_scenarios_from_output(&output)?;
 
-    // Extract JSON array from the output
-    parse_scenarios_from_output(&output)
+    // Store in cache when no fixture inputs
+    if fixture_inputs.is_none() {
+        let key = scenario_cache_key(persona, tools, use_case_filter);
+        let mut cache = SCENARIO_CACHE.lock().await;
+        // Evict expired entries opportunistically
+        cache.retain(|_, (created, _)| created.elapsed().as_secs() < SCENARIO_CACHE_TTL_SECS);
+        cache.insert(key, (Instant::now(), scenarios.clone()));
+    }
+
+    Ok(scenarios)
 }
 
 fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], use_case_filter: Option<&str>, fixture_inputs: Option<&str>) -> String {

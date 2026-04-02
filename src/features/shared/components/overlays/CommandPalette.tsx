@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from 'react';
 import {
   Search, Bot, Home, BarChart3, Radio, Key, FlaskConical,
   Settings, Plus, Power, Workflow, Play, ToggleLeft, Copy, Puzzle,
@@ -79,7 +79,8 @@ export default function CommandPalette() {
   const close = useCallback(() => setOpen(false), []);
 
   const isCommandMode = query.startsWith('>');
-  const searchQuery = isCommandMode ? query.slice(1).trim() : query.trim();
+  const rawSearchQuery = isCommandMode ? query.slice(1).trim() : query.trim();
+  const searchQuery = useDeferredValue(rawSearchQuery);
 
   const groupMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -139,101 +140,112 @@ export default function CommandPalette() {
     },
   }), [addToast, storeUpdatePersona, storeFetchPersonas, setSidebarSection, selectPersona, personas]);
 
+  // Stage 1: stable entity lists (only recomputed when entities change, not on every keystroke)
+  const stableItems = useMemo(() => {
+    const agentItems = personas.map(p =>
+      agentItem(p, groupMap, selectPersona, setSidebarSection, botIcon, powerIcon),
+    );
+    const credItems = credentials.map(c =>
+      credentialItem(c, setSidebarSection, keyIcon),
+    );
+    const templateItems = recipes.map(r =>
+      templateItem(r, setSidebarSection, flaskIcon),
+    );
+    const autoItems = automations.map(a =>
+      automationItem(a, setSidebarSection, workflowIcon),
+    );
+    const navItems = NAV_ITEMS.map(nav => ({
+      id: `nav:${nav.id}`, kind: 'navigation' as const, label: nav.label,
+      icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
+    }));
+    const cbs = agentActions();
+    const commandItems: PaletteItem[] = [
+      {
+        id: 'cmd:create-agent', kind: 'action', label: 'Create New Agent',
+        icon: <Plus className="w-4 h-4" />,
+        onSelect: () => { setSidebarSection('personas'); setIsCreatingPersona(true); },
+      },
+      ...NAV_ITEMS.map(nav => ({
+        id: `cmd:nav-${nav.id}`, kind: 'action' as const, label: `Go to ${nav.label}`,
+        icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
+      })),
+      ...agentActionItems(personas, cbs, {
+        run: playIcon, toggle: toggleIcon, duplicate: copyIcon,
+        health: healthIcon, edit: pencilIcon,
+      }),
+    ];
+    return { agentItems, credItems, templateItems, autoItems, navItems, commandItems };
+  }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, workflowIcon, agentActions, playIcon, toggleIcon, copyIcon, healthIcon, pencilIcon]);
+
+  // Stage 2: filtered + scored (recomputed on deferred searchQuery)
   const items = useMemo((): PaletteItem[] => {
+    const { agentItems, credItems, templateItems, autoItems, navItems, commandItems } = stableItems;
     const results: PaletteItem[] = [];
     const recentAgentIds = getRecentAgentIds();
 
     if (isCommandMode) {
-      const cbs = agentActions();
-      const actions: PaletteItem[] = [
-        {
-          id: 'cmd:create-agent', kind: 'action', label: 'Create New Agent',
-          icon: <Plus className="w-4 h-4" />,
-          onSelect: () => { setSidebarSection('personas'); setIsCreatingPersona(true); },
-        },
-        ...NAV_ITEMS.map(nav => ({
-          id: `cmd:nav-${nav.id}`, kind: 'action' as const, label: `Go to ${nav.label}`,
-          icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
-        })),
-        ...agentActionItems(personas, cbs, {
-          run: playIcon, toggle: toggleIcon, duplicate: copyIcon,
-          health: healthIcon, edit: pencilIcon,
-        }),
-      ];
-      if (!searchQuery) return actions;
-      return actions
+      if (!searchQuery) return commandItems;
+      return commandItems
         .filter(a => fuzzyMatch(searchQuery, a.label))
         .sort((a, b) => fuzzyScore(searchQuery, b.label) - fuzzyScore(searchQuery, a.label));
     }
 
     // -- Agents --
     if (!searchQuery && recentAgentIds.length > 0) {
-      const personaMap = new Map(personas.map(p => [p.id, p]));
+      const agentMap = new Map(agentItems.map(a => [a.id.replace('agent:', ''), a]));
       for (const id of recentAgentIds) {
-        const p = personaMap.get(id);
-        if (!p) continue;
-        results.push(agentItem(p, groupMap, selectPersona, setSidebarSection, botIcon, powerIcon));
+        const item = agentMap.get(id);
+        if (item) results.push(item);
       }
     }
 
     if (searchQuery) {
-      const scoredAgents = personas
-        .map(p => ({
-          persona: p,
-          score: Math.max(
-            fuzzyScore(searchQuery, p.name),
-            fuzzyScore(searchQuery, p.description ?? ''),
-            p.group_id && groupMap[p.group_id] ? fuzzyScore(searchQuery, groupMap[p.group_id]!) * 0.6 : 0,
-          ),
-        }))
+      const scoredAgents = agentItems
+        .map(item => {
+          const p = personas.find(pp => `agent:${pp.id}` === item.id)!;
+          return {
+            item,
+            score: Math.max(
+              fuzzyScore(searchQuery, p.name),
+              fuzzyScore(searchQuery, p.description ?? ''),
+              p.group_id && groupMap[p.group_id] ? fuzzyScore(searchQuery, groupMap[p.group_id]!) * 0.6 : 0,
+            ),
+          };
+        })
         .filter(s => s.score > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, 20);
 
-      for (const { persona } of scoredAgents) {
-        if (!results.some(r => r.id === `agent:${persona.id}`)) {
-          results.push(agentItem(persona, groupMap, selectPersona, setSidebarSection, botIcon, powerIcon));
-        }
+      for (const { item } of scoredAgents) {
+        if (!results.some(r => r.id === item.id)) results.push(item);
       }
 
       // -- Credentials --
-      const scoredCreds = credentials
-        .map(c => ({ cred: c, score: Math.max(fuzzyScore(searchQuery, c.name), fuzzyScore(searchQuery, c.service_type) * 0.7) }))
+      const scoredCreds = credItems
+        .map((item, i) => { const c = credentials[i]; return c ? { item, score: Math.max(fuzzyScore(searchQuery, c.name), fuzzyScore(searchQuery, c.service_type) * 0.7) } : { item, score: 0 }; })
         .filter(s => s.score > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
-      for (const { cred } of scoredCreds) {
-        results.push(credentialItem(cred, setSidebarSection, keyIcon));
-      }
+      for (const { item } of scoredCreds) results.push(item);
 
       // -- Templates --
-      const scoredTemplates = recipes
-        .map(r => ({ recipe: r, score: Math.max(fuzzyScore(searchQuery, r.name), fuzzyScore(searchQuery, r.category ?? '') * 0.6) }))
+      const scoredTemplates = templateItems
+        .map((item, i) => { const r = recipes[i]; return r ? { item, score: Math.max(fuzzyScore(searchQuery, r.name), fuzzyScore(searchQuery, r.category ?? '') * 0.6) } : { item, score: 0 }; })
         .filter(s => s.score > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
-      for (const { recipe } of scoredTemplates) {
-        results.push(templateItem(recipe, setSidebarSection, flaskIcon));
-      }
+      for (const { item } of scoredTemplates) results.push(item);
 
       // -- Automations --
-      const scoredAutomations = automations
-        .map(a => ({ auto: a, score: Math.max(fuzzyScore(searchQuery, a.name), fuzzyScore(searchQuery, a.platform) * 0.5) }))
+      const scoredAutomations = autoItems
+        .map((item, i) => { const a = automations[i]; return a ? { item, score: Math.max(fuzzyScore(searchQuery, a.name), fuzzyScore(searchQuery, a.platform) * 0.5) } : { item, score: 0 }; })
         .filter(s => s.score > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
-      for (const { auto: a } of scoredAutomations) {
-        results.push(automationItem(a, setSidebarSection, workflowIcon));
-      }
-
+      for (const { item } of scoredAutomations) results.push(item);
     }
 
     // -- Navigation --
-    const navItems = NAV_ITEMS.map(nav => ({
-      id: `nav:${nav.id}`, kind: 'navigation' as const, label: nav.label,
-      icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
-    }));
-
     if (searchQuery) {
       results.push(...navItems.filter(n => fuzzyMatch(searchQuery, n.label))
         .sort((a, b) => fuzzyScore(searchQuery, b.label) - fuzzyScore(searchQuery, a.label)));
@@ -242,7 +254,7 @@ export default function CommandPalette() {
     }
 
     return results;
-  }, [personas, groups, groupMap, credentials, recipes, automations, searchQuery, isCommandMode, selectPersona, setSidebarSection, setIsCreatingPersona, botIcon, powerIcon, keyIcon, flaskIcon, workflowIcon, agentActions, playIcon, toggleIcon, copyIcon, healthIcon, pencilIcon]);
+  }, [stableItems, searchQuery, isCommandMode, personas, groupMap, credentials, recipes, automations]);
 
   useEffect(() => {
     setSelectedIndex(i => Math.min(i, Math.max(0, items.length - 1)));

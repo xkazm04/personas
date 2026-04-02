@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Cloud, Activity } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ConnectionStatusBadge } from '@/features/shared/components/feedback/ConnectionStatusBadge';
@@ -49,14 +50,29 @@ export default function CloudDeployPanel() {
   const [diagnostics, setDiagnostics] = useState<CloudDiagnostics | null>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
 
-  const config = useSystemStore((s) => s.cloudConfig);
-  const isConnecting = useSystemStore((s) => s.cloudIsConnecting);
-  const status = useSystemStore((s) => s.cloudStatus);
-  const isLoadingStatus = useSystemStore((s) => s.cloudIsLoadingStatus);
-  const oauthStatus = useSystemStore((s) => s.cloudOAuthStatus);
-  const pendingOAuthState = useSystemStore((s) => s.cloudPendingOAuthState);
-  const error = useSystemStore((s) => s.cloudError);
+  // Group state selectors into logical slices to reduce subscription churn
+  const cloudState = useSystemStore(useShallow((s) => ({
+    config: s.cloudConfig,
+    isConnecting: s.cloudIsConnecting,
+    status: s.cloudStatus,
+    isLoadingStatus: s.cloudIsLoadingStatus,
+    oauthStatus: s.cloudOAuthStatus,
+    pendingOAuthState: s.cloudPendingOAuthState,
+    error: s.cloudError,
+    deployments: s.cloudDeployments,
+    isDeploying: s.cloudIsDeploying,
+    baseUrl: s.cloudBaseUrl,
+    latencyMs: s.cloudConnectionLatencyMs,
+    reconnectState: s.cloudReconnectState,
+  })));
+  const {
+    config, isConnecting, status, isLoadingStatus,
+    oauthStatus, pendingOAuthState, error,
+    deployments, isDeploying, baseUrl,
+    latencyMs, reconnectState,
+  } = cloudState;
 
+  // Actions are stable references -- individual selectors are fine
   const initialize = useSystemStore((s) => s.cloudInitialize);
   const connect = useSystemStore((s) => s.cloudConnectAction);
   const disconnect = useSystemStore((s) => s.cloudDisconnectAction);
@@ -68,17 +84,11 @@ export default function CloudDeployPanel() {
   const refreshOAuth = useSystemStore((s) => s.cloudRefreshOAuth);
   const disconnectOAuth = useSystemStore((s) => s.cloudDisconnectOAuth);
   const clearError = useSystemStore((s) => s.cloudClearError);
-  const deployments = useSystemStore((s) => s.cloudDeployments);
-  const isDeploying = useSystemStore((s) => s.cloudIsDeploying);
-  const baseUrl = useSystemStore((s) => s.cloudBaseUrl);
   const fetchDeployments = useSystemStore((s) => s.cloudFetchDeployments);
   const deploy = useSystemStore((s) => s.cloudDeploy);
   const pauseDeploy = useSystemStore((s) => s.cloudPauseDeploy);
   const resumeDeploy = useSystemStore((s) => s.cloudResumeDeploy);
   const removeDeploy = useSystemStore((s) => s.cloudRemoveDeploy);
-
-  const latencyMs = useSystemStore((s) => s.cloudConnectionLatencyMs);
-  const reconnectState = useSystemStore((s) => s.cloudReconnectState);
 
   const isConnected = config?.is_connected ?? false;
 

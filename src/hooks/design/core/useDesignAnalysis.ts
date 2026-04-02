@@ -80,7 +80,16 @@ export function useDesignAnalysis() {
   }, []);
 
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
-  const refreshPersonas = useAgentStore((s) => s.fetchPersonas);
+  const refreshPersonasRaw = useAgentStore((s) => s.fetchPersonas);
+
+  // Deduplicate rapid refreshPersonas calls (e.g. design complete + apply)
+  const refreshInFlightRef = useRef<Promise<void> | null>(null);
+  const refreshPersonas = useCallback(() => {
+    if (refreshInFlightRef.current) return refreshInFlightRef.current;
+    const p = refreshPersonasRaw().finally(() => { refreshInFlightRef.current = null; });
+    refreshInFlightRef.current = p;
+    return p;
+  }, [refreshPersonasRaw]);
 
   // -- Core streaming via useTauriStream -----------------------------
   // Handles: listener lifecycle, line accumulation, cleanup on unmount,

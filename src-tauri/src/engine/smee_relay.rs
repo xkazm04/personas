@@ -365,34 +365,40 @@ pub async fn run_smee_relay(
             let handle = tokio::spawn(async move {
                 let mut backoff = Duration::from_secs(1);
                 let max_backoff = Duration::from_secs(30);
+                // Cache relay config in memory; only refresh from DB on first
+                // connect and after SmeeRelayNotifier signals a config change.
+                let mut cached_target: Option<Option<String>> = None;
+                let mut cached_filter: Option<Option<Vec<String>>> = None;
                 loop {
-                    // Re-query config each iteration so changes take effect on reconnect
-                    let target_persona_id: Option<String> = {
-                        let conn = pool2.get().ok();
-                        conn.and_then(|c| {
-                            c.query_row(
-                                "SELECT target_persona_id FROM smee_relays WHERE id = ?1",
-                                rusqlite::params![relay_id2],
-                                |row| row.get::<_, Option<String>>(0),
-                            ).ok()
-                        }).flatten()
-                    };
-                    let event_filter: Option<Vec<String>> = {
-                        let conn = pool2.get().ok();
-                        conn.and_then(|c| {
-                            c.query_row(
-                                "SELECT event_filter FROM smee_relays WHERE id = ?1",
-                                rusqlite::params![relay_id2],
-                                |row| row.get::<_, Option<String>>(0),
-                            ).ok()
-                        }).flatten().and_then(|f| serde_json::from_str(&f).ok())
-                    };
+                    // Only query DB when cache is empty (first iteration or after invalidation)
+                    if cached_target.is_none() {
+                        cached_target = Some({
+                            let conn = pool2.get().ok();
+                            conn.and_then(|c| {
+                                c.query_row(
+                                    "SELECT target_persona_id FROM smee_relays WHERE id = ?1",
+                                    rusqlite::params![relay_id2],
+                                    |row| row.get::<_, Option<String>>(0),
+                                ).ok()
+                            }).flatten()
+                        });
+                        cached_filter = Some({
+                            let conn = pool2.get().ok();
+                            conn.and_then(|c| {
+                                c.query_row(
+                                    "SELECT event_filter FROM smee_relays WHERE id = ?1",
+                                    rusqlite::params![relay_id2],
+                                    |row| row.get::<_, Option<String>>(0),
+                                ).ok()
+                            }).flatten().and_then(|f| serde_json::from_str(&f).ok())
+                        });
+                    }
                     let params = RelayParams {
                         relay_key: relay_id2.clone(),
                         channel_url: url2.clone(),
                         source_id: Some(relay_id2.clone()),
-                        target_persona_id,
-                        event_filter,
+                        target_persona_id: cached_target.clone().flatten(),
+                        event_filter: cached_filter.clone().flatten(),
                     };
                     let connected_at = Instant::now();
                     match relay_sse_core(&params, &pool2, &app2, &state2).await {
@@ -419,6 +425,10 @@ pub async fn run_smee_relay(
                             emit_status(&app2, &mut s);
                         }
                     }
+                    // Invalidate cached config on disconnect so next connect picks up changes
+                    cached_target = None;
+                    cached_filter = None;
+
                     tokio::time::sleep(backoff).await;
                     backoff = (backoff * 2).min(max_backoff);
 

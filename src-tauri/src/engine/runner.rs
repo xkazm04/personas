@@ -330,11 +330,14 @@ pub async fn run_execution(
 
     let cred_env_clone = cred_env.clone();
 
+    // Load engine kind once and reuse for both config snapshot and provider selection
+    let engine_kind = provider::load_engine_kind_notified(&pool, &app);
+
     // Assemble immutable ExecutionConfig snapshot from all resolved sources.
     // This is the single source of truth for what config this execution used.
     let execution_config = ExecutionConfig {
         model_profile: model_profile.as_ref().map(RedactedModelProfile::from_profile),
-        engine: provider::load_engine_kind_notified(&pool, &app).as_setting().to_string(),
+        engine: engine_kind.as_setting().to_string(),
         max_budget_usd: persona.max_budget_usd,
         max_turns: persona.max_turns,
         timeout_ms: {
@@ -528,7 +531,7 @@ pub async fn run_execution(
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
     // =========================================================================
-    let primary_engine = provider::load_engine_kind_notified(&pool, &app);
+    let primary_engine = engine_kind;
 
     // Evaluate BYOM policy if configured.
     // IMPORTANT: If the stored policy JSON is corrupt we must NOT silently

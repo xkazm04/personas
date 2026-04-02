@@ -193,6 +193,45 @@ pub fn create_result(
     })
 }
 
+/// Batch-insert multiple test results in a single transaction to reduce
+/// connection pool pressure and SQLite WAL lock overhead.
+pub fn batch_create_results(
+    pool: &DbPool,
+    inputs: &[CreateTestResultInput],
+) -> Result<Vec<PersonaTestResult>, AppError> {
+    timed_query!("test_runs", "test_runs::batch_create_results", {
+        let conn = pool.get()?;
+        let tx = conn.unchecked_transaction()?;
+        let mut results = Vec::with_capacity(inputs.len());
+        for input in inputs {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            let result = tx.query_row(
+                "INSERT INTO persona_test_results
+                    (id, test_run_id, scenario_name, model_id, provider, status,
+                     output_preview, tool_calls_expected, tool_calls_actual,
+                     tool_accuracy_score, output_quality_score, protocol_compliance,
+                     input_tokens, output_tokens, cost_usd, duration_ms,
+                     error_message, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
+                 RETURNING *",
+                params![
+                    id, input.test_run_id, input.scenario_name, input.model_id,
+                    input.provider, input.status, input.output_preview,
+                    input.tool_calls_expected, input.tool_calls_actual,
+                    input.tool_accuracy_score, input.output_quality_score,
+                    input.protocol_compliance, input.input_tokens, input.output_tokens,
+                    input.cost_usd, input.duration_ms, input.error_message, now,
+                ],
+                row_to_result,
+            ).map_err(AppError::Database)?;
+            results.push(result);
+        }
+        tx.commit()?;
+        Ok(results)
+    })
+}
+
 pub fn get_result_by_id(pool: &DbPool, id: &str) -> Result<PersonaTestResult, AppError> {
     timed_query!("test_runs", "test_runs::get_result_by_id", {
         let conn = pool.get()?;

@@ -482,13 +482,14 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
         };
 
         let conn = pool.get()?;
-        conn.execute(
+        conn.query_row(
             "INSERT INTO personas
              (id, project_id, name, description, system_prompt, structured_prompt,
               icon, color, enabled, sensitive, max_concurrent, timeout_ms,
               model_profile, max_budget_usd, max_turns, design_context, group_id,
               notification_channels, created_at, updated_at)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)",
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)
+             RETURNING *",
             params![
                 id, project_id, input.name, input.description, input.system_prompt,
                 input.structured_prompt, input.icon, input.color, enabled, sensitive,
@@ -496,9 +497,11 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
                 input.max_budget_usd, input.max_turns, input.design_context,
                 input.group_id, encrypted_channels, now,
             ],
-        )?;
-
-        get_by_id(pool, &id)
+            row_to_persona,
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::Internal("Failed to create persona".into()),
+            other => AppError::Database(other),
+        })
     })
 }
 
@@ -575,7 +578,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         push_field_param!(input.parameters, "parameters", sets, param_idx, param_values, clone);
 
         let sql = format!(
-            "UPDATE personas SET {} WHERE id = ?{}",
+            "UPDATE personas SET {} WHERE id = ?{} RETURNING *",
             sets.join(", "),
             param_idx
         );
@@ -583,9 +586,11 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
-        conn.execute(&sql, params_ref.as_slice())?;
-
-        get_by_id(pool, id)
+        conn.query_row(&sql, params_ref.as_slice(), row_to_persona)
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Persona {id}")),
+                other => AppError::Database(other),
+            })
     })
 }
 
@@ -645,57 +650,69 @@ pub fn get_summaries(pool: &DbPool) -> Result<Vec<PersonaSummary>, AppError> {
     let base_rows: Vec<(String, i64, Option<String>)> =
         collect_rows(base_rows, "personas::get_summaries/base_rows");
 
-    // Query 2: Batched recent statuses — last 10 per persona using ROW_NUMBER window
-    let mut recent_stmt = conn.prepare(
-        "SELECT persona_id, status FROM (
-             SELECT persona_id, status,
+    // Query 2: Combined CTE for recent statuses, runs-today, and 7-day sparkline
+    // Single scan of persona_executions instead of 3 separate queries.
+    let mut combined_stmt = conn.prepare(
+        "WITH ranked AS (
+             SELECT persona_id, status, created_at,
                     ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC) AS rn
              FROM persona_executions
-         ) WHERE rn <= 10
-         ORDER BY persona_id, rn",
+         ),
+         recent AS (
+             SELECT persona_id, status FROM ranked WHERE rn <= 10
+         ),
+         today AS (
+             SELECT persona_id, COUNT(*) AS cnt
+             FROM persona_executions
+             WHERE created_at >= ?1
+             GROUP BY persona_id
+         ),
+         sparkline AS (
+             SELECT persona_id, DATE(created_at) AS day, COUNT(*) AS cnt
+             FROM persona_executions
+             WHERE created_at >= ?2
+             GROUP BY persona_id, DATE(created_at)
+         )
+         SELECT 'R' AS kind, persona_id, status AS val, NULL AS day, 0 AS cnt FROM recent
+         UNION ALL
+         SELECT 'T' AS kind, persona_id, NULL AS val, NULL AS day, cnt FROM today
+         UNION ALL
+         SELECT 'S' AS kind, persona_id, NULL AS val, day, cnt FROM sparkline",
     )?;
-    let recent_rows = recent_stmt.query_map([], |row| {
-        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-    })?;
-    let mut recent_map: std::collections::HashMap<String, Vec<String>> =
-        std::collections::HashMap::new();
-    for row in collect_rows(recent_rows, "personas::get_summaries/recent_statuses") {
-        recent_map.entry(row.0).or_default().push(row.1);
-    }
-
-    // Query 3: Batched runs-today count — 1 query for all personas
-    let mut today_stmt = conn.prepare(
-        "SELECT persona_id, COUNT(*) AS cnt
-         FROM persona_executions
-         WHERE created_at >= ?1
-         GROUP BY persona_id",
-    )?;
-    let today_rows = today_stmt.query_map(params![today_start], |row| {
-        Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-    })?;
-    let today_map: std::collections::HashMap<String, i64> =
-        collect_rows(today_rows, "personas::get_summaries/runs_today")
-            .into_iter()
-            .collect();
-
-    // Query 4: Batched 7-day sparkline — 1 query for all personas
-    let mut sparkline_stmt = conn.prepare(
-        "SELECT persona_id, DATE(created_at) AS day, COUNT(*) AS cnt
-         FROM persona_executions
-         WHERE created_at >= ?1
-         GROUP BY persona_id, DATE(created_at)",
-    )?;
-    let spark_rows = sparkline_stmt.query_map(params![week_ago], |row| {
+    let combined_rows = combined_stmt.query_map(params![today_start, week_ago], |row| {
         Ok((
             row.get::<_, String>(0)?,
             row.get::<_, String>(1)?,
-            row.get::<_, i64>(2)?,
+            row.get::<_, Option<String>>(2)?,
+            row.get::<_, Option<String>>(3)?,
+            row.get::<_, i64>(4)?,
         ))
     })?;
+
+    let mut recent_map: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+    let mut today_map: std::collections::HashMap<String, i64> =
+        std::collections::HashMap::new();
     let mut spark_map: std::collections::HashMap<String, std::collections::HashMap<String, i64>> =
         std::collections::HashMap::new();
-    for (pid, day, cnt) in collect_rows(spark_rows, "personas::get_summaries/sparkline") {
-        spark_map.entry(pid).or_default().insert(day, cnt);
+
+    for (kind, pid, val, day, cnt) in collect_rows(combined_rows, "personas::get_summaries/combined") {
+        match kind.as_str() {
+            "R" => {
+                if let Some(status) = val {
+                    recent_map.entry(pid).or_default().push(status);
+                }
+            }
+            "T" => {
+                today_map.insert(pid, cnt);
+            }
+            "S" => {
+                if let Some(d) = day {
+                    spark_map.entry(pid).or_default().insert(d, cnt);
+                }
+            }
+            _ => {}
+        }
     }
 
     // Assemble results from the batched maps

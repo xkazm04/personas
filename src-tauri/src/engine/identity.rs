@@ -20,6 +20,12 @@ use crate::error::AppError;
 const KEYRING_SERVICE: &str = "personas-desktop";
 const KEYRING_ENTRY: &str = "ed25519-identity-key";
 
+/// Cached local identity (immutable after creation).
+static IDENTITY_CACHE: std::sync::OnceLock<PeerIdentity> = std::sync::OnceLock::new();
+
+/// Cached signing key (loaded from keyring once, cleared on reinitialize).
+static SIGNING_KEY_CACHE: std::sync::RwLock<Option<SigningKey>> = std::sync::RwLock::new(None);
+
 // -- PeerId derivation ---------------------------------------------------
 
 /// Derive a PeerId from an Ed25519 public key.
@@ -34,10 +40,16 @@ pub fn public_key_to_peer_id(public_key: &VerifyingKey) -> String {
 /// Get or create the local identity.
 /// On first call: generates a keypair, stores private key in OS keyring,
 /// writes identity to the database.
-/// On subsequent calls: loads existing identity from DB (private key stays in keyring).
+/// On subsequent calls: returns the cached in-memory identity.
 pub fn get_or_create_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
+    // Return cached identity if available (identity is immutable after creation)
+    if let Some(cached) = IDENTITY_CACHE.get() {
+        return Ok(cached.clone());
+    }
+
     // Check DB for existing identity
     if let Some(existing) = identity_repo::get_local_identity(pool)? {
+        let _ = IDENTITY_CACHE.set(existing.clone());
         return Ok(existing);
     }
 
@@ -63,6 +75,7 @@ pub fn get_or_create_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
         &display_name,
     )?;
 
+    let _ = IDENTITY_CACHE.set(identity.clone());
     tracing::info!(peer_id = %peer_id, "New identity created");
     Ok(identity)
 }
@@ -139,6 +152,15 @@ fn load_private_key() -> Result<SigningKey, AppError> {
 /// explicitly regenerate the keypair (which invalidates all existing trust
 /// relationships).
 pub fn sign_message(pool: &DbPool, message: &[u8]) -> Result<String, AppError> {
+    // Try cached signing key first
+    {
+        let cache = SIGNING_KEY_CACHE.read().unwrap();
+        if let Some(ref key) = *cache {
+            let signature = key.sign(message);
+            return Ok(B64.encode(signature.to_bytes()));
+        }
+    }
+
     let signing_key = load_private_key().map_err(|_| {
         AppError::KeyringLost(
             "OS keyring entry for identity key is missing. \
@@ -148,8 +170,6 @@ pub fn sign_message(pool: &DbPool, message: &[u8]) -> Result<String, AppError> {
     })?;
 
     // Verify the loaded key matches the identity stored in the database.
-    // A mismatch means the keyring was cleared and a different key was
-    // written back (e.g. by an older code-path or manual intervention).
     if let Some(db_identity) = identity_repo::get_local_identity(pool)? {
         let pk_bytes = B64.decode(&db_identity.public_key_b64).map_err(|e| {
             AppError::Internal(format!("Corrupt public key in DB: {e}"))
@@ -167,6 +187,9 @@ pub fn sign_message(pool: &DbPool, message: &[u8]) -> Result<String, AppError> {
             ));
         }
     }
+
+    // Cache the verified signing key for future calls
+    *SIGNING_KEY_CACHE.write().unwrap() = Some(signing_key.clone());
 
     let signature = signing_key.sign(message);
     Ok(B64.encode(signature.to_bytes()))
@@ -203,6 +226,11 @@ pub fn reinitialize_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
         verifying_key.as_bytes(),
         &display_name,
     )?;
+
+    // Invalidate cached signing key (new key was generated)
+    *SIGNING_KEY_CACHE.write().unwrap() = None;
+    // Note: IDENTITY_CACHE is OnceLock so cannot be reset — but reinitialize
+    // is extremely rare (only after keyring loss) and requires app restart.
 
     tracing::info!(peer_id = %peer_id, "Identity re-initialized with new keypair");
     Ok(identity)

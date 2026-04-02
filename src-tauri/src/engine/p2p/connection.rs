@@ -709,6 +709,7 @@ impl ConnectionManager {
 
     /// Run a single health check pass: ping all connected peers concurrently
     /// (up to 8 at a time) and disconnect dead ones.
+    /// Collects all ping results, then applies updates in a single write-lock pass.
     pub async fn run_health_checks(&self) -> Result<(), crate::error::AppError> {
         use futures_util::stream::{self, StreamExt};
 
@@ -720,22 +721,37 @@ impl ConnectionManager {
             .cloned()
             .collect();
 
-        let failed: Vec<String> = stream::iter(peer_ids)
+        // Collect ping results without holding the write lock
+        let results: Vec<(String, Result<u64, crate::error::AppError>)> = stream::iter(peer_ids)
             .map(|peer_id| async move {
-                match self.ping_peer(&peer_id).await {
-                    Ok(()) => None,
-                    Err(e) => {
-                        tracing::warn!(peer_id = %peer_id, "Ping failed: {}", e);
-                        Some(peer_id)
-                    }
-                }
+                let result = self.ping_peer_latency(&peer_id).await;
+                (peer_id, result)
             })
             .buffer_unordered(8)
-            .filter_map(|opt| async { opt })
             .collect()
             .await;
 
-        for peer_id in failed {
+        // Apply all successful updates in a single write-lock acquisition
+        let mut failed_peers = Vec::new();
+        {
+            let mut conns = self.connections.write().await;
+            for (peer_id, result) in &results {
+                match result {
+                    Ok(latency_ms) => {
+                        if let Some(conn) = conns.get_mut(peer_id) {
+                            conn.info.last_ping = Some(chrono::Utc::now());
+                            conn.info.last_latency_ms = Some(*latency_ms);
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!(peer_id = %peer_id, "Ping failed: {}", e);
+                        failed_peers.push(peer_id.clone());
+                    }
+                }
+            }
+        }
+
+        for peer_id in failed_peers {
             let _ = self
                 .disconnect_peer_with_reason(&peer_id, DisconnectReason::HealthCheck)
                 .await;
@@ -752,8 +768,8 @@ impl ConnectionManager {
         }
     }
 
-    /// Send a Ping and wait for a Pong.
-    async fn ping_peer(&self, peer_id: &str) -> Result<(), AppError> {
+    /// Send a Ping and wait for a Pong. Returns latency in milliseconds.
+    async fn ping_peer_latency(&self, peer_id: &str) -> Result<u64, AppError> {
         let (mut send, mut recv) = self.open_stream(peer_id).await?;
 
         let ping_start = std::time::Instant::now();
@@ -767,15 +783,7 @@ impl ConnectionManager {
         .map_err(|_| AppError::Internal("Ping timeout".into()))??;
 
         match response {
-            Message::Pong => {
-                let latency_ms = ping_start.elapsed().as_millis() as u64;
-                // Update last_ping timestamp and latency
-                if let Some(conn) = self.connections.write().await.get_mut(peer_id) {
-                    conn.info.last_ping = Some(chrono::Utc::now());
-                    conn.info.last_latency_ms = Some(latency_ms);
-                }
-                Ok(())
-            }
+            Message::Pong => Ok(ping_start.elapsed().as_millis() as u64),
             _ => Err(AppError::Internal("Expected Pong response".into())),
         }
     }

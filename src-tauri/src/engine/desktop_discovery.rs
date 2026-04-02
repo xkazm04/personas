@@ -120,12 +120,15 @@ const KNOWN_APPS: &[AppDetector] = &[
 
 /// Scan the system for known desktop applications.
 pub async fn discover_apps() -> Vec<DiscoveredApp> {
+    // Fetch the full process list once and check all apps against it in memory
+    let running_processes = get_all_running_processes().await;
+
     let mut results = Vec::new();
 
     for app in KNOWN_APPS {
         let (installed, binary_path) = detect_binary(app);
         let running = if installed {
-            is_process_running(app.connector_name).await
+            is_process_in_list(app.connector_name, &running_processes)
         } else {
             false
         };
@@ -135,13 +138,72 @@ pub async fn discover_apps() -> Vec<DiscoveredApp> {
             label: app.label.to_string(),
             installed,
             binary_path,
-            version: None, // populated lazily on demand
+            version: None,
             running,
             category: app.category.to_string(),
         });
     }
 
     results
+}
+
+/// Get the full process list from a single OS call.
+async fn get_all_running_processes() -> std::collections::HashSet<String> {
+    let mut processes = std::collections::HashSet::new();
+
+    #[cfg(target_os = "windows")]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        let mut cmd = tokio::process::Command::new("tasklist");
+        cmd.args(["/FO", "CSV", "/NH"]);
+        cmd.creation_flags(0x08000000);
+
+        if let Ok(output) = cmd.output().await {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                // CSV format: "Image Name","PID","Session Name","Session#","Mem Usage"
+                if let Some(name) = line.split(',').next() {
+                    let name = name.trim_matches('"').to_lowercase();
+                    if !name.is_empty() {
+                        processes.insert(name);
+                    }
+                }
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        if let Ok(output) = tokio::process::Command::new("ps")
+            .args(["-eo", "comm"])
+            .output()
+            .await
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines().skip(1) {
+                let name = line.trim().to_lowercase();
+                if !name.is_empty() {
+                    processes.insert(name);
+                }
+            }
+        }
+    }
+
+    processes
+}
+
+/// Check if any of a connector's known process names are in the cached process list.
+fn is_process_in_list(connector_name: &str, processes: &std::collections::HashSet<String>) -> bool {
+    let process_names: &[&str] = match connector_name {
+        "desktop_vscode" => &["code", "code.exe"],
+        "desktop_docker" => &["docker", "docker desktop.exe", "dockerd"],
+        "desktop_obsidian" => &["obsidian", "obsidian.exe"],
+        "desktop_browser" => &["chrome", "chrome.exe", "msedge.exe"],
+        _ => return false,
+    };
+
+    process_names.iter().any(|name| processes.contains(&name.to_lowercase()))
 }
 
 /// Check whether a desktop app is installed, by connector name.

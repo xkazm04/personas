@@ -1,9 +1,13 @@
+use std::sync::atomic::{AtomicU32, Ordering};
+
 use rusqlite::params;
 
 use crate::db::models::webhook_log::{CreateWebhookRequestLogInput, WebhookRequestLog};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
+
+static INSERT_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 row_mapper!(row_to_log -> WebhookRequestLog {
     id, trigger_id, method, headers, body,
@@ -26,16 +30,18 @@ pub fn list_by_trigger(pool: &DbPool, trigger_id: &str) -> Result<Vec<WebhookReq
     })
 }
 
-/// Insert a new webhook request log entry and enforce the 100-per-trigger cap.
+/// Insert a new webhook request log entry and periodically enforce the 100-per-trigger cap.
+/// The cap-enforcement DELETE runs every 10th insert to avoid per-insert overhead on a hot path.
 pub fn create(pool: &DbPool, input: CreateWebhookRequestLogInput) -> Result<WebhookRequestLog, AppError> {
     timed_query!("webhook_log", "webhook_log::create", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
 
-        conn.execute(
+        let row = conn.query_row(
             "INSERT INTO webhook_request_log (id, trigger_id, method, headers, body, status_code, response_body, event_id, error_message, received_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+             RETURNING *",
             params![
                 id,
                 input.trigger_id,
@@ -48,17 +54,24 @@ pub fn create(pool: &DbPool, input: CreateWebhookRequestLogInput) -> Result<Webh
                 input.error_message,
                 now,
             ],
-        )?;
+            row_to_log,
+        ).map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::Internal("Failed to create webhook log".into()),
+            other => AppError::Database(other),
+        })?;
 
-        // Enforce 100-per-trigger cap: delete oldest entries beyond 100
-        conn.execute(
-            "DELETE FROM webhook_request_log WHERE trigger_id = ?1 AND id NOT IN (
-                SELECT id FROM webhook_request_log WHERE trigger_id = ?1 ORDER BY received_at DESC LIMIT 100
-            )",
-            params![input.trigger_id],
-        )?;
+        // Enforce 100-per-trigger cap every 10th insert to reduce DB load
+        let count = INSERT_COUNTER.fetch_add(1, Ordering::Relaxed);
+        if count % 10 == 0 {
+            let _ = conn.execute(
+                "DELETE FROM webhook_request_log WHERE trigger_id = ?1 AND id NOT IN (
+                    SELECT id FROM webhook_request_log WHERE trigger_id = ?1 ORDER BY received_at DESC LIMIT 100
+                )",
+                params![row.trigger_id],
+            );
+        }
 
-        get_by_id(pool, &id)
+        Ok(row)
 
     })
 }

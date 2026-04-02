@@ -49,18 +49,16 @@ pub fn create(pool: &DbPool, input: CreateTemplateFeedbackInput) -> Result<Templ
         .and_then(|v| v.as_str().map(String::from))
         .unwrap_or_else(|| "neutral".to_string());
 
-    conn.execute(
+    conn.query_row(
         "INSERT INTO template_feedback (id, review_id, persona_id, execution_id, rating, labels, comment, source, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+         RETURNING *",
         params![id, input.review_id, input.persona_id, input.execution_id, rating_str, labels_json, input.comment, input.source, now],
-    )?;
-
-    let row = conn.query_row(
-        "SELECT * FROM template_feedback WHERE id = ?1",
-        params![id],
         row_to_feedback,
-    )?;
-    Ok(row)
+    ).map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => AppError::Internal("Failed to create template feedback".into()),
+        other => AppError::Database(other),
+    })
     })
 }
 
@@ -96,37 +94,35 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         )));
     }
 
-    // Track whether any sub-query failed so the frontend can distinguish
-    // real zero-data from query failures with substituted defaults.
     let mut data_available = true;
 
-    // Adoption count from the design review
-    let total_adoptions: i64 = conn
+    // Combined review metrics: adoption count + structural/semantic scores in one query
+    let (total_adoptions, structural_score, semantic_score): (i64, f64, f64) = conn
         .query_row(
-            "SELECT COALESCE(adoption_count, 0) FROM persona_design_reviews WHERE id = ?1",
+            "SELECT COALESCE(adoption_count, 0), COALESCE(structural_score, 50), COALESCE(semantic_score, 50) FROM persona_design_reviews WHERE id = ?1",
             params![review_id],
-            |row| row.get(0),
+            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?, row.get::<_, f64>(2)?)),
         )
         .unwrap_or_else(|e| {
-            tracing::warn!(review_id = %review_id, error = %e, "Failed to query adoption count, defaulting to 0");
+            tracing::warn!(review_id = %review_id, error = %e, "Failed to query review metrics, defaulting");
             data_available = false;
-            0
+            (0, 50.0, 50.0)
         });
 
-    // Execution stats from personas linked to this template
-    let (total_executions, success_count): (i64, i64) = conn
+    // Combined execution stats: count, success count, and avg cost in one query
+    let (total_executions, success_count, avg_cost): (i64, i64, f64) = conn
         .query_row(
-            "SELECT COUNT(*), SUM(CASE WHEN pe.status = 'completed' THEN 1 ELSE 0 END)
+            "SELECT COUNT(*), SUM(CASE WHEN pe.status = 'completed' THEN 1 ELSE 0 END), COALESCE(AVG(pe.cost_usd), 0.0)
              FROM persona_executions pe
              JOIN personas p ON pe.persona_id = p.id
              WHERE p.source_review_id = ?1",
             params![review_id],
-            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Option<i64>>(1)?.unwrap_or(0))),
+            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Option<i64>>(1)?.unwrap_or(0), row.get::<_, f64>(2)?)),
         )
         .unwrap_or_else(|e| {
-            tracing::warn!(review_id = %review_id, error = %e, "Failed to query execution stats, defaulting to (0, 0)");
+            tracing::warn!(review_id = %review_id, error = %e, "Failed to query execution stats, defaulting");
             data_available = false;
-            (0, 0)
+            (0, 0, 0.0)
         });
 
     let success_rate = if total_executions > 0 {
@@ -135,47 +131,9 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         0.0
     };
 
-    let avg_cost: f64 = conn
-        .query_row(
-            "SELECT COALESCE(AVG(pe.cost_usd), 0.0)
-             FROM persona_executions pe
-             JOIN personas p ON pe.persona_id = p.id
-             WHERE p.source_review_id = ?1",
-            params![review_id],
-            |row| row.get(0),
-        )
-        .unwrap_or_else(|e| {
-            tracing::warn!(review_id = %review_id, error = %e, "Failed to query avg cost, defaulting to 0.0");
-            data_available = false;
-            0.0
-        });
-
-    // Feedback counts
-    let positive_count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM template_feedback WHERE review_id = ?1 AND rating = 'positive'",
-            params![review_id],
-            |row| row.get(0),
-        )
-        .unwrap_or_else(|e| {
-            tracing::warn!(review_id = %review_id, error = %e, "Failed to query positive feedback count, defaulting to 0");
-            data_available = false;
-            0
-        });
-
-    let negative_count: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM template_feedback WHERE review_id = ?1 AND rating = 'negative'",
-            params![review_id],
-            |row| row.get(0),
-        )
-        .unwrap_or_else(|e| {
-            tracing::warn!(review_id = %review_id, error = %e, "Failed to query negative feedback count, defaulting to 0");
-            data_available = false;
-            0
-        });
-
-    // Top labels (parse all feedback labels and count)
+    // Combined feedback: counts and labels in a single scan
+    let mut positive_count: i64 = 0;
+    let mut negative_count: i64 = 0;
     let mut label_counts: std::collections::HashMap<String, (i64, i64)> = std::collections::HashMap::new();
     {
         let mut stmt = conn.prepare(
@@ -186,6 +144,11 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         })?;
         for row in rows.flatten() {
             let (rating, labels_json) = row;
+            if rating == "positive" {
+                positive_count += 1;
+            } else if rating == "negative" {
+                negative_count += 1;
+            }
             if let Ok(labels) = serde_json::from_str::<Vec<String>>(&labels_json) {
                 for label in labels {
                     let entry = label_counts.entry(label).or_insert((0, 0));
@@ -212,19 +175,6 @@ pub fn get_performance(pool: &DbPool, review_id: &str) -> Result<TemplatePerform
         .map(|(k, (_, n))| (k.clone(), *n))
         .collect();
     top_negative.sort_by(|a, b| b.1.cmp(&a.1));
-
-    // Get structural and semantic scores from review
-    let (structural_score, semantic_score): (f64, f64) = conn
-        .query_row(
-            "SELECT COALESCE(structural_score, 50), COALESCE(semantic_score, 50) FROM persona_design_reviews WHERE id = ?1",
-            params![review_id],
-            |row| Ok((row.get::<_, f64>(0)?, row.get::<_, f64>(1)?)),
-        )
-        .unwrap_or_else(|e| {
-            tracing::warn!(review_id = %review_id, error = %e, "Failed to query structural/semantic scores, defaulting to (50, 50)");
-            data_available = false;
-            (50.0, 50.0)
-        });
 
     // Derived quality: 40% semantic + 30% structural + 30% success rate (all normalized to 0-100)
     let derived_quality_score = (semantic_score * 0.4) + (structural_score * 0.3) + (success_rate * 100.0 * 0.3);

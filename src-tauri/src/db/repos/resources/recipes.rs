@@ -37,12 +37,13 @@ pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinitio
         let now = chrono::Utc::now().to_rfc3339();
 
         let conn = pool.get()?;
-        conn.execute(
+        conn.query_row(
             "INSERT INTO recipe_definitions
              (id, project_id, credential_id, use_case_id, name, description, category, prompt_template,
               input_schema, output_contract, tool_requirements, credential_requirements,
               model_preference, sample_inputs, tags, icon, color, created_at, updated_at)
-             VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17)",
+             VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?17)
+             RETURNING *",
             params![
                 id,
                 input.credential_id,
@@ -62,14 +63,9 @@ pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinitio
                 input.color,
                 now,
             ],
-        )?;
-
-        conn.query_row(
-            "SELECT * FROM recipe_definitions WHERE id = ?1",
-            params![id],
             row_to_recipe,
         ).map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {id}")),
+            rusqlite::Error::QueryReturnedNoRows => AppError::Internal("Failed to create recipe".into()),
             other => AppError::Database(other),
         })
 
@@ -84,16 +80,6 @@ pub fn update(
     timed_query!("recipes", "recipes::update", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
-
-        // Verify recipe exists
-        let exists: bool = conn.query_row(
-            "SELECT EXISTS(SELECT 1 FROM recipe_definitions WHERE id = ?1)",
-            params![id],
-            |row| row.get(0),
-        )?;
-        if !exists {
-            return Err(AppError::NotFound(format!("Recipe {id}")));
-        }
 
         let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
         let mut param_idx = 2u32;
@@ -113,7 +99,7 @@ pub fn update(
         push_field!(input.color, "color", sets, param_idx);
 
         let sql = format!(
-            "UPDATE recipe_definitions SET {} WHERE id = ?{}",
+            "UPDATE recipe_definitions SET {} WHERE id = ?{} RETURNING *",
             sets.join(", "),
             param_idx
         );
@@ -163,16 +149,11 @@ pub fn update(
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
             param_values.iter().map(|p| p.as_ref()).collect();
-        conn.execute(&sql, params_ref.as_slice())?;
-
-        conn.query_row(
-            "SELECT * FROM recipe_definitions WHERE id = ?1",
-            params![id],
-            row_to_recipe,
-        ).map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {id}")),
-            other => AppError::Database(other),
-        })
+        conn.query_row(&sql, params_ref.as_slice(), row_to_recipe)
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {id}")),
+                other => AppError::Database(other),
+            })
 
     })
 }

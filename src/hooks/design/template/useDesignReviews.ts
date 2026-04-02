@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
-import { cancelDesignReviewRun, deleteDesignReview, deleteStaleSeedTemplates, importDesignReview, listDesignReviews, startDesignReviewRun } from "@/api/overview/reviews";
+import { batchImportDesignReviews, cancelDesignReviewRun, deleteDesignReview, deleteStaleSeedTemplates, listDesignReviews, startDesignReviewRun } from "@/api/overview/reviews";
 
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import { getActiveSeedIds, getSeedReviews, SEED_RUN_ID } from '@/lib/personas/templates/seedTemplates';
@@ -89,7 +89,7 @@ export function useDesignReviews() {
     if (seeds.length === 0) return;
 
     try {
-      await Promise.all(seeds.map((input) => importDesignReview(input)));
+      await batchImportDesignReviews(seeds);
 
       // Prune stale seed templates whose IDs are no longer in the catalog
       // (e.g. renamed or deleted template files). Only affects seed rows.

@@ -255,6 +255,79 @@ pub fn create_review(
     })
 }
 
+pub fn batch_create_reviews(
+    pool: &DbPool,
+    inputs: &[CreateDesignReviewInput],
+) -> Result<u32, AppError> {
+    timed_query!("design_reviews", "design_reviews::batch_create_reviews", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut count = 0u32;
+
+        {
+            let mut stmt = tx.prepare(
+                "INSERT INTO persona_design_reviews
+                 (id, test_case_id, test_case_name, instruction, status,
+                  structural_score, semantic_score, connectors_used, trigger_types,
+                  design_result, structural_evaluation, semantic_evaluation,
+                  test_run_id, had_references, suggested_adjustment, adjustment_generation,
+                  use_case_flows, reviewed_at, created_at, category)
+                 VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)
+                 ON CONFLICT(test_case_name, test_run_id) DO UPDATE SET
+                   test_case_id = excluded.test_case_id,
+                   instruction = excluded.instruction,
+                   status = excluded.status,
+                   structural_score = excluded.structural_score,
+                   semantic_score = excluded.semantic_score,
+                   connectors_used = excluded.connectors_used,
+                   trigger_types = excluded.trigger_types,
+                   design_result = excluded.design_result,
+                   structural_evaluation = excluded.structural_evaluation,
+                   semantic_evaluation = excluded.semantic_evaluation,
+                   had_references = excluded.had_references,
+                   suggested_adjustment = excluded.suggested_adjustment,
+                   adjustment_generation = excluded.adjustment_generation,
+                   use_case_flows = excluded.use_case_flows,
+                   reviewed_at = excluded.reviewed_at,
+                   created_at = excluded.created_at,
+                   category = excluded.category",
+            )?;
+
+            for input in inputs {
+                let id = uuid::Uuid::new_v4().to_string();
+                let had_refs_int: Option<i32> = input.had_references.map(|b| b as i32);
+                stmt.execute(params![
+                    id,
+                    input.test_case_id,
+                    input.test_case_name,
+                    input.instruction,
+                    input.status,
+                    input.structural_score,
+                    input.semantic_score,
+                    input.connectors_used,
+                    input.trigger_types,
+                    input.design_result,
+                    input.structural_evaluation,
+                    input.semantic_evaluation,
+                    input.test_run_id,
+                    had_refs_int,
+                    input.suggested_adjustment,
+                    input.adjustment_generation,
+                    input.use_case_flows,
+                    input.reviewed_at,
+                    now,
+                    input.category,
+                ])?;
+                count += 1;
+            }
+        }
+
+        tx.commit().map_err(AppError::Database)?;
+        Ok(count)
+    })
+}
+
 pub fn delete_review(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("design_reviews", "design_reviews::delete_review", {
         let conn = pool.get()?;

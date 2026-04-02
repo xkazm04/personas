@@ -54,45 +54,35 @@ pub fn upsert(pool: &DbPool, input: CreateCredentialRecipeInput) -> Result<Crede
             )
             .ok();
 
-        let id = if let Some(existing_id) = existing {
-            // Update existing recipe
-            conn.execute(
-                "UPDATE credential_recipes SET
-                    connector_label = ?1, category = ?2, color = ?3, oauth_type = ?4,
-                    fields_json = ?5, healthcheck_json = ?6, setup_instructions = ?7,
-                    summary = ?8, docs_url = ?9, source = ?10, updated_at = ?11
-                 WHERE id = ?12",
-                params![
-                    input.connector_label, input.category, input.color, input.oauth_type,
-                    input.fields_json, input.healthcheck_json, input.setup_instructions,
-                    input.summary, input.docs_url, input.source, now, existing_id,
-                ],
-            )?;
-            existing_id
-        } else {
-            // Insert new recipe
-            let new_id = uuid::Uuid::new_v4().to_string();
-            conn.execute(
-                "INSERT INTO credential_recipes (id, connector_name, connector_label, category, color, oauth_type, fields_json, healthcheck_json, setup_instructions, summary, docs_url, source, usage_count, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0, ?13, ?13)",
-                params![
-                    new_id, input.connector_name, input.connector_label, input.category, input.color,
-                    input.oauth_type, input.fields_json, input.healthcheck_json, input.setup_instructions,
-                    input.summary, input.docs_url, input.source, now,
-                ],
-            )?;
-            new_id
-        };
-
-        conn.query_row(
-            "SELECT * FROM credential_recipes WHERE id = ?1",
-            params![id],
+        let new_id = uuid::Uuid::new_v4().to_string();
+        let recipe = conn.query_row(
+            "INSERT INTO credential_recipes (id, connector_name, connector_label, category, color, oauth_type, fields_json, healthcheck_json, setup_instructions, summary, docs_url, source, usage_count, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0, ?13, ?13)
+             ON CONFLICT(connector_name) DO UPDATE SET
+                connector_label = excluded.connector_label,
+                category = excluded.category,
+                color = excluded.color,
+                oauth_type = excluded.oauth_type,
+                fields_json = excluded.fields_json,
+                healthcheck_json = excluded.healthcheck_json,
+                setup_instructions = excluded.setup_instructions,
+                summary = excluded.summary,
+                docs_url = excluded.docs_url,
+                source = excluded.source,
+                updated_at = excluded.updated_at
+             RETURNING *",
+            params![
+                new_id, input.connector_name, input.connector_label, input.category, input.color,
+                input.oauth_type, input.fields_json, input.healthcheck_json, input.setup_instructions,
+                input.summary, input.docs_url, input.source, now,
+            ],
             row_to_recipe,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("CredentialRecipe {id}")),
+            rusqlite::Error::QueryReturnedNoRows => AppError::Internal("Failed to upsert credential recipe".into()),
             other => AppError::Database(other),
-        })
+        })?;
+        Ok(recipe)
 
     })
 }

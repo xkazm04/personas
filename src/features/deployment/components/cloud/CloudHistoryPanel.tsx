@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { CloudExecutionRow } from './CloudExecutionRow';
@@ -45,12 +45,22 @@ export function CloudHistoryPanel() {
   }, [filterPersona, filterStatus, period]);
 
   const fetchingRef = useRef(new Set<string>());
+  const outputCacheRef = useRef(new Map<string, { lines: string[]; ts: number }>());
+  const OUTPUT_CACHE_TTL = 5 * 60 * 1000;
+
   const fetchOutput = useCallback(async (execId: string) => {
+    // Return cached output if still fresh
+    const cached = outputCacheRef.current.get(execId);
+    if (cached && Date.now() - cached.ts < OUTPUT_CACHE_TTL) {
+      setOutputMap((prev) => ({ ...prev, [execId]: { lines: cached.lines, loading: false } }));
+      return;
+    }
     if (fetchingRef.current.has(execId)) return;
     fetchingRef.current.add(execId);
     setOutputMap((prev) => ({ ...prev, [execId]: { lines: [], loading: true } }));
     try {
       const lines = await cloudGetExecutionOutput(execId);
+      outputCacheRef.current.set(execId, { lines, ts: Date.now() });
       setOutputMap((prev) => ({ ...prev, [execId]: { lines, loading: false } }));
     } catch (e) {
       setOutputMap((prev) => ({
@@ -61,6 +71,24 @@ export function CloudHistoryPanel() {
       fetchingRef.current.delete(execId);
     }
   }, []);
+
+  // Debounce filter-driven refetches to avoid API spam when iterating filters
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const debouncedFetchData = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(fetchData, 300);
+  }, [fetchData]);
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+
+  // Re-fetch when filters change (debounced)
+  const prevFiltersRef = useRef({ filterPersona, filterStatus, period });
+  useEffect(() => {
+    const prev = prevFiltersRef.current;
+    if (prev.filterPersona !== filterPersona || prev.filterStatus !== filterStatus || prev.period !== period) {
+      prevFiltersRef.current = { filterPersona, filterStatus, period };
+      debouncedFetchData();
+    }
+  }, [filterPersona, filterStatus, period, debouncedFetchData]);
 
   // Auto-poll history data while this panel is mounted and tab is visible
   const { lastRefreshed: historyLastPolled } = usePolling(fetchData, {

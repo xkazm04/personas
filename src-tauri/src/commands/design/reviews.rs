@@ -1321,6 +1321,28 @@ pub fn import_design_review(
     repo::create_review(&state.db, &review_input)
 }
 
+#[tauri::command]
+pub fn batch_import_design_reviews(
+    state: State<'_, Arc<AppState>>,
+    inputs: Vec<serde_json::Value>,
+) -> Result<u32, AppError> {
+    require_auth_sync(&state)?;
+    let mut review_inputs = Vec::with_capacity(inputs.len());
+    for input in inputs {
+        let import_input: ImportDesignReviewInput = serde_json::from_value(input)
+            .map_err(|e| AppError::Validation(format!("Invalid design review input: {e}")))?;
+        let mut review_input: CreateDesignReviewInput = import_input.into();
+        if review_input.category.is_none() {
+            review_input.category = Some(infer_template_category(
+                &review_input.instruction,
+                review_input.connectors_used.as_deref(),
+            ));
+        }
+        review_inputs.push(review_input);
+    }
+    repo::batch_create_reviews(&state.db, &review_inputs)
+}
+
 // -- CLI Runner -------------------------------------------------
 
 /// Spawn Claude CLI for a single template and return the full output string.

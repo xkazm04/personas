@@ -71,6 +71,7 @@ pub async fn gitlab_connect(
         .map_err(|e| AppError::GitLab(format!("Failed to store GitLab instance URL: {e}")))?;
 
     *state.gitlab_client.lock().await = Some(client);
+    *state.gitlab_config_cache.lock().await = Some((std::time::Instant::now(), user.username.clone()));
 
     tracing::info!(username = %user.username, base_url = %base_url, "Connected to GitLab");
     Ok(user)
@@ -138,11 +139,13 @@ pub async fn gitlab_disconnect(
     require_cloud_auth(&state, "gitlab_disconnect").await?;
     gitlab::config::clear_gitlab_config();
     *state.gitlab_client.lock().await = None;
+    *state.gitlab_config_cache.lock().await = None;
     tracing::info!("Disconnected from GitLab");
     Ok(())
 }
 
 /// Return the current GitLab connection configuration, if any.
+/// Caches the token validation result for 60 seconds to avoid repeated HTTP round-trips.
 #[tauri::command]
 pub async fn gitlab_get_config(
     state: State<'_, Arc<AppState>>,
@@ -152,17 +155,39 @@ pub async fn gitlab_get_config(
     match maybe_client {
         Some(client) => {
             let base_url = client.base_url().to_string();
+
+            // Check TTL cache first (60s)
+            {
+                let cache = state.gitlab_config_cache.lock().await;
+                if let Some((ts, ref username)) = *cache {
+                    if ts.elapsed().as_secs() < 60 {
+                        return Ok(Some(GitLabConfig {
+                            base_url,
+                            is_connected: true,
+                            username: username.clone(),
+                        }));
+                    }
+                }
+            }
+
             match client.validate_token().await {
-                Ok(user) => Ok(Some(GitLabConfig {
-                    base_url,
-                    is_connected: true,
-                    username: user.username,
-                })),
-                Err(_) => Ok(Some(GitLabConfig {
-                    base_url,
-                    is_connected: false,
-                    username: String::new(),
-                })),
+                Ok(user) => {
+                    *state.gitlab_config_cache.lock().await =
+                        Some((std::time::Instant::now(), user.username.clone()));
+                    Ok(Some(GitLabConfig {
+                        base_url,
+                        is_connected: true,
+                        username: user.username,
+                    }))
+                }
+                Err(_) => {
+                    *state.gitlab_config_cache.lock().await = None;
+                    Ok(Some(GitLabConfig {
+                        base_url,
+                        is_connected: false,
+                        username: String::new(),
+                    }))
+                }
             }
         }
         None => {

@@ -46,35 +46,43 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
   const [elapsedLabel, setElapsedLabel] = useState('');
   const elapsedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
 
   const classified = toast.type === 'error' ? classifyErrorFull(toast.message) : null;
   const friendly = classified?.friendly ?? null;
   const displayMessage = friendly?.message ?? toast.message;
 
+  // Single RAF loop handles both dismiss countdown and elapsed label
   useEffect(() => {
-    if (paused) return;
-
+    let rafId: number;
+    let lastLabelSec = -1;
     lastTickRef.current = Date.now();
-    const interval = setInterval(() => {
+
+    const tick = () => {
       const now = Date.now();
-      elapsedRef.current += now - lastTickRef.current;
+      if (!pausedRef.current) {
+        elapsedRef.current += now - lastTickRef.current;
+        if (elapsedRef.current >= toast.duration) {
+          onDismiss(toast.id);
+          return;
+        }
+      }
       lastTickRef.current = now;
 
-      if (elapsedRef.current >= toast.duration) {
-        onDismiss(toast.id);
+      const sec = Math.floor((now - toast.timestamp) / 1000);
+      if (sec !== lastLabelSec) {
+        lastLabelSec = sec;
+        setElapsedLabel(formatElapsed(now - toast.timestamp));
       }
-    }, 50);
 
-    return () => clearInterval(interval);
-  }, [paused, toast.duration, toast.id, onDismiss]);
+      rafId = requestAnimationFrame(tick);
+    };
 
-  // Live-update elapsed label every second
-  useEffect(() => {
-    const update = () => setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
-    update();
-    const id = setInterval(update, 1_000);
-    return () => clearInterval(id);
-  }, [toast.timestamp]);
+    setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [toast.duration, toast.id, toast.timestamp, onDismiss]);
 
   const remaining = Math.max(0, toast.duration - elapsedRef.current);
   const progressFraction = remaining / toast.duration;
@@ -136,30 +144,39 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
   const [elapsedLabel, setElapsedLabel] = useState('');
   const elapsedRef = useRef(0);
   const lastTickRef = useRef(Date.now());
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
 
+  // Single RAF loop handles both dismiss countdown and elapsed label
   useEffect(() => {
-    if (paused) return;
-
+    let rafId: number;
+    let lastLabelSec = -1;
     lastTickRef.current = Date.now();
-    const interval = setInterval(() => {
+
+    const tick = () => {
       const now = Date.now();
-      elapsedRef.current += now - lastTickRef.current;
+      if (!pausedRef.current) {
+        elapsedRef.current += now - lastTickRef.current;
+        if (elapsedRef.current >= toast.duration) {
+          onDismiss(toast.id);
+          return;
+        }
+      }
       lastTickRef.current = now;
 
-      if (elapsedRef.current >= toast.duration) {
-        onDismiss(toast.id);
+      const sec = Math.floor((now - toast.timestamp) / 1000);
+      if (sec !== lastLabelSec) {
+        lastLabelSec = sec;
+        setElapsedLabel(formatElapsed(now - toast.timestamp));
       }
-    }, 50);
 
-    return () => clearInterval(interval);
-  }, [paused, toast.duration, toast.id, onDismiss]);
+      rafId = requestAnimationFrame(tick);
+    };
 
-  useEffect(() => {
-    const update = () => setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
-    update();
-    const id = setInterval(update, 1_000);
-    return () => clearInterval(id);
-  }, [toast.timestamp]);
+    setElapsedLabel(formatElapsed(Date.now() - toast.timestamp));
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [toast.duration, toast.id, toast.timestamp, onDismiss]);
 
   const handleResolve = useCallback(async () => {
     const { useOverviewStore } = await import("@/stores/overviewStore");

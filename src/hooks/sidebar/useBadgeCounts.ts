@@ -4,9 +4,15 @@
  * Dynamically imports the overviewStore to avoid pulling all 7 overview slices
  * (~85 KB) into the main bundle. Badge counts are non-critical UI that can
  * load a frame after the Sidebar shell renders.
+ *
+ * Also consolidates budget spend polling into the same timer tick so the
+ * sidebar runs a single coordinated polling loop instead of two independent
+ * timers (badge counts + budget).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useAgentStore } from "@/stores/agentStore";
+import { POLLING_CONFIG } from "@/hooks/utility/timing/usePolling";
 
 interface BadgeCounts {
   pendingReviewCount: number;
@@ -18,6 +24,17 @@ const INITIAL: BadgeCounts = { pendingReviewCount: 0, unreadMessageCount: 0, pen
 
 export function useBadgeCounts(): BadgeCounts {
   const [counts, setCounts] = useState<BadgeCounts>(INITIAL);
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const fetchBudgetSpend = useAgentStore((s) => s.fetchBudgetSpend);
+
+  const fetchAll = useCallback(async () => {
+    const { useOverviewStore } = await import("@/stores/overviewStore");
+    const state = useOverviewStore.getState();
+    void state.fetchPendingReviewCount();
+    void state.fetchUnreadMessageCount();
+    void state.fetchRecentEvents();
+    void fetchBudgetSpend();
+  }, [fetchBudgetSpend]);
 
   useEffect(() => {
     let unsub: (() => void) | undefined;
@@ -33,10 +50,11 @@ export function useBadgeCounts(): BadgeCounts {
         pendingEventCount: state.pendingEventCount,
       });
 
-      // Fire initial fetches
-      void state.fetchPendingReviewCount();
-      void state.fetchUnreadMessageCount();
-      void state.fetchRecentEvents();
+      // Fire initial fetches (badge counts + budget in one tick)
+      void fetchAll();
+
+      // Single consolidated polling interval for all sidebar data
+      timerRef.current = setInterval(fetchAll, POLLING_CONFIG.dashboardRefresh.interval);
 
       // Subscribe to store changes — only track the 3 badge fields to avoid
       // re-renders when unrelated overview state changes.
@@ -65,8 +83,9 @@ export function useBadgeCounts(): BadgeCounts {
     return () => {
       cancelled = true;
       unsub?.();
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [fetchAll]);
 
   return counts;
 }

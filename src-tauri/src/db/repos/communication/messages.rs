@@ -193,60 +193,69 @@ pub fn get_thread_summaries(
     let offset = offset.unwrap_or(0);
     let conn = pool.get()?;
 
-    // Get distinct threads ordered by latest activity
-    let mut qb = QueryBuilder::new();
-    qb.where_raw(|_| "thread_id IS NOT NULL".to_string(), vec![]);
-    if let Some(pid) = persona_id {
-        qb.where_eq("persona_id", pid.to_string());
-    }
-    qb.order_by("last_at", "DESC");
-    qb.limit(limit);
-    qb.offset(offset);
+    // Single query with CTE: fetch thread aggregates joined with the parent
+    // message to eliminate the N+1 per-thread parent fetch.
+    let persona_where = if persona_id.is_some() {
+        "WHERE thread_id IS NOT NULL AND persona_id = ?1"
+    } else {
+        "WHERE thread_id IS NOT NULL"
+    };
 
-    let base = "SELECT thread_id,
-                    MIN(created_at) AS first_at,
-                    MAX(created_at) AS last_at,
-                    COUNT(*) AS cnt
-             FROM persona_messages";
-    // We need GROUP BY between WHERE and ORDER BY, so build manually
+    let (limit_param, offset_param) = if persona_id.is_some() {
+        ("?2", "?3")
+    } else {
+        ("?1", "?2")
+    };
+
     let sql = format!(
-        "{base} {} GROUP BY thread_id {}",
-        qb.where_clause(),
-        {
-            // Extract ORDER BY + LIMIT + OFFSET from build_clauses minus WHERE
-            let clauses = qb.build_clauses();
-            let wc = qb.where_clause();
-            if wc.is_empty() {
-                clauses
-            } else {
-                clauses.strip_prefix(&wc).unwrap_or(&clauses).trim().to_string()
-            }
-        },
+        "WITH thread_agg AS (
+            SELECT thread_id,
+                   MIN(created_at) AS first_at,
+                   MAX(created_at) AS last_at,
+                   COUNT(*) AS cnt
+            FROM persona_messages
+            {persona_where}
+            GROUP BY thread_id
+            ORDER BY last_at DESC
+            LIMIT {limit_param} OFFSET {offset_param}
+        )
+        SELECT ta.thread_id AS ta_thread_id, ta.last_at AS ta_last_at, ta.cnt AS ta_cnt,
+               pm.id, pm.persona_id, pm.execution_id, pm.title, pm.content,
+               pm.content_type, pm.priority, pm.is_read, pm.metadata,
+               pm.created_at, pm.read_at, pm.thread_id
+        FROM thread_agg ta
+        JOIN persona_messages pm
+          ON pm.thread_id = ta.thread_id
+          AND pm.created_at = ta.first_at
+        ORDER BY ta.last_at DESC",
     );
 
     let mut stmt = conn.prepare(&sql)?;
-    let thread_rows = stmt.query_map(qb.params_ref().as_slice(), |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, String>(1)?,      // first_at
-            row.get::<_, Option<String>>(2)?, // last_at
-            row.get::<_, i64>(3)?,         // cnt
-        ))
-    })?;
+    let rows = if let Some(pid) = persona_id {
+        stmt.query_map(params![pid, limit, offset], |row| {
+            Ok((
+                row.get::<_, String>("ta_thread_id")?,
+                row.get::<_, Option<String>>("ta_last_at")?,
+                row.get::<_, i64>("ta_cnt")?,
+                row_to_message(row)?,
+            ))
+        })?
+    } else {
+        stmt.query_map(params![limit, offset], |row| {
+            Ok((
+                row.get::<_, String>("ta_thread_id")?,
+                row.get::<_, Option<String>>("ta_last_at")?,
+                row.get::<_, i64>("ta_cnt")?,
+                row_to_message(row)?,
+            ))
+        })?
+    };
 
     let mut summaries = Vec::new();
-    for row in thread_rows {
-        let (tid, _first_at, last_at, cnt) = row.map_err(AppError::Database)?;
-        // Fetch the parent (earliest message in the thread)
-        let parent = conn.query_row(
-            "SELECT * FROM persona_messages WHERE thread_id = ?1 ORDER BY created_at ASC LIMIT 1",
-            params![tid],
-            row_to_message,
-        ).map_err(AppError::Database)?;
-
-        let reply_count = cnt - 1; // exclude the parent itself
+    for row in rows {
+        let (tid, last_at, cnt, parent) = row.map_err(AppError::Database)?;
+        let reply_count = cnt - 1;
         let latest_reply_at = if reply_count > 0 { last_at } else { None };
-
         summaries.push(MessageThreadSummary {
             thread_id: tid,
             parent,

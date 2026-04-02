@@ -66,19 +66,55 @@ fn validate_addresses(raw: Vec<String>) -> Vec<String> {
         .collect()
 }
 
+/// Cached set of trusted peer IDs, refreshed every 30 seconds.
+struct TrustedPeerCache {
+    peers: std::collections::HashSet<String>,
+    refreshed_at: std::time::Instant,
+}
+
+static TRUSTED_PEER_CACHE: Mutex<Option<TrustedPeerCache>> = Mutex::new(None);
+
+const TRUSTED_CACHE_TTL_SECS: u64 = 30;
+
 /// Check whether a peer_id exists in the trusted_peers table (non-revoked).
+/// Uses an in-memory cache with 30s TTL to avoid per-event DB queries.
 fn is_trusted_peer(pool: &DbPool, peer_id: &str) -> bool {
+    let mut cache = TRUSTED_PEER_CACHE.lock().unwrap();
+    if let Some(ref c) = *cache {
+        if c.refreshed_at.elapsed().as_secs() < TRUSTED_CACHE_TTL_SECS {
+            return c.peers.contains(peer_id);
+        }
+    }
+
+    // Refresh cache
+    let peers = load_trusted_peer_ids(pool);
+    let result = peers.contains(peer_id);
+    *cache = Some(TrustedPeerCache {
+        peers,
+        refreshed_at: std::time::Instant::now(),
+    });
+    result
+}
+
+fn load_trusted_peer_ids(pool: &DbPool) -> std::collections::HashSet<String> {
     let conn = match pool.get() {
         Ok(c) => c,
-        Err(_) => return false,
+        Err(_) => return std::collections::HashSet::new(),
     };
-    conn.query_row(
-        "SELECT COUNT(*) FROM trusted_peers WHERE peer_id = ?1 AND trust_level != 'revoked'",
-        rusqlite::params![peer_id],
-        |row| row.get::<_, i32>(0),
-    )
-    .unwrap_or(0)
-        > 0
+    let mut stmt = match conn.prepare(
+        "SELECT peer_id FROM trusted_peers WHERE trust_level != 'revoked'"
+    ) {
+        Ok(s) => s,
+        Err(_) => return std::collections::HashSet::new(),
+    };
+    stmt.query_map([], |row| row.get::<_, String>(0))
+        .map(|rows| rows.filter_map(|r| r.ok()).collect())
+        .unwrap_or_default()
+}
+
+/// Invalidate the trusted peer cache (call after trust changes).
+pub fn invalidate_trusted_peer_cache() {
+    *TRUSTED_PEER_CACHE.lock().unwrap() = None;
 }
 
 /// Validate all fields from an mDNS TXT record before DB insertion.

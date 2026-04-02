@@ -91,6 +91,7 @@ pub fn import_trusted_peer(
         &card.display_name,
         notes.as_deref(),
     )?;
+    crate::engine::p2p::mdns::invalidate_trusted_peer_cache();
     tracing::info!(
         peer_id = %card.peer_id,
         display_name = %card.display_name,
@@ -119,6 +120,7 @@ pub fn revoke_peer_trust(
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     identity_repo::revoke_peer_trust(&state.db, &peer_id)?;
+    crate::engine::p2p::mdns::invalidate_trusted_peer_cache();
     tracing::info!(peer_id = %peer_id, action = "trust_revoked", "Peer trust revoked");
     Ok(true)
 }
@@ -130,6 +132,7 @@ pub fn delete_trusted_peer(
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     identity_repo::delete_trusted_peer(&state.db, &peer_id)?;
+    crate::engine::p2p::mdns::invalidate_trusted_peer_cache();
     tracing::info!(peer_id = %peer_id, action = "trust_deleted", "Trusted peer deleted");
     Ok(true)
 }
