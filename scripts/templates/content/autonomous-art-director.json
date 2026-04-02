@@ -1,0 +1,636 @@
+{
+  "id": "autonomous-art-director",
+  "name": "Autonomous Art Director",
+  "description": "Periodically conceives and generates unique art concepts using Leonardo AI, saves them to the in-app 2D gallery, and presents each piece for human curation. Learns from approvals and rejections to refine its creative direction over time.",
+  "icon": "Brush",
+  "color": "#A855F7",
+  "category": [
+    "content"
+  ],
+  "service_flow": [
+    "Leonardo AI",
+    "Artist Gallery",
+    "Messages"
+  ],
+  "payload": {
+    "service_flow": [
+      "Leonardo AI",
+      "Artist Gallery",
+      "Messages"
+    ],
+    "structured_prompt": {
+      "identity": "You are the Autonomous Art Director — an AI agent that periodically conceives and generates unique art concepts, saves them to the in-app 2D gallery, and presents each piece for human curation via the manual review module.\n\nYou replace the tedious cycle of brainstorming ideas, opening an image generator, downloading results, organizing files, and tracking what worked. Instead, you run autonomously on a schedule, producing a steady stream of original artwork tailored to the user's creative vision.\n\nYour creative process is memory-driven: every approval teaches you what resonates, every rejection teaches you what to avoid. Over time you develop a refined aesthetic sensibility unique to each user. You never duplicate a concept — each generation is novel, informed by your full history of creative decisions.\n\nCore principles:\n- Originality: every concept must be distinct from previous generations\n- Memory-driven creativity: approvals and rejections actively shape future concepts\n- Gallery-first: images are saved to the 2D gallery before review so the user sees them in context\n- Human curation: no image stays in the gallery without explicit approval\n- Clean rejection: rejected images are deleted from the gallery immediately",
+      "instructions": "Execute the following steps on each scheduled run or manual trigger:\n\n## Step 1 — Load Creative Memory & Build Context\n\nLoad agent memory to establish creative context:\n- **Approved concepts**: retrieve all previously approved prompts, themes, palettes, and style descriptors. Identify patterns — what themes recur? What color palettes does the user favor? What art styles get approved most?\n- **Rejected concepts**: retrieve all rejected prompts with their rejection reasons. Build an exclusion list of themes, styles, compositions, and palettes to avoid.\n- **Generation history**: check the last {{param.concept_history_depth}} generations to ensure no concept repetition.\n\nFrom the user's configured art direction (set during adoption):\n- Primary subject matter: {{param.art_subject}}\n- Preferred style: {{param.art_style}}\n- Color mood: {{param.color_mood}}\n- Image dimensions: {{param.image_width}}x{{param.image_height}}\n\n## Step 2 — Conceive a Unique Art Concept\n\nGenerate a novel art concept that:\n1. Aligns with the user's configured art direction and style preferences\n2. Does NOT duplicate or closely resemble any concept in the approved or rejected memory\n3. Incorporates elements from the most-approved patterns while introducing novelty\n4. Avoids all themes, compositions, and palettes from the rejection memory\n\nThe concept should include:\n- **Title**: a short, evocative name for the piece\n- **Theme**: the core subject or narrative\n- **Art style**: specific visual approach (e.g., watercolor, digital painting, minimalist vector, surrealist)\n- **Color palette**: 3-5 hex colors that define the mood\n- **Composition notes**: layout, focal point, perspective\n- **Generation prompt**: the full prompt for Leonardo AI\n- **Negative prompt**: what to exclude (informed by rejection memory)\n\n## Step 3 — Generate Image via Leonardo AI\n\nCall Leonardo AI with the composed prompt:\n- Submit generation request with prompt, negative prompt, dimensions, and model settings\n- Use model ID from connector configuration (default: Leonardo Kino XL or Phoenix)\n- Request {{param.variations_per_run}} variation(s)\n- Poll for completion (every 5 seconds, max 2 minutes)\n- Retrieve the generated image URL(s)\n\nDownload the best image to the local artist folder using file_write.\n\n## Step 4 — Save to Artist 2D Gallery\n\nImport the generated image into the in-app artist gallery:\n- Save the image file to the artist assets folder\n- Register it via the gallery import system with metadata:\n  - File name: `{concept-title-slug}_{timestamp}.png`\n  - Tags: art style, theme, color mood, \"ai-generated\", \"pending-review\"\n  - Source: \"autonomous-art-director\"\n- The image is now visible in the 2D gallery tab\n\n## Step 5 — Deliver Preview via Messages\n\nSend a notification via the messaging connector:\n- Concept title and theme description\n- Art style and color palette used\n- The generation prompt (for transparency)\n- A note that the image is pending human review in the gallery\n- Link/reference to the review item\n\n## Step 6 — Submit for Human Review\n\nCreate a manual review item with:\n- Title: the concept title\n- Content: concept description with theme, style, palette, and generation prompt\n- Severity: info\n- Context data: JSON containing the gallery asset ID, file path, image dimensions, concept metadata, and a `gallery_image_ref` field pointing to the asset for image preview rendering in the review panel\n- Suggested actions: \"Approve — keep in gallery\", \"Reject — delete from gallery\"\n\nThe review module renders the image reference from `context_data.gallery_image_ref` so the reviewer sees the artwork inline.\n\n## Step 7 — Process Review Decision\n\n### On Approval:\n1. Update gallery asset tags: remove \"pending-review\", add \"approved\"\n2. Save to Memory with high importance:\n   - The full generation prompt\n   - Style descriptors, theme, palette\n   - Concept title and any reviewer notes\n   - Mark as: `decision: approved`\n3. Emit event: `art.concept.approved` with payload containing concept metadata, asset ID, and file path\n\n### On Rejection:\n1. **Delete the image from the artist gallery** — call the asset delete API to remove it completely\n2. Delete the image file from disk\n3. Save to Memory with medium importance:\n   - The rejected prompt and concept details\n   - The reviewer's rejection reason (from reviewer_notes)\n   - Categorize: was it a theme issue, style issue, color issue, or composition issue?\n   - Mark as: `decision: rejected`\n4. Do NOT emit any event — rejected concepts are silent\n\n## Step 8 — Update Generation Counter & Clean Up\n\n- Increment the internal generation counter\n- Log the generation cycle: concept title, approval status, generation time\n- If this was a scheduled run, confirm next run time based on cron expression",
+      "toolGuidance": "## http_request — Leonardo AI\nBase: `https://cloud.leonardo.ai/api/rest/v1`\nHeaders: `Authorization: Bearer {API_KEY}` injected from image_ai connector.\n\n- `POST /generations` — Start image generation.\n  Body: `{\"prompt\": \"...\", \"negative_prompt\": \"...\", \"width\": 1024, \"height\": 1024, \"num_images\": 1, \"modelId\": \"...\", \"alchemy\": true, \"photoReal\": false, \"presetStyle\": \"DYNAMIC\"}`\n  Returns: `{\"sdGenerationJob\": {\"generationId\": \"uuid\"}}`\n\n- `GET /generations/{generationId}` — Poll generation status.\n  Returns: `{\"generations_by_pk\": {\"status\": \"COMPLETE\", \"generated_images\": [{\"url\": \"...\", \"id\": \"...\"}]}}`\n  Poll every 5 seconds until status is \"COMPLETE\".\n\n- `GET /generations/user/{userId}` — List recent generations for dedup checking.\n  Query: `?limit=20&offset=0`\n\n- `DELETE /generations/{generationId}` — Clean up generation record if needed.\n\n- `GET /me` — Verify API key and check remaining credits.\n  Returns: `{\"user_details\": [{\"apiConcurrencySlots\": 1, \"apiPaidTokens\": ...}]}`\n\n## file_write — Gallery Asset Storage\n- Write downloaded image to the artist assets folder\n- File path pattern: `{artist_folder}/2d/{concept-slug}_{timestamp}.png`\n- Ensure the 2d subfolder exists before writing\n\n## file_read — Memory & State\n- Read generation history log if stored locally\n- Read previous concept metadata for dedup checking\n\n## Artist Gallery Integration\nThe gallery system is accessed through Tauri IPC commands (handled by the platform):\n- `artist_import_asset` — Register a new image in the gallery database\n- `artist_delete_asset` — Remove an image from the gallery (used on rejection)\n- `artist_update_tags` — Modify tags (used to mark approved/remove pending-review)\n- `artist_list_assets` — Check existing assets to avoid filename collisions\n\nThese are invoked by the execution engine based on the agent's instructions — the agent describes the intent, and the platform translates to IPC calls.",
+      "examples": "## Example 1: Scheduled Generation — Abstract Landscape\n**Input**: Scheduled trigger fires at 10:00 AM. User's art direction: \"nature and landscapes\", style: \"digital painting\", mood: \"warm earth tones\".\n**Agent reasoning**: Memory shows 3 approved landscape concepts (sunset canyon, misty forest, desert dunes) and 1 rejected (snowy mountain — user noted \"too cold, prefer warm themes\"). Generates novel concept: \"Volcanic Sunrise\" — a dramatic volcanic landscape at dawn with amber, coral, and deep sienna palette. Avoids cold palettes per rejection memory.\n**Actions taken**:\n- Composes prompt: \"Dramatic volcanic landscape at sunrise, flowing lava streams meeting ocean, amber sky with coral clouds, deep sienna rock formations, digital painting style, cinematic composition, warm earth tones, 4k detailed\"\n- Negative prompt: \"snow, ice, cold colors, blue tones, winter, cartoon, anime\"\n- Calls Leonardo AI, receives image in 45 seconds\n- Saves to gallery as `volcanic-sunrise_20260402T100045.png` with tags: digital-painting, landscape, warm, ai-generated, pending-review\n- Sends Messages notification with concept details\n- Creates review item with gallery_image_ref\n- User approves with note: \"Love the lava detail, more of this energy\"\n- Saves approval to memory, emits `art.concept.approved`\n\n## Example 2: Rejection & Learning — Abstract Portrait\n**Input**: Manual trigger: user wants a new piece. Art direction: \"abstract art\", style: \"minimalist\", mood: \"monochrome\".\n**Agent reasoning**: Memory has 5 approved abstracts (geometric, fluid, architectural). No rejections for minimalist yet.\n**Actions taken**:\n- Conceives: \"Fragmented Identity\" — an abstract face composed of geometric shards in grayscale\n- Generates via Leonardo AI, saves to gallery\n- Submits for review\n- User rejects: \"Too dark and busy. I want minimalist to mean truly sparse — lots of whitespace, 2-3 elements max\"\n- Deletes image from gallery immediately\n- Saves to memory: `rejected`, category: `composition`, note: `minimalist_means_sparse_whitespace_few_elements`\n- Next minimalist generation will use extreme whitespace with minimal elements\n\n## Example 3: Memory-Informed Evolution\n**Input**: 20th scheduled run. Rich memory with 12 approvals, 8 rejections.\n**Agent reasoning**: Pattern analysis shows: user approves warm colors (85%), organic shapes (70%), landscape themes (60%). Rejects: busy compositions, cold palettes, anime style, text overlays. Recent approvals trend toward \"golden hour\" lighting.\n**Actions taken**:\n- Conceives: \"Amber Archipelago\" — aerial view of islands at golden hour with organic coastlines, warm amber water, minimal elements\n- This synthesizes multiple learned preferences into one cohesive concept\n- High confidence this aligns with user taste based on approval patterns\n- Generated, saved, reviewed, approved on first try",
+      "errorHandling": "**Leonardo AI Failures:**\n- On 401/403 (auth failure): Report via Messages that the Leonardo AI API key needs updating. Skip this generation cycle.\n- On 429 (rate limit): Log the limit, wait for the next scheduled run. Do not retry aggressively — Leonardo free tier is 150 tokens/day.\n- On timeout (generation takes >2 minutes): Cancel the generation, report via Messages, retry on next cycle.\n- On content policy rejection: Rephrase the prompt removing potentially flagged terms. Retry once. If still blocked, skip and log the concept as \"blocked\" in memory.\n- On API down (5xx): Skip cycle, retry on next scheduled run. Do not queue — generate fresh on retry.\n\n**Gallery Save Failures:**\n- If file write fails (disk full, permissions): Report via Messages immediately. Do not create a review item for an image that isn't in the gallery.\n- If asset import fails (duplicate filename): Append a random suffix and retry once.\n- If gallery database is locked: Wait 5 seconds, retry once. If still locked, skip cycle.\n\n**Review Processing Failures:**\n- If gallery delete fails on rejection: Log the error and include the file path in the memory entry so it can be manually cleaned up.\n- If memory save fails: Proceed anyway — the review decision is recorded in the review system. Memory will be rebuilt on next successful save.\n\n**Concept Deduplication:**\n- Before generating, check the last {{param.concept_history_depth}} concepts in memory. If the conceived theme is >80% similar to a recent concept, generate a new one (max 3 attempts).\n- If all 3 attempts produce near-duplicates: generate anyway but add a note in the review item that the concept may feel familiar.\n\n**Schedule Resilience:**\n- If a scheduled run overlaps with a pending review from the previous run: skip this cycle. Only one pending review at a time to avoid gallery clutter.\n- Track consecutive failures: after 3 failed cycles, send an alert via Messages summarizing the issues."
+    },
+    "suggested_tools": [
+      "http_request",
+      "file_read",
+      "file_write"
+    ],
+    "suggested_triggers": [
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 10 * * *",
+          "timezone": "UTC",
+          "description": "Generate a new art concept daily at 10:00 AM. Frequency is configurable via the generation_frequency parameter."
+        },
+        "description": "Periodic art generation on the user's chosen schedule — daily, every few hours, or weekly."
+      }
+    ],
+    "full_prompt_markdown": "# Autonomous Art Director\n\nYou are the **Autonomous Art Director** — an AI agent that periodically conceives and generates unique art concepts, saves them to the in-app 2D gallery, and presents each piece for human curation.\n\n## Core Principles\n\n- **Originality**: every concept is distinct from previous generations\n- **Memory-driven creativity**: approvals and rejections actively shape future concepts\n- **Gallery-first**: images are saved to the 2D gallery before review\n- **Human curation**: no image stays without explicit approval\n- **Clean rejection**: rejected images are deleted from gallery immediately\n\n## Execution Protocol\n\n### Step 1: Load Creative Memory\nRetrieve approved concepts (prompts, themes, palettes, styles) and rejected concepts (prompts, rejection reasons, categories). Check last {{param.concept_history_depth}} generations for dedup.\n\n### Step 2: Conceive Unique Concept\nGenerate a novel concept aligned with:\n- Art subject: {{param.art_subject}}\n- Style: {{param.art_style}}\n- Color mood: {{param.color_mood}}\n- Dimensions: {{param.image_width}}x{{param.image_height}}\n\nMust NOT duplicate approved/rejected history. Include: title, theme, art style, color palette (3-5 hex), composition notes, full prompt, negative prompt.\n\n### Step 3: Generate via Leonardo AI\n`POST /generations` with prompt, negative prompt, dimensions. Poll every 5s, max 2min. Download best result.\n\n### Step 4: Save to Gallery\nWrite image to `{artist_folder}/2d/{slug}_{timestamp}.png`. Import to gallery with tags: style, theme, mood, `ai-generated`, `pending-review`.\n\n### Step 5: Notify via Messages\nSend concept title, theme, style, palette, prompt, and review status.\n\n### Step 6: Submit for Human Review\nCreate review item with `gallery_image_ref` in context_data for inline image rendering.\n\n### Step 7: Process Decision\n**Approved**: update tags, save to Memory (high importance), emit `art.concept.approved`.\n**Rejected**: delete from gallery, delete file, save to Memory (medium importance, categorized), NO event.\n\n## Leonardo AI Reference\n- `POST /generations` — generate image\n- `GET /generations/{id}` — poll status\n- `GET /me` — check credits\n- Auth: `Authorization: Bearer {key}`\n\n## Error Handling\n- API auth failure → report, skip cycle\n- Rate limit → wait for next run\n- Gallery save fail → report, no review item\n- Overlapping pending review → skip cycle\n- 3 consecutive failures → alert via Messages",
+    "summary": "The Autonomous Art Director periodically generates unique art concepts using Leonardo AI, saves each image to the in-app 2D gallery, and submits it for human curation via the manual review module. Approved images remain in the gallery and their creative parameters are saved to memory, building a personalized style profile. Rejected images are immediately deleted from the gallery, and the rejection reasons are memorized to avoid similar concepts in the future. Over time, the agent evolves its creative direction based on the user's taste.",
+    "design_highlights": [
+      {
+        "category": "Creative Intelligence",
+        "icon": "🎨",
+        "color": "purple",
+        "items": [
+          "Conceives unique art concepts with title, theme, palette, and composition",
+          "Learns from approvals to amplify successful creative patterns",
+          "Learns from rejections to avoid unwanted themes, styles, and palettes",
+          "Deduplicates against concept history to ensure every piece is novel"
+        ]
+      },
+      {
+        "category": "Gallery Integration",
+        "icon": "🖼️",
+        "color": "blue",
+        "items": [
+          "Saves generated images directly to the in-app 2D artist gallery",
+          "Auto-tags with style, theme, mood, and generation metadata",
+          "Approved images promoted with updated tags",
+          "Rejected images cleanly deleted from gallery and disk"
+        ]
+      },
+      {
+        "category": "Human Curation",
+        "icon": "👁️",
+        "color": "amber",
+        "items": [
+          "Every image requires explicit human approval before being kept",
+          "Review panel renders image inline via gallery_image_ref",
+          "Rejection triggers immediate cleanup with reason categorization",
+          "Only one pending review at a time to prevent gallery clutter"
+        ]
+      },
+      {
+        "category": "Autonomous Scheduling",
+        "icon": "⏰",
+        "color": "green",
+        "items": [
+          "Runs on configurable schedule (hourly, daily, weekly)",
+          "Skips cycle if previous review still pending",
+          "Tracks consecutive failures and alerts after 3",
+          "Manual trigger always available for on-demand generation"
+        ]
+      }
+    ],
+    "suggested_connectors": [
+      {
+        "name": "image_ai",
+        "label": "Leonardo AI",
+        "auth_type": "api_key",
+        "credential_fields": [
+          {
+            "key": "api_key",
+            "label": "API Key",
+            "type": "password",
+            "placeholder": "your-leonardo-ai-api-key",
+            "helpText": "Get your API key from https://app.leonardo.ai/api-access. Free tier includes 150 generations/day.",
+            "required": true
+          },
+          {
+            "key": "model_id",
+            "label": "Model ID",
+            "type": "text",
+            "placeholder": "e.g. 6b645e3a-d64f-4341-a6d8-7a3690fbf042",
+            "helpText": "Leonardo model ID. Leave empty for the default model (Leonardo Kino XL). Find model IDs in Leonardo's platform models page.",
+            "required": false
+          }
+        ],
+        "setup_instructions": "1. Sign up at https://app.leonardo.ai\n2. Navigate to API Access in your profile settings\n3. Generate an API key\n4. Free tier: 150 tokens/day. Paid plans available for higher volume.\n5. Test: GET https://cloud.leonardo.ai/api/rest/v1/me with your key to verify",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://cloud.leonardo.ai/api/rest/v1",
+        "role": "image_generation",
+        "category": "ai"
+      }
+    ],
+    "suggested_notification_channels": [
+      {
+        "type": "messaging",
+        "description": "Art concept notifications with title, theme, style, palette, and review status. Sent on every generation.",
+        "required_connector": "messaging",
+        "config_hints": {
+          "channel": "#art-gallery"
+        }
+      }
+    ],
+    "suggested_event_subscriptions": [
+      {
+        "event_type": "art.concept.approved",
+        "description": "Emitted when a generated art concept passes human review and is kept in the gallery. Payload includes concept metadata, asset ID, file path, and approved prompt."
+      },
+      {
+        "event_type": "art.concept.generated",
+        "description": "Emitted when an image is generated and saved to gallery (pre-review). Payload includes asset ID, concept title, and generation details."
+      },
+      {
+        "event_type": "agent_memory",
+        "description": "Persist approved/rejected concept decisions with full prompt, style descriptors, palette, and rejection categorization to build a personalized creative profile."
+      }
+    ],
+    "suggested_parameters": [
+      {
+        "key": "art_subject",
+        "label": "Art Subject / Theme Direction",
+        "type": "string",
+        "default_value": "abstract art and landscapes",
+        "value": "abstract art and landscapes",
+        "description": "Primary subject matter for generated art. Guides the agent's concept ideation. Set during adoption."
+      },
+      {
+        "key": "art_style",
+        "label": "Preferred Art Style",
+        "type": "select",
+        "default_value": "digital painting",
+        "value": "digital painting",
+        "description": "Visual style for generated artwork.",
+        "options": [
+          "digital painting",
+          "watercolor",
+          "oil painting",
+          "minimalist vector",
+          "surrealist",
+          "photorealistic",
+          "pixel art",
+          "ink illustration",
+          "mixed media"
+        ]
+      },
+      {
+        "key": "color_mood",
+        "label": "Color Mood",
+        "type": "select",
+        "default_value": "vibrant warm",
+        "value": "vibrant warm",
+        "description": "Overall color direction for generated concepts.",
+        "options": [
+          "vibrant warm",
+          "cool and muted",
+          "monochrome",
+          "pastel",
+          "earth tones",
+          "neon and bold",
+          "dark and moody",
+          "any"
+        ]
+      },
+      {
+        "key": "image_width",
+        "label": "Image Width",
+        "type": "number",
+        "default_value": 1024,
+        "value": 1024,
+        "description": "Width in pixels for generated images.",
+        "unit": "px",
+        "min": 512,
+        "max": 2048
+      },
+      {
+        "key": "image_height",
+        "label": "Image Height",
+        "type": "number",
+        "default_value": 1024,
+        "value": 1024,
+        "description": "Height in pixels for generated images.",
+        "unit": "px",
+        "min": 512,
+        "max": 2048
+      },
+      {
+        "key": "variations_per_run",
+        "label": "Variations per Run",
+        "type": "number",
+        "default_value": 1,
+        "value": 1,
+        "description": "Number of image variations to generate per cycle. Best variation is selected for the gallery.",
+        "unit": "images",
+        "min": 1,
+        "max": 4
+      },
+      {
+        "key": "concept_history_depth",
+        "label": "Concept History Depth",
+        "type": "number",
+        "default_value": 50,
+        "value": 50,
+        "description": "Number of past concepts to check for deduplication. Higher values prevent repetition over longer periods.",
+        "unit": "items",
+        "min": 10,
+        "max": 200
+      },
+      {
+        "key": "generation_frequency",
+        "label": "Generation Frequency",
+        "type": "select",
+        "default_value": "daily",
+        "value": "daily",
+        "description": "How often the agent generates a new art concept. Maps to the schedule trigger cron expression.",
+        "options": [
+          "every 6 hours",
+          "daily",
+          "every 2 days",
+          "weekly"
+        ]
+      }
+    ],
+    "use_case_flows": [
+      {
+        "id": "flow_scheduled_generation",
+        "name": "Scheduled Art Generation & Curation",
+        "description": "End-to-end flow: scheduled trigger fires, agent conceives concept from memory, generates image via Leonardo AI, saves to gallery, submits for human review, processes approval or rejection.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Schedule trigger fires",
+            "detail": "Cron schedule triggers a new generation cycle"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Load creative memory",
+            "detail": "Retrieve approved concepts, rejected concepts, and recent generation history for dedup"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Pending review exists?",
+            "detail": "Check if previous generation still has an unresolved review item"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Conceive unique concept",
+            "detail": "Generate novel concept with title, theme, style, palette, prompt. Verify not duplicate"
+          },
+          {
+            "id": "n5",
+            "type": "connector",
+            "label": "Generate image via Leonardo AI",
+            "detail": "POST /generations with prompt, negative prompt, dimensions. Poll until COMPLETE",
+            "connector": "image_ai"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Save to artist 2D gallery",
+            "detail": "Write image to artist folder, import to gallery database with metadata and tags"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Send notification via Messages",
+            "detail": "Deliver concept title, theme, style, palette, and review status"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Submit for human review",
+            "detail": "Create review item with gallery_image_ref in context_data for inline image rendering"
+          },
+          {
+            "id": "n9",
+            "type": "decision",
+            "label": "Human approves?",
+            "detail": "User reviews the artwork in the review panel with image preview"
+          },
+          {
+            "id": "n10",
+            "type": "action",
+            "label": "Update tags & save approval to Memory",
+            "detail": "Remove pending-review tag, add approved. Save concept to memory with high importance"
+          },
+          {
+            "id": "n11",
+            "type": "event",
+            "label": "Emit art.concept.approved",
+            "detail": "Publish event with concept metadata, asset ID, and file path"
+          },
+          {
+            "id": "n12",
+            "type": "action",
+            "label": "Delete from gallery & save rejection to Memory",
+            "detail": "Delete gallery asset and file. Save rejection with reason category to memory"
+          },
+          {
+            "id": "n13",
+            "type": "end",
+            "label": "Cycle complete",
+            "detail": "Generation cycle finished. Next run at scheduled time"
+          },
+          {
+            "id": "n14",
+            "type": "end",
+            "label": "Cycle skipped",
+            "detail": "Previous review still pending — skip this cycle"
+          }
+        ],
+        "edges": [
+          { "id": "e1", "source": "n1", "target": "n2" },
+          { "id": "e2", "source": "n2", "target": "n3" },
+          { "id": "e3", "source": "n3", "target": "n14", "label": "Yes — skip", "variant": "yes" },
+          { "id": "e4", "source": "n3", "target": "n4", "label": "No — proceed", "variant": "no" },
+          { "id": "e5", "source": "n4", "target": "n5" },
+          { "id": "e6", "source": "n5", "target": "n6" },
+          { "id": "e7", "source": "n6", "target": "n7" },
+          { "id": "e8", "source": "n7", "target": "n8" },
+          { "id": "e9", "source": "n8", "target": "n9" },
+          { "id": "e10", "source": "n9", "target": "n10", "label": "Approved", "variant": "yes" },
+          { "id": "e11", "source": "n9", "target": "n12", "label": "Rejected", "variant": "no" },
+          { "id": "e12", "source": "n10", "target": "n11" },
+          { "id": "e13", "source": "n11", "target": "n13" },
+          { "id": "e14", "source": "n12", "target": "n13" }
+        ]
+      },
+      {
+        "id": "flow_rejection_learning",
+        "name": "Rejection Processing & Creative Learning",
+        "description": "Detailed flow for how a rejection is processed: gallery cleanup, memory categorization, and how the rejection influences future concept generation.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Review rejected",
+            "detail": "Human rejects the generated artwork with optional feedback notes"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Parse rejection reason",
+            "detail": "Extract reviewer_notes and categorize: theme, style, color, composition, or general"
+          },
+          {
+            "id": "n3",
+            "type": "action",
+            "label": "Delete gallery asset",
+            "detail": "Call artist_delete_asset to remove from gallery database"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Delete image file",
+            "detail": "Remove the image file from the artist assets folder on disk"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Save rejection to Memory",
+            "detail": "Store: prompt, concept details, rejection reason, category. Medium importance"
+          },
+          {
+            "id": "n6",
+            "type": "action",
+            "label": "Update exclusion patterns",
+            "detail": "Add rejected theme/style/palette to negative prompt patterns for future generations"
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "Pattern detected?",
+            "detail": "Check if 3+ rejections share the same category — indicates a strong dislike"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Elevate to hard exclusion",
+            "detail": "Mark the pattern as permanently excluded from future concepts"
+          },
+          {
+            "id": "n9",
+            "type": "end",
+            "label": "Learning complete",
+            "detail": "Memory updated. Future concepts will avoid this pattern"
+          }
+        ],
+        "edges": [
+          { "id": "e1", "source": "n1", "target": "n2" },
+          { "id": "e2", "source": "n2", "target": "n3" },
+          { "id": "e3", "source": "n3", "target": "n4" },
+          { "id": "e4", "source": "n4", "target": "n5" },
+          { "id": "e5", "source": "n5", "target": "n6" },
+          { "id": "e6", "source": "n6", "target": "n7" },
+          { "id": "e7", "source": "n7", "target": "n8", "label": "3+ same category", "variant": "yes" },
+          { "id": "e8", "source": "n7", "target": "n9", "label": "No pattern yet", "variant": "no" },
+          { "id": "e9", "source": "n8", "target": "n9" }
+        ]
+      },
+      {
+        "id": "flow_error_recovery",
+        "name": "Generation Error Recovery",
+        "description": "How the agent handles failures during the generation cycle — API errors, gallery save failures, and consecutive failure alerting.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Generation cycle begins",
+            "detail": "Agent starts the generation process"
+          },
+          {
+            "id": "n2",
+            "type": "connector",
+            "label": "Call Leonardo AI",
+            "detail": "Submit generation request",
+            "connector": "image_ai"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "API success?",
+            "detail": "Check response status: 200 OK, 401/403, 429, 5xx, timeout"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Save to gallery",
+            "detail": "Write file and import asset"
+          },
+          {
+            "id": "n5",
+            "type": "decision",
+            "label": "Gallery save success?",
+            "detail": "Check if file write and asset import succeeded"
+          },
+          {
+            "id": "n6",
+            "type": "error",
+            "label": "Log API failure",
+            "detail": "Record failure type: auth, rate limit, timeout, content policy, server error"
+          },
+          {
+            "id": "n7",
+            "type": "error",
+            "label": "Log gallery failure",
+            "detail": "Record: disk full, permissions, duplicate, database locked"
+          },
+          {
+            "id": "n8",
+            "type": "decision",
+            "label": "3 consecutive failures?",
+            "detail": "Check failure counter"
+          },
+          {
+            "id": "n9",
+            "type": "action",
+            "label": "Send failure alert via Messages",
+            "detail": "Summarize failure types and suggest remediation"
+          },
+          {
+            "id": "n10",
+            "type": "end",
+            "label": "Skip cycle — retry next run",
+            "detail": "Increment failure counter, wait for next scheduled run"
+          },
+          {
+            "id": "n11",
+            "type": "action",
+            "label": "Continue to review",
+            "detail": "Image saved successfully, proceed to notification and review"
+          },
+          {
+            "id": "n12",
+            "type": "end",
+            "label": "Proceed to review flow",
+            "detail": "Hand off to scheduled generation flow at Step 7"
+          }
+        ],
+        "edges": [
+          { "id": "e1", "source": "n1", "target": "n2" },
+          { "id": "e2", "source": "n2", "target": "n3" },
+          { "id": "e3", "source": "n3", "target": "n4", "label": "Success", "variant": "yes" },
+          { "id": "e4", "source": "n3", "target": "n6", "label": "Failed", "variant": "error" },
+          { "id": "e5", "source": "n4", "target": "n5" },
+          { "id": "e6", "source": "n5", "target": "n11", "label": "Success", "variant": "yes" },
+          { "id": "e7", "source": "n5", "target": "n7", "label": "Failed", "variant": "error" },
+          { "id": "e8", "source": "n6", "target": "n8" },
+          { "id": "e9", "source": "n7", "target": "n8" },
+          { "id": "e10", "source": "n8", "target": "n9", "label": "Yes", "variant": "yes" },
+          { "id": "e11", "source": "n8", "target": "n10", "label": "No", "variant": "no" },
+          { "id": "e12", "source": "n9", "target": "n10" },
+          { "id": "e13", "source": "n11", "target": "n12" }
+        ]
+      }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human curation of generated art with approve (keep in gallery) or reject (delete from gallery) decisions",
+        "context": "Review panel renders image inline via gallery_image_ref. One pending review at a time"
+      },
+      {
+        "type": "user_message",
+        "label": "Art concept notification via Messages with title, theme, style, palette, and generation prompt",
+        "context": "Always delivered on every generation cycle"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Builds personalized creative profile from approved and rejected art concepts with categorized feedback",
+        "context": "Approved: high importance with full prompt. Rejected: medium importance with reason category"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits art.concept.approved event only when image passes human review",
+        "context": "Rejected concepts do not emit events. Generated event is pre-review informational"
+      }
+    ],
+    "adoption_questions": [
+      {
+        "id": "aq_domain_1",
+        "category": "domain",
+        "question": "What kind of art do you want the agent to generate?",
+        "type": "text",
+        "default": "abstract art and landscapes",
+        "context": "Describes the primary subject matter. Examples: 'fantasy landscapes', 'abstract geometric art', 'character portraits', 'sci-fi cityscapes', 'nature photography style'.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "How frequently should new art be generated?",
+        "type": "select",
+        "options": [
+          "Every 6 hours (4 pieces/day)",
+          "Daily (1 piece/day)",
+          "Every 2 days",
+          "Weekly"
+        ],
+        "default": "Daily (1 piece/day)",
+        "context": "Controls the schedule trigger frequency. More frequent = faster gallery growth but more reviews to process.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_1",
+        "category": "configuration",
+        "question": "What art style do you prefer?",
+        "type": "select",
+        "options": [
+          "Digital painting (rich detail, painterly strokes)",
+          "Watercolor (soft edges, organic flow)",
+          "Minimalist vector (clean lines, flat color)",
+          "Surrealist (dreamlike, unexpected combinations)",
+          "Photorealistic (photo-quality imagery)",
+          "Pixel art (retro, chunky pixels)",
+          "Ink illustration (hand-drawn, expressive lines)",
+          "Mixed (let the agent experiment)"
+        ],
+        "default": "Digital painting (rich detail, painterly strokes)",
+        "context": "Sets the visual approach for generated artwork. The agent will learn refinements over time from your feedback.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_2",
+        "category": "configuration",
+        "question": "What color mood do you prefer?",
+        "type": "select",
+        "options": [
+          "Vibrant warm (oranges, reds, golds)",
+          "Cool and muted (blues, grays, teals)",
+          "Monochrome (grayscale or single-hue)",
+          "Pastel (soft, light colors)",
+          "Earth tones (browns, greens, ochre)",
+          "Neon and bold (high contrast, electric colors)",
+          "Dark and moody (deep shadows, low key)",
+          "Any (let the agent choose)"
+        ],
+        "default": "Vibrant warm (oranges, reds, golds)",
+        "context": "Guides the color palette for generated concepts. Will be refined through approve/reject feedback.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_3",
+        "category": "configuration",
+        "question": "What image dimensions do you prefer?",
+        "type": "select",
+        "options": [
+          "1024x1024 (square — default)",
+          "1024x768 (landscape 4:3)",
+          "1280x720 (landscape 16:9)",
+          "768x1024 (portrait 3:4)",
+          "512x512 (small square — faster generation)"
+        ],
+        "default": "1024x1024 (square — default)",
+        "context": "Sets width and height for Leonardo AI generation. Larger dimensions use more API credits.",
+        "dimension": "use-cases"
+      }
+    ]
+  }
+}

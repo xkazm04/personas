@@ -84,7 +84,7 @@ export async function testBuildDraft(
   return invokeWithTimeout<TestReport>("test_build_draft", {
     sessionId,
     personaId,
-  });
+  }, undefined, 180_000);
 }
 
 /**

@@ -690,21 +690,37 @@ pub async fn run_tool_tests(
         super::runner::resolve_credential_env_vars(pool, &tool_defs, persona_id, persona_name)
             .await;
 
-    let cred_context = if hints.is_empty() && cred_failures.is_empty() {
-        "No credentials resolved. Tools requiring auth will fail.".to_string()
-    } else {
+    // Query ALL credential service types from vault so the LLM can match intelligently
+    let all_vault_types = crate::db::repos::resources::credentials::get_distinct_service_types(pool)
+        .unwrap_or_default();
+
+    let cred_context = {
         let mut ctx = String::new();
         if !hints.is_empty() {
-            ctx.push_str("Available credential env vars:\n");
+            ctx.push_str("Resolved credential env vars:\n");
             for h in &hints {
                 ctx.push_str(&format!("  {h}\n"));
             }
         }
         if !cred_failures.is_empty() {
             ctx.push_str(&format!(
-                "\nFailed to resolve credentials for: {}\n",
+                "\nFailed to auto-resolve credentials for: {}\n",
                 cred_failures.join(", ")
             ));
+        }
+        if !all_vault_types.is_empty() {
+            let mut sorted: Vec<_> = all_vault_types.iter().cloned().collect();
+            sorted.sort();
+            ctx.push_str("\nAll credential service types available in vault:\n");
+            for t in &sorted {
+                // Derive the env var prefix the system would use
+                let prefix = t.to_uppercase().replace('-', "_");
+                ctx.push_str(&format!("  {t} (env prefix: {prefix}_)\n"));
+            }
+            ctx.push_str("\nIMPORTANT: If a tool needs a credential that wasn't auto-resolved above, check if any vault service type matches semantically (e.g. 'github' matches a GitHub PAT, 'alpha_vantage' matches an Alpha Vantage API key). Use the env prefix format ${PREFIX_API_KEY} or ${PREFIX_TOKEN} for the matching vault entry.\n");
+        }
+        if ctx.is_empty() {
+            ctx = "No credentials found in vault. Tools requiring auth will fail.".to_string();
         }
         ctx
     };

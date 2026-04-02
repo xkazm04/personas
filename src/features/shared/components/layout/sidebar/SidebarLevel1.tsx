@@ -56,6 +56,9 @@ export default function SidebarLevel1({
   const { pendingReviewCount } = useBadgeCounts();
   const isLabRunning = useAgentStore((s) => s.isLabRunning);
   const isExecuting = useAgentStore((s) => s.isExecuting);
+  const buildPhase = useAgentStore((s) => s.buildPhase);
+  const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
+  const isBuildingOrTesting = !!buildPersonaId && !!buildPhase && buildPhase !== 'initializing' && buildPhase !== 'promoted';
   const isDev = import.meta.env.DEV;
   const tier = useTier();
   const labelOf = useSidebarLabels();
@@ -78,6 +81,15 @@ export default function SidebarLevel1({
         },
       ],
       personas: [
+        {
+          id: 'build-test',
+          priority: 2,
+          active: isBuildingOrTesting,
+          label: buildPhase === 'testing' ? 'Testing agent' : 'Building agent',
+          variant: 'pulse',
+          color: 'bg-violet-500 border-violet-600/50',
+          pingColor: 'bg-violet-500/40',
+        },
         {
           id: 'executing',
           priority: 2,

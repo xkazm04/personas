@@ -75,6 +75,11 @@ export function useOnboardingState() {
     }
   }, []);
 
+  const handleNextFromAppearance = useCallback(() => {
+    completeOnboardingStep('appearance');
+    setOnboardingStep('discover');
+  }, [completeOnboardingStep, setOnboardingStep]);
+
   const handleNextFromDiscover = useCallback(() => {
     completeOnboardingStep('discover');
     setOnboardingStep('pick-template');
@@ -185,6 +190,7 @@ export function useOnboardingState() {
     approvedApps,
     approvingApp,
     handleApproveApp,
+    handleNextFromAppearance,
     handleNextFromDiscover,
     // Template / adoption / execution
     handleTemplateSelect,

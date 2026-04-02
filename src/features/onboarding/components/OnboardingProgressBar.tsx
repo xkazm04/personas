@@ -4,13 +4,14 @@ import { useAgentStore } from "@/stores/agentStore";
 import type { OnboardingStep } from '@/stores/slices/system/onboardingSlice';
 
 const STEP_LABELS: Record<OnboardingStep, string> = {
+  'appearance': 'Look & feel',
   'discover': 'Detect desktop apps',
   'pick-template': 'Pick template',
   'adopt': 'Adopt agent',
   'execute': 'First run',
 };
 
-const STEP_ORDER: OnboardingStep[] = ['discover', 'pick-template', 'adopt', 'execute'];
+const STEP_ORDER: OnboardingStep[] = ['appearance', 'discover', 'pick-template', 'adopt', 'execute'];
 
 export default function OnboardingProgressBar() {
   const onboardingActive = useSystemStore((s) => s.onboardingActive);

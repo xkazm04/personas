@@ -12,6 +12,8 @@ import { useCallback, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { EventName } from "@/lib/eventRegistry";
 import { answerBuildQuestion, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
+import { sendAppNotification } from "@/api/system/system";
+import { silentCatch } from "@/lib/silentCatch";
 import { invokeWithTimeout } from "@/lib/tauriInvoke";
 import {
   updatePersona,
@@ -143,9 +145,14 @@ export function useMatrixLifecycle({
         ? `${report.tools_passed} passed${report.tools_skipped > 0 ? `, ${report.tools_skipped} skipped` : ''}`
         : `${report.tools_passed}/${report.tools_tested} passed, ${report.tools_failed} failed${report.credential_issues.length > 0 ? `, ${report.credential_issues.length} credential issue(s)` : ""}`;
       store.handleTestComplete(allPassed, summary);
+      sendAppNotification(
+        allPassed ? 'Agent Test Passed' : 'Agent Test Complete',
+        allPassed ? `All ${report.tools_passed} tools passed. Ready to promote.` : summary,
+      ).catch(silentCatch("lifecycle:testComplete"));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to run tests";
       useAgentStore.getState().handleTestFailed(message);
+      sendAppNotification('Agent Test Failed', message).catch(silentCatch("lifecycle:testFailed"));
     }
   }, [personaId]);
 
@@ -222,6 +229,7 @@ export function useMatrixLifecycle({
           total_count: 8,
         });
 
+        sendAppNotification('Agent Promoted', 'Your agent has been promoted to production and is ready to use.').catch(silentCatch("lifecycle:promoted"));
         return {
           success: true,
           triggersCreated: result.triggers_created,
@@ -250,6 +258,7 @@ export function useMatrixLifecycle({
           total_count: 8,
         });
 
+        sendAppNotification('Agent Promoted', 'Your agent has been promoted to production and is ready to use.').catch(silentCatch("lifecycle:promoted"));
         return { ...emptyResult, success: true };
       }
     } catch (err) {

@@ -12,7 +12,8 @@ use std::sync::LazyLock;
 /// Embedded checksum manifest: maps relative template path → expected hash.
 /// Populated at compile time from the same source of truth as the frontend.
 static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
-    let mut m = HashMap::with_capacity(90);
+    let mut m = HashMap::with_capacity(91);
+    m.insert("content/autonomous-art-director.json", "000438b330af0d5b");
     m.insert("content/content-performance-reporter.json", "000a2eb4107c5dc4");
     m.insert("content/newsletter-curator.json", "0007f5729c380e36");
     m.insert("development/dev-clone.json", "000dd30f5f901eb7");

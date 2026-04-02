@@ -489,6 +489,9 @@ export function TestRunningIndicator({ testOutputLines = [], onCancelTest }: { t
   return (
     <div className="flex flex-col items-center gap-3 py-2 w-full">
       <BuildStatusIndicator phaseLabel="Testing agent..." />
+      <p className="text-xs text-muted-foreground/50 text-center leading-relaxed max-w-xs">
+        This may take a few minutes. You can leave this page and come back later — testing continues in the background.
+      </p>
       {testOutputLines.length > 0 && (
         <CliOutputStream lines={testOutputLines} />
       )}

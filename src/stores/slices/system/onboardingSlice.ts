@@ -6,7 +6,7 @@ import * as Sentry from "@sentry/react";
 
 // -- Types --------------------------------------------------------------
 
-export type OnboardingStep = "discover" | "pick-template" | "adopt" | "execute";
+export type OnboardingStep = "appearance" | "discover" | "pick-template" | "adopt" | "execute";
 
 export interface OnboardingSlice {
   // State
@@ -59,6 +59,7 @@ function trackOnboardingDismissed(atStep: OnboardingStep) {
 // -- Slice --------------------------------------------------------------
 
 const INITIAL_STEP_STATUS: Record<OnboardingStep, boolean> = {
+  "appearance": false,
   "discover": false,
   "pick-template": false,
   "adopt": false,
@@ -89,7 +90,7 @@ export const createOnboardingSlice: StateCreator<
     }
     set({
       onboardingActive: true,
-      onboardingStep: "discover",
+      onboardingStep: "appearance",
       onboardingStepCompleted: { ...INITIAL_STEP_STATUS },
       onboardingSelectedReviewId: null,
       onboardingCreatedPersonaId: null,
@@ -135,7 +136,7 @@ export const createOnboardingSlice: StateCreator<
     set({
       onboardingActive: false,
       onboardingCompleted: true,
-      onboardingStep: "discover",
+      onboardingStep: "appearance",
       onboardingDismissedAtStep: null,
     });
   },

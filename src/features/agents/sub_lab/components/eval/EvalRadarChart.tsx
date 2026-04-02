@@ -4,6 +4,7 @@ import {
   Radar, RadarChart, ResponsiveContainer, Tooltip,
 } from 'recharts';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
+import { useScaledFontSize } from '@/stores/themeStore';
 import type { VersionAggregate } from '../../libs/evalAggregation';
 
 interface EvalRadarChartProps {
@@ -13,6 +14,7 @@ interface EvalRadarChartProps {
 const RADAR_PALETTE = ['#60A5FA', '#A78BFA', '#34D399', '#F59E0B', '#FB7185', '#22D3EE'];
 
 export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
+  const sf = useScaledFontSize();
   const radarVersions = versionAggs.slice(0, 4);
 
   const radarData = useMemo(() =>
@@ -44,8 +46,8 @@ export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} outerRadius="72%">
                 <PolarGrid stroke="rgba(148, 163, 184, 0.25)" />
-                <PolarAngleAxis dataKey="metric" tick={{ fill: 'rgba(226,232,240,0.85)', fontSize: 12 }} />
-                <PolarRadiusAxis domain={[0, 100]} tick={{ fill: 'rgba(148,163,184,0.75)', fontSize: 10 }} />
+                <PolarAngleAxis dataKey="metric" tick={{ fill: 'rgba(226,232,240,0.85)', fontSize: sf(12) }} />
+                <PolarRadiusAxis domain={[0, 100]} tick={{ fill: 'rgba(148,163,184,0.75)', fontSize: sf(10) }} />
                 <Tooltip
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={((value: number | string | undefined) => [value ?? 0, 'Score']) as any}

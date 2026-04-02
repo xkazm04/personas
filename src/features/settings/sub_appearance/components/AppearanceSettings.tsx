@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
-import { Check, Globe, Palette, Type } from 'lucide-react';
+import { Check, Globe, Palette, Sun, Type } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
-import { useThemeStore, THEMES, TEXT_SCALES, customThemeDef } from '@/stores/themeStore';
-import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode } from '@/stores/themeStore';
+import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
+import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import CustomThemeCreator from './CustomThemeCreator';
@@ -103,6 +103,10 @@ export default function AppearanceSettings() {
   const timezone = useThemeStore((s) => s.timezone);
   const setTimezone = useThemeStore((s) => s.setTimezone);
 
+  const brightness = useThemeStore((s) => s.brightness);
+  const setBrightness = useThemeStore((s) => s.setBrightness);
+  const isDark = useIsDarkTheme();
+  const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);
 
   const customDef = customTheme ? customThemeDef(customTheme) : null;
@@ -155,6 +159,45 @@ export default function AppearanceSettings() {
 
           {/* Custom theme creator */}
           <CustomThemeCreator />
+
+          {/* Brightness */}
+          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+            <SectionHeading title="Brightness" icon={<Sun />} />
+            <p className="text-xs text-muted-foreground/60">
+              Adjust screen brightness if the app feels too dark on your display.
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {brightnessLevels.map((level, i) => {
+                const isActive = brightness === level.id;
+                const iconOpacity = i === 0 ? 'opacity-40' : i === 1 ? 'opacity-70' : 'opacity-100';
+                return (
+                  <Button
+                    variant="ghost"
+                    key={level.id}
+                    onClick={() => setBrightness(level.id as BrightnessLevel)}
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                      isActive
+                        ? 'border-primary/30 bg-primary/5'
+                        : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                    }`}
+                  >
+                    <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-muted-foreground/70'}`} />
+                    <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/70'}`}>
+                      {level.label}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground/50">
+                      {level.description}
+                    </span>
+                    {isActive && (
+                      <div className="absolute top-2 right-2">
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Text sizing */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">

@@ -7,6 +7,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import AdoptionWizardModal from '@/features/templates/sub_generated/adoption/AdoptionWizardModal';
+import { AppearanceStep } from './AppearanceStep';
 import { DesktopDiscoveryStep } from './DesktopDiscoveryStep';
 import { TemplatePickerStep } from './TemplatePickerStep';
 import { ExecutionStep } from './ExecutionStep';
@@ -33,6 +34,7 @@ export default function OnboardingOverlay() {
     approvedApps,
     approvingApp,
     handleApproveApp,
+    handleNextFromAppearance,
     handleNextFromDiscover,
     handleTemplateSelect,
     handleNextFromPick,
@@ -101,6 +103,10 @@ export default function OnboardingOverlay() {
         <div className="animate-fade-slide-in"
             key={onboardingStep}
           >
+            {onboardingStep === 'appearance' && (
+              <AppearanceStep />
+            )}
+
             {onboardingStep === 'discover' && (
               <DesktopDiscoveryStep
                 apps={discoveredApps}
@@ -147,6 +153,16 @@ export default function OnboardingOverlay() {
         </button>
 
         <div className="flex items-center gap-2">
+          {onboardingStep === 'appearance' && (
+            <button
+              onClick={handleNextFromAppearance}
+              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+            >
+              Continue
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+
           {onboardingStep === 'discover' && (
             <button
               onClick={handleNextFromDiscover}

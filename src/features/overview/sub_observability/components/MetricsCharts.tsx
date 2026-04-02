@@ -5,6 +5,7 @@ import {
   AreaChart, Area, PieChart, Pie, Cell, Legend, ReferenceLine,
 } from 'recharts';
 import { CHART_COLORS_PURPLE, CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
+import { useScaledFontSize } from '@/stores/themeStore';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { MetricChart } from '@/features/overview/sub_usage/components/MetricChart';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
@@ -31,6 +32,7 @@ export interface MetricsChartsProps {
 }
 
 export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, anomalies = [], annotations = [], onFailureBarClick, onAnomalyClick }: MetricsChartsProps) {
+  const sf = useScaledFontSize();
   const { shouldAnimate } = useMotion();
   const visibleAnnotations = useMemo(() => {
     const chartDates = new Set(chartData.map((point) => point.date));
@@ -53,8 +55,8 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
         <MetricChart title="Cost Over Time" height={240}>
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
-            <YAxis tick={{ fontSize: 10, fill: getAxisTickFill() }} tickFormatter={(v) => `$${v}`} />
+            <XAxis dataKey="date" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+            <YAxis tick={{ fontSize: sf(10), fill: getAxisTickFill() }} tickFormatter={(v) => `$${v}`} />
             <Tooltip content={<ChartTooltip />} />
             <Area type="monotone" dataKey="cost" stroke="#6366f1" fill={`url(#${CHART_GRAD.cost})`} strokeWidth={2} />
             {visibleAnnotations.map((annotation, index) => (
@@ -154,10 +156,10 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
       <MetricChart title="Execution Health" height={240}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
-          <XAxis dataKey="date" tick={{ fontSize: 10, fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
-          <YAxis tick={{ fontSize: 10, fill: getAxisTickFill() }} />
+          <XAxis dataKey="date" tick={{ fontSize: sf(10), fill: getAxisTickFill() }} tickFormatter={(v) => new Date(v).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} />
+          <YAxis tick={{ fontSize: sf(10), fill: getAxisTickFill() }} />
           <Tooltip content={<ChartTooltip />} cursor={false} />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Legend wrapperStyle={{ fontSize: sf(11) }} />
           <Bar dataKey="success" name="Successful" fill="#22c55e" radius={[2, 2, 0, 0]} />
           <Bar
             dataKey="failed"

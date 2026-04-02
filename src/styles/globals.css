@@ -451,6 +451,126 @@ body {
   font-size: 17px;
 }
 
+/* -- Brightness --
+   Driven by --app-brightness CSS variable (set from JS).
+   Dark themes:  low=1.25  mid=1.38  high=1.50
+   Light themes: low=0.82  mid=0.91  high=1.0
+   Applied via filter on <html> so every theme benefits universally.
+
+   Status & brand colors are descoped from the brightness boost.
+   Each level pre-darkens/lightens these tokens by 1/X so they render
+   at their original intended intensity after the filter is applied. */
+
+:root {
+  --app-brightness: 1.25;
+  /* Raw status/brand tokens — set by JS (applyBrightness) from computed theme values
+     before the data-brightness counteraction rules override the main tokens. */
+}
+
+html {
+  filter: brightness(var(--app-brightness));
+}
+
+/* Brightness counteraction — pre-adjust status/brand colors so they are
+   visually unchanged after the brightness filter.
+   Factor = round(100 / brightness_value) → percentage kept in color-mix with black. */
+
+/* Dark: low = 1.25 → counteract 80% */
+[data-brightness="dark-low"] {
+  --status-success: color-mix(in srgb, var(--status-success-raw) 80%, black);
+  --status-warning: color-mix(in srgb, var(--status-warning-raw) 80%, black);
+  --status-error: color-mix(in srgb, var(--status-error-raw) 80%, black);
+  --status-info: color-mix(in srgb, var(--status-info-raw) 80%, black);
+  --status-pending: color-mix(in srgb, var(--status-pending-raw) 80%, black);
+  --status-processing: color-mix(in srgb, var(--status-processing-raw) 80%, black);
+  --status-neutral: color-mix(in srgb, var(--status-neutral-raw) 80%, black);
+  --brand-cyan: color-mix(in srgb, var(--brand-cyan-raw) 80%, black);
+  --brand-purple: color-mix(in srgb, var(--brand-purple-raw) 80%, black);
+  --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 80%, black);
+  --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 80%, black);
+  --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 80%, black);
+}
+
+/* Dark: mid = 1.38 → counteract 72% */
+[data-brightness="dark-mid"] {
+  --status-success: color-mix(in srgb, var(--status-success-raw) 72%, black);
+  --status-warning: color-mix(in srgb, var(--status-warning-raw) 72%, black);
+  --status-error: color-mix(in srgb, var(--status-error-raw) 72%, black);
+  --status-info: color-mix(in srgb, var(--status-info-raw) 72%, black);
+  --status-pending: color-mix(in srgb, var(--status-pending-raw) 72%, black);
+  --status-processing: color-mix(in srgb, var(--status-processing-raw) 72%, black);
+  --status-neutral: color-mix(in srgb, var(--status-neutral-raw) 72%, black);
+  --brand-cyan: color-mix(in srgb, var(--brand-cyan-raw) 72%, black);
+  --brand-purple: color-mix(in srgb, var(--brand-purple-raw) 72%, black);
+  --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 72%, black);
+  --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 72%, black);
+  --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 72%, black);
+}
+
+/* Dark: high = 1.50 → counteract 67% */
+[data-brightness="dark-high"] {
+  --status-success: color-mix(in srgb, var(--status-success-raw) 67%, black);
+  --status-warning: color-mix(in srgb, var(--status-warning-raw) 67%, black);
+  --status-error: color-mix(in srgb, var(--status-error-raw) 67%, black);
+  --status-info: color-mix(in srgb, var(--status-info-raw) 67%, black);
+  --status-pending: color-mix(in srgb, var(--status-pending-raw) 67%, black);
+  --status-processing: color-mix(in srgb, var(--status-processing-raw) 67%, black);
+  --status-neutral: color-mix(in srgb, var(--status-neutral-raw) 67%, black);
+  --brand-cyan: color-mix(in srgb, var(--brand-cyan-raw) 67%, black);
+  --brand-purple: color-mix(in srgb, var(--brand-purple-raw) 67%, black);
+  --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 67%, black);
+  --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 67%, black);
+  --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 67%, black);
+}
+
+/* Light: low = 0.82 → counteract by mixing 18% white (1/0.82≈1.22) */
+[data-brightness="light-low"] {
+  --status-success: color-mix(in srgb, var(--status-success-raw) 82%, white);
+  --status-warning: color-mix(in srgb, var(--status-warning-raw) 82%, white);
+  --status-error: color-mix(in srgb, var(--status-error-raw) 82%, white);
+  --status-info: color-mix(in srgb, var(--status-info-raw) 82%, white);
+  --status-pending: color-mix(in srgb, var(--status-pending-raw) 82%, white);
+  --status-processing: color-mix(in srgb, var(--status-processing-raw) 82%, white);
+  --status-neutral: color-mix(in srgb, var(--status-neutral-raw) 82%, white);
+  --brand-cyan: color-mix(in srgb, var(--brand-cyan-raw) 82%, white);
+  --brand-purple: color-mix(in srgb, var(--brand-purple-raw) 82%, white);
+  --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 82%, white);
+  --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 82%, white);
+  --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 82%, white);
+}
+
+/* Light: mid = 0.91 → counteract by mixing 9% white */
+[data-brightness="light-mid"] {
+  --status-success: color-mix(in srgb, var(--status-success-raw) 91%, white);
+  --status-warning: color-mix(in srgb, var(--status-warning-raw) 91%, white);
+  --status-error: color-mix(in srgb, var(--status-error-raw) 91%, white);
+  --status-info: color-mix(in srgb, var(--status-info-raw) 91%, white);
+  --status-pending: color-mix(in srgb, var(--status-pending-raw) 91%, white);
+  --status-processing: color-mix(in srgb, var(--status-processing-raw) 91%, white);
+  --status-neutral: color-mix(in srgb, var(--status-neutral-raw) 91%, white);
+  --brand-cyan: color-mix(in srgb, var(--brand-cyan-raw) 91%, white);
+  --brand-purple: color-mix(in srgb, var(--brand-purple-raw) 91%, white);
+  --brand-emerald: color-mix(in srgb, var(--brand-emerald-raw) 91%, white);
+  --brand-amber: color-mix(in srgb, var(--brand-amber-raw) 91%, white);
+  --brand-rose: color-mix(in srgb, var(--brand-rose-raw) 91%, white);
+}
+
+/* Light: high = 1.0 → no counteraction needed, use raw values */
+[data-brightness="light-high"] {
+  --status-success: var(--status-success-raw);
+  --status-warning: var(--status-warning-raw);
+  --status-error: var(--status-error-raw);
+  --status-info: var(--status-info-raw);
+  --status-pending: var(--status-pending-raw);
+  --status-processing: var(--status-processing-raw);
+  --status-neutral: var(--status-neutral-raw);
+  --brand-cyan: var(--brand-cyan-raw);
+  --brand-purple: var(--brand-purple-raw);
+  --brand-emerald: var(--brand-emerald-raw);
+  --brand-amber: var(--brand-amber-raw);
+  --brand-rose: var(--brand-rose-raw);
+}
+
 /* -- Icon Frame --
    Standardized container for PersonaIcon / PersonaAvatar.
    Use .icon-frame on the wrapper div, then let PersonaIcon fill it.

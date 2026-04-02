@@ -4,6 +4,7 @@
  */
 
 export const TEMPLATE_CHECKSUMS: Record<string, string> = {
+  'content/autonomous-art-director.json': '000438b330af0d5b',
   'content/content-performance-reporter.json': '000a2eb4107c5dc4',
   'content/newsletter-curator.json': '0007f5729c380e36',
   'development/dev-clone.json': '000dd30f5f901eb7',

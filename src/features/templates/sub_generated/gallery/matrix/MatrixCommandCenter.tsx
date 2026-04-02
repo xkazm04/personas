@@ -189,12 +189,12 @@ export function MatrixCommandCenter({
     // Creation: Resolving/Analyzing (after refinement or continuation)
     if (isCreation && (buildPhase === 'resolving' || buildPhase === 'analyzing'))
       return (<div className={WRAP}><ActiveBuildProgress buildPhase={buildPhase} completeness={completeness} cellStates={cellBuildStates} cliOutputLines={cliOutputLines} onOpenNextQuestion={handleOpenNextQuestion} buildActivity={buildActivity} onSubmitAnswers={onSubmitAnswers} /></div>);
-    // Creation: Testing lifecycle states
-    if (isCreation && buildPhase === 'testing')
+    // Testing lifecycle states (both creation and adoption flows)
+    if (buildPhase === 'testing')
       return (<div className={WRAP}><TestRunningIndicator testOutputLines={testOutputLines} onCancelTest={undefined} /></div>);
-    if (isCreation && buildPhase === 'test_complete')
+    if (buildPhase === 'test_complete')
       return (<div className={WRAP}><TestResultsPanel passed={testPassed} outputLines={testOutputLines} error={testError} onApprove={onApproveTest} onReject={onRejectTest} toolResults={toolTestResults} summary={testSummary} /></div>);
-    if (isCreation && buildPhase === 'promoted')
+    if (buildPhase === 'promoted')
       return (<div className={WRAP}><PromotionSuccessIndicator onViewAgent={onViewAgent} /></div>);
     // Creation: Design question awaiting answer
     if (isCreation && designQuestion && onAnswerQuestion)
@@ -211,8 +211,8 @@ export function MatrixCommandCenter({
         </div>
       );
     }
-    // Adoption: Build completed
-    if (!isCreation && buildCompleted) return (<div className={WRAP}><BuildCompletedIndicator /></div>);
+    // Adoption: Build completed — show completed indicator + refine input
+    if (!isCreation && buildCompleted) return (<div className={WRAP}><BuildCompletedIndicator />{onRefine && <SavedRefineInput onRefine={onRefine} />}</div>);
     // Creation: Post-generation
     if (isCreation && hasDesignResult) return (<div className={WRAP}><CreationPostGeneration completeness={completeness} onRefine={onRefine} onStartTest={onStartTest} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} /></div>);
     // Saved: Show prompt sections + action buttons (production-ready view)

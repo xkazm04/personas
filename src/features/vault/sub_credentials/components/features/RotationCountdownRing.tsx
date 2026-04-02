@@ -61,8 +61,7 @@ export function RotationCountdownRing({
         y={cy}
         textAnchor="middle"
         dominantBaseline="central"
-        className="fill-muted-foreground/90"
-        style={{ fontSize: '9px', fontFamily: 'ui-monospace, monospace' }}
+        className="fill-muted-foreground/90 text-[9px] font-mono"
       >
         {countdown}
       </text>

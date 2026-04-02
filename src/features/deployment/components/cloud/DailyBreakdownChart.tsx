@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useScaledFontSize } from '@/stores/themeStore';
 
 export interface DailyPoint {
   date: string;
@@ -25,6 +26,7 @@ function formatShortDate(iso: string): string {
 }
 
 export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
+  const sf = useScaledFontSize();
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
@@ -128,7 +130,7 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
                   textAnchor="middle"
                   fill="currentColor"
                   className="text-muted-foreground/40"
-                  fontSize={9}
+                  fontSize={sf(9)}
                 >
                   {formatShortDate(d.date)}
                 </text>

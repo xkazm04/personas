@@ -5,6 +5,7 @@ import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tool
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
+import { useScaledFontSize } from '@/stores/themeStore';
 import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import { useOverviewFilterValues } from '../OverviewFilterContext';
@@ -22,6 +23,7 @@ interface TrafficErrorsChartProps {
 }
 
 export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, totalTraffic, totalErrors }: TrafficErrorsChartProps) {
+  const sf = useScaledFontSize();
   const { effectiveDays } = useOverviewFilterValues();
   const rangeLabel = effectiveDays === 1 ? 'Yesterday' : `${effectiveDays} Days Ago`;
   const formatCounter = useCallback((v: number) => Math.round(v).toLocaleString(), []);
@@ -54,8 +56,8 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
-                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: 9 }} tickFormatter={(v: string) => v.slice(5)} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: getAxisTickFill(), fontSize: 9 }} width={24} axisLine={false} tickLine={false} allowDecimals={false} />
+                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: sf(9) }} tickFormatter={(v: string) => v.slice(5)} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: getAxisTickFill(), fontSize: sf(9) }} width={24} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<ChartTooltip />} />
                 <Area type="monotone" dataKey="traffic" name="Traffic" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill={`url(#${CHART_GRAD.traffic})`} />
                 <Area type="monotone" dataKey="errors" name="Errors" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill={`url(#${CHART_GRAD.error})`} />
