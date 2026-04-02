@@ -22,6 +22,7 @@ use super::healing::{self, HealingAction, KnowledgeHint, MAX_RETRY_COUNT};
 /// Resolve a [`KnowledgeHint`] from the healing knowledge base for the given
 /// persona and failure category by iterating over connectors associated with
 /// the persona's tools.
+#[allow(dead_code)]
 pub fn resolve_knowledge_hint(
     pool: &DbPool,
     persona_id: &str,

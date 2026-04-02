@@ -234,7 +234,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   <User className="w-3.5 h-3.5 text-blue-400" />
                 </div>
               ) : (
-                <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="framed" />
+                <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="framed" frameSize={"lg"} />
               )}
               <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : ''}`}>

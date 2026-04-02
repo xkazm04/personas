@@ -242,7 +242,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             let mut jobs = self.lock_or_recover();
             let entry = jobs
                 .entry(job_id.to_string())
-                .or_insert_with(JobEntry::default);
+                .or_default();
             entry.status = status.to_string();
             entry.error = error.clone();
         }
@@ -264,7 +264,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             let mut jobs = self.lock_or_recover();
             let entry = jobs
                 .entry(job_id.to_string())
-                .or_insert_with(JobEntry::default);
+                .or_default();
             if entry.lines.len() < MAX_LINES {
                 entry.lines.push(line.clone());
             }
@@ -284,7 +284,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         let mut jobs = self.lock_or_recover();
         let entry = jobs
             .entry(job_id.to_string())
-            .or_insert_with(JobEntry::default);
+            .or_default();
         f(&mut entry.extra);
     }
 
@@ -331,7 +331,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             }
             let entry = jobs
                 .entry(job_id.to_string())
-                .or_insert_with(JobEntry::default);
+                .or_default();
             entry.status = "running".to_string();
             entry.error = None;
             entry.cancel_token = Some(token);

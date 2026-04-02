@@ -3,15 +3,15 @@
 /**
  * Response from smart search (camelCase for the TS/frontend boundary).
  */
-export type SmartSearchResult = { rankedIds: Array<string>, rationale: string,
+export type SmartSearchResult = { rankedIds: Array<string>, rationale: string, 
 /**
  * CLI log lines captured during the search (for debugging UI).
  */
-cliLog: Array<string>,
+cliLog: Array<string>, 
 /**
  * Total templates in the gallery (so the UI can indicate partial coverage).
  */
-totalTemplates: number,
+totalTemplates: bigint, 
 /**
  * How many templates were actually sent to the LLM for ranking.
  */

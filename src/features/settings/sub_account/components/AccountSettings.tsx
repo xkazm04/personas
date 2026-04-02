@@ -1,4 +1,4 @@
-import { Chrome, LogOut, User, Check, Sparkles, LayoutGrid, Wrench, AlertCircle, RefreshCw } from 'lucide-react';
+import { Globe, LogOut, User, Check, Sparkles, LayoutGrid, Wrench, AlertCircle, RefreshCw } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useAuthStore } from '@/stores/authStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -105,7 +105,7 @@ export default function AccountSettings() {
           ) : (
             <div className="text-center py-6">
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Chrome className="w-7 h-7 text-primary/60" />
+                <Globe className="w-7 h-7 text-primary/60" />
               </div>
               <p className="text-sm text-muted-foreground/80 mb-4">Sign in to sync your data across devices</p>
 
@@ -147,7 +147,7 @@ export default function AccountSettings() {
                     bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15
                     transition-colors"
                 >
-                  <Chrome className="w-4 h-4" />
+                  <Globe className="w-4 h-4" />
                   Sign in with Google
                 </button>
               )}

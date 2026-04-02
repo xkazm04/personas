@@ -155,6 +155,7 @@ enum NodeOutcome {
 }
 
 /// Execute a single node: create an execution, start it, poll for completion.
+#[allow(clippy::ptr_arg)]
 async fn run_node(
     db: &DbPool,
     engine: &ExecutionEngine,

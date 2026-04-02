@@ -1197,6 +1197,8 @@ mod tests {
             trust_level: PersonaTrustLevel::Manual,
             trust_origin: PersonaTrustOrigin::User,
             trust_verified_at: None,
+            trust_score: 0.0,
+            parameters: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
         }
@@ -1393,7 +1395,7 @@ mod tests {
         let prompt = assemble_prompt(&persona, &[], None, None, None, #[cfg(feature = "desktop")] None);
 
         assert!(prompt.contains("## EXECUTE NOW"));
-        assert!(prompt.contains("Respond naturally and complete the task."));
+        assert!(prompt.contains("Act autonomously"));
         // The EXECUTE NOW section should come after protocols
         let exec_pos = prompt.find("## EXECUTE NOW").unwrap();
         let proto_pos = prompt.find("## Communication Protocols").unwrap();

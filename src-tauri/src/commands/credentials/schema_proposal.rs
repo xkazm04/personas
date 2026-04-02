@@ -52,6 +52,7 @@ pub fn cancel_schema_proposal_job(app: &tauri::AppHandle, proposal_id: &str) -> 
 
 // -- Tauri commands ------------------------------------------------------
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn start_schema_proposal(
     state: State<'_, Arc<AppState>>,

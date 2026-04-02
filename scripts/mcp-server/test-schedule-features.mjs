@@ -141,16 +141,7 @@ async function run() {
     return d?.data?.enabled === false || text(resp).includes("fetch failed");
   });
 
-  // 6. Get CLI fallback command
-  await test("MCP: get_cli_fallback_command", async () => {
-    const resp = await callTool("get_cli_fallback_command", { persona: personaName });
-    const d = parse(resp);
-    const t = text(resp);
-    return (d?.data?.command && d.data.command.includes("claude"))
-      || t.includes("fetch failed");
-  });
-
-  // 7. Not-found persona
+  // 6. Not-found persona
   await test("MCP: configure_auto_optimize (not found)", async () => {
     const resp = await callTool("configure_auto_optimize", {
       persona: "nonexistent_xyz", enabled: true,
@@ -212,10 +203,6 @@ async function run() {
       return d?.data?.enabled === false;
     });
 
-    await test("API: GET /api/settings/cli-fallback", async () => {
-      const d = await apiGet(`/api/settings/cli-fallback/${personaId}`);
-      return d?.data?.command && d.data.command.includes("claude");
-    });
   } else {
     console.log("\nManagement API not available — skipping HTTP tests (start Personas app to test)\n");
   }

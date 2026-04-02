@@ -1,9 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
-
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
 use chrono::Utc;
@@ -154,7 +151,7 @@ pub async fn ocr_with_gemini(
         model: Some(model_name.into()),
         extracted_text,
         structured_data: None,
-        prompt: prompt,
+        prompt,
         duration_ms,
         token_count,
         created_at: now,
@@ -238,7 +235,7 @@ pub async fn ocr_with_claude(
 
         #[cfg(target_os = "windows")]
         let mut child = tokio::process::Command::new("cmd")
-            .args(&["/c", binary.to_str().unwrap_or("claude"), "-p", "-", "--output-format", "text"])
+            .args(["/c", binary.to_str().unwrap_or("claude"), "-p", "-", "--output-format", "text"])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())

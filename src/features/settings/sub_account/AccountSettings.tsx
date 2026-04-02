@@ -1,4 +1,4 @@
-import { Chrome, LogOut, User } from 'lucide-react';
+import { Globe, LogOut, User } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
@@ -64,7 +64,7 @@ export default function AccountSettings() {
           ) : (
             <div className="text-center py-6">
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Chrome className="w-7 h-7 text-primary/60" />
+                <Globe className="w-7 h-7 text-primary/60" />
               </div>
               <p className="text-sm text-muted-foreground/80 mb-4">Sign in to sync your data across devices</p>
               <button
@@ -74,7 +74,7 @@ export default function AccountSettings() {
                   bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15
                   transition-colors disabled:opacity-50"
               >
-                <Chrome className={`w-4 h-4 ${isLoading ? 'animate-pulse' : ''}`} />
+                <Globe className={`w-4 h-4 ${isLoading ? 'animate-pulse' : ''}`} />
                 Sign in with Google
               </button>
             </div>

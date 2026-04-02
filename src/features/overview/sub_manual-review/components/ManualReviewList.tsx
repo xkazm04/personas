@@ -18,7 +18,8 @@ import { createLogger } from "@/lib/log";
 const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
-import { TriagePlayer, type TriageReview } from './TriagePlayer';
+import type { TriageReview } from './TriagePlayer';
+import { ReviewFocusFlow } from './ReviewFocusFlow';
 
 export default function ManualReviewList() {
   const {
@@ -199,11 +200,11 @@ export default function ManualReviewList() {
             </div>
           </div>
         ) : filter === 'pending' ? (
-          <div className="flex-1 overflow-y-auto p-4">
-            <TriagePlayer
+          <div className="flex-1 overflow-hidden">
+            <ReviewFocusFlow
               reviews={filteredReviews as TriageReview[]}
-              onApprove={(id, notes) => handleAction(id, 'approved' as ManualReviewStatus, notes)}
-              onReject={(id, notes) => handleAction(id, 'rejected' as ManualReviewStatus, notes)}
+              onApprove={(id: string, notes?: string) => handleAction(id, 'approved' as ManualReviewStatus, notes)}
+              onReject={(id: string, notes?: string) => handleAction(id, 'rejected' as ManualReviewStatus, notes)}
               isProcessing={isProcessing}
             />
           </div>

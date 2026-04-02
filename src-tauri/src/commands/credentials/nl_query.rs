@@ -38,11 +38,13 @@ static NL_QUERY_JOBS: BackgroundJobManager<NlQueryExtra> =
     );
 
 /// List all NL query job snapshots (for unified workflows view).
+#[allow(dead_code)]
 pub fn list_nl_query_jobs() -> Vec<crate::background_job::JobSnapshot> {
     NL_QUERY_JOBS.list_snapshots()
 }
 
 /// Cancel an NL query job (called from unified workflows dispatcher).
+#[allow(dead_code)]
 pub fn cancel_nl_query_job(app: &tauri::AppHandle, query_id: &str) -> Result<(), AppError> {
     NL_QUERY_JOBS.cancel(app, query_id)
 }

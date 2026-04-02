@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Chrome, Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Globe, Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore, THEMES } from '@/stores/themeStore';
 import type { ThemeId } from '@/stores/themeStore';
@@ -57,7 +57,7 @@ function AccountFooterIcon() {
         {isAuthenticated && user?.avatar_url ? (
           <img src={user.avatar_url} alt="" className="w-5 h-5 rounded-full border border-emerald-500/30" />
         ) : (
-          <Chrome className="w-4 h-4" />
+          <Globe className="w-4 h-4" />
         )}
         {/* Status dot */}
         <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-background ${

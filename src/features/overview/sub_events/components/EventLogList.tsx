@@ -83,7 +83,7 @@ export default function EventLogList() {
         if (targetPersona) {
           return (
             <div className="flex items-center gap-2 min-w-0">
-              <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" frameSize="md" />
+              <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" frameSize="lg" />
               <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
             </div>
           );
@@ -120,8 +120,8 @@ export default function EventLogList() {
         const statusIcon = event.status === 'completed' || event.status === 'delivered'
           ? <CheckCircle2 className="w-3 h-3" />
           : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
-          : event.status === 'processing' ? <LoadingSpinner size="xs" />
-          : <Clock className="w-3 h-3" />;
+            : event.status === 'processing' ? <LoadingSpinner size="xs" />
+              : <Clock className="w-3 h-3" />;
         return (
           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
             {statusIcon}
@@ -218,11 +218,10 @@ export default function EventLogList() {
               <button
                 key={view.id}
                 onClick={() => applySavedView(view)}
-                className={`group flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg border transition-colors ${
-                  activeViewId === view.id
+                className={`group flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg border transition-colors ${activeViewId === view.id
                     ? 'bg-primary/15 text-primary border-primary/30'
                     : 'bg-secondary/30 text-foreground/70 border-primary/10 hover:bg-secondary/50'
-                }`}
+                  }`}
               >
                 <Bookmark className="w-2.5 h-2.5" />
                 {view.name}
@@ -293,18 +292,18 @@ export default function EventLogList() {
       </ContentBody>
 
       {selectedEvent && (
-          <DetailModal
-            title={`Event: ${selectedEvent.event_type}`}
-            subtitle={`Status: ${selectedEvent.status}`}
-            onClose={() => { setSelectedEvent(null); setCopiedPayload(false); }}
-          >
-            <EventDetailContent
-              event={selectedEvent}
-              copiedPayload={copiedPayload}
-              setCopiedPayload={setCopiedPayload}
-            />
-          </DetailModal>
-        )}
+        <DetailModal
+          title={`Event: ${selectedEvent.event_type}`}
+          subtitle={`Status: ${selectedEvent.status}`}
+          onClose={() => { setSelectedEvent(null); setCopiedPayload(false); }}
+        >
+          <EventDetailContent
+            event={selectedEvent}
+            copiedPayload={copiedPayload}
+            setCopiedPayload={setCopiedPayload}
+          />
+        </DetailModal>
+      )}
     </ContentBox>
   );
 }

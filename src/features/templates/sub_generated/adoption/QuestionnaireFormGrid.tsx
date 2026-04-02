@@ -100,30 +100,67 @@ function SelectPills({
   options,
   value,
   onChange,
+  allowCustom,
 }: {
   options: string[];
   value: string;
   onChange: (v: string) => void;
+  allowCustom?: boolean;
 }) {
+  const isCustomValue = allowCustom && value && !options.includes(value);
+  const [showCustomInput, setShowCustomInput] = useState(isCustomValue ?? false);
+  const customInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showCustomInput) {
+      setTimeout(() => customInputRef.current?.focus(), 50);
+    }
+  }, [showCustomInput]);
+
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((opt) => {
-        const selected = value === opt;
-        return (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((opt) => {
+          const selected = !showCustomInput && value === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => { setShowCustomInput(false); onChange(opt); }}
+              className={`px-3 py-1 text-xs rounded-lg border transition-all ${
+                selected
+                  ? 'bg-primary/20 border-primary/30 text-primary font-medium'
+                  : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
+              }`}
+            >
+              {opt}
+            </button>
+          );
+        })}
+        {allowCustom && (
           <button
-            key={opt}
             type="button"
-            onClick={() => onChange(opt)}
+            onClick={() => { setShowCustomInput(true); if (!isCustomValue) onChange(''); }}
             className={`px-3 py-1 text-xs rounded-lg border transition-all ${
-              selected
+              showCustomInput
                 ? 'bg-primary/20 border-primary/30 text-primary font-medium'
                 : 'bg-white/[0.03] border-white/[0.06] text-foreground/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
             }`}
           >
-            {opt}
+            Custom...
           </button>
-        );
-      })}
+        )}
+      </div>
+      {allowCustom && showCustomInput && (
+        <input
+          ref={customInputRef}
+          type="text"
+          value={isCustomValue ? value : ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Type your custom value..."
+          className="w-full max-w-sm px-3 py-1.5 text-sm rounded-lg border border-primary/20 bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all"
+        />
+      )}
     </div>
   );
 }
@@ -217,7 +254,7 @@ function QuestionCard({
       {/* Input control */}
       <div className="ml-5.5">
         {question.type === 'select' && question.options ? (
-          <SelectPills options={question.options} value={answer} onChange={onAnswer} />
+          <SelectPills options={question.options} value={answer} onChange={onAnswer} allowCustom={question.allow_custom} />
         ) : question.type === 'boolean' ? (
           <BooleanToggle value={answer} onChange={onAnswer} />
         ) : question.type === 'devtools_project' ? (
@@ -225,6 +262,14 @@ function QuestionCard({
             value={answer || null}
             onSelect={(project) => onAnswer(project.id)}
             className="max-w-sm"
+          />
+        ) : question.type === 'textarea' ? (
+          <textarea
+            value={answer}
+            onChange={(e) => onAnswer(e.target.value)}
+            placeholder={question.default ?? 'Describe in detail...'}
+            rows={3}
+            className="w-full max-w-lg px-3 py-2 text-sm rounded-lg border border-white/[0.08] bg-white/[0.03] text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 focus:bg-white/[0.05] transition-all resize-y min-h-[60px]"
           />
         ) : (
           <input

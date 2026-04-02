@@ -60,7 +60,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
     <div className="px-4 py-3 space-y-3" onKeyDown={handleKeyDown}>
       {/* Header */}
       <div className="flex items-center gap-2">
-        <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" className="shrink-0" />
+        <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" className="shrink-0" frameSize={"lg"} />
         <span className="typo-body font-medium text-foreground truncate">{persona.name}</span>
         <span className="typo-caption text-muted-foreground/60">Quick Edit</span>
       </div>

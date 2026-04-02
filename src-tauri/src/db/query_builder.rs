@@ -31,6 +31,7 @@ use rusqlite::types::ToSql;
 /// All user-supplied values go through parameter binding (`?N` placeholders),
 /// preventing SQL injection. Column names are **not** parameterised — callers
 /// must validate them (e.g. via allowlist) before passing them in.
+#[allow(dead_code)]
 pub struct QueryBuilder {
     conditions: Vec<String>,
     sets: Vec<String>,
@@ -40,6 +41,7 @@ pub struct QueryBuilder {
     has_offset: bool,
 }
 
+#[allow(dead_code)]
 impl QueryBuilder {
     pub fn new() -> Self {
         Self {

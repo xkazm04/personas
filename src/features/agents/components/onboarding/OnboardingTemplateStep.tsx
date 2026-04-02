@@ -82,11 +82,10 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-3 flex gap-1.5 flex-wrap">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
-              activeFilter === 'all'
+            className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${activeFilter === 'all'
                 ? 'border-primary/30 text-foreground/80'
                 : 'border-primary/10 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/20'
-            }`}
+              }`}
           >
             {activeFilter === 'all' && (
               <motion.div
@@ -101,11 +100,10 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
             <button
               key={cat}
               onClick={() => setActiveFilter(cat)}
-              className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${
-                activeFilter === cat
+              className={`relative px-2.5 py-1 text-sm font-medium rounded-xl border transition-colors ${activeFilter === cat
                   ? 'border-primary/30 text-foreground/80'
                   : 'border-primary/10 text-muted-foreground/45 hover:text-muted-foreground hover:border-primary/20'
-              }`}
+                }`}
             >
               {activeFilter === cat && (
                 <motion.div
@@ -141,7 +139,7 @@ export function TemplatePickerStep({ onSelect, onFromScratch, onCancel }: Templa
                       borderColor: `${template.color}30`,
                     }}
                   >
-                    <PersonaIcon icon={templateAgentIcon(template)} color={template.color} size="w-5 h-5" framed />
+                    <PersonaIcon icon={templateAgentIcon(template)} color={template.color} size="w-5 h-5" framed frameSize='lg' />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground/85 truncate">{template.name}</p>

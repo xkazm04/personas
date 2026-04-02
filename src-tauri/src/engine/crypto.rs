@@ -232,7 +232,7 @@ impl ProtectedKey {
         // Lock the heap-allocated key bytes to prevent the OS from paging them
         // to disk. Best-effort: failure is logged but not fatal, since the key
         // is still DPAPI-protected at rest on Windows.
-        let ptr = inner.as_ptr() as *const u8;
+        let ptr = inner.as_ptr();
         let len = std::mem::size_of::<[u8; 32]>();
         if !memory_lock(ptr, len) {
             tracing::warn!(
@@ -252,7 +252,7 @@ impl ProtectedKey {
 impl Drop for ProtectedKey {
     fn drop(&mut self) {
         // Unlock the memory page before Zeroizing<T> zeroizes the bytes
-        let ptr = self.inner.as_ptr() as *const u8;
+        let ptr = self.inner.as_ptr();
         let len = std::mem::size_of::<[u8; 32]>();
         memory_unlock(ptr, len);
         // Zeroizing<[u8; 32]> handles zeroing the key material on drop

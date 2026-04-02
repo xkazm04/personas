@@ -72,12 +72,6 @@ pub const QUALITY_GATE_CONFIG: &str = "quality_gate_config";
 /// Defaults to `claude-haiku-4-5-20251001` when unset.
 pub const SMART_SEARCH_MODEL: &str = "smart_search_model";
 
-/// Claude CLI fallback scheduling flag. Key: `claude_cli_fallback:<persona_id>`.
-/// Value: JSON `{"enabled":true,"cron":"..."}`.
-/// When enabled, provides a generated `claude -p` command for external cron scheduling.
-#[allow(dead_code)]
-pub const CLAUDE_CLI_FALLBACK_PREFIX: &str = "claude_cli_fallback:";
-
 /// Whether the weekly health digest is enabled. Value: `"true"` or `"false"`.
 pub const HEALTH_DIGEST_ENABLED: &str = "health_digest_enabled";
 
@@ -124,7 +118,6 @@ const ALLOWED_PREFIXES: &[&str] = &[
     AUTO_ROLLBACK_PREFIX,
     AUTO_OPTIMIZE_PREFIX,
     HEALTH_WATCH_PREFIX,
-    CLAUDE_CLI_FALLBACK_PREFIX,
 ];
 
 /// Returns `Ok(())` if the key is in the allow-list (exact match or prefix match).

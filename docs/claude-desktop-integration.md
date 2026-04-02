@@ -109,7 +109,6 @@ claude mcp add-json personas '{"command":"node","args":["<path>/scripts/mcp-serv
 |---|---|
 | `configure_auto_optimize` | Enable/disable automatic prompt optimization |
 | `configure_health_watch` | Enable/disable continuous health monitoring |
-| `get_cli_fallback_command` | Generate OS cron command for offline scheduling |
 
 ---
 
@@ -190,52 +189,6 @@ curl -X POST http://127.0.0.1:9420/api/settings/health-watch/<persona_id> \
 
 ---
 
-## Feature 3: Claude CLI Fallback Scheduling
-
-**What it does:** Generates a ready-to-use `claude -p` command that can be scheduled via the operating system's cron (Linux/macOS) or Task Scheduler (Windows) to execute personas when the Personas desktop app is not running.
-
-**Where to find it:** **Overview > Schedules** tab > scroll to the bottom > expand **Claude CLI Fallback Scheduling**.
-
-**How it works:**
-
-1. For each persona with a schedule trigger, the system generates a `claude -p` command that:
-   - Uses the Personas MCP server for context
-   - Includes the persona name in the prompt
-   - References the correct MCP server path
-2. The generated command can be:
-   - Pasted into `crontab -e` on Linux/macOS
-   - Added to Windows Task Scheduler via the provided `schtasks` command
-3. When the OS scheduler fires the command, Claude Code CLI starts headlessly, connects to the Personas MCP server, and executes the persona
-
-**Via Claude Desktop:**
-
-```
-"Show me the CLI fallback command for my Daily Programming Learner agent"
-```
-
-Claude calls `get_cli_fallback_command(persona: "Daily Programming Learner")` and shows the cron/schtasks instruction.
-
-**Via Management API:**
-
-```bash
-curl http://127.0.0.1:9420/api/settings/cli-fallback/<persona_id>
-```
-
-Returns:
-```json
-{
-  "persona_name": "Daily Programming Learner",
-  "command": "claude -p \"Use the personas MCP server to execute...\" --mcp-config ...",
-  "cron_instruction": "Add to crontab:\n  0 8 * * * claude -p ..."
-}
-```
-
-**Visual indicator:** The section has a terminal icon and `data-testid="cli-fallback-section"`. It's collapsed by default to avoid clutter.
-
-**Important:** This is an alternative to the Personas cloud deployment feature. Use CLI fallback for single-machine setups where you want agents to run even when the desktop app is closed. Use cloud deployment when you need agents running on a remote server.
-
----
-
 ## Example Workflows in Claude Desktop
 
 ### Weekly Optimization Sweep
@@ -270,7 +223,6 @@ All three features store their configuration in the `app_settings` SQLite table:
 |---|---|
 | `auto_optimize:<persona_id>` | `{"enabled":true,"cron":"0 2 * * 0","min_score":80,"models":["sonnet"]}` |
 | `health_watch:<persona_id>` | `{"enabled":true,"interval_hours":6,"error_threshold":30}` |
-| `claude_cli_fallback:<persona_id>` | Generated on-demand (not stored) |
 
 ### Management API Port
 
@@ -287,5 +239,5 @@ Dependencies: `@modelcontextprotocol/sdk`, `sql.js`, `zod` (installed via `npm i
 | Test | Command | Tools Tested |
 |---|---|---|
 | Full MCP suite (24 tests) | `node scripts/mcp-server/test-tools.mjs` | All read + write tools |
-| Schedule features (7 tests) | `node scripts/mcp-server/test-schedule-features.mjs` | auto-optimize, health-watch, cli-fallback |
+| Schedule features (5 tests) | `node scripts/mcp-server/test-schedule-features.mjs` | auto-optimize, health-watch |
 | Live integration (11 steps) | `node scripts/mcp-server/test-live.mjs` | Arena test + improve + version lifecycle |

@@ -28,6 +28,7 @@ use super::types::{
 ///
 /// Each stage represents a boundary crossing in the system, matching the
 /// frontend's `PIPELINE_STAGES` array in `pipeline.ts`.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PipelineStage {
@@ -47,6 +48,7 @@ pub enum PipelineStage {
     FrontendComplete,
 }
 
+#[allow(dead_code)]
 impl PipelineStage {
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -86,6 +88,7 @@ impl std::fmt::Display for PipelineStage {
 ///
 /// Captures the terminal state plus metrics that the frontend needs to
 /// transition the execution to its final state.
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct StatusFinalization {
     pub execution_id: String,
@@ -95,6 +98,7 @@ pub struct StatusFinalization {
     pub cost_usd: Option<f64>,
 }
 
+#[allow(dead_code)]
 impl StatusFinalization {
     /// Convert to the event payload used by Tauri event emission.
     pub fn to_status_event(&self) -> ExecutionStatusEvent {
@@ -126,6 +130,7 @@ impl StatusFinalization {
 /// The pipeline stages (declared in `PipelineStage`) define the execution
 /// lifecycle. The status finalization contract (`finalize_status`) marks
 /// the transition to a terminal state.
+#[allow(dead_code)]
 pub trait ExecutionProtocol {
     /// Handle a parsed protocol message from the AI output stream.
     fn dispatch_message(&mut self, msg: &ProtocolMessage);
@@ -156,6 +161,7 @@ pub trait ExecutionProtocol {
 /// Captures all dispatched messages, emitted events, and status finalizations
 /// for assertion in unit/integration tests. Enables running the engine
 /// without a database or Tauri runtime.
+#[allow(dead_code)]
 #[derive(Debug, Default)]
 pub struct MockProtocol {
     pub dispatched_messages: Vec<ProtocolMessage>,
@@ -165,6 +171,7 @@ pub struct MockProtocol {
     pub finalizations: Vec<StatusFinalization>,
 }
 
+#[allow(dead_code)]
 impl MockProtocol {
     pub fn new() -> Self {
         Self::default()

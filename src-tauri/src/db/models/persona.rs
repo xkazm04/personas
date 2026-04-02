@@ -14,19 +14,14 @@ use crate::error::AppError;
 /// Trust level for a persona — mirrors the peer `TrustLevel` enum in
 /// `identity.rs` but kept separate because persona trust and peer trust
 /// may diverge in the future.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum PersonaTrustLevel {
     Manual,
+    #[default]
     Verified,
     Revoked,
-}
-
-impl Default for PersonaTrustLevel {
-    fn default() -> Self {
-        Self::Verified
-    }
 }
 
 impl fmt::Display for PersonaTrustLevel {
@@ -64,19 +59,14 @@ impl FromStr for PersonaTrustLevel {
 }
 
 /// Origin of a persona's trust classification.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum PersonaTrustOrigin {
+    #[default]
     Builtin,
     User,
     System,
-}
-
-impl Default for PersonaTrustOrigin {
-    fn default() -> Self {
-        Self::Builtin
-    }
 }
 
 impl fmt::Display for PersonaTrustOrigin {
@@ -132,20 +122,15 @@ impl fmt::Display for ParamType {
 }
 
 /// File type discriminator for design context files.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "kebab-case")]
 pub enum DesignFileKind {
     ApiSpec,
     Schema,
     McpConfig,
+    #[default]
     Other,
-}
-
-impl Default for DesignFileKind {
-    fn default() -> Self {
-        Self::Other
-    }
 }
 
 /// Canonical health status for a persona.

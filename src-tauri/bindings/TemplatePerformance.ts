@@ -3,4 +3,9 @@
 /**
  * Aggregated performance metrics for a template.
  */
-export type TemplatePerformance = { review_id: string, total_adoptions: number, total_executions: number, success_rate: number, avg_cost_usd: number, positive_count: number, negative_count: number, top_positive_labels: Array<string>, top_negative_labels: Array<string>, derived_quality_score: number, /** False when one or more metric sub-queries failed and defaults were substituted. */ data_available: boolean, };
+export type TemplatePerformance = { review_id: string, total_adoptions: number, total_executions: number, success_rate: number, avg_cost_usd: number, positive_count: number, negative_count: number, top_positive_labels: Array<string>, top_negative_labels: Array<string>, derived_quality_score: number, 
+/**
+ * False when one or more metric sub-queries failed and defaults were substituted.
+ * The frontend should show an error/empty state instead of the derived score.
+ */
+data_available: boolean, };

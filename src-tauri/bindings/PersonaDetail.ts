@@ -3,9 +3,21 @@ import type { PersonaAutomation } from "./PersonaAutomation";
 import type { PersonaEventSubscription } from "./PersonaEventSubscription";
 import type { PersonaToolDefinition } from "./PersonaToolDefinition";
 import type { PersonaTrigger } from "./PersonaTrigger";
+import type { PersonaTrustLevel } from "./PersonaTrustLevel";
+import type { PersonaTrustOrigin } from "./PersonaTrustOrigin";
 
 /**
  * Batched persona detail: persona + tools + triggers + subscriptions + automations
  * in a single IPC round trip.
  */
-export type PersonaDetail = { tools: Array<PersonaToolDefinition>, triggers: Array<PersonaTrigger>, subscriptions: Array<PersonaEventSubscription>, automations: Array<PersonaAutomation>, warnings: Array<string>, id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, group_id: string | null, source_review_id: string | null, trust_level: string, trust_origin: string, trust_verified_at: string | null, created_at: string, updated_at: string, };
+export type PersonaDetail = { tools: Array<PersonaToolDefinition>, triggers: Array<PersonaTrigger>, subscriptions: Array<PersonaEventSubscription>, automations: Array<PersonaAutomation>, 
+/**
+ * Non-empty when one or more sub-resource queries failed.
+ * Each entry describes which resource could not be loaded.
+ */
+warnings: Array<string>, id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, group_id: string | null, source_review_id: string | null, trust_level: PersonaTrustLevel, trust_origin: PersonaTrustOrigin, trust_verified_at: string | null, trust_score: number, 
+/**
+ * Free parameters: JSON array of `PersonaParameter` definitions.
+ * Adjustable at runtime without triggering a rebuild.
+ */
+parameters: string | null, created_at: string, updated_at: string, };

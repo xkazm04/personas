@@ -277,7 +277,7 @@ fn extract_endpoints(doc: &serde_json::Value, _spec_format: &str) -> Vec<OpenApi
                 .and_then(|rb| rb.pointer("/content/application/json/schema/$ref"))
                 .or_else(|| operation.get("requestBody").and_then(|rb| rb.pointer("/content/application/json/schema/type")))
                 .and_then(|v| v.as_str())
-                .map(|s| ref_to_name(s));
+                .map(ref_to_name);
 
             let response_type = operation.get("responses")
                 .and_then(|r| r.get("200").or_else(|| r.get("201")))
@@ -286,7 +286,7 @@ fn extract_endpoints(doc: &serde_json::Value, _spec_format: &str) -> Vec<OpenApi
                     .and_then(|r| r.get("200").or_else(|| r.get("201")))
                     .and_then(|r| r.pointer("/schema/$ref"))) // Swagger 2
                 .and_then(|v| v.as_str())
-                .map(|s| ref_to_name(s));
+                .map(ref_to_name);
 
             endpoints.push(OpenApiEndpoint {
                 path: path.clone(),
@@ -353,7 +353,7 @@ fn extract_models(doc: &serde_json::Value, spec_format: &str) -> Vec<OpenApiMode
                             let property_type = pval.get("type")
                                 .and_then(|v| v.as_str())
                                 .or_else(|| pval.get("$ref").and_then(|v| v.as_str()))
-                                .map(|s| ref_to_name(s))
+                                .map(ref_to_name)
                                 .unwrap_or_else(|| "any".to_string());
                             let pdesc = pval.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
                             OpenApiModelProperty {
@@ -464,7 +464,7 @@ fn generate_tool_definitions(endpoints: &[OpenApiEndpoint]) -> Vec<GeneratedTool
     endpoints.iter()
         .map(|ep| {
             let tool_name = ep.operation_id.clone().unwrap_or_else(|| {
-                let clean_path = ep.path.replace('/', "_").replace('{', "").replace('}', "");
+                let clean_path = ep.path.replace('/', "_").replace(['{', '}'], "");
                 format!("{}_{}", ep.method.to_lowercase(), clean_path.trim_start_matches('_'))
             });
 
@@ -534,7 +534,7 @@ pub async fn openapi_parse_from_url(
     // Only allow HTTPS URLs (or HTTP for localhost)
     match parsed_url.scheme() {
         "https" => {}
-        "http" if parsed_url.host_str().map_or(false, |h| h == "localhost" || h == "127.0.0.1") => {}
+        "http" if parsed_url.host_str().is_some_and(|h| h == "localhost" || h == "127.0.0.1") => {}
         _ => return Err(AppError::Validation("Only HTTPS URLs are allowed (HTTP only for localhost)".into())),
     }
 
@@ -673,7 +673,7 @@ pub async fn openapi_playground_test(
     // SSRF protection: only allow HTTPS or localhost HTTP
     match parsed.scheme() {
         "https" => {}
-        "http" if parsed.host_str().map_or(false, |h| h == "localhost" || h == "127.0.0.1") => {}
+        "http" if parsed.host_str().is_some_and(|h| h == "localhost" || h == "127.0.0.1") => {}
         _ => return Err(AppError::Validation("Only HTTPS URLs are allowed (HTTP only for localhost)".into())),
     }
 

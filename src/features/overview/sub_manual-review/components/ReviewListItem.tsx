@@ -113,13 +113,12 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
     <button
       onClick={onClick}
       data-testid={`review-row-${review.id}`}
-      className={`w-full text-left px-3 py-2.5 border-b border-primary/[0.06] transition-colors group ${
-        isActive ? 'bg-primary/[0.08] border-l-2 border-l-primary' : 'border-l-2 border-l-transparent hover:bg-white/[0.04]'
-      }`}
+      className={`w-full text-left px-3 py-2.5 border-b border-primary/[0.06] transition-colors group ${isActive ? 'bg-primary/[0.08] border-l-2 border-l-primary' : 'border-l-2 border-l-transparent hover:bg-white/[0.04]'
+        }`}
     >
       <div className="flex items-start gap-2.5">
         <div className="flex-shrink-0 mt-0.5">
-          <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" />
+          <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" frameSize={"lg"} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">

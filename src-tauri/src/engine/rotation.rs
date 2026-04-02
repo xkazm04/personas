@@ -74,9 +74,11 @@ const DEFAULT_PERMANENT_FAILURE_THRESHOLD: f64 = 0.8;
 const DEFAULT_TRANSIENT_FAILURE_THRESHOLD: f64 = 0.9;
 
 /// Low tolerance for production-grade credentials (alert at 5%).
+#[allow(dead_code)]
 const PRODUCTION_TOLERANCE: f64 = 0.05;
 
 /// High tolerance for development credentials (tolerate 50%).
+#[allow(dead_code)]
 const DEVELOPMENT_TOLERANCE: f64 = 0.50;
 
 // ---------------------------------------------------------------------------
@@ -343,6 +345,7 @@ pub fn compute_anomaly_score(entries: &[HealthcheckEntry], tolerance: Option<f64
 
 /// Determine the tolerance threshold for a credential based on metadata hints.
 /// Returns a fraction (0.0--1.0) representing the maximum acceptable failure rate.
+#[allow(dead_code)]
 pub fn resolve_tolerance(metadata: &serde_json::Value) -> f64 {
     // Check for explicit tolerance override
     if let Some(t) = metadata.get("anomaly_tolerance").and_then(|v| v.as_f64()) {
@@ -447,6 +450,7 @@ pub fn append_healthcheck_entry(
 
 /// Result of parsing healthcheck entries from credential metadata.
 /// Distinguishes between "no entries recorded" and "metadata is corrupted".
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum HealthcheckParseResult {
     /// Successfully parsed entries (may be empty if none have been recorded).

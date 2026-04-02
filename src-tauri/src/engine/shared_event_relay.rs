@@ -9,7 +9,6 @@ use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::{events as event_repo, shared_events as repo};
 use crate::db::DbPool;
 use crate::engine::event_registry::emit_event_bus;
-use crate::error::AppError;
 
 // ---------------------------------------------------------------------------
 // Relay state

@@ -1,8 +1,8 @@
 import {
   BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare,
   FlaskConical, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
-  List, Settings, Chrome, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
-  Network, Database, Home, Compass, Shield, CalendarClock, HardDriveDownload, Heart,
+  List, Settings, Globe, Palette, Bell, GitBranch, LayoutDashboard, Cpu,
+  Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
   type LucideIcon,
@@ -62,7 +62,7 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'messages', icon: MessageSquare, label: 'Messages' },
   { id: 'events', icon: Zap, label: 'Events', minTier: TIERS.TEAM },
   { id: 'knowledge', icon: Brain, label: 'Knowledge', minTier: TIERS.TEAM },
-  { id: 'schedules', icon: CalendarClock, label: 'Schedules', minTier: TIERS.TEAM },
+
   { id: 'health', icon: Heart, label: 'Health' },
 ];
 
@@ -108,7 +108,7 @@ export const cloudItems: SubNavItem[] = [
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {
   const tier = activeTier ?? TIERS.TEAM;
   return [
-    { id: 'account', label: 'Account', icon: Chrome, devOnly: true },
+    { id: 'account', label: 'Account', icon: Globe, devOnly: true },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },

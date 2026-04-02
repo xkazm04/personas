@@ -137,7 +137,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
     testFlowTimeoutsRef.current = [];
   }, []);
 
-  const stats = useMemo(() => statsRef.current, [dataVersion]); // eslint-disable-line react-hooks/exhaustive-deps
+  const stats = useMemo(() => statsRef.current, [dataVersion]);
 
   // Helper: push events and recompute stats in one batch.
   // This is the ONLY way events should be added — it ensures stats stay in sync

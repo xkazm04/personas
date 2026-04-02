@@ -685,12 +685,11 @@ pub async fn kb_search(
     })?;
 
     // Collect hydrated rows keyed by chunk_id
+    #[allow(clippy::type_complexity)]
     let mut hydrated: std::collections::HashMap<String, (String, String, Option<String>, String, Option<String>)> =
         std::collections::HashMap::with_capacity(matches.len());
-    for row in rows {
-        if let Ok((cid, doc_id, content, meta_json, doc_title, source_path)) = row {
-            hydrated.insert(cid, (doc_id, content, meta_json, doc_title, source_path));
-        }
+    for (cid, doc_id, content, meta_json, doc_title, source_path) in rows.flatten() {
+        hydrated.insert(cid, (doc_id, content, meta_json, doc_title, source_path));
     }
 
     // Rebuild results in original vector-search ranking order

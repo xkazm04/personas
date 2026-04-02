@@ -456,8 +456,9 @@ pub fn update_metadata(pool: &DbPool, id: &str, metadata: Option<&str>) -> Resul
 /// - `null` values remove keys
 /// - Sanitizes before persisting
 /// - Returns the updated credential row
+///
 /// Apply a metadata patch on an existing connection (for use inside an outer
-/// transaction).  Does NOT manage its own transaction — the caller is
+/// transaction).  Does NOT manage its own transaction -- the caller is
 /// responsible for commit/rollback.
 pub fn patch_metadata_on_conn(
     conn: &rusqlite::Connection,

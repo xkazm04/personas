@@ -28,6 +28,7 @@ const HIGH_CONFIDENCE_PATTERNS: &[(&str, &str)] = &[
     ("goroutine ", "stack_trace"),
     ("Unhandled exception", "exception"),
     ("Unhandled rejection", "exception"),
+    ("Exception in thread", "exception"),
     ("fatal error:", "panic"),
     ("FATAL ERROR:", "panic"),
     ("segmentation fault", "panic"),
@@ -38,12 +39,7 @@ const HIGH_CONFIDENCE_PATTERNS: &[(&str, &str)] = &[
 
 /// Medium-confidence patterns (each match adds 0.2 confidence).
 const MEDIUM_PATTERNS: &[(&str, &str)] = &[
-    ("Error:", "error_message"),
-    ("ERROR:", "error_message"),
-    ("Exception:", "exception"),
-    ("EXCEPTION:", "exception"),
-    ("FAILED", "error_message"),
-    ("error[E", "error_message"),     // Rust compiler errors
+    // Specific exception types must come before generic "Error:" / "Exception:"
     ("TypeError:", "exception"),
     ("ReferenceError:", "exception"),
     ("SyntaxError:", "exception"),
@@ -58,6 +54,13 @@ const MEDIUM_PATTERNS: &[(&str, &str)] = &[
     ("NullReferenceException", "exception"),
     ("ArgumentException", "exception"),
     ("System.Exception", "exception"),
+    ("Exception:", "exception"),
+    ("EXCEPTION:", "exception"),
+    // Generic error patterns after specific ones
+    ("Error:", "error_message"),
+    ("ERROR:", "error_message"),
+    ("FAILED", "error_message"),
+    ("error[E", "error_message"),     // Rust compiler errors
     ("caused by:", "error_message"),
     ("Caused by:", "error_message"),
 ];
@@ -140,7 +143,7 @@ pub fn detect_error_pattern(text: &str) -> Option<ErrorDetection> {
             || STACK_LINE_CONTAINS.iter().any(|p| line.contains(p));
         if is_stack {
             stack_line_count += 1;
-            confidence += 0.1; // diminishing returns handled by cap
+            confidence += 0.15; // diminishing returns handled by cap
         }
     }
 

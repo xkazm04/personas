@@ -134,6 +134,7 @@ impl SessionPool {
 
 /// Compute a fast config fingerprint for invalidation checks.
 /// Uses FNV-style hash of the key config fields.
+#[allow(dead_code)]
 pub fn compute_config_hash(
     system_prompt: &str,
     model_profile: &str,

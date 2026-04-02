@@ -4,15 +4,4 @@ import type { ConfigField } from "./ConfigField";
 /**
  * The full effective model configuration for a persona, with inheritance metadata.
  */
-export type EffectiveModelConfig = {
-  personaId: string,
-  personaName: string,
-  workspaceName: string | null,
-  model: ConfigField<string>,
-  provider: ConfigField<string>,
-  baseUrl: ConfigField<string>,
-  authToken: ConfigField<string>,
-  maxBudgetUsd: ConfigField<number>,
-  maxTurns: ConfigField<number>,
-  promptCachePolicy: ConfigField<string>,
-};
+export type EffectiveModelConfig = { personaId: string, personaName: string, workspaceName: string | null, model: ConfigField, provider: ConfigField, baseUrl: ConfigField, authToken: ConfigField, maxBudgetUsd: ConfigField, maxTurns: ConfigField, promptCachePolicy: ConfigField, };

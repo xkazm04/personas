@@ -275,7 +275,7 @@ impl ByomPolicy {
                 continue;
             }
             for provider_str in &rule.allowed_providers {
-                if let Some(kind) = provider_str.parse().ok() {
+                if let Ok(kind) = provider_str.parse() {
                     if blocked_set.contains(&kind) {
                         warnings.push(PolicyWarning {
                             severity: PolicyWarningSeverity::Error,
@@ -312,7 +312,7 @@ impl ByomPolicy {
             if !rule.enabled {
                 continue;
             }
-            if let Some(kind) = rule.provider.parse().ok() {
+            if let Ok(kind) = rule.provider.parse() {
                 if blocked_set.contains(&kind) {
                     warnings.push(PolicyWarning {
                         severity: PolicyWarningSeverity::Error,
@@ -346,6 +346,7 @@ impl ByomPolicy {
     }
 
     /// Returns true if the policy has any Error-level validation warnings.
+    #[allow(dead_code)]
     pub fn has_blocking_errors(&self) -> bool {
         self.validate().iter().any(|w| w.severity == PolicyWarningSeverity::Error)
     }

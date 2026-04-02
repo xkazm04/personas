@@ -181,6 +181,7 @@ fn day_matches(schedule: &CronSchedule, day: u32, weekday: u32) -> bool {
 }
 
 /// Check if a datetime matches the schedule (evaluated in UTC).
+#[allow(dead_code)]
 fn matches(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
     let minute = dt.minute();
     let hour = dt.hour();
@@ -213,6 +214,7 @@ fn matches_local(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
 
 /// Compute the next fire time strictly after `from` (cron evaluated in UTC).
 /// Returns None if no valid time found within 4 years (safety limit).
+#[allow(dead_code)]
 pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<DateTime<Utc>> {
     let start = from
         .with_second(0)

@@ -380,7 +380,7 @@ pub fn mutate(genome: &mut PersonaGenome, mutation_rate: f64) {
         // Adjust timeout by ±20%
         let factor = rng.gen_range(0.8..1.2);
         genome.model.timeout_ms = ((genome.model.timeout_ms as f64) * factor) as i32;
-        genome.model.timeout_ms = genome.model.timeout_ms.max(5_000).min(super::ENGINE_MAX_EXECUTION_MS); // floor 5s, ceiling engine max
+        genome.model.timeout_ms = genome.model.timeout_ms.clamp(5_000, super::ENGINE_MAX_EXECUTION_MS); // floor 5s, ceiling engine max
     }
 
     // Mutate max_concurrent
@@ -576,6 +576,8 @@ mod tests {
             trust_level: PersonaTrustLevel::Verified,
             trust_origin: PersonaTrustOrigin::System,
             trust_verified_at: None,
+            trust_score: 0.0,
+            parameters: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
         }

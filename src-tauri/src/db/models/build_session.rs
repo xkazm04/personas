@@ -75,7 +75,7 @@ impl BuildPhase {
             Self::AwaitingInput => matches!(next, Self::Resolving),
             Self::Resolving => matches!(next, Self::AwaitingInput | Self::DraftReady),
             Self::DraftReady => matches!(next, Self::Testing | Self::Resolving | Self::Promoted),
-            Self::Testing => matches!(next, Self::TestComplete | Self::DraftReady),
+            Self::Testing => matches!(next, Self::TestComplete | Self::DraftReady | Self::Testing),
             Self::TestComplete => matches!(next, Self::Testing | Self::Promoted),
             Self::Completed | Self::Failed | Self::Cancelled | Self::Promoted => false,
         };

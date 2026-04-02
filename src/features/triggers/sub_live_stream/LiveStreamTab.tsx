@@ -5,7 +5,7 @@ import { DataGrid, type DataGridColumn } from '@/features/shared/components/disp
 import { useAgentStore } from '@/stores/agentStore';
 import { listEvents } from '@/api/overview/events';
 import { formatRelativeTime, EVENT_STATUS_COLORS } from '@/lib/utils/formatters';
-import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { PersonaEvent } from '@/lib/types/types';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';
@@ -113,17 +113,12 @@ export function LiveStreamTab() {
         if (persona) {
           return (
             <div className="flex items-center gap-2 min-w-0">
-              <div
-                className="w-5 h-5 rounded-md flex items-center justify-center text-xs border border-primary/15 flex-shrink-0"
-                style={{ backgroundColor: colorWithAlpha(persona.color || '#6366f1', 0.08) }}
-              >
-                {persona.icon || '\u{1F916}'}
-              </div>
+              <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize="lg" />
               <span className="text-sm text-foreground truncate">{persona.name}</span>
             </div>
           );
         }
-        return <span className="text-sm text-muted-foreground/60 truncate">broadcast</span>;
+        return <span className="text-sm text-foreground/60 truncate">broadcast</span>;
       },
     },
     {
@@ -171,7 +166,7 @@ export function LiveStreamTab() {
           }}
           sortKey="created"
           sortDirection="desc"
-          onSort={() => {}}
+          onSort={() => { }}
           pageSize={20}
           isLoading={isLoading}
           loadingLabel="Connecting to event bus..."

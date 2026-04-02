@@ -1780,6 +1780,7 @@ async fn handle_execution_result(
 }
 
 /// Send an OS notification for execution completion.
+#[allow(dead_code)]
 fn notify_execution(
     app: &AppHandle,
     pool: &DbPool,

@@ -63,6 +63,7 @@ export function CopyButton({
   const btn = (
     <button
       type="button"
+      title={resolvedTooltip ?? undefined}
       onClick={handleClick}
       disabled={disabled}
       className={[

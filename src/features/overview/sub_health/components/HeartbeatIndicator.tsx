@@ -48,7 +48,7 @@ export function HeartbeatIndicator({ score, grade, size = 'md', animate = true, 
       {/* Score circle with icon or number */}
       <div className={`relative ${dims.outer} rounded-full border-2 ${colors.ring} ${colors.bg} flex items-center justify-center`}>
         {personaIcon !== undefined ? (
-          <PersonaIcon icon={personaIcon} color={personaColor ?? null} size={dims.iconSize} />
+          <PersonaIcon icon={personaIcon} color={personaColor ?? null} size={dims.iconSize} display='framed' frameSize={"lg"} />
         ) : (
           <span className={`${dims.text} font-bold text-foreground/90`}>{score}</span>
         )}

@@ -58,6 +58,14 @@ vi.mock("@/api/agents/personas", () => ({
   buildUpdateInput: (...args: unknown[]) => mockBuildUpdateInput(...args),
 }));
 
+vi.mock("@/api/system/system", () => ({
+  sendAppNotification: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/lib/silentCatch", () => ({
+  silentCatch: () => () => {},
+}));
+
 // Mock Tauri event listeners
 type ListenerCallback = (event: { payload: Record<string, unknown> }) => void;
 const listenerMap = new Map<string, ListenerCallback>();
@@ -423,7 +431,7 @@ describe("useMatrixLifecycle", () => {
       expect(mockPromoteBuildDraft).toHaveBeenCalledWith("session-123", "persona-1");
     });
 
-    it("falls back to updatePersona when draft has no rich fields", async () => {
+    it("uses Rust promote path when session exists even without rich draft fields", async () => {
       const draftIR = { name: "Bot", description: "Desc" };
       setStoreState({
         buildPhase: "test_complete",
@@ -440,10 +448,7 @@ describe("useMatrixLifecycle", () => {
         await result.current.handlePromote();
       });
 
-      expect(mockUpdatePersona).toHaveBeenCalledWith(
-        "persona-1",
-        expect.objectContaining({ enabled: true }),
-      );
+      expect(mockPromoteBuildDraft).toHaveBeenCalledWith("session-123", "persona-1");
     });
 
     it("transitions to promoted phase on success", async () => {

@@ -48,10 +48,10 @@ impl<'a> LangMatcher<'a> {
         if tag.is_empty() {
             return true;
         }
-        if self.reject.iter().any(|r| tag == *r) {
+        if self.reject.contains(&tag) {
             return false;
         }
-        self.accept.iter().any(|a| tag == *a) || tag == "sql" // bare "sql" always matches sql-family
+        self.accept.contains(&tag) || tag == "sql" // bare "sql" always matches sql-family
     }
 }
 
@@ -63,7 +63,7 @@ impl<'a> LangMatcher<'a> {
 /// # Arguments
 /// * `text`     – the raw LLM output
 /// * `language` – desired language hint: `"sql"`, `"redis"`, `"mongodb"`, or a
-///                custom tag. An empty string matches any bare block.
+///   custom tag. An empty string matches any bare block.
 pub fn extract_fenced_block(text: &str, language: &str) -> Option<String> {
     let matcher = LangMatcher::for_language(language);
 

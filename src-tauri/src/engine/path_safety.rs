@@ -38,6 +38,7 @@ const BLOCKED_PREFIXES_WINDOWS: &[&str] = &[
 ///
 /// Returns `Ok(())` if the path is safe to watch, or `Err(reason)` if it
 /// targets a sensitive or disallowed location.
+#[allow(dead_code)]
 pub fn validate_watch_path(path: &str) -> Result<(), String> {
     let trimmed = path.trim();
     if trimmed.is_empty() {
@@ -91,6 +92,7 @@ pub fn validate_watch_path(path: &str) -> Result<(), String> {
 
 /// Validate all watch paths extracted from a trigger config JSON string.
 /// Returns the first error encountered, if any.
+#[allow(dead_code)]
 pub fn validate_file_watcher_paths(trigger_type: &str, config: Option<&str>) -> Result<(), String> {
     if trigger_type != "file_watcher" {
         return Ok(());
@@ -142,6 +144,7 @@ fn is_under_user_home(normalised: &str) -> bool {
 // -- Save-path validation (export / seal commands) -----------------------
 
 /// Allowed file extensions for save operations.
+#[allow(dead_code)]
 const ALLOWED_SAVE_EXTENSIONS: &[&str] = &["persona", "enclave"];
 
 /// Validate a save path for write operations (bundle export, enclave seal).
@@ -154,6 +157,7 @@ const ALLOWED_SAVE_EXTENSIONS: &[&str] = &["persona", "enclave"];
 /// 5. No symlink escapes — the parent directory must already exist and
 ///    its canonical form must also be within the allowed sandbox
 /// 6. File extension is one of the expected types
+#[allow(dead_code)]
 pub fn validate_save_path(path: &str) -> Result<std::path::PathBuf, String> {
     let trimmed = path.trim();
     if trimmed.is_empty() {
@@ -207,10 +211,15 @@ pub fn validate_save_path(path: &str) -> Result<std::path::PathBuf, String> {
     })?;
 
     let canonical_path = canonical_parent.join(file_name);
-    let canonical_str = canonical_path
+    let mut canonical_str = canonical_path
         .to_string_lossy()
         .replace('\\', "/")
         .to_lowercase();
+
+    // Strip Windows extended-path prefix (\\?\) that canonicalize() may add
+    if canonical_str.starts_with("//?/") {
+        canonical_str = canonical_str[4..].to_string();
+    }
 
     // Block system directories
     for prefix in BLOCKED_PREFIXES_UNIX {

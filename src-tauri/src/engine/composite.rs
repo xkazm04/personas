@@ -210,7 +210,7 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
             // Check if we already fired within the window (suppress re-firing)
             let suppressed = state.last_fired
                 .get(&trigger.id)
-                .map_or(false, |last| {
+                .is_some_and(|last| {
                     now.signed_duration_since(last).num_seconds() < window_secs as i64
                 });
 

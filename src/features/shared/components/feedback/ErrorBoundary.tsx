@@ -83,6 +83,7 @@ function ErrorFallback({
   const handleGoHome = () => {
     try {
       // Try store-based navigation first for seamless UX
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { useSystemStore } = require("@/stores/systemStore");
       useSystemStore.getState().setSidebarSection('home');
       onReset();

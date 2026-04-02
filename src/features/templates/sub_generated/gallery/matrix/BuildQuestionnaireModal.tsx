@@ -94,7 +94,7 @@ export function BuildQuestionnaireModal({
       // Allow Enter in text inputs when field is not empty
       if (e.key === 'Enter' && isInput) {
         const val = (e.target as HTMLInputElement)?.value?.trim();
-        if (val) { e.preventDefault(); isLast ? onSubmit() : goNext(); }
+        if (val) { e.preventDefault(); if (isLast) { onSubmit(); } else { goNext(); } }
         return;
       }
       if (isInput) return;

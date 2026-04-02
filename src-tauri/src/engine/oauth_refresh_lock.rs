@@ -41,6 +41,7 @@ pub async fn acquire(credential_id: &str) -> OwnedMutexGuard<()> {
 
 /// Try to acquire the lock without blocking. Returns `None` if another
 /// refresh is already in progress for this credential.
+#[allow(dead_code)]
 pub fn try_acquire(credential_id: &str) -> Option<OwnedMutexGuard<()>> {
     let mutex = {
         let mut m = map().lock().expect("oauth refresh lock map poisoned");

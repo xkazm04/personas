@@ -149,9 +149,9 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
   const targetPersona = getPersona(event.target_persona_id);
   const borderAccent =
     event.status === 'processing' ? 'border-l-status-processing'
-    : event.status === 'completed' || event.status === 'delivered' ? 'border-l-status-success'
-    : event.status === 'failed' ? 'border-l-status-error'
-    : 'border-l-status-pending';
+      : event.status === 'completed' || event.status === 'delivered' ? 'border-l-status-success'
+        : event.status === 'failed' ? 'border-l-status-error'
+          : 'border-l-status-pending';
 
   return (
     <tr
@@ -174,7 +174,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
       <td className="px-4 py-2.5">
         {targetPersona ? (
           <div className="flex items-center gap-2">
-            <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" />
+            <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" frameSize={"lg"} />
             <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
           </div>
         ) : (
@@ -187,9 +187,9 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
       <td className="px-4 py-2.5">
         <span className={`inline-flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
           {event.status === 'completed' || event.status === 'delivered' ? <CheckCircle2 className="w-3 h-3" />
-           : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
-           : event.status === 'processing' ? <LoadingSpinner size="xs" />
-           : <Clock className="w-3 h-3" />}
+            : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
+              : event.status === 'processing' ? <LoadingSpinner size="xs" />
+                : <Clock className="w-3 h-3" />}
           {event.status}
         </span>
       </td>
@@ -218,9 +218,9 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
   const targetPersona = getPersona(event.target_persona_id);
   const borderAccent =
     event.status === 'processing' ? 'border-l-status-processing'
-    : event.status === 'completed' || event.status === 'delivered' ? 'border-l-status-success'
-    : event.status === 'failed' ? 'border-l-status-error'
-    : 'border-l-status-pending';
+      : event.status === 'completed' || event.status === 'delivered' ? 'border-l-status-success'
+        : event.status === 'failed' ? 'border-l-status-error'
+          : 'border-l-status-pending';
 
   return (
     <div
@@ -251,8 +251,8 @@ export function EventGridRow({ event, index, gridCols, getPersona, onClick }: Ev
         <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-lg font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
           {event.status === 'completed' || event.status === 'delivered' ? <CheckCircle2 className="w-3 h-3" />
             : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
-            : event.status === 'processing' ? <LoadingSpinner size="xs" />
-            : <Clock className="w-3 h-3" />}
+              : event.status === 'processing' ? <LoadingSpinner size="xs" />
+                : <Clock className="w-3 h-3" />}
           {event.status}
         </span>
       </div>

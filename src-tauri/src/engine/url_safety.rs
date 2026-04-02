@@ -181,13 +181,12 @@ impl reqwest::dns::Resolve for SsrfSafeResolver {
             })
             .await
             .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                Box::new(std::io::Error::new(std::io::ErrorKind::Other, e))
+                Box::new(std::io::Error::other(e))
             })?
             .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { Box::new(e) })?;
 
             if addrs.is_empty() {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                return Err(Box::new(std::io::Error::other(
                     format!("DNS resolution returned no addresses for '{host}'"),
                 )) as Box<dyn std::error::Error + Send + Sync>);
             }
@@ -195,8 +194,7 @@ impl reqwest::dns::Resolve for SsrfSafeResolver {
             // Reject if ANY resolved address is private/internal
             for addr in &addrs {
                 if is_private_ip(addr.ip()) {
-                    return Err(Box::new(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    return Err(Box::new(std::io::Error::other(
                         format!(
                             "SSRF protection: '{host}' resolves to private address {}",
                             addr.ip()

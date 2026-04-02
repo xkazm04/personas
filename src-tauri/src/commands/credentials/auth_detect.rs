@@ -573,6 +573,7 @@ const AUTH_DETECT_CACHE_TTL: Duration = Duration::from_secs(300); // 5 minutes
 /// Call this after any event that changes authentication state (e.g. a
 /// successful OAuth flow) so downstream consumers (NegotiatorPanel, etc.)
 /// immediately see the updated picture.
+#[allow(dead_code)]
 pub async fn invalidate_auth_detect_cache(state: &AppState) {
     *state.auth_detect_cache.lock().await = None;
     tracing::debug!("Auth detection cache invalidated");

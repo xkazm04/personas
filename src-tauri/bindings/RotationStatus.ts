@@ -7,7 +7,7 @@ export type RotationStatus = { has_policy: boolean, policy_enabled: boolean, rot
 /**
  * The policy type: "scheduled", "oauth_keepalive", etc.
  */
-policy_type: string | null, anomaly_detected: boolean, consecutive_failures: number, recent_history: Array<CredentialRotationEntry>, anomaly_score: AnomalyScore | null, anomaly_tolerance: number,
+policy_type: string | null, anomaly_detected: boolean, consecutive_failures: number, recent_history: Array<CredentialRotationEntry>, anomaly_score: AnomalyScore | null, anomaly_tolerance: number, 
 /**
  * True when the healthcheck ring buffer metadata is corrupted and could
  * not be deserialized. The UI should show a corruption warning instead of

@@ -33,6 +33,7 @@ pub struct ExecutionContext<'a> {
 }
 
 /// Extract knowledge from a completed execution and persist it.
+#[allow(clippy::too_many_arguments)]
 pub fn extract_and_persist(
     pool: &DbPool,
     execution_id: &str,

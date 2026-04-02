@@ -916,29 +916,6 @@ server.tool(
   }
 );
 
-// ---------------------------------------------------------------------------
-// Tool: get_cli_fallback_command
-// ---------------------------------------------------------------------------
-server.tool(
-  "get_cli_fallback_command",
-  "Generate a claude -p command for scheduling persona execution via OS cron or Task Scheduler. Use when the Personas app may not always be running.",
-  {
-    persona: z.string().describe("Persona name or ID"),
-  },
-  async ({ persona }) => {
-    const d = await getDb();
-    const row = findPersona(d, persona);
-    if (!row) return notFound("Persona", persona);
-
-    try {
-      const result = await apiCall("GET", `/api/settings/cli-fallback/${row.id}`);
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-    } catch (e) {
-      return errorResult(`Failed to generate: ${e.message}. Is the Personas app running?`);
-    }
-  }
-);
-
 // =============================================================================
 // Start
 // =============================================================================

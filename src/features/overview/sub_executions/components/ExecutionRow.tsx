@@ -32,7 +32,7 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
         </div>
 
         <div className="flex items-center gap-2 w-[140px] sm:w-auto sm:min-w-[140px] flex-shrink-0">
-          <PersonaIcon icon={execution.persona_icon ?? null} color={execution.persona_color ?? null} display="framed" />
+          <PersonaIcon icon={execution.persona_icon ?? null} color={execution.persona_color ?? null} display="framed" frameSize={"lg"} />
           <span className="typo-heading text-foreground/80 truncate max-w-[100px]">
             {execution.persona_name || 'Unknown'}
           </span>
@@ -69,14 +69,14 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
       </div>
 
       {isExpanded && (
-          <div
-            className="animate-fade-slide-in overflow-hidden"
-          >
-            <div className="px-4 pb-4 pt-3 border-t border-primary/15">
-              <ExecutionDetail execution={execution} />
-            </div>
+        <div
+          className="animate-fade-slide-in overflow-hidden"
+        >
+          <div className="px-4 pb-4 pt-3 border-t border-primary/15">
+            <ExecutionDetail execution={execution} />
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 });

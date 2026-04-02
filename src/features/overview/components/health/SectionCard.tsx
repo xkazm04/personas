@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Chrome, Key, Loader2, Unplug } from 'lucide-react';
+import { Globe, Key, Loader2, Unplug } from 'lucide-react';
 import type { HealthCheckSection } from "@/api/system/system";
 import { registerClaudeDesktopMcp, unregisterClaudeDesktopMcp } from "@/api/system/system";
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
@@ -137,7 +137,7 @@ export function SectionCard({
               onClick={onSignIn}
               disabled={authLoading}
               loading={authLoading}
-              icon={authLoading ? undefined : <Chrome className="w-3.5 h-3.5" />}
+              icon={authLoading ? undefined : <Globe className="w-3.5 h-3.5" />}
             >
               {authLoading ? 'Signing in...' : 'Sign in with Google'}
             </Button>

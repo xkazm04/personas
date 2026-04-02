@@ -96,17 +96,17 @@ function AgentRow({ agent }: { agent: CronAgent }) {
 
   const healthColor =
     !agent.trigger_enabled || !agent.persona_enabled ? 'text-muted-foreground/50' :
-    agent.recent_executions === 0 ? 'text-muted-foreground/50' :
-    failureRate === 0 ? 'text-emerald-400' :
-    failureRate < 0.6 ? 'text-amber-400' :
-    'text-red-400';
+      agent.recent_executions === 0 ? 'text-muted-foreground/50' :
+        failureRate === 0 ? 'text-emerald-400' :
+          failureRate < 0.6 ? 'text-amber-400' :
+            'text-red-400';
 
   const HealthIcon =
     !agent.trigger_enabled || !agent.persona_enabled ? Pause :
-    agent.recent_executions === 0 ? Clock :
-    failureRate === 0 ? CheckCircle2 :
-    failureRate < 0.6 ? AlertTriangle :
-    XCircle;
+      agent.recent_executions === 0 ? Clock :
+        failureRate === 0 ? CheckCircle2 :
+          failureRate < 0.6 ? AlertTriangle :
+            XCircle;
 
   const schedule = agent.cron_expression
     ? agent.cron_expression
@@ -117,13 +117,12 @@ function AgentRow({ agent }: { agent: CronAgent }) {
   const disabled = !agent.trigger_enabled || !agent.persona_enabled;
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-      disabled
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${disabled
         ? 'border-primary/5 bg-primary/[0.02] opacity-60'
         : 'border-primary/10 bg-primary/[0.03] hover:bg-primary/[0.05]'
-    }`}>
+      }`}>
       {/* Icon */}
-      <PersonaIcon icon={agent.persona_icon} color={agent.persona_color} display="pop"
+      <PersonaIcon icon={agent.persona_icon} color={agent.persona_color} display="pop" frameSize={"lg"}
         frameStyle={{
           backgroundColor: agent.persona_color ? `${agent.persona_color}20` : 'var(--color-primary-5)',
           color: agent.persona_color || 'var(--color-muted-foreground)',

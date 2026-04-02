@@ -152,14 +152,13 @@ pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
 
     // Step 5: AI Healing — third priority.
     // Dev-mode only. Mutually exclusive with rule-based retry.
-    if ctx.is_dev_mode && ctx.has_session_id {
-        if super::ai_healing::should_trigger_ai_healing(
+    if ctx.is_dev_mode && ctx.has_session_id
+        && super::ai_healing::should_trigger_ai_healing(
             &category,
             ctx.execution_state,
             ctx.consecutive_failures,
         ) {
-            return HealingStrategy::AiHealing { diagnosis };
-        }
+        return HealingStrategy::AiHealing { diagnosis };
     }
 
     // Step 6: Fallback — create an issue for manual investigation.

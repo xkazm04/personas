@@ -5,6 +5,9 @@ import { mockInvokeMap, resetInvokeMocks, mockInvokeError } from "@/test/tauriMo
 import { clearSWRCache } from "@/lib/utils/staleWhileRevalidate";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 
+// Set IPC token so invokeWithTimeout doesn't enter infinite token-wait loop
+(globalThis as Record<string, unknown>).__IPC_TOKEN = "test-token";
+
 function makeReview(overrides: Partial<PersonaDesignReview> = {}): PersonaDesignReview {
   return {
     id: "r-1",

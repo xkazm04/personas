@@ -54,7 +54,7 @@ function filterMetaContent(content: string): string {
     .trim();
 
   // If the entire content looks like a JSON object/array and isn't already in a code fence, wrap it
-  if (/^\s*[\[{]/.test(cleaned) && /[\]}]\s*$/.test(cleaned) && !cleaned.includes('```')) {
+  if (/^\s*[[{]/.test(cleaned) && /[\]}]\s*$/.test(cleaned) && !cleaned.includes('```')) {
     try {
       const parsed = JSON.parse(cleaned);
       cleaned = '```json\n' + JSON.stringify(parsed, null, 2) + '\n```';

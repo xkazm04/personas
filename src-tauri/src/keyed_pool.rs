@@ -81,7 +81,7 @@ impl<K: Eq + Hash + Clone, V: Clone> KeyedResourcePool<K, V> {
 
         // Periodic pruning of entries with zero active handles.
         if inner.prune_interval > 0 {
-            let count = inner.acquire_count.fetch_add(1, Ordering::Relaxed);
+            let count = inner.acquire_count.fetch_add(1, Ordering::Relaxed) + 1;
             if count % inner.prune_interval == 0 && map.len() > inner.prune_threshold {
                 let before = map.len();
                 map.retain(|_, entry| entry.active > 0);
@@ -167,6 +167,12 @@ impl<K: Eq + Hash + Clone, V: Clone> KeyedResourcePool<K, V> {
     #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.inner.map.lock().unwrap_or_else(|e| e.into_inner()).len()
+    }
+
+    /// Returns `true` if the pool contains no entries.
+    #[allow(dead_code)]
+    pub fn is_empty(&self) -> bool {
+        self.inner.map.lock().unwrap_or_else(|e| e.into_inner()).is_empty()
     }
 }
 

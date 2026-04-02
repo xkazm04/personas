@@ -51,7 +51,7 @@ function EventCard({ item }: { item: TimelineEventItem }) {
         </span>
         {item.personaName && (
           <span className="text-[10px] text-muted-foreground/70 truncate">
-            <PersonaIcon icon={item.personaIcon} color={item.personaColor} display="pop" frameSize="xs" frameClass="mr-0.5" className="inline-flex" />
+            <PersonaIcon icon={item.personaIcon} color={item.personaColor} display="pop" frameSize="lg" frameClass="mr-0.5" className="inline-flex" />
             {item.personaName}
           </span>
         )}

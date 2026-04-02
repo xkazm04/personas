@@ -55,6 +55,12 @@ pub struct StartupTimer {
     last_checkpoint: Instant,
 }
 
+impl Default for StartupTimer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StartupTimer {
     pub fn new() -> Self {
         Self {

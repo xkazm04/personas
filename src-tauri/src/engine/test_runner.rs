@@ -693,7 +693,7 @@ pub(crate) async fn score_result(output: &ExecutionOutput, scenario: &TestScenar
 /// Average only the non-None scores from an iterator of Option<i32>.
 /// Returns None if no scored values exist.
 fn avg_scored(iter: impl Iterator<Item = Option<i32>>) -> Option<f64> {
-    let scored: Vec<i32> = iter.filter_map(|v| v).collect();
+    let scored: Vec<i32> = iter.flatten().collect();
     if scored.is_empty() { None } else { Some(scored.iter().map(|&v| v as f64).sum::<f64>() / scored.len() as f64) }
 }
 

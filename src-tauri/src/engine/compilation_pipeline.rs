@@ -74,6 +74,7 @@ impl CompilationStage {
 ///
 /// Generic over `T` so each pipeline can define its own result type
 /// while still sharing the question/failed variants.
+#[allow(dead_code)]
 pub enum PipelineOutcome<T> {
     /// A complete result was extracted and parsed.
     Result(T),
@@ -97,6 +98,7 @@ pub enum PipelineOutcome<T> {
 /// part of this trait because generation is always the same (spawn CLI, stream
 /// stdout) and persistence varies too much in shape (SQL transactions, simple
 /// updates, etc.) to benefit from a single trait method.
+#[allow(dead_code)]
 pub trait CompilationPipeline {
     /// The typed input for this pipeline (e.g. persona + tools + instruction).
     type Input;

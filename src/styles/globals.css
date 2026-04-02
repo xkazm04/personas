@@ -18,9 +18,9 @@
 .titlebar {
   display: flex;
   align-items: center;
-  height: 36px;
-  min-height: 36px;
-  padding: 0 2px 0 12px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 2px 0 16px;
   background: var(--background);
   border-bottom: 1px solid var(--card-border);
   user-select: none;
@@ -31,8 +31,8 @@
 .titlebar-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.75rem;
+  gap: 10px;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--muted-foreground);
@@ -40,9 +40,9 @@
 }
 
 .titlebar-logo {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
 }
 
 .titlebar-controls {
@@ -54,13 +54,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 36px;
+  width: 52px;
+  height: 48px;
   color: var(--muted-foreground);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .titlebar-btn:hover {
@@ -457,18 +457,36 @@ body {
    Light themes: low=0.82  mid=0.91  high=1.0
    Applied via filter on <html> so every theme benefits universally.
 
-   Status & brand colors are descoped from the brightness boost.
-   Each level pre-darkens/lightens these tokens by 1/X so they render
-   at their original intended intensity after the filter is applied. */
+   Vivid interactive elements (gradient buttons, solid CTAs) are
+   counter-filtered so they render at their authored intensity. */
 
 :root {
   --app-brightness: 1.25;
-  /* Raw status/brand tokens — set by JS (applyBrightness) from computed theme values
-     before the data-brightness counteraction rules override the main tokens. */
+  --brightness-compensate: calc(1 / var(--app-brightness));
 }
 
 html {
   filter: brightness(var(--app-brightness));
+}
+
+/* Brightness compensation for vivid interactive elements.
+   Sets --tw-brightness AND the full Tailwind filter chain so it
+   composes with existing shadow / blur utilities rather than
+   overwriting them. */
+
+@utility brightness-lock {
+  --tw-brightness: brightness(var(--brightness-compensate));
+  filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
+}
+
+[class*="bg-gradient-to-"],
+[class*="bg-red-5"],
+[class*="bg-red-6"],
+[class*="bg-indigo-5"],
+[class*="bg-indigo-6"],
+[class*="bg-orange-5"] {
+  --tw-brightness: brightness(var(--brightness-compensate));
+  filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
 }
 
 /* Brightness counteraction — pre-adjust status/brand colors so they are

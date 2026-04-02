@@ -36,7 +36,7 @@ export function IdentityPreviewCard({ name, description, icon, color, summary, b
           )
         ) : (
           <div className="icon-frame icon-frame-pop" style={{ backgroundColor: colorWithAlpha(color, 0.13) }}>
-            <PersonaIcon icon={icon} color={color} size="w-4 h-4" framed />
+            <PersonaIcon icon={icon} color={color} size="w-4 h-4" framed frameSize='lg' />
           </div>
         )}
         <div className="min-w-0">

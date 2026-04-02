@@ -52,6 +52,7 @@ mod tests {
             status: "active".into(),
             last_triggered_at: None,
             next_trigger_at: None,
+            trigger_version: 0,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
             use_case_id: None,

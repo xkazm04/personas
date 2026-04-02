@@ -44,7 +44,7 @@ pub fn create(pool: &DbPool, input: CreateTemplateFeedbackInput) -> Result<Templ
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let labels_json = serde_json::to_string(&input.labels).unwrap_or_else(|_| "[]".to_string());
-    let rating_str = serde_json::to_value(&input.rating)
+    let rating_str = serde_json::to_value(input.rating)
         .ok()
         .and_then(|v| v.as_str().map(String::from))
         .unwrap_or_else(|| "neutral".to_string());

@@ -16,10 +16,8 @@ pub fn load_all(pool: &DbPool) -> Result<HashMap<String, String>, AppError> {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })?;
         let mut map = HashMap::new();
-        for row in rows {
-            if let Ok((tid, ts)) = row {
-                map.insert(tid, ts);
-            }
+        for (tid, ts) in rows.flatten() {
+            map.insert(tid, ts);
         }
         Ok(map)
     })

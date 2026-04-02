@@ -1000,6 +1000,7 @@ pub fn dev_tools_list_health_snapshots(
     require_auth_sync(&state)?;
     repo::list_health_snapshots(&state.db, &project_id, limit)
 }
+#[allow(clippy::too_many_arguments)]
 
 #[tauri::command]
 pub fn dev_tools_save_health_snapshot(
@@ -1580,6 +1581,10 @@ pub async fn dev_tools_get_dependency_graph(
 
     let mut all_deps: std::collections::HashMap<String, Vec<serde_json::Value>> = std::collections::HashMap::new();
 
+    let section_re = regex::Regex::new(r"\[((?:dev-|build-)?dependencies)\]").unwrap();
+    let dep_inline_re = regex::Regex::new(r#"^(\w[\w-]*)\s*=\s*"([^"]+)""#).unwrap();
+    let dep_table_re = regex::Regex::new(r#"^(\w[\w-]*)\s*=\s*\{.*version\s*=\s*"([^"]+)".*\}"#).unwrap();
+
     for project in &projects {
         let root = std::path::Path::new(&project.root_path);
 
@@ -1609,11 +1614,6 @@ pub async fn dev_tools_get_dependency_graph(
         let cargo_path = root.join("Cargo.toml");
         if cargo_path.exists() {
             if let Ok(content) = tokio::fs::read_to_string(&cargo_path).await {
-                // Match lines like: dep_name = "version" or dep_name = { version = "..." }
-                let section_re = regex::Regex::new(r"\[((?:dev-|build-)?dependencies)\]").unwrap();
-                let dep_inline_re = regex::Regex::new(r#"^(\w[\w-]*)\s*=\s*"([^"]+)""#).unwrap();
-                let dep_table_re = regex::Regex::new(r#"^(\w[\w-]*)\s*=\s*\{.*version\s*=\s*"([^"]+)".*\}"#).unwrap();
-
                 let mut current_section: Option<&str> = None;
                 for line in content.lines() {
                     let trimmed = line.trim();

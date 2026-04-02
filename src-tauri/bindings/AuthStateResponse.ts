@@ -2,4 +2,9 @@
 import type { AuthSubscription } from "./AuthSubscription";
 import type { AuthUser } from "./AuthUser";
 
-export type AuthStateResponse = { is_authenticated: boolean, is_offline: boolean, is_offline_authenticated: boolean, user: AuthUser | null, subscription: AuthSubscription | null, };
+export type AuthStateResponse = { is_authenticated: boolean, is_offline: boolean, 
+/**
+ * True when the user is offline but has a cached profile — local-only
+ * features may work, but cloud/remote commands should be rejected.
+ */
+is_offline_authenticated: boolean, user: AuthUser | null, subscription: AuthSubscription | null, };

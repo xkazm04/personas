@@ -59,7 +59,7 @@ function MemoryPreview({
       <div className={`px-2.5 py-1.5 typo-caption ${headerCls} bg-secondary/30 border-b ${borderCls} flex items-center justify-between`}>
         <span>{label}</span>
         <span className="flex items-center gap-1 text-muted-foreground/60">
-          <PersonaIcon icon={null} color={null} display="pop" frameSize="xs" />
+          <PersonaIcon icon={null} color={null} display="pop" frameSize="lg" />
           {agentName}
         </span>
       </div>
@@ -106,24 +106,24 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
       </button>
 
       {isActive && (
-          <div className="animate-fade-slide-in overflow-hidden">
-            <div className="px-3 pb-3 space-y-3 border-t border-primary/10 pt-3">
-              <p className="text-xs text-muted-foreground/70">{conflict.reason}</p>
-              <div className="grid grid-cols-2 gap-2">
-                <MemoryPreview label="Memory A" memory={conflict.memoryA} agentName={nameA} accent="blue" />
-                <MemoryPreview label="Memory B" memory={conflict.memoryB} agentName={nameB} accent="amber" />
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {conflict.kind === 'duplicate' && (
-                  <ResolutionButton icon={GitMerge} label="Merge" variant="primary" disabled={isProcessing} onClick={() => onResolve('merge')} />
-                )}
-                <ResolutionButton icon={Check} label={`Keep "${stripHtml(conflict.memoryA.title).slice(0, 20)}..."`} variant="success" disabled={isProcessing} onClick={() => onResolve('keep_a')} />
-                <ResolutionButton icon={Check} label={`Keep "${stripHtml(conflict.memoryB.title).slice(0, 20)}..."`} variant="success" disabled={isProcessing} onClick={() => onResolve('keep_b')} />
-                <ResolutionButton icon={X} label="Dismiss" variant="muted" disabled={isProcessing} onClick={() => onResolve('dismiss')} />
-              </div>
+        <div className="animate-fade-slide-in overflow-hidden">
+          <div className="px-3 pb-3 space-y-3 border-t border-primary/10 pt-3">
+            <p className="text-xs text-muted-foreground/70">{conflict.reason}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <MemoryPreview label="Memory A" memory={conflict.memoryA} agentName={nameA} accent="blue" />
+              <MemoryPreview label="Memory B" memory={conflict.memoryB} agentName={nameB} accent="amber" />
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {conflict.kind === 'duplicate' && (
+                <ResolutionButton icon={GitMerge} label="Merge" variant="primary" disabled={isProcessing} onClick={() => onResolve('merge')} />
+              )}
+              <ResolutionButton icon={Check} label={`Keep "${stripHtml(conflict.memoryA.title).slice(0, 20)}..."`} variant="success" disabled={isProcessing} onClick={() => onResolve('keep_a')} />
+              <ResolutionButton icon={Check} label={`Keep "${stripHtml(conflict.memoryB.title).slice(0, 20)}..."`} variant="success" disabled={isProcessing} onClick={() => onResolve('keep_b')} />
+              <ResolutionButton icon={X} label="Dismiss" variant="muted" disabled={isProcessing} onClick={() => onResolve('dismiss')} />
             </div>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 }

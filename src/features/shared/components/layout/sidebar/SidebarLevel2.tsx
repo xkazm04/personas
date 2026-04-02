@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Users, Sparkles, Plus, List, Star, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine, Palette } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Star, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine, Palette, CalendarClock } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
@@ -186,6 +186,9 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
       );
 
 
+    case 'schedules':
+      return <SchedulesSidebarNav />;
+
     case 'plugins':
       return <PluginsSidebarNav />;
 
@@ -202,6 +205,98 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
     default:
       return null;
   }
+}
+
+// -- Schedules persona filter sidebar --
+
+function SchedulesSidebarNav() {
+  const personas = useAgentStore((s) => s.personas);
+  const [cronAgents, setCronAgents] = useState<{ persona_id: string; persona_name: string }[]>([]);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void import('@/stores/overviewStore').then(({ useOverviewStore }) => {
+      const s = useOverviewStore.getState();
+      setCronAgents(s.cronAgents);
+      return useOverviewStore.subscribe((s) => setCronAgents(s.cronAgents));
+    }).then((unsub) => { return () => unsub?.(); });
+  }, []);
+
+  // Unique personas participating in schedules, sorted by name asc, with schedule count
+  const scheduledPersonas = useMemo(() => {
+    const countMap = new Map<string, number>();
+    for (const a of cronAgents) {
+      countMap.set(a.persona_id, (countMap.get(a.persona_id) ?? 0) + 1);
+    }
+    return personas
+      .filter((p) => countMap.has(p.id))
+      .map((p) => ({ ...p, scheduleCount: countMap.get(p.id) ?? 0 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [cronAgents, personas]);
+
+  // Broadcast filter to ScheduleTimeline via a custom event
+  const selectFilter = useCallback((personaId: string | null) => {
+    setSelectedPersonaId(personaId);
+    window.dispatchEvent(new CustomEvent('schedules:filter', { detail: { personaId } }));
+  }, []);
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-3 py-3 border-b border-primary/10">
+        <div className="flex items-center justify-between">
+          <span className="typo-label text-muted-foreground/50">Schedules</span>
+          <span className="text-[10px] font-mono text-muted-foreground/30">{cronAgents.length} total</span>
+        </div>
+      </div>
+      <div className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
+        {/* All personas */}
+        <button
+          onClick={() => selectFilter(null)}
+          aria-current={selectedPersonaId === null ? 'page' : undefined}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+            selectedPersonaId === null
+              ? 'bg-primary/10 text-foreground/90'
+              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+          }`}
+        >
+          <CalendarClock className="w-4 h-4 flex-shrink-0" />
+          All personas
+          <span className="ml-auto text-[10px] font-mono text-muted-foreground/40">{scheduledPersonas.length}</span>
+        </button>
+
+        {/* Divider */}
+        {scheduledPersonas.length > 0 && (
+          <div className="mx-2 my-1.5 border-t border-primary/8" />
+        )}
+
+        {/* Individual personas sorted by name */}
+        {scheduledPersonas.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => selectFilter(p.id)}
+            aria-current={selectedPersonaId === p.id ? 'page' : undefined}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+              selectedPersonaId === p.id
+                ? 'bg-primary/10 text-foreground/90'
+                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+            }`}
+          >
+            <PersonaIcon icon={p.icon} color={p.color} />
+            <span className="truncate text-[13px] min-w-0">{p.name}</span>
+            <span className="ml-auto text-[10px] font-mono text-muted-foreground/35 tabular-nums">{p.scheduleCount}</span>
+          </button>
+        ))}
+
+        {/* Empty state */}
+        {scheduledPersonas.length === 0 && (
+          <div className="text-center py-10 space-y-2">
+            <CalendarClock className="w-8 h-8 mx-auto text-muted-foreground/20" />
+            <p className="text-[12px] text-muted-foreground/40">No agents with schedules</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // -- Simplified agents sidebar (persona list removed, lives in table view now) --

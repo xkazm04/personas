@@ -23,11 +23,13 @@ macro_rules! event_names {
         /// Compile-time event name constants.
         ///
         /// Use these instead of raw string literals so typos become compile errors.
+        #[allow(dead_code)]
         pub mod event_name {
             $(pub const $const_name: &str = $str;)*
         }
 
         /// All registered event names (for diagnostics / exhaustiveness checks).
+        #[allow(dead_code)]
         pub const ALL_EVENT_NAMES: &[&str] = &[$($str),*];
     };
 }

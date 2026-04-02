@@ -25,14 +25,12 @@ pub fn validate_trigger_type(trigger_type: &str) -> Vec<ValidationError> {
 pub fn validate_config_json(config: Option<&str>) -> Vec<ValidationError> {
     if let Some(c) = config {
         let trimmed = c.trim();
-        if !trimmed.is_empty() {
-            if serde_json::from_str::<serde_json::Value>(trimmed).is_err() {
-                return vec![ValidationError::new(
-                    "config",
-                    "json",
-                    "Invalid config JSON",
-                )];
-            }
+        if !trimmed.is_empty() && serde_json::from_str::<serde_json::Value>(trimmed).is_err() {
+            return vec![ValidationError::new(
+                "config",
+                "json",
+                "Invalid config JSON",
+            )];
         }
     }
     vec![]

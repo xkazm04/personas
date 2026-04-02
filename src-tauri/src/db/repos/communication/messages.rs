@@ -499,6 +499,7 @@ mod tests {
                 content_type: None,
                 priority: Some("high".into()),
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();
@@ -539,6 +540,7 @@ mod tests {
                     content_type: None,
                     priority: None,
                     metadata: None,
+                    thread_id: None,
                 },
             )
             .unwrap();
@@ -572,6 +574,7 @@ mod tests {
                 content_type: None,
                 priority: None,
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();
@@ -601,6 +604,7 @@ mod tests {
                 content_type: None,
                 priority: None,
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();
@@ -615,6 +619,7 @@ mod tests {
                 content_type: None,
                 priority: None,
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();
@@ -655,6 +660,7 @@ mod tests {
                 content_type: None,
                 priority: None,
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();
@@ -669,6 +675,7 @@ mod tests {
                 content_type: None,
                 priority: None,
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();
@@ -699,6 +706,7 @@ mod tests {
                 content_type: None,
                 priority: None,
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();
@@ -731,6 +739,7 @@ mod tests {
                 content_type: None,
                 priority: None,
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();
@@ -777,6 +786,7 @@ mod tests {
                 content_type: None,
                 priority: None,
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();
@@ -825,6 +835,7 @@ mod tests {
                 content_type: None,
                 priority: None,
                 metadata: None,
+                thread_id: None,
             },
         )
         .unwrap();

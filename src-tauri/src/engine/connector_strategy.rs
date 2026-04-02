@@ -34,6 +34,7 @@ impl ResolvedToken {
         Self { token, expires_in_secs: None, refresh_token: None }
     }
 
+    #[allow(dead_code)]
     pub fn with_expiry(token: String, expires_in_secs: u64) -> Self {
         Self { token, expires_in_secs: Some(expires_in_secs), refresh_token: None }
     }

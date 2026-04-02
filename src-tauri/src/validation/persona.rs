@@ -109,8 +109,8 @@ pub fn validate_structured_prompt_schema(val: &serde_json::Value) -> Vec<Validat
     };
 
     // Must have at least identity or instructions to be a meaningful prompt
-    let has_identity = obj.get("identity").and_then(|v| v.as_str()).map_or(false, |s| !s.trim().is_empty());
-    let has_instructions = obj.get("instructions").and_then(|v| v.as_str()).map_or(false, |s| !s.trim().is_empty());
+    let has_identity = obj.get("identity").and_then(|v| v.as_str()).is_some_and(|s| !s.trim().is_empty());
+    let has_instructions = obj.get("instructions").and_then(|v| v.as_str()).is_some_and(|s| !s.trim().is_empty());
     if !has_identity && !has_instructions {
         errors.push(ValidationError::new(
             "structured_prompt",
@@ -153,7 +153,7 @@ pub fn validate_structured_prompt_schema(val: &serde_json::Value) -> Vec<Validat
                     // Must have at least one heading key
                     let has_heading = ["title", "label", "name", "key"]
                         .iter()
-                        .any(|k| sec_obj.get(*k).and_then(|v| v.as_str()).map_or(false, |s| !s.is_empty()));
+                        .any(|k| sec_obj.get(*k).and_then(|v| v.as_str()).is_some_and(|s| !s.is_empty()));
                     if !has_heading {
                         errors.push(ValidationError::new(
                             "structured_prompt",
@@ -193,7 +193,7 @@ pub fn validate_structured_prompt_schema(val: &serde_json::Value) -> Vec<Validat
 }
 
 pub fn validate_max_concurrent(v: i32) -> Vec<ValidationError> {
-    if v < MAX_CONCURRENT_MIN || v > MAX_CONCURRENT_MAX {
+    if !(MAX_CONCURRENT_MIN..=MAX_CONCURRENT_MAX).contains(&v) {
         vec![ValidationError::new(
             "max_concurrent",
             "range",

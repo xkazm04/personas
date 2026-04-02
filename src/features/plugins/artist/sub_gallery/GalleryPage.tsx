@@ -27,10 +27,9 @@ export default function GalleryPage() {
       );
     }
     list.sort((a, b) => {
-      let cmp = 0;
-      if (sortBy === 'name') cmp = a.fileName.localeCompare(b.fileName);
-      else if (sortBy === 'date') cmp = a.createdAt.localeCompare(b.createdAt);
-      else cmp = a.fileSize - b.fileSize;
+      const cmp = sortBy === 'name' ? a.fileName.localeCompare(b.fileName)
+        : sortBy === 'date' ? a.createdAt.localeCompare(b.createdAt)
+        : a.fileSize - b.fileSize;
       return sortDir === 'desc' ? -cmp : cmp;
     });
     return list;

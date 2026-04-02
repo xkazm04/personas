@@ -103,7 +103,7 @@ pub fn register_claude_desktop_mcp() -> Result<String, AppError> {
         .map_err(|e| AppError::Internal(format!("Failed to rename temp config: {e}")))?;
 
     tracing::info!(config = %config_path.display(), "Registered Personas MCP server in Claude Desktop");
-    Ok(format!("Registered. Restart Claude Desktop to activate."))
+    Ok("Registered. Restart Claude Desktop to activate.".to_string())
 }
 
 #[tauri::command]

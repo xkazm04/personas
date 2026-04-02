@@ -83,7 +83,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
 
   const statusPredicate = useCallback((e: GlobalExecution) =>
     filter === 'running' ? e.status === 'running' || e.status === 'pending' : e.status === filter,
-  [filter]);
+    [filter]);
 
   const { filtered: filteredExecutions } = useFilteredCollection(personaFiltered, {
     custom: [filter !== 'all' ? statusPredicate : null],
@@ -238,9 +238,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                     const status = getStatusEntry(exec.status);
                     const borderAccent =
                       exec.status === 'running' || exec.status === 'pending' ? 'border-l-blue-400'
-                      : exec.status === 'completed' ? 'border-l-emerald-400'
-                      : exec.status === 'failed' ? 'border-l-red-400'
-                      : 'border-l-amber-400';
+                        : exec.status === 'completed' ? 'border-l-emerald-400'
+                          : exec.status === 'failed' ? 'border-l-red-400'
+                            : 'border-l-amber-400';
                     return IS_MOBILE ? (
                       <div
                         key={exec.id} role="row" tabIndex={0}
@@ -250,7 +250,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" />
+                            <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
                             <span className="typo-heading text-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
                           </div>
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg typo-caption flex-shrink-0 ${badgeClass(status)}`}>
@@ -272,7 +272,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         className={`grid items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                       >
                         <div className="flex items-center gap-2 px-4 min-w-0">
-                          <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" />
+                          <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
                           <span className="text-sm text-muted-foreground/80 truncate">{exec.persona_name || 'Unknown'}</span>
                         </div>
                         <div className="px-4">

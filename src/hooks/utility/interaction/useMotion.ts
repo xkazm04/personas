@@ -1,6 +1,6 @@
 import { useMemo, useSyncExternalStore } from 'react';
 
-const MQ = typeof window !== 'undefined'
+const MQ = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
   ? window.matchMedia('(prefers-reduced-motion: reduce)')
   : null;
 

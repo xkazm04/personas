@@ -5,7 +5,6 @@ use std::sync::Arc;
 use std::os::windows::process::CommandExt;
 
 use chrono::Utc;
-use serde::Deserialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -112,7 +111,7 @@ pub fn artist_list_assets(
     asset_type: Option<String>,
 ) -> Result<Vec<ArtistAsset>, AppError> {
     let pool = &state.db;
-    repo::list_assets(&pool, asset_type.as_deref())
+    repo::list_assets(pool, asset_type.as_deref())
 }
 
 /// Import a scanned asset into the database. Returns null if already exists.
@@ -122,7 +121,7 @@ pub fn artist_import_asset(
     asset: ArtistAsset,
 ) -> Result<Option<ArtistAsset>, AppError> {
     let pool = &state.db;
-    repo::insert_asset(&pool, &asset)
+    repo::insert_asset(pool, &asset)
 }
 
 /// Delete an asset from the database.
@@ -132,7 +131,7 @@ pub fn artist_delete_asset(
     id: String,
 ) -> Result<bool, AppError> {
     let pool = &state.db;
-    repo::delete_asset(&pool, &id)
+    repo::delete_asset(pool, &id)
 }
 
 /// Update tags on an asset.
@@ -143,7 +142,7 @@ pub fn artist_update_tags(
     tags: String,
 ) -> Result<ArtistAsset, AppError> {
     let pool = &state.db;
-    repo::update_asset_tags(&pool, &id, &tags)
+    repo::update_asset_tags(pool, &id, &tags)
 }
 
 /// Get the default artist folder path (~/Personas/Artist).
@@ -312,8 +311,7 @@ async fn run_creative_cli(
 
     // -- MCP config: wire up Blender MCP server so the CLI has real tools --
     // Keep the temp file alive for the entire function scope.
-    let _mcp_config_file: Option<tempfile::NamedTempFile>;
-    if has_blender {
+    let _mcp_config_file: Option<tempfile::NamedTempFile> = if has_blender {
         let mcp_config = json!({
             "mcpServers": {
                 "blender": {
@@ -338,10 +336,10 @@ async fn run_creative_cli(
             session_id,
             format!("[Creative] Blender MCP config: {}", tmp.path().display()),
         );
-        _mcp_config_file = Some(tmp);
+        Some(tmp)
     } else {
-        _mcp_config_file = None;
-    }
+        None
+    };
 
     let mut cmd = tokio::process::Command::new(&cli_args.command);
     cmd.args(&cli_args.args)

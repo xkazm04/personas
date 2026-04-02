@@ -4,9 +4,9 @@
  * Lifecycle states for a persona trigger.
  *
  * Valid transitions:
- *   Active  -> Paused | Errored | Disabled
- *   Paused  -> Active | Disabled
- *   Errored -> Active | Paused | Disabled
+ *   Active   -> Paused | Errored | Disabled
+ *   Paused   -> Active | Disabled
+ *   Errored  -> Active | Paused | Disabled
  *   Disabled -> Active
  *
  * Persisted in the `status TEXT` column on `persona_triggers`.

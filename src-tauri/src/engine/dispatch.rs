@@ -54,6 +54,7 @@ impl<'a> DispatchContext<'a> {
     ///
     /// The `gate_config` is shared across all protocol messages in the execution,
     /// avoiding repeated DB queries. Load it once with [`quality_gate::load`]
+    #[allow(clippy::too_many_arguments)]
     /// before the message processing loop and pass the same `Arc` to every context.
     pub fn new(
         app: &'a AppHandle,

@@ -588,6 +588,8 @@ mod tests {
             trust_level: PersonaTrustLevel::Manual,
             trust_origin: PersonaTrustOrigin::User,
             trust_verified_at: None,
+            trust_score: 0.0,
+            parameters: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
         }

@@ -32,6 +32,7 @@ use crate::ActiveProcessRegistry;
 /// underlying enum. Enums created with `declare_lifecycle!` satisfy most of
 /// these requirements already; implement the remaining methods in a small
 /// `impl SessionState for ...` block.
+#[allow(dead_code)]
 pub trait SessionState: Copy + Clone + Send + Sync + 'static + std::fmt::Debug {
     /// Entity name for error messages (e.g. "execution", "lab_run").
     const ENTITY: &'static str;
@@ -92,6 +93,7 @@ pub trait SessionState: Copy + Clone + Send + Sync + 'static + std::fmt::Debug {
 ///
 /// For `ActiveProcessRegistry` integration, use [`ProcessContext`] which
 /// provides guarded registration and cancellation flag propagation.
+#[allow(dead_code)]
 pub trait ProcessSession {
     /// The state machine enum for this process domain.
     type State: SessionState;
@@ -158,6 +160,7 @@ pub trait ProcessSession {
 /// if ctx.is_cancelled() { break; }
 /// // ctx auto-unregisters when dropped
 /// ```
+#[allow(dead_code)]
 pub struct ProcessContext {
     domain: String,
     run_id: String,
@@ -168,6 +171,7 @@ pub struct ProcessContext {
     owns_registration: bool,
 }
 
+#[allow(dead_code)]
 impl ProcessContext {
     /// Register a new process run and return a context that auto-unregisters on drop.
     pub fn register(
@@ -449,7 +453,7 @@ mod tests {
             LabRunStatus::Cancelled,
         ] {
             let s = SessionState::as_str(&status);
-            let parsed = LabRunStatus::from_db(s).unwrap();
+            let parsed = <LabRunStatus as SessionState>::from_db(s).unwrap();
             assert_eq!(parsed, status);
         }
     }

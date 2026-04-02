@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Chrome, LogOut, User } from "lucide-react";
+import { Globe, LogOut, User } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -36,7 +36,7 @@ export default function AuthButton() {
         onClick={loginWithGoogle}
         disabled={isLoading}
         icon={
-          <Chrome
+          <Globe
             className={`w-5 h-5 transition-colors text-muted-foreground/90 group-hover:text-primary ${
               isLoading ? "animate-pulse" : ""
             }`}

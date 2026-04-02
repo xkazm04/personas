@@ -490,21 +490,21 @@ describe("matrixBuildSlice", () => {
     it("wraps single pending_question into buildPendingQuestions array", () => {
       useAgentStore.getState().hydrateBuildSession({
         id: "session-abc",
-        persona_id: "p-1",
+        personaId: "p-1",
         phase: "awaiting_input",
-        resolved_cells: {
+        resolvedCells: {
           connectors: { tools: ["github"] },
           "use-cases": { name: "Code Review" },
         },
-        pending_question: {
+        pendingQuestion: {
           cellKey: "triggers",
           question: "When should this run?",
           options: ["On push", "On schedule"],
         },
-        agent_ir: { draft: "ir-data" },
+        agentIr: { draft: "ir-data" },
         intent: "Build a code review agent",
-        error_message: null,
-        created_at: "2026-03-14T00:00:00Z",
+        errorMessage: null,
+        createdAt: "2026-03-14T00:00:00Z",
       });
 
       const s = useAgentStore.getState();
@@ -525,14 +525,14 @@ describe("matrixBuildSlice", () => {
     it("sets empty array when pending_question is null", () => {
       useAgentStore.getState().hydrateBuildSession({
         id: "s2",
-        persona_id: "p-2",
+        personaId: "p-2",
         phase: "resolving",
-        resolved_cells: { memory: { enabled: true } },
-        pending_question: null,
-        agent_ir: null,
+        resolvedCells: { memory: { enabled: true } },
+        pendingQuestion: null,
+        agentIr: null,
         intent: "Build an agent",
-        error_message: null,
-        created_at: "2026-03-14T00:00:00Z",
+        errorMessage: null,
+        createdAt: "2026-03-14T00:00:00Z",
       });
 
       const s = useAgentStore.getState();
@@ -544,14 +544,14 @@ describe("matrixBuildSlice", () => {
     it("handles testing phase from persisted session", () => {
       useAgentStore.getState().hydrateBuildSession({
         id: "s3",
-        persona_id: "p-3",
+        personaId: "p-3",
         phase: "testing",
-        resolved_cells: {},
-        pending_question: null,
-        agent_ir: null,
+        resolvedCells: {},
+        pendingQuestion: null,
+        agentIr: null,
         intent: "Build an agent",
-        error_message: null,
-        created_at: "2026-03-14T00:00:00Z",
+        errorMessage: null,
+        createdAt: "2026-03-14T00:00:00Z",
       });
 
       expect(useAgentStore.getState().buildPhase).toBe("testing");
@@ -560,14 +560,14 @@ describe("matrixBuildSlice", () => {
     it("handles test_complete phase from persisted session", () => {
       useAgentStore.getState().hydrateBuildSession({
         id: "s4",
-        persona_id: "p-4",
+        personaId: "p-4",
         phase: "test_complete",
-        resolved_cells: {},
-        pending_question: null,
-        agent_ir: null,
+        resolvedCells: {},
+        pendingQuestion: null,
+        agentIr: null,
         intent: "Build an agent",
-        error_message: null,
-        created_at: "2026-03-14T00:00:00Z",
+        errorMessage: null,
+        createdAt: "2026-03-14T00:00:00Z",
       });
 
       expect(useAgentStore.getState().buildPhase).toBe("test_complete");
@@ -576,14 +576,14 @@ describe("matrixBuildSlice", () => {
     it("handles promoted phase from persisted session", () => {
       useAgentStore.getState().hydrateBuildSession({
         id: "s5",
-        persona_id: "p-5",
+        personaId: "p-5",
         phase: "promoted",
-        resolved_cells: {},
-        pending_question: null,
-        agent_ir: null,
+        resolvedCells: {},
+        pendingQuestion: null,
+        agentIr: null,
         intent: "Build an agent",
-        error_message: null,
-        created_at: "2026-03-14T00:00:00Z",
+        errorMessage: null,
+        createdAt: "2026-03-14T00:00:00Z",
       });
 
       expect(useAgentStore.getState().buildPhase).toBe("promoted");

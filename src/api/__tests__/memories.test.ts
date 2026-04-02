@@ -73,9 +73,11 @@ describe("api/overview/memories", () => {
 
   it("createMemory rejects out-of-range importance", () => {
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       createMemory({ persona_id: "p-1", title: "t", content: "c", importance: 0 } as any),
     ).toThrow("Importance must be");
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       createMemory({ persona_id: "p-1", title: "t", content: "c", importance: 6 } as any),
     ).toThrow("Importance must be");
   });

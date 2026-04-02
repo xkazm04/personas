@@ -316,6 +316,7 @@ struct UseCaseData {
 }
 
 /// All data assembled before the transaction begins.
+#[allow(dead_code)]
 struct PromotePreparation {
     use_cases: UseCaseData,
     tool_actions: Vec<ToolAction>,
@@ -327,6 +328,7 @@ struct PromotePreparation {
 }
 
 /// Mutable counters tracked during the transaction.
+#[allow(dead_code)]
 struct PromoteCounters {
     tools_created: u32,
     triggers_created: u32,
@@ -898,12 +900,11 @@ fn update_trigger_schedules(
     for trigger_id in trigger_ids {
         if let Ok(trigger) = trigger_repo::get_by_id(db, trigger_id) {
             if let Some(next_at) = crate::engine::scheduler::compute_next_trigger_at(&trigger, chrono::Utc::now()) {
-                let _ = db.get().and_then(|c| {
+                let _ = db.get().map(|c| {
                     c.execute(
                         "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
                         rusqlite::params![next_at, chrono::Utc::now().to_rfc3339(), trigger_id],
                     ).ok();
-                    Ok(())
                 });
             }
         }

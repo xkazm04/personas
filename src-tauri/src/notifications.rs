@@ -444,6 +444,7 @@ async fn send_via_resend(
 // Public notification helpers
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)]
 pub fn notify_execution_completed(
     app: &AppHandle,
     persona_name: &str,
@@ -455,6 +456,7 @@ pub fn notify_execution_completed(
 }
 
 /// Richer execution notification with cost, model, and error context.
+#[allow(clippy::too_many_arguments)]
 pub fn notify_execution_completed_rich(
     app: &AppHandle,
     persona_name: &str,

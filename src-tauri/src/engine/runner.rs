@@ -345,7 +345,7 @@ pub async fn run_execution(
         has_workspace_instructions: workspace_instructions.is_some(),
         workspace_id: persona.group_id.clone(),
         tool_names: tools.iter().map(|t| t.name.clone()).collect(),
-        credential_connectors: cred_hints.iter().map(|h| h.clone()).collect(),
+        credential_connectors: cred_hints.to_vec(),
         routing_rule: None, // Set after BYOM policy evaluation in spawn stage
         compliance_rule: None,
         continuation_mode: match &continuation {
@@ -519,10 +519,10 @@ pub async fn run_execution(
             logger.log(&format!("BYOM policy is corrupt — execution blocked: {e}"));
             return ExecutionResult {
                 success: false,
-                error: Some(format!(
+                error: Some(
                     "BYOM policy is corrupt and cannot be loaded. \
-                     Please reset or fix the policy in Settings → BYOM before running executions."
-                )),
+                     Please reset or fix the policy in Settings → BYOM before running executions.".to_string()
+                ),
                 log_file_path: Some(log_file_path),
                 duration_ms: start_time.elapsed().as_millis() as u64,
                 ..default_result()

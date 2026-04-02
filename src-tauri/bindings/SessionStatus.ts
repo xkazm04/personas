@@ -2,6 +2,5 @@
 
 /**
  * Valid session statuses for an n8n transform session.
- * Use `as_str()` when writing to the database or setting status fields.
  */
 export type SessionStatus = "draft" | "analyzing" | "transforming" | "awaiting_answers" | "editing" | "confirmed" | "failed" | "interrupted";

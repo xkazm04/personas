@@ -112,7 +112,6 @@ export function useGalleryQuery(
   // identical elements doesn't re-trigger the heavy mount effect (6+ API calls).
   const stableCoverageServiceTypes = useMemo(
     () => coverageServiceTypes,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [coverageServiceTypes?.join('\0')],
   );
 

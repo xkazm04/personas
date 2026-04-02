@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::params;
 
 use crate::db::models::{
     CreateTeamInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember, PipelineRun,
@@ -195,6 +195,7 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
                 "SELECT run_id, member_id, persona_id, title, content, category, importance, tags
                  FROM team_memories WHERE team_id = ?1",
             )?;
+            #[allow(clippy::type_complexity)]
             let mem_rows: Vec<(
                 Option<String>,
                 Option<String>,

@@ -1112,6 +1112,7 @@ pub fn get_anomaly_drilldown(
              WHERE r.created_at BETWEEN ?1 AND ?2
              ORDER BY r.created_at"
         )?;
+        #[allow(clippy::type_complexity)]
         let rows: Vec<(String, String, Option<String>, String, String, Option<String>, String)> = stmt
             .query_map(params![&window_start, &window_end], |row| {
                 Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?))
@@ -1147,6 +1148,7 @@ pub fn get_anomaly_drilldown(
              ORDER BY created_at"
         };
         let mut stmt = conn.prepare(query)?;
+        #[allow(clippy::type_complexity)]
         let rows: Vec<(String, String, String, String, bool, String, String, String)> = if let Some(pid) = persona_id {
             stmt.query_map(params![&window_start, &window_end, pid], |row| {
                 Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?, row.get(7)?))
@@ -1448,7 +1450,7 @@ mod tests {
 
         // Summary with no executions
         let summary = get_summary(&pool, Some(30), None).unwrap();
-        assert_eq!(summary["total_executions"], 0);
-        assert_eq!(summary["active_personas"], 0);
+        assert_eq!(summary.total_executions, 0);
+        assert_eq!(summary.active_personas, 0);
     }
 }

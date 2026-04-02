@@ -206,7 +206,7 @@ export function KnowledgeRow({ entry, personaName, personaIcon, personaColor, on
   return (
     <div className="border border-primary/8 rounded-xl bg-background/40 hover:bg-background/60 transition-colors">
       <div role="button" tabIndex={0} onClick={toggleExpanded} onKeyDown={handleRowKeyDown} className="w-full flex items-center gap-3 px-4 py-3 text-left cursor-pointer">
-        <PersonaIcon icon={personaIcon ?? null} color={personaColor ?? null} display="framed" />
+        <PersonaIcon icon={personaIcon ?? null} color={personaColor ?? null} display="framed" frameSize={"lg"} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-foreground/90 truncate">

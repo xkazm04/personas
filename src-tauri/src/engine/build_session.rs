@@ -816,7 +816,7 @@ pub async fn run_tool_tests(
 
         let mut fb_passed = 0usize;
         let mut fb_failed = 0usize;
-        let mut fb_skipped = 0usize;
+        let fb_skipped = 0usize;
         let mut fb_cred_issues: Vec<serde_json::Value> = Vec::new();
         let fallback_results: Vec<serde_json::Value> = tools
             .iter()
@@ -846,7 +846,7 @@ pub async fn run_tool_tests(
                         || resolved_cred_names.iter().any(|cred| name_lower.starts_with(cred))
                         || hints.iter().any(|h| {
                             let h_lower = h.to_lowercase();
-                            h_lower.contains(&name_lower) || name_lower.split('_').next().map_or(false, |prefix| h_lower.contains(prefix))
+                            h_lower.contains(&name_lower) || name_lower.split('_').next().is_some_and(|prefix| h_lower.contains(prefix))
                         });
                     if has_cred {
                         // Credential exists but CLI didn't generate a test — verify via healthcheck

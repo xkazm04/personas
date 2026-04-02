@@ -65,17 +65,15 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
       <div className="flex items-center border-b border-primary/5 px-1.5 pt-2 pb-1.5 gap-1 flex-shrink-0">
         <button
           onClick={() => setView('personas')}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-md transition-colors ${
-            view === 'personas' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-md transition-colors ${view === 'personas' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+            }`}
         >
           <Bot className="w-3 h-3" />Personas
         </button>
         <button
           onClick={() => setView('marketplace')}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-md transition-colors ${
-            view === 'marketplace' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-md transition-colors ${view === 'marketplace' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40'
+            }`}
         >
           <Store className="w-3 h-3" />Marketplace
         </button>
@@ -124,7 +122,7 @@ export function PersonaPalette({ personas, triggers, onCanvasPersonaIds, onCanva
                     title={`Drag or click to place "${p.name}" on canvas`}
                   >
                     <div className="flex-shrink-0 icon-frame-sm bg-primary/5">
-                      <PersonaIcon icon={p.icon} color={p.color} size="w-3 h-3" framed />
+                      <PersonaIcon icon={p.icon} color={p.color} size="w-3 h-3" framed frameSize={"lg"} />
                     </div>
                     <span className="text-[11px] font-medium text-foreground truncate flex-1 min-w-0">{p.name}</span>
                     <div className="flex items-center gap-1 flex-shrink-0 min-w-[28px] justify-end">

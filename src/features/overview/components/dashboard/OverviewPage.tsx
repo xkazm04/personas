@@ -16,7 +16,7 @@ const MessageList = lazyRetry(() => import('@/features/overview/sub_messages/com
 const EventLogList = lazyRetry(() => import('@/features/overview/sub_events/components/EventLogList'));
 const KnowledgeHub = lazyRetry(() => import('@/features/overview/components/dashboard/cards/KnowledgeHub'));
 const SLADashboard = lazyRetry(() => import('@/features/overview/sub_sla/components/SLADashboard'));
-const ScheduleTimeline = lazyRetry(() => import('@/features/overview/sub_schedules/components/ScheduleTimeline'));
+
 const PersonaHealthDashboard = lazyRetry(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
 
 function OverviewContent() {
@@ -37,7 +37,7 @@ function OverviewContent() {
         overviewTab === 'events' ? <EventLogList /> :
         overviewTab === 'knowledge' ? <KnowledgeHub /> :
         overviewTab === 'sla' ? <SLADashboard /> :
-        overviewTab === 'schedules' ? <ScheduleTimeline /> :
+
         overviewTab === 'health' ? <PersonaHealthDashboard /> :
         <DashboardWithSubtabs />}
       </Suspense>

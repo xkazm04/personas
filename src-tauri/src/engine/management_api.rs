@@ -69,7 +69,6 @@ pub fn management_router(state: ManagementState) -> Router {
         // Automation settings
         .route("/api/settings/auto-optimize/{persona_id}", get(get_auto_optimize).post(set_auto_optimize))
         .route("/api/settings/health-watch/{persona_id}", get(get_health_watch).post(set_health_watch))
-        .route("/api/settings/cli-fallback/{persona_id}", get(get_cli_fallback))
         .with_state(Arc::new(state))
         .layer(
             CorsLayer::new()
@@ -367,7 +366,7 @@ async fn improve_prompt(
         Ok(p) => p,
         Err(_) => return err_json(StatusCode::NOT_FOUND, "Persona not found").into_response(),
     };
-    let tools = tool_repo::get_tools_for_persona(&state.pool, &persona_id).unwrap_or_default();
+    let _tools = tool_repo::get_tools_for_persona(&state.pool, &persona_id).unwrap_or_default();
 
     // Load results based on mode
     let results_text = match load_lab_results_for_improvement(&state.pool, &run_id, &input.mode) {
@@ -580,39 +579,4 @@ async fn set_health_watch(
         Ok(()) => ok_json(config).into_response(),
         Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
     }
-}
-
-async fn get_cli_fallback(
-    AxumState(state): AxumState<Arc<ManagementState>>,
-    Path(persona_id): Path<String>,
-) -> impl IntoResponse {
-    let persona = match persona_repo::get_by_id(&state.pool, &persona_id) {
-        Ok(p) => p,
-        Err(_) => return err_json(StatusCode::NOT_FOUND, "Persona not found").into_response(),
-    };
-
-    // Generate the claude -p command for external scheduling
-    let mcp_server_path = crate::commands::infrastructure::system::resolve_mcp_server_path()
-        .map(|p| p.to_string_lossy().to_string())
-        .unwrap_or_else(|| "<path-to-personas>/scripts/mcp-server/index.mjs".into());
-
-    let command = format!(
-        r#"claude -p "Use the personas MCP server to execute the persona '{}' and report the result." --mcp-config '{{"personas":{{"command":"node","args":["{}"]}}}}' --allowedTools 'mcp__personas__*'"#,
-        persona.name.replace('"', r#"\""#),
-        mcp_server_path.replace('\\', "\\\\"),
-    );
-
-    // Platform-specific cron instructions
-    let cron_instruction = if cfg!(target_os = "windows") {
-        format!("Windows Task Scheduler:\n  schtasks /create /tn \"Personas-{}\" /tr \"{}\" /sc daily /st 08:00", persona_id.chars().take(8).collect::<String>(), command)
-    } else {
-        format!("Add to crontab (crontab -e):\n  0 8 * * * {}", command)
-    };
-
-    ok_json(serde_json::json!({
-        "persona_id": persona_id,
-        "persona_name": persona.name,
-        "command": command,
-        "cron_instruction": cron_instruction,
-    })).into_response()
 }

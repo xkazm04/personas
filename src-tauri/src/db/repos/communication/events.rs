@@ -1470,6 +1470,7 @@ mod tests {
             )
             .unwrap();
         assert_eq!(enabled_before, 1);
+        drop(conn); // Release connection back to the pool before update_subscription needs it
 
         // Update: disable the subscription and change event_type
         update_subscription(
@@ -1484,6 +1485,7 @@ mod tests {
         .unwrap();
 
         // Verify the trigger was also updated
+        let conn = pool.get().unwrap();
         let (enabled_after, status): (i32, String) = conn
             .query_row(
                 "SELECT enabled, status FROM persona_triggers

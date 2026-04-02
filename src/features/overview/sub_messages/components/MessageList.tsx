@@ -267,7 +267,7 @@ export default function MessageList() {
                       <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-muted-foreground/60">
                         {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       </div>
-                      <PersonaIcon icon={(parent as PersonaMessage).persona_icon ?? null} color={(parent as PersonaMessage).persona_color ?? null} display="framed" />
+                      <PersonaIcon icon={(parent as PersonaMessage).persona_icon ?? null} color={(parent as PersonaMessage).persona_color ?? null} display="framed" frameSize={"lg"} />
                       <div className="flex-1 min-w-0">
                         <span className={`text-sm truncate block ${parent.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>
                           {parent.title || (parent.content ?? '').slice(0, 80)}

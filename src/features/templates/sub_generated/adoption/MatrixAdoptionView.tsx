@@ -6,7 +6,6 @@
  */
 import { useCallback, useEffect, useState, useRef } from "react";
 import { invokeWithTimeout } from "@/lib/tauriInvoke";
-import { answerBuildQuestion } from "@/api/agents/buildSession";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("template-adoption");
@@ -176,34 +175,26 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     if (Object.keys(defaults).length > 0) setAdoptionAnswers(defaults);
   }, [hasAdoptionQuestions, adoptionQuestions]);
 
-  // When questions are completed, send answers as a refinement to update agent_ir, then transition to draft_ready
+  // When questions are completed, store answers in the build draft and transition to draft_ready.
+  // Adoption sessions are pre-designed templates — they don't have active LLM build tasks,
+  // so we skip the refinement call and apply answers directly as parameter overrides.
   useEffect(() => {
     if (!questionsComplete || !seeded) return;
-    const sessionId = useAgentStore.getState().buildSessionId;
-    if (!sessionId || Object.keys(adoptionAnswers).length === 0) {
-      useAgentStore.setState({ buildPhase: "draft_ready" });
-      return;
-    }
-    // Build a summary of answers keyed by question text
-    const answerLines = adoptionQuestions
-      .filter((q) => adoptionAnswers[q.id])
-      .map((q) => `${q.question}: ${adoptionAnswers[q.id]}`);
-    if (answerLines.length === 0) {
-      useAgentStore.setState({ buildPhase: "draft_ready" });
-      return;
-    }
-    (async () => {
-      try {
-        await answerBuildQuestion(
-          sessionId,
-          "_refine",
-          `User answered the adoption questionnaire. Update the agent configuration (dimensions, triggers, parameters) based on these answers:\n${answerLines.join("\n")}`,
-        );
-      } catch (err) {
-        logger.error("Failed to apply adoption answers as refinement", { err });
+
+    // Merge adoption answers into the build draft as parameter overrides
+    const currentDraft = useAgentStore.getState().buildDraft as Record<string, unknown> | null;
+    if (currentDraft && Object.keys(adoptionAnswers).length > 0) {
+      const answerMap: Record<string, string> = {};
+      for (const q of adoptionQuestions) {
+        if (adoptionAnswers[q.id]) answerMap[q.id] = adoptionAnswers[q.id]!;
       }
+      useAgentStore.setState({
+        buildDraft: { ...currentDraft, _adoption_answers: answerMap },
+        buildPhase: "draft_ready",
+      });
+    } else {
       useAgentStore.setState({ buildPhase: "draft_ready" });
-    })();
+    }
   }, [questionsComplete, seeded, adoptionAnswers, adoptionQuestions]);
 
   // Seed the matrix cells from the template on first render

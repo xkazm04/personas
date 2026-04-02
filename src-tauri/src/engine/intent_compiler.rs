@@ -14,6 +14,7 @@ use crate::engine::design::{self, DESIGN_OUTPUT_SCHEMA};
 
 /// Input for intent compilation — a persona with its available tools/connectors
 /// and a plain-language intent string.
+#[allow(dead_code)]
 pub struct IntentInput<'a> {
     pub persona: &'a Persona,
     pub tools: &'a [PersonaToolDefinition],
@@ -27,6 +28,7 @@ pub struct IntentInput<'a> {
 
 /// The intent compiler — extends the standard persona design pipeline with
 /// use cases, model recommendations, and test scenarios.
+#[allow(dead_code)]
 pub struct IntentCompiler;
 
 impl CompilationPipeline for IntentCompiler {

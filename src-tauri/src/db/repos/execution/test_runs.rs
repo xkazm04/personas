@@ -226,7 +226,7 @@ pub fn get_results_by_run(
 mod tests {
     use super::*;
     use crate::db::init_test_db;
-    use crate::db::models::CreatePersonaInput;
+    use crate::db::models::{CreatePersonaInput, Json};
     use crate::db::repos::core::personas;
 
     fn setup() -> (DbPool, String) {
@@ -300,8 +300,8 @@ mod tests {
                 provider: "anthropic".into(),
                 status: "passed".into(),
                 output_preview: Some("Processed 3 emails".into()),
-                tool_calls_expected: Some(r#"["gmail_read","http_request"]"#.into()),
-                tool_calls_actual: Some(r#"["gmail_read","http_request"]"#.into()),
+                tool_calls_expected: Some(Json(vec!["gmail_read".to_string(), "http_request".to_string()])),
+                tool_calls_actual: Some(Json(vec!["gmail_read".to_string(), "http_request".to_string()])),
                 tool_accuracy_score: Some(100),
                 output_quality_score: Some(85),
                 protocol_compliance: Some(90),

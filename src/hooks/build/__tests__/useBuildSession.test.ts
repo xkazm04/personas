@@ -444,18 +444,18 @@ describe("useBuildSession", () => {
     it("hydrates from SQLite when an active session exists", async () => {
       mockGetActiveBuildSession.mockResolvedValueOnce({
         id: "persisted-session",
-        persona_id: "p-1",
+        personaId: "p-1",
         phase: "awaiting_input",
-        resolved_cells: { connectors: { tools: ["github"] } },
-        pending_question: {
+        resolvedCells: { connectors: { tools: ["github"] } },
+        pendingQuestion: {
           cellKey: "triggers",
           question: "When?",
           options: null,
         },
-        agent_ir: null,
+        agentIr: null,
         intent: "Build agent",
-        error_message: null,
-        created_at: "2026-03-14T00:00:00Z",
+        errorMessage: null,
+        createdAt: "2026-03-14T00:00:00Z",
       });
 
       await act(async () => {

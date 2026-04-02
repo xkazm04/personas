@@ -64,6 +64,7 @@ impl From<PipelineOutcome<serde_json::Value>> for ParseOutcome {
 
 /// The persona design compiler — implements the generic pipeline for
 /// persona prompt assembly, output parsing, and feasibility validation.
+#[allow(dead_code)]
 pub struct PersonaCompiler {
     /// Tool names available for feasibility checking (stage 4).
     pub tool_names: Vec<String>,
@@ -196,6 +197,8 @@ mod tests {
             trust_level: PersonaTrustLevel::Manual,
             trust_origin: PersonaTrustOrigin::User,
             trust_verified_at: None,
+            trust_score: 0.0,
+            parameters: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
         }

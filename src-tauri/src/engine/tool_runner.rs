@@ -87,6 +87,7 @@ pub async fn invoke_tool_direct(
     let kind = tool.tool_kind().map_err(AppError::Execution)?;
 
     let result = {
+        #[allow(clippy::type_complexity)]
         let fut: std::pin::Pin<Box<dyn std::future::Future<Output = Result<(String, String), AppError>> + Send>> = match kind {
             ToolKind::Automation => Box::pin(invoke_automation_tool(pool, tool, input_json)),
             ToolKind::Script => Box::pin(invoke_script(tool, input_json, &env_map)),
@@ -521,7 +522,7 @@ pub fn tool_def_from_ir(tool: &crate::db::models::agent_ir::AgentIrTool) -> Opti
                 input_schema: None,
                 output_schema: None,
                 requires_credential_type: d.requires_credential_type.clone()
-                    .or_else(|| Some(name)),
+                    .or(Some(name)),
                 implementation_guide: d.implementation_guide.clone(),
                 is_builtin: false,
                 created_at: String::new(),

@@ -3,10 +3,10 @@ import type { LabRunStatus } from "./LabRunStatus";
 
 export type LabEvalRun = { id: string, personaId: string, status: LabRunStatus, 
 /**
- * JSON array of version IDs, e.g. ["uuid1","uuid2","uuid3"]
+ * Version IDs, e.g. ["uuid1","uuid2","uuid3"]
  */
-versionIds: string, 
+versionIds: Array<string>, 
 /**
- * JSON array of version numbers, e.g. [1,3,5]
+ * Version numbers, e.g. [1,3,5]
  */
-versionNumbers: string, modelsTested: string, scenariosCount: number, useCaseFilter: string | null, testInput: string | null, summary: string | null, llmSummary: string | null, progressJson: string | null, error: string | null, createdAt: string, completedAt: string | null, };
+versionNumbers: Array<number>, modelsTested: Array<string>, scenariosCount: number, useCaseFilter: string | null, testInput: string | null, summary: string | null, llmSummary: string | null, progressJson: string | null, error: string | null, createdAt: string, completedAt: string | null, };

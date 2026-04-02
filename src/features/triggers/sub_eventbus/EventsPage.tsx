@@ -62,8 +62,8 @@ export function EventsPage() {
       <ContentHeader
         icon={<Radio className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
-        title="Event Bus"
-        subtitle="Central event hub — agents publish and subscribe to events through this shared bus"
+        title="Live Stream"
+        subtitle="Real-time event hub — agents publish and subscribe to events through this shared bus"
         actions={
           <button
             onClick={() => {

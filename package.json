@@ -44,7 +44,7 @@
     "dompurify": "^3.3.3",
     "framer-motion": "^12.38.0",
     "js-yaml": "^4.1.1",
-    "lucide-react": "^0.577.0",
+    "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-markdown": "^10.1.0",
@@ -73,7 +73,7 @@
     "lefthook": "^2.1.4",
     "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^4.2.2",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "typescript-eslint": "^8.57.1",
     "vite": "^8.0.1",
     "vitest": "^4.1.0"

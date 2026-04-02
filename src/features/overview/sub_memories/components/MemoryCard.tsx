@@ -60,7 +60,7 @@ export function MemoryRow({
   }, [confirmDelete]);
 
   const agentAvatar = (
-    <PersonaIcon icon={null} color={personaColor} display="framed"
+    <PersonaIcon icon={null} color={personaColor} display="framed" frameSize={"lg"}
       frameStyle={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }} />
   );
 
@@ -71,15 +71,15 @@ export function MemoryRow({
   const deleteButton = (
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       {confirmDelete ? (
-          <div key="confirm" className="animate-fade-slide-in flex items-center gap-1">
-            <button onClick={onDelete} className="px-2 py-1 typo-heading rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">Confirm</button>
-            <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 typo-heading rounded-lg bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors">Cancel</button>
-          </div>
-        ) : (
-          <button key="trash" onClick={() => setConfirmDelete(true)} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-muted-foreground/80 hover:text-red-400 transition-colors">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        )}
+        <div key="confirm" className="animate-fade-slide-in flex items-center gap-1">
+          <button onClick={onDelete} className="px-2 py-1 typo-heading rounded-lg bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">Confirm</button>
+          <button onClick={() => setConfirmDelete(false)} className="px-2 py-1 typo-heading rounded-lg bg-secondary/50 text-foreground/80 hover:text-foreground/95 hover:bg-secondary/70 transition-colors">Cancel</button>
+        </div>
+      ) : (
+        <button key="trash" onClick={() => setConfirmDelete(true)} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-muted-foreground/80 hover:text-red-400 transition-colors">
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   );
 

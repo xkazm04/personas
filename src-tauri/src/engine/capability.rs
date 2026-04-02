@@ -24,6 +24,7 @@ pub use crate::engine::mcp_tools::{McpTool, McpToolResult, StdioPoolMetrics};
 // ============================================================================
 
 /// Health status returned by [`Capability::healthcheck`].
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 pub struct CapabilityHealth {
@@ -42,6 +43,7 @@ pub struct CapabilityHealth {
 /// is to make the shared shape explicit so that contributors see the pattern,
 /// new resource types have a template, and generic capability composition
 /// becomes possible.
+#[allow(dead_code)]
 #[async_trait]
 pub trait Capability: Send + Sync {
     /// Input payload for the primary action.
@@ -87,6 +89,7 @@ pub trait Capability: Send + Sync {
 // ============================================================================
 
 /// Input for [`DbQueryCapability::execute`].
+#[allow(dead_code)]
 pub struct DbQueryInput {
     pub query_text: String,
     pub allow_mutation: bool,
@@ -94,6 +97,7 @@ pub struct DbQueryInput {
 
 /// Metrics snapshot for the database query subsystem.
 #[derive(Debug, Clone, Serialize)]
+#[allow(dead_code)]
 pub struct DbQueryMetrics {
     /// Database queries have per-call duration but no persistent metrics
     /// registry; this is a placeholder for future expansion.
@@ -104,6 +108,7 @@ pub struct DbQueryMetrics {
 ///
 /// Wraps the free-function API into the [`Capability`] trait without changing
 /// existing callers.
+#[allow(dead_code)]
 pub struct DbQueryCapability {
     pub user_db: Option<crate::db::UserDbPool>,
 }
@@ -181,6 +186,7 @@ impl Capability for DbQueryCapability {
 // ============================================================================
 
 /// Input for [`ApiProxyCapability::execute`].
+#[allow(dead_code)]
 pub struct ApiProxyInput {
     pub method: String,
     pub path: String,
@@ -189,6 +195,7 @@ pub struct ApiProxyInput {
 }
 
 /// Capability adapter for `engine::api_proxy`.
+#[allow(dead_code)]
 pub struct ApiProxyCapability;
 
 #[async_trait]
@@ -273,6 +280,7 @@ impl Capability for ApiProxyCapability {
 // ============================================================================
 
 /// Input for [`McpToolsCapability::execute`].
+#[allow(dead_code)]
 pub struct McpToolsInput {
     pub tool_name: String,
     pub arguments: serde_json::Value,
@@ -281,6 +289,7 @@ pub struct McpToolsInput {
 }
 
 /// Capability adapter for `engine::mcp_tools`.
+#[allow(dead_code)]
 pub struct McpToolsCapability {
     pub rate_limiter: Option<std::sync::Arc<crate::engine::rate_limiter::RateLimiter>>,
 }

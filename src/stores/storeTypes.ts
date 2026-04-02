@@ -147,7 +147,6 @@ export function clearSliceError(
 ): void {
   set((state) => {
     const prev = state.sliceErrors ?? {};
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { [action]: _, ...rest } = prev;
     return { sliceErrors: rest };
   });

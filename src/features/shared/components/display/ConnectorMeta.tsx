@@ -7,7 +7,7 @@ import {
   HardDrive,
   MessageSquare,
   MessageCircle,
-  Github,
+  GitBranch as GithubIcon,
   Globe,
   CheckSquare,
   Database,
@@ -90,7 +90,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
 
   // -- Source Control & CI/CD ------------------------------------
   azure_devops:       { label: 'Azure DevOps',       color: '#0078D7', iconUrl: '/icons/connectors/azure-devops.svg',                   Icon: GitBranch },
-  github:             { label: 'GitHub',             color: '#24292e', iconUrl: 'https://cdn.simpleicons.org/github/f0f0f0',          Icon: Github },
+  github:             { label: 'GitHub',             color: '#24292e', iconUrl: 'https://cdn.simpleicons.org/github/f0f0f0',          Icon: GithubIcon },
   gitlab:             { label: 'GitLab',             color: '#FC6D26', iconUrl: 'https://cdn.simpleicons.org/gitlab/FC6D26',          Icon: GitBranch },
   circleci:           { label: 'CircleCI',           color: '#343434', iconUrl: 'https://cdn.simpleicons.org/circleci/f0f0f0',        Icon: Circle },
 
@@ -232,7 +232,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   // -- Automation Platforms --------------------------------------
   n8n:                { label: 'n8n',                color: '#EA4B71', iconUrl: '/icons/connectors/n8n.svg',                              Icon: Globe },
   zapier:             { label: 'Zapier',             color: '#FF4A00', iconUrl: '/icons/connectors/zapier.svg',                           Icon: Globe },
-  github_actions:     { label: 'GitHub Actions',     color: '#2088FF', iconUrl: 'https://cdn.simpleicons.org/github/f0f0f0',             Icon: Github },
+  github_actions:     { label: 'GitHub Actions',     color: '#2088FF', iconUrl: 'https://cdn.simpleicons.org/github/f0f0f0',             Icon: GithubIcon },
 
   // -- Generic ---------------------------------------------------
   http:               { label: 'HTTP / REST',        color: '#3B82F6', iconUrl: null,                                                   Icon: Globe },

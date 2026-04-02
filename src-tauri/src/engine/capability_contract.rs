@@ -74,6 +74,7 @@ pub enum Requirement {
 
 impl Requirement {
     /// Short human-readable summary for display in the UI.
+    #[allow(dead_code)]
     pub fn summary(&self) -> String {
         match self {
             Self::Credential { service_type, needed_by } => {

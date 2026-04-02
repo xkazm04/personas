@@ -58,10 +58,11 @@ export interface TransformQuestionResponse {
   id: string;
   category?: string;
   question: string;
-  type: 'select' | 'text' | 'boolean' | 'devtools_project';
+  type: 'select' | 'text' | 'textarea' | 'boolean' | 'devtools_project';
   options?: string[];
   default?: string;
   context?: string;
+  allow_custom?: boolean;
 }
 
 export interface N8nTransformSnapshot {

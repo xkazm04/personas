@@ -70,6 +70,7 @@ pub fn get_or_create_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
 /// Store the Ed25519 private key in the OS keyring.
 fn store_private_key(signing_key: &SigningKey) -> Result<(), AppError> {
     let mut key_bytes = signing_key.to_bytes();
+    #[allow(unused_variables)]
     let encoded = B64.encode(key_bytes);
     key_bytes.zeroize();
 

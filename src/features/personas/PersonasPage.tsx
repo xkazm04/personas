@@ -34,6 +34,7 @@ const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPag
 const DocSigningPage = lazy(() => import('@/features/plugins/doc-signing/DocSigningPage'));
 const OcrPage = lazy(() => import('@/features/plugins/ocr/OcrPage'));
 const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
+const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
@@ -234,6 +235,7 @@ export default function PersonasPage() {
         </div>
       );
     }
+    if (sidebarSection === 'schedules') return <ErrorBoundary name="Schedules"><Suspense fallback={SectionFallback}><SchedulesPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
     if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {
       return <ErrorBoundary name="UnifiedMatrixEntry"><Suspense fallback={SectionFallback}><UnifiedMatrixEntry /></Suspense></ErrorBoundary>;

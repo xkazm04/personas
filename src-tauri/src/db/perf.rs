@@ -52,12 +52,14 @@ pub struct DbPerfSnapshot {
 const RING_CAPACITY: usize = 2048;
 const SLOW_QUERY_THRESHOLD: Duration = Duration::from_millis(100);
 
+#[allow(dead_code)]
 struct RingBuffer {
     samples: Vec<QuerySample>,
     head: usize,
     len: usize,
 }
 
+#[allow(dead_code)]
 impl RingBuffer {
     const fn new() -> Self {
         Self {

@@ -142,6 +142,7 @@ pub fn cancel_query_debug_job(app: &tauri::AppHandle, debug_id: &str) -> Result<
 
 // -- Tauri commands ------------------------------------------------------
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn start_query_debug(
     state: State<'_, Arc<AppState>>,

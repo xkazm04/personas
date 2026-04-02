@@ -4,4 +4,17 @@ import type { ConfigSource } from "./ConfigSource";
 /**
  * A single resolved config field with its effective value and inheritance source.
  */
-export type ConfigField<T> = { value: T | null, source: ConfigSource, isOverridden: boolean };
+export type ConfigField = { 
+/**
+ * The effective (resolved) value, or None if no level provides it.
+ */
+value: string | null, 
+/**
+ * Where the effective value was inherited from.
+ */
+source: ConfigSource, 
+/**
+ * Whether this field was explicitly overridden at the agent level
+ * (i.e., agent has a different value than what workspace/global would provide).
+ */
+isOverridden: boolean, };

@@ -5,6 +5,7 @@ use crate::error::AppError;
 use crate::gitlab::types::GitLabDeploymentRecord;
 
 /// Insert a deployment history record.
+#[allow(clippy::too_many_arguments)]
 pub fn insert(
     pool: &DbPool,
     persona_id: &str,

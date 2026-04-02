@@ -162,7 +162,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
                     className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-card/50 border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
                   >
                     <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
-                      <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" framed />
+                      <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" framed frameSize={"lg"} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[11px] font-medium text-foreground truncate">{p.name}</div>

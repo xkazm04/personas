@@ -77,6 +77,7 @@ pub fn create_execution(
 ///
 /// The remaining stages (StreamOutput, FinalizeStatus, Complete) run
 /// asynchronously inside the spawned engine task.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn execute_persona(
     state: State<'_, Arc<AppState>>,
@@ -410,7 +411,7 @@ pub fn preview_execution(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     input_data: Option<String>,
-    use_case_id: Option<String>,
+    _use_case_id: Option<String>,
 ) -> Result<crate::engine::cost::ExecutionPreview, AppError> {
     require_auth_sync(&state)?;
     use crate::db::repos::core::memories as mem_repo;

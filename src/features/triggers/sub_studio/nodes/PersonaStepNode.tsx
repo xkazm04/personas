@@ -25,9 +25,7 @@ function PersonaStepNodeInner({ data, selected }: NodeProps) {
         className="!w-3 !h-3 !bg-emerald-400 !border-2 !border-background !rounded-full"
       />
 
-      <div className="flex-shrink-0 icon-frame-md icon-frame-pop bg-emerald-500/15">
-        <PersonaIcon icon={d.icon} color={d.color} size="w-4.5 h-4.5" framed />
-      </div>
+      <PersonaIcon icon={d.icon} color={d.color} display="framed" frameSize="lg" />
 
       <div className="flex flex-col min-w-0">
         <span className="text-[10px] uppercase tracking-wider text-emerald-400/70 font-medium">Persona</span>

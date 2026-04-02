@@ -10,10 +10,11 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  MoreHorizontal, Plus, X, Zap, Search, Filter,
+  MoreHorizontal, Plus, X, Zap, Search,
   Radio, RefreshCw, type LucideIcon,
 } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
@@ -70,13 +71,11 @@ interface Props {
 export function UnifiedRoutingView({ initialTriggers, personas, groups }: Props) {
   const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>(initialTriggers);
   const [sourceFilter, setSourceFilter] = useState<string>('all'); // 'all' | 'common' | personaId
-  const [showSourceDropdown, setShowSourceDropdown] = useState(false);
   const [eventSearch, setEventSearch] = useState('');
   const [actionMenuRow, setActionMenuRow] = useState<string | null>(null);
   const [addPersonaForEvent, setAddPersonaForEvent] = useState<string | null>(null);
   const [disconnectTarget, setDisconnectTarget] = useState<{ triggerId: string; personaId: string; personaName: string; eventLabel: string } | null>(null);
 
-  const sourceDropdownRef = useRef<HTMLDivElement>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setAllTriggers(initialTriggers); }, [initialTriggers]);
@@ -215,20 +214,17 @@ export function UnifiedRoutingView({ initialTriggers, personas, groups }: Props)
     setDisconnectTarget(null);
   }, [disconnectTarget, reload]);
 
-  // Close dropdowns on outside click
+  // Close action menu on outside click
   useEffect(() => {
-    if (!showSourceDropdown && !actionMenuRow) return;
+    if (!actionMenuRow) return;
     function handleClick(e: MouseEvent) {
-      if (showSourceDropdown && sourceDropdownRef.current && !sourceDropdownRef.current.contains(e.target as Node)) {
-        setShowSourceDropdown(false);
-      }
       if (actionMenuRow && actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
         setActionMenuRow(null);
       }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [showSourceDropdown, actionMenuRow]);
+  }, [actionMenuRow]);
 
   // Personas already connected to a given event (for the modal exclusion list)
   const connectedPersonaIdsForEvent = useMemo(() => {
@@ -237,7 +233,6 @@ export function UnifiedRoutingView({ initialTriggers, personas, groups }: Props)
     return new Set(row?.connections.map(c => c.personaId) ?? []);
   }, [addPersonaForEvent, rows]);
 
-  const currentSourceLabel = sourceOptions.find(o => o.id === sourceFilter)?.label ?? 'All Sources';
   const totalConnections = rows.reduce((sum, r) => sum + r.connections.length, 0);
 
   return (
@@ -245,30 +240,14 @@ export function UnifiedRoutingView({ initialTriggers, personas, groups }: Props)
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-primary/10 bg-card/30 max-w-[900px]">
         {/* Source filter */}
-        <div className="relative" ref={sourceDropdownRef}>
-          <button
-            onClick={() => setShowSourceDropdown(!showSourceDropdown)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/10 hover:border-primary/20 bg-card transition-colors"
-          >
-            <Filter className="w-3.5 h-3.5 text-muted-foreground/50" />
-            <span className="text-sm font-medium text-foreground/80">{currentSourceLabel}</span>
-          </button>
-
-          {showSourceDropdown && (
-            <div className="absolute top-full left-0 mt-1 w-52 rounded-xl bg-card border border-primary/15 shadow-elevation-4 py-1 z-30">
-              {sourceOptions.map(opt => (
-                <button
-                  key={opt.id}
-                  onClick={() => { setSourceFilter(opt.id); setShowSourceDropdown(false); }}
-                  className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors ${sourceFilter === opt.id ? 'bg-cyan-500/10 text-cyan-400' : 'text-foreground/70 hover:bg-secondary/40'}`}
-                >
-                  {opt.icon && <span className="text-sm">{opt.icon}</span>}
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <ThemedSelect
+          filterable
+          options={sourceOptions.map(o => ({ value: o.id, label: o.label }))}
+          value={sourceFilter}
+          onValueChange={(v) => setSourceFilter(v || 'all')}
+          placeholder="All Sources"
+          className="!px-2 !py-0 !rounded-lg !border-primary/10 !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+        />
 
         {/* Search */}
         <div className="relative flex-1 max-w-xs">
@@ -358,14 +337,8 @@ export function UnifiedRoutingView({ initialTriggers, personas, groups }: Props)
                     key={conn.triggerId}
                     className="flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-lg bg-card border border-emerald-400/20 hover:border-emerald-400/40 group/chip transition-colors"
                   >
-                    <div className="icon-frame-xs bg-emerald-500/10">
-                      {conn.persona?.icon ? (
-                        <span className="text-xs">{conn.persona.icon}</span>
-                      ) : (
-                        <PersonaIcon icon={conn.persona?.icon} color={conn.persona?.color} size="w-3 h-3" framed />
-                      )}
-                    </div>
-                    <span className="text-sm text-foreground/70">
+                    <PersonaIcon icon={conn.persona?.icon ?? null} color={conn.persona?.color ?? null} display="framed" frameSize="lg" />
+                    <span className="text-sm text-foreground/80">
                       {conn.persona?.name ?? conn.personaId.slice(0, 8)}
                     </span>
                     <button

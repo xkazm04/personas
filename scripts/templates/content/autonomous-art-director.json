@@ -557,9 +557,9 @@
         "id": "aq_domain_1",
         "category": "domain",
         "question": "What kind of art do you want the agent to generate?",
-        "type": "text",
+        "type": "textarea",
         "default": "abstract art and landscapes",
-        "context": "Describes the primary subject matter. Examples: 'fantasy landscapes', 'abstract geometric art', 'character portraits', 'sci-fi cityscapes', 'nature photography style'.",
+        "context": "Describe the subject matter, themes, and mood in detail. Examples: 'fantasy landscapes with magical creatures', 'abstract geometric art inspired by architecture', 'character portraits in anime style'.",
         "dimension": "use-cases"
       },
       {
@@ -567,6 +567,7 @@
         "category": "domain",
         "question": "How frequently should new art be generated?",
         "type": "select",
+        "allow_custom": true,
         "options": [
           "Every 6 hours (4 pieces/day)",
           "Daily (1 piece/day)",
@@ -582,6 +583,7 @@
         "category": "configuration",
         "question": "What art style do you prefer?",
         "type": "select",
+        "allow_custom": true,
         "options": [
           "Digital painting (rich detail, painterly strokes)",
           "Watercolor (soft edges, organic flow)",

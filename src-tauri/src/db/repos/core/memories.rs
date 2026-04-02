@@ -520,7 +520,7 @@ pub fn increment_access_batch(pool: &DbPool, ids: &[String]) -> Result<(), AppEr
         let mut qb = QueryBuilder::new();
         let p_now1 = qb.push_param(now.clone());
         let p_now2 = qb.push_param(now);
-        qb.where_in("id", ids.iter().map(|s| s.clone()).collect());
+        qb.where_in("id", ids.to_vec());
         let sql = format!(
             "UPDATE persona_memories SET access_count = access_count + 1, last_accessed_at = {p_now1}, updated_at = {p_now2} {}",
             qb.where_clause()
@@ -570,7 +570,7 @@ pub fn run_lifecycle(pool: &DbPool, persona_id: &str) -> Result<(i64, i64), AppE
 mod tests {
     use super::*;
     use crate::db::init_test_db;
-    use crate::db::models::{CreatePersonaInput, CreatePersonaMemoryInput};
+    use crate::db::models::{CreatePersonaInput, CreatePersonaMemoryInput, Json};
     use crate::db::repos::core::personas;
 
     #[test]
@@ -638,7 +638,7 @@ mod tests {
                 category: Some("preference".into()),
                 source_execution_id: None,
                 importance: Some(5),
-                tags: Some("ui,preference".into()),
+                tags: Some(Json(vec!["ui".to_string(), "preference".to_string()])),
             },
         )
         .unwrap();
@@ -665,7 +665,7 @@ mod tests {
         // Read by id
         let fetched = get_by_id(&pool, &m1.id).unwrap();
         assert_eq!(fetched.title, "User prefers dark mode");
-        assert_eq!(fetched.tags, Some("[\"ui\",\"preference\"]".into()));
+        assert_eq!(fetched.tags, Some(Json(vec!["ui".to_string(), "preference".to_string()])));
 
         // Get all (no filters)
         let all = get_all(&pool, None, None, None, None, None, None, None).unwrap();

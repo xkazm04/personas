@@ -15,10 +15,11 @@ use crate::engine::lifecycle::TriggerStatus;
 ///
 /// Determines when a chain trigger fires based on the source persona's
 /// execution outcome.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ChainConditionType {
     /// Fire regardless of execution outcome (default).
+    #[default]
     Any,
     /// Fire only when the source execution completed successfully
     /// (execution status == "completed").
@@ -66,11 +67,6 @@ impl std::str::FromStr for ChainConditionType {
     }
 }
 
-impl Default for ChainConditionType {
-    fn default() -> Self {
-        Self::Any
-    }
-}
 
 /// Condition for chain triggers: when a source persona finishes, what outcome
 /// should fire the chain?
@@ -611,6 +607,7 @@ mod tests {
             status: "active".into(),
             last_triggered_at: None,
             next_trigger_at: None,
+            trigger_version: 0,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
             use_case_id: None,

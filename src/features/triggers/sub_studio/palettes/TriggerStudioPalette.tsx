@@ -84,9 +84,7 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
                 onClick={() => onAddPersonaStep(persona)}
                 className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors group"
               >
-                <div className="icon-frame-sm bg-emerald-500/10">
-                  <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" framed />
-                </div>
+                <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize="lg" />
                 <div className="flex flex-col items-start min-w-0">
                   <span className="text-[11px] text-foreground/80 group-hover:text-foreground truncate">{persona.name}</span>
                   <span className="text-[9px] text-muted-foreground/60 truncate">{persona.description ?? 'Agent'}</span>
@@ -129,8 +127,8 @@ export function TriggerStudioPalette({ personas, onAddTriggerSource, onAddPerson
             <button
               onClick={() => onAddConditionGate('Classifier', [
                 { id: 'support', label: 'Support', color: '#3b82f6' },
-                { id: 'sales',   label: 'Sales',   color: '#10b981' },
-                { id: 'other',   label: 'Other',   color: '#6b7280' },
+                { id: 'sales', label: 'Sales', color: '#10b981' },
+                { id: 'other', label: 'Other', color: '#6b7280' },
               ])}
               className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg hover:bg-secondary/40 transition-colors group"
             >

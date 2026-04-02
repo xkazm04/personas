@@ -660,7 +660,7 @@ pub fn get_retry_chains_batch(
         .collect::<Vec<_>>()
         .join(", ");
 
-    let chain_sql = format!(
+    let _chain_sql = format!(
         "SELECT * FROM persona_executions
          WHERE (id IN ({root_placeholders}) OR retry_of_execution_id IN ({root_placeholders}))
          ORDER BY retry_count ASC, created_at ASC",
@@ -893,7 +893,7 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
     use crate::db::repos::core::personas;
-    use crate::db::models::CreatePersonaInput;
+    use crate::db::models::{CreatePersonaInput, Json};
 
     #[test]
     fn test_execution_crud() {
@@ -981,7 +981,7 @@ mod tests {
                 output_data: Some("output result".into()),
                 duration_ms: Some(1500),
                 log_file_path: Some("/tmp/log.txt".into()),
-                execution_flows: Some("{\"flows\": []}".into()),
+                execution_flows: Some(Json(serde_json::from_str("{\"flows\": []}").unwrap())),
                 input_tokens: Some(100),
                 output_tokens: Some(200),
                 cost_usd: Some(0.005),

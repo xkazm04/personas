@@ -1882,6 +1882,7 @@ pub fn delete_cross_project_relations_for_project(pool: &DbPool, project_id: &st
 }
 
 /// Bulk create ideas across multiple projects in a single transaction.
+#[allow(clippy::type_complexity)]
 pub fn bulk_create_ideas_cross_project(
     pool: &DbPool,
     ideas: &[(Option<&str>, Option<&str>, &str, &str, &str, Option<&str>, Option<i32>, Option<i32>, Option<i32>)],

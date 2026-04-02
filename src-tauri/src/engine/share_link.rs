@@ -39,6 +39,7 @@ const SERVER_PORT: u16 = 9420;
 // In-memory token store
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)]
 struct SharedBundle {
     bytes: Vec<u8>,
     created_at: Instant,
@@ -216,6 +217,7 @@ pub fn resolve_deep_link(url: &str) -> Result<ResolvedShareLink, AppError> {
 }
 
 /// Revoke an active share link by token.
+#[allow(dead_code)]
 pub fn revoke_share_link(token: &str) -> bool {
     let mut store = SHARE_STORE.lock().unwrap();
     store.remove(token).is_some()

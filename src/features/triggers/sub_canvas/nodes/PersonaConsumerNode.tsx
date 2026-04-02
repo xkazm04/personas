@@ -37,7 +37,7 @@ function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
       />
 
       <div className="flex-shrink-0 icon-frame icon-frame-pop bg-emerald-500/15">
-        <PersonaIcon icon={d.icon} color={d.color} size="w-4 h-4" framed />
+        <PersonaIcon icon={d.icon} color={d.color} size="w-4 h-4" framed frameSize={"lg"} />
       </div>
 
       <div className="flex flex-col min-w-0">
@@ -46,8 +46,8 @@ function PersonaConsumerNodeInner({ data, selected, id: _id }: NodeProps) {
           <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`} />
           <span className="text-[10px] text-muted-foreground">
             {d.executionStatus === 'running' ? 'Running' :
-             d.lastExecutionAt ? `Last: ${new Date(d.lastExecutionAt).toLocaleTimeString()}` :
-             'No executions'}
+              d.lastExecutionAt ? `Last: ${new Date(d.lastExecutionAt).toLocaleTimeString()}` :
+                'No executions'}
           </span>
         </div>
       </div>

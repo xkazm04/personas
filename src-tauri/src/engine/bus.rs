@@ -147,6 +147,7 @@ pub fn match_event<T: MatchableSubscription>(
 ///
 /// Parses each trigger's config once, wraps in `ParsedTrigger`, then delegates
 /// to the generic `match_event`. Keeps call-sites unchanged.
+#[allow(dead_code)]
 pub fn match_event_listeners(
     event: &PersonaEvent,
     listeners: &[PersonaTrigger],
@@ -300,6 +301,7 @@ mod tests {
             status: "active".into(),
             last_triggered_at: None,
             next_trigger_at: None,
+            trigger_version: 0,
             created_at: "2026-01-15T10:00:00Z".into(),
             updated_at: "2026-01-15T10:00:00Z".into(),
             use_case_id: None,

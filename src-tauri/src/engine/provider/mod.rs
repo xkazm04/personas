@@ -190,6 +190,7 @@ pub fn resolve_provider(kind: EngineKind) -> Box<dyn CliProvider> {
 
 /// Read the active engine kind from the settings DB.
 /// Falls back to ClaudeCode if unset or unrecognized.
+#[allow(dead_code)]
 pub fn load_engine_kind(pool: &DbPool) -> EngineKind {
     crate::db::repos::core::settings::get(pool, crate::db::settings_keys::CLI_ENGINE)
         .ok()
