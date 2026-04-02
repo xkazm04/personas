@@ -78,7 +78,7 @@ pub async fn export_persona(
     let persona = persona_repo::get_by_id(pool, &persona_id)?;
     let triggers = trigger_repo::get_by_persona_id(pool, &persona_id)?;
     let subscriptions = event_repo::get_subscriptions_by_persona(pool, &persona_id)?;
-    let memories = memory_repo::get_all(pool, Some(&persona_id), None, None, Some(i64::MAX), None, None, None)?;
+    let memories = memory_repo::get_all(pool, Some(&persona_id), None, None, Some(5000), None, None, None)?;
 
     let bundle = PersonaExportBundle {
         version: 1,
@@ -310,11 +310,12 @@ pub async fn import_persona(
         }
     }
 
-    // Re-create memories
-    for (i, m) in bundle.memories.iter().enumerate() {
-        if let Err(e) = memory_repo::create(
-            pool,
-            crate::db::models::CreatePersonaMemoryInput {
+    // Batch-create memories in a single transaction
+    if !bundle.memories.is_empty() {
+        let memory_inputs: Vec<crate::db::models::CreatePersonaMemoryInput> = bundle
+            .memories
+            .iter()
+            .map(|m| crate::db::models::CreatePersonaMemoryInput {
                 persona_id: new_id.clone(),
                 title: m.title.clone(),
                 content: m.content.clone(),
@@ -322,9 +323,20 @@ pub async fn import_persona(
                 source_execution_id: None,
                 importance: Some(m.importance),
                 tags: m.tags.clone(),
-            },
-        ) {
-            warnings.push(format!("Memory {} ({}): {}", i + 1, m.title, e));
+            })
+            .collect();
+        let expected = memory_inputs.len();
+        match memory_repo::batch_create(pool, memory_inputs) {
+            Ok(created) => {
+                if (created as usize) < expected {
+                    warnings.push(format!(
+                        "Memories: {created} of {expected} imported (some skipped due to validation)"
+                    ));
+                }
+            }
+            Err(e) => {
+                warnings.push(format!("Memories batch import failed: {e}"));
+            }
         }
     }
 

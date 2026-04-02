@@ -74,7 +74,7 @@ pub struct MockToolResponse {
 }
 
 /// Tauri event payload for test run progress.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct TestRunStatusEvent {
     pub run_id: String,
     pub phase: String,
@@ -160,16 +160,8 @@ pub async fn run_test(
             run_id: run_id.clone(),
             phase: "generated".into(),
             scenarios_count: Some(scenario_count),
-            current: None,
-            total: None,
-            model_id: None,
-            scenario_name: None,
-            status: None,
-            scores: None,
-            summary: None,
-            error: None,
             scenarios: Some(scenarios.clone()),
-            elapsed_ms: None,
+            ..Default::default()
         },
     );
 
@@ -199,8 +191,17 @@ pub async fn run_test(
             let tools_c = tools.to_vec();
             let scenario_c = scenario.clone();
             let model_c = model.clone();
+            let cancelled_c = cancelled.clone();
 
             handles.push(tokio::spawn(async move {
+                if cancelled_c.load(std::sync::atomic::Ordering::Acquire) {
+                    return (mi, "cancelled".to_string(), ScoreResult {
+                        tool_accuracy: None, output_quality: None, protocol_compliance: None,
+                        output_preview: None, tool_calls_actual: None,
+                        input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
+                        error_message: Some("Cancelled".to_string()), rationale: None, suggestions: None,
+                    });
+                }
                 let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
                 let (status, scores) = match &result {
                     Ok(r) => {
@@ -351,14 +352,8 @@ pub async fn run_test(
             scenarios_count: Some(scenario_count),
             current: Some(total),
             total: Some(total),
-            model_id: None,
-            scenario_name: None,
-            status: None,
-            scores: None,
             summary: Some(summary),
-            error: None,
-            scenarios: None,
-            elapsed_ms: None,
+            ..Default::default()
         },
     );
 }
@@ -954,6 +949,7 @@ struct LabCallbacks<'a> {
     update_status: Box<dyn Fn(&DbPool, &str, LabRunStatus, Option<i32>, Option<&str>, Option<&str>, Option<&str>) + Send + Sync + 'a>,
     persist_result: Box<dyn Fn(&DbPool, &str, &LabVariant<'_>, &TestScenario, &TestModelConfig, &str, &ScoreResult) + Send + Sync + 'a>,
     build_summary: Box<dyn Fn(&HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>>, &[TestModelConfig]) -> serde_json::Value + Send + Sync + 'a>,
+    update_llm_summary: Box<dyn Fn(&DbPool, &str, &str) + Send + Sync + 'a>,
 }
 
 /// Generate a prose LLM summary of test results. Returns the summary text, or None on failure.
@@ -1052,10 +1048,9 @@ async fn run_lab_loop(
 
     let _ = app.emit(cb.event_name, TestRunStatusEvent {
         run_id: run_id.to_string(), phase: "generated".into(),
-        scenarios_count: Some(scenario_count), current: None, total: None,
-        model_id: None, scenario_name: None, status: None, scores: None, summary: None, error: None,
-        scenarios: None,
+        scenarios_count: Some(scenario_count),
         elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
+        ..Default::default()
     });
 
     let total = scenario_count * model_configs.len() * variants.len();
@@ -1078,8 +1073,18 @@ async fn run_lab_loop(
                 let tools_c = if variant.tools.is_empty() { tools.to_vec() } else { variant.tools.clone() };
                 let scenario_c = scenario.clone();
                 let model_c = model.clone();
+                let cancelled_c = cancelled.clone();
 
                 handles.push(tokio::spawn(async move {
+                    if cancelled_c.load(std::sync::atomic::Ordering::Acquire) {
+                        return (mi, vi, "cancelled".to_string(), ScoreResult {
+                            tool_accuracy: None, output_quality: None, protocol_compliance: None,
+                            output_preview: None, tool_calls_actual: None,
+                            input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
+                            error_message: Some("Cancelled".to_string()),
+                            rationale: None, suggestions: None,
+                        });
+                    }
                     let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
                     let (status, scores) = match &result {
                         Ok(r) => ("passed".to_string(), score_result(r, &scenario_c, &persona_c).await),
@@ -1148,7 +1153,7 @@ async fn run_lab_loop(
 
     // Persist the LLM summary if available (best-effort, non-fatal)
     if let Some(ref text) = llm_summary {
-        let _ = crate::db::repos::lab::arena::update_llm_summary(pool, run_id, text);
+        let _ = (cb.update_llm_summary)(pool, run_id, text);
     }
 
     let now = chrono::Utc::now().to_rfc3339();
@@ -1157,10 +1162,9 @@ async fn run_lab_loop(
     let _ = app.emit(cb.event_name, TestRunStatusEvent {
         run_id: run_id.to_string(), phase: "completed".into(),
         scenarios_count: Some(scenario_count), current: Some(total), total: Some(total),
-        model_id: None, scenario_name: None, status: None, scores: None,
-        summary: Some(summary), error: None,
-        scenarios: None,
+        summary: Some(summary),
         elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
+        ..Default::default()
     });
 }
 
@@ -1290,6 +1294,9 @@ pub async fn run_arena_test(
             });
         }),
         build_summary: Box::new(build_arena_summary),
+        update_llm_summary: Box::new(|pool, id, text| {
+            let _ = arena_repo::update_llm_summary(pool, id, text);
+        }),
     };
 
     run_lab_loop(&app, &pool, &run_id, persona, tools, &model_configs, &variants, &cancelled, use_case_filter.as_deref(), &cb).await;
@@ -1326,13 +1333,19 @@ pub async fn run_ab_test(
             let _ = ab_repo::update_run_status(pool, id, status, sc, sum, err, ca);
         }),
         persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
-            let src = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label).unwrap();
+            let Some(src) = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label) else {
+                tracing::error!("Version lookup failed for label '{}' during A/B persist_result", variant.label);
+                return;
+            };
             let base = make_common_result_fields(scenario, model, status, scores);
             let _ = ab_repo::create_result(pool, &CreateAbResultInput {
                 run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
             });
         }),
         build_summary: Box::new(build_keyed_summary),
+        update_llm_summary: Box::new(|pool, id, text| {
+            let _ = ab_repo::update_llm_summary(pool, id, text);
+        }),
     };
 
     run_lab_loop(&app, &pool, &run_id, primary_persona, &tools, &model_configs, &lab_variants, &cancelled, use_case_filter.as_deref(), &cb).await;
@@ -1368,13 +1381,19 @@ pub async fn run_eval_test(
             let _ = eval_repo::update_run_status(pool, id, status, sc, sum, err, ca);
         }),
         persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
-            let src = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label).unwrap();
+            let Some(src) = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label) else {
+                tracing::error!("Version lookup failed for label '{}' during eval persist_result", variant.label);
+                return;
+            };
             let base = make_common_result_fields(scenario, model, status, scores);
             let _ = eval_repo::create_result(pool, &CreateEvalResultInput {
                 run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
             });
         }),
         build_summary: Box::new(build_keyed_summary),
+        update_llm_summary: Box::new(|pool, id, text| {
+            let _ = eval_repo::update_llm_summary(pool, id, text);
+        }),
     };
 
     run_lab_loop(&app, &pool, &run_id, primary_persona, &tools, &model_configs, &lab_variants, &cancelled, use_case_filter.as_deref(), &cb).await;
@@ -1451,6 +1470,9 @@ pub async fn run_matrix_test(
             });
         }),
         build_summary: Box::new(build_keyed_summary),
+        update_llm_summary: Box::new(|pool, id, text| {
+            let _ = matrix_repo::update_llm_summary(pool, id, text);
+        }),
     };
 
     // Transition Drafting -> Generating so run_lab_loop can then go Generating -> Running -> Completed

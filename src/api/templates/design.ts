@@ -14,8 +14,8 @@ export const refineDesign = (personaId: string, feedback: string, currentResult?
 export const testDesignFeasibility = (designResult: string) =>
   invoke<FeasibilityResult>("test_design_feasibility", { designResult });
 
-export const cancelDesignAnalysis = () =>
-  invoke<void>("cancel_design_analysis");
+export const cancelDesignAnalysis = (designId?: string) =>
+  invoke<void>("cancel_design_analysis", { designId: designId });
 
 export const compileFromIntent = (personaId: string, intent: string, designId?: string) =>
   invoke<DesignStartResult>("compile_from_intent", { personaId, intent, designId: designId });

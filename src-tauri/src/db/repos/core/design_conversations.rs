@@ -113,8 +113,17 @@ pub fn append_single_message(
     })
 }
 
+const VALID_CONVERSATION_STATUSES: &[&str] = &["active", "completed", "abandoned"];
+
 /// Update the status of a conversation.
+/// Validates the status against the allowed set to prevent silent corruption.
 pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppError> {
+    if !VALID_CONVERSATION_STATUSES.contains(&status) {
+        return Err(AppError::Validation(format!(
+            "Invalid conversation status '{status}'. Must be one of: {}",
+            VALID_CONVERSATION_STATUSES.join(", ")
+        )));
+    }
     timed_query!("design_conversations", "design_conversations::update_status", {
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();

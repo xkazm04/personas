@@ -43,6 +43,24 @@ struct SessionHandle {
 }
 
 // =============================================================================
+// HandleDropGuard -- ensures session handles are removed on task exit/panic
+// =============================================================================
+
+struct HandleDropGuard {
+    sessions: Arc<Mutex<HashMap<String, SessionHandle>>>,
+    session_id: String,
+}
+
+impl Drop for HandleDropGuard {
+    fn drop(&mut self) {
+        let mut sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if sessions.remove(&self.session_id).is_some() {
+            tracing::info!(session_id = %self.session_id, "HandleDropGuard: removed stale session handle");
+        }
+    }
+}
+
+// =============================================================================
 // BuildSessionManager -- the public API
 // =============================================================================
 
@@ -146,8 +164,14 @@ impl BuildSessionManager {
 
         // Spawn the session task
         let sessions_map = self.sessions.clone();
+        let guard_map = self.sessions.clone();
+        let guard_sid = session_id.clone();
         let sid = session_id.clone();
         tokio::spawn(async move {
+            let _handle_guard = HandleDropGuard {
+                sessions: guard_map,
+                session_id: guard_sid,
+            };
             run_session(
                 sid,
                 persona_id,
@@ -626,7 +650,11 @@ async fn run_session(
     let agent_ir_str = resolved_cells.get("agent_ir")
         .and_then(|v| serde_json::to_string(v).ok());
 
-    let final_phase = BuildPhase::DraftReady;
+    let final_phase = if resolved_count == 0 && agent_ir_str.is_none() {
+        BuildPhase::Failed
+    } else {
+        BuildPhase::DraftReady
+    };
     let resolved_json = serde_json::to_string(&serde_json::Value::Object(resolved_cells)).unwrap_or_else(|_| "{}".to_string());
     let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
         phase: Some(final_phase.as_str().to_string()),

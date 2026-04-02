@@ -107,7 +107,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <span className="text-sm font-medium text-foreground/90 truncate">{result.scenarioName}</span>
           {result.modelId && <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary/70">{result.modelId}</span>}
         </div>
-        <button onClick={onClose} className="p-1 rounded hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground transition-colors">
+        <button onClick={onClose} aria-label="Close details" className="p-1 rounded hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -239,7 +239,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
 
         {/* Error */}
         {result.errorMessage && (
-          <div className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2 border border-red-500/15">
+          <div className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2 border border-red-500/20">
             {result.errorMessage}
           </div>
         )}

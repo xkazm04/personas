@@ -6,24 +6,24 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 
-// -- Importance bar (1-10 scale, gradient fill) --------------------------------
+// -- Importance bar (1-5 scale, matching API's IMPORTANCE_MAX) -----------------
 function getImportanceColor(value: number): string {
-  if (value <= 3) return 'rgb(52, 211, 153)';   // emerald-400
-  if (value <= 6) return 'rgb(251, 191, 36)';    // amber-400
+  if (value <= 2) return 'rgb(52, 211, 153)';   // emerald-400
+  if (value <= 3) return 'rgb(251, 191, 36)';    // amber-400
   return 'rgb(251, 113, 133)';                    // rose-400
 }
 
 function getImportanceGradient(value: number): string {
-  if (value <= 3) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(52, 211, 153))';
-  if (value <= 6) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(251, 191, 36))';
+  if (value <= 2) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(52, 211, 153))';
+  if (value <= 3) return 'linear-gradient(90deg, rgb(52, 211, 153), rgb(251, 191, 36))';
   return 'linear-gradient(90deg, rgb(251, 191, 36), rgb(251, 113, 133))';
 }
 
 export function ImportanceBar({ value }: { value: number }) {
-  const maxScale = 10;
+  const maxScale = 5;
   const pct = (Math.max(1, Math.min(value, maxScale)) / maxScale) * 100;
   const label = `Importance: ${value} of ${maxScale}`;
-  const highImportance = value >= 8;
+  const highImportance = value >= 4;
 
   return (
     <div className="flex items-center gap-1.5" title={label} aria-label={label}>
@@ -36,7 +36,7 @@ export function ImportanceBar({ value }: { value: number }) {
           style={{ width: `${pct}%`, background: getImportanceGradient(value) }}
         />
       </div>
-      <span className="text-xs text-muted-foreground/70 tabular-nums">({value}/{maxScale})</span>
+      <span className="text-xs text-muted-foreground/70 tabular-nums">{value}/{maxScale}</span>
     </div>
   );
 }

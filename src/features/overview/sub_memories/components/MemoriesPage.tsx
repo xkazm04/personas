@@ -13,8 +13,69 @@ import ReviewResultsModal from './ReviewResultsModal';
 import MemoryDetailModal from './MemoryDetailModal';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
-import type { MemoryReviewResult } from '@/api/overview/memories';
+import type { MemoryReviewResult, MemoryStats } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/types/types';
+
+const CATEGORY_HEX_COLORS: Record<string, string> = {
+  fact: '#3b82f6',
+  preference: '#f59e0b',
+  instruction: '#8b5cf6',
+  context: '#10b981',
+  learned: '#06b6d4',
+  constraint: '#ef4444',
+};
+
+function MemoryStatsSummaryBar({ stats }: { stats: MemoryStats }) {
+  const avgPct = ((stats.avg_importance / 5) * 100);
+  const total = stats.total || 1;
+
+  return (
+    <div className="flex items-center gap-4 px-4 md:px-6 py-1.5 border-b border-primary/10 bg-secondary/5 flex-shrink-0 h-10">
+      <span className="text-xs font-mono text-foreground/60 flex-shrink-0 tabular-nums">
+        {stats.total} total
+      </span>
+
+      {/* Avg importance ring */}
+      <div className="flex items-center gap-1.5 flex-shrink-0" title={`Avg importance: ${stats.avg_importance.toFixed(1)}/5`}>
+        <svg width="18" height="18" viewBox="0 0 18 18" className="flex-shrink-0">
+          <circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/15" />
+          <circle
+            cx="9" cy="9" r="7" fill="none"
+            stroke={avgPct <= 40 ? '#34d399' : avgPct <= 60 ? '#fbbf24' : '#fb7185'}
+            strokeWidth="2"
+            strokeDasharray={`${(avgPct / 100) * 44} 44`}
+            strokeLinecap="round"
+            transform="rotate(-90 9 9)"
+            style={{ transition: 'stroke-dasharray 300ms' }}
+          />
+        </svg>
+        <span className="text-xs text-foreground/50 tabular-nums">{stats.avg_importance.toFixed(1)}</span>
+      </div>
+
+      {/* Category segmented bar */}
+      {stats.category_counts.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <div className="flex h-2 rounded-full overflow-hidden flex-1 bg-muted-foreground/10">
+            {stats.category_counts.map(([cat, count]) => (
+              <div
+                key={cat}
+                title={`${MEMORY_CATEGORY_COLORS[cat]?.label ?? cat}: ${count}`}
+                className="h-full"
+                style={{
+                  width: `${(count / total) * 100}%`,
+                  backgroundColor: CATEGORY_HEX_COLORS[cat] ?? '#6b7280',
+                  transition: 'width 300ms',
+                  minWidth: count > 0 ? '2px' : 0,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 interface SortState { column: SortColumn; direction: SortDirection }
@@ -26,10 +87,11 @@ const GRID_COLUMNS = '180px minmax(0,2fr) 100px 80px 100px 40px';
 export default function MemoriesPage() {
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, fetchMemories, deleteMemory, reviewMemories,
+    memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
+    memoryStats: s.memoryStats,
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
     reviewMemories: s.reviewMemories,
@@ -73,6 +135,24 @@ export default function MemoriesPage() {
   const clearFilters = useCallback(() => { setSearch(''); setSelectedPersonaId(null); setSelectedCategory(null); }, []);
 
   const { parentRef: memoryListRef, virtualizer } = useVirtualList(memories, 48);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+
+  const handleListKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (memories.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusedIndex((prev) => Math.min(prev + 1, memories.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex((prev) => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < memories.length) {
+      e.preventDefault();
+      setSelectedMemory(memories[focusedIndex]!);
+    } else if (e.key === 'Delete' && focusedIndex >= 0 && focusedIndex < memories.length) {
+      e.preventDefault();
+      deleteMemory(memories[focusedIndex]!.id);
+    }
+  }, [memories, focusedIndex, deleteMemory]);
 
   const handleReview = useCallback(async () => {
     setIsReviewing(true); setReviewResult(null); setReviewError(null);
@@ -185,6 +265,8 @@ export default function MemoriesPage() {
             )}
           </div>
 
+          {memoryStats && memoryStats.total > 0 && <MemoryStatsSummaryBar stats={memoryStats} />}
+
           {memories.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 text-foreground/60">
               <div className="w-16 h-16 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
@@ -229,13 +311,14 @@ export default function MemoriesPage() {
                 <div className="px-2 py-1.5" />
               </div>
 
-              <div ref={memoryListRef} className="flex-1 overflow-y-auto">
+              <div ref={memoryListRef} className="flex-1 overflow-y-auto focus:outline-none" tabIndex={0} role="grid" aria-label="Memory list" onKeyDown={handleListKeyDown}>
                 <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                   {virtualizer.getVirtualItems().map((virtualRow) => {
                     const memory = memories[virtualRow.index]!;
                     const persona = personaMap.get(memory.persona_id);
+                    const isFocused = virtualRow.index === focusedIndex;
                     return (
-                      <div key={memory.id} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}>
+                      <div key={memory.id} data-index={virtualRow.index} role="row" aria-selected={isFocused} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }} className={isFocused ? 'ring-1 ring-primary/40 ring-inset z-[1]' : ''}>
                         <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} personaColor={persona?.color || '#6B7280'} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
                       </div>
                     );

@@ -1,5 +1,6 @@
 import { Trash2, Clock } from 'lucide-react';
 import { statusBadge } from '@/lib/eval/evalFramework';
+import { LabEmptyState } from './LabEmptyState';
 
 export interface LabHistoryColumn<TRun> {
   key: string;
@@ -38,11 +39,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
           <Clock className="w-3 h-3" />
           {title}
         </h4>
-        <div className="text-center py-10 bg-secondary/30 border border-primary/10 rounded-xl">
-          <EmptyIcon className="w-8 h-8 text-primary/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground/70">{emptyTitle}</p>
-          <p className="text-xs text-muted-foreground/50 mt-1">{emptySubtitle}</p>
-        </div>
+        <LabEmptyState icon={EmptyIcon} title={emptyTitle} subtitle={emptySubtitle} />
       </div>
     );
   }
@@ -96,6 +93,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
                     onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
                     className="p-1 rounded-lg hover:bg-red-500/15 text-muted-foreground/40 hover:text-red-400 transition-colors"
                     title="Delete run"
+                    aria-label="Delete run"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>

@@ -718,7 +718,9 @@ fn create_triggers_in_tx(
         let trigger_type = t.trigger_type.as_deref().unwrap_or("manual").to_string();
         let config = t.config.as_ref()
             .map(|v| serde_json::to_string(v).unwrap_or_default());
-        let use_case_id = use_case_ids.get(idx).cloned();
+        let use_case_id = use_case_ids.get(idx)
+            .or_else(|| use_case_ids.last())
+            .cloned();
         let encrypted_config = config.as_deref().map(trigger_repo::encrypt_config);
 
         let trigger_id = uuid::Uuid::new_v4().to_string();

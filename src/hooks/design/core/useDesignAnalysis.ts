@@ -206,7 +206,7 @@ export function useDesignAnalysis() {
   }, [refineAnalysis]);
 
   const cancelAnalysis = useCallback(() => {
-    cancelDesignAnalysis().catch(silentCatch("designAnalysis:cancel"));
+    cancelDesignAnalysis(designIdRef.current ?? undefined).catch(silentCatch("designAnalysis:cancel"));
     stream.cancel();
     designIdRef.current = null;
     setDesignPhase('idle');

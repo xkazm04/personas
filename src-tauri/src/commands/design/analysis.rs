@@ -190,10 +190,16 @@ pub fn test_design_feasibility(
 #[tauri::command]
 pub fn cancel_design_analysis(
     state: State<'_, Arc<AppState>>,
+    design_id: Option<String>,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    // Cancel the active design and kill the CLI child process to stop API credit consumption.
-    if let Some(pid) = state.process_registry.cancel("design") {
+    if let Some(id) = design_id {
+        state.process_registry.cancel_run("design", &id);
+        if let Some(pid) = state.process_registry.take_run_pid("design", &id) {
+            tracing::info!(pid = pid, design_id = %id, "Killing design analysis CLI child process (scoped)");
+            engine::kill_process(pid);
+        }
+    } else if let Some(pid) = state.process_registry.cancel("design") {
         tracing::info!(pid = pid, "Killing design analysis CLI child process");
         engine::kill_process(pid);
     }
@@ -234,6 +240,26 @@ pub async fn compile_from_intent(
     )
 }
 
+fn emit_design_status(
+    app: &tauri::AppHandle,
+    design_id: &str,
+    status: &str,
+    result: Option<serde_json::Value>,
+    error: Option<String>,
+    question: Option<serde_json::Value>,
+) {
+    let _ = app.emit(
+        event_name::DESIGN_STATUS,
+        DesignStatusEvent {
+            design_id: design_id.to_string(),
+            status: status.into(),
+            result,
+            error,
+            question,
+        },
+    );
+}
+
 // -- Design analysis runner --------------------------------------
 
 struct DesignRunParams {
@@ -265,16 +291,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         cancelled,
     } = params;
     // Emit analyzing status
-    let _ = app.emit(
-        event_name::DESIGN_STATUS,
-        DesignStatusEvent {
-            design_id: design_id.clone(),
-            status: "analyzing".into(),
-            result: None,
-            error: None,
-            question: None,
-        },
-    );
+    emit_design_status(&app, &design_id, "analyzing", None, None, None);
 
     // Spawn Claude CLI process via shared CliProcessDriver
     let mut driver = match engine::cli_process::CliProcessDriver::spawn_cwd(&cli_args) {
@@ -286,16 +303,7 @@ async fn run_design_analysis(params: DesignRunParams) {
             } else {
                 format!("Failed to spawn Claude CLI: {e}")
             };
-            let _ = app.emit(
-                event_name::DESIGN_STATUS,
-                DesignStatusEvent {
-                    design_id,
-                    status: "failed".into(),
-                    result: None,
-                    error: Some(error_msg),
-                    question: None,
-                },
-            );
+            emit_design_status(&app, &design_id, "failed", None, Some(error_msg), None);
             return;
         }
     };
@@ -312,16 +320,7 @@ async fn run_design_analysis(params: DesignRunParams) {
     let mut reader = match driver.take_stdout_reader().map(|r| r.lines()) {
         Some(r) => r,
         None => {
-            let _ = app.emit(
-                event_name::DESIGN_STATUS,
-                DesignStatusEvent {
-                    design_id,
-                    status: "failed".into(),
-                    result: None,
-                    error: Some("Failed to capture stdout from CLI process".to_string()),
-                    question: None,
-                },
-            );
+            emit_design_status(&app, &design_id, "failed", None, Some("Failed to capture stdout from CLI process".to_string()), None);
             return;
         }
     };
@@ -356,16 +355,7 @@ async fn run_design_analysis(params: DesignRunParams) {
     if stream_result.is_err() {
         driver.kill().await;
         registry.clear_pid("design");
-        let _ = app.emit(
-            event_name::DESIGN_STATUS,
-            DesignStatusEvent {
-                design_id,
-                status: "failed".into(),
-                result: None,
-                error: Some("Design analysis timed out after 10 minutes".into()),
-                question: None,
-            },
-        );
+        emit_design_status(&app, &design_id, "failed", None, Some("Design analysis timed out after 10 minutes".into()), None);
         return;
     }
 
@@ -385,27 +375,14 @@ async fn run_design_analysis(params: DesignRunParams) {
     // Stage 3: Parse LLM output via PersonaCompiler
     match compiler::parse_output(&full_output) {
         ParseOutcome::Question(question) => {
-            // Pipeline short-circuit: LLM needs clarification
             tracing::info!(design_id = %design_id, "Design analysis paused -- question emitted");
-            let _ = app.emit(
-                event_name::DESIGN_STATUS,
-                DesignStatusEvent {
-                    design_id,
-                    status: "awaiting-input".into(),
-                    result: None,
-                    error: None,
-                    question: Some(question),
-                },
-            );
+            emit_design_status(&app, &design_id, "awaiting-input", None, None, Some(question));
         }
         ParseOutcome::Result(mut result) => {
             // Stage 4: Feasibility Check via PersonaCompiler
             compiler::run_feasibility(&mut result, &tool_names, &connector_names);
 
             // Stage 5: Persist via PersonaCompiler
-            // This is the single canonical write for design results.
-            // All other consumers (frontend store, conversation history)
-            // derive from persona.last_design_result rather than storing copies.
             let result_json = result.to_string();
             if let Err(e) = persona_repo::update(
                 &pool,
@@ -416,47 +393,16 @@ async fn run_design_analysis(params: DesignRunParams) {
                 },
             ) {
                 tracing::error!(design_id = %design_id, error = %e, "Failed to save design result to DB");
-                let _ = app.emit(
-                    event_name::DESIGN_STATUS,
-                    DesignStatusEvent {
-                        design_id,
-                        status: "failed".into(),
-                        result: Some(result),
-                        error: Some(format!("Design completed but failed to save: {e}")),
-                        question: None,
-                    },
-                );
+                emit_design_status(&app, &design_id, "failed", Some(result), Some(format!("Design completed but failed to save: {e}")), None);
                 return;
             }
 
-            // Clear active design ID on successful completion
             registry.clear_id_if("design", &design_id);
-
-            let _ = app.emit(
-                event_name::DESIGN_STATUS,
-                DesignStatusEvent {
-                    design_id,
-                    status: "completed".into(),
-                    result: Some(result),
-                    error: None,
-                    question: None,
-                },
-            );
+            emit_design_status(&app, &design_id, "completed", Some(result), None, None);
         }
         ParseOutcome::Failed => {
-            // Clear active design ID on failure
             registry.clear_id_if("design", &design_id);
-
-            let _ = app.emit(
-                event_name::DESIGN_STATUS,
-                DesignStatusEvent {
-                    design_id,
-                    status: "failed".into(),
-                    result: None,
-                    error: Some("Failed to extract design result from Claude output".into()),
-                    question: None,
-                },
-            );
+            emit_design_status(&app, &design_id, "failed", None, Some("Failed to extract design result from Claude output".into()), None);
         }
     }
 }

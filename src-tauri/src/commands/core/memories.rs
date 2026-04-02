@@ -342,9 +342,9 @@ Memories to review:
     let reviews: Vec<serde_json::Value> = serde_json::from_str(&json_str)
         .map_err(|e| AppError::Internal(format!("Invalid JSON in review output: {e}")))?;
 
-    // 6. Apply changes
-    let mut deleted_count = 0usize;
-    let mut updated_count = 0usize;
+    // 6. Collect changes, then apply as batch operations
+    let mut ids_to_delete = Vec::new();
+    let mut importance_updates = Vec::new();
     let mut details = Vec::new();
 
     let title_map: std::collections::HashMap<&str, &str> = memories
@@ -378,27 +378,14 @@ Memories to review:
             .to_string();
 
         if score < threshold {
-            match repo::delete(&db, id) {
-                Ok(_) => {
-                    deleted_count += 1;
-                    details.push(MemoryReviewDetail {
-                        id: id.to_string(),
-                        title,
-                        score,
-                        reason,
-                        action: "deleted".to_string(),
-                    });
-                }
-                Err(e) => {
-                    details.push(MemoryReviewDetail {
-                        id: id.to_string(),
-                        title,
-                        score,
-                        reason: format!("DB error on delete: {e}"),
-                        action: "error".to_string(),
-                    });
-                }
-            }
+            ids_to_delete.push(id.to_string());
+            details.push(MemoryReviewDetail {
+                id: id.to_string(),
+                title,
+                score,
+                reason,
+                action: "deleted".to_string(),
+            });
         } else {
             // Map 7-10 to importance 3-5
             let new_importance = match score {
@@ -407,29 +394,48 @@ Memories to review:
                 9..=10 => 5,
                 _ => 3,
             };
-            match repo::update_importance(&db, id, new_importance) {
-                Ok(_) => {
-                    updated_count += 1;
-                    details.push(MemoryReviewDetail {
-                        id: id.to_string(),
-                        title,
-                        score,
-                        reason,
-                        action: "kept".to_string(),
-                    });
-                }
-                Err(e) => {
-                    details.push(MemoryReviewDetail {
-                        id: id.to_string(),
-                        title,
-                        score,
-                        reason: format!("DB error on update: {e}"),
-                        action: "error".to_string(),
-                    });
-                }
-            }
+            importance_updates.push((id.to_string(), new_importance));
+            details.push(MemoryReviewDetail {
+                id: id.to_string(),
+                title,
+                score,
+                reason,
+                action: "kept".to_string(),
+            });
         }
     }
+
+    // Batch delete below-threshold memories
+    let deleted_count = if !ids_to_delete.is_empty() {
+        match repo::batch_delete(&db, &ids_to_delete) {
+            Ok(n) => n as usize,
+            Err(e) => {
+                for detail in details.iter_mut().filter(|d| d.action == "deleted") {
+                    detail.action = "error".to_string();
+                    detail.reason = format!("Batch delete failed: {e}");
+                }
+                0
+            }
+        }
+    } else {
+        0
+    };
+
+    // Batch update importance for kept memories
+    let updated_count = if !importance_updates.is_empty() {
+        match repo::batch_update_importance(&db, &importance_updates) {
+            Ok(n) => n as usize,
+            Err(e) => {
+                for detail in details.iter_mut().filter(|d| d.action == "kept") {
+                    detail.action = "error".to_string();
+                    detail.reason = format!("Batch update failed: {e}");
+                }
+                0
+            }
+        }
+    } else {
+        0
+    };
 
     Ok(MemoryReviewResult {
         reviewed: reviews.len(),

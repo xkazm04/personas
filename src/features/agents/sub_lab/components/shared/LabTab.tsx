@@ -1,13 +1,14 @@
-import { useEffect, useState, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
 import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
-import { ArenaPanel } from '../arena/ArenaPanel';
-import { MatrixPanel } from '../matrix/MatrixPanel';
-import { VersionsPanel } from './VersionsPanel';
-import { GenomeBreedingPanel } from '../genome/GenomeBreedingPanel';
-import { EvolutionPanel } from '../evolution/EvolutionPanel';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
+
+const ArenaPanel = lazy(() => import('../arena/ArenaPanel').then((m) => ({ default: m.ArenaPanel })));
+const MatrixPanel = lazy(() => import('../matrix/MatrixPanel').then((m) => ({ default: m.MatrixPanel })));
+const VersionsPanel = lazy(() => import('./VersionsPanel').then((m) => ({ default: m.VersionsPanel })));
+const GenomeBreedingPanel = lazy(() => import('../genome/GenomeBreedingPanel').then((m) => ({ default: m.GenomeBreedingPanel })));
+const EvolutionPanel = lazy(() => import('../evolution/EvolutionPanel').then((m) => ({ default: m.EvolutionPanel })));
 
 const LAB_MODE_KEY = 'dac-lab-mode';
 
@@ -86,11 +87,13 @@ export function LabTab() {
       </div>
 
       {/* Mode content */}
-      {labMode === 'arena' && <ArenaPanel />}
-      {(labMode === 'matrix' || labMode === 'ab' || labMode === 'eval') && <MatrixPanel />}
-      {labMode === 'breed' && <GenomeBreedingPanel />}
-      {labMode === 'evolve' && <EvolutionPanel />}
-      {labMode === 'versions' && <VersionsPanel />}
+      <Suspense fallback={<div className="py-8 text-center text-xs text-muted-foreground/50">Loading...</div>}>
+        {labMode === 'arena' && <ArenaPanel />}
+        {(labMode === 'matrix' || labMode === 'ab' || labMode === 'eval') && <MatrixPanel />}
+        {labMode === 'breed' && <GenomeBreedingPanel />}
+        {labMode === 'evolve' && <EvolutionPanel />}
+        {labMode === 'versions' && <VersionsPanel />}
+      </Suspense>
     </div>
   );
 }

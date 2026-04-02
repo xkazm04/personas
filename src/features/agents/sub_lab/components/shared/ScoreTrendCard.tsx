@@ -41,10 +41,10 @@ function avgComposite(results: Array<{ toolAccuracyScore: number | null; outputQ
   return Math.round(sum / scored.length);
 }
 
-const SVG_W = 120;
-const SVG_H = 48;
-const PAD_X = 4;
-const PAD_Y = 4;
+const SVG_W = 180;
+const SVG_H = 64;
+const PAD_X = 6;
+const PAD_Y = 6;
 const MAX_POINTS = 8;
 const GRADIENT_ID = 'scoreTrendGrad';
 
@@ -147,18 +147,16 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
         )}
       </div>
 
-      {/* Sparkline with endpoint labels */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[10px] tabular-nums text-muted-foreground/70 w-5 text-right shrink-0">
-          {first.dp.score}
-        </span>
-
-        <div className="relative flex-1" onMouseLeave={() => setHoveredIdx(null)}>
+      {/* Sparkline */}
+      <div className="space-y-1">
+        <div className="relative" onMouseLeave={() => setHoveredIdx(null)}>
           <svg
             viewBox={`0 0 ${SVG_W} ${SVG_H}`}
             className="w-full"
-            style={{ height: 48 }}
+            style={{ height: 64 }}
             preserveAspectRatio="none"
+            role="img"
+            aria-label={`Score trend: ${first.dp.score} to ${last.dp.score}, ${last.dp.score >= first.dp.score ? 'improving' : 'declining'}`}
           >
             <defs>
               <linearGradient id={GRADIENT_ID} x1="0" x2="0" y1="0" y2="1">
@@ -209,9 +207,22 @@ export function ScoreTrendCard({ personaId }: ScoreTrendCardProps) {
           )}
         </div>
 
-        <span className="text-[10px] tabular-nums text-muted-foreground/70 w-5 shrink-0">
-          {last.dp.score}
-        </span>
+        {/* Min/max labels below chart */}
+        <div className="flex justify-between">
+          <span className="text-xs text-foreground/50 tabular-nums">{first.dp.score}</span>
+          <span className="text-xs text-foreground/50 tabular-nums">{last.dp.score}</span>
+        </div>
+
+        {/* Visually-hidden table fallback for screen readers */}
+        <table className="sr-only">
+          <caption>Score trend data points</caption>
+          <thead><tr><th>Run</th><th>Score</th></tr></thead>
+          <tbody>
+            {dataPoints.map((dp, i) => (
+              <tr key={i}><td>{dp.label}</td><td>{dp.score}</td></tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -107,6 +107,8 @@ export function VersionItem({
         <button
           onClick={(e) => { e.stopPropagation(); setShowActions(!showActions); }}
           data-testid={`version-actions-toggle-${version.version_number}`}
+          aria-expanded={showActions}
+          aria-label={`${showActions ? 'Hide' : 'Show'} actions for version ${version.version_number}`}
           className="text-sm text-muted-foreground/60 hover:text-muted-foreground flex items-center gap-1 transition-colors"
         >
           {showActions ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}

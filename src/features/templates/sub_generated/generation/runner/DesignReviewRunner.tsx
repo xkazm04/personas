@@ -47,7 +47,7 @@ export default function DesignReviewRunner({
         <div
           ref={state.modalRef}
           role="dialog" aria-modal="true" aria-labelledby="design-runner-title"
-          className="animate-fade-slide-in w-[750px] max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
+          className="animate-fade-slide-in max-w-3xl w-full mx-4 sm:mx-6 md:mx-auto max-h-[85vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-primary/10 bg-primary/5">

@@ -53,17 +53,20 @@ pub fn list_sessions(
     timed_query!("chat_sessions", "chat_sessions::list_sessions", {
         let limit = limit.unwrap_or(50);
         let conn = pool.get()?;
+        // Use chat_session_context (indexed) + lightweight count subquery
+        // instead of GROUP BY across all chat_messages.
         let mut stmt = conn.prepare(
             "SELECT
-                session_id,
-                persona_id,
-                COUNT(*) as message_count,
-                MAX(created_at) as last_message_at,
-                MIN(created_at) as created_at
-             FROM chat_messages
-             WHERE persona_id = ?1
-             GROUP BY session_id
-             ORDER BY last_message_at DESC
+                csc.session_id,
+                csc.persona_id,
+                COALESCE((SELECT COUNT(*) FROM chat_messages cm
+                          WHERE cm.session_id = csc.session_id
+                            AND cm.persona_id = csc.persona_id), 0) as message_count,
+                csc.updated_at as last_message_at,
+                csc.created_at
+             FROM chat_session_context csc
+             WHERE csc.persona_id = ?1
+             ORDER BY csc.updated_at DESC
              LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![persona_id, limit], |row| {

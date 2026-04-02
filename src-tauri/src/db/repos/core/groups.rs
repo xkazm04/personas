@@ -35,10 +35,19 @@ crud_update! {
     }
 }
 
+const MAX_GROUP_NAME_LEN: usize = 200;
+
 pub fn create(pool: &DbPool, input: CreatePersonaGroupInput) -> Result<PersonaGroup, AppError> {
-    if input.name.trim().is_empty() {
+    let name = crate::validation::strip_html_tags(input.name.trim());
+    if name.is_empty() {
         return Err(AppError::Validation("Name cannot be empty".into()));
     }
+    if name.len() > MAX_GROUP_NAME_LEN {
+        return Err(AppError::Validation(format!(
+            "Group name exceeds maximum length of {MAX_GROUP_NAME_LEN} characters"
+        )));
+    }
+    let description = input.description.map(|d| crate::validation::strip_html_tags(&d));
 
     timed_query!("persona_groups", "persona_groups::create", {
         let id = uuid::Uuid::new_v4().to_string();
@@ -65,7 +74,7 @@ pub fn create(pool: &DbPool, input: CreatePersonaGroupInput) -> Result<PersonaGr
         conn.execute(
             "INSERT INTO persona_groups (id, name, color, sort_order, collapsed, description, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?6)",
-            params![id, input.name, color, sort_order, input.description, now],
+            params![id, name, color, sort_order, description, now],
         )?;
 
         get_by_id(pool, &id)

@@ -259,6 +259,65 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
     })
 }
 
+/// Insert multiple memories in a single transaction without read-back.
+/// Returns the number of successfully inserted rows.
+pub fn batch_create(pool: &DbPool, inputs: Vec<CreatePersonaMemoryInput>) -> Result<i64, AppError> {
+    if inputs.is_empty() {
+        return Ok(0);
+    }
+    timed_query!("persona_memories", "persona_memories::batch_create", {
+        let conn = pool.get()?;
+        let tx = conn.unchecked_transaction()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut count: i64 = 0;
+
+        {
+            let mut stmt = tx.prepare(
+                "INSERT INTO persona_memories
+                 (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+            )?;
+
+            for input in inputs {
+                let title = strip_html_tags(&input.title);
+                let content = strip_html_tags(&input.content);
+                if title.trim().is_empty() || content.trim().is_empty() {
+                    continue;
+                }
+                let id = uuid::Uuid::new_v4().to_string();
+                let category = input.category.as_deref().unwrap_or(DEFAULT_MEMORY_CATEGORY);
+                if validate_category(category).is_err() {
+                    continue;
+                }
+                let category = category.to_string();
+                let importance = match input.importance {
+                    Some(v) => match validate_importance(v) {
+                        Ok(v) => v,
+                        Err(_) => 3,
+                    },
+                    None => 3,
+                };
+
+                stmt.execute(params![
+                    id,
+                    input.persona_id,
+                    title,
+                    content,
+                    category,
+                    input.source_execution_id,
+                    importance,
+                    normalize_tags(input.tags.map(|j| serde_json::to_string(&j.0).unwrap_or_default())),
+                    now,
+                ])?;
+                count += 1;
+            }
+        }
+
+        tx.commit()?;
+        Ok(count)
+    })
+}
+
 pub fn get_total_count(
     pool: &DbPool,
     persona_id: Option<&str>,
@@ -405,6 +464,32 @@ pub fn update_importance(pool: &DbPool, id: &str, importance: i32) -> Result<boo
             params![importance, now, id],
         )?;
         Ok(rows > 0)
+    })
+}
+
+/// Batch-update importance for multiple memories in a single transaction.
+/// Each tuple is (id, new_importance).
+pub fn batch_update_importance(pool: &DbPool, updates: &[(String, i32)]) -> Result<i64, AppError> {
+    if updates.is_empty() {
+        return Ok(0);
+    }
+    timed_query!("persona_memories", "persona_memories::batch_update_importance", {
+        let conn = pool.get()?;
+        let tx = conn.unchecked_transaction()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut total_updated: i64 = 0;
+
+        let mut stmt = tx.prepare(
+            "UPDATE persona_memories SET importance = ?1, updated_at = ?2 WHERE id = ?3",
+        )?;
+        for (id, importance) in updates {
+            let rows = stmt.execute(params![importance, now, id])?;
+            total_updated += rows as i64;
+        }
+        drop(stmt);
+
+        tx.commit()?;
+        Ok(total_updated)
     })
 }
 
