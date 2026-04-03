@@ -519,8 +519,6 @@ export default function SetupCards() {
   const setupRole = useSystemStore((s) => s.setupRole);
   const setupTool = useSystemStore((s) => s.setupTool);
   const setupGoal = useSystemStore((s) => s.setupGoal);
-  const dismissSetup = useSystemStore((s) => s.dismissSetup);
-
   const [stepperOpen, setStepperOpen] = useState(false);
   const [initialStep, setInitialStep] = useState(0);
 
@@ -547,20 +545,6 @@ export default function SetupCards() {
       transition={{ delay: 0.2, duration: 0.4 }}
       className="space-y-3"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/10" />
-          <span className="typo-label text-muted-foreground/50">Get Started</span>
-          <div className="h-px w-8 bg-gradient-to-l from-transparent to-primary/10" />
-        </div>
-        <button
-          onClick={dismissSetup}
-          className="typo-caption text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
-        >
-          Dismiss
-        </button>
-      </div>
-
       <div className="grid grid-cols-3 gap-5">
         {CARD_DEFS.map((card, i) => (
           <SetupCardItem

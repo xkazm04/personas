@@ -212,6 +212,70 @@ body {
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
 
+/* -- Theme-Adaptive Card Label -----------------------------------------------
+   Bright and shiny in dark themes, darker/shadowy in light themes.
+   Tokenized for reuse across card grids, nav cards, language cards, etc. */
+
+.typo-card-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  font-feature-settings: "kern" 1, "liga" 1;
+  color: hsl(var(--foreground));
+  text-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 0 4px hsl(var(--primary) / 0.15);
+}
+
+:root[class*="light"] .typo-card-label,
+[data-theme*="light"] .typo-card-label {
+  text-shadow: 0 1px 2px hsl(var(--foreground) / 0.15);
+  color: hsl(var(--foreground) / 0.85);
+}
+
+/* -- Section Title -----------------------------------------------------------
+   Section divider labels with theme-tinted coloring. */
+
+.typo-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  font-feature-settings: "kern" 1, "liga" 1;
+  color: hsl(var(--primary) / 0.85);
+}
+
+/* -- Hero Greeting Shine -----------------------------------------------------
+   Subtle animated shine effect for the dominant greeting typography. */
+
+@keyframes greeting-shine {
+  0%, 100% { background-position: -200% center; }
+  50% { background-position: 200% center; }
+}
+
+.typo-hero-shine {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--foreground)) 0%,
+    hsl(var(--foreground)) 35%,
+    hsl(var(--primary) / 0.9) 50%,
+    hsl(var(--foreground)) 65%,
+    hsl(var(--foreground)) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: greeting-shine 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typo-hero-shine {
+    animation: none;
+    background: none;
+    color: hsl(var(--foreground));
+  }
+}
+
 /* Small caps -- elegant label variant */
 .font-smallcaps {
   font-feature-settings: "smcp" 1, "kern" 1;

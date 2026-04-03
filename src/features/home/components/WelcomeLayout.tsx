@@ -4,8 +4,19 @@ import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import HeroHeader from './HeroHeader';
 import SetupCards from './SetupCards';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
+import TourLauncher from '@/features/onboarding/components/TourLauncher';
 
 const LanguageCards = lazy(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
+      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
+      <span className="typo-section-title">{label}</span>
+      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
+    </div>
+  );
+}
 
 interface WelcomeLayoutProps {
   greeting: string;
@@ -33,21 +44,21 @@ export default function WelcomeLayout({
         <div className="w-full px-6 py-4 space-y-4">
           <HeroHeader greeting={greeting} displayName={displayName} />
 
-          <SetupCards />
-
+          {/* Get Started section with tour button next to title */}
           <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-            <span className="text-lg font-medium text-foreground/80">{quickNavLabel}</span>
+            <span className="typo-section-title">Get Started</span>
+            <TourLauncher />
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
           </div>
+
+          <SetupCards />
+
+          <SectionDivider label={quickNavLabel} />
 
           <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
 
-          <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-            <span className="text-lg font-medium text-foreground/80">Language</span>
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-          </div>
+          <SectionDivider label="Language" />
 
           <Suspense fallback={<SuspenseFallback />}>
             <LanguageCards />

@@ -62,7 +62,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
         {/* Module name overlaid at bottom of illustration */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-10">
-          <h3 className="typo-heading-lg tracking-wide text-foreground uppercase drop-shadow-sm">{cardT.label}</h3>
+          <h3 className="typo-card-label tracking-wide uppercase">{cardT.label}</h3>
         </div>
 
         {/* Arrow overlay */}

@@ -1,6 +1,4 @@
 import { useMemo } from 'react';
-import LanguageSwitcher from './LanguageSwitcher';
-import TourLauncher from '@/features/onboarding/components/TourLauncher';
 
 const BG_OPTIONS = [
   '/illustrations/bg-v1-command-room.png',
@@ -27,15 +25,9 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
       </div>
 
       <div className="relative z-10">
-        {/* Top bar -- language on left, tour on right */}
-        <div className="flex items-center justify-between">
-          <LanguageSwitcher />
-          <TourLauncher />
-        </div>
-
         {/* Logo + greeting -- centered row */}
         <div
-          className="animate-fade-slide-in flex items-center justify-center gap-6 py-4"
+          className="animate-fade-slide-in flex items-center justify-center gap-6 py-6"
         >
           {/* Logo */}
           <div className="relative group flex-shrink-0">
@@ -51,9 +43,9 @@ export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
             </div>
           </div>
 
-          {/* Greeting */}
+          {/* Greeting with animated shine */}
           <h1
-            className="animate-fade-slide-in typo-hero font-display bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent"
+            className="animate-fade-slide-in typo-hero font-display typo-hero-shine"
           >
             {greeting}, {displayName}
           </h1>
