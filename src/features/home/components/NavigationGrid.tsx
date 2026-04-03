@@ -62,7 +62,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
         {/* Module name overlaid at bottom of illustration */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-10">
-          <h3 className="typo-heading-lg tracking-wide text-foreground/80 uppercase drop-shadow-sm">{cardT.label}</h3>
+          <h3 className="typo-heading-lg tracking-wide text-foreground uppercase drop-shadow-sm">{cardT.label}</h3>
         </div>
 
         {/* Arrow overlay */}
@@ -76,7 +76,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
       {/* Description below -- fixed height */}
       <div className="mt-1.5 px-1 h-[48px] flex items-start">
-        <p className="typo-caption leading-relaxed text-muted-foreground/80 line-clamp-3">{cardT.description}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground/80 line-clamp-3">{cardT.description}</p>
       </div>
     </motion.button>
   );

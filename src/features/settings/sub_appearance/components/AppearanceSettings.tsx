@@ -3,6 +3,7 @@ import { Check, Globe, Palette, Sun, Type } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
+// ThemeDefinition used in ThemingSection props
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import CustomThemeCreator from './CustomThemeCreator';
@@ -95,6 +96,62 @@ const TIMEZONE_OPTIONS: Array<{ value: string; label: string; description: strin
   { value: 'Asia/Tokyo', label: 'Tokyo', description: 'JST (UTC+9)' },
 ];
 
+function ThemingSection({ themeId, setTheme, darkThemes, lightThemes }: {
+  themeId: ThemeId;
+  setTheme: (id: ThemeId) => void;
+  darkThemes: ThemeDefinition[];
+  lightThemes: ThemeDefinition[];
+}) {
+  const [themeTab, setThemeTab] = useState<'default' | 'custom'>('default');
+  return (
+    <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <SectionHeading title="Theming" icon={<Palette />} />
+        <div className="flex rounded-lg border border-primary/15 overflow-hidden">
+          <button
+            onClick={() => setThemeTab('default')}
+            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+              themeTab === 'default' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+            }`}
+          >
+            Default
+          </button>
+          <button
+            onClick={() => setThemeTab('custom')}
+            className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-primary/15 ${
+              themeTab === 'custom' ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/60 hover:text-foreground/80'
+            }`}
+          >
+            Custom
+          </button>
+        </div>
+      </div>
+      {themeTab === 'default' ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <span className="text-sm text-muted-foreground/60">Dark</span>
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+              {darkThemes.map((t) => (
+                <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <span className="text-sm text-muted-foreground/60">Light</span>
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+              {lightThemes.map((t) => (
+                <ThemeSwatch key={t.id} theme={t} active={themeId === t.id} onSelect={() => setTheme(t.id as ThemeId)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <CustomThemeCreator />
+      )}
+    </div>
+  );
+}
+
 export default function AppearanceSettings() {
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
@@ -127,86 +184,13 @@ export default function AppearanceSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
-          {/* Dark themes */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <SectionHeading title="Dark" />
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
-              {darkWithCustom.map((t) => (
-                <ThemeSwatch
-                  key={t.id}
-                  theme={t}
-                  active={themeId === t.id}
-                  onSelect={() => setTheme(t.id as ThemeId)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Light themes */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <SectionHeading title="Light" />
-            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
-              {lightWithCustom.map((t) => (
-                <ThemeSwatch
-                  key={t.id}
-                  theme={t}
-                  active={themeId === t.id}
-                  onSelect={() => setTheme(t.id as ThemeId)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Custom theme creator */}
-          <CustomThemeCreator />
-
-          {/* Brightness */}
-          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
-            <SectionHeading title="Brightness" icon={<Sun />} />
-            <p className="text-xs text-muted-foreground/60">
-              Adjust screen brightness if the app feels too dark on your display.
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              {brightnessLevels.map((level, i) => {
-                const isActive = brightness === level.id;
-                const iconOpacity = i === 0 ? 'opacity-40' : i === 1 ? 'opacity-70' : 'opacity-100';
-                return (
-                  <Button
-                    variant="ghost"
-                    key={level.id}
-                    onClick={() => setBrightness(level.id as BrightnessLevel)}
-                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
-                      isActive
-                        ? 'border-primary/30 bg-primary/5'
-                        : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-                    }`}
-                  >
-                    <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-muted-foreground/70'}`} />
-                    <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/70'}`}>
-                      {level.label}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground/50">
-                      {level.description}
-                    </span>
-                    {isActive && (
-                      <div className="absolute top-2 right-2">
-                        <Check className="w-3.5 h-3.5 text-primary" />
-                      </div>
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Text sizing */}
           <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title="Text Size" icon={<Type />} />
-            <div className="grid grid-cols-2 2xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {TEXT_SCALES.map((scale) => {
                 const isActive = textScale === scale.id;
                 const sizeClass =
-                  scale.id === 'compact' ? 'text-xs' :
                   scale.id === 'default' ? 'text-sm' :
                   scale.id === 'large' ? 'text-base' : 'text-lg';
                 return (
@@ -281,6 +265,53 @@ export default function AppearanceSettings() {
 
           {/* Language & Translation Contributions */}
           <TranslationContributor />
+
+          {/* Brightness */}
+          <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+            <SectionHeading title="Brightness" icon={<Sun />} />
+            <p className="text-sm text-muted-foreground/60">
+              Adjust screen brightness if the app feels too dark on your display.
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {brightnessLevels.map((level, i) => {
+                const isActive = brightness === level.id;
+                const iconOpacity = i === 0 ? 'opacity-40' : i === 1 ? 'opacity-70' : 'opacity-100';
+                return (
+                  <Button
+                    variant="ghost"
+                    key={level.id}
+                    onClick={() => setBrightness(level.id as BrightnessLevel)}
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border ${
+                      isActive
+                        ? 'border-primary/30 bg-primary/5'
+                        : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                    }`}
+                  >
+                    <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-muted-foreground/70'}`} />
+                    <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/70'}`}>
+                      {level.label}
+                    </span>
+                    <span className="text-sm text-muted-foreground/50">
+                      {level.description}
+                    </span>
+                    {isActive && (
+                      <div className="absolute top-2 right-2">
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Theming (moved to last) */}
+          <ThemingSection
+            themeId={themeId}
+            setTheme={setTheme}
+            darkThemes={darkWithCustom}
+            lightThemes={lightWithCustom}
+          />
         </div>
       </ContentBody>
     </ContentBox>

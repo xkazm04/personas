@@ -1,14 +1,32 @@
-import { Check, Sun } from 'lucide-react';
-import { useThemeStore, THEMES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
-import type { ThemeId, BrightnessLevel } from '@/stores/themeStore';
+import { Check, Sun, Type, Languages } from 'lucide-react';
+import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
+import type { ThemeId, TextScale, BrightnessLevel } from '@/stores/themeStore';
+import { useI18nStore, type Language } from '@/stores/i18nStore';
+
+const ONBOARDING_LANGUAGES: { code: Language; label: string; flag: string }[] = [
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'cs', label: 'Čeština', flag: '🇨🇿' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
+  { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
+];
 
 export function AppearanceStep() {
   const themeId = useThemeStore((s) => s.themeId);
   const setTheme = useThemeStore((s) => s.setTheme);
+  const textScale = useThemeStore((s) => s.textScale);
+  const setTextScale = useThemeStore((s) => s.setTextScale);
   const brightness = useThemeStore((s) => s.brightness);
   const setBrightness = useThemeStore((s) => s.setBrightness);
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
+  const { language, setLanguage } = useI18nStore();
 
   const darkThemes = THEMES.filter((t) => !t.isLight);
   const lightThemes = THEMES.filter((t) => t.isLight);
@@ -16,15 +34,72 @@ export function AppearanceStep() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="typo-heading text-foreground/90 mb-1">Choose your theme</h3>
-        <p className="typo-body text-muted-foreground/60">
-          Pick a color scheme that feels comfortable on your screen. You can change this anytime in Settings.
+        <h3 className="typo-heading text-foreground/90 mb-1">Set up your preferences</h3>
+        <p className="text-sm text-muted-foreground/60">
+          Configure language, text size, and theme. You can change these anytime in Settings.
         </p>
+      </div>
+
+      {/* Language */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Languages className="w-4 h-4 text-muted-foreground/60" />
+          <span className="text-sm font-medium text-foreground/80">Language</span>
+        </div>
+        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))' }}>
+          {ONBOARDING_LANGUAGES.map((lang) => {
+            const isActive = language === lang.code;
+            return (
+              <button
+                key={lang.code}
+                onClick={() => setLanguage(lang.code)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors text-sm ${
+                  isActive
+                    ? 'border-primary/30 bg-primary/5 text-foreground/90 font-medium'
+                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5 text-muted-foreground/70'
+                }`}
+              >
+                <span>{lang.flag}</span>
+                <span className="truncate">{lang.label}</span>
+                {isActive && <Check className="w-3 h-3 text-primary ml-auto shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Text size */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Type className="w-4 h-4 text-muted-foreground/60" />
+          <span className="text-sm font-medium text-foreground/80">Text Size</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {TEXT_SCALES.map((scale) => {
+            const isActive = textScale === scale.id;
+            const sizeClass = scale.id === 'default' ? 'text-sm' : scale.id === 'large' ? 'text-base' : 'text-lg';
+            return (
+              <button
+                key={scale.id}
+                onClick={() => setTextScale(scale.id as TextScale)}
+                className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-colors ${
+                  isActive
+                    ? 'border-primary/30 bg-primary/5'
+                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                }`}
+              >
+                <span className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-muted-foreground/70'}`}>Aa</span>
+                <span className={`text-sm ${isActive ? 'text-foreground/80 font-medium' : 'text-muted-foreground/60'}`}>{scale.label}</span>
+                {isActive && <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-primary" /></div>}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Dark themes */}
       <div className="space-y-2">
-        <span className="typo-caption text-muted-foreground/50">Dark</span>
+        <span className="text-sm text-muted-foreground/50">Dark</span>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
           {darkThemes.map((t) => {
             const isActive = themeId === t.id;
@@ -44,7 +119,7 @@ export function AppearanceStep() {
                 >
                   {isActive && <Check className="w-3 h-3 text-white drop-shadow-sm" />}
                 </div>
-                <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
+                <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
                   {t.label}
                 </span>
               </button>
@@ -55,7 +130,7 @@ export function AppearanceStep() {
 
       {/* Light themes */}
       <div className="space-y-2">
-        <span className="typo-caption text-muted-foreground/50">Light</span>
+        <span className="text-sm text-muted-foreground/50">Light</span>
         <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
           {lightThemes.map((t) => {
             const isActive = themeId === t.id;
@@ -75,7 +150,7 @@ export function AppearanceStep() {
                 >
                   {isActive && <Check className="w-3 h-3 text-white drop-shadow-sm" />}
                 </div>
-                <span className={`text-[11px] ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
+                <span className={`text-sm ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/60'}`}>
                   {t.label}
                 </span>
               </button>
@@ -86,8 +161,8 @@ export function AppearanceStep() {
 
       {/* Brightness */}
       <div className="space-y-2">
-        <span className="typo-caption text-muted-foreground/50">Brightness</span>
-        <p className="text-xs text-muted-foreground/50">
+        <span className="text-sm text-muted-foreground/50">Brightness</span>
+        <p className="text-sm text-muted-foreground/50">
           If the app feels too dark on your monitor, increase brightness.
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -108,7 +183,7 @@ export function AppearanceStep() {
                 <span className={`text-xs ${isActive ? 'text-foreground/90 font-medium' : 'text-muted-foreground/70'}`}>
                   {level.label}
                 </span>
-                <span className="text-[10px] text-muted-foreground/50">{level.description}</span>
+                <span className="text-sm text-muted-foreground/50">{level.description}</span>
                 {isActive && (
                   <div className="absolute top-1.5 right-1.5">
                     <Check className="w-3 h-3 text-primary" />

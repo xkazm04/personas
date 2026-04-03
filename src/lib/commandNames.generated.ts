@@ -93,7 +93,6 @@ export type CommandName =
   | "cloud_list_deployments"
   | "cloud_list_executions"
   | "cloud_list_pending_reviews"
-  | "clear_pending_oauth"
   | "cloud_list_trigger_firings"
   | "cloud_list_triggers"
   | "cloud_oauth_authorize"

@@ -1,7 +1,6 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{CreateMessageInput, MessageThreadSummary, PersonaMessage, PersonaMessageDelivery};
-use crate::db::query_builder::QueryBuilder;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -231,24 +230,18 @@ pub fn get_thread_summaries(
     );
 
     let mut stmt = conn.prepare(&sql)?;
-    let rows = if let Some(pid) = persona_id {
-        stmt.query_map(params![pid, limit, offset], |row| {
-            Ok((
-                row.get::<_, String>("ta_thread_id")?,
-                row.get::<_, Option<String>>("ta_last_at")?,
-                row.get::<_, i64>("ta_cnt")?,
-                row_to_message(row)?,
-            ))
-        })?
+    let mapper = |row: &rusqlite::Row| {
+        Ok((
+            row.get::<_, String>("ta_thread_id")?,
+            row.get::<_, Option<String>>("ta_last_at")?,
+            row.get::<_, i64>("ta_cnt")?,
+            row_to_message(row)?,
+        ))
+    };
+    let rows: Vec<Result<(String, Option<String>, i64, PersonaMessage), rusqlite::Error>> = if let Some(pid) = persona_id {
+        stmt.query_map(params![pid, limit, offset], mapper)?.collect()
     } else {
-        stmt.query_map(params![limit, offset], |row| {
-            Ok((
-                row.get::<_, String>("ta_thread_id")?,
-                row.get::<_, Option<String>>("ta_last_at")?,
-                row.get::<_, i64>("ta_cnt")?,
-                row_to_message(row)?,
-            ))
-        })?
+        stmt.query_map(params![limit, offset], mapper)?.collect()
     };
 
     let mut summaries = Vec::new();

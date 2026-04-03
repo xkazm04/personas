@@ -66,7 +66,7 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }
         <span className="shrink-0">{icon}</span>
         <div className="flex-1 min-w-0">
           <span className="typo-heading text-foreground">{title}</span>
-          <p className="typo-caption text-muted-foreground/70 mt-0.5">{tldr}</p>
+          <p className="text-sm text-muted-foreground/70 mt-0.5">{tldr}</p>
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
       </button>
@@ -109,7 +109,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
       onClose={noop}
       titleId="first-use-consent-title"
       containerClassName="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-      maxWidthClass="max-w-2xl"
+      maxWidthClass="max-w-3xl"
       panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[90vh]"
     >
         {/* Header */}
@@ -222,7 +222,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
             href="https://github.com/anthropics/personas-desktop"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 typo-caption text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
             {c.source_link}

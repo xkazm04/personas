@@ -50,7 +50,7 @@ export function TourPanelBody({
               <h4 className="typo-heading text-foreground/90 flex items-center gap-2">
                 {currentStep.title}
                 {isStepCompleted && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-medium text-emerald-400">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-sm font-medium text-emerald-400">
                     <Check className="w-2.5 h-2.5" />
                     Done
                   </span>

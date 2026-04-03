@@ -37,7 +37,7 @@ export default function WelcomeLayout({
 
           <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-            <span className="typo-label text-muted-foreground/50">{quickNavLabel}</span>
+            <span className="text-lg font-medium text-foreground/80">{quickNavLabel}</span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
           </div>
 
@@ -45,7 +45,7 @@ export default function WelcomeLayout({
 
           <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-            <span className="typo-label text-muted-foreground/50">Language</span>
+            <span className="text-lg font-medium text-foreground/80">Language</span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
           </div>
 
@@ -54,7 +54,7 @@ export default function WelcomeLayout({
           </Suspense>
 
           <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center justify-center pt-4 pb-8">
-            <div className="flex items-center gap-2 typo-label text-muted-foreground/50">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
               <div className="w-8 h-px bg-gradient-to-r from-transparent to-muted-foreground/20" />
               {platformLabel}
               <div className="w-8 h-px bg-gradient-to-l from-transparent to-muted-foreground/20" />

@@ -4,6 +4,18 @@ import { create } from 'zustand';
 // Types
 // ---------------------------------------------------------------------------
 
+export type ProcessType =
+  | 'n8n-transform'
+  | 'template-adopt'
+  | 'rebuild'
+  | 'template-test'
+  | 'context-scan'
+  | 'execution'
+  | 'matrix-build'
+  | 'lab-run'
+  | 'connector-test'
+  | 'creative-session';
+
 export type PipelineNotificationStatus = 'success' | 'failed' | 'canceled';
 
 export interface PipelineNotification {
@@ -53,6 +65,15 @@ interface NotificationCenterStore {
   unreadCount: number;
 
   addNotification: (n: Omit<PipelineNotification, 'id' | 'timestamp' | 'read'>) => void;
+  addProcessNotification: (n: {
+    processType: ProcessType;
+    personaId: string | null;
+    personaName: string | null;
+    status: string;
+    summary: string;
+    redirectSection: string;
+    redirectTab: string | null;
+  }) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
   dismiss: (id: string) => void;
@@ -75,6 +96,22 @@ export const useNotificationCenterStore = create<NotificationCenterStore>((set, 
       const notification: PipelineNotification = {
         ...n,
         id: `pn-${++nextId}-${Date.now()}`,
+        timestamp: Date.now(),
+        read: false,
+      };
+      const updated = [notification, ...get().notifications].slice(0, MAX_NOTIFICATIONS);
+      saveNotifications(updated);
+      set({ notifications: updated, unreadCount: updated.filter((x) => !x.read).length });
+    },
+
+    addProcessNotification: (n) => {
+      const notification: PipelineNotification = {
+        id: `proc-${++nextId}-${Date.now()}`,
+        pipelineId: 0,
+        projectId: null,
+        status: n.status === 'success' ? 'success' : 'failed',
+        ref: n.processType,
+        webUrl: n.redirectSection + (n.redirectTab ? `#${n.redirectTab}` : ''),
         timestamp: Date.now(),
         read: false,
       };

@@ -19,7 +19,7 @@ export type ThemeId =
   | 'light-news'
   | 'custom';
 
-export type TextScale = 'compact' | 'default' | 'large' | 'larger';
+export type TextScale = 'default' | 'large' | 'larger';
 
 export type BrightnessLevel = 'low' | 'mid' | 'high';
 
@@ -72,14 +72,12 @@ export const THEMES: ThemeDefinition[] = [
 ];
 
 export const TEXT_SCALES: { id: TextScale; label: string; description: string }[] = [
-  { id: 'compact', label: 'Compact', description: 'Dense data views' },
-  { id: 'default', label: 'Default', description: 'Balanced readability' },
-  { id: 'large', label: 'Large', description: 'Comfortable reading' },
+  { id: 'default', label: 'Small', description: 'Compact readability' },
+  { id: 'large', label: 'Large', description: 'Default — comfortable reading' },
   { id: 'larger', label: 'Larger', description: 'Maximum readability' },
 ];
 
 const TEXT_SCALE_MULTIPLIERS: Record<TextScale, number> = {
-  compact: 13 / 14,
   default: 1,
   large: 15 / 14,
   larger: 16.5 / 14,
@@ -210,7 +208,7 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
       themeId: 'dark-midnight' as ThemeId,
-      textScale: 'default' as TextScale,
+      textScale: 'large' as TextScale,
       timezone: 'local' as TimezoneMode,
       brightness: 'low' as BrightnessLevel,
       customTheme: null as CustomThemeConfig | null,
@@ -251,7 +249,7 @@ export const useThemeStore = create<ThemeState>()(
             injectCustomThemeStyle(deriveCustomThemeVars(state.customTheme));
           }
           applyThemeToDOM(state.themeId, state.customTheme);
-          applyTextScale(state.textScale ?? 'default');
+          applyTextScale(state.textScale ?? 'large');
           applyBrightness(state.brightness ?? 'low', state.themeId, state.customTheme);
         }
       },

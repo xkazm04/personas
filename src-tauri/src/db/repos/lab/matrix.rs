@@ -100,6 +100,17 @@ pub fn accept_draft(pool: &DbPool, id: &str) -> Result<(), AppError> {
     })
 }
 
+pub fn update_llm_summary(pool: &DbPool, id: &str, llm_summary: &str) -> Result<(), AppError> {
+    timed_query!("lab_matrix_runs", "lab_matrix_runs::update_llm_summary", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE lab_matrix_runs SET llm_summary = ?1 WHERE id = ?2",
+            params![llm_summary, id],
+        )?;
+        Ok(())
+    })
+}
+
 pub fn create_result(
     pool: &DbPool,
     input: &CreateMatrixResultInput,
