@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 import { deriveCustomThemeVars, injectCustomThemeStyle, removeCustomThemeStyle } from '@/lib/theme/deriveCustomTheme';
+import { storeBus } from '@/lib/storeBus';
 
 export type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 
@@ -166,19 +167,21 @@ function applyBrightness(level: BrightnessLevel, themeId: ThemeId, customConfig?
   const el = document.documentElement;
   el.style.setProperty('--app-brightness', String(val));
 
-  // Temporarily remove data-brightness so getComputedStyle reads the theme's
-  // unmodified status/brand values (not values already counteracted by a previous level).
-  el.removeAttribute('data-brightness');
-  void el.offsetHeight; // force style recalc
-
-  const computed = getComputedStyle(el);
-  for (const token of BRIGHTNESS_EXEMPT_TOKENS) {
-    const current = computed.getPropertyValue(`--${token}`).trim();
-    if (current) el.style.setProperty(`--${token}-raw`, current);
-  }
-
-  // Set data-brightness="dark-low" / "light-mid" etc. for CSS counteraction
-  el.setAttribute('data-brightness', `${light ? 'light' : 'dark'}-${level}`);
+  // Defer the expensive token compensation to avoid blocking the main thread.
+  // The brightness filter applies instantly via CSS; the color compensation
+  // is a cosmetic refinement that can arrive a frame later.
+  requestAnimationFrame(() => {
+    el.removeAttribute('data-brightness');
+    // Use a microtask to batch the read/write cycle after the frame paints
+    queueMicrotask(() => {
+      const computed = getComputedStyle(el);
+      for (const token of BRIGHTNESS_EXEMPT_TOKENS) {
+        const current = computed.getPropertyValue(`--${token}`).trim();
+        if (current) el.style.setProperty(`--${token}-raw`, current);
+      }
+      el.setAttribute('data-brightness', `${light ? 'light' : 'dark'}-${level}`);
+    });
+  });
 }
 
 interface ThemeState {
@@ -216,15 +219,18 @@ export const useThemeStore = create<ThemeState>()(
         applyThemeToDOM(id, get().customTheme);
         applyBrightness(get().brightness, id, get().customTheme);
         set({ themeId: id });
+        storeBus.emit('appearance:changed', { field: 'themeId', value: id });
       },
       setTextScale: (scale: TextScale) => {
         applyTextScale(scale);
         set({ textScale: scale });
+        storeBus.emit('appearance:changed', { field: 'textScale', value: scale });
       },
       setTimezone: (tz: TimezoneMode) => set({ timezone: tz }),
       setBrightness: (level: BrightnessLevel) => {
         applyBrightness(level, get().themeId, get().customTheme);
         set({ brightness: level });
+        storeBus.emit('appearance:changed', { field: 'brightness', value: level });
       },
       setCustomTheme: (config: CustomThemeConfig) => {
         set({ customTheme: config });

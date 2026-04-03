@@ -1,15 +1,14 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, memo, useMemo } from 'react';
 import { Check, Globe, Palette, Sun, Type } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
-// ThemeDefinition used in ThemingSection props
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
 
-function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
+const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
   const borderColor = theme.isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.12)';
   return (
@@ -44,9 +43,9 @@ function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
       </div>
     </div>
   );
-}
+});
 
-function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; active: boolean; onSelect: () => void }) {
+const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; active: boolean; onSelect: () => void }) {
   const [showPreview, setShowPreview] = useState(false);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -83,7 +82,7 @@ function ThemeSwatch({ theme, active, onSelect }: { theme: ThemeDefinition; acti
       </span>
     </Button>
   );
-}
+});
 
 const TIMEZONE_OPTIONS: Array<{ value: string; label: string; description: string }> = [
   { value: 'local', label: 'Local', description: 'Browser timezone' },
@@ -166,15 +165,18 @@ export default function AppearanceSettings() {
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);
 
-  const customDef = customTheme ? customThemeDef(customTheme) : null;
-  const darkThemes = THEMES.filter((t) => !t.isLight);
-  const lightThemes = THEMES.filter((t) => t.isLight);
-  // Append custom theme swatch to the appropriate group
-  const darkWithCustom = customDef && !customDef.isLight ? [...darkThemes, customDef] : darkThemes;
-  const lightWithCustom = customDef && customDef.isLight ? [...lightThemes, customDef] : lightThemes;
+  const customDef = useMemo(() => customTheme ? customThemeDef(customTheme) : null, [customTheme]);
+  const { darkWithCustom, lightWithCustom } = useMemo(() => {
+    const dark = THEMES.filter((t) => !t.isLight);
+    const light = THEMES.filter((t) => t.isLight);
+    return {
+      darkWithCustom: customDef && !customDef.isLight ? [...dark, customDef] : dark,
+      lightWithCustom: customDef && customDef.isLight ? [...light, customDef] : light,
+    };
+  }, [customDef]);
 
   return (
-    <ContentBox>
+    <ContentBox data-testid="settings-appearance-panel">
       <ContentHeader
         icon={<Palette className="w-5 h-5 text-violet-400" />}
         iconColor="violet"

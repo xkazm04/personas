@@ -287,7 +287,12 @@ body {
 /* -- Text Scale --
    Four tiers: compact (13px), default (14px), large (15px), larger (16.5px).
    Each tier scales Tailwind utility classes AND hardcoded text-[Npx] sizes
-   so the entire UI remains proportional at every zoom level. */
+   so the entire UI remains proportional at every zoom level.
+   Smooth transition on font-size for fluid scale switching. */
+
+html {
+  transition: font-size 150ms ease;
+}
 
 /* Compact — dense data views, power users */
 [data-text-scale="compact"] {
@@ -3053,12 +3058,15 @@ input[type="number"] {
   background: linear-gradient(168deg, #e0ded9 0%, #dcdad4 50%, #e2e0db 100%);
 }
 
-/* -- Theme Transition -- */
-.theme-transitioning,
-.theme-transitioning *,
-.theme-transitioning *::before,
-.theme-transitioning *::after {
-  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, box-shadow 200ms ease !important;
+/* -- Theme Transition -- scoped to visual surfaces only, not * */
+.theme-transitioning {
+  transition: background-color 200ms ease, color 200ms ease !important;
+}
+.theme-transitioning > div,
+.theme-transitioning [class*="bg-"],
+.theme-transitioning [class*="border-"],
+.theme-transitioning [class*="text-"] {
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

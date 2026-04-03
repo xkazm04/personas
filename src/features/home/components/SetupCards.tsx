@@ -475,7 +475,7 @@ function SetupCardItem({
 
         {/* Title overlaid at bottom */}
         <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-10">
-          <h3 className="typo-heading-lg tracking-wide text-foreground/80 uppercase drop-shadow-sm">
+          <h3 className="typo-card-label tracking-wide uppercase">
             {displayTitle}
           </h3>
         </div>

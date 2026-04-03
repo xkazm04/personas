@@ -1,4 +1,4 @@
-import { Map, RotateCcw, Play } from "lucide-react";
+import { Map } from "lucide-react";
 import { useSystemStore } from "@/stores/systemStore";
 import { TOUR_STEPS } from "@/stores/slices/system/tourSlice";
 
@@ -41,26 +41,19 @@ export default function TourLauncher() {
   const tourDismissed = useSystemStore((s) => s.tourDismissed);
   const tourActive = useSystemStore((s) => s.tourActive);
   const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
-  const resetTour = useSystemStore((s) => s.resetTour);
 
-  if (tourActive) return null;
+  // Hide when tour is active (it's running) or fully completed
+  if (tourActive || tourCompleted) return null;
 
   const completedCount = Object.values(tourStepCompleted).filter(Boolean).length;
   const totalSteps = TOUR_STEPS.length;
-  const canResume = tourDismissed && !tourCompleted && completedCount > 0;
+  const hasProgress = completedCount > 0;
 
-  const handleStart = () => {
-    if (tourCompleted) {
-      resetTour();
+  const handleClick = () => {
+    // Always resume from where user left off — don't reset
+    if (tourDismissed) {
+      useSystemStore.setState({ tourDismissed: false });
     }
-    setTimeout(() => {
-      useSystemStore.getState().startTour();
-    }, 50);
-  };
-
-  const handleResume = () => {
-    // Start tour without resetting — it will resume from persisted step
-    useSystemStore.setState({ tourDismissed: false });
     setTimeout(() => {
       useSystemStore.getState().startTour();
     }, 50);
@@ -68,26 +61,17 @@ export default function TourLauncher() {
 
   return (
     <button
-      onClick={canResume ? handleResume : handleStart}
+      onClick={handleClick}
+      data-testid="tour-launcher"
       className="animate-fade-slide-in flex-shrink-0 flex items-center gap-2 px-4 py-2 typo-heading rounded-xl
         bg-violet-500/10 text-violet-300 border border-violet-500/25
         hover:bg-violet-500/20 hover:border-violet-400/40 hover:shadow-[0_0_16px_rgba(139,92,246,0.15)]
         transition-all duration-300 cursor-pointer"
     >
-      {canResume ? (
+      {hasProgress ? (
         <>
           <TourProgressArc completed={completedCount} total={totalSteps} />
           Resume Tour ({completedCount}/{totalSteps})
-        </>
-      ) : tourCompleted ? (
-        <>
-          <RotateCcw className="w-3.5 h-3.5" />
-          Restart Tour
-        </>
-      ) : tourDismissed ? (
-        <>
-          <Play className="w-3.5 h-3.5" />
-          Start Tour
         </>
       ) : (
         <>
