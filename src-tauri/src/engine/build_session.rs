@@ -272,6 +272,8 @@ async fn run_session(
     // Register run in ActiveProcessRegistry
     let _reg_flag = registry.register_run("build_session", &session_id);
 
+    super::process_activity::emit_process_activity(&app_handle, "build_session", "started", Some(&session_id), None);
+
     // Update phase to Analyzing
     let _ = update_phase(&pool, &session_id, BuildPhase::Analyzing);
     emit_session_status(&channel, &app_handle, &session_id, BuildPhase::Analyzing, 0, 0);
@@ -317,6 +319,7 @@ async fn run_session(
         // Check cancellation
         if cancel_flag.load(Ordering::Acquire) {
             tracing::info!(session_id = %session_id, "Build session cancelled");
+            super::process_activity::emit_process_activity(&app_handle, "build_session", "cancelled", Some(&session_id), None);
             let _ = std::fs::remove_dir_all(&session_exec_dir);
             cleanup_session(&sessions_map, &registry, &session_id);
             return;
@@ -655,6 +658,10 @@ async fn run_session(
     } else {
         BuildPhase::DraftReady
     };
+    {
+        let action = if final_phase == BuildPhase::Failed { "failed" } else { "completed" };
+        super::process_activity::emit_process_activity(&app_handle, "build_session", action, Some(&session_id), None);
+    }
     let resolved_json = serde_json::to_string(&serde_json::Value::Object(resolved_cells)).unwrap_or_else(|_| "{}".to_string());
     let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
         phase: Some(final_phase.as_str().to_string()),

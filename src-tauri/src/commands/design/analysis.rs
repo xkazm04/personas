@@ -291,6 +291,7 @@ async fn run_design_analysis(params: DesignRunParams) {
         cancelled,
     } = params;
     // Emit analyzing status
+    engine::process_activity::emit_process_activity(&app, "design", "started", Some(&design_id), None);
     emit_design_status(&app, &design_id, "analyzing", None, None, None);
 
     // Spawn Claude CLI process via shared CliProcessDriver
@@ -303,6 +304,7 @@ async fn run_design_analysis(params: DesignRunParams) {
             } else {
                 format!("Failed to spawn Claude CLI: {e}")
             };
+            engine::process_activity::emit_process_activity(&app, "design", "failed", Some(&design_id), None);
             emit_design_status(&app, &design_id, "failed", None, Some(error_msg), None);
             return;
         }
@@ -398,10 +400,12 @@ async fn run_design_analysis(params: DesignRunParams) {
             }
 
             registry.clear_id_if("design", &design_id);
+            engine::process_activity::emit_process_activity(&app, "design", "completed", Some(&design_id), None);
             emit_design_status(&app, &design_id, "completed", Some(result), None, None);
         }
         ParseOutcome::Failed => {
             registry.clear_id_if("design", &design_id);
+            engine::process_activity::emit_process_activity(&app, "design", "failed", Some(&design_id), None);
             emit_design_status(&app, &design_id, "failed", None, Some("Failed to extract design result from Claude output".into()), None);
         }
     }

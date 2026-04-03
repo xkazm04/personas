@@ -187,6 +187,9 @@ export const EventName = {
 
   // System trace (frontend-only, emitted by systemTrace module)
   SYSTEM_TRACE_UPDATED: 'system-trace-updated',
+
+  // Process activity (global background process lifecycle)
+  PROCESS_ACTIVITY: 'process-activity',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
@@ -728,6 +731,14 @@ export interface EventPayloadMap {
     trace_id: string;
     operation_type: string;
     event_type: 'started' | 'span_update' | 'completed';
+  };
+
+  // Process activity
+  [EventName.PROCESS_ACTIVITY]: {
+    domain: string;
+    action: 'started' | 'completed' | 'failed' | 'cancelled';
+    run_id?: string;
+    label?: string;
   };
 }
 

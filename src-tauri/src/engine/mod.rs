@@ -44,6 +44,7 @@ pub mod optimizer;
 pub mod parser;
 pub mod pipeline;
 pub mod polling;
+pub mod process_activity;
 pub mod topology_graph;
 pub mod topology_heuristic;
 pub mod topology_types;

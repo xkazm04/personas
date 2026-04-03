@@ -258,6 +258,25 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Process activity (global background process lifecycle) -----------------
+  {
+    event: EventName.PROCESS_ACTIVITY,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.PROCESS_ACTIVITY,
+        (payload) => {
+          const store = useOverviewStore.getState();
+          if (payload.action === "started") {
+            store.processStarted(payload.domain, payload.run_id, payload.label);
+          } else {
+            store.processEnded(payload.domain, payload.action, payload.run_id);
+          }
+        },
+      );
+      return [unlisten];
+    },
+  },
+
   // -- Network snapshot pushed from Rust P2P engine --------------------------
   {
     event: EventName.NETWORK_SNAPSHOT_UPDATED,

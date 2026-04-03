@@ -195,6 +195,9 @@ event_names! {
 
     // Persona health (push-based summary refresh signal)
     PERSONA_HEALTH_CHANGED     => "persona-health-changed",
+
+    // Process activity (unified lifecycle signal for background processes)
+    PROCESS_ACTIVITY           => "process-activity",
 }
 
 // ---------------------------------------------------------------------------

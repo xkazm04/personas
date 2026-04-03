@@ -173,6 +173,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
         None
     };
 
+    crate::engine::process_activity::emit_process_activity(&app, &domain, "started", Some(&task_id), None);
     emit_task_status(&app, messages.status_event, messages.id_field, &task_id, messages.initial_status, None, None);
     emit_task_progress(&app, messages.progress_event, messages.id_field, &task_id, "Connecting to Claude...");
 
@@ -225,6 +226,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
     let is_cancelled = registry.get_id(&domain).as_deref() != Some(&task_id);
 
     if is_cancelled {
+        crate::engine::process_activity::emit_process_activity(&app, &domain, "cancelled", Some(&task_id), None);
         let duration_ms = started_at.elapsed().as_millis() as u64;
         tracing::info!(
             task_id = %task_id,
@@ -252,6 +254,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                 error = %error_msg,
                 "AI artifact task failed"
             );
+            crate::engine::process_activity::emit_process_activity(&app, &domain, "failed", Some(&task_id), None);
             emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "failed", None, Some(error_msg));
         }
         Ok(spawn_result) => {
@@ -274,6 +277,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                         outcome = "success",
                         "AI artifact task completed"
                     );
+                    crate::engine::process_activity::emit_process_activity(&app, &domain, "completed", Some(&task_id), None);
                     emit_task_progress(&app, messages.progress_event, messages.id_field, &task_id, messages.success_progress);
                     emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "completed", Some(extracted), None);
                 }
@@ -289,6 +293,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                         raw_output_preview = %raw_preview,
                         "Failed to extract result from Claude text output"
                     );
+                    crate::engine::process_activity::emit_process_activity(&app, &domain, "failed", Some(&task_id), None);
                     emit_task_status(
                         &app,
                         messages.status_event,

@@ -6,6 +6,7 @@ import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import ProcessActivityIndicator from './ProcessActivityIndicator';
 
 const appWindow = IS_DESKTOP ? getCurrentWindow() : null;
 
@@ -81,6 +82,9 @@ export default function TitleBar() {
             </span>
           )}
         </button>
+
+        {/* Process activity indicator */}
+        <ProcessActivityIndicator />
 
         {/* Notification bell */}
         <button

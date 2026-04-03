@@ -43,6 +43,7 @@ import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 import type { RotationSlice } from "./slices/vault/rotationSlice";
 import type { CompositionSlice } from "./slices/pipeline/compositionSlice";
+import type { ProcessActivitySlice } from "./slices/processActivitySlice";
 
 // -- Shared helpers ------------------------------------------------------
 import { isTauriError, type TauriErrorKind } from "@/lib/types/tauriError";
@@ -180,7 +181,7 @@ export type AgentStore = CoreState &
   ChatSlice &
   MatrixBuildSlice;
 
-/** Overview domain: dashboard, messages, events, healing, memories, cron, alerts, persona health */
+/** Overview domain: dashboard, messages, events, healing, memories, cron, alerts, persona health, process activity */
 export type OverviewStore = CoreState &
   OverviewSlice &
   MessageSlice &
@@ -189,7 +190,8 @@ export type OverviewStore = CoreState &
   MemorySlice &
   CronAgentsSlice &
   AlertSlice &
-  PersonaHealthSlice;
+  PersonaHealthSlice &
+  ProcessActivitySlice;
 
 /** Pipeline domain: triggers, teams, groups, recipes, composition */
 export type PipelineStore = CoreState &

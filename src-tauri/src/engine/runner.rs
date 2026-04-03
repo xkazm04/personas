@@ -706,6 +706,8 @@ pub async fn run_execution(
                 trace.end_span_error(&spawn_engine_stage, "Cancelled before spawn");
                 logger.close();
 
+                super::process_activity::emit_process_activity(&app, "execution", "cancelled", Some(&execution_id), Some(&persona.name));
+
                 let duration_ms = start_time.elapsed().as_millis() as u64;
                 let _ = app.emit(
                     event_name::EXECUTION_OUTPUT,
@@ -766,6 +768,8 @@ pub async fn run_execution(
         logger.log(&format!("[ERROR] {error_msg}"));
         logger.close();
 
+        super::process_activity::emit_process_activity(&app, "execution", "failed", Some(&execution_id), Some(&persona.name));
+
         let _ = app.emit(
             event_name::EXECUTION_OUTPUT,
             ExecutionOutputEvent {
@@ -822,6 +826,8 @@ pub async fn run_execution(
         driver.unregister_pid(&child_pids, &execution_id).await;
         logger.close();
 
+        super::process_activity::emit_process_activity(&app, "execution", "cancelled", Some(&execution_id), Some(&persona.name));
+
         let duration_ms = start_time.elapsed().as_millis() as u64;
         let _ = app.emit(
             event_name::EXECUTION_OUTPUT,
@@ -850,6 +856,9 @@ pub async fn run_execution(
             ..default_result()
         };
     }
+
+    // Emit process activity: execution started
+    super::process_activity::emit_process_activity(&app, "execution", "started", Some(&execution_id), Some(&persona.name));
 
     // Provider spawn succeeded -- record in trace
     let spawn_span = trace.start_span(
@@ -888,6 +897,8 @@ pub async fn run_execution(
         driver.kill().await;
         driver.unregister_pid(&child_pids, &execution_id).await;
         logger.close();
+
+        super::process_activity::emit_process_activity(&app, "execution", "cancelled", Some(&execution_id), Some(&persona.name));
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
         let _ = app.emit(
@@ -1649,6 +1660,12 @@ pub async fn run_execution(
     }
     // Emit the complete trace to frontend
     let _ = app.emit(event_name::EXECUTION_TRACE, &final_trace);
+
+    // Emit process activity: final outcome
+    {
+        let action = if success { "completed" } else { "failed" };
+        super::process_activity::emit_process_activity(&app, "execution", action, Some(&execution_id), Some(&persona.name));
+    }
 
     // Emit final status
     let _ = app.emit(

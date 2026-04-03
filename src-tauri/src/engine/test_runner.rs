@@ -179,6 +179,8 @@ pub async fn run_test(
         None,
     );
 
+    super::process_activity::emit_process_activity(&app, "test", "started", Some(&run_id), Some(&persona.name));
+
     let _ = app.emit(
         event_name::TEST_RUN_STATUS,
         TestRunStatusEvent {
@@ -373,6 +375,8 @@ pub async fn run_test(
         None,
         Some(&now),
     );
+
+    super::process_activity::emit_process_activity(&app, "test", "completed", Some(&run_id), Some(&persona.name));
 
     let _ = app.emit(
         event_name::TEST_RUN_STATUS,
@@ -956,6 +960,7 @@ fn emit_status(app: &AppHandle, run_id: &str, phase: &str, error: Option<&str>) 
 fn finish_with_error(app: &AppHandle, pool: &DbPool, run_id: &str, error: &str) {
     let now = chrono::Utc::now().to_rfc3339();
     let _ = repo::update_run_status(pool, run_id, LabRunStatus::Failed, None, None, Some(error), Some(&now));
+    super::process_activity::emit_process_activity(app, "test", "failed", Some(run_id), None);
     emit_status(app, run_id, "failed", Some(error));
 }
 
