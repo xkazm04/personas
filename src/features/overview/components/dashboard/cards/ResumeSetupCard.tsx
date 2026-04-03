@@ -1,30 +1,38 @@
 import { RotateCcw, ArrowRight, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useShallow } from 'zustand/react/shallow';
-import { STEPS } from '@/features/onboarding/components/StepIndicator';
+import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
 
 export default function ResumeSetupCard() {
   const {
-    onboardingActive,
-    onboardingCompleted,
-    onboardingDismissedAtStep,
-    onboardingStepCompleted,
-    resumeOnboarding,
-    finishOnboarding,
+    tourActive,
+    tourCompleted,
+    tourDismissed,
+    tourStepCompleted,
+    tourCurrentStepIndex,
   } = useSystemStore(useShallow((s) => ({
-    onboardingActive: s.onboardingActive,
-    onboardingCompleted: s.onboardingCompleted,
-    onboardingDismissedAtStep: s.onboardingDismissedAtStep,
-    onboardingStepCompleted: s.onboardingStepCompleted,
-    resumeOnboarding: s.resumeOnboarding,
-    finishOnboarding: s.finishOnboarding,
+    tourActive: s.tourActive,
+    tourCompleted: s.tourCompleted,
+    tourDismissed: s.tourDismissed,
+    tourStepCompleted: s.tourStepCompleted,
+    tourCurrentStepIndex: s.tourCurrentStepIndex,
   })));
 
-  // Only show when onboarding was dismissed mid-flow
-  if (onboardingActive || onboardingCompleted || !onboardingDismissedAtStep) return null;
+  // Only show when tour was dismissed mid-flow
+  if (tourActive || tourCompleted || !tourDismissed) return null;
 
-  const completedCount = STEPS.filter((s) => onboardingStepCompleted[s.key]).length;
-  const currentStepLabel = STEPS.find((s) => s.key === onboardingDismissedAtStep)?.label ?? 'Setup';
+  const completedCount = TOUR_STEPS.filter((s) => tourStepCompleted[s.id]).length;
+  const currentStep = TOUR_STEPS[tourCurrentStepIndex];
+  const currentStepLabel = currentStep?.title ?? 'Setup';
+
+  const handleResume = () => {
+    useSystemStore.setState({ tourDismissed: false });
+    setTimeout(() => useSystemStore.getState().startTour(), 50);
+  };
+
+  const handleDismiss = () => {
+    useSystemStore.getState().finishTour();
+  };
 
   return (
     <div className="animate-fade-slide-in rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/8 to-indigo-500/5 p-4">
@@ -33,24 +41,24 @@ export default function ResumeSetupCard() {
           <RotateCcw className="w-5 h-5 text-violet-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="typo-heading text-foreground/90">Resume Setup</h3>
+          <h3 className="typo-heading text-foreground/90">Resume Tour</h3>
           <p className="typo-body text-muted-foreground/70">
             You left off at <span className="text-violet-400 font-medium">{currentStepLabel}</span>
             {completedCount > 0 && (
-              <> &mdash; {completedCount}/{STEPS.length} steps completed</>
+              <> &mdash; {completedCount}/{TOUR_STEPS.length} steps completed</>
             )}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
-            onClick={finishOnboarding}
+            onClick={handleDismiss}
             className="p-2 rounded-lg hover:bg-secondary/50 transition-colors text-muted-foreground/50 hover:text-foreground/70"
-            title="Skip setup entirely"
+            title="Skip tour entirely"
           >
             <X className="w-4 h-4" />
           </button>
           <button
-            onClick={resumeOnboarding}
+            onClick={handleResume}
             className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
           >
             Continue

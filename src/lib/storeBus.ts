@@ -39,6 +39,15 @@ export interface StoreBusEventMap {
 
   /** A pipeline stage finished with high-resolution timing (observability subscribers). */
   'pipeline:stage-complete': { executionId: string; stage: string; durationMs: number };
+
+  /** An appearance setting changed (themeStore emits, tour subscribes). */
+  'appearance:changed': { field: string; value: string };
+
+  /** A build phase transition occurred (matrixBuildSlice emits, tour subscribes). */
+  'build:phase-changed': { phase: string; personaId: string };
+
+  /** Tour requests credential nav to switch view (GuidedTour emits, CredentialNavContext subscribes). */
+  'tour:navigate-credential-view': { key: string };
 }
 
 // ---------------------------------------------------------------------------

@@ -1,8 +1,12 @@
 //! Test Automation HTTP Server
 //!
-//! Feature-gated behind `test-automation`. Starts a lightweight HTTP server on
-//! `127.0.0.1:17320` that bridges external test drivers (MCP servers, scripts)
-//! to the running Tauri WebView via JavaScript evaluation.
+//! Available in two modes:
+//!
+//! 1. **Dev mode** (compile-time): `--features test-automation` → port 17320
+//! 2. **Production mode** (env var): `PERSONAS_TEST_PORT=17321` → custom port
+//!
+//! Starts a lightweight HTTP server on `127.0.0.1:<port>` that bridges external
+//! test drivers (MCP servers, scripts) to the running Tauri WebView via JS eval.
 //!
 //! Architecture:
 //!   MCP Server ──HTTP──▶ this module ──eval()──▶ WebView bridge (window.__TEST__)
@@ -576,7 +580,18 @@ async fn handle_health() -> &'static str {
 
 // ── Server startup ──────────────────────────────────────────────────────────
 
-pub fn start_server(app_handle: AppHandle, pending: PendingResponses) {
+/// Default port for dev mode (`--features test-automation`).
+pub const DEFAULT_PORT: u16 = 17320;
+
+/// Check if production test mode is enabled via env var.
+/// Returns the port if `PERSONAS_TEST_PORT` is set to a valid number.
+pub fn env_test_port() -> Option<u16> {
+    std::env::var("PERSONAS_TEST_PORT")
+        .ok()
+        .and_then(|v| v.parse::<u16>().ok())
+}
+
+pub fn start_server(app_handle: AppHandle, pending: PendingResponses, port: u16) {
     let state = ServerState {
         app_handle,
         pending,
@@ -618,18 +633,20 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses) {
         .route("/list-credentials", get(handle_list_credentials))
         .with_state(state);
 
+    let addr = format!("127.0.0.1:{}", port);
+    let addr_clone = addr.clone();
     tauri::async_runtime::spawn(async move {
-        match tokio::net::TcpListener::bind("127.0.0.1:17320").await {
+        match tokio::net::TcpListener::bind(&addr).await {
             Ok(listener) => {
-                tracing::info!("Test automation server listening on http://127.0.0.1:17320");
+                tracing::info!("Test automation server listening on http://{}", addr);
                 if let Err(e) = axum::serve(listener, app).await {
                     tracing::error!("Test automation server error: {}", e);
                 }
             }
             Err(e) => {
                 tracing::error!(
-                    "Failed to bind test automation server on 127.0.0.1:17320: {}",
-                    e
+                    "Failed to bind test automation server on {}: {}",
+                    addr_clone, e
                 );
             }
         }

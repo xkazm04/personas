@@ -7,7 +7,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { SidebarSection } from '@/lib/types/types';
-import OnboardingProgressBar from '@/features/onboarding/components/OnboardingProgressBar';
+
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { sections } from './sidebarData';
@@ -179,7 +179,6 @@ export default function Sidebar() {
                 style={{ background: 'linear-gradient(to top, hsl(var(--secondary) / 0.3), transparent)' }}
               />
             </div>
-            {!IS_MOBILE && <OnboardingProgressBar />}
           </div>
         </>
       )}

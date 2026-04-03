@@ -71,4 +71,17 @@ export function initStoreBus(): void {
   storeBus.on('persona:move-to-group', ({ personaId, groupId }) => {
     void useAgentStore.getState().applyPersonaOp(personaId, { kind: 'MoveToGroup', group_id: groupId ?? '' });
   });
+
+  // Appearance changed — systemStore emits tour event for appearance step completion
+  storeBus.on('appearance:changed', () => {
+    useSystemStore.getState().emitTourEvent('tour:appearance-changed');
+  });
+
+  // Build phase changed — systemStore advances tour sub-steps for persona creation
+  storeBus.on('build:phase-changed', ({ phase }) => {
+    const sys = useSystemStore.getState();
+    if (!sys.tourActive) return;
+    if (phase === 'draft_ready') sys.emitTourEvent('tour:persona-draft-ready');
+    if (phase === 'test_complete' || phase === 'promoted') sys.emitTourEvent('tour:persona-promoted');
+  });
 }

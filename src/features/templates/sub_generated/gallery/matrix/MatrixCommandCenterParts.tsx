@@ -338,18 +338,14 @@ export function CreationPostGeneration({
   onSaveVersion?: () => void;
 }) {
   const [refineText, setRefineText] = useState('');
-  const [isTesting, setIsTesting] = useState(false);
+  const buildPhase = useAgentStore((s) => s.buildPhase);
+  const isTesting = buildPhase === 'testing';
   const editDirty = useAgentStore((s) => s.buildEditDirty);
   const editingCellKey = useAgentStore((s) => s.editingCellKey);
 
-  const handleTest = async () => {
+  const handleTest = () => {
     if (!onStartTest || isTesting) return;
-    setIsTesting(true);
-    try {
-      await onStartTest();
-    } finally {
-      setIsTesting(false);
-    }
+    onStartTest();
   };
 
   return (
@@ -387,7 +383,7 @@ export function CreationPostGeneration({
           onClick={handleTest}
           disabled={isTesting}
           data-testid="agent-test-btn"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30"
         >
           {isTesting ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
           {isTesting ? 'Starting Test...' : 'Test Agent'}
@@ -399,7 +395,7 @@ export function CreationPostGeneration({
           type="button"
           onClick={onSaveVersion}
           data-testid="save-version-btn"
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-elevation-3 shadow-violet-500/20 hover:shadow-violet-500/30"
         >
           <Save className="w-3.5 h-3.5" />
           Save Version
@@ -576,7 +572,7 @@ export function TestResultsPanel({
             type="button"
             onClick={onApprove}
             data-testid="agent-approve-btn"
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium cursor-pointer bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-elevation-3 shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             Approve

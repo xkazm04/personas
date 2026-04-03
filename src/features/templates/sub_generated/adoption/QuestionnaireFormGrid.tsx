@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { DevToolsProjectDropdown } from '@/features/shared/components/forms/DevToolsProjectDropdown';
+import { DirectoryPickerInput } from '@/features/shared/components/forms/DirectoryPickerInput';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 
 // ---------------------------------------------------------------------------
@@ -262,6 +263,12 @@ function QuestionCard({
             value={answer || null}
             onSelect={(project) => onAnswer(project.id)}
             className="max-w-sm"
+          />
+        ) : question.type === 'directory_picker' ? (
+          <DirectoryPickerInput
+            value={answer}
+            onChange={onAnswer}
+            placeholder={question.default ?? 'Select a directory...'}
           />
         ) : question.type === 'textarea' ? (
           <textarea

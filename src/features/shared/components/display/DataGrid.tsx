@@ -15,6 +15,8 @@ export interface DataGridColumn<T> {
   filterOptions?: { value: string; label: string }[];
   filterValue?: string;
   onFilterChange?: (value: string) => void;
+  /** Custom filter component rendered instead of ThemedSelect */
+  filterComponent?: React.ReactNode;
   /** If true, column header is clickable to toggle sort */
   sortable?: boolean;
   /** Align content: 'left' (default) | 'right' */
@@ -177,6 +179,15 @@ export function DataGrid<T>({
                     </svg>
                   )}
                 </div>
+              </div>
+            );
+          }
+
+          /* Custom filter component takes precedence */
+          if (!simplified && col.filterComponent) {
+            return (
+              <div key={col.key} className="px-2 py-2.5 flex items-center">
+                {col.filterComponent}
               </div>
             );
           }

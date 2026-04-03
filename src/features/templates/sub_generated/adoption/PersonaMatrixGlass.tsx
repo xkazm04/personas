@@ -205,17 +205,27 @@ function CenterHub({
         {/* Action buttons */}
         <div className="flex flex-col gap-2 w-full mt-2">
           {onStartTest && buildPhase === 'draft_ready' && (
-            <button onClick={onStartTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
+            <button onClick={onStartTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md cursor-pointer bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
               <Play className="w-4 h-4" /> Start Test
             </button>
           )}
+          {buildPhase === 'testing' && (
+            <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md bg-primary/5 border border-primary/10 text-[13px] font-medium text-foreground/70">
+              <span className="flex gap-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </span>
+              Testing agent...
+            </div>
+          )}
           {onApproveTest && buildPhase === 'test_complete' && (
-            <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all duration-200 text-emerald-400 text-[13px] font-medium">
+            <button onClick={onApproveTest} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md cursor-pointer bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all duration-200 text-emerald-400 text-[13px] font-medium">
               <CheckCircle2 className="w-4 h-4" /> Approve &amp; Promote
             </button>
           )}
           {onViewAgent && (buildPhase === 'completed' || buildPhase === 'promoted') && (
-            <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
+            <button onClick={onViewAgent} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md cursor-pointer bg-primary/10 border border-primary/15 hover:bg-primary/20 transition-all duration-200 text-foreground text-[13px] font-medium">
               <Eye className="w-4 h-4" /> View Agent
             </button>
           )}

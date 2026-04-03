@@ -22,6 +22,7 @@ export function ConnectorCard({ connector, isOwned, onPickType }: ConnectorCardP
   return (
     <button
       onClick={() => onPickType(connector)}
+      data-testid={`catalog-connector-${connector.name}`}
       className={`group relative flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all transition-transform hover:scale-[1.02] ${
         isOwned
           ? 'bg-emerald-500/8 border-emerald-500/20 hover:bg-emerald-500/15'

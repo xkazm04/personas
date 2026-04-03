@@ -1,14 +1,16 @@
 import { useState, useCallback } from 'react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import type { PersonaEvent } from '@/lib/types/types';
+import type { PersonaEvent, PersonaMessage } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { updateManualReviewStatus } from '@/api/overview/reviews';
+import { deleteMessage } from '@/api/overview/messages';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { ExecutionDetail } from '@/features/agents/sub_executions/detail/ExecutionDetail';
 import { EventDetailModal } from '@/features/overview/sub_events/EventDetailModal';
 import MemoryDetailModal from '@/features/overview/sub_memories/components/MemoryDetailModal';
+import { MessageDetailModal } from '@/features/overview/sub_messages/components/MessageDetailModal';
 import type { ActivityItem } from './activityTypes';
 
 interface ActivityModalsProps {
@@ -22,6 +24,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
   const [selectedReview, setSelectedReview] = useState<PersonaManualReview | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<PersonaMessage | null>(null);
   const [reviewProcessing, setReviewProcessing] = useState(false);
 
   const handleRowClick = useCallback((item: ActivityItem) => {
@@ -30,6 +33,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
       case 'event': setSelectedEvent(item.raw as PersonaEvent); break;
       case 'memory': setSelectedMemory(item.raw as PersonaMemory); break;
       case 'review': setSelectedReview(item.raw as PersonaManualReview); break;
+      case 'message': setSelectedMessage(item.raw as PersonaMessage); break;
     }
   }, []);
 
@@ -68,6 +72,18 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
           personaColor={personaColor}
           onClose={() => setSelectedMemory(null)}
           onDelete={() => { setSelectedMemory(null); onDataChanged(); }}
+        />
+      )}
+
+      {selectedMessage && (
+        <MessageDetailModal
+          message={selectedMessage}
+          onClose={() => setSelectedMessage(null)}
+          onDelete={async () => {
+            await deleteMessage(selectedMessage.id).catch(() => {});
+            setSelectedMessage(null);
+            onDataChanged();
+          }}
         />
       )}
 

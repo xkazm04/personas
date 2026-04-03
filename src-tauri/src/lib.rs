@@ -10,7 +10,6 @@ pub mod keyed_pool;
 mod logging;
 mod notifications;
 pub mod startup_timing;
-#[cfg(feature = "test-automation")]
 pub mod test_automation;
 #[cfg(feature = "desktop")]
 mod tray;
@@ -448,13 +447,29 @@ pub fn run() {
     let ipc_auth_script = ipc_auth::generate_ipc_auth_script(&ipc_token);
     tracing::info!("IPC session token initialised (privileged commands protected)");
 
-    builder
+    // If PERSONAS_TEST_PORT is set, inject a flag before page JS so the
+    // frontend knows to load the test automation bridge.
+    let test_port = test_automation::env_test_port();
+    let mut final_builder = builder
         .plugin(
             tauri::plugin::Builder::<tauri::Wry, ()>::new("ipc-auth")
                 .js_init_script(ipc_auth_script)
                 .build(),
-        )
+        );
+    if test_port.is_some() {
+        final_builder = final_builder.plugin(
+            tauri::plugin::Builder::<tauri::Wry, ()>::new("test-mode-flag")
+                .js_init_script(String::from("window.__PERSONAS_TEST_MODE__ = true;"))
+                .build(),
+        );
+    }
+    final_builder
         .setup(|app| {
+            // Always manage PendingResponses so __test_respond command doesn't panic
+            let pending_default: test_automation::PendingResponses =
+                Arc::new(tokio::sync::Mutex::new(HashMap::new()));
+            app.manage(pending_default);
+
             let mut st = startup_timing::StartupTimer::new();
 
             let app_data_dir = app
@@ -713,13 +728,18 @@ pub fn run() {
             );
             st.checkpoint("cdc_drain_task");
 
-            // Test automation HTTP server (feature-gated)
-            #[cfg(feature = "test-automation")]
+            // Test automation HTTP server
             {
-                let pending: test_automation::PendingResponses =
-                    Arc::new(tokio::sync::Mutex::new(HashMap::new()));
-                app.manage(pending.clone());
-                test_automation::start_server(app.handle().clone(), pending);
+                let pending = app.state::<test_automation::PendingResponses>().inner().clone();
+                #[cfg(feature = "test-automation")]
+                {
+                    test_automation::start_server(app.handle().clone(), pending, test_automation::DEFAULT_PORT);
+                }
+                #[cfg(not(feature = "test-automation"))]
+                if let Some(port) = test_automation::env_test_port() {
+                    tracing::info!("Production test mode enabled via PERSONAS_TEST_PORT={}", port);
+                    test_automation::start_server(app.handle().clone(), pending, port);
+                }
             }
 
             // Load desktop connector approvals from database
@@ -868,8 +888,7 @@ pub fn run() {
             log_frontend_error,
             get_startup_timing,
             report_frontend_ready,
-            // Test automation (feature-gated)
-            #[cfg(feature = "test-automation")]
+            // Test automation (always registered; server only starts when enabled)
             test_automation::__test_respond,
             // Core -- Validation
             commands::core::validation::get_validation_rules,

@@ -138,7 +138,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
       <ContentHeader
         icon={<Loader2 className="w-5 h-5 text-blue-400" />}
         iconColor="blue"
-        title="Executions"
+        title="Activity"
         subtitle={`${globalExecutionsTotal} execution${globalExecutionsTotal !== 1 ? 's' : ''} recorded`}
         actions={
           <div className="flex items-center gap-2">

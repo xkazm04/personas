@@ -64,7 +64,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
 
   // -- Specialty -------------------------------------------------
   { role: 'auth_identity',       label: 'Auth & Identity',      members: ['clerk'] },
-  { role: 'ai_platform',         label: 'AI Platform',          members: ['openai', 'leonardo_ai'] },
+  { role: 'ai_platform',         label: 'AI Platform',          members: ['openai', 'leonardo_ai', 'elevenlabs'] },
   { role: 'advertising',         label: 'Advertising',          members: ['google_ads'] },
   { role: 'e_signature',         label: 'E-Signature',          members: ['docusign'] },
   { role: 'hr_recruiting',       label: 'HR & Recruiting',      members: ['greenhouse'] },

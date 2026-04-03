@@ -1004,6 +1004,29 @@ const google_ads: EP[] = [
   ], ['Budgets'], jsonBody(), 'Body: { "operations": [{ "create": { "name": "My Budget", "amountMicros": "10000000", "deliveryMethod": "STANDARD" } }] }'),
 ];
 
+// -- ElevenLabs -------------------------------------------------------
+
+const elevenlabs: EP[] = [
+  ep('GET', '/user/subscription', 'Get user subscription info', [], ['User']),
+  ep('GET', '/user', 'Get current user info', [], ['User']),
+  ep('POST', '/text-to-speech/{voice_id}', 'Convert text to speech', [
+    pathP('voice_id', 'Voice ID'),
+  ], ['Text to Speech'], jsonBody(), 'Body: { "text": "Hello world", "model_id": "eleven_multilingual_v2" }'),
+  ep('POST', '/text-to-speech/{voice_id}/stream', 'Stream text to speech', [
+    pathP('voice_id', 'Voice ID'),
+  ], ['Text to Speech'], jsonBody(), 'Body: { "text": "Hello world", "model_id": "eleven_multilingual_v2" }'),
+  ep('GET', '/voices', 'List available voices', [], ['Voices']),
+  ep('GET', '/voices/{voice_id}', 'Get voice details', [
+    pathP('voice_id', 'Voice ID'),
+  ], ['Voices']),
+  ep('GET', '/models', 'List available models', [], ['Models']),
+  ep('GET', '/history', 'List history items', [
+    queryP('page_size', false, 'Number of items per page'),
+    queryP('start_after_history_item_id', false, 'Cursor for pagination'),
+  ], ['History']),
+  ep('POST', '/sound-generation', 'Generate sound effects from text', [], ['Sound Effects'], jsonBody(), 'Body: { "text": "ocean waves crashing", "duration_seconds": 5 }'),
+];
+
 // -- Export ------------------------------------------------------------
 
 // -- Canva ------------------------------------------------------------
@@ -1181,6 +1204,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   github_actions,
   asana,
   kubernetes,
+  elevenlabs,
   leonardo_ai,
   linkedin,
   google_ads,

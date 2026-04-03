@@ -14,7 +14,7 @@ use crate::AppState;
 pub fn list_connectors(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<ConnectorDefinition>, AppError> {
-    require_privileged_sync(&state, "list_connectors")?;
+    // Public command — no IPC token required (read-only, needed at startup)
     repo::get_all(&state.db)
 }
 
@@ -23,7 +23,6 @@ pub fn get_connector(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<ConnectorDefinition, AppError> {
-    require_privileged_sync(&state, "get_connector")?;
     repo::get_by_id(&state.db, &id)
 }
 

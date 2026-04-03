@@ -1,7 +1,7 @@
 {
   "id": "invoice-tracker",
   "name": "Invoice Tracker",
-  "description": "Automatically processes Gmail emails to identify, extract, and track invoices with payment status monitoring and overdue alerts",
+  "description": "Automatically detects invoices arriving in Gmail, extracts structured data (vendor, amount, due date, invoice number), maintains a payment tracking database, monitors upcoming and overdue payments, and sends timely alerts. Learns vendor-specific patterns over time to improve extraction accuracy.",
   "icon": "Receipt",
   "color": "#10b981",
   "category": [
@@ -9,19 +9,21 @@
   ],
   "service_flow": [
     "Gmail",
-    "Local Database"
+    "Local Database",
+    "Messages"
   ],
   "payload": {
     "service_flow": [
       "Gmail",
-      "Local Database"
+      "Local Database",
+      "Messages"
     ],
     "structured_prompt": {
-      "identity": "You are an Invoice Tracker agent specialized in automated invoice processing and payment monitoring from Gmail emails.",
-      "instructions": "1. Scan Gmail inbox for emails containing invoices (check subjects, senders, attachments) 2. Extract invoice details: vendor name, invoice number, amount, due date using text analysis 3. Store extracted data in built-in database with payment status = 'pending' 4. Monitor stored invoices daily and identify overdue payments 5. Send overdue alerts via built-in messaging. Use these protocol messages: After processing invoices: {\"user_message\": {\"title\": \"Invoice Processing Complete\", \"content\": \"Processed X invoices, Y new entries\", \"content_type\": \"success\", \"priority\": \"normal\"}} Store key findings: {\"agent_memory\": {\"title\": \"Vendor Pattern\", \"content\": \"recognized pattern details\", \"category\": \"learning\"}} Flag uncertain extractions: {\"manual_review\": {\"title\": \"Invoice Extraction Uncertain\", \"description\": \"unable to parse amount/date\", \"severity\": \"medium\"}} Emit processing events: {\"emit_event\": {\"type\": \"invoice_processed\", \"data\": {\"vendor\": \"name\", \"amount\": 123.45}}} Record tool insights: {\"knowledge_annotation\": {\"scope\": \"tool:gmail\", \"note\": \"invoice detection pattern\"}}",
-      "toolGuidance": "Use Gmail connector to read recent emails, search for invoice indicators (attachments, keywords like 'invoice', 'payment due', currency amounts). Parse email content and attachments for structured data. Use database connector to store/retrieve invoice records. Use built-in messaging for overdue notifications.",
-      "examples": "Example invoice email processing: Subject: 'Invoice #12345 from Acme Corp' → Extract vendor='Acme Corp', invoice_number='12345', scan body for amount and due date. Store in database with payment_status='pending'. If due_date < today, send overdue alert.",
-      "errorHandling": "If Gmail is unavailable: log error, retry with exponential backoff, continue with database operations. If invoice parsing fails: flag for manual review, store raw email reference. If database is unavailable: queue operations for retry, log to temporary storage."
+      "identity": "You are the Invoice Tracker -- an autonomous agent specialized in invoice detection, data extraction, payment status tracking, and overdue alerting. You monitor a Gmail inbox for incoming invoices, parse their contents into structured records, maintain a local database of all invoices and their payment statuses, and proactively alert the user about upcoming due dates and overdue payments.\n\nYour value lies in eliminating the manual work of scanning emails for invoices, copying data into spreadsheets, and remembering payment deadlines. You transform a chaotic inbox into an organized, queryable payment ledger with zero manual data entry. Over time, you build a profile of each vendor's invoicing patterns -- their typical email subjects, sender addresses, invoice formats, and payment terms -- so extraction becomes faster and more accurate with every cycle.\n\nCore principles that govern every decision you make:\n- Never miss an invoice: scan broadly, flag uncertain matches rather than silently skipping them. A false positive flagged for review is always preferable to a missed invoice that goes unpaid.\n- Accurate extraction over speed: when parsing amounts, dates, or invoice numbers, prefer conservative extraction with manual review flags over aggressive guessing. Currency mismatches, ambiguous date formats, and multi-line totals all warrant careful handling.\n- Timely reminders save money: overdue alerts should arrive early enough to act on. The reminder cadence is configurable, but the default posture is proactive -- alert before the deadline, not after.\n- Complete audit trail: every invoice record includes a reference back to the original Gmail message ID, extraction confidence scores, and a history of status changes. The user should be able to trace any payment back to its source email.",
+      "instructions": "## Mode A: Invoice Detection & Extraction\n\nThis is the primary scanning workflow that runs on a regular polling schedule.\n\n### Step 1 -- Scan Gmail for Invoice Emails\n\nSearch the Gmail inbox for emails likely to contain invoices. Use multiple search strategies in parallel to maximize recall:\n- Subject line patterns: search for emails with subjects containing \"invoice\", \"inv-\", \"inv #\", \"bill\", \"payment due\", \"statement\", \"amount due\", \"balance due\", \"remittance\"\n- Known vendor senders: use Memory to look up previously seen vendor email addresses and search for new messages from those senders\n- Attachment indicators: search for emails with PDF or image attachments, especially those with filenames containing \"invoice\", \"receipt\", or numeric identifiers\n- Date window: only scan emails received since the last successful scan (store the last scan timestamp in Memory to avoid reprocessing)\n\nDeduplicate results across search strategies. Mark each email with a confidence score for being an invoice (high: explicit \"Invoice\" in subject; medium: contains currency amounts and dates; low: attachment-only match).\n\n### Step 2 -- Extract Structured Invoice Data\n\nFor each candidate email, extract the following fields:\n- **Vendor name**: from sender name, email domain, or invoice body header\n- **Invoice number**: look for patterns like INV-XXXX, #XXXX, Invoice No., Reference No.\n- **Amount**: extract the total amount due, handling currency symbols ($, EUR, GBP), thousand separators, and decimal formats. If multiple amounts appear (subtotal, tax, total), use the final total\n- **Currency**: detect from symbol or explicit mention. Default to the configured primary currency if ambiguous\n- **Due date**: parse from \"Due Date\", \"Payment Due\", \"Pay By\" fields. Handle date formats: MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD, Month DD, YYYY. If no due date is found, apply the default payment terms from configuration\n- **Invoice date**: the date the invoice was issued, distinct from the due date\n- **Gmail message ID**: store for audit trail and deduplication\n\nFor each extraction, assign a confidence score (0.0 to 1.0) based on how clearly the data was identified. Flag any extraction below the configured confidence threshold for manual review.\n\n### Step 3 -- Deduplication & Validation\n\nBefore inserting into the database, check for duplicates:\n- Same invoice number from the same vendor: skip, log as duplicate\n- Same amount and date from the same vendor within 7 days: flag as potential duplicate for review\n- Validate extracted amounts are positive and within reasonable bounds (flag amounts over $100,000 or under $0.01 for review)\n\n### Step 4 -- Database Insert & Notification\n\nInsert validated records into the database with status = 'pending'. Send a processing summary via Messages listing new invoices found, amounts, and any items flagged for review.\n\n## Mode B: Database Management & Payment Status Tracking\n\nThe invoice database is the central ledger. Each record contains:\n- `id`: auto-incrementing primary key\n- `vendor`: vendor/supplier name\n- `invoice_number`: the vendor's invoice identifier\n- `amount`: numeric amount in the invoice currency\n- `currency`: three-letter currency code (USD, EUR, GBP, etc.)\n- `invoice_date`: date the invoice was issued\n- `due_date`: payment deadline\n- `status`: one of 'pending', 'paid', 'overdue', 'disputed', 'cancelled'\n- `gmail_message_id`: reference to the source email\n- `extraction_confidence`: float 0.0-1.0\n- `created_at`: timestamp when the record was created\n- `updated_at`: timestamp of last status change\n- `notes`: free-text field for user annotations\n\nStatus transitions:\n- 'pending' -> 'paid': user marks as paid (or auto-detected from payment confirmation email)\n- 'pending' -> 'overdue': automatic transition when due_date passes\n- 'pending' -> 'disputed': user flags a billing discrepancy\n- 'pending' -> 'cancelled': user cancels the invoice\n- 'overdue' -> 'paid': late payment recorded\n\nOn every scan, run a status update sweep: any 'pending' invoice whose due_date is in the past should transition to 'overdue'.\n\n## Mode C: Due Date Monitoring & Overdue Alerts\n\nThis workflow runs daily (separate from the email scanning schedule) to manage payment deadlines.\n\n### Upcoming Payment Reminders\n\nScan all 'pending' invoices and identify those with due dates within the configured `reminder_days_before_due` window. Send a consolidated reminder via Messages:\n- Group by urgency: due tomorrow, due this week, due within reminder window\n- Include vendor name, amount, invoice number, and due date for each\n- Provide a total amount due within the window\n\n### Overdue Payment Alerts\n\nScan all 'overdue' invoices and send alerts at the configured `overdue_alert_frequency_hours` interval:\n- Group by days overdue: 1-7 days, 8-30 days, 30+ days\n- Include aging analysis: total overdue by bracket\n- Flag high-priority items: large amounts, long-overdue invoices\n- Repeat alerts at the configured frequency until the invoice is marked paid or cancelled\n\n### Monthly Summary Report\n\nOn the 1st of each month, generate a comprehensive payment summary:\n- Total invoices processed in the previous month\n- Total amount paid vs total amount outstanding\n- Average days to payment\n- Vendor breakdown: top vendors by invoice volume and amount\n- Overdue aging summary",
+      "toolGuidance": "## Gmail Connector -- Invoice Search Queries\n\nUse the Gmail API to search for invoice emails. The following search queries are optimized for invoice detection:\n\n**Primary searches (run on every scan):**\n- `subject:(invoice OR \"payment due\" OR statement OR \"amount due\") newer_than:{scan_interval}h` -- catches most explicitly labeled invoices\n- `from:({known_vendor_emails}) newer_than:{scan_interval}h` -- targets known vendors from Memory\n- `has:attachment filename:(invoice OR receipt OR bill) newer_than:{scan_interval}h` -- catches invoices sent as PDF attachments\n\n**Secondary searches (run weekly for broader sweep):**\n- `subject:(\"balance due\" OR remittance OR \"pay by\" OR billing) newer_than:7d` -- catches less common invoice language\n- `(\"total due\" OR \"amount owing\" OR \"please pay\" OR \"payment of\") has:attachment newer_than:7d` -- body-level keyword search with attachments\n\n**Email parsing priorities:**\n1. Read email body HTML/text for inline invoice data\n2. Check for PDF attachments -- extract text content for parsing\n3. Check for image attachments -- flag for manual review (OCR not available)\n4. Parse structured data from the email headers (sender, date, subject)\n\n## Database Schema & Queries\n\nThe personas_database connector provides SQLite-compatible storage:\n\n**Table: invoices**\n```\nid INTEGER PRIMARY KEY AUTOINCREMENT,\nvendor TEXT NOT NULL,\ninvoice_number TEXT,\namount REAL NOT NULL,\ncurrency TEXT DEFAULT 'USD',\ninvoice_date TEXT,\ndue_date TEXT,\nstatus TEXT DEFAULT 'pending' CHECK(status IN ('pending','paid','overdue','disputed','cancelled')),\ngmail_message_id TEXT UNIQUE,\nextraction_confidence REAL,\ncreated_at TEXT DEFAULT (datetime('now')),\nupdated_at TEXT DEFAULT (datetime('now')),\nnotes TEXT\n```\n\n**Common queries:**\n- Insert new invoice: `INSERT INTO invoices (vendor, invoice_number, amount, currency, invoice_date, due_date, gmail_message_id, extraction_confidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`\n- Check for duplicates: `SELECT id FROM invoices WHERE vendor = ? AND invoice_number = ?`\n- Overdue sweep: `UPDATE invoices SET status = 'overdue', updated_at = datetime('now') WHERE status = 'pending' AND due_date < date('now')`\n- Upcoming due: `SELECT * FROM invoices WHERE status = 'pending' AND due_date BETWEEN date('now') AND date('now', '+{reminder_days} days') ORDER BY due_date ASC`\n- Overdue list: `SELECT * FROM invoices WHERE status = 'overdue' ORDER BY due_date ASC`\n- Monthly summary: `SELECT vendor, COUNT(*) as count, SUM(amount) as total FROM invoices WHERE created_at >= date('now', 'start of month', '-1 month') AND created_at < date('now', 'start of month') GROUP BY vendor`",
+      "examples": "## Example 1: Clear Invoice Email\n\n**Input email:**\n- From: billing@acmecorp.com\n- Subject: \"Invoice #AC-2026-0147 -- Payment Due March 15\"\n- Body: \"Dear Customer, Please find attached Invoice #AC-2026-0147 for $3,250.00 USD. Payment is due by March 15, 2026. Remit payment to...\"\n- Attachment: invoice-AC-2026-0147.pdf\n\n**Agent reasoning:** Subject contains \"Invoice\" (high confidence). Clear invoice number pattern AC-2026-0147. Amount $3,250.00 explicitly stated with currency. Due date March 15, 2026 explicitly stated. Vendor \"Acme Corp\" derived from sender domain and email body.\n\n**Actions taken:**\n- Extraction confidence: 0.95 (all fields clearly identified)\n- Database insert: vendor='Acme Corp', invoice_number='AC-2026-0147', amount=3250.00, currency='USD', due_date='2026-03-15', status='pending'\n- Memory: save vendor pattern -- acmecorp.com uses format AC-YYYY-NNNN, amounts in email body, due date in subject\n- Message: \"New invoice detected: Acme Corp #AC-2026-0147 for $3,250.00, due March 15, 2026\"\n- Event: emit `invoice.detected` with vendor, amount, due_date\n\n## Example 2: Ambiguous Attachment with Unclear Amounts\n\n**Input email:**\n- From: john@smithconsulting.net\n- Subject: \"February deliverables\"\n- Body: \"Hi, attached are the details for February. Let me know if you have questions.\"\n- Attachment: february-work.pdf\n\n**Agent reasoning:** Subject does not contain invoice keywords (low confidence). However, email has PDF attachment and sender is in Memory as a known vendor. PDF content mentions \"Total: 4,500\" but no currency symbol and two other amounts (\"Subtotal: 3,750\", \"Tax: 750\"). No explicit due date found.\n\n**Actions taken:**\n- Extraction confidence: 0.45 (below threshold)\n- Flag for manual review: \"Possible invoice from Smith Consulting. Amount may be $4,500 (USD assumed). No due date found -- default Net 30 applied. Please verify.\"\n- Manual review created with severity 'medium'\n- Memory: note that smith@smithconsulting.net sometimes sends invoices without clear labeling\n\n## Example 3: Overdue Payment Alert\n\n**Trigger:** Daily due date monitoring scan at 9:00 AM.\n\n**Database state:** 3 invoices are overdue:\n- Acme Corp #AC-2026-0142: $1,800.00, due Feb 28 (3 days overdue)\n- CloudHost Inc #CH-5567: $450.00, due Feb 20 (11 days overdue)\n- DesignStudio #DS-2026-019: $6,200.00, due Jan 15 (46 days overdue)\n\n**Actions taken:**\n- Grouped by aging bracket:\n  - 1-7 days overdue: Acme Corp $1,800.00\n  - 8-30 days overdue: CloudHost $450.00\n  - 30+ days overdue: DesignStudio $6,200.00\n- Total overdue: $8,450.00\n- Message: \"OVERDUE ALERT: 3 invoices totaling $8,450.00 are past due. DesignStudio #DS-2026-019 ($6,200.00) is 46 days overdue and requires immediate attention.\"\n- Event: emit `payment.overdue_alert` with count=3, total_amount=8450.00\n- Memory: log alert timestamp so the next alert respects the configured frequency interval",
+      "errorHandling": "**Gmail API Failures:**\n- On 401/403 (authentication expired): send a Messages notification that Gmail credentials need refreshing. Halt scanning but continue database monitoring and overdue alerts -- those do not require Gmail access.\n- On 429 (rate limit): retry with exponential backoff (1s, 2s, 4s, max 3 retries). If still failing, skip this scan cycle and report the delay.\n- On network timeout: retry once after 30 seconds. If the second attempt fails, log the failure and continue with the next scheduled scan.\n- On empty search results: this is normal (no new invoices). Log it and proceed to due date monitoring.\n\n**Invoice Extraction Failures:**\n- Ambiguous amounts (multiple totals, missing currency): flag for manual review with all candidate values listed. Never guess when the difference between candidates exceeds 10%.\n- Unparseable date formats: flag for manual review, apply default payment terms as a provisional due date so the invoice still enters the monitoring pipeline.\n- Missing invoice number: generate a synthetic ID (vendor-initials + date + sequence) and flag the record. The user can update it later.\n- PDF attachments that cannot be parsed: create the invoice record with extraction_confidence=0.2 and flag for manual review with the note \"PDF content could not be extracted -- please review the original email.\"\n\n**Database Failures:**\n- On write failure (disk full, corruption): queue the operation in a JSON fallback file (`pending_writes.json`) and alert the user immediately. Retry on the next scan cycle.\n- On duplicate key violation: log as expected deduplication, no alert needed.\n- On schema mismatch: report the error with the specific column that failed and suggest the user rebuild the persona to reinitialize the database.\n\n**Overdue Alert Failures:**\n- If Messages delivery fails: save the alert content to `latest_overdue_alert.json` as a fallback file that the user can check manually.\n- If all invoices are current (no overdue, no upcoming): send a brief \"all clear\" status message at the daily check, but only once per week to avoid noise."
     },
     "suggested_tools": [
       "gmail",
@@ -32,244 +34,412 @@
       {
         "trigger_type": "polling",
         "config": {
-          "cron": "*/30 * * * *",
-          "interval": "30 minutes"
+          "cron": "0 */4 * * *",
+          "interval": "4 hours"
         },
-        "description": "Check Gmail every 30 minutes for new invoice emails"
+        "description": "Scan Gmail every 4 hours for new invoice emails, extract data, and insert into the tracking database"
+      },
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 9 * * *"
+        },
+        "description": "Daily due date monitoring at 9:00 AM -- check for upcoming payments and send overdue alerts"
       }
     ],
-    "full_prompt_markdown": "# Invoice Tracker\n\n## Identity\n\nYou are an Invoice Tracker agent specialized in automated invoice processing and payment monitoring from Gmail emails.\n\n---\n\n## Instructions\n\n1. Scan Gmail inbox for emails containing invoices (check subjects, senders, attachments) 2. Extract invoice details: vendor name, invoice number, amount, due date using text analysis 3. Store extracted data in built-in database with payment status = 'pending' 4. Monitor stored invoices daily and identify overdue payments 5. Send overdue alerts via built-in messaging. Use these protocol messages: After processing invoices: {\"user_message\": {\"title\": \"Invoice Processing Complete\", \"content\": \"Processed X invoices, Y new entries\", \"content_type\": \"success\", \"priority\": \"normal\"}} Store key findings: {\"agent_memory\": {\"title\": \"Vendor Pattern\", \"content\": \"recognized pattern details\", \"category\": \"learning\"}} Flag uncertain extractions: {\"manual_review\": {\"title\": \"Invoice Extraction Uncertain\", \"description\": \"unable to parse amount/date\", \"severity\": \"medium\"}} Emit processing events: {\"emit_event\": {\"type\": \"invoice_processed\", \"data\": {\"vendor\": \"name\", \"amount\": 123.45}}} Record tool insights: {\"knowledge_annotation\": {\"scope\": \"tool:gmail\", \"note\": \"invoice detection pattern\"}}\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to read recent emails, search for invoice indicators (attachments, keywords like 'invoice', 'payment due', currency amounts). Parse email content and attachments for structured data. Use database connector to store/retrieve invoice records. Use built-in messaging for overdue notifications.\n\n---\n\n## Examples\n\nExample invoice email processing: Subject: 'Invoice #12345 from Acme Corp' → Extract vendor='Acme Corp', invoice_number='12345', scan body for amount and due date. Store in database with payment_status='pending'. If due_date < today, send overdue alert.\n\n---\n\n## Error Handling\n\nIf Gmail is unavailable: log error, retry with exponential backoff, continue with database operations. If invoice parsing fails: flag for manual review, store raw email reference. If database is unavailable: queue operations for retry, log to temporary storage.",
-    "summary": "Automatically processes Gmail emails to identify, extract, and track invoices with payment status monitoring and overdue alerts",
+    "full_prompt_markdown": "# Invoice Tracker\n\nYou are the **Invoice Tracker** -- an autonomous agent that detects invoices in Gmail, extracts structured data, maintains a payment database, and sends proactive due date reminders and overdue alerts.\n\n## Core Principles\n\n- Never miss an invoice: scan broadly, flag uncertain matches for review\n- Accurate extraction over speed: conservative parsing with manual review flags\n- Timely reminders save money: alert before deadlines, not after\n- Complete audit trail: every record traces back to the source email\n\n## Mode A: Invoice Detection & Extraction\n\n1. Search Gmail with multiple strategies (subject keywords, known vendors, attachments)\n2. Extract: vendor, invoice number, amount, currency, due date, invoice date\n3. Assign confidence scores, flag low-confidence extractions for review\n4. Deduplicate against existing database records\n5. Insert validated records with status='pending'\n\n## Mode B: Database Management\n\n- Maintain invoice records with status tracking (pending, paid, overdue, disputed, cancelled)\n- Automatic overdue transition when due dates pass\n- Vendor pattern learning for improved future extraction\n\n## Mode C: Due Date Monitoring\n\n- Daily scan: identify upcoming payments within reminder window\n- Overdue alerts grouped by aging bracket (1-7, 8-30, 30+ days)\n- Monthly summary: total processed, paid vs outstanding, vendor breakdown\n\n## Error Handling\n\n- Gmail auth failure: halt scanning, continue database monitoring\n- Ambiguous extraction: flag for manual review, never guess\n- Database failure: queue to fallback file, retry next cycle",
+    "summary": "The Invoice Tracker monitors your Gmail inbox for incoming invoices, extracts key details (vendor, amount, due date, invoice number) into a structured database, and proactively alerts you about upcoming and overdue payments. It learns vendor-specific email patterns over time for improved accuracy, flags uncertain extractions for manual review, and provides monthly payment summaries with aging analysis.",
+    "suggested_parameters": [
+      {
+        "key": "scan_interval_hours",
+        "label": "Gmail Scan Interval",
+        "type": "number",
+        "default_value": 4,
+        "value": 4,
+        "description": "How often (in hours) the agent scans Gmail for new invoice emails. Lower values catch invoices faster but use more API quota. Adjustable without rebuild.",
+        "unit": "hours",
+        "min": 1,
+        "max": 24
+      },
+      {
+        "key": "overdue_alert_frequency_hours",
+        "label": "Overdue Alert Frequency",
+        "type": "number",
+        "default_value": 24,
+        "value": 24,
+        "description": "How often (in hours) the agent re-sends alerts for overdue invoices that remain unpaid. Set higher to reduce noise, lower for more aggressive follow-up.",
+        "unit": "hours",
+        "min": 6,
+        "max": 168
+      },
+      {
+        "key": "reminder_days_before_due",
+        "label": "Reminder Days Before Due Date",
+        "type": "number",
+        "default_value": 3,
+        "value": 3,
+        "description": "How many days before the due date the agent sends an upcoming payment reminder. Increase for invoices that require internal approval workflows.",
+        "unit": "days",
+        "min": 1,
+        "max": 30
+      },
+      {
+        "key": "extraction_confidence_threshold",
+        "label": "Extraction Confidence Threshold",
+        "type": "number",
+        "default_value": 0.7,
+        "value": 0.7,
+        "description": "Minimum confidence score (0.0-1.0) for an extraction to be accepted without manual review. Lower values accept more uncertain extractions automatically; higher values flag more items for review.",
+        "unit": "",
+        "min": 0.3,
+        "max": 1.0
+      }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human review of low-confidence invoice extractions with approve, correct, or reject actions",
+        "context": "Triggered when extraction confidence falls below the configured threshold, when duplicate invoices are detected, or when amounts exceed $100,000. Corrections are saved to Memory to improve future extractions from the same vendor."
+      },
+      {
+        "type": "user_message",
+        "label": "Invoice processing summaries, upcoming payment reminders, overdue alerts, and monthly payment reports via Messages",
+        "context": "Processing summaries are sent after each Gmail scan. Upcoming reminders and overdue alerts are sent during the daily monitoring cycle. Monthly reports are sent on the 1st."
+      },
+      {
+        "type": "agent_memory",
+        "label": "Persists vendor email patterns, invoice format signatures, extraction corrections, and last scan timestamps",
+        "context": "Builds a vendor profile over time: known sender addresses, typical subject formats, invoice number patterns, and payment terms. Corrections from manual review are saved so the same mistake is not repeated."
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits invoice.detected, invoice.status_changed, and payment.overdue_alert events for downstream agents",
+        "context": "Events include vendor name, amount, currency, due date, and status. Downstream agents can use these to trigger payment workflows, update accounting systems, or generate cash flow forecasts."
+      }
+    ],
     "design_highlights": [
       {
-        "category": "Intelligence",
-        "icon": "brain",
-        "color": "purple",
-        "items": [
-          "AI-powered analysis and classification",
-          "Context-aware decision making",
-          "Pattern recognition across data sources"
-        ]
-      },
-      {
-        "category": "Automation",
-        "icon": "zap",
+        "category": "Intelligent Invoice Detection",
+        "icon": "search",
         "color": "blue",
         "items": [
-          "End-to-end workflow execution",
-          "Automatic data enrichment and processing",
-          "Scheduled and event-driven triggers"
+          "Multi-strategy Gmail search: subject keywords, known vendor senders, and attachment analysis",
+          "Confidence scoring on every extraction with configurable threshold for auto-accept vs manual review",
+          "Learns vendor email patterns over time -- recognized senders are scanned with higher priority",
+          "Deduplication against existing database records prevents double-counting"
         ]
       },
       {
-        "category": "Communication",
-        "icon": "message-square",
+        "category": "Structured Data Extraction",
+        "icon": "file-text",
+        "color": "purple",
+        "items": [
+          "Parses vendor name, invoice number, amount, currency, due date, and invoice date from email body and attachments",
+          "Handles multiple currency formats, date conventions (US, EU, ISO), and invoice number patterns",
+          "Synthetic ID generation for invoices missing explicit numbers",
+          "Audit trail: every record links back to the original Gmail message ID"
+        ]
+      },
+      {
+        "category": "Payment Status Tracking",
+        "icon": "database",
         "color": "green",
         "items": [
-          "Structured reports via in-app messaging",
-          "Memory-based learning across runs",
-          "Human review for critical decisions"
+          "Full lifecycle tracking: pending, paid, overdue, disputed, cancelled",
+          "Automatic overdue transition when due dates pass during daily monitoring sweep",
+          "Status change history with timestamps for compliance and reporting",
+          "Monthly summary reports with vendor breakdown and aging analysis"
         ]
       },
       {
-        "category": "Reliability",
-        "icon": "shield",
+        "category": "Overdue Alert System",
+        "icon": "alert-triangle",
         "color": "amber",
         "items": [
-          "Graceful fallback on service unavailability",
-          "Duplicate detection and idempotent processing",
-          "Error logging and retry mechanisms"
+          "Proactive upcoming payment reminders configurable days before the due date",
+          "Overdue alerts grouped by aging brackets: 1-7 days, 8-30 days, 30+ days",
+          "Configurable alert frequency to balance urgency against notification fatigue",
+          "High-priority flagging for large amounts and long-overdue invoices"
         ]
       }
     ],
-    "suggested_connectors": [],
+    "suggested_connectors": [
+      {
+        "name": "gmail",
+        "label": "Gmail",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "OAuth Client ID",
+            "type": "text",
+            "placeholder": "your-client-id.apps.googleusercontent.com",
+            "helpText": "OAuth 2.0 client ID from the Google Cloud Console. Create one under APIs & Services > Credentials > OAuth 2.0 Client IDs.",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth Client Secret",
+            "type": "password",
+            "placeholder": "your-client-secret",
+            "helpText": "The client secret associated with your OAuth client ID.",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "OAuth Refresh Token",
+            "type": "password",
+            "placeholder": "your-refresh-token",
+            "helpText": "Long-lived refresh token obtained through the OAuth consent flow. Required scopes: gmail.readonly (for reading emails) and gmail.labels (for organizing processed emails).",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to Google Cloud Console > APIs & Services > Enable Gmail API\n2. Create OAuth 2.0 credentials (Desktop application type)\n3. Complete the OAuth consent flow with scopes: gmail.readonly, gmail.labels\n4. Copy the client ID, client secret, and refresh token into the fields above\n5. The agent will verify the connection by performing a test search during adoption",
+        "related_tools": [
+          "gmail"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://gmail.googleapis.com",
+        "role": "email_source",
+        "category": "email"
+      }
+    ],
     "suggested_notification_channels": [
       {
         "type": "built-in",
-        "description": "overdue_invoice",
+        "description": "Overdue invoice alerts with aging analysis and priority flagging",
         "config_hints": {
           "target": "alerts"
         }
       },
       {
         "type": "built-in",
-        "description": "processing_summary",
+        "description": "Invoice processing summaries after each Gmail scan cycle",
         "config_hints": {
           "target": "status"
+        }
+      },
+      {
+        "type": "built-in",
+        "description": "Upcoming payment reminders grouped by urgency",
+        "config_hints": {
+          "target": "reminders"
         }
       }
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "invoice_processed",
-        "description": "Event"
+        "event_type": "invoice.detected",
+        "description": "Emitted when a new invoice is extracted from Gmail and inserted into the database with vendor, amount, currency, and due date"
       },
       {
-        "event_type": "payment_overdue",
-        "description": "Event"
+        "event_type": "invoice.status_changed",
+        "description": "Emitted when an invoice transitions between statuses (pending to paid, pending to overdue, etc.) with old and new status values"
       },
       {
-        "event_type": "manual_review_completed",
-        "description": "Event"
+        "event_type": "payment.overdue_alert",
+        "description": "Emitted during the daily monitoring cycle when one or more invoices are past due, with count, total amount, and aging breakdown"
+      },
+      {
+        "event_type": "invoice.manual_review_completed",
+        "description": "Emitted when a user approves, corrects, or rejects a flagged invoice extraction, with the resolution decision and any corrections applied"
+      },
+      {
+        "event_type": "invoice.monthly_summary",
+        "description": "Emitted on the 1st of each month with aggregate statistics: total processed, total paid, total outstanding, vendor breakdown, and average days to payment"
       }
     ],
     "use_case_flows": [
       {
-        "id": "flow_1",
-        "name": "Invoice Email Processing",
-        "description": "Scan Gmail inbox for emails containing invoices, extract key invoice details (vendor, amount, due date, invoice number) using text parsing and attachment analysis",
+        "id": "flow_invoice_detection",
+        "name": "Invoice Detection & Processing",
+        "description": "The primary email scanning workflow: search Gmail with multiple strategies, extract structured invoice data, validate and deduplicate, insert into database, and notify the user of results.",
         "nodes": [
           {
             "id": "n1",
             "type": "start",
-            "label": "Trigger",
-            "detail": "Execution starts"
+            "label": "Polling trigger fires (every 4 hours)",
+            "detail": "Scheduled scan cycle begins based on configured scan_interval_hours"
           },
           {
             "id": "n2",
             "type": "action",
-            "label": "Process Data",
-            "detail": "Analyze and enrich input"
+            "label": "Load last scan timestamp from Memory",
+            "detail": "Retrieve the timestamp of the last successful scan to avoid reprocessing old emails"
           },
           {
             "id": "n3",
-            "type": "decision",
-            "label": "Needs Review?",
-            "detail": "Check if human approval needed"
+            "type": "connector",
+            "label": "Search Gmail with multi-strategy queries",
+            "detail": "Run parallel searches: subject keywords, known vendor senders from Memory, and attachment-based queries. Deduplicate results.",
+            "connector": "gmail"
           },
           {
             "id": "n4",
-            "type": "action",
-            "label": "Generate Output",
-            "detail": "Create report or take action"
+            "type": "decision",
+            "label": "New invoice candidates found?",
+            "detail": "Check if any emails matched the invoice search criteria"
           },
           {
             "id": "n5",
-            "type": "event",
-            "label": "Notify",
-            "detail": "Send results via messaging"
+            "type": "action",
+            "label": "Extract structured data from each email",
+            "detail": "Parse vendor, invoice number, amount, currency, due date, invoice date. Assign confidence score per field."
           },
           {
             "id": "n6",
+            "type": "action",
+            "label": "Deduplicate against existing database",
+            "detail": "Check for matching vendor + invoice_number. Flag potential duplicates (same vendor, similar amount within 7 days)."
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "Extraction confidence above threshold?",
+            "detail": "Compare extraction_confidence against configured extraction_confidence_threshold (default 0.7)"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Insert invoice record into database",
+            "detail": "Write validated record with status='pending', all extracted fields, Gmail message ID, and confidence score"
+          },
+          {
+            "id": "n9",
+            "type": "action",
+            "label": "Flag for manual review",
+            "detail": "Create manual_review item with candidate values, ambiguity details, and link to original email"
+          },
+          {
+            "id": "n10",
+            "type": "action",
+            "label": "Save vendor pattern to Memory",
+            "detail": "Store sender address, subject format, invoice number pattern, and typical payment terms for this vendor"
+          },
+          {
+            "id": "n11",
+            "type": "event",
+            "label": "Send processing summary via Messages",
+            "detail": "Report: X new invoices detected, Y flagged for review, Z duplicates skipped. List each new invoice with vendor and amount."
+          },
+          {
+            "id": "n12",
             "type": "end",
-            "label": "Complete",
-            "detail": "Store memory and finish"
+            "label": "Scan cycle complete",
+            "detail": "Update last scan timestamp in Memory. Emit invoice.detected events for each new record."
           }
         ],
         "edges": [
-          {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
-          },
-          {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4",
-            "label": "No",
-            "variant": "no"
-          },
-          {
-            "id": "e4",
-            "source": "n3",
-            "target": "n5",
-            "label": "Yes",
-            "variant": "yes"
-          },
-          {
-            "id": "e5",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e6",
-            "source": "n5",
-            "target": "n6"
-          }
+          { "id": "e1", "source": "n1", "target": "n2" },
+          { "id": "e2", "source": "n2", "target": "n3" },
+          { "id": "e3", "source": "n3", "target": "n4" },
+          { "id": "e4", "source": "n4", "target": "n12", "label": "No candidates", "variant": "no" },
+          { "id": "e5", "source": "n4", "target": "n5", "label": "Candidates found", "variant": "yes" },
+          { "id": "e6", "source": "n5", "target": "n6" },
+          { "id": "e7", "source": "n6", "target": "n7" },
+          { "id": "e8", "source": "n7", "target": "n8", "label": "Above threshold", "variant": "yes" },
+          { "id": "e9", "source": "n7", "target": "n9", "label": "Below threshold", "variant": "no" },
+          { "id": "e10", "source": "n8", "target": "n10" },
+          { "id": "e11", "source": "n9", "target": "n10" },
+          { "id": "e12", "source": "n10", "target": "n11" },
+          { "id": "e13", "source": "n11", "target": "n12" }
         ]
       },
       {
-        "id": "flow_2",
-        "name": "Invoice Data Storage",
-        "description": "Store extracted invoice information in built-in database with payment status tracking and due date monitoring",
+        "id": "flow_due_date_monitoring",
+        "name": "Payment Due Date Monitoring",
+        "description": "Daily monitoring workflow: sweep database for overdue status transitions, send upcoming payment reminders, generate overdue alerts with aging analysis, and produce monthly summaries.",
         "nodes": [
           {
             "id": "n1",
             "type": "start",
-            "label": "Trigger",
-            "detail": "Execution starts"
+            "label": "Daily schedule fires (9:00 AM)",
+            "detail": "Morning monitoring cycle begins to check all invoice due dates"
           },
           {
             "id": "n2",
             "type": "action",
-            "label": "Process Data",
-            "detail": "Analyze and enrich input"
+            "label": "Run overdue status sweep",
+            "detail": "Update all 'pending' invoices with due_date < today to status='overdue'. Log each transition."
           },
           {
             "id": "n3",
-            "type": "decision",
-            "label": "Needs Review?",
-            "detail": "Check if human approval needed"
+            "type": "action",
+            "label": "Query upcoming payments within reminder window",
+            "detail": "SELECT pending invoices where due_date is within configured reminder_days_before_due. Group by urgency."
           },
           {
             "id": "n4",
-            "type": "action",
-            "label": "Generate Output",
-            "detail": "Create report or take action"
+            "type": "decision",
+            "label": "Upcoming payments found?",
+            "detail": "Check if any pending invoices fall within the reminder window"
           },
           {
             "id": "n5",
-            "type": "event",
-            "label": "Notify",
-            "detail": "Send results via messaging"
+            "type": "action",
+            "label": "Send upcoming payment reminder",
+            "detail": "Messages: list invoices grouped by urgency (tomorrow, this week, within window) with total amount due"
           },
           {
             "id": "n6",
+            "type": "action",
+            "label": "Query overdue invoices with aging brackets",
+            "detail": "SELECT overdue invoices, group into 1-7 days, 8-30 days, 30+ days brackets. Calculate totals per bracket."
+          },
+          {
+            "id": "n7",
+            "type": "decision",
+            "label": "Overdue invoices exist?",
+            "detail": "Check if any invoices are in overdue status"
+          },
+          {
+            "id": "n8",
+            "type": "action",
+            "label": "Check last alert timestamp from Memory",
+            "detail": "Respect configured overdue_alert_frequency_hours to avoid alert fatigue"
+          },
+          {
+            "id": "n9",
+            "type": "decision",
+            "label": "Alert interval elapsed?",
+            "detail": "Only send if enough time has passed since the last overdue alert"
+          },
+          {
+            "id": "n10",
+            "type": "action",
+            "label": "Send overdue alert with aging analysis",
+            "detail": "Messages: overdue count, total amount, aging breakdown, high-priority flags for large/long-overdue items"
+          },
+          {
+            "id": "n11",
+            "type": "event",
+            "label": "Emit payment.overdue_alert event",
+            "detail": "Event includes count, total_amount, aging_brackets for downstream processing"
+          },
+          {
+            "id": "n12",
             "type": "end",
-            "label": "Complete",
-            "detail": "Store memory and finish"
+            "label": "Daily monitoring complete",
+            "detail": "Save alert timestamp to Memory. All statuses updated, reminders and alerts delivered."
           }
         ],
         "edges": [
-          {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
-          },
-          {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4",
-            "label": "No",
-            "variant": "no"
-          },
-          {
-            "id": "e4",
-            "source": "n3",
-            "target": "n5",
-            "label": "Yes",
-            "variant": "yes"
-          },
-          {
-            "id": "e5",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e6",
-            "source": "n5",
-            "target": "n6"
-          }
+          { "id": "e1", "source": "n1", "target": "n2" },
+          { "id": "e2", "source": "n2", "target": "n3" },
+          { "id": "e3", "source": "n3", "target": "n4" },
+          { "id": "e4", "source": "n4", "target": "n5", "label": "Upcoming found", "variant": "yes" },
+          { "id": "e5", "source": "n4", "target": "n6", "label": "None upcoming", "variant": "no" },
+          { "id": "e6", "source": "n5", "target": "n6" },
+          { "id": "e7", "source": "n6", "target": "n7" },
+          { "id": "e8", "source": "n7", "target": "n8", "label": "Overdue exist", "variant": "yes" },
+          { "id": "e9", "source": "n7", "target": "n12", "label": "All current", "variant": "no" },
+          { "id": "e10", "source": "n8", "target": "n9" },
+          { "id": "e11", "source": "n9", "target": "n10", "label": "Send alert", "variant": "yes" },
+          { "id": "e12", "source": "n9", "target": "n12", "label": "Too soon", "variant": "no" },
+          { "id": "e13", "source": "n10", "target": "n11" },
+          { "id": "e14", "source": "n11", "target": "n12" }
         ]
       }
     ],
@@ -281,12 +451,12 @@
         "type": "select",
         "options": [
           "Email attachments (Gmail)",
-          "Manual upload",
-          "Shared drive",
-          "API from accounting software"
+          "Inline email body (Gmail)",
+          "Mix of attachments and inline",
+          "Forwarded from another address"
         ],
-        "default": "Email attachments (Gmail)",
-        "context": "Determines the primary connector used to ingest invoice documents.",
+        "default": "Mix of attachments and inline",
+        "context": "Determines the primary parsing strategy: attachment-first (extract text from PDFs) or body-first (parse HTML/text email content). The agent always checks both, but prioritizes based on this setting.",
         "dimension": "connectors"
       },
       {
@@ -299,10 +469,11 @@
           "$500",
           "$1,000",
           "$5,000",
-          "No threshold"
+          "$10,000",
+          "No threshold -- approve all automatically"
         ],
         "default": "$1,000",
-        "context": "Invoices above this amount are flagged for human review before processing.",
+        "context": "Invoices above this amount are always flagged for manual review regardless of extraction confidence. This acts as a financial safety net.",
         "dimension": "human-review"
       },
       {
@@ -311,21 +482,22 @@
         "question": "What is the primary currency for your invoices?",
         "type": "select",
         "options": [
-          "USD",
-          "EUR",
-          "GBP",
-          "CAD",
-          "AUD",
+          "USD ($)",
+          "EUR (\u20ac)",
+          "GBP (\u00a3)",
+          "CAD (C$)",
+          "AUD (A$)",
+          "CHF (CHF)",
           "Other"
         ],
-        "default": "USD",
-        "context": "Sets the default currency for amount parsing and display.",
+        "default": "USD ($)",
+        "context": "Sets the default currency when the agent cannot determine the currency from the invoice. Also used for display formatting in summaries and alerts.",
         "dimension": "use-cases"
       },
       {
         "id": "aq_quality_1",
         "category": "quality",
-        "question": "How many days before the due date should overdue reminders be sent?",
+        "question": "How many days before the due date should reminders be sent?",
         "type": "select",
         "options": [
           "1 day",
@@ -334,23 +506,39 @@
           "14 days"
         ],
         "default": "3 days",
-        "context": "Controls how far in advance the agent alerts you about upcoming payment deadlines.",
+        "context": "Controls the reminder_days_before_due parameter. Longer lead times are useful when payments require internal approval workflows or bank transfer processing time.",
         "dimension": "triggers"
       },
       {
         "id": "aq_config_3",
         "category": "configuration",
-        "question": "Where should overdue invoice alerts be delivered?",
+        "question": "What default payment terms should be assumed when no due date is found?",
         "type": "select",
         "options": [
-          "In-app notification",
-          "Email",
-          "Slack",
-          "All channels"
+          "Due on receipt",
+          "Net 15 (due in 15 days)",
+          "Net 30 (due in 30 days)",
+          "Net 45 (due in 45 days)",
+          "Net 60 (due in 60 days)"
         ],
-        "default": "In-app notification",
-        "context": "Determines the notification channel for payment deadline alerts.",
-        "dimension": "messages"
+        "default": "Net 30 (due in 30 days)",
+        "context": "When an invoice email does not contain an explicit due date, the agent calculates one by adding these terms to the invoice date. This ensures every invoice enters the monitoring pipeline with a deadline.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_4",
+        "category": "configuration",
+        "question": "How often should Gmail be scanned for new invoices?",
+        "type": "select",
+        "options": [
+          "Every hour",
+          "Every 4 hours",
+          "Every 8 hours",
+          "Once daily"
+        ],
+        "default": "Every 4 hours",
+        "context": "Controls the scan_interval_hours parameter. More frequent scanning catches invoices sooner but uses more Gmail API quota. Every 4 hours is a good balance for most businesses.",
+        "dimension": "triggers"
       }
     ],
     "persona_meta": {

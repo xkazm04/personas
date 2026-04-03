@@ -51,8 +51,8 @@ class SilentErrorBoundary extends Component<
 // BackgroundServices hosts hooks that import domain stores (~300 KB deferred).
 const BackgroundServices = lazy(() => import("@/features/shared/components/layout/BackgroundServices"));
 const CommandPalette = lazy(() => import("@/features/shared/components/overlays/CommandPalette"));
-const OnboardingOverlay = lazy(() => import("@/features/onboarding/components/OnboardingOverlay"));
 const GuidedTour = lazy(() => import("@/features/onboarding/components/GuidedTour"));
+const TourSpotlight = lazy(() => import("@/features/onboarding/components/TourSpotlight"));
 const ExecutionMiniPlayer = lazy(() => import("@/features/execution/components/ExecutionMiniPlayer"));
 const HealingToast = lazy(() => import("@/features/shared/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const AlertToastContainer = lazy(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
@@ -76,8 +76,9 @@ export default function App() {
     });
     void useAuthStore.getState().initialize();
     // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.
-    // Only loaded in dev builds; tree-shaken from production.
-    if (import.meta.env.DEV) {
+    // Loaded in dev builds always, or in production when PERSONAS_TEST_PORT is set
+    // (Rust injects window.__PERSONAS_TEST_MODE__ = true via eval).
+    if (import.meta.env.DEV || (window as unknown as Record<string, unknown>).__PERSONAS_TEST_MODE__) {
       void import("@/test/automation/bridge");
     }
 
@@ -133,8 +134,8 @@ export default function App() {
           <Suspense fallback={null}>
             <HealingToast />
             <AlertToastContainer />
-            <OnboardingOverlay />
             <GuidedTour />
+            <TourSpotlight />
             <ExecutionMiniPlayer />
             <CommandPalette />
             <NotificationCenter />

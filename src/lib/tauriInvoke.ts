@@ -32,15 +32,28 @@ export type RustArgs<T extends Record<string, unknown>> = {
 /** Default timeout for Tauri IPC calls (90 seconds). */
 const DEFAULT_TIMEOUT_MS = 90_000;
 
-/** Wait for the IPC session token to become available (max ~1s). */
+/**
+ * Wait for the IPC session token AND the __TAURI_INTERNALS__ monkey-patch
+ * to become available. Resolves once both are ready or after ~2 s max.
+ * The monkey-patch is critical on Windows WebView2 — without it the
+ * x-ipc-token header may not reach the Rust backend.
+ */
 let _tokenReady: Promise<void> | null = null;
 function waitForIpcToken(): Promise<void> {
-  if ((globalThis as Record<string, unknown>).__IPC_TOKEN) return Promise.resolve();
+  const g = globalThis as Record<string, unknown>;
+  const isReady = () =>
+    !!g.__IPC_TOKEN &&
+    !!(
+      (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ as
+        | (Record<string, unknown> & { __ipc_patched?: boolean })
+        | undefined
+    )?.__ipc_patched;
+  if (isReady()) return Promise.resolve();
   if (_tokenReady) return _tokenReady;
   _tokenReady = new Promise<void>((resolve) => {
     let tries = 0;
     const iv = setInterval(() => {
-      if ((globalThis as Record<string, unknown>).__IPC_TOKEN || ++tries > 50) {
+      if (isReady() || ++tries > 100) {
         clearInterval(iv);
         resolve();
       }

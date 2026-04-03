@@ -5,6 +5,7 @@ import {
   Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
+  GraduationCap,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -51,6 +52,7 @@ export function filterByTier<T extends { minTier?: Tier; simpleHidden?: boolean 
 
 export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> = [
   { id: 'welcome', icon: Compass, label: 'Welcome' },
+  { id: 'learning', icon: GraduationCap, label: 'Learning' },
   { id: 'roadmap', icon: Map, label: 'Roadmap' },
   ...(import.meta.env.DEV ? [{ id: 'system-check' as HomeTab, icon: Monitor, label: 'System Check' }] : []),
 ];

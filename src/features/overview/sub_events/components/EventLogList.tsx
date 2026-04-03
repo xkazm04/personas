@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
-import { Zap, Activity, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X } from 'lucide-react';
+import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
-import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
+import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
+import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
@@ -30,7 +31,7 @@ export default function EventLogList() {
   const {
     recentEvents, personas, availableTypes,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
-    sortDirection, toggleSortDirection,
+    sortDirection: _sortDirection, toggleSortDirection: _toggleSortDirection,
     selectedEvent, setSelectedEvent,
     selectedPersonaId, setSelectedPersonaId,
     isLoading, isRefreshing, isSearching,
@@ -65,19 +66,19 @@ export default function EventLogList() {
     ...availableTypes.map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
   ];
 
-  const personaOptions = [
-    { value: '', label: 'All personas' },
-    ...personas.map((p) => ({ value: p.id, label: p.name })),
-  ];
 
-  const columns: DataGridColumn<PersonaEvent>[] = [
+  const columns: TableColumn<PersonaEvent>[] = [
     {
       key: 'persona',
       label: 'Persona',
       width: 'minmax(200px, 1.2fr)',
-      filterOptions: personaOptions,
-      filterValue: selectedPersonaId,
-      onFilterChange: (v) => setSelectedPersonaId(v),
+      filterComponent: (
+        <PersonaColumnFilter
+          value={selectedPersonaId}
+          onChange={(v) => setSelectedPersonaId(v)}
+          personas={personas}
+        />
+      ),
       render: (event) => {
         const targetPersona = getPersona(event.target_persona_id);
         if (targetPersona) {
@@ -267,24 +268,12 @@ export default function EventLogList() {
       </div>
 
       <ContentBody flex>
-        <DataGrid<PersonaEvent>
+        <UnifiedTable<PersonaEvent>
           columns={columns}
           data={filteredEvents}
           getRowKey={(e) => e.id}
           onRowClick={setSelectedEvent}
-          getRowAccent={(event) => {
-            if (event.status === 'processing') return 'hover:border-l-status-processing';
-            if (event.status === 'completed' || event.status === 'delivered') return 'hover:border-l-status-success';
-            if (event.status === 'failed') return 'hover:border-l-status-error';
-            return 'hover:border-l-status-pending';
-          }}
-          sortKey="created"
-          sortDirection={sortDirection}
-          onSort={() => toggleSortDirection()}
-          pageSize={20}
           isLoading={isLoading}
-          loadingLabel="Loading events..."
-          emptyIcon={Activity}
           emptyTitle="No events yet"
           emptyDescription="Events from webhooks, executions, and persona actions will appear here as your agents run."
           className="flex-1"

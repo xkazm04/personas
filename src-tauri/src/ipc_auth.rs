@@ -92,30 +92,23 @@ pub fn is_privileged_command(command: &str) -> bool {
 }
 
 /// Commands that require a valid IPC session token.
-/// These are sensitive local operations (credential management, vault access,
-/// OAuth flows, API proxying, desktop discovery, etc.).
+/// These are sensitive write/delete operations. Read-only commands that are
+/// needed at startup (list_credentials, list_connectors, vault_status, etc.)
+/// are intentionally PUBLIC so the app boots reliably on all platforms.
+/// The IPC token monkey-patch has a race condition on Windows WebView2 where
+/// the native bridge may not forward `Headers` objects before the patch fires.
 pub const PRIVILEGED_COMMANDS: &[&str] = &[
-    // Credentials -- CRUD
-    "list_credentials",
+    // Credentials -- Write/Delete CRUD (reads are public)
     "create_credential",
     "update_credential",
     "patch_credential_metadata",
-    "credential_blast_radius",
     "delete_credential",
-    "list_credential_events",
-    "list_all_credential_events",
     "create_credential_event",
     "update_credential_event",
     "delete_credential_event",
-    "healthcheck_credential",
-    "healthcheck_credential_preview",
-    "vault_status",
     "migrate_plaintext_credentials",
-    "list_credential_fields",
     "update_credential_field",
-    // Credentials -- Connectors
-    "list_connectors",
-    "get_connector",
+    // Credentials -- Connectors (writes only; list/get are public)
     "create_connector",
     "update_connector",
     "delete_connector",
@@ -529,12 +522,12 @@ static CLOUD_COMMANDS_SET: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
 });
 
 /// Commands that require cloud authentication (Google OAuth).
+/// Read-only config/status checks (cloud_get_config, cloud_status,
+/// gitlab_get_config) are public to allow startup without auth.
 pub const CLOUD_COMMANDS: &[&str] = &[
     "cloud_connect",
     "cloud_reconnect_from_keyring",
     "cloud_disconnect",
-    "cloud_get_config",
-    "cloud_status",
     "cloud_execute_persona",
     "cloud_cancel_execution",
     "cloud_oauth_authorize",
@@ -564,11 +557,10 @@ pub const CLOUD_COMMANDS: &[&str] = &[
     "smee_relay_update",
     "smee_relay_set_status",
     "smee_relay_delete",
-    // GitLab
+    // GitLab (gitlab_get_config is public — read-only startup check)
     "gitlab_connect",
     "gitlab_connect_from_vault",
     "gitlab_disconnect",
-    "gitlab_get_config",
     "gitlab_list_projects",
     "gitlab_deploy_persona",
     "gitlab_list_agents",
@@ -618,14 +610,22 @@ mod tests {
 
     #[test]
     fn privileged_commands_require_token() {
-        assert_eq!(command_tier("list_credentials"), AuthTier::Privileged);
+        // Write/delete operations are privileged
         assert_eq!(command_tier("create_credential"), AuthTier::Privileged);
         assert_eq!(command_tier("delete_credential"), AuthTier::Privileged);
-        assert_eq!(command_tier("healthcheck_credential"), AuthTier::Privileged);
-        assert_eq!(command_tier("vault_status"), AuthTier::Privileged);
         assert_eq!(command_tier("scan_credential_sources"), AuthTier::Privileged);
         assert_eq!(command_tier("execute_api_request"), AuthTier::Privileged);
         assert_eq!(command_tier("sign_document"), AuthTier::Privileged);
+    }
+
+    #[test]
+    fn read_only_commands_are_public() {
+        // Read-only startup commands are public (no IPC token required)
+        assert_eq!(command_tier("list_credentials"), AuthTier::Public);
+        assert_eq!(command_tier("list_connectors"), AuthTier::Public);
+        assert_eq!(command_tier("vault_status"), AuthTier::Public);
+        assert_eq!(command_tier("healthcheck_credential"), AuthTier::Public);
+        assert_eq!(command_tier("gitlab_get_config"), AuthTier::Public);
     }
 
     #[test]
@@ -638,8 +638,9 @@ mod tests {
 
     #[test]
     fn is_privileged_includes_cloud() {
-        assert!(is_privileged_command("list_credentials"));
+        assert!(is_privileged_command("create_credential"));
         assert!(is_privileged_command("cloud_connect"));
+        assert!(!is_privileged_command("list_credentials"));
         assert!(!is_privileged_command("greet"));
     }
 

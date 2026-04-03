@@ -1,92 +1,119 @@
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ChevronRight, X, MapPin, Sparkles } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
+import { useThemeStore } from "@/stores/themeStore";
 import { useOverviewStore } from "@/stores/overviewStore";
-import { useAgentStore } from "@/stores/agentStore";
-import { useTier } from '@/hooks/utility/interaction/useTier';
+import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
-import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
-import type { SidebarSection } from '@/lib/types/types';
-import { STEP_COLORS } from './tourConstants';
+import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlice';
+import type { SidebarSection, EventBusTab } from '@/lib/types/types';
+import { getStepColors } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
 
-/** Steps hidden in simple mode (navigate to sections not visible in simple mode). */
-const SIMPLE_HIDDEN_STEPS = new Set(['credentials-catalog']);
+const DEFAULT_PANEL_WIDTH = 440;
 
 export default function GuidedTour() {
-  const { isStarter: isSimple } = useTier();
   const tourActive = useSystemStore((s) => s.tourActive);
+  const tourId = useSystemStore((s) => s.tourActiveTourId);
   const currentIndex = useSystemStore((s) => s.tourCurrentStepIndex);
   const completedSteps = useSystemStore((s) => s.tourStepCompleted);
+  const subStepIndex = useSystemStore((s) => s.tourSubStepIndex);
   const advanceTour = useSystemStore((s) => s.advanceTour);
   const dismissTour = useSystemStore((s) => s.dismissTour);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
-  const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
-  const emitTourEvent = useSystemStore((s) => s.emitTourEvent);
-  const tourCreatedPersonaId = useSystemStore((s) => s.tourCreatedPersonaId);
-  const selectPersona = useAgentStore((s) => s.selectPersona);
-  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const captureAppearanceBaseline = useSystemStore((s) => s.captureAppearanceBaseline);
+  const setHighlightTestId = useSystemStore((s) => s.setHighlightTestId);
 
   const [isMinimized, setIsMinimized] = useState(false);
 
-  const visibleSteps = useMemo(
-    () => isSimple ? TOUR_STEPS.filter((s) => !SIMPLE_HIDDEN_STEPS.has(s.id)) : TOUR_STEPS,
-    [isSimple],
-  );
-
-  const currentStep = visibleSteps[currentIndex] ?? TOUR_STEPS[currentIndex];
-  const isStepCompleted = currentStep ? completedSteps[currentStep.id] : false;
-  const allCompleted = visibleSteps.every((s) => completedSteps[s.id]);
+  const tourDef = getTourById(tourId);
+  const visibleSteps = getActiveTourSteps(tourId);
+  const currentStep = visibleSteps[currentIndex];
+  const isStepCompleted = currentStep ? (completedSteps[currentStep.id] ?? false) : false;
+  const allCompleted = visibleSteps.every((s) => completedSteps[s.id] ?? false);
   const completedCount = visibleSteps.filter((s) => completedSteps[s.id]).length;
+  const panelWidth = currentStep?.panelWidth ?? DEFAULT_PANEL_WIDTH;
 
   const navigateToStep = useCallback(
     (stepIndex: number) => {
-      const step = TOUR_STEPS[stepIndex];
+      const steps = getActiveTourSteps(tourId);
+      const step = steps[stepIndex];
       if (!step) return;
+
       setSidebarSection(step.nav.sidebarSection as SidebarSection);
+
+      // Handle sub-tab setters
       if (step.nav.subTab && step.nav.subTabSetter) {
         setTimeout(() => {
-          if (step.nav.subTabSetter === 'setOverviewTab') setOverviewTab(step.nav.subTab as Parameters<typeof setOverviewTab>[0]);
-          else if (step.nav.subTabSetter === 'setTemplateTab') setTemplateTab(step.nav.subTab as Parameters<typeof setTemplateTab>[0]);
+          if (step.nav.subTabSetter === 'setSettingsTab') {
+            setSettingsTab(step.nav.subTab as Parameters<typeof setSettingsTab>[0]);
+          } else if (step.nav.subTabSetter === 'setOverviewTab') {
+            setOverviewTab(step.nav.subTab as Parameters<typeof setOverviewTab>[0]);
+          } else if (step.nav.subTabSetter === 'setEventBusTab') {
+            useSystemStore.setState({ eventBusTab: step.nav.subTab as EventBusTab });
+          }
         }, 100);
       }
-      if (step.id === 'agent-execution' && tourCreatedPersonaId) {
-        setTimeout(() => { selectPersona(tourCreatedPersonaId); setEditorTab('lab'); }, 150);
+
+      // Step-specific navigation for getting-started tour
+      if (step.id === 'appearance-setup') {
+        const theme = useThemeStore.getState();
+        captureAppearanceBaseline({ themeId: theme.themeId, textScale: theme.textScale, brightness: theme.brightness });
+      } else if (step.id === 'credentials-intro') {
+        setTimeout(() => storeBus.emit('tour:navigate-credential-view', { key: 'from-template' }), 150);
+      } else if (step.id === 'persona-creation') {
+        setTimeout(() => useSystemStore.setState({ isCreatingPersona: true }), 150);
+      }
+
+      // Set initial spotlight
+      const firstSubHighlight = step.subSteps[0]?.highlightTestId;
+      if (step.highlightTestId) {
+        setTimeout(() => setHighlightTestId(step.highlightTestId!), 300);
+      } else if (firstSubHighlight) {
+        setTimeout(() => setHighlightTestId(firstSubHighlight), 300);
       }
     },
-    [setSidebarSection, setOverviewTab, setTemplateTab, selectPersona, setEditorTab, tourCreatedPersonaId],
+    [tourId, setSidebarSection, setSettingsTab, setOverviewTab, captureAppearanceBaseline, setHighlightTestId],
   );
 
-  useEffect(() => { if (!tourActive || isMinimized) return; navigateToStep(currentIndex); }, [currentIndex, tourActive, navigateToStep, isMinimized]);
-
   useEffect(() => {
-    if (!tourActive || !currentStep || currentStep.id !== 'overview-messages') return;
-    const timer = setTimeout(() => emitTourEvent('tour:messages-viewed'), 3000);
-    return () => clearTimeout(timer);
-  }, [tourActive, currentStep, emitTourEvent]);
+    if (!tourActive || isMinimized) return;
+    navigateToStep(currentIndex);
+  }, [currentIndex, tourActive, navigateToStep, isMinimized]);
 
+  // Auto-complete time-based steps for observability/events tours
   useEffect(() => {
-    if (!tourActive || !currentStep || currentStep.id !== 'credentials-catalog') return;
-    const timer = setTimeout(() => emitTourEvent('tour:catalog-explored'), 4000);
-    return () => clearTimeout(timer);
-  }, [tourActive, currentStep, emitTourEvent]);
+    if (!tourActive || !currentStep) return;
+    const timedSteps = ['tour:dashboard-viewed', 'tour:activity-explored', 'tour:messages-explored',
+      'tour:health-explored', 'tour:lab-explored', 'tour:events-viewed',
+      'tour:triggers-explored', 'tour:chaining-understood', 'tour:livestream-viewed'];
+    if (timedSteps.includes(currentStep.completeOn)) {
+      const timer = setTimeout(() => useSystemStore.getState().emitTourEvent(currentStep.completeOn), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [tourActive, currentStep]);
 
-  const handleNext = () => { if (allCompleted) { useSystemStore.getState().finishTour(); return; } advanceTour(); };
-  const handlePrev = () => { if (currentIndex > 0) useSystemStore.setState({ tourCurrentStepIndex: currentIndex - 1 }); };
+  const handleNext = () => {
+    if (allCompleted) { useSystemStore.getState().finishTour(); return; }
+    advanceTour();
+  };
+  const handlePrev = () => {
+    if (currentIndex > 0) useSystemStore.setState({ tourCurrentStepIndex: currentIndex - 1, tourSubStepIndex: 0 });
+  };
   const handleJump = (index: number) => {
-    const step = TOUR_STEPS[index];
-    if (step?.id === 'template-gallery') useSystemStore.setState({ tourCurrentStepIndex: index, tourSearchPrefill: 'AI Weekly Research' });
-    else useSystemStore.setState({ tourCurrentStepIndex: index });
+    useSystemStore.setState({ tourCurrentStepIndex: index, tourSubStepIndex: 0 });
   };
 
-  if (!tourActive || !currentStep) return null;
-  const colors = STEP_COLORS[currentStep.id];
+  if (!tourActive || !currentStep || !tourDef) return null;
+  const colors = getStepColors(tourDef.color);
 
   if (isMinimized) {
     return (
       <button
         onClick={() => { setIsMinimized(false); navigateToStep(currentIndex); }}
+        data-testid="tour-panel-minimized"
         className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background/95 backdrop-blur-xl border border-l-0 ${colors.border} shadow-elevation-3 ${colors.glow} hover:shadow-elevation-3 transition-shadow cursor-pointer group`}
       >
         <MapPin className={`w-4 h-4 ${colors.text}`} />
@@ -97,39 +124,44 @@ export default function GuidedTour() {
 
   return (
     <div
-        key="tour-panel"
-        className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999] w-[380px]"
-      >
-        <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.border} bg-background/95 backdrop-blur-xl shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
-          <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
-            <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}>
-                <Sparkles className={`w-4 h-4 ${colors.text}`} />
-              </div>
-              <div>
-                <h3 className="typo-heading text-foreground/90 leading-tight">Guided Tour</h3>
-                <p className="text-[11px] text-muted-foreground/80">Step {currentIndex + 1} of {visibleSteps.length}</p>
-              </div>
+      key="tour-panel"
+      data-testid="tour-panel"
+      className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
+      style={{ width: panelWidth }}
+    >
+      <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.border} bg-background/95 backdrop-blur-xl shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+              <Sparkles className={`w-4 h-4 ${colors.text}`} />
             </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title="Minimize">
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon-sm" onClick={dismissTour} title="End tour">
-                <X className="w-3.5 h-3.5" />
-              </Button>
+            <div>
+              <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
+              <p className="text-[11px] text-muted-foreground/80">Step {currentIndex + 1} of {visibleSteps.length}</p>
             </div>
           </div>
-          <TourPanelBody
-            currentIndex={currentIndex}
-            completedSteps={completedSteps}
-            isStepCompleted={isStepCompleted}
-            allCompleted={allCompleted}
-            onNext={handleNext}
-            onPrev={handlePrev}
-            onJump={handleJump}
-          />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title="Minimize" data-testid="tour-panel-minimize">
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon-sm" onClick={dismissTour} title="End tour" data-testid="tour-panel-dismiss">
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
+        <TourPanelBody
+          currentIndex={currentIndex}
+          completedSteps={completedSteps}
+          isStepCompleted={isStepCompleted}
+          allCompleted={allCompleted}
+          subStepIndex={subStepIndex}
+          tourId={tourId}
+          tourColor={tourDef.color}
+          onNext={handleNext}
+          onPrev={handlePrev}
+          onJump={handleJump}
+        />
       </div>
+    </div>
   );
 }

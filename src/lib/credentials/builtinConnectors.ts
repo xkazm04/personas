@@ -42,6 +42,7 @@ import figma from '../../../scripts/connectors/builtin/figma.json';
 import hubspot from '../../../scripts/connectors/builtin/hubspot.json';
 import jira from '../../../scripts/connectors/builtin/jira.json';
 import kubernetes from '../../../scripts/connectors/builtin/kubernetes.json';
+import elevenlabs from '../../../scripts/connectors/builtin/elevenlabs.json';
 import leonardoAi from '../../../scripts/connectors/builtin/leonardo-ai.json';
 import confluence from '../../../scripts/connectors/builtin/confluence.json';
 import neon from '../../../scripts/connectors/builtin/neon.json';
@@ -124,6 +125,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   hubspot,
   jira,
   kubernetes,
+  elevenlabs,
   leonardoAi,
   confluence,
   neon,

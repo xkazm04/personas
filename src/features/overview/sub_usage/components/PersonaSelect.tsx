@@ -1,5 +1,5 @@
 import type { Persona } from '@/lib/bindings/Persona';
-import { PersonaSelector } from '@/features/shared/components/forms/PersonaSelector';
+import { PersonaSelectorModal } from '@/features/shared/components/forms/PersonaSelectorModal';
 
 // ---------------------------------------------------------------------------
 // CompareToggle
@@ -42,7 +42,7 @@ interface PersonaSelectProps {
 
 export function PersonaSelect({ value, onChange, personas }: PersonaSelectProps) {
   return (
-    <PersonaSelector
+    <PersonaSelectorModal
       value={value}
       onChange={onChange}
       personas={personas}

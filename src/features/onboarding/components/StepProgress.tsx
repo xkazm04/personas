@@ -1,10 +1,9 @@
 import { Check } from 'lucide-react';
-import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
-import type { TourStepId } from '@/stores/slices/system/tourSlice';
-import { STEP_ICONS, STEP_COLORS } from './tourConstants';
+import type { TourStepDef, TourStepId } from '@/stores/slices/system/tourSlice';
+import { getStepIcon, getStepColors } from './tourConstants';
 
 interface StepProgressProps {
-  steps: typeof TOUR_STEPS;
+  steps: TourStepDef[];
   currentIndex: number;
   completedSteps: Record<TourStepId, boolean>;
   onJump: (index: number) => void;
@@ -21,13 +20,14 @@ export function StepProgress({
       {steps.map((step, i) => {
         const isCompleted = completedSteps[step.id];
         const isCurrent = i === currentIndex;
-        const Icon = STEP_ICONS[step.id];
-        const colors = STEP_COLORS[step.id];
+        const Icon = getStepIcon(step.id);
+        const colors = getStepColors(step.id);
 
         return (
           <button
             key={step.id}
             onClick={() => onJump(i)}
+            data-testid={`tour-step-${step.id}`}
             className={`relative flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200 ${
               isCurrent
                 ? `${colors.bg} ${colors.border} border shadow-elevation-2 ${colors.glow}`

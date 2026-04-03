@@ -3,7 +3,6 @@ import { List, Compass } from 'lucide-react';
 import { DensityToggle, type Density } from './filters/DensityToggle';
 import { SortDropdown } from './filters/SortDropdown';
 import { FilterChips } from './filters/FilterChips';
-import { ConnectorFilterDropdown } from './filters/ConnectorFilterDropdown';
 import { ComponentFilterDropdown } from './filters/ComponentFilterDropdown';
 import { AdminToolsDropdown } from './filters/AdminToolsDropdown';
 import type { ConnectorWithCount } from '@/api/overview/reviews';
@@ -132,7 +131,7 @@ export function TemplateSearchFilterRow({
   connectorFilter,
   onCategoryFilterChange,
   onConnectorFilterChange,
-  availableConnectors,
+  availableConnectors: _availableConnectors,
   coverageFilter,
   onCoverageFilterChange,
   coverageCounts,
@@ -160,12 +159,6 @@ export function TemplateSearchFilterRow({
         coverageCounts={coverageCounts}
         componentFilter={componentFilter}
         onComponentFilterChange={onComponentFilterChange}
-      />
-
-      <ConnectorFilterDropdown
-        availableConnectors={availableConnectors}
-        connectorFilter={connectorFilter}
-        setConnectorFilter={onConnectorFilterChange}
       />
 
       {onComponentFilterChange && availableComponents && (

@@ -6,7 +6,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '@/stores/authStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { useCallback, useMemo } from 'react';
+import { Suspense, useCallback, useMemo } from 'react';
 import { selectActiveAlertCount } from '@/stores/selectors/activeAlertCount';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
@@ -24,6 +24,9 @@ import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { DashboardHeaderBadges } from './widgets/DashboardHeaderBadges';
 import { RecentActivityList } from './widgets/RecentActivityList';
 import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
+import { lazyRetry } from '@/lib/lazyRetry';
+
+const AnalyticsInserts = lazyRetry(() => import('./widgets/AnalyticsInserts'));
 
 export default function DashboardHome() {
   const user = useAuthStore((s) => s.user);
@@ -169,16 +172,24 @@ export default function DashboardHome() {
                 <RecentActivityList recentExecs={stats.recentExecs} onViewAll={handleViewAllExecs} />
               </div>
 
-              {/* Center: Charts */}
-              <div className="relative">
-                <StalenessIndicator fetchedAt={pipelineFetchedAt.executionDashboard} hasError={!!pipelineErrors.executionDashboard} label="Traffic & errors" />
-                <TrafficErrorsChart chartData={chartData} totalTraffic={chartTotals.totalTraffic} totalErrors={chartTotals.totalErrors} />
+              {/* Center: Traffic/Errors + Execution Health + Cost Over Time */}
+              <div className="space-y-4">
+                <div className="relative">
+                  <StalenessIndicator fetchedAt={pipelineFetchedAt.executionDashboard} hasError={!!pipelineErrors.executionDashboard} label="Traffic & errors" />
+                  <TrafficErrorsChart chartData={chartData} totalTraffic={chartTotals.totalTraffic} totalErrors={chartTotals.totalErrors} />
+                </div>
+                <Suspense fallback={null}>
+                  <AnalyticsInserts position="center" />
+                </Suspense>
               </div>
 
-              {/* Right: Health Digest + Deploy */}
+              {/* Right: Health Digest + Deploy + Rotation + Health Issues */}
               <div className="space-y-4">
                 <HealthDigestPanel />
                 <DeployFirstAutomationCard />
+                <Suspense fallback={null}>
+                  <AnalyticsInserts position="right" />
+                </Suspense>
               </div>
             </div>
           )}

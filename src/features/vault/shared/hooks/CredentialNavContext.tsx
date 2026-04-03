@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { storeBus } from '@/lib/storeBus';
 
 export type CredentialNavKey = 'credentials' | 'from-template' | 'add-new' | 'databases' | 'graph';
 
@@ -42,6 +43,14 @@ export function CredentialNavProvider({ children }: { children: ReactNode }) {
     navigate,
     setNavigateHandler,
   }), [currentKey, navigate, setNavigateHandler]);
+
+  // Listen for tour navigation requests from outside the provider tree
+  useEffect(() => {
+    const unsub = storeBus.on('tour:navigate-credential-view', ({ key }) => {
+      navigate(key as CredentialNavKey);
+    });
+    return unsub;
+  }, [navigate]);
 
   return (
     <CredentialNavContext.Provider value={value}>

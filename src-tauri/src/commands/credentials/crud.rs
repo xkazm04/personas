@@ -19,7 +19,7 @@ use crate::AppState;
 pub fn list_credentials(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<PersonaCredential>, AppError> {
-    require_privileged_sync(&state, "list_credentials")?;
+    // Public command — no IPC token required (read-only, needed at startup)
     repo::get_all(&state.db)
 }
 
@@ -143,7 +143,6 @@ pub fn credential_blast_radius(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<Vec<BlastRadiusItem>, AppError> {
-    require_privileged_sync(&state, "credential_blast_radius")?;
     let items = repo::blast_radius(&state.db, &id)?;
     Ok(items
         .into_iter()
@@ -178,7 +177,6 @@ pub fn list_credential_events(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<CredentialEvent>, AppError> {
-    require_privileged_sync(&state, "list_credential_events")?;
     repo::get_events_by_credential(&state.db, &credential_id)
 }
 
@@ -186,7 +184,6 @@ pub fn list_credential_events(
 pub fn list_all_credential_events(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<CredentialEvent>, AppError> {
-    require_privileged_sync(&state, "list_all_credential_events")?;
     repo::get_all_events(&state.db)
 }
 
@@ -223,7 +220,6 @@ pub async fn healthcheck_credential(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "healthcheck_credential").await?;
     let result =
         crate::engine::healthcheck::run_healthcheck(&state.db, &credential_id).await?;
     let cred = repo::get_by_id(&state.db, &credential_id)
@@ -259,7 +255,6 @@ pub async fn healthcheck_credential_preview(
     service_type: String,
     session_encrypted_data: String,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged(&state, "healthcheck_credential_preview").await?;
     // Decrypt mandatory session-encrypted field values (RSA-OAEP + AES-GCM transit encryption)
     let field_values: HashMap<String, String> = match state.session_key.decrypt(&session_encrypted_data) {
         Ok(decrypted) => serde_json::from_str(&decrypted)
@@ -286,7 +281,7 @@ pub async fn healthcheck_credential_preview(
 pub fn vault_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
-    require_privileged_sync(&state, "vault_status")?;
+    // Public command — no IPC token required (read-only status check)
     let (total, plaintext) = repo::count_vault_status(&state.db)?;
     let encrypted = total - plaintext;
     let source = crypto::key_source_label();
@@ -318,7 +313,6 @@ pub fn list_credential_fields(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<Vec<serde_json::Value>, AppError> {
-    require_privileged_sync(&state, "list_credential_fields")?;
     let fields = repo::get_fields(&state.db, &credential_id)?;
     Ok(fields
         .iter()

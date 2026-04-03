@@ -15,7 +15,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import { seedMockMessage } from '@/api/overview/messages';
-import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { priorityConfig, FILTER_LABELS, GRID_TEMPLATE_COLUMNS, type FilterType, deliveryStatusConfig } from '../libs/messageHelpers';
 
 import { ROW_SEPARATOR, ROW_SEPARATOR_T } from '@/lib/design/listTokens';
@@ -151,16 +151,6 @@ export default function MessageList() {
   }), [messages, unreadMessageCount]);
 
   const defaultPriority = { color: 'text-foreground/80', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
-
-  const personaFilterOptions = useMemo(() => [
-    { value: '', label: 'All personas' },
-    ...personas.map((p) => ({ value: p.id, label: p.name })),
-  ], [personas]);
-
-  const priorityFilterOptions = useMemo(() => [
-    { value: '', label: 'All priorities' },
-    { value: 'high', label: 'High' },
-  ], []);
 
   const handleToggleThread = useCallback((threadId: string) => {
     if (expandedThreadId === threadId) {
@@ -365,32 +355,30 @@ export default function MessageList() {
           ) : (
             <div ref={parentRef} className="flex-1 overflow-y-auto">
               <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={6} className="w-full">
-                <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}>
-                  <div role="columnheader" className="px-2 py-1.5 flex items-center">
-                    <ThemedSelect
-                      filterable
-                      options={personaFilterOptions}
+                <div role="row" className="sticky top-0 z-10 bg-primary/5 border-b border-primary/10 grid" style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}>
+                  <div role="columnheader" className="px-4 py-1.5 flex items-center">
+                    <PersonaColumnFilter
                       value={selectedPersonaId}
-                      onValueChange={setSelectedPersonaId}
-                      placeholder="Personas"
-                      wrapperClassName="w-full"
-                      className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                      onChange={setSelectedPersonaId}
+                      personas={personas}
                     />
                   </div>
-                  <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">Title</div>
+                  <div role="columnheader" className="flex items-center px-4 py-2.5 text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider">Title</div>
                   <div role="columnheader" className="px-2 py-1.5 flex items-center">
-                    <ThemedSelect
-                      filterable
-                      options={priorityFilterOptions}
-                      value={filter === 'high' ? 'high' : ''}
-                      onValueChange={(v) => setFilter(v === 'high' ? 'high' : 'all')}
-                      placeholder="Priority"
-                      className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
-                    />
+                    <button
+                      onClick={() => setFilter(filter === 'high' ? 'all' : 'high')}
+                      className={`px-2.5 py-1 rounded-lg text-sm font-medium transition-colors ${
+                        filter === 'high'
+                          ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                          : 'text-foreground/80 hover:bg-secondary/30'
+                      }`}
+                    >
+                      Priority {filter === 'high' ? '(High)' : ''}
+                    </button>
                   </div>
-                  <div role="columnheader" className="flex items-center justify-center px-4 py-1.5 typo-label text-foreground/80">Delivery</div>
-                  <div role="columnheader" className="flex items-center justify-center px-4 py-1.5 typo-label text-foreground/80">Status</div>
-                  <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Created</div>
+                  <div role="columnheader" className="flex items-center justify-center px-4 py-1.5 text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider">Delivery</div>
+                  <div role="columnheader" className="flex items-center justify-center px-4 py-1.5 text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider">Status</div>
+                  <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 text-sm font-semibold text-muted-foreground/60 uppercase tracking-wider">Created</div>
                 </div>
                 <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                   {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -402,7 +390,8 @@ export default function MessageList() {
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: GRID_TEMPLATE_COLUMNS }}
                         className={`grid items-center hover:bg-white/[0.03] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40`}
                       >
-                        <div role="gridcell" className="flex items-center px-4 min-w-0">
+                        <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
+                          <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} display="framed" frameSize="lg" />
                           <span className="text-sm text-foreground/80 truncate">{message.persona_name || 'Unknown'}</span>
                         </div>
                         <div role="gridcell" className="px-4 min-w-0"><span className={`text-sm truncate block ${message.is_read ? 'text-foreground/80' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>

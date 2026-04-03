@@ -433,7 +433,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           {/* Corner glows -- stronger at corners, thinner mid-lanes */}
           <div className="absolute inset-0 pointer-events-none matrix-center-corner-glow" />
           {/* Subtle mid-lane fill */}
-          <div className="absolute inset-0 bg-card-bg" />
+          <div className="absolute inset-0 bg-card-bg pointer-events-none" />
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none matrix-center-midlane-fill" />
           <div className="relative z-10 h-full">{commandCenter}</div>
         </div>

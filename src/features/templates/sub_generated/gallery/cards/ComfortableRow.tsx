@@ -102,25 +102,19 @@ export function ComfortableRow({
                   </span>
                 )}
                 {flowCount > 0 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewFlows(review);
-                    }}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded bg-violet-500/10 text-violet-400/70 border border-violet-500/15 hover:bg-violet-500/20 transition-colors flex-shrink-0"
-                    title="View flows"
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-sm rounded bg-violet-500/10 text-violet-400/70 border border-violet-500/15 flex-shrink-0"
+                    title={`${flowCount} flow${flowCount !== 1 ? 's' : ''}`}
                   >
                     <Workflow className="w-2.5 h-2.5" />
-                    {flowCount} flow{flowCount !== 1 ? 's' : ''}
-                  </button>
+                    {flowCount}
+                  </span>
                 )}
               </div>
-              {/* Second line: instruction */}
+              {/* Second line: instruction (no truncation) */}
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-sm text-muted-foreground/60 truncate flex-1 min-w-0">
-                  {review.instruction.length > 80
-                    ? review.instruction.slice(0, 80) + '...'
-                    : review.instruction}
+                <span className="text-sm text-muted-foreground/60 flex-1 min-w-0 line-clamp-3">
+                  {review.instruction}
                 </span>
               </div>
             </div>
@@ -172,6 +166,7 @@ export function ComfortableRow({
               modals.open({ type: 'preview', review });
             }}
             onAddCredential={(name) => onAddCredential(name, review)}
+            onViewFlows={onViewFlows}
           />
         </div>
       )}

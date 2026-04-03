@@ -36,13 +36,17 @@ export interface StructuredQueryCallbacks {
  * Parses structured query tokens from the search input.
  * Supports `category:value`, `difficulty:value`, and `setup:value` syntax that commits as chips.
  */
+// Module-level cache to persist input across component remounts
+let _cachedInput = '';
+let _cachedChips: QueryChip[] = [];
+
 export function useStructuredQuery(
   onCategoryFilterChange: (categories: string[]) => void,
   onSearchChange: (keyword: string) => void,
   callbacks?: Pick<StructuredQueryCallbacks, 'onDifficultyFilterChange' | 'onSetupFilterChange'>,
 ): UseStructuredQueryReturn {
-  const [inputValue, setInputValueRaw] = useState('');
-  const [chips, setChips] = useState<QueryChip[]>([]);
+  const [inputValue, setInputValueRaw] = useState(_cachedInput);
+  const [chips, setChips] = useState<QueryChip[]>(_cachedChips);
 
   // Detect if the user is typing a prefix like "category:"
   const { autocompletePrefix, autocompleteQuery, keywordText } = useMemo(() => {
@@ -68,6 +72,7 @@ export function useStructuredQuery(
 
   // Sync keyword text to parent search
   const setInputValue = useCallback((value: string) => {
+    _cachedInput = value;
     setInputValueRaw(value);
 
     // Extract keyword text (everything except active prefix typing)
@@ -96,15 +101,13 @@ export function useStructuredQuery(
 
   const addChip = useCallback((chip: QueryChip) => {
     setChips((prev) => {
-      // Don't add duplicate
       if (prev.some((c) => c.type === chip.type && c.value === chip.value)) return prev;
-
       const next = [...prev, chip];
+      _cachedChips = next;
       syncChipFilters(next, chip.type);
       return next;
     });
 
-    // Remove the prefix text from input
     setInputValueRaw((prev) => {
       const words = prev.split(/\s+/);
       const lastWord = words[words.length - 1] ?? '';
@@ -113,6 +116,7 @@ export function useStructuredQuery(
       );
       if (isPrefix) {
         const cleaned = words.slice(0, -1).join(' ');
+        _cachedInput = cleaned;
         onSearchChange(cleaned);
         return cleaned;
       }
@@ -124,13 +128,15 @@ export function useStructuredQuery(
     setChips((prev) => {
       const removed = prev[index];
       const next = prev.filter((_, i) => i !== index);
-
+      _cachedChips = next;
       if (removed) syncChipFilters(next, removed.type);
       return next;
     });
   }, [syncChipFilters]);
 
   const clearAll = useCallback(() => {
+    _cachedInput = '';
+    _cachedChips = [];
     setChips([]);
     setInputValueRaw('');
     onCategoryFilterChange([]);

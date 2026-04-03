@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
+import { useIsDarkTheme } from '@/stores/themeStore';
 
 export interface SubNavItem {
   id: string;
@@ -37,9 +38,17 @@ export default function SidebarSubNav({
   children?: ReactNode;
 }) {
   const isOverview = variant === 'overview';
+  const isDark = useIsDarkTheme();
   const boxSize = isOverview ? 'w-8 h-8' : 'w-7 h-7';
   const iconSize = isOverview ? 'w-4 h-4' : 'w-3.5 h-3.5';
   const labelOf = useSidebarLabels();
+  // Theme-synced active styles: light uses L1-style (stronger), dark uses L2-style (subtle)
+  const activeClass = isDark
+    ? 'bg-primary/10 border-primary/20'
+    : 'bg-primary/15 border-primary/30';
+  const activeIconBox = isDark
+    ? 'bg-primary/15 border-primary/25'
+    : 'bg-primary/20 border-primary/35';
 
   return (
     <>
@@ -59,7 +68,7 @@ export default function SidebarSubNav({
               isActive
                 ? isDevItem
                   ? 'bg-amber-500/8 border-amber-500/35'
-                  : 'bg-primary/10 border-primary/20'
+                  : activeClass
                 : isDevItem
                   ? 'bg-amber-500/5 border-amber-500/25 hover:bg-amber-500/10'
                   : isOverview
@@ -69,7 +78,7 @@ export default function SidebarSubNav({
           >
             <div className={`${boxSize} rounded-lg flex items-center justify-center border transition-colors ${
               isActive
-                ? 'bg-primary/15 border-primary/25'
+                ? activeIconBox
                 : 'bg-secondary/40 border-primary/15'
             }`}>
               <Icon className={`${iconSize} ${isActive ? 'text-primary' : 'text-muted-foreground/90'}`} />

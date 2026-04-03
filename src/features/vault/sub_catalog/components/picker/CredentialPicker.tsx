@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { isTierVisible, type Tier } from '@/lib/constants/uiModes';
 import { useSystemStore } from '@/stores/systemStore';
@@ -24,6 +24,18 @@ export function CredentialPicker({ connectors: rawConnectors, credentials, onPic
   }), [rawConnectors, viewMode]);
 
   const filters = usePickerFilters(connectors, credentials, searchTerm);
+  const tourActive = useSystemStore((s) => s.tourActive);
+  const recordCredentialInteraction = useSystemStore((s) => s.recordCredentialInteraction);
+
+  const handleCategoryChange = useCallback((v: string | null) => {
+    filters.setActiveCategory(v);
+    if (tourActive && v) recordCredentialInteraction('category', v);
+  }, [filters, tourActive, recordCredentialInteraction]);
+
+  const handlePickType = useCallback((connector: ConnectorDefinition) => {
+    if (tourActive) recordCredentialInteraction('connector', connector.name);
+    onPickType(connector);
+  }, [onPickType, tourActive, recordCredentialInteraction]);
 
   return (
     <div className="space-y-3">
@@ -35,7 +47,7 @@ export function CredentialPicker({ connectors: rawConnectors, credentials, onPic
         onPurposeChange={filters.setActivePurpose}
         purposeOptions={filters.purposeOptions}
         activeCategory={filters.activeCategory}
-        onCategoryChange={filters.setActiveCategory}
+        onCategoryChange={handleCategoryChange}
         categoryOptions={filters.categoryOptions}
         activeLicense={filters.activeLicense}
         onLicenseChange={filters.setActiveLicense}
@@ -47,7 +59,7 @@ export function CredentialPicker({ connectors: rawConnectors, credentials, onPic
       <PickerGrid
         filteredConnectors={filters.filteredConnectors}
         ownedServiceTypes={filters.ownedServiceTypes}
-        onPickType={onPickType}
+        onPickType={handlePickType}
       />
     </div>
   );

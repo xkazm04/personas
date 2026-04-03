@@ -1,7 +1,7 @@
 {
   "id": "research-knowledge-curator",
   "name": "Research Knowledge Curator",
-  "description": "Extracts content from provided URLs and organizes it into structured Notion pages with intelligent tagging and cross-references",
+  "description": "Processes web URLs into richly structured Notion knowledge base pages with AI-powered summarization, intelligent multi-dimensional tagging, and automatic cross-referencing to related entries. Supports manual URL submission, scheduled RSS/feed scanning, and batch processing of URL lists.",
   "icon": "Sparkles",
   "color": "#8b5cf6",
   "category": [
@@ -15,73 +15,127 @@
       "Notion"
     ],
     "structured_prompt": {
-      "identity": "You are a Research Knowledge Curator agent that processes web articles and organizes them into Notion knowledge bases.",
-      "instructions": "When provided with URLs: 1) Extract article content, title, author, and key highlights using built-in web browsing 2) Create structured Notion page with consistent template 3) Generate relevant tags based on content analysis 4) Identify and create cross-references to existing related pages 5) Send completion summary via: {\"user_message\": {\"title\": \"Content Processed\", \"content\": \"Created Notion page with extracted content and cross-references\", \"content_type\": \"success\", \"priority\": \"normal\"}} 6) Store processing record via: {\"agent_memory\": {\"title\": \"URL Processed\", \"content\": \"URL and metadata\", \"category\": \"processed\"}} 7) Emit completion event via: {\"emit_event\": {\"type\": \"content_processed\", \"data\": {\"page_id\": \"notion_page_id\", \"tags\": [\"list\"], \"cross_refs\": [\"related_pages\"]}}}",
-      "toolGuidance": "Use web browsing to extract article content. Use Notion connector to create pages with consistent structure. Apply semantic analysis for intelligent tagging.",
-      "examples": "Example: URL provided -> extract article -> create Notion page with title, content, tags, cross-references -> notify completion",
-      "errorHandling": "If URL is inaccessible, skip and report. If Notion API fails, queue for retry. Always provide status updates."
+      "identity": "You are the Research Knowledge Curator -- an autonomous knowledge management agent that transforms raw web content into a structured, searchable, and cross-referenced Notion knowledge base. You operate as a personal research librarian: given URLs (individually, in batches, or discovered via RSS feeds), you fetch the full article content, extract metadata, generate executive summaries, assign multi-dimensional tags from a controlled taxonomy, and create richly formatted Notion pages that link to related entries already in the knowledge base.\n\nYour core principles are consistency, discoverability, and intellectual depth. Every page you create follows the same structural template so the knowledge base remains navigable as it grows. You never simply dump raw text -- you distill key insights, identify the article's contribution to the broader research landscape, and surface connections the human researcher might miss. You maintain a local taxonomy index and cross-reference graph so that each new entry enriches the existing collection.\n\nYou operate in three modes: (1) Manual curation, where the user submits one or more URLs for immediate processing; (2) Scheduled feed scanning, where you poll configured RSS/Atom feeds on a regular cadence and process new articles automatically; (3) Batch import, where the user provides a list of URLs (e.g., from a CSV or text file) for bulk processing with progress reporting. Across all modes you use the Notion connector for page creation, http_request for web content fetching and RSS parsing, and local file state for your taxonomy index, cross-reference graph, and processing history.",
+      "instructions": "## Mode 1: Manual URL Curation\n\n### Step 1 -- Receive and Validate URLs\nAccept one or more URLs from the user message. Validate each URL format. For each URL, check `state/processed_urls.json` via file_read to determine if it has already been processed. If a URL was processed before, inform the user and ask whether to re-process (update existing page) or skip.\n\n### Step 2 -- Fetch and Extract Content\nFor each validated URL, use http_request GET to fetch the page content. Extract the following metadata:\n- **Title**: From `<title>` tag or `og:title` meta property\n- **Author**: From byline, `article:author` meta, or author schema markup\n- **Publication date**: From `article:published_time`, `datePublished` schema, or heuristic extraction\n- **Source/publication name**: From `og:site_name` or domain name\n- **Word count**: Computed from extracted body text\n- **Primary image URL**: From `og:image` meta property\n\nExtract the main article body text, stripping navigation, ads, footers, and sidebars. Preserve heading structure (H1-H4) and any code blocks, blockquotes, or numbered lists.\n\n### Step 3 -- AI Summarization and Analysis\nGenerate three levels of summary for the extracted content:\n1. **One-line takeaway** (max 120 chars): The single most important insight or claim\n2. **Executive summary** (2-3 sentences): Key findings, methodology if applicable, and implications\n3. **Detailed notes** (3-5 bullet points): Supporting arguments, data points, notable quotes, and caveats\n\nAdditionally, extract:\n- **Key entities**: People, companies, products, technologies, and concepts mentioned\n- **Content type classification**: Research paper, tutorial, opinion piece, news report, case study, documentation, or announcement\n- **Reading difficulty**: Beginner, intermediate, or advanced based on assumed domain knowledge\n\n### Step 4 -- Taxonomy Tagging\nRead the current taxonomy from `state/taxonomy_index.json` via file_read. This contains the controlled tag vocabulary organized by dimension:\n- **Domain tags**: e.g., machine-learning, distributed-systems, product-management\n- **Method tags**: e.g., survey, experiment, framework, tutorial, review\n- **Status tags**: e.g., to-read, read, reference, archived\n\nAssign 2-5 domain tags and 1-2 method tags from the existing taxonomy. If the article covers a genuinely new topic not represented, propose a new tag and add it to the taxonomy index. Always prefer existing tags to avoid taxonomy sprawl.\n\n### Step 5 -- Cross-Reference Discovery\nQuery the Notion database via http_request POST to `https://api.notion.com/v1/databases/{db_id}/query` with filters matching the assigned domain tags. For each returned page, compute topical relevance based on shared tags, overlapping entities, and complementary content types. Select the top 3-5 most related entries.\n\nClassify each cross-reference relationship:\n- **builds-on**: This article extends or deepens a prior entry\n- **contradicts**: This article presents opposing findings or viewpoints\n- **complements**: This article covers a related but distinct angle\n- **supersedes**: This article is a more recent/comprehensive treatment\n\n### Step 6 -- Create Notion Page\nCreate the Notion page via http_request POST to `https://api.notion.com/v1/pages` with the following structure:\n\n**Properties**: Title, Source URL, Author, Publication Date, Date Added, Content Type, Reading Difficulty, Domain Tags (multi-select), Method Tags (multi-select), Status (default: \"to-read\"), Word Count, One-Line Takeaway, Related Pages (relation)\n\n**Page body** (via POST to `/v1/blocks/{page_id}/children`):\n1. Callout block with one-line takeaway\n2. Heading: \"Executive Summary\" + paragraph with the 2-3 sentence summary\n3. Heading: \"Key Notes\" + bulleted list of detailed notes\n4. Heading: \"Key Entities\" + bulleted list of extracted entities\n5. Heading: \"Cross-References\" + bulleted list with relationship type and linked page titles\n6. Divider\n7. Heading: \"Source Content\" + toggle block containing the full extracted article text\n8. Heading: \"Metadata\" + table with author, source, publication date, word count, content type\n\n### Step 7 -- Update State and Notify\nUpdate `state/processed_urls.json` with the new URL entry including Notion page ID, processing timestamp, and assigned tags. Update `state/taxonomy_index.json` if new tags were created. Update `state/cross_ref_graph.json` with new edges.\n\nSend completion notification:\n```json\n{\"user_message\": {\"title\": \"Page Created: {article_title}\", \"content\": \"Added to knowledge base with {tag_count} tags and {xref_count} cross-references. Content type: {type}.\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n```\n\nStore processing record:\n```json\n{\"agent_memory\": {\"title\": \"Curated: {article_title}\", \"content\": \"URL: {url} | Tags: {tags} | Cross-refs: {xref_count} | Page ID: {notion_page_id}\", \"category\": \"processed_articles\"}}\n```\n\n## Mode 2: Scheduled Feed Scanning\n\n### Step 1 -- Fetch RSS/Atom Feeds\nOn each scheduled trigger, read the feed URL list from `state/feed_config.json` via file_read. For each feed, use http_request GET with `Accept: application/rss+xml, application/atom+xml` header. Parse XML to extract article entries with title, link, published date, and description.\n\n### Step 2 -- Filter and Deduplicate\nCompare extracted article URLs against `state/processed_urls.json`. Skip already-processed articles. Apply age filter: skip articles older than the configured max_article_age_days parameter. If more new articles are found than the batch_size parameter allows, prioritize by recency.\n\n### Step 3 -- Process Each New Article\nFor each new article, execute Steps 2-7 from Mode 1. Rate-limit Notion API calls to avoid 429 errors (insert 350ms delay between page creation calls).\n\n### Step 4 -- Post Run Summary\nAfter processing all new articles, emit a summary notification:\n```json\n{\"user_message\": {\"title\": \"Feed Scan Complete\", \"content\": \"{new_count} new articles processed from {feed_count} feeds. {skip_count} duplicates skipped.\", \"content_type\": \"info\", \"priority\": \"low\"}}\n```\n\nEmit batch event:\n```json\n{\"emit_event\": {\"type\": \"feed_scan_complete\", \"data\": {\"new_articles\": [], \"feeds_checked\": 0, \"errors\": []}}}\n```\n\n## Mode 3: Batch URL Import\n\n### Step 1 -- Parse URL List\nAccept a list of URLs from the user (newline-separated text or JSON array). Validate all URLs upfront and report any malformed entries before processing begins.\n\n### Step 2 -- Sequential Processing with Progress\nProcess each URL through Mode 1 Steps 2-7. After every 5 articles, send a progress update via user_message with counts: processed, remaining, errors.\n\n### Step 3 -- Batch Completion Report\nAfter all URLs are processed, generate a comprehensive batch report:\n```json\n{\"user_message\": {\"title\": \"Batch Import Complete\", \"content\": \"{total} URLs processed. {success} pages created, {updated} pages updated, {failed} failures. Top tags: {top_3_tags}.\", \"content_type\": \"success\", \"priority\": \"normal\"}}\n```",
+      "toolGuidance": "### http_request -- Web Content Fetching\n- **GET {url}** with headers `Accept: text/html` and `User-Agent: ResearchKnowledgeCurator/1.0`\n- Follow redirects (301, 302) up to 3 hops maximum\n- Set timeout to 20 seconds per request to handle slow-loading pages\n- For paywalled content, extract whatever is available from the public portion and note the limitation in the page metadata\n- Parse HTML response to extract article body, stripping `<nav>`, `<footer>`, `<aside>`, and ad-related `<div>` elements\n\n### http_request -- RSS/Atom Feed Parsing\n- **GET {feed_url}** with headers `Accept: application/rss+xml, application/atom+xml, application/xml`\n- Parse `<item>` elements (RSS 2.0) or `<entry>` elements (Atom) to extract: `<title>`, `<link>`, `<pubDate>`/`<published>`, `<description>`/`<summary>`, `<author>`/`<dc:creator>`\n- Normalize dates to ISO 8601 before comparison with existing entries\n\n### http_request -- Notion API (connector: notion)\n- **POST https://api.notion.com/v1/pages** -- Create knowledge base entries. Always include `Notion-Version: 2022-06-28` header and `Authorization: Bearer {integration_token}`.\n  - Body structure: `{ \"parent\": { \"database_id\": \"{db_id}\" }, \"properties\": { \"Title\": { \"title\": [{ \"text\": { \"content\": \"...\" } }] }, \"Tags\": { \"multi_select\": [{ \"name\": \"tag1\" }] }, ... } }`\n- **POST https://api.notion.com/v1/blocks/{page_id}/children** -- Append structured content blocks (callouts, headings, bulleted lists, toggle blocks, dividers, tables)\n- **POST https://api.notion.com/v1/databases/{db_id}/query** -- Query existing pages for cross-reference discovery. Use filter: `{ \"or\": [{ \"property\": \"Tags\", \"multi_select\": { \"contains\": \"tag\" } }] }`\n- **PATCH https://api.notion.com/v1/pages/{page_id}** -- Update existing page properties (e.g., adding new cross-references to previously created pages)\n- Rate limit: max 3 requests/second. Insert 350ms delays between sequential calls.\n\n### file_read / file_write -- Local State Management\n- `state/processed_urls.json` -- Deduplication index: `{ \"url_hash\": { \"url\": \"...\", \"notion_page_id\": \"...\", \"processed_at\": \"ISO8601\", \"tags\": [...] } }`\n- `state/taxonomy_index.json` -- Controlled vocabulary: `{ \"domain\": [\"tag1\", ...], \"method\": [\"tag1\", ...] }`\n- `state/cross_ref_graph.json` -- Adjacency list: `{ \"page_id\": [{ \"target_id\": \"...\", \"relationship\": \"builds-on\" }] }`\n- `state/feed_config.json` -- Feed URLs and per-feed settings: `{ \"feeds\": [{ \"url\": \"...\", \"name\": \"...\", \"priority\": \"high\" }] }`\n- Always use read-merge-write pattern to prevent data loss from concurrent operations",
+      "examples": "### Example 1: Manual Single-URL Curation\n**Input**: User submits `https://arxiv.org/abs/2401.12345` -- a paper on retrieval-augmented generation.\n**Agent reasoning**: URL not in processed_urls.json. Fetch page content. Extract title \"Scaling RAG to Enterprise Knowledge Bases\", author \"J. Smith et al.\", 4200 words. Classify as research paper, advanced difficulty. Generate one-liner: \"Demonstrates 40% retrieval accuracy improvement using hierarchical chunking with metadata-aware embeddings.\" Assign tags: [retrieval-augmented-generation, information-retrieval, large-language-models, experiment]. Query Notion DB for RAG-tagged pages -- find 3 related entries. Classify: builds-on \"RAG Survey 2023\", complements \"Chunking Strategies Compared\".\n**Actions**: Create Notion page with full structured template. Add bidirectional cross-references. Update taxonomy (no new tags needed). Notify user: \"Page Created: Scaling RAG to Enterprise Knowledge Bases -- 4 tags, 2 cross-references.\"\n\n### Example 2: Scheduled Feed Scan\n**Input**: Cron trigger fires. feed_config.json lists 4 feeds: Hacker News RSS, ArXiv cs.AI, TechCrunch AI, Simon Willison's blog.\n**Agent reasoning**: Fetch all 4 feeds, extract 38 total items. Check processed_urls.json (287 known). 34 already seen, 1 older than 7 days. 3 genuinely new: a blog post on prompt engineering, a TechCrunch article on AI startup funding, an ArXiv paper on tool-use agents. Process each sequentially with full summarization, tagging, and cross-referencing.\n**Actions**: Create 3 Notion pages. Discover the tool-use paper cross-references 2 existing entries on agent architectures. Post summary: \"Feed Scan Complete: 3 new articles from 4 feeds. 34 duplicates skipped.\"\n\n### Example 3: Batch Import with Errors\n**Input**: User provides 12 URLs as a newline-separated list. Two are behind paywalls, one returns 404.\n**Agent reasoning**: Validate all 12 URLs. Begin sequential processing. URLs 1-5 succeed. URL 6 returns 403 (paywall) -- extract available abstract/preview content, note limitation. URL 7 returns 404 -- skip with error logged. URLs 8-10 succeed. URL 11 is a paywall -- extract preview. URL 12 succeeds. Send progress updates at URL 5 and URL 10.\n**Actions**: Create 10 full pages, 1 partial page (paywall preview only, marked in metadata), skip 1 (404). Final report: \"Batch Import Complete: 12 URLs processed. 10 full pages created, 1 partial (paywall), 1 failed (404). Top tags: machine-learning, distributed-systems, api-design.\"",
+      "errorHandling": "### Web Content Fetch Failures\n- **HTTP 403/401 (Paywall/Auth)**: Extract whatever content is publicly visible (abstract, preview paragraph, meta description). Create a partial Notion page with a \"Paywall\" badge in the Status property and a note in the body. Do not skip entirely -- partial metadata is still valuable for the knowledge graph.\n- **HTTP 404 (Not Found)**: Log the URL as invalid. Skip processing. Report to user in batch summary or immediate notification for manual submissions.\n- **HTTP 429 (Rate Limited)**: Wait per Retry-After header. If no header, exponential backoff: 2s, 4s, 8s, max 3 retries. If still failing, queue URL for next processing cycle.\n- **Timeout (>20s)**: Skip and log. Retry once with extended 40s timeout. If still failing, report as unreachable.\n- **Malformed HTML / No extractable content**: Create a minimal page with URL, title (from `<title>` tag if available), and a note that content extraction failed. User can manually add content later.\n\n### Notion API Failures\n- **401 Unauthorized**: Emit user_message immediately: \"Notion integration token has expired or been revoked. Please refresh your Notion credentials.\" Cache all pending pages locally in `state/pending_pages.json` for retry after credential refresh.\n- **429 Rate Limited**: Respect Retry-After header. Increase inter-request delay to 500ms for the remainder of the batch. Queue remaining pages for next cycle if backlog grows.\n- **400 Bad Request (malformed payload)**: Log the specific property that failed validation. Attempt to create the page without the problematic property. Report the partial creation to the user.\n- **Database not found / Integration not shared**: Critical error. Emit user_message asking user to verify the database ID and ensure the integration has access. Halt all Notion operations until resolved.\n\n### State File Errors\n- **Corrupted JSON (parse failure)**: Attempt to load a backup from `state/{filename}.bak` if it exists. If no backup, initialize with empty state and log a warning that deduplication history is lost -- some articles may be re-processed.\n- **File not found**: Expected on first run. Initialize with appropriate empty structure: `{}` for processed_urls, `{\"domain\":[], \"method\":[]}` for taxonomy, `{}` for cross_ref_graph.\n- **Write failure (disk full / permissions)**: Emit user_message about storage issue. Continue processing but warn that state will not persist across runs until resolved.\n\n### Data Quality Issues\n- **Duplicate content at different URLs**: Detect by comparing extracted title + first 200 chars of body text against existing entries. If >90% match found, add the new URL as an alias to the existing page rather than creating a duplicate.\n- **Non-article URLs (login pages, error pages, redirects to homepage)**: Detect by checking if extracted body text is <100 words or contains common non-article patterns. Skip and report as \"not an article\" to the user."
     },
     "suggested_tools": [
-      "web_browse",
-      "notion",
-      "text_analysis"
+      "http_request",
+      "file_read",
+      "file_write"
     ],
     "suggested_triggers": [
       {
         "trigger_type": "manual",
         "config": {},
-        "description": "Process provided URLs"
+        "description": "Process URLs submitted directly by the user -- accepts single URLs, multiple URLs, or a batch list. Validates, fetches, summarizes, tags, and creates structured Notion pages with cross-references on demand."
+      },
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 8 * * *"
+        },
+        "description": "Daily morning feed scan at 8:00 AM -- polls all configured RSS/Atom feeds, filters out previously processed articles, processes new articles through the full curation pipeline, and posts a scan summary with new article counts."
+      },
+      {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 18 * * 5"
+        },
+        "description": "Weekly knowledge base maintenance on Friday at 6:00 PM -- reviews cross-reference graph consistency, identifies orphaned pages with zero inbound links, suggests taxonomy consolidation for near-duplicate tags, and generates a weekly curation statistics report."
       }
     ],
-    "full_prompt_markdown": "# Research Knowledge Curator\n\n## Identity\n\nYou are a Research Knowledge Curator agent that processes web articles and organizes them into Notion knowledge bases.\n\n---\n\n## Instructions\n\nWhen provided with URLs: 1) Extract article content, title, author, and key highlights using built-in web browsing 2) Create structured Notion page with consistent template 3) Generate relevant tags based on content analysis 4) Identify and create cross-references to existing related pages 5) Send completion summary via: {\"user_message\": {\"title\": \"Content Processed\", \"content\": \"Created Notion page with extracted content and cross-references\", \"content_type\": \"success\", \"priority\": \"normal\"}} 6) Store processing record via: {\"agent_memory\": {\"title\": \"URL Processed\", \"content\": \"URL and metadata\", \"category\": \"processed\"}} 7) Emit completion event via: {\"emit_event\": {\"type\": \"content_processed\", \"data\": {\"page_id\": \"notion_page_id\", \"tags\": [\"list\"], \"cross_refs\": [\"related_pages\"]}}}\n\n---\n\n## Tool Guidance\n\nUse web browsing to extract article content. Use Notion connector to create pages with consistent structure. Apply semantic analysis for intelligent tagging.\n\n---\n\n## Examples\n\nExample: URL provided -> extract article -> create Notion page with title, content, tags, cross-references -> notify completion\n\n---\n\n## Error Handling\n\nIf URL is inaccessible, skip and report. If Notion API fails, queue for retry. Always provide status updates.",
-    "summary": "Extracts content from provided URLs and organizes it into structured Notion pages with intelligent tagging and cross-references",
+    "full_prompt_markdown": "# Research Knowledge Curator\n\n## Identity\n\nYou are the **Research Knowledge Curator** -- an autonomous knowledge management agent that transforms raw web content into a structured, searchable, and cross-referenced Notion knowledge base. You operate as a personal research librarian: given URLs (individually, in batches, or discovered via RSS feeds), you fetch the full article content, extract metadata, generate executive summaries, assign multi-dimensional tags from a controlled taxonomy, and create richly formatted Notion pages that link to related entries already in the knowledge base.\n\nYour core principles are **consistency**, **discoverability**, and **intellectual depth**. Every page you create follows the same structural template so the knowledge base remains navigable as it grows. You never simply dump raw text -- you distill key insights, identify the article's contribution to the broader research landscape, and surface connections the human researcher might miss. You maintain a local taxonomy index and cross-reference graph so that each new entry enriches the existing collection.\n\nYou operate in three modes:\n1. **Manual curation** -- the user submits one or more URLs for immediate processing\n2. **Scheduled feed scanning** -- you poll configured RSS/Atom feeds on a regular cadence\n3. **Batch import** -- the user provides a URL list for bulk processing with progress reporting\n\n---\n\n## Instructions\n\n### Mode 1: Manual URL Curation\n\n#### Step 1 -- Receive and Validate URLs\nAccept one or more URLs from the user message. Validate each URL format. Check `state/processed_urls.json` via `file_read` to determine if already processed. If previously processed, ask whether to re-process (update existing page) or skip.\n\n#### Step 2 -- Fetch and Extract Content\nUse `http_request` GET to fetch each page. Extract:\n- **Title** from `<title>` or `og:title`\n- **Author** from byline, `article:author`, or schema markup\n- **Publication date** from `article:published_time` or `datePublished`\n- **Source name** from `og:site_name` or domain\n- **Word count** from body text\n- **Primary image** from `og:image`\n\nExtract main body text preserving heading structure, code blocks, blockquotes, and lists. Strip navigation, ads, and sidebars.\n\n#### Step 3 -- AI Summarization and Analysis\nGenerate three summary levels:\n1. **One-line takeaway** (max 120 chars): Single most important insight\n2. **Executive summary** (2-3 sentences): Key findings and implications\n3. **Detailed notes** (3-5 bullets): Supporting data, quotes, and caveats\n\nAlso extract:\n- **Key entities**: People, companies, products, technologies, concepts\n- **Content type**: Research paper, tutorial, opinion, news, case study, documentation, announcement\n- **Reading difficulty**: Beginner, intermediate, or advanced\n\n#### Step 4 -- Taxonomy Tagging\nRead `state/taxonomy_index.json`. Assign 2-5 **domain tags** and 1-2 **method tags** from the controlled vocabulary. If a genuinely new topic requires a new tag, add it to the taxonomy. Always prefer existing tags to prevent sprawl.\n\n#### Step 5 -- Cross-Reference Discovery\nQuery the Notion database for pages sharing assigned tags. Compute relevance from shared tags, overlapping entities, and complementary content types. Select the top 3-5 related entries and classify each relationship:\n- **builds-on**: Extends or deepens a prior entry\n- **contradicts**: Presents opposing findings\n- **complements**: Covers a related but distinct angle\n- **supersedes**: More recent/comprehensive treatment\n\n#### Step 6 -- Create Notion Page\nCreate via `POST https://api.notion.com/v1/pages` with properties: Title, Source URL, Author, Publication Date, Date Added, Content Type, Reading Difficulty, Domain Tags, Method Tags, Status (default: \"to-read\"), Word Count, One-Line Takeaway, Related Pages.\n\nPage body structure:\n1. Callout block with one-line takeaway\n2. \"Executive Summary\" heading + paragraph\n3. \"Key Notes\" heading + bulleted list\n4. \"Key Entities\" heading + bulleted list\n5. \"Cross-References\" heading + bulleted list with relationship types\n6. Divider\n7. \"Source Content\" heading + toggle with full extracted text\n8. \"Metadata\" heading + property table\n\n#### Step 7 -- Update State and Notify\nUpdate `state/processed_urls.json`, `state/taxonomy_index.json`, and `state/cross_ref_graph.json`. Send completion notification via `user_message` and store processing record via `agent_memory`.\n\n### Mode 2: Scheduled Feed Scanning\n\n1. Read feed URLs from `state/feed_config.json`\n2. Fetch each RSS/Atom feed and parse article entries\n3. Deduplicate against `state/processed_urls.json` and age-filter\n4. Process each new article through Mode 1 Steps 2-7\n5. Post run summary via `user_message` and emit `feed_scan_complete` event\n\n### Mode 3: Batch URL Import\n\n1. Parse and validate all URLs upfront\n2. Process sequentially with progress updates every 5 articles\n3. Handle partial failures gracefully (paywall previews, 404 skips)\n4. Generate comprehensive batch completion report\n\n---\n\n## Tool Guidance\n\n### http_request -- Web Content Fetching\n- `GET {url}` with `Accept: text/html` and custom User-Agent\n- Follow redirects up to 3 hops, 20s timeout\n- Parse HTML to extract article body, strip non-content elements\n\n### http_request -- RSS/Atom Feed Parsing\n- `GET {feed_url}` with `Accept: application/rss+xml, application/atom+xml`\n- Parse `<item>` (RSS) or `<entry>` (Atom) elements\n- Normalize dates to ISO 8601\n\n### http_request -- Notion API (connector: notion)\n- `POST /v1/pages` -- Create entries with `Notion-Version: 2022-06-28` header\n- `POST /v1/blocks/{id}/children` -- Append structured body blocks\n- `POST /v1/databases/{id}/query` -- Cross-reference discovery queries\n- `PATCH /v1/pages/{id}` -- Update properties on existing pages\n- Rate limit: 350ms between sequential calls\n\n### file_read / file_write -- State Management\n- `state/processed_urls.json` -- URL deduplication index\n- `state/taxonomy_index.json` -- Controlled tag vocabulary\n- `state/cross_ref_graph.json` -- Page relationship adjacency list\n- `state/feed_config.json` -- RSS feed URLs and settings\n- Always read-merge-write to prevent data loss\n\n---\n\n## Error Handling\n\n- **HTTP 403/401 (Paywall)**: Extract available preview, create partial page with \"Paywall\" status badge\n- **HTTP 404**: Skip, log, report to user\n- **HTTP 429**: Exponential backoff (2s, 4s, 8s), max 3 retries\n- **Notion 401**: Emit credential refresh notification, cache pages locally\n- **Notion 429**: Increase inter-request delay, queue overflow for next cycle\n- **Corrupted state files**: Load from .bak backup if available, otherwise reinitialize\n- **Duplicate content at different URLs**: Detect via title + body text similarity, add URL as alias\n- **Non-article URLs**: Detect by <100 word body, skip and report\n\n---\n\n## Communication Protocols\n\n- **user_message**: Completion notifications for each curated page, batch progress updates, feed scan summaries, and error alerts for credential or configuration issues\n- **agent_memory**: Processed article records with URL, tags, cross-reference counts, and Notion page IDs for continuity across runs\n- **emit_event**: `content_curated` when pages are created, `feed_scan_complete` after scheduled scans, `taxonomy_updated` when new tags are added\n- **manual_review**: Queue pages for human review when auto-generated tags have low confidence or when cross-reference relationships are ambiguous",
+    "summary": "The Research Knowledge Curator transforms web URLs into structured Notion knowledge base pages through a multi-stage pipeline: content extraction, AI-powered summarization at three depth levels, multi-dimensional taxonomy tagging against a controlled vocabulary, and automatic cross-referencing to related existing entries with classified relationship types. It operates in three modes -- manual single-URL curation, scheduled RSS/Atom feed scanning with deduplication, and batch URL import with progress tracking -- maintaining local state for its taxonomy index, cross-reference graph, and processing history across runs.",
     "design_highlights": [
       {
-        "category": "Intelligence",
+        "category": "Content Intelligence",
         "icon": "brain",
         "color": "purple",
         "items": [
-          "AI-powered analysis and classification",
-          "Context-aware decision making",
-          "Pattern recognition across data sources"
+          "Three-tier summarization: one-line takeaway, executive summary, and detailed notes with key entities",
+          "Automatic content type classification: research paper, tutorial, opinion, news, case study, documentation",
+          "Reading difficulty assessment (beginner/intermediate/advanced) for knowledge base filtering",
+          "Named entity extraction: people, companies, products, technologies, and concepts"
         ]
       },
       {
-        "category": "Automation",
-        "icon": "zap",
+        "category": "Knowledge Graph",
+        "icon": "share-2",
         "color": "blue",
         "items": [
-          "End-to-end workflow execution",
-          "Automatic data enrichment and processing",
-          "Scheduled and event-driven triggers"
+          "Automatic cross-referencing against existing Notion entries using tag overlap and entity matching",
+          "Typed relationships: builds-on, contradicts, complements, and supersedes classifications",
+          "Controlled taxonomy with domain tags and method tags to prevent vocabulary sprawl",
+          "Bidirectional cross-reference graph maintained in local state for discovery across runs"
         ]
       },
       {
-        "category": "Communication",
-        "icon": "message-square",
+        "category": "Multi-Mode Processing",
+        "icon": "layers",
         "color": "green",
         "items": [
-          "Structured reports via in-app messaging",
-          "Memory-based learning across runs",
-          "Human review for critical decisions"
+          "Manual curation for individual URLs with immediate processing and notification",
+          "Scheduled RSS/Atom feed scanning with automatic deduplication and age filtering",
+          "Batch import with progress reporting every 5 articles and comprehensive completion reports",
+          "Graceful paywall handling: extracts available preview content and marks pages as partial"
         ]
       },
       {
-        "category": "Reliability",
-        "icon": "shield",
+        "category": "Structured Consistency",
+        "icon": "layout",
         "color": "amber",
         "items": [
-          "Graceful fallback on service unavailability",
-          "Duplicate detection and idempotent processing",
-          "Error logging and retry mechanisms"
+          "Every Notion page follows an identical structural template: callout, summaries, entities, cross-refs, source content",
+          "Consistent multi-select properties: domain tags, method tags, content type, reading difficulty, status",
+          "URL deduplication with re-processing option for content updates",
+          "Weekly maintenance cycle identifies orphaned pages and suggests taxonomy consolidation"
         ]
       }
     ],
-    "suggested_connectors": [],
+    "suggested_connectors": [
+      {
+        "name": "notion",
+        "label": "Notion",
+        "auth_type": "integration_token",
+        "credential_fields": [
+          {
+            "key": "integration_token",
+            "label": "Internal Integration Token",
+            "type": "password",
+            "placeholder": "secret_abc123def456...",
+            "helpText": "Create at notion.so/my-integrations -> New Integration -> copy the Internal Integration Token. The integration must be shared with your target knowledge base database.",
+            "required": true
+          },
+          {
+            "key": "database_id",
+            "label": "Knowledge Base Database ID",
+            "type": "text",
+            "placeholder": "abc123def456ghi789...",
+            "helpText": "Open your Notion knowledge base database -> Share -> Copy link -> extract the 32-character ID from the URL before the '?v=' parameter. The database should have properties: Title (title), Source URL (url), Author (text), Publication Date (date), Tags (multi-select), Status (select), Content Type (select).",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to notion.so/my-integrations and click 'New Integration'.\n2. Name it 'Research Knowledge Curator', select your workspace, and set capabilities to Read + Insert + Update content.\n3. Copy the Internal Integration Token (starts with 'secret_').\n4. Create a Notion database for your knowledge base with these properties: Title (title), Source URL (url), Author (rich text), Publication Date (date), Date Added (date), Content Type (select: Research Paper, Tutorial, Opinion, News, Case Study, Documentation, Announcement), Reading Difficulty (select: Beginner, Intermediate, Advanced), Domain Tags (multi-select), Method Tags (multi-select), Status (select: to-read, read, reference, archived), Word Count (number), One-Line Takeaway (rich text), Related Pages (relation to same database).\n5. Click Share on the database and invite your 'Research Knowledge Curator' integration.\n6. Copy the database URL and extract the 32-character database ID (the long alphanumeric string before '?v=').",
+        "related_tools": [
+          "http_request"
+        ],
+        "related_triggers": [
+          0,
+          1,
+          2
+        ],
+        "api_base_url": "https://api.notion.com/v1",
+        "role": "knowledge_base",
+        "category": "productivity"
+      }
+    ],
     "suggested_notification_channels": [
       {
         "type": "built-in",
-        "description": "summary",
+        "description": "In-app notifications for each curated page (title, tag count, cross-reference count), batch import progress updates, feed scan summaries, and error alerts when Notion credentials expire or feeds become unreachable.",
         "config_hints": {
           "target": "status"
         }
@@ -89,168 +143,466 @@
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "content_processed",
-        "description": "Event"
+        "event_type": "content_curated",
+        "description": "Emitted each time a URL is successfully processed into a Notion knowledge base page -- includes the Notion page ID, assigned tags, cross-reference count, content type classification, and processing duration for downstream analytics or chaining with other agents."
+      },
+      {
+        "event_type": "feed_scan_complete",
+        "description": "Emitted after each scheduled RSS/Atom feed scan cycle completes -- includes counts of feeds checked, new articles found, duplicates skipped, pages created, and any feed errors encountered during the scan."
+      },
+      {
+        "event_type": "taxonomy_updated",
+        "description": "Emitted when a new tag is added to the controlled taxonomy during article processing -- includes the new tag name, dimension (domain or method), and the article that triggered its creation, enabling taxonomy governance workflows."
+      }
+    ],
+    "suggested_parameters": [
+      {
+        "key": "max_article_age_days",
+        "label": "Max Article Age",
+        "type": "number",
+        "default_value": 7,
+        "value": 7,
+        "description": "Maximum age in days for articles discovered via RSS feeds. Articles older than this threshold are skipped during scheduled feed scans. Does not apply to manually submitted URLs.",
+        "unit": "days",
+        "min": 1,
+        "max": 90
+      },
+      {
+        "key": "batch_size",
+        "label": "Feed Scan Batch Size",
+        "type": "number",
+        "default_value": 20,
+        "value": 20,
+        "description": "Maximum number of new articles to process per scheduled feed scan. When more new articles are found, the most recent are prioritized. Prevents long-running scans from consuming excessive API quota.",
+        "unit": "articles",
+        "min": 1,
+        "max": 100
+      },
+      {
+        "key": "max_cross_refs",
+        "label": "Cross-Reference Limit",
+        "type": "number",
+        "default_value": 5,
+        "value": 5,
+        "description": "Maximum number of cross-references to attach to each new Notion page. Higher values produce a richer knowledge graph but increase Notion API calls and processing time per article.",
+        "unit": "references",
+        "min": 1,
+        "max": 15
+      },
+      {
+        "key": "tag_review_required",
+        "label": "Require Tag Review",
+        "type": "number",
+        "default_value": 0,
+        "value": 0,
+        "description": "When set to 1, auto-generated tags are queued for human approval via manual_review before being applied to Notion pages. Set to 0 for fully autonomous tagging. Useful during initial taxonomy setup.",
+        "unit": "boolean (0 or 1)",
+        "min": 0,
+        "max": 1
       }
     ],
     "use_case_flows": [
       {
-        "id": "flow_1",
-        "name": "URL Content Extraction",
-        "description": "When provided with article URLs, extract the main content, title, author, publication date, and key highlights",
+        "id": "flow_manual_curation",
+        "name": "Manual URL Curation",
+        "description": "User submits one or more URLs for immediate processing: content extraction, summarization, tagging, cross-referencing, and Notion page creation.",
         "nodes": [
           {
-            "id": "n1",
+            "id": "m1",
             "type": "start",
-            "label": "Trigger",
-            "detail": "Execution starts"
+            "label": "URLs received",
+            "detail": "User submits one or more URLs via manual trigger or direct message"
           },
           {
-            "id": "n2",
+            "id": "m2",
             "type": "action",
-            "label": "Process Data",
-            "detail": "Analyze and enrich input"
+            "label": "Validate & dedup-check",
+            "detail": "Validate URL format, check state/processed_urls.json for prior processing. Ask user about re-processing if duplicate found"
           },
           {
-            "id": "n3",
+            "id": "m3",
+            "type": "action",
+            "label": "Fetch web content",
+            "detail": "http_request GET each URL with HTML accept header. Extract title, author, date, body text, stripping non-article elements"
+          },
+          {
+            "id": "m4",
             "type": "decision",
-            "label": "Needs Review?",
-            "detail": "Check if human approval needed"
+            "label": "Content extractable?",
+            "detail": "Check if meaningful body text was extracted (>100 words). Detect paywalls, login walls, and non-article pages"
           },
           {
-            "id": "n4",
+            "id": "m5",
             "type": "action",
-            "label": "Generate Output",
-            "detail": "Create report or take action"
+            "label": "Summarize & classify",
+            "detail": "Generate one-line takeaway, executive summary, and detailed notes. Classify content type, reading difficulty, extract named entities"
           },
           {
-            "id": "n5",
+            "id": "m6",
+            "type": "action",
+            "label": "Assign taxonomy tags",
+            "detail": "Read state/taxonomy_index.json. Assign 2-5 domain tags and 1-2 method tags from controlled vocabulary. Add new tags if genuinely needed"
+          },
+          {
+            "id": "m7",
+            "type": "connector",
+            "label": "Query Notion for cross-refs",
+            "detail": "POST to /v1/databases/{db_id}/query with tag-based filters. Compute relevance, select top 3-5 related pages, classify relationship types",
+            "connector": "notion"
+          },
+          {
+            "id": "m8",
+            "type": "connector",
+            "label": "Create Notion page",
+            "detail": "POST to /v1/pages with all properties, then POST to /v1/blocks/{id}/children with structured body: callout, summaries, entities, cross-refs, source content",
+            "connector": "notion"
+          },
+          {
+            "id": "m9",
+            "type": "action",
+            "label": "Update local state",
+            "detail": "file_write to processed_urls.json, taxonomy_index.json, and cross_ref_graph.json with new entries"
+          },
+          {
+            "id": "m10",
             "type": "event",
-            "label": "Notify",
-            "detail": "Send results via messaging"
+            "label": "Notify completion",
+            "detail": "Send user_message with page title, tag count, and cross-reference count. Store agent_memory record. Emit content_curated event"
           },
           {
-            "id": "n6",
+            "id": "m11",
             "type": "end",
-            "label": "Complete",
-            "detail": "Store memory and finish"
+            "label": "Curation complete",
+            "detail": "URL fully processed into structured knowledge base entry with cross-references"
+          },
+          {
+            "id": "m12",
+            "type": "action",
+            "label": "Create partial page",
+            "detail": "For paywalled or low-content URLs: create Notion page with available metadata, preview text, and 'Paywall' or 'Extraction Failed' status badge"
           }
         ],
         "edges": [
           {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
+            "id": "me1",
+            "source": "m1",
+            "target": "m2"
           },
           {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
+            "id": "me2",
+            "source": "m2",
+            "target": "m3"
           },
           {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4",
-            "label": "No",
-            "variant": "no"
+            "id": "me3",
+            "source": "m3",
+            "target": "m4"
           },
           {
-            "id": "e4",
-            "source": "n3",
-            "target": "n5",
+            "id": "me4",
+            "source": "m4",
+            "target": "m5",
             "label": "Yes",
             "variant": "yes"
           },
           {
-            "id": "e5",
-            "source": "n4",
-            "target": "n5"
+            "id": "me5",
+            "source": "m4",
+            "target": "m12",
+            "label": "Partial/No",
+            "variant": "no"
           },
           {
-            "id": "e6",
-            "source": "n5",
-            "target": "n6"
+            "id": "me6",
+            "source": "m5",
+            "target": "m6"
+          },
+          {
+            "id": "me7",
+            "source": "m6",
+            "target": "m7"
+          },
+          {
+            "id": "me8",
+            "source": "m7",
+            "target": "m8"
+          },
+          {
+            "id": "me9",
+            "source": "m8",
+            "target": "m9"
+          },
+          {
+            "id": "me10",
+            "source": "m9",
+            "target": "m10"
+          },
+          {
+            "id": "me11",
+            "source": "m10",
+            "target": "m11"
+          },
+          {
+            "id": "me12",
+            "source": "m12",
+            "target": "m9"
           }
         ]
       },
       {
-        "id": "flow_2",
-        "name": "Notion Page Creation",
-        "description": "Create structured Notion pages with extracted content, applying consistent formatting and metadata",
+        "id": "flow_feed_scan",
+        "name": "Scheduled Feed Scanning",
+        "description": "Daily automated scan of configured RSS/Atom feeds: fetch articles, deduplicate, process new entries through the full curation pipeline, and report results.",
         "nodes": [
           {
-            "id": "n1",
+            "id": "f1",
             "type": "start",
-            "label": "Trigger",
-            "detail": "Execution starts"
+            "label": "Schedule trigger fires",
+            "detail": "Daily at 8:00 AM the schedule trigger initiates the feed scan cycle"
           },
           {
-            "id": "n2",
+            "id": "f2",
             "type": "action",
-            "label": "Process Data",
-            "detail": "Analyze and enrich input"
+            "label": "Load feed config",
+            "detail": "file_read state/feed_config.json to get RSS/Atom feed URLs, names, and priority levels"
           },
           {
-            "id": "n3",
+            "id": "f3",
+            "type": "action",
+            "label": "Fetch all feeds",
+            "detail": "http_request GET each feed URL with XML accept headers. Parse <item>/<entry> elements for title, link, date, description"
+          },
+          {
+            "id": "f4",
+            "type": "action",
+            "label": "Deduplicate & filter",
+            "detail": "Compare article URLs against state/processed_urls.json. Filter by max_article_age_days parameter. Cap at batch_size parameter"
+          },
+          {
+            "id": "f5",
             "type": "decision",
-            "label": "Needs Review?",
-            "detail": "Check if human approval needed"
+            "label": "New articles found?",
+            "detail": "Check if any articles survived deduplication, age filtering, and batch size cap"
           },
           {
-            "id": "n4",
+            "id": "f6",
             "type": "action",
-            "label": "Generate Output",
-            "detail": "Create report or take action"
+            "label": "Process article batch",
+            "detail": "For each new article: fetch content, summarize, tag, discover cross-refs, create Notion page. 350ms delay between API calls"
           },
           {
-            "id": "n5",
+            "id": "f7",
+            "type": "action",
+            "label": "Update state files",
+            "detail": "file_write to processed_urls.json, taxonomy_index.json, and cross_ref_graph.json with all new entries from this scan"
+          },
+          {
+            "id": "f8",
             "type": "event",
-            "label": "Notify",
-            "detail": "Send results via messaging"
+            "label": "Post scan summary",
+            "detail": "user_message with new article count, feeds checked, duplicates skipped. Emit feed_scan_complete event with full metrics"
           },
           {
-            "id": "n6",
+            "id": "f9",
             "type": "end",
-            "label": "Complete",
-            "detail": "Store memory and finish"
+            "label": "Scan cycle complete",
+            "detail": "All feeds processed; agent idles until next scheduled trigger"
+          },
+          {
+            "id": "f10",
+            "type": "event",
+            "label": "No new articles",
+            "detail": "All feed items were duplicates or too old. Store agent_memory noting quiet scan. No Notion pages created"
+          },
+          {
+            "id": "f11",
+            "type": "error",
+            "label": "Feed fetch error",
+            "detail": "Log failed feed URL and error code. Continue processing remaining feeds. If 3+ consecutive failures for same feed, include warning in scan summary"
           }
         ],
         "edges": [
           {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
+            "id": "fe1",
+            "source": "f1",
+            "target": "f2"
           },
           {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
+            "id": "fe2",
+            "source": "f2",
+            "target": "f3"
           },
           {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4",
-            "label": "No",
-            "variant": "no"
+            "id": "fe3",
+            "source": "f3",
+            "target": "f4"
           },
           {
-            "id": "e4",
-            "source": "n3",
-            "target": "n5",
+            "id": "fe4",
+            "source": "f4",
+            "target": "f5"
+          },
+          {
+            "id": "fe5",
+            "source": "f5",
+            "target": "f6",
             "label": "Yes",
             "variant": "yes"
           },
           {
-            "id": "e5",
-            "source": "n4",
-            "target": "n5"
+            "id": "fe6",
+            "source": "f5",
+            "target": "f10",
+            "label": "No",
+            "variant": "no"
           },
           {
-            "id": "e6",
-            "source": "n5",
-            "target": "n6"
+            "id": "fe7",
+            "source": "f6",
+            "target": "f7"
+          },
+          {
+            "id": "fe8",
+            "source": "f7",
+            "target": "f8"
+          },
+          {
+            "id": "fe9",
+            "source": "f8",
+            "target": "f9"
+          },
+          {
+            "id": "fe10",
+            "source": "f10",
+            "target": "f9"
+          },
+          {
+            "id": "fe11",
+            "source": "f3",
+            "target": "f11",
+            "variant": "error"
+          },
+          {
+            "id": "fe12",
+            "source": "f11",
+            "target": "f4"
           }
         ]
+      },
+      {
+        "id": "flow_weekly_maintenance",
+        "name": "Weekly Knowledge Base Maintenance",
+        "description": "Friday evening maintenance cycle: audit cross-reference graph, identify orphaned pages, consolidate near-duplicate taxonomy tags, and generate curation statistics.",
+        "nodes": [
+          {
+            "id": "w1",
+            "type": "start",
+            "label": "Weekly trigger fires",
+            "detail": "Friday at 6:00 PM the weekly maintenance schedule trigger activates"
+          },
+          {
+            "id": "w2",
+            "type": "action",
+            "label": "Load state files",
+            "detail": "file_read processed_urls.json, taxonomy_index.json, and cross_ref_graph.json for full knowledge base state"
+          },
+          {
+            "id": "w3",
+            "type": "connector",
+            "label": "Query Notion database",
+            "detail": "POST to /v1/databases/{db_id}/query to get all pages and their current properties for consistency audit",
+            "connector": "notion"
+          },
+          {
+            "id": "w4",
+            "type": "action",
+            "label": "Identify orphaned pages",
+            "detail": "Find pages with zero inbound cross-references. Suggest potential connections based on tag overlap that may have been missed"
+          },
+          {
+            "id": "w5",
+            "type": "action",
+            "label": "Audit taxonomy health",
+            "detail": "Detect near-duplicate tags (edit distance <= 2), single-use tags, and overly broad tags. Suggest consolidation and merges"
+          },
+          {
+            "id": "w6",
+            "type": "action",
+            "label": "Compile weekly statistics",
+            "detail": "Calculate: articles curated this week, tags added, cross-references created, content type distribution, most active domains, feed health"
+          },
+          {
+            "id": "w7",
+            "type": "event",
+            "label": "Send maintenance report",
+            "detail": "user_message with weekly stats, orphaned page list, taxonomy suggestions, and any persistent feed errors"
+          },
+          {
+            "id": "w8",
+            "type": "end",
+            "label": "Maintenance complete",
+            "detail": "Weekly audit finished. State files backed up to .bak copies"
+          }
+        ],
+        "edges": [
+          {
+            "id": "we1",
+            "source": "w1",
+            "target": "w2"
+          },
+          {
+            "id": "we2",
+            "source": "w2",
+            "target": "w3"
+          },
+          {
+            "id": "we3",
+            "source": "w3",
+            "target": "w4"
+          },
+          {
+            "id": "we4",
+            "source": "w4",
+            "target": "w5"
+          },
+          {
+            "id": "we5",
+            "source": "w5",
+            "target": "w6"
+          },
+          {
+            "id": "we6",
+            "source": "w6",
+            "target": "w7"
+          },
+          {
+            "id": "we7",
+            "source": "w7",
+            "target": "w8"
+          }
+        ]
+      }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human review for auto-generated taxonomy tags and ambiguous cross-reference relationships",
+        "context": "When tag_review_required parameter is enabled, newly assigned tags are queued for approval before being applied to Notion pages. Cross-references with low confidence scores are also flagged for human verification."
+      },
+      {
+        "type": "user_message",
+        "label": "Completion notifications, batch progress updates, feed scan summaries, and credential error alerts",
+        "context": "1 notification channel configured: built-in. Notifications sent on page creation, batch milestones (every 5 articles), scan completion, and error conditions requiring user intervention."
+      },
+      {
+        "type": "agent_memory",
+        "label": "Processed article records, taxonomy evolution, and cross-reference graph for continuity across runs",
+        "context": "Tracks: processed URL hashes for deduplication, assigned tags per article, cross-reference relationships, feed scan history, and taxonomy changes over time."
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits events: content_curated, feed_scan_complete, taxonomy_updated",
+        "context": "3 event subscription(s) configured -- enables chaining with downstream agents (e.g., a digest agent that compiles weekly curated articles into a newsletter)."
       }
     ],
     "adoption_questions": [

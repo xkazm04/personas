@@ -368,6 +368,7 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "clickup" => Some("https://api.clickup.com/api/v2"),
         "cal_com" => Some("https://api.cal.com"),
         "calendly" => Some("https://api.calendly.com"),
+        "elevenlabs" => Some("https://api.elevenlabs.io/v1"),
         "leonardo_ai" => Some("https://cloud.leonardo.ai/api/rest/v1"),
         "betterstack" => Some("https://uptime.betterstack.com"),
         "mixpanel" => Some("https://mixpanel.com"),

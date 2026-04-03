@@ -461,3 +461,86 @@ curl http://127.0.0.1:17320/snapshot
 # Select agent by name
 curl -X POST http://127.0.0.1:17320/select-agent -H "Content-Type: application/json" -d '{"name_or_id":"Email"}'
 ```
+
+---
+
+## Production Build Testing
+
+The test automation server is also available in **production builds** via the `PERSONAS_TEST_PORT` environment variable. This allows smoke testing installed packages without recompiling.
+
+### How it works
+
+| Mode | Trigger | Port | Frontend bridge |
+|------|---------|------|----------------|
+| Dev | `--features test-automation` | 17320 (fixed) | Loaded via `import.meta.env.DEV` |
+| Production | `PERSONAS_TEST_PORT=<port>` | Custom (e.g. 17321) | Loaded via `window.__PERSONAS_TEST_MODE__` |
+
+When `PERSONAS_TEST_PORT` is set, the Rust backend:
+1. Starts the HTTP test server on the specified port
+2. Injects `window.__PERSONAS_TEST_MODE__ = true` via `js_init_script`
+3. The frontend detects the flag and loads `window.__TEST__` bridge
+
+### Running production smoke tests
+
+```bash
+# 1. Launch installed app with test mode enabled
+$env:PERSONAS_TEST_PORT = "17321"   # PowerShell
+& "C:\Users\kazda\AppData\Local\Personas\personas-desktop.exe"
+
+# Or on bash:
+PERSONAS_TEST_PORT=17321 /path/to/personas-desktop &
+
+# 2. Verify the server is up
+curl http://127.0.0.1:17321/health
+
+# 3. Run production smoke tests
+uvx --with httpx python tools/test-mcp/production_smoke_test.py --port 17321
+```
+
+### Running both dev and production simultaneously
+
+Dev and production can run side-by-side on different ports:
+
+```bash
+# Terminal 1: Dev app on default port
+npx tauri dev --features test-automation
+# → http://127.0.0.1:17320
+
+# Terminal 2: Production app on custom port
+PERSONAS_TEST_PORT=17321 "C:\...\personas-desktop.exe"
+# → http://127.0.0.1:17321
+
+# Terminal 3: Run smoke tests against production
+uvx --with httpx python tools/test-mcp/production_smoke_test.py --port 17321
+```
+
+### What the production smoke tests cover
+
+| # | Test | Description |
+|---|------|-------------|
+| 0 | Health check | Server connectivity |
+| 1 | Sidebar sections | All 7 main sections render without errors |
+| 2 | Overview sub-tabs | Dashboard, Executions, Approvals, Messages, Events, Knowledge |
+| 3 | Settings sub-tabs | Appearance, Notifications, Portability |
+| 4 | Credentials module | Loads without "startup failed" errors |
+| 5 | Agent creation | Opens creation wizard, fills name + instruction |
+| 6 | Agent execution | Executes first available agent |
+| 7 | Artifact verification | Checks all Overview tabs render after execution |
+| 8 | Exploratory nav | Clicks through all 1st + 2nd level menu items |
+
+### MCP server with custom port
+
+To use Claude Code's MCP tools against a production build, update `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "personas-test-prod": {
+      "command": "uvx",
+      "args": ["--with", "mcp", "python", "tools/test-mcp/server.py", "--port", "17321"]
+    }
+  }
+}
+```
+
+Then ask Claude Code to run tests against the production instance.

@@ -4,8 +4,9 @@ import { listExecutions } from '@/api/agents/executions';
 import { listMemories } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import { listEvents } from '@/api/overview/events';
+import { listMessages } from '@/api/overview/messages';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
-import type { PersonaEvent } from '@/lib/types/types';
+import type { PersonaEvent, PersonaMessage } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ActivityItem, ActivityType } from './activityTypes';
@@ -27,16 +28,18 @@ export function ActivityTab() {
     if (!personaId) return;
     setIsLoading(true);
     try {
-      const [executions, events, memories, reviews] = await Promise.all([
+      const [executions, events, memories, reviews, messages] = await Promise.all([
         listExecutions(personaId, 50).catch(() => [] as PersonaExecution[]),
         listEvents(100).catch(() => [] as PersonaEvent[]),
         listMemories(personaId, undefined, undefined, 50).catch(() => [] as PersonaMemory[]),
         listManualReviews(personaId).catch(() => [] as PersonaManualReview[]),
+        listMessages(50).catch(() => [] as PersonaMessage[]),
       ]);
 
       const personaEvents = events.filter(
         (e) => e.source_id === personaId || e.target_persona_id === personaId
       );
+      const personaMessages = messages.filter((m) => m.persona_id === personaId);
 
       const allItems: ActivityItem[] = [
         ...executions.map((e): ActivityItem => ({
@@ -71,6 +74,14 @@ export function ActivityTab() {
           timestamp: r.created_at,
           raw: r,
         })),
+        ...personaMessages.map((m): ActivityItem => ({
+          type: 'message', id: m.id,
+          title: m.title || 'Message',
+          subtitle: m.content?.slice(0, 80) || '',
+          status: m.priority || 'normal',
+          timestamp: m.created_at,
+          raw: m,
+        })),
       ];
 
       allItems.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -94,7 +105,7 @@ export function ActivityTab() {
   }, [items, filter]);
 
   const counts = useMemo(() => {
-    const c: Record<ActivityType, number> = { all: items.length, execution: 0, event: 0, memory: 0, review: 0 };
+    const c: Record<ActivityType, number> = { all: items.length, execution: 0, event: 0, memory: 0, review: 0, message: 0 };
     for (const item of items) c[item.type]++;
     return c;
   }, [items]);

@@ -6,6 +6,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { MemoryRow } from './MemoryCard';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryConflictReview } from './MemoryConflictReview';
@@ -166,11 +167,6 @@ export default function MemoriesPage() {
 
   const closeReviewModal = useCallback(() => { setReviewResult(null); setReviewError(null); }, []);
 
-  const personaFilterOptions = useMemo(() => [
-    { value: '', label: 'All agents' },
-    ...personas.map((p) => ({ value: p.id, label: p.name })),
-  ], [personas]);
-
   const categoryFilterOptions = useMemo(() => [
     { value: '', label: 'All categories' },
     ...ALL_MEMORY_CATEGORIES.map((cat) => ({
@@ -283,15 +279,11 @@ export default function MemoriesPage() {
             <>
               {/* Column headers with inline filters */}
               <div className="hidden md:grid gap-0 border-b border-primary/10 bg-background sticky top-0 z-10" style={{ gridTemplateColumns: GRID_COLUMNS }}>
-                <div className="px-2 py-1.5 flex items-center">
-                  <ThemedSelect
-                    filterable
-                    options={personaFilterOptions}
+                <div className="px-4 py-1.5 flex items-center">
+                  <PersonaColumnFilter
                     value={selectedPersonaId ?? ''}
-                    onValueChange={(v) => setSelectedPersonaId(v || null)}
-                    placeholder="Agent"
-                    wrapperClassName="w-full"
-                    className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                    onChange={(v) => setSelectedPersonaId(v || null)}
+                    personas={personas}
                   />
                 </div>
                 <div className="flex items-center px-4 py-1.5 typo-label text-foreground/80">Title</div>

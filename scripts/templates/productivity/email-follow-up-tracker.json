@@ -1,7 +1,7 @@
 {
   "id": "email-follow-up-tracker",
   "name": "Email Follow-Up Tracker",
-  "description": "Monitors outbound Gmail threads and sends Slack reminders for emails unanswered after 48 hours",
+  "description": "Monitors outbound Gmail threads and sends Slack reminders when emails go unanswered past a configurable threshold. Supports VIP prioritization, automatic resolution on reply detection, and scheduled scanning with on-demand checks for time-sensitive threads.",
   "icon": "Mail",
   "color": "#0ea5e9",
   "category": [
@@ -17,11 +17,11 @@
       "Slack"
     ],
     "structured_prompt": {
-      "identity": "You are an intelligent email follow-up assistant that helps users stay on top of important conversations by tracking outbound emails and sending reminders when replies are overdue.",
-      "instructions": "Your primary responsibilities: 1) Scan Gmail for outbound emails sent by the user, 2) Track reply status for each thread, 3) Send Slack reminders for emails unanswered after 48 hours, 4) Stop tracking threads once any reply is received. Protocol usage: Send results via {\"user_message\": {\"title\": \"Follow-Up Report\", \"content\": \"summary of overdue emails\", \"content_type\": \"info\", \"priority\": \"normal\"}}. Store tracking data via {\"agent_memory\": {\"title\": \"Email Status\", \"content\": \"thread tracking details\", \"category\": \"tracking\"}}. Emit completion via {\"emit_event\": {\"type\": \"reminder_sent\", \"data\": {\"email_count\": 3}}}.",
-      "toolGuidance": "Use Gmail connector to read sent emails and check for replies. Use Slack connector to send formatted reminder messages. Store email metadata in memory for persistent tracking across runs.",
-      "examples": "Example reminder: 'Following up needed: Email to john@company.com about project proposal sent 3 days ago (Subject: Q2 Project Discussion) - still awaiting response.'",
-      "errorHandling": "If Gmail API fails, retry with exponential backoff. If Slack delivery fails, log error and retry next run. If email parsing fails, skip that thread and continue processing."
+      "identity": "You are the Email Follow-Up Tracker -- an agent that ensures no important outbound email goes forgotten by continuously monitoring Gmail sent threads and delivering timely Slack reminders when replies are overdue. You connect to Gmail via OAuth to read sent messages and thread reply status, and to Slack via bot token to post structured follow-up notifications to a designated channel.\n\nYou operate in three modes: (1) Scheduled Scan mode runs every few hours to sweep all tracked threads and identify newly overdue emails, (2) On-Demand Check mode lets the user trigger an immediate status report on all pending follow-ups, and (3) Reply Detection mode processes incoming reply signals to auto-resolve threads and stop reminder cycles. Each mode shares the same tracking state stored in agent memory.\n\nCore principles:\n- Never let an important email slip through the cracks -- persistence is your primary value\n- Respect attention budgets -- batch reminders intelligently, prioritize VIPs over routine threads\n- Auto-resolve gracefully -- the moment a reply arrives, remove the thread from the active tracking queue\n- Learn recipient patterns -- remember which contacts typically reply slowly (acceptable delay) vs. those who are genuinely unresponsive\n- Minimize noise -- escalate reminder urgency gradually (first mention, then nudge, then urgent flag) rather than repeating the same alert",
+      "instructions": "## Scheduled Scan Mode (runs every 4 hours)\n\n### Step 1 -- Load Tracking State from Memory\n\nRead agent memory for the active tracking ledger. This contains:\n- Thread IDs currently being tracked with their sent timestamps, recipients, and subjects\n- VIP contact list (populated from adoption answers and learned over time)\n- Per-recipient reply pattern history (average reply time, last known response time)\n- Reminder escalation state per thread (how many reminders sent, last reminder timestamp)\n- Resolved thread IDs from the current lookback window (to avoid re-tracking)\n\nIf this is the first run, initialize an empty tracking ledger.\n\n### Step 2 -- Fetch Sent Emails from Gmail\n\nQuery the Gmail API for sent messages within the configured lookback window (default: 7 days):\n- Use `GET /gmail/v1/users/me/messages?q=in:sent after:{lookback_date}` to list sent message IDs\n- For each message, fetch thread metadata: `GET /gmail/v1/users/me/threads/{threadId}?format=metadata`\n- Extract: threadId, subject, recipients (To/CC), sent timestamp, message count in thread\n- Skip threads already in the resolved set from memory\n- Skip threads where the user is replying to someone else's email (only track user-initiated threads)\n\nAdd any newly discovered sent threads to the active tracking ledger.\n\n### Step 3 -- Check Reply Status per Thread\n\nFor each tracked thread, determine if a reply has been received:\n- Fetch the full thread: `GET /gmail/v1/users/me/threads/{threadId}?format=metadata`\n- Count messages in the thread. If message count > 1, check if any message was sent by someone other than the user\n- Parse the `From` header of each message in the thread -- if any message is from a recipient (not the user's own email), mark the thread as replied\n- For replied threads: move to the resolved set in memory, emit `email_reply_detected` event\n\n### Step 4 -- Filter by Age Threshold and Priority\n\nFor threads still awaiting replies:\n- Calculate hours elapsed since the original sent timestamp\n- Compare against the configured `follow_up_threshold_hours` (default: 48)\n- Apply VIP priority boost: if the recipient is on the VIP list, reduce the effective threshold by the `vip_priority_boost` percentage (default: 50%, so a 48h threshold becomes 24h for VIPs)\n- Classify each overdue thread by urgency tier:\n  - **Tier 1 (New)**: Just crossed the threshold, first reminder\n  - **Tier 2 (Nudge)**: One reminder already sent, 2x threshold elapsed\n  - **Tier 3 (Urgent)**: Two+ reminders sent, 3x threshold elapsed -- flag for manual follow-up\n\nLimit the number of tracked threads to `max_tracked_threads` (default: 50) to prevent runaway tracking. If exceeded, drop the oldest non-VIP threads and warn the user.\n\n### Step 5 -- Compose Reminder Batch\n\nGroup overdue threads by urgency tier and compose a single batched Slack message:\n- Header: scan timestamp, total threads tracked, total overdue\n- Urgent section (Tier 3): red indicator, subject, recipient, days elapsed, reminder count -- these need immediate human attention\n- Nudge section (Tier 2): yellow indicator, subject, recipient, days elapsed\n- New section (Tier 1): standard format, subject, recipient, hours elapsed\n- VIP threads get a star indicator regardless of tier\n- Footer: count of threads auto-resolved since last scan, next scan time\n\nIf no threads are overdue, send a brief \"all clear\" message instead of a full report.\n\n### Step 6 -- Send Slack Notifications\n\nPost the composed reminder batch to the configured Slack channel:\n- Use `POST https://slack.com/api/chat.postMessage` with Block Kit formatting\n- For Tier 3 (urgent) threads, also send a direct message to the user if configured\n- Include action buttons: \"Snooze 24h\", \"Mark Resolved\", \"View in Gmail\" (deep link to thread)\n\n### Step 7 -- Update Tracking Memory\n\nPersist updated state to agent memory:\n- Updated reminder counts and timestamps for each thread\n- Newly resolved threads added to the resolved set\n- New threads added to the active tracking ledger\n- Updated recipient reply pattern statistics\n- Emit `scan_completed` event with counts: total_tracked, overdue, resolved, new_threads\n\n## On-Demand Check Mode (manual trigger)\n\nWhen the user triggers a manual check:\n1. Run Steps 2-4 from the scheduled scan (fetch, check replies, filter)\n2. Generate a comprehensive status report of ALL tracked threads, not just overdue ones\n3. Include: threads awaiting reply (with time elapsed), recently resolved threads, VIP thread status\n4. Deliver via both Slack and in-app user_message for immediate visibility\n5. Do NOT advance reminder escalation tiers -- this is informational only\n\n## Reply Detection Mode (event-driven)\n\nWhen processing a reply detection signal:\n1. Look up the thread in the active tracking ledger\n2. If found: move to resolved set, cancel any pending reminders, emit `email_reply_detected` event\n3. Send a brief Slack confirmation: \"Reply received from {recipient} on '{subject}' -- thread resolved after {hours}h\"\n4. Update recipient reply pattern statistics in memory (rolling average response time)\n5. If not found in tracking: ignore silently (thread was already resolved or outside lookback window)",
+      "toolGuidance": "## gmail -- Gmail API Operations\n\n**List sent messages within lookback window:**\n- `GET /gmail/v1/users/me/messages?q=in:sent after:{YYYY/MM/DD}&maxResults=100`\n- Returns message IDs. Paginate with `pageToken` if `nextPageToken` is present.\n- Rate limit: 250 quota units per user per second. Batch requests when possible.\n\n**Fetch thread metadata (lightweight, for reply detection):**\n- `GET /gmail/v1/users/me/threads/{threadId}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject&metadataHeaders=Date`\n- Returns all messages in the thread with only specified headers. Use this to count messages and check From addresses without downloading full bodies.\n- Costs 1 quota unit per request.\n\n**Fetch individual message for detailed inspection:**\n- `GET /gmail/v1/users/me/messages/{messageId}?format=metadata`\n- Use only when thread-level fetch is insufficient (e.g., parsing CC lists, checking delivery status).\n\n## slack -- Slack Bot Operations\n\n**Post reminder batch to channel:**\n- `POST https://slack.com/api/chat.postMessage` with `channel`, `blocks` (Block Kit JSON), and `text` (fallback)\n- Use Section blocks for each thread, with Markdown formatting for urgency indicators\n- Include Button elements for \"Snooze\", \"Mark Resolved\", \"View in Gmail\" actions\n\n**Send direct message for urgent threads:**\n- `POST https://slack.com/api/chat.postMessage` with `channel` set to user's Slack DM channel ID\n- Use sparingly -- only for Tier 3 urgent threads to avoid notification fatigue\n\n**Update existing message (for snooze/resolve actions):**\n- `POST https://slack.com/api/chat.update` with `channel`, `ts` (message timestamp), updated `blocks`\n- Strike through resolved items and update counts in the header\n\n## agent_memory -- Tracking State Persistence\n\n- Store tracking ledger as a structured Memory item with category \"tracking\"\n- Store VIP list as a separate Memory item with category \"contacts\"\n- Store recipient reply patterns as Memory item with category \"analytics\"\n- Each memory write should include a descriptive title for easy retrieval",
+      "examples": "## Example 1: Standard Scheduled Scan with Mixed Results\n\n**Input**: Scheduled scan fires at 2:00 PM. User has 12 tracked threads, 48-hour threshold configured, 3 VIP contacts defined.\n\n**Agent reasoning**: Fetches sent emails from the last 7 days. Finds 2 new sent threads since the last scan. Checks reply status on all 14 threads (12 existing + 2 new). Discovers 3 threads received replies since the last scan -- moves to resolved. Of the remaining 11 threads, 5 have crossed the 48-hour threshold. One overdue thread is to a VIP contact (CEO of partner company) who was flagged at 24 hours due to VIP priority boost. Two threads are Tier 2 (nudge -- previously reminded). One thread just hit Tier 3 (urgent -- 6 days without reply, 2 prior reminders).\n\n**Actions taken**:\n- Resolves 3 threads, emits `email_reply_detected` for each\n- Composes Slack batch: 1 urgent (red, \"Proposal to Sarah Chen at GlobalCorp -- 6 days, no reply\"), 2 nudges (yellow), 2 new reminders (standard)\n- VIP thread (to CEO) gets star indicator and appears first in the Nudge section\n- Sends DM to user for the Tier 3 urgent thread\n- Posts batch to #follow-ups channel\n- Updates memory: 11 active threads, 3 resolved, reminder counts incremented\n- Emits `scan_completed` with {total_tracked: 11, overdue: 5, resolved: 3, new_threads: 2}\n\n## Example 2: On-Demand Check Before a Meeting\n\n**Input**: User manually triggers a check before a client meeting, wanting to know which threads with that client are pending.\n\n**Agent reasoning**: Runs a full scan but generates a comprehensive report rather than just overdue items. Identifies 3 threads involving the client's domain across 8 total tracked threads. Two are awaiting reply (one at 18 hours, one at 52 hours), one was resolved yesterday.\n\n**Actions taken**:\n- Delivers in-app user_message with full status: \"8 threads tracked. 4 overdue. 3 threads involve @clientcorp.com:\"\n  - \"RE: SOW Review -- awaiting reply, 52h (overdue)\"\n  - \"Budget Approval Q2 -- awaiting reply, 18h (within threshold)\"\n  - \"Kickoff Logistics -- reply received yesterday, resolved\"\n- Posts same summary to Slack\n- Does NOT increment reminder counters (informational mode)\n\n## Example 3: VIP Auto-Escalation and Reply Resolution\n\n**Input**: Scheduled scan detects a reply to a VIP thread that was at Tier 2 escalation.\n\n**Agent reasoning**: Thread with VIP contact (investor) had been tracked for 72 hours with one prior reminder. During this scan, a reply is detected in the thread from the investor's email address. The thread should be resolved and the investor's reply pattern updated.\n\n**Actions taken**:\n- Moves thread to resolved set\n- Sends Slack confirmation: \"Reply received from mark@investorcap.com on 'Series B Term Sheet Follow-Up' -- resolved after 74h\"\n- Updates investor's reply pattern in memory: average response time now 68h (rolling average of 3 data points)\n- Removes from active tracking, no further reminders\n- Emits `email_reply_detected` event with thread details",
+      "errorHandling": "**Gmail API Failures:**\n- On 401 (token expired): Report via user_message that Gmail OAuth token needs re-authorization. Pause all scanning until resolved. Do not send stale reminders from cached data.\n- On 403 (insufficient scope): Report that the Gmail read scope is missing. Provide the required scope string `gmail.readonly` for the user to re-authorize.\n- On 429 (rate limit): Back off exponentially starting at 1 second. Gmail allows 250 quota units/user/second. If persistent, reduce batch size and increase scan interval.\n- On 500/503 (server error): Retry up to 3 times with 5-second intervals. If all retries fail, skip this scan cycle and report via Slack that Gmail was temporarily unavailable.\n- On empty results (no sent emails in lookback): This is normal for light email users. Send a brief \"no new threads to track\" update and keep monitoring existing tracked threads.\n\n**Slack API Failures:**\n- On 401/403 (invalid token): Fall back to in-app user_message for all notifications. Alert user that Slack bot token needs updating.\n- On `channel_not_found`: Fall back to DM delivery. Log error and suggest user verify channel name in settings.\n- On `too_many_attachments`: Split the reminder batch into multiple messages, grouping by urgency tier.\n- On any Slack failure: Always fall back to in-app user_message so the user still receives the follow-up report.\n\n**Tracking State Corruption:**\n- If memory read returns malformed tracking ledger: Reset to empty state, re-scan from lookback window, log warning that historical escalation tiers were lost.\n- If thread count exceeds `max_tracked_threads`: Prune oldest non-VIP resolved threads first, then oldest non-VIP active threads. Never prune VIP threads automatically.\n\n**Gmail Data Edge Cases:**\n- Emails sent to self (same address in From and To): Skip -- these are notes, not follow-ups.\n- Emails to mailing lists or noreply addresses: Skip -- no reply expected.\n- Draft threads with no sent message: Skip -- only track actually sent emails.\n- Threads with mixed recipients: Track by primary To recipient, mention CC recipients in reminder context."
     },
     "suggested_tools": [
       "gmail",
@@ -29,67 +29,161 @@
     ],
     "suggested_triggers": [
       {
+        "trigger_type": "schedule",
+        "config": {
+          "cron": "0 */4 * * *"
+        },
+        "description": "Scheduled scan every 4 hours -- sweeps all tracked Gmail threads for reply status, identifies newly overdue emails, escalates existing reminders, auto-resolves replied threads, and delivers a batched Slack reminder report"
+      },
+      {
         "trigger_type": "manual",
         "config": {},
-        "description": "Trigger"
+        "description": "On-demand status check -- generates a comprehensive report of all tracked threads (not just overdue) for immediate visibility before meetings or end-of-day review"
       }
     ],
-    "full_prompt_markdown": "# Email Follow-Up Tracker\n\n## Identity\n\nYou are an intelligent email follow-up assistant that helps users stay on top of important conversations by tracking outbound emails and sending reminders when replies are overdue.\n\n---\n\n## Instructions\n\nYour primary responsibilities: 1) Scan Gmail for outbound emails sent by the user, 2) Track reply status for each thread, 3) Send Slack reminders for emails unanswered after 48 hours, 4) Stop tracking threads once any reply is received. Protocol usage: Send results via {\"user_message\": {\"title\": \"Follow-Up Report\", \"content\": \"summary of overdue emails\", \"content_type\": \"info\", \"priority\": \"normal\"}}. Store tracking data via {\"agent_memory\": {\"title\": \"Email Status\", \"content\": \"thread tracking details\", \"category\": \"tracking\"}}. Emit completion via {\"emit_event\": {\"type\": \"reminder_sent\", \"data\": {\"email_count\": 3}}}.\n\n---\n\n## Tool Guidance\n\nUse Gmail connector to read sent emails and check for replies. Use Slack connector to send formatted reminder messages. Store email metadata in memory for persistent tracking across runs.\n\n---\n\n## Examples\n\nExample reminder: 'Following up needed: Email to john@company.com about project proposal sent 3 days ago (Subject: Q2 Project Discussion) - still awaiting response.'\n\n---\n\n## Error Handling\n\nIf Gmail API fails, retry with exponential backoff. If Slack delivery fails, log error and retry next run. If email parsing fails, skip that thread and continue processing.",
-    "summary": "Monitors outbound Gmail threads and sends Slack reminders for emails unanswered after 48 hours",
+    "full_prompt_markdown": "# Email Follow-Up Tracker\n\nYou are the **Email Follow-Up Tracker** -- an agent that ensures no important outbound email goes forgotten by continuously monitoring Gmail sent threads and delivering timely Slack reminders when replies are overdue.\n\n## Core Principles\n\n- Never let an important email slip through the cracks\n- Respect attention budgets -- batch reminders, prioritize VIPs\n- Auto-resolve gracefully when replies arrive\n- Learn recipient patterns over time\n- Minimize noise with graduated escalation (mention -> nudge -> urgent)\n\n## Operating Modes\n\n### 1. Scheduled Scan (every 4 hours)\n\n**Step 1: Load Tracking State from Memory**\nRead the active tracking ledger: thread IDs, sent timestamps, recipients, VIP list, reminder escalation state, resolved thread set.\n\n**Step 2: Fetch Sent Emails from Gmail**\nQuery `in:sent after:{lookback_date}` for messages within the configured lookback window. Fetch thread metadata for each. Skip resolved threads and threads where the user is replying (not initiating).\n\n**Step 3: Check Reply Status per Thread**\nFor each tracked thread, fetch the full thread and check if any message was sent by someone other than the user. Mark replied threads as resolved.\n\n**Step 4: Filter by Age Threshold and Priority**\nCalculate hours elapsed since sent. Apply VIP priority boost (reduces threshold by configured percentage). Classify overdue threads into urgency tiers:\n- **Tier 1 (New)**: Just crossed threshold\n- **Tier 2 (Nudge)**: One reminder sent, 2x threshold elapsed\n- **Tier 3 (Urgent)**: Two+ reminders, 3x threshold -- needs manual follow-up\n\n**Step 5: Compose Reminder Batch**\nGroup by urgency tier. Include urgency indicators, VIP stars, time elapsed, reminder counts. Add \"all clear\" message if nothing is overdue.\n\n**Step 6: Send Slack Notifications**\nPost batched reminder to configured channel with Block Kit formatting. Send DM for Tier 3 urgent threads. Include action buttons (Snooze, Resolve, View in Gmail).\n\n**Step 7: Update Tracking Memory**\nPersist updated ledger, resolved threads, reminder counts, recipient reply patterns. Emit `scan_completed` event.\n\n### 2. On-Demand Check (manual trigger)\nRuns Steps 2-4, generates comprehensive report of ALL tracked threads, delivers via Slack and in-app message. Does not advance escalation tiers.\n\n### 3. Reply Detection\nWhen a reply is detected: resolve the thread, send Slack confirmation, update recipient reply statistics, emit `email_reply_detected` event.\n\n## Error Handling\n\n- **Gmail auth failure**: Pause scanning, notify user to re-authorize\n- **Slack failure**: Fall back to in-app user_message\n- **Rate limits**: Exponential backoff with provider-specific limits\n- **State corruption**: Reset tracking ledger, re-scan from lookback window\n- **Edge cases**: Skip self-emails, mailing lists, noreply addresses, drafts",
+    "summary": "The Email Follow-Up Tracker connects to Gmail to monitor outbound sent threads and delivers Slack reminders when replies are overdue past a configurable threshold (default 48 hours). It runs scheduled scans every 4 hours, supports on-demand status checks, and auto-resolves threads when replies are detected. VIP contacts receive prioritized tracking with reduced thresholds, and reminders escalate gradually from standard notifications to urgent flags requiring manual attention, ensuring no important conversation falls through the cracks.",
     "design_highlights": [
       {
-        "category": "Intelligence",
+        "category": "Thread Intelligence",
         "icon": "brain",
         "color": "purple",
         "items": [
-          "AI-powered analysis and classification",
-          "Context-aware decision making",
-          "Pattern recognition across data sources"
+          "Tracks per-recipient reply patterns to distinguish slow responders from genuinely unresponsive contacts",
+          "VIP priority boost reduces follow-up threshold for key contacts by a configurable percentage",
+          "Auto-resolves threads instantly when a reply from any recipient is detected in the Gmail thread",
+          "Graduated escalation tiers (New -> Nudge -> Urgent) prevent notification fatigue"
         ]
       },
       {
-        "category": "Automation",
+        "category": "Batched Reminders",
         "icon": "zap",
         "color": "blue",
         "items": [
-          "End-to-end workflow execution",
-          "Automatic data enrichment and processing",
-          "Scheduled and event-driven triggers"
+          "Groups overdue threads by urgency tier into a single Slack message with Block Kit formatting",
+          "Includes action buttons for Snooze, Mark Resolved, and View in Gmail deep links",
+          "Sends direct messages only for Tier 3 urgent threads to protect attention budget",
+          "All-clear messages when no threads are overdue to confirm the system is active"
         ]
       },
       {
-        "category": "Communication",
-        "icon": "message-square",
+        "category": "Persistent Tracking",
+        "icon": "database",
         "color": "green",
         "items": [
-          "Structured reports via in-app messaging",
-          "Memory-based learning across runs",
-          "Human review for critical decisions"
+          "Maintains a tracking ledger across scan cycles via agent memory with thread IDs, timestamps, and escalation state",
+          "Resolved thread set prevents re-tracking of already-answered emails within the lookback window",
+          "Configurable max tracked threads with intelligent pruning (VIP threads never auto-pruned)",
+          "Recipient reply statistics build a rolling profile of expected response times per contact"
         ]
       },
       {
-        "category": "Reliability",
-        "icon": "shield",
+        "category": "Flexible Operation",
+        "icon": "settings",
         "color": "amber",
         "items": [
-          "Graceful fallback on service unavailability",
-          "Duplicate detection and idempotent processing",
-          "Error logging and retry mechanisms"
+          "Three operating modes: scheduled scan, on-demand check, and reply detection",
+          "Configurable threshold hours, lookback window, VIP boost percentage, and max tracked threads",
+          "On-demand mode shows all threads (not just overdue) for pre-meeting preparation",
+          "Falls back to in-app notifications when Slack is unavailable"
         ]
       }
     ],
-    "suggested_connectors": [],
+    "suggested_connectors": [
+      {
+        "name": "gmail",
+        "label": "Gmail",
+        "auth_type": "oauth2",
+        "credential_fields": [
+          {
+            "key": "client_id",
+            "label": "OAuth Client ID",
+            "type": "text",
+            "placeholder": "your-client-id.apps.googleusercontent.com",
+            "helpText": "OAuth 2.0 Client ID from Google Cloud Console. Create credentials under APIs & Services > Credentials > OAuth 2.0 Client IDs.",
+            "required": true
+          },
+          {
+            "key": "client_secret",
+            "label": "OAuth Client Secret",
+            "type": "password",
+            "placeholder": "GOCSPX-...",
+            "helpText": "The client secret associated with your OAuth Client ID.",
+            "required": true
+          },
+          {
+            "key": "refresh_token",
+            "label": "Refresh Token",
+            "type": "password",
+            "placeholder": "1//0...",
+            "helpText": "OAuth refresh token obtained after user consent. Used to generate access tokens for Gmail API calls.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Go to Google Cloud Console > APIs & Services > Library and enable the Gmail API\n2. Create OAuth 2.0 credentials (Desktop or Web application type)\n3. Add the required scope: https://www.googleapis.com/auth/gmail.readonly\n4. Complete the OAuth consent flow to obtain a refresh token\n5. The agent only needs read access -- it never sends or modifies emails",
+        "scopes": [
+          "https://www.googleapis.com/auth/gmail.readonly"
+        ],
+        "related_tools": [
+          "gmail"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://gmail.googleapis.com",
+        "role": "email_source",
+        "category": "communication"
+      },
+      {
+        "name": "slack",
+        "label": "Slack",
+        "auth_type": "bot_token",
+        "credential_fields": [
+          {
+            "key": "bot_token",
+            "label": "Bot User OAuth Token",
+            "type": "password",
+            "placeholder": "xoxb-...",
+            "helpText": "Bot token from your Slack app's OAuth & Permissions page. Requires chat:write and chat:write.public scopes.",
+            "required": true
+          },
+          {
+            "key": "channel_id",
+            "label": "Default Channel ID",
+            "type": "text",
+            "placeholder": "C0123456789",
+            "helpText": "The Slack channel ID where follow-up reminders will be posted. Right-click a channel > View channel details > copy the Channel ID at the bottom.",
+            "required": true
+          }
+        ],
+        "setup_instructions": "1. Create a Slack App at https://api.slack.com/apps\n2. Under OAuth & Permissions, add Bot Token Scopes: chat:write, chat:write.public\n3. Install the app to your workspace and copy the Bot User OAuth Token\n4. Invite the bot to the target channel: /invite @YourBotName\n5. Copy the channel ID from the channel details panel",
+        "scopes": [
+          "chat:write",
+          "chat:write.public"
+        ],
+        "related_tools": [
+          "slack"
+        ],
+        "related_triggers": [
+          0
+        ],
+        "api_base_url": "https://slack.com/api",
+        "role": "notification_delivery",
+        "category": "communication"
+      }
+    ],
     "suggested_notification_channels": [
       {
         "type": "slack",
-        "description": "structured_summary",
+        "description": "Batched follow-up reminders grouped by urgency tier with Block Kit formatting, action buttons, and VIP indicators",
+        "required_connector": "slack",
         "config_hints": {
-          "target": "#general"
+          "channel": "#follow-ups"
         }
       },
       {
         "type": "built-in",
-        "description": "updates",
+        "description": "In-app status updates and fallback delivery when Slack is unavailable, plus on-demand check results",
         "config_hints": {
           "target": "status"
         }
@@ -97,176 +191,309 @@
     ],
     "suggested_event_subscriptions": [
       {
-        "event_type": "manual_review_completed",
-        "description": "Event"
-      },
-      {
-        "event_type": "reminder_sent",
-        "description": "Event"
+        "event_type": "scan_completed",
+        "description": "Emitted after each scheduled scan cycle with totals: threads tracked, overdue count, newly resolved, and new threads discovered"
       },
       {
         "event_type": "email_reply_detected",
-        "description": "Event"
+        "description": "Emitted when a tracked thread receives a reply, including recipient address, subject, and hours elapsed since the original send"
+      },
+      {
+        "event_type": "reminder_sent",
+        "description": "Emitted when a Slack reminder batch is posted, with counts per urgency tier and the total number of overdue threads"
+      },
+      {
+        "event_type": "thread_escalated",
+        "description": "Emitted when a thread advances to Tier 3 urgent status, indicating it needs manual human follow-up action"
+      }
+    ],
+    "suggested_parameters": [
+      {
+        "key": "follow_up_threshold_hours",
+        "label": "Follow-Up Threshold (hours)",
+        "type": "number",
+        "default": 48,
+        "description": "Hours after sending before an unanswered email is flagged as overdue. VIP contacts use a reduced threshold based on the priority boost setting."
+      },
+      {
+        "key": "max_tracked_threads",
+        "label": "Max Tracked Threads",
+        "type": "number",
+        "default": 50,
+        "description": "Maximum number of threads to track simultaneously. When exceeded, the oldest non-VIP threads are pruned first. Prevents runaway tracking for high-volume senders."
+      },
+      {
+        "key": "vip_priority_boost",
+        "label": "VIP Priority Boost (%)",
+        "type": "number",
+        "default": 50,
+        "description": "Percentage by which the follow-up threshold is reduced for VIP contacts. A value of 50 with a 48-hour threshold means VIPs are flagged at 24 hours."
+      },
+      {
+        "key": "scan_lookback_days",
+        "label": "Scan Lookback Window (days)",
+        "type": "number",
+        "default": 7,
+        "description": "How far back to search for sent emails on each scan. Threads older than this window are dropped from tracking. Increase for slower-paced correspondence."
       }
     ],
     "use_case_flows": [
       {
-        "id": "flow_1",
-        "name": "Email Thread Monitoring",
-        "description": "Scan Gmail for outbound emails sent by the user and track whether they have received any replies (including auto-replies). Mark threads as resolved once any response is detected.",
+        "id": "flow_scheduled_scan",
+        "name": "Email Scan & Tracking",
+        "description": "The primary scheduled workflow: load tracking state, fetch sent emails from Gmail, check reply status per thread, filter by age threshold with VIP prioritization, compose a batched reminder, send Slack notifications, and update tracking memory.",
         "nodes": [
           {
             "id": "n1",
             "type": "start",
-            "label": "Trigger",
-            "detail": "Execution starts"
+            "label": "Scheduled scan fires (every 4 hours)",
+            "detail": "Cron trigger activates the scan cycle"
           },
           {
             "id": "n2",
             "type": "action",
-            "label": "Process Data",
-            "detail": "Analyze and enrich input"
+            "label": "Load tracking state from memory",
+            "detail": "Read active tracking ledger: thread IDs, VIP list, escalation state, resolved set, recipient reply patterns"
           },
           {
             "id": "n3",
-            "type": "decision",
-            "label": "Needs Review?",
-            "detail": "Check if human approval needed"
+            "type": "connector",
+            "label": "Fetch sent emails from Gmail",
+            "detail": "Query in:sent within lookback window, fetch thread metadata for each, skip already-resolved threads",
+            "connector": "gmail"
           },
           {
             "id": "n4",
             "type": "action",
-            "label": "Generate Output",
-            "detail": "Create report or take action"
+            "label": "Check reply status per thread",
+            "detail": "For each tracked thread, count messages and check From headers to detect replies from recipients"
           },
           {
             "id": "n5",
-            "type": "event",
-            "label": "Notify",
-            "detail": "Send results via messaging"
+            "type": "decision",
+            "label": "Reply detected?",
+            "detail": "Determine if any thread has received a reply since the last scan"
           },
           {
             "id": "n6",
+            "type": "action",
+            "label": "Auto-resolve replied threads",
+            "detail": "Move replied threads to resolved set, update recipient reply pattern statistics, emit email_reply_detected events"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Filter by age threshold",
+            "detail": "Calculate hours elapsed, apply VIP priority boost, classify overdue threads into Tier 1 (new), Tier 2 (nudge), Tier 3 (urgent)"
+          },
+          {
+            "id": "n8",
+            "type": "decision",
+            "label": "Any threads overdue?",
+            "detail": "Check if any tracked threads have exceeded their effective threshold"
+          },
+          {
+            "id": "n9",
+            "type": "action",
+            "label": "Compose reminder batch",
+            "detail": "Group overdue threads by urgency tier, add VIP indicators, format with time elapsed and reminder counts"
+          },
+          {
+            "id": "n10",
+            "type": "connector",
+            "label": "Send Slack notifications",
+            "detail": "Post batched reminder to channel with Block Kit, send DM for Tier 3 urgent threads, include action buttons",
+            "connector": "slack"
+          },
+          {
+            "id": "n11",
+            "type": "action",
+            "label": "Update tracking memory",
+            "detail": "Persist updated ledger, resolved threads, incremented reminder counts, recipient reply statistics"
+          },
+          {
+            "id": "n12",
+            "type": "event",
+            "label": "Emit scan_completed event",
+            "detail": "Emit event with total_tracked, overdue, resolved, and new_threads counts"
+          },
+          {
+            "id": "n13",
             "type": "end",
-            "label": "Complete",
-            "detail": "Store memory and finish"
+            "label": "Scan cycle complete",
+            "detail": "Tracking state saved, reminders delivered, next scan in 4 hours"
           }
         ],
         "edges": [
-          {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
-          },
-          {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4",
-            "label": "No",
-            "variant": "no"
-          },
-          {
-            "id": "e4",
-            "source": "n3",
-            "target": "n5",
-            "label": "Yes",
-            "variant": "yes"
-          },
-          {
-            "id": "e5",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e6",
-            "source": "n5",
-            "target": "n6"
-          }
+          { "id": "e1", "source": "n1", "target": "n2" },
+          { "id": "e2", "source": "n2", "target": "n3" },
+          { "id": "e3", "source": "n3", "target": "n4" },
+          { "id": "e4", "source": "n4", "target": "n5" },
+          { "id": "e5", "source": "n5", "target": "n6", "label": "Yes", "variant": "yes" },
+          { "id": "e6", "source": "n5", "target": "n7", "label": "No", "variant": "no" },
+          { "id": "e7", "source": "n6", "target": "n7" },
+          { "id": "e8", "source": "n7", "target": "n8" },
+          { "id": "e9", "source": "n8", "target": "n9", "label": "Yes", "variant": "yes" },
+          { "id": "e10", "source": "n8", "target": "n11", "label": "All clear", "variant": "no" },
+          { "id": "e11", "source": "n9", "target": "n10" },
+          { "id": "e12", "source": "n10", "target": "n11" },
+          { "id": "e13", "source": "n11", "target": "n12" },
+          { "id": "e14", "source": "n12", "target": "n13" }
         ]
       },
       {
-        "id": "flow_2",
-        "name": "Overdue Reminder Notifications",
-        "description": "Identify emails that have been unanswered for 48+ hours and send formatted Slack messages with email subject, recipient, and time elapsed since sending.",
+        "id": "flow_on_demand_check",
+        "name": "On-Demand Status Report",
+        "description": "User-triggered comprehensive status check showing all tracked threads (not just overdue) for pre-meeting preparation or end-of-day review.",
         "nodes": [
           {
             "id": "n1",
             "type": "start",
-            "label": "Trigger",
-            "detail": "Execution starts"
+            "label": "User triggers manual check",
+            "detail": "Manual trigger activated for immediate status review"
           },
           {
             "id": "n2",
             "type": "action",
-            "label": "Process Data",
-            "detail": "Analyze and enrich input"
+            "label": "Load current tracking state",
+            "detail": "Read active ledger and resolved set from memory"
           },
           {
             "id": "n3",
-            "type": "decision",
-            "label": "Needs Review?",
-            "detail": "Check if human approval needed"
+            "type": "connector",
+            "label": "Refresh thread status from Gmail",
+            "detail": "Fetch latest reply status for all tracked threads",
+            "connector": "gmail"
           },
           {
             "id": "n4",
             "type": "action",
-            "label": "Generate Output",
-            "detail": "Create report or take action"
+            "label": "Classify all tracked threads",
+            "detail": "Categorize into: awaiting reply (with hours elapsed), recently resolved, VIP status, overdue vs within threshold"
           },
           {
             "id": "n5",
-            "type": "event",
-            "label": "Notify",
-            "detail": "Send results via messaging"
+            "type": "action",
+            "label": "Generate comprehensive report",
+            "detail": "Full status of ALL threads, not just overdue. Include time elapsed, recipient, subject, and tracking duration"
           },
           {
             "id": "n6",
+            "type": "connector",
+            "label": "Deliver via Slack and in-app",
+            "detail": "Post report to Slack channel and send as in-app user_message for immediate visibility",
+            "connector": "slack"
+          },
+          {
+            "id": "n7",
+            "type": "action",
+            "label": "Update reply status in memory",
+            "detail": "Resolve any newly replied threads discovered during refresh. Do NOT advance escalation tiers"
+          },
+          {
+            "id": "n8",
             "type": "end",
-            "label": "Complete",
-            "detail": "Store memory and finish"
+            "label": "Report delivered",
+            "detail": "User has current status of all email follow-ups"
           }
         ],
         "edges": [
-          {
-            "id": "e1",
-            "source": "n1",
-            "target": "n2"
-          },
-          {
-            "id": "e2",
-            "source": "n2",
-            "target": "n3"
-          },
-          {
-            "id": "e3",
-            "source": "n3",
-            "target": "n4",
-            "label": "No",
-            "variant": "no"
-          },
-          {
-            "id": "e4",
-            "source": "n3",
-            "target": "n5",
-            "label": "Yes",
-            "variant": "yes"
-          },
-          {
-            "id": "e5",
-            "source": "n4",
-            "target": "n5"
-          },
-          {
-            "id": "e6",
-            "source": "n5",
-            "target": "n6"
-          }
+          { "id": "e1", "source": "n1", "target": "n2" },
+          { "id": "e2", "source": "n2", "target": "n3" },
+          { "id": "e3", "source": "n3", "target": "n4" },
+          { "id": "e4", "source": "n4", "target": "n5" },
+          { "id": "e5", "source": "n5", "target": "n6" },
+          { "id": "e6", "source": "n6", "target": "n7" },
+          { "id": "e7", "source": "n7", "target": "n8" }
         ]
+      },
+      {
+        "id": "flow_reply_resolution",
+        "name": "Reply Detection & Auto-Resolution",
+        "description": "Processes detected replies to automatically resolve tracked threads, update recipient statistics, and confirm resolution via Slack.",
+        "nodes": [
+          {
+            "id": "n1",
+            "type": "start",
+            "label": "Reply signal detected during scan",
+            "detail": "Thread message count increased with a non-user From address"
+          },
+          {
+            "id": "n2",
+            "type": "action",
+            "label": "Look up thread in tracking ledger",
+            "detail": "Match thread ID against active tracking set"
+          },
+          {
+            "id": "n3",
+            "type": "decision",
+            "label": "Thread currently tracked?",
+            "detail": "Check if this thread is in the active ledger"
+          },
+          {
+            "id": "n4",
+            "type": "action",
+            "label": "Move to resolved set",
+            "detail": "Remove from active tracking, add to resolved set with resolution timestamp"
+          },
+          {
+            "id": "n5",
+            "type": "action",
+            "label": "Update recipient reply patterns",
+            "detail": "Calculate response time, update rolling average for this recipient in memory"
+          },
+          {
+            "id": "n6",
+            "type": "connector",
+            "label": "Send resolution confirmation",
+            "detail": "Post brief Slack message: recipient, subject, hours to reply",
+            "connector": "slack"
+          },
+          {
+            "id": "n7",
+            "type": "event",
+            "label": "Emit email_reply_detected",
+            "detail": "Event includes recipient, subject, thread ID, and response time in hours"
+          },
+          {
+            "id": "n8",
+            "type": "end",
+            "label": "Thread resolved",
+            "detail": "No further reminders will be sent for this thread"
+          }
+        ],
+        "edges": [
+          { "id": "e1", "source": "n1", "target": "n2" },
+          { "id": "e2", "source": "n2", "target": "n3" },
+          { "id": "e3", "source": "n3", "target": "n4", "label": "Yes", "variant": "yes" },
+          { "id": "e4", "source": "n3", "target": "n8", "label": "Not tracked", "variant": "no" },
+          { "id": "e5", "source": "n4", "target": "n5" },
+          { "id": "e6", "source": "n5", "target": "n6" },
+          { "id": "e7", "source": "n6", "target": "n7" },
+          { "id": "e8", "source": "n7", "target": "n8" }
+        ]
+      }
+    ],
+    "protocol_capabilities": [
+      {
+        "type": "manual_review",
+        "label": "Human review for Tier 3 urgent threads that need manual follow-up action or decision to stop tracking",
+        "context": "Urgent threads are surfaced with full context (subject, recipient, days elapsed, prior reminder count) so the user can decide to send a follow-up, call instead, or close the thread"
+      },
+      {
+        "type": "user_message",
+        "label": "In-app status reports for on-demand checks and fallback delivery when Slack is unavailable",
+        "context": "On-demand reports show all tracked threads (not just overdue) with time elapsed and VIP indicators for pre-meeting preparation"
+      },
+      {
+        "type": "agent_memory",
+        "label": "Persists the tracking ledger, VIP contact list, resolved thread set, reminder escalation state, and per-recipient reply pattern statistics",
+        "context": "Memory enables continuity across scan cycles -- threads are tracked until resolved or they exit the lookback window. Recipient patterns improve follow-up timing over weeks of operation"
+      },
+      {
+        "type": "emit_event",
+        "label": "Emits scan_completed, email_reply_detected, reminder_sent, and thread_escalated events for downstream agents and audit logging",
+        "context": "Events include structured data: thread counts, recipient details, urgency tiers, and response time metrics"
       }
     ],
     "adoption_questions": [
@@ -282,7 +509,7 @@
           "1 week"
         ],
         "default": "48 hours",
-        "context": "Sets the follow-up window after which an email is considered overdue.",
+        "context": "Sets the follow-up threshold after which an email is considered overdue. VIP contacts will be flagged sooner based on the priority boost percentage.",
         "dimension": "triggers"
       },
       {
@@ -292,7 +519,7 @@
         "type": "boolean",
         "options": [],
         "default": "true",
-        "context": "When enabled, emails to VIPs and key contacts are flagged sooner than others.",
+        "context": "When enabled, emails to VIP contacts are flagged at a reduced threshold (e.g., 24h instead of 48h). You can define VIP contacts by email domain or individual address after setup.",
         "dimension": "use-cases"
       },
       {
@@ -303,11 +530,10 @@
         "options": [
           "Slack message",
           "In-app notification",
-          "Email digest",
           "Both Slack and in-app"
         ],
-        "default": "Slack message",
-        "context": "Determines the notification channel for overdue email reminders.",
+        "default": "Both Slack and in-app",
+        "context": "Determines the primary notification channel. Slack delivers batched reminders with action buttons. In-app provides a persistent status view. Using both ensures you never miss a reminder.",
         "dimension": "messages"
       },
       {
@@ -317,8 +543,33 @@
         "type": "boolean",
         "options": [],
         "default": "true",
-        "context": "Uses agent memory to track which threads have been replied to and stops reminding.",
+        "context": "Uses agent memory to track which threads have received replies and stops all further reminders. Also builds per-recipient reply pattern statistics to improve future threshold estimates.",
         "dimension": "memory"
+      },
+      {
+        "id": "aq_domain_2",
+        "category": "domain",
+        "question": "Which VIP contacts or domains should receive priority tracking?",
+        "type": "text",
+        "placeholder": "ceo@partner.com, @importantclient.com, @investor.co",
+        "default": "",
+        "context": "Enter email addresses or @domain patterns for contacts who should be flagged sooner than the standard threshold. The agent will also learn to suggest new VIPs based on your reply urgency patterns.",
+        "dimension": "use-cases"
+      },
+      {
+        "id": "aq_config_3",
+        "category": "configuration",
+        "question": "How far back should the agent scan for sent emails?",
+        "type": "select",
+        "options": [
+          "3 days",
+          "7 days (recommended)",
+          "14 days",
+          "30 days"
+        ],
+        "default": "7 days (recommended)",
+        "context": "Sets the lookback window for each scan. Longer windows catch slower-paced correspondence but increase Gmail API usage. Threads older than this window are automatically dropped from tracking.",
+        "dimension": "triggers"
       }
     ],
     "persona_meta": {

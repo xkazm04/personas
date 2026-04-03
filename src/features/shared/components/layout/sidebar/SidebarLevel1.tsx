@@ -13,6 +13,7 @@ import { TIERS, isTierVisible } from '@/lib/constants/uiModes';
 import { sections } from './sidebarData';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useIsDarkTheme } from '@/stores/themeStore';
 
 interface SidebarLevel1Props {
   collapsed: boolean;
@@ -53,16 +54,21 @@ export default function SidebarLevel1({
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const feedbackImprovementComplete = useSystemStore((s) => s.feedbackImprovementComplete);
-  const { pendingReviewCount } = useBadgeCounts();
+  const { pendingReviewCount, unreadMessageCount } = useBadgeCounts();
   const isLabRunning = useAgentStore((s) => s.isLabRunning);
   const isExecuting = useAgentStore((s) => s.isExecuting);
   const buildPhase = useAgentStore((s) => s.buildPhase);
   const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
   const isBuildingOrTesting = !!buildPersonaId && !!buildPhase && buildPhase !== 'initializing' && buildPhase !== 'promoted';
   const isDev = import.meta.env.DEV;
+  const isDark = useIsDarkTheme();
   const tier = useTier();
   const labelOf = useSidebarLabels();
   const { t } = useTranslation();
+  // Theme-synced L1 active: light uses stronger styling, dark uses subtler
+  const l1ActiveClass = isDark
+    ? 'bg-primary/10 border border-primary/20'
+    : 'bg-primary/15 border border-primary/30 shadow-[0_0_12px_rgba(59,130,246,0.15)]';
 
   // Build badge definitions per section, ordered by priority (lower = higher).
   // Priority guide: 1 = count badges (actionable), 2 = executing, 3 = testing,
@@ -78,6 +84,15 @@ export default function SidebarLevel1({
           variant: 'count',
           color: 'bg-amber-500 shadow-amber-500/30',
           count: pendingReviewCount,
+        },
+        {
+          id: 'unread-messages',
+          priority: 1,
+          active: unreadMessageCount > 0,
+          label: `${unreadMessageCount} unread message${unreadMessageCount !== 1 ? 's' : ''}`,
+          variant: 'count',
+          color: 'bg-blue-500 shadow-blue-500/30',
+          count: unreadMessageCount,
         },
       ],
       personas: [
@@ -165,7 +180,7 @@ export default function SidebarLevel1({
     };
     return map;
   }, [
-    pendingReviewCount, isExecuting, isLabRunning, connectorTestActive,
+    pendingReviewCount, unreadMessageCount, isExecuting, isLabRunning, connectorTestActive,
     feedbackImprovementComplete, n8nTransformActive, templateAdoptActive,
     rebuildActive, templateTestActive, contextScanActive, contextScanComplete,
     setContextScanComplete, creativeSessionRunning,
@@ -216,7 +231,7 @@ export default function SidebarLevel1({
               {isActive && !isDisabled && (
                 <motion.div
                   layoutId="sidebarSectionIndicator"
-                  className="absolute inset-0 rounded-xl bg-primary/15 border border-primary/30 shadow-[0_0_12px_rgba(59,130,246,0.15)]"
+                  className={`absolute inset-0 rounded-xl ${l1ActiveClass}`}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}

@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
+  Video,
 } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -78,6 +79,12 @@ function parseDecisions(contextData: string | null | undefined): { decisions: De
 /** Check if a decision has any visual content */
 function getDecisionImage(d: DecisionItem): string | null {
   return d.image_url || d.gallery_image_ref || d.preview_url || null;
+}
+
+/** Detect video URLs by extension */
+const VIDEO_EXT_RE = /\.(mp4|webm|mov|avi|mkv|ogv)(\?.*)?$/i;
+function isVideoUrl(url: string): boolean {
+  return VIDEO_EXT_RE.test(url);
 }
 
 // ---------------------------------------------------------------------------
@@ -459,17 +466,27 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                     <p className="text-sm text-foreground/90 leading-relaxed">{current!.description}</p>
                   )}
 
-                  {/* Gallery-level image (single image review like art director) */}
+                  {/* Gallery-level media (single image/video review like art director) */}
                   {galleryImage && !hasDecisions && (
                     <>
                       <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                       <div className="rounded-lg overflow-hidden border border-primary/10 bg-black/20">
-                        <img
-                          src={galleryImage}
-                          alt={current!.title}
-                          className="w-full max-h-[50vh] object-contain"
-                          loading="lazy"
-                        />
+                        {isVideoUrl(galleryImage) ? (
+                          <video
+                            src={galleryImage}
+                            controls
+                            className="w-full max-h-[50vh] object-contain"
+                          >
+                            Your browser does not support video playback.
+                          </video>
+                        ) : (
+                          <img
+                            src={galleryImage}
+                            alt={current!.title}
+                            className="w-full max-h-[50vh] object-contain"
+                            loading="lazy"
+                          />
+                        )}
                       </div>
                     </>
                   )}
@@ -560,13 +577,24 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   {suggestedActions.length > 0 && (
                     <>
                       <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-                      <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                        <Zap className="w-3.5 h-3.5 text-foreground/40 flex-shrink-0" />
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-1.5 text-sm text-foreground/40">
+                          <Zap className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="font-medium">Quick Actions</span>
+                        </div>
                         {suggestedActions.map((action, i) => (
-                          <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-foreground/80 border border-primary/10 whitespace-nowrap">
-                            <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold">{i + 1}</span>
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              setActiveAction('approve');
+                              setActionNotes(action);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground/80 bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-colors text-left"
+                          >
+                            <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0">{i + 1}</span>
                             {action}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     </>
@@ -652,19 +680,32 @@ function FocusedDecisionCard({ decision, verdict, onToggle, imageUrl }: FocusedD
       {hasImage ? (
         /* ---- Image + Text side-by-side layout ---- */
         <div className="flex flex-col md:flex-row">
-          {/* Image panel */}
+          {/* Media panel (image or video) */}
           <div className="md:w-1/2 bg-black/20 flex items-center justify-center min-h-[200px] max-h-[400px] overflow-hidden">
-            <img
-              src={imageUrl!}
-              alt={decision.label}
-              className="w-full h-full object-contain"
-              loading="lazy"
-              onError={(e) => {
-                // Fallback to placeholder on load error
-                (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="flex flex-col items-center gap-2 py-12 text-foreground/30"><svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v14.25a1.5 1.5 0 001.5 1.5z" /></svg><span class="text-sm">Image unavailable</span></div>';
-              }}
-            />
+            {isVideoUrl(imageUrl!) ? (
+              <video
+                src={imageUrl!}
+                controls
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLVideoElement).style.display = 'none';
+                  (e.target as HTMLVideoElement).parentElement!.innerHTML = '<div class="flex flex-col items-center gap-2 py-12 text-foreground/30"><svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" /></svg><span class="text-sm">Video unavailable</span></div>';
+                }}
+              >
+                Your browser does not support video playback.
+              </video>
+            ) : (
+              <img
+                src={imageUrl!}
+                alt={decision.label}
+                className="w-full h-full object-contain"
+                loading="lazy"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="flex flex-col items-center gap-2 py-12 text-foreground/30"><svg class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 001.5-1.5V5.25a1.5 1.5 0 00-1.5-1.5H3.75a1.5 1.5 0 00-1.5 1.5v14.25a1.5 1.5 0 001.5 1.5z" /></svg><span class="text-sm">Image unavailable</span></div>';
+                }}
+              />
+            )}
           </div>
           {/* Text panel */}
           <div className="md:w-1/2 p-4 flex flex-col justify-between">
@@ -673,7 +714,11 @@ function FocusedDecisionCard({ decision, verdict, onToggle, imageUrl }: FocusedD
                 {decision.category && (
                   <span className="text-xs font-medium text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{decision.category}</span>
                 )}
-                <ImageIcon className="w-3 h-3 text-foreground/30" />
+                {isVideoUrl(imageUrl!) ? (
+                  <Video className="w-3 h-3 text-foreground/30" />
+                ) : (
+                  <ImageIcon className="w-3 h-3 text-foreground/30" />
+                )}
               </div>
               <h3 className="text-base font-semibold text-foreground mb-2">{decision.label}</h3>
               {decision.description && (

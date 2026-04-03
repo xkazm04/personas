@@ -1,0 +1,46 @@
+{
+  "id": "builtin-elevenlabs",
+  "name": "elevenlabs",
+  "label": "ElevenLabs",
+  "color": "#000000",
+  "icon_url": "/icons/connectors/elevenlabs.svg",
+  "category": "ai",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Generate at elevenlabs.io → Profile → API Keys",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.elevenlabs.io/v1/user/subscription",
+    "method": "GET",
+    "headers": {
+      "xi-api-key": "{{api_key}}"
+    },
+    "description": "Validates API key via ElevenLabs /user/subscription endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "ElevenLabs AI voice generation, text-to-speech, and audio processing platform.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://elevenlabs.io/docs/api-reference",
+    "setup_guide": "1. Go to elevenlabs.io and sign in\n2. Click your profile icon → Profile + API key\n3. Click the eye icon or 'Create API Key'\n4. Copy the generated API key",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
+    ]
+  }
+}

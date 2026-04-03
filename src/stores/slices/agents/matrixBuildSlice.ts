@@ -16,6 +16,7 @@ import type {
   ToolTestResult,
 } from "@/lib/types/buildTypes";
 import type { MatrixEditState } from "@/features/templates/sub_generated/gallery/matrix/matrixEditTypes";
+import { storeBus } from "@/lib/storeBus";
 
 // -- Slice interface --------------------------------------------------------
 
@@ -289,9 +290,12 @@ export const createMatrixBuildSlice: StateCreator<
       event.total_count > 0
         ? (event.resolved_count / event.total_count) * 100
         : 0;
-    set({
-      buildPhase: event.phase as BuildPhase,
-      buildProgress: progress,
+    set((s) => {
+      if (s.buildPersonaId) storeBus.emit('build:phase-changed', { phase: event.phase, personaId: s.buildPersonaId });
+      return {
+        buildPhase: event.phase as BuildPhase,
+        buildProgress: progress,
+      };
     });
   },
 
@@ -308,10 +312,13 @@ export const createMatrixBuildSlice: StateCreator<
   },
 
   handleTestComplete: (passed, outputPreview) => {
-    set({
-      buildPhase: "test_complete",
-      buildTestPassed: passed,
-      buildTestOutputLines: [outputPreview],
+    set((s) => {
+      if (s.buildPersonaId) storeBus.emit('build:phase-changed', { phase: 'test_complete', personaId: s.buildPersonaId });
+      return {
+        buildPhase: "test_complete" as BuildPhase,
+        buildTestPassed: passed,
+        buildTestOutputLines: [outputPreview],
+      };
     });
   },
 

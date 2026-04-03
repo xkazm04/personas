@@ -178,8 +178,13 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   // When questions are completed, store answers in the build draft and transition to draft_ready.
   // Adoption sessions are pre-designed templates — they don't have active LLM build tasks,
   // so we skip the refinement call and apply answers directly as parameter overrides.
+  // Guard: never overwrite a more advanced phase (testing, test_complete, promoted).
   useEffect(() => {
     if (!questionsComplete || !seeded) return;
+
+    const currentPhase = useAgentStore.getState().buildPhase;
+    // Don't regress phase if a test or promotion is already in progress
+    if (currentPhase === "testing" || currentPhase === "test_complete" || currentPhase === "promoted") return;
 
     // Merge adoption answers into the build draft as parameter overrides
     const currentDraft = useAgentStore.getState().buildDraft as Record<string, unknown> | null;
@@ -219,12 +224,15 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         });
         setPersonaId(persona.id);
 
-        // Create an adoption build session so test_build_draft can work
+        // Create an adoption build session so test_build_draft can work.
+        // Pass resolvedCellsJson so hydrateBuildSession restores populated cells.
         const agentIrJson = JSON.stringify(designResult);
+        const resolvedCellsJson = JSON.stringify(dimensionData);
         const sessionId = await invokeWithTimeout<string>("create_adoption_session", {
           personaId: persona.id,
           intent: review.instruction || templateName,
           agentIrJson,
+          resolvedCellsJson,
         });
 
         useAgentStore.setState({

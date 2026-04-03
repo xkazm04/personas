@@ -107,6 +107,8 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
   ntfy:                            'personal',
   obsidian:                        'personal',
 
+  elevenlabs:                      'personal',
+
   // -- Paid (no meaningful free tier) ------------------
   leonardo_ai:                     'paid',
   cal_com:                         'personal',

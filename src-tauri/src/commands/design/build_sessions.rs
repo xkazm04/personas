@@ -76,23 +76,27 @@ pub async fn start_build_session(
 
 /// Create a build session record from a pre-built design result (template adoption).
 /// Does NOT spawn CLI — just inserts the session with agent_ir so test_build_draft works.
+/// `resolved_cells_json` carries the pre-extracted dimension data so hydration restores
+/// populated matrix cells (instead of the empty `{}` that was previously hardcoded).
 #[tauri::command]
 pub async fn create_adoption_session(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
     intent: String,
     agent_ir_json: String,
+    resolved_cells_json: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
     let session_id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
+    let cells = resolved_cells_json.unwrap_or_else(|| "{}".to_string());
 
     let conn = state.db.get()?;
     conn.execute(
         "INSERT INTO build_sessions (id, persona_id, phase, resolved_cells, intent, agent_ir, created_at, updated_at)
-         VALUES (?1, ?2, 'draft_ready', '{}', ?3, ?4, ?5, ?5)",
-        rusqlite::params![session_id, persona_id, intent, agent_ir_json, now],
+         VALUES (?1, ?2, 'draft_ready', ?3, ?4, ?5, ?6, ?6)",
+        rusqlite::params![session_id, persona_id, cells, intent, agent_ir_json, now],
     )?;
 
     tracing::info!(

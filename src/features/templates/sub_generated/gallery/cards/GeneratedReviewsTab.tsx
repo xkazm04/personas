@@ -13,6 +13,8 @@ import { BackgroundBanners } from '../explore/BackgroundBanners';
 import { TrendingCarousel } from '../explore/TrendingCarousel';
 import { EmptyState } from '../explore/EmptyState';
 import { ExploreView } from '../explore/ExploreView';
+import { ExploreVariantA } from '../explore/ExploreVariantA';
+import { ExploreVariantB } from '../explore/ExploreVariantB';
 import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
 import { TemplateVirtualList } from './TemplateVirtualList';
@@ -49,6 +51,7 @@ export default function GeneratedReviewsTab({
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [density, setDensityRaw] = useState<Density>('comfortable');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [exploreVariant, setExploreVariant] = useState<'classic' | 'role' | 'need'>('role');
 
   const credentialServiceTypesArray = useMemo(
     () => credentials.map((c) => c.service_type),
@@ -203,14 +206,51 @@ export default function GeneratedReviewsTab({
       )}
 
       {viewMode === 'explore' ? (
-        <ExploreView
-          availableCategories={gallery.availableCategories}
-          allItems={gallery.allItems}
-          readyTemplates={gallery.readyTemplates}
-          userServiceTypes={credentialServiceTypesArray}
-          onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setViewMode('list'); }}
-          onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
-        />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Explore variant picker */}
+          <div className="flex items-center gap-1 px-4 py-2 border-b border-primary/10 flex-shrink-0">
+            {([['role', 'By Role'], ['need', 'By Need'], ['classic', 'Classic']] as const).map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setExploreVariant(id)}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  exploreVariant === id ? 'bg-primary/10 text-foreground font-medium' : 'text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/30'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {exploreVariant === 'role' ? (
+            <ExploreVariantA
+              availableCategories={gallery.availableCategories}
+              allItems={gallery.allItems}
+              readyTemplates={gallery.readyTemplates}
+              userServiceTypes={credentialServiceTypesArray}
+              onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setViewMode('list'); }}
+              onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
+            />
+          ) : exploreVariant === 'need' ? (
+            <ExploreVariantB
+              availableCategories={gallery.availableCategories}
+              allItems={gallery.allItems}
+              readyTemplates={gallery.readyTemplates}
+              userServiceTypes={credentialServiceTypesArray}
+              onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setViewMode('list'); }}
+              onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
+              onSearchFocus={() => setViewMode('list')}
+            />
+          ) : (
+            <ExploreView
+              availableCategories={gallery.availableCategories}
+              allItems={gallery.allItems}
+              readyTemplates={gallery.readyTemplates}
+              userServiceTypes={credentialServiceTypesArray}
+              onSelectCategory={(cat) => { gallery.setCategoryFilter([cat]); setViewMode('list'); }}
+              onSelectTemplate={(t) => modals.open({ type: 'detail', review: t })}
+            />
+          )}
+        </div>
       ) : (
       <div className="flex-1 flex flex-col overflow-hidden">
         <TemplateVirtualList

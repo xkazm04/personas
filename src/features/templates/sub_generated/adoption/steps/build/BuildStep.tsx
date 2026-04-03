@@ -39,7 +39,7 @@ function BuildQuestionnaire({
   onAnswerUpdated,
   onSubmit,
 }: {
-  questions: { id: string; question: string; type: 'select' | 'text' | 'textarea' | 'boolean' | 'devtools_project'; options?: string[]; default?: string; context?: string; category?: string; allow_custom?: boolean }[];
+  questions: { id: string; question: string; type: 'select' | 'text' | 'textarea' | 'boolean' | 'devtools_project' | 'directory_picker'; options?: string[]; default?: string; context?: string; category?: string; allow_custom?: boolean }[];
   userAnswers: Record<string, string>;
   onAnswerUpdated: (questionId: string, answer: string) => void;
   onSubmit: () => void;

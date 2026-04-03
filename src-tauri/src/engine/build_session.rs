@@ -814,6 +814,11 @@ pub async fn run_tool_tests(
 
     // Build connector resolution list for the report so the frontend can show
     // which connectors were matched to user credentials.
+    // Check three sources: resolved env vars, credential hints, AND vault service types.
+    let vault_types_lower: std::collections::HashSet<String> = all_vault_types
+        .iter()
+        .map(|t| t.to_lowercase())
+        .collect();
     let connectors_resolved: Vec<serde_json::Value> = {
         let names: Vec<String> = agent_ir.required_connectors.iter()
             .filter_map(|c| c.name().map(|n| n.to_string()))
@@ -824,7 +829,11 @@ pub async fn run_tool_tests(
                 let name_lower = name.to_lowercase();
                 let matched = resolved_cred_names.contains(&name_lower)
                     || resolved_cred_names.iter().any(|cred| name_lower.contains(cred.as_str()) || cred.contains(&name_lower))
-                    || hints.iter().any(|h| h.to_lowercase().contains(&name_lower));
+                    || hints.iter().any(|h| h.to_lowercase().contains(&name_lower))
+                    // Also match against vault service types (covers connectors not matched
+                    // by tool name, e.g. alpha_vantage credential for http_request tool)
+                    || vault_types_lower.contains(&name_lower)
+                    || vault_types_lower.iter().any(|vt| name_lower.contains(vt.as_str()) || vt.contains(&name_lower));
                 serde_json::json!({
                     "name": name,
                     "has_credential": matched,

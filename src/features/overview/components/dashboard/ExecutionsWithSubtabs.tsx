@@ -1,7 +1,7 @@
 import { Suspense, useState, startTransition } from 'react';
 import { Activity, Workflow } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
-import GlobalExecutionList from '@/features/overview/sub_executions/components/GlobalExecutionList';
+import GlobalExecutionList from '@/features/overview/sub_activity/components/GlobalExecutionList';
 import { lazyRetry } from '@/lib/lazyRetry';
 
 const WorkflowsDashboard = lazyRetry(() => import('@/features/overview/sub_workflows/components/WorkflowsDashboard'));
