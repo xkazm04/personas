@@ -1208,6 +1208,15 @@ async fn run_lab_loop(
     }
 
     let now = chrono::Utc::now().to_rfc3339();
+
+    // Guard: if the run was cancelled while we were finishing, do not overwrite
+    // the "cancelled" status with "completed" — that would corrupt the state.
+    if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+        tracing::info!(run_id, "Skipping completed status write — run was cancelled");
+        emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
+        return;
+    }
+
     (cb.update_status)(pool, run_id, LabRunStatus::Completed, None, Some(&summary_str), None, Some(&now));
 
     let _ = app.emit(cb.event_name, TestRunStatusEvent {

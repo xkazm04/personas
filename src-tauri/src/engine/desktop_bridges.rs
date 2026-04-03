@@ -783,6 +783,9 @@ pub mod obsidian {
                         Some(f) => vault.join(f),
                         None => vault.to_path_buf(),
                     };
+                    if !search_path.starts_with(vault) {
+                        return Err(AppError::Forbidden("Path traversal detected".into()));
+                    }
                     let mut notes = Vec::new();
                     collect_markdown_files(&search_path, vault, &mut notes)?;
                     Ok(notes.join("\n"))

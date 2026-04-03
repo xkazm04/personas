@@ -171,8 +171,12 @@ pub async fn test_credential_design_healthcheck(
     // Post-resolution SSRF defense: reject private/internal addresses
     validate_healthcheck_url(&resolved_endpoint)?;
 
+    // Use the SSRF-safe DNS resolver to prevent DNS rebinding attacks where a
+    // hostname passes validate_healthcheck_url with a public IP, then re-resolves
+    // to a private/internal IP at connection time.
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
+        .dns_resolver(std::sync::Arc::new(crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver))
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
 

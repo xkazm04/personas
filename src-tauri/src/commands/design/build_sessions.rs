@@ -721,7 +721,7 @@ fn create_triggers_in_tx(
         let use_case_id = use_case_ids.get(idx)
             .or_else(|| use_case_ids.last())
             .cloned();
-        let encrypted_config = config.as_deref().map(trigger_repo::encrypt_config);
+        let encrypted_config = config.as_deref().map(trigger_repo::encrypt_config).transpose()?;
 
         let trigger_id = uuid::Uuid::new_v4().to_string();
         let status = "active";

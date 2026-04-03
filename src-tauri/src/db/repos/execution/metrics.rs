@@ -464,20 +464,34 @@ fn percentile(sorted: &[f64], p: f64) -> f64 {
     }
 }
 
-/// Detect cost anomalies in global chart data using the same rolling
-/// 5-day window with >100% deviation threshold as the per-persona detector.
-fn detect_chart_anomalies(points: &[MetricsChartPoint]) -> Vec<MetricAnomaly> {
+/// Generic rolling-window anomaly detector.
+///
+/// Scans a slice of items, extracting a value via `extract_value` and a date
+/// via `extract_date`. If the value deviates from the rolling window average
+/// by more than `upper_pct`% (positive spike) or less than `lower_pct`%
+/// (sudden drop), an anomaly is recorded.
+///
+/// `resolve_exec_id` optionally maps the item index to an associated execution ID.
+fn detect_rolling_anomalies<T>(
+    items: &[T],
+    window: usize,
+    metric_name: &str,
+    extract_value: impl Fn(&T) -> f64,
+    extract_date: impl Fn(&T) -> &str,
+    resolve_exec_id: impl Fn(usize) -> Option<String>,
+    upper_pct: f64,
+    lower_pct: f64,
+) -> Vec<MetricAnomaly> {
     let mut anomalies = Vec::new();
-    let window = 5;
 
-    for i in 0..points.len() {
-        let value = points[i].cost;
+    for i in 0..items.len() {
+        let value = extract_value(&items[i]);
         if value == 0.0 {
             continue;
         }
 
         let start = i.saturating_sub(window);
-        let preceding: Vec<f64> = (start..i).map(|j| points[j].cost).collect();
+        let preceding: Vec<f64> = (start..i).map(|j| extract_value(&items[j])).collect();
         if preceding.is_empty() {
             continue;
         }
@@ -487,14 +501,14 @@ fn detect_chart_anomalies(points: &[MetricsChartPoint]) -> Vec<MetricAnomaly> {
         }
 
         let deviation_pct = ((value - baseline) / baseline) * 100.0;
-        if deviation_pct > 100.0 || deviation_pct < -50.0 {
+        if deviation_pct > upper_pct || deviation_pct < lower_pct {
             anomalies.push(MetricAnomaly {
-                date: points[i].date.clone(),
-                metric: "cost".to_string(),
+                date: extract_date(&items[i]).to_string(),
+                metric: metric_name.to_string(),
                 value,
                 baseline,
                 deviation_pct,
-                execution_id: None,
+                execution_id: resolve_exec_id(i),
             });
         }
     }
@@ -502,69 +516,42 @@ fn detect_chart_anomalies(points: &[MetricsChartPoint]) -> Vec<MetricAnomaly> {
     anomalies
 }
 
-/// Detect anomalies: points where a metric deviates > 2x from its
-/// rolling 5-day average (or the overall average for early points).
+/// Detect cost anomalies in global chart data using a rolling 5-day
+/// window with >100% / <-50% deviation thresholds.
+fn detect_chart_anomalies(points: &[MetricsChartPoint]) -> Vec<MetricAnomaly> {
+    detect_rolling_anomalies(
+        points, 5, "cost",
+        |p| p.cost,
+        |p| &p.date,
+        |_| None,
+        100.0, -50.0,
+    )
+}
+
+/// Detect anomalies across cost, error_rate, and latency metrics for a
+/// single persona's prompt performance data.
 #[allow(clippy::type_complexity)]
 fn detect_anomalies(
     daily_points: &[PromptPerformancePoint],
     worst_cost_by_date: &HashMap<String, (String, f64)>,
     worst_duration_by_date: &HashMap<String, (String, f64)>,
 ) -> Vec<MetricAnomaly> {
-    let mut anomalies = Vec::new();
-    let window = 5;
-
-    // Check cost, error_rate, and latency
-    let metrics: Vec<(&str, Box<dyn Fn(&PromptPerformancePoint) -> f64>)> = vec![
-        ("cost", Box::new(|p: &PromptPerformancePoint| p.avg_cost_usd)),
-        ("error_rate", Box::new(|p: &PromptPerformancePoint| p.error_rate)),
-        ("latency", Box::new(|p: &PromptPerformancePoint| p.p95_duration_ms)),
+    let metrics: Vec<(&str, Box<dyn Fn(&PromptPerformancePoint) -> f64>, &HashMap<String, (String, f64)>)> = vec![
+        ("cost", Box::new(|p: &PromptPerformancePoint| p.avg_cost_usd), worst_cost_by_date),
+        ("error_rate", Box::new(|p: &PromptPerformancePoint| p.error_rate), worst_cost_by_date),
+        ("latency", Box::new(|p: &PromptPerformancePoint| p.p95_duration_ms), worst_duration_by_date),
     ];
 
-    for (metric_name, extract) in &metrics {
-        // Pick the appropriate worst-exec map for this metric
-        let worst_map = match *metric_name {
-            "latency" => worst_duration_by_date,
-            // cost and error_rate both link to the most expensive execution
-            _ => worst_cost_by_date,
-        };
-
-        for i in 0..daily_points.len() {
-            let value = extract(&daily_points[i]);
-            if value == 0.0 {
-                continue;
-            }
-
-            // Compute baseline as rolling window average of preceding points
-            let start = i.saturating_sub(window);
-            let preceding: Vec<f64> = (start..i).map(|j| extract(&daily_points[j])).collect();
-            if preceding.is_empty() {
-                continue;
-            }
-            let baseline = preceding.iter().sum::<f64>() / preceding.len() as f64;
-            if baseline == 0.0 {
-                continue;
-            }
-
-            let deviation_pct = ((value - baseline) / baseline) * 100.0;
-
-            // Flag if deviation > 100% (2x baseline) or < -50% (sudden drop)
-            if deviation_pct > 100.0 || deviation_pct < -50.0 {
-                let exec_id = worst_map
-                    .get(&daily_points[i].date)
-                    .map(|(id, _)| id.clone());
-
-                anomalies.push(MetricAnomaly {
-                    date: daily_points[i].date.clone(),
-                    metric: metric_name.to_string(),
-                    value,
-                    baseline,
-                    deviation_pct,
-                    execution_id: exec_id,
-                });
-            }
-        }
+    let mut anomalies = Vec::new();
+    for (metric_name, extract, worst_map) in &metrics {
+        anomalies.extend(detect_rolling_anomalies(
+            daily_points, 5, metric_name,
+            |p| extract(p),
+            |p| &p.date,
+            |i| worst_map.get(&daily_points[i].date).map(|(id, _)| id.clone()),
+            100.0, -50.0,
+        ));
     }
-
     anomalies
 }
 

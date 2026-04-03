@@ -16,15 +16,12 @@ pub(crate) fn validate_config(trigger_type: &str, config: Option<&str>) -> Resul
 }
 
 /// Encrypt sensitive fields in a trigger config JSON string before writing to DB.
-/// Returns the original string if encryption fails (best-effort -- logged, not fatal).
-pub(crate) fn encrypt_config(config: &str) -> String {
-    match crypto::encrypt_trigger_config(config) {
-        Ok(encrypted) => encrypted,
-        Err(e) => {
-            tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
-            config.to_string()
-        }
-    }
+/// Returns an error if encryption fails -- secrets must never be stored in plaintext.
+pub(crate) fn encrypt_config(config: &str) -> Result<String, AppError> {
+    crypto::encrypt_trigger_config(config).map_err(|e| {
+        tracing::error!("Failed to encrypt trigger config: {}", e);
+        AppError::Internal(format!("Trigger config encryption failed: {e}"))
+    })
 }
 
 row_mapper!(row_to_trigger -> PersonaTrigger {
@@ -109,7 +106,7 @@ pub fn create(pool: &DbPool, input: CreateTriggerInput) -> Result<PersonaTrigger
         let enabled_i = enabled as i32;
 
         // Encrypt sensitive config fields before writing to DB
-        let encrypted_config = input.config.as_deref().map(encrypt_config);
+        let encrypted_config = input.config.as_deref().map(encrypt_config).transpose()?;
 
         {
             let conn = pool.get()?;
@@ -170,7 +167,7 @@ pub fn update(
         }
 
         // Encrypt sensitive config fields before writing to DB
-        let encrypted_config = input.config.as_deref().map(encrypt_config);
+        let encrypted_config = input.config.as_deref().map(encrypt_config).transpose()?;
 
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;

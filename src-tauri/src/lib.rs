@@ -303,7 +303,7 @@ pub struct AppState {
     /// negotiation, automation_design, auto_cred).
     pub process_registry: Arc<ActiveProcessRegistry>,
     /// Authentication state (Supabase OAuth).
-    pub auth: Arc<tokio::sync::Mutex<commands::infrastructure::auth::AuthStateInner>>,
+    pub auth: Arc<tokio::sync::RwLock<commands::infrastructure::auth::AuthStateInner>>,
     /// Serialises token refresh attempts so that only one in-flight refresh
     /// executes at a time, preventing the race where concurrent callers each
     /// consume the same single-use refresh token (Supabase rotates on use).
@@ -590,7 +590,7 @@ pub fn run() {
 
             let scheduler = Arc::new(engine::background::SchedulerState::new());
             let engine = Arc::new(engine::ExecutionEngine::new(log_dir, scheduler.clone(), Some(Arc::new(pool.clone()))));
-            let auth = Arc::new(tokio::sync::Mutex::new(
+            let auth = Arc::new(tokio::sync::RwLock::new(
                 commands::infrastructure::auth::AuthStateInner::default(),
             ));
 

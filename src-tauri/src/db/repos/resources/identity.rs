@@ -189,24 +189,39 @@ pub fn update_trusted_peer(
     timed_query!("identity_links", "identity_links::update_trusted_peer", {
         let conn = pool.get()?;
 
+        // Build a single dynamic UPDATE to apply all fields atomically,
+        // avoiding partial updates if the process crashes mid-way.
+        let mut set_clauses = Vec::new();
+        let mut params_vec: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
         if let Some(name) = &input.display_name {
-            conn.execute(
-                "UPDATE trusted_peers SET display_name = ?1 WHERE peer_id = ?2",
-                params![name, peer_id],
-            )?;
+            set_clauses.push(format!("display_name = ?{}", params_vec.len() + 1));
+            params_vec.push(Box::new(name.clone()));
         }
         if let Some(level) = &input.trust_level {
-            conn.execute(
-                "UPDATE trusted_peers SET trust_level = ?1 WHERE peer_id = ?2",
-                params![level.to_string(), peer_id],
-            )?;
+            set_clauses.push(format!("trust_level = ?{}", params_vec.len() + 1));
+            params_vec.push(Box::new(level.to_string()));
         }
         if let Some(notes_opt) = &input.notes {
-            conn.execute(
-                "UPDATE trusted_peers SET notes = ?1 WHERE peer_id = ?2",
-                params![notes_opt, peer_id],
-            )?;
+            set_clauses.push(format!("notes = ?{}", params_vec.len() + 1));
+            params_vec.push(Box::new(notes_opt.clone()));
         }
+
+        if !set_clauses.is_empty() {
+            let peer_idx = params_vec.len() + 1;
+            let sql = format!(
+                "UPDATE trusted_peers SET {} WHERE peer_id = ?{}",
+                set_clauses.join(", "),
+                peer_idx,
+            );
+            params_vec.push(Box::new(peer_id.to_string()));
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+            let changed = conn.execute(&sql, params_ref.as_slice())?;
+            if changed == 0 {
+                return Err(AppError::NotFound(format!("Trusted peer {peer_id}")));
+            }
+        }
+
         get_trusted_peer(pool, peer_id)
 
     })

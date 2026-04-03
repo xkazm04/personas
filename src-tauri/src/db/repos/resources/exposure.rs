@@ -124,10 +124,13 @@ pub fn create_exposed_resource(
         let fields_json = serde_json::to_string(&input.fields_exposed)?;
         let tags_json = serde_json::to_string(&input.tags)?;
         let conn = pool.get()?;
-        conn.execute(
+        // Use ON CONFLICT DO NOTHING to atomically prevent duplicate exposure
+        // entries, closing the TOCTOU race in the command-layer duplicate check.
+        let rows = conn.execute(
             "INSERT INTO exposed_resources (id, resource_type, resource_id, display_name, description,
              fields_exposed, access_level, requires_auth, tags, expires_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+             ON CONFLICT(resource_type, resource_id) DO NOTHING",
             params![
                 id,
                 input.resource_type.to_string(),
@@ -141,6 +144,9 @@ pub fn create_exposed_resource(
                 input.expires_at,
             ],
         )?;
+        if rows == 0 {
+            return Err(AppError::Validation("This resource is already exposed".into()));
+        }
         get_exposed_resource(pool, &id)
 
     })

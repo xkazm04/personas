@@ -81,6 +81,29 @@ fn validate_event_input(input: &CreatePersonaEventInput) -> Result<(), AppError>
 }
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/// Encrypt an optional payload for at-rest storage.
+///
+/// Returns `(stored_payload, payload_iv)`. If encryption fails, the plaintext
+/// is returned with `None` IV and a warning is logged.
+fn encrypt_optional_payload(payload: &Option<String>) -> (Option<String>, Option<String>) {
+    match payload {
+        Some(plaintext) if !plaintext.is_empty() => {
+            match crypto::encrypt_for_db(plaintext) {
+                Ok((ct, iv)) => (Some(ct), Some(iv)),
+                Err(e) => {
+                    tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
+                    (Some(plaintext.clone()), None)
+                }
+            }
+        }
+        other => (other.clone(), None),
+    }
+}
+
+// ============================================================================
 // Row Mappers
 // ============================================================================
 
@@ -152,18 +175,7 @@ pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaE
         let project_id = input.project_id.unwrap_or_else(|| "default".into());
 
         // Encrypt payload at rest if present
-        let (stored_payload, payload_iv) = match &input.payload {
-            Some(plaintext) if !plaintext.is_empty() => {
-                match crypto::encrypt_for_db(plaintext) {
-                    Ok((ct, iv)) => (Some(ct), Some(iv)),
-                    Err(e) => {
-                        tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
-                        (Some(plaintext.clone()), None)
-                    }
-                }
-            }
-            other => (other.clone(), None),
-        };
+        let (stored_payload, payload_iv) = encrypt_optional_payload(&input.payload);
 
         let conn = pool.get()?;
         conn.execute(
@@ -280,12 +292,21 @@ pub fn update_status(
             None
         };
 
-        conn.execute(
+        // Use WHERE status = current to close the TOCTOU gap: if another thread
+        // changed the status between our SELECT and this UPDATE, rows_affected
+        // will be 0 and we reject the stale transition.
+        let rows = conn.execute(
             "UPDATE persona_events
              SET status = ?1, error_message = ?2, processed_at = ?3
-             WHERE id = ?4",
-            params![status_str, error_message, processed_at, id],
+             WHERE id = ?4 AND status = ?5",
+            params![status_str, error_message, processed_at, id, current_str],
         )?;
+
+        if rows == 0 {
+            return Err(AppError::Validation(format!(
+                "Event {id} status changed concurrently (expected '{current_str}')"
+            )));
+        }
 
         Ok(())
     })
@@ -433,18 +454,7 @@ pub fn publish_dead_letter(
         let now = chrono::Utc::now().to_rfc3339();
         let project_id = input.project_id.unwrap_or_else(|| "default".into());
 
-        let (stored_payload, payload_iv) = match &input.payload {
-            Some(plaintext) if !plaintext.is_empty() => {
-                match crypto::encrypt_for_db(plaintext) {
-                    Ok((ct, iv)) => (Some(ct), Some(iv)),
-                    Err(e) => {
-                        tracing::warn!("Failed to encrypt dead-letter payload, storing plaintext: {}", e);
-                        (Some(plaintext.clone()), None)
-                    }
-                }
-            }
-            other => (other.clone(), None),
-        };
+        let (stored_payload, payload_iv) = encrypt_optional_payload(&input.payload);
 
         let conn = pool.get()?;
         conn.execute(
@@ -580,35 +590,34 @@ pub fn increment_retry_or_dead_letter(
     timed_query!("persona_events", "persona_events::increment_retry_or_dead_letter", {
         let conn = pool.get()?;
 
-        // Get current retry_count
-        let current_retries: i32 = conn.query_row(
-            "SELECT retry_count FROM persona_events WHERE id = ?1",
+        // Atomically increment retry_count and conditionally set status in a
+        // single UPDATE to avoid TOCTOU races with concurrent retry attempts.
+        let now = chrono::Utc::now().to_rfc3339();
+
+        // Use a single atomic UPDATE that increments retry_count and conditionally
+        // sets status based on whether the new count exceeds max_retries.
+        let rows = conn.execute(
+            "UPDATE persona_events
+             SET retry_count = retry_count + 1,
+                 error_message = ?1,
+                 processed_at = ?2,
+                 status = CASE WHEN retry_count + 1 >= ?3 THEN 'dead_letter' ELSE 'failed' END
+             WHERE id = ?4",
+            params![error_message, now, max_retries, id],
+        )?;
+
+        if rows == 0 {
+            return Err(AppError::NotFound(format!("PersonaEvent {id}")));
+        }
+
+        // Check if it was moved to dead letter
+        let final_status: String = conn.query_row(
+            "SELECT status FROM persona_events WHERE id = ?1",
             params![id],
             |row| row.get(0),
         ).map_err(|_| AppError::NotFound(format!("PersonaEvent {id}")))?;
 
-        let new_count = current_retries + 1;
-        let now = chrono::Utc::now().to_rfc3339();
-
-        if new_count >= max_retries {
-            // Move to dead letter queue
-            conn.execute(
-                "UPDATE persona_events
-                 SET status = 'dead_letter', retry_count = ?1, error_message = ?2, processed_at = ?3
-                 WHERE id = ?4",
-                params![new_count, error_message, now, id],
-            )?;
-            Ok(true)
-        } else {
-            // Mark as failed with incremented retry count
-            conn.execute(
-                "UPDATE persona_events
-                 SET status = 'failed', retry_count = ?1, error_message = ?2, processed_at = ?3
-                 WHERE id = ?4",
-                params![new_count, error_message, now, id],
-            )?;
-            Ok(false)
-        }
+        Ok(final_status == "dead_letter")
     })
 }
 

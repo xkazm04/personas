@@ -20,9 +20,16 @@ use crate::engine::scheduler as sched_logic;
 const INITIAL_BACKOFF_SECS: u64 = 30;
 const MAX_BACKOFF_SECS: u64 = 300;
 
+/// Maximum number of entries in the backoff map before LRU eviction.
+const MAX_BACKOFF_ENTRIES: usize = 1000;
+/// Entries older than this TTL are evicted regardless of trigger state.
+const BACKOFF_TTL_SECS: u64 = 3600; // 1 hour
+
 struct BackoffEntry {
     until: Instant,
     failures: u32,
+    /// When this entry was last updated (for TTL eviction).
+    last_updated: Instant,
 }
 
 fn backoff_map() -> &'static Mutex<HashMap<String, BackoffEntry>> {
@@ -38,13 +45,31 @@ fn is_in_backoff(trigger_id: &str) -> bool {
 
 fn record_mark_failure(trigger_id: &str) {
     let Ok(mut map) = backoff_map().lock() else { return };
+
+    // TTL eviction: remove entries that haven't been updated in BACKOFF_TTL_SECS
+    let now = Instant::now();
+    let ttl = Duration::from_secs(BACKOFF_TTL_SECS);
+    map.retain(|_, e| now.duration_since(e.last_updated) < ttl);
+
+    // LRU-style cap: if still over limit, remove the oldest entries
+    if map.len() >= MAX_BACKOFF_ENTRIES {
+        if let Some(oldest_key) = map
+            .iter()
+            .min_by_key(|(_, e)| e.last_updated)
+            .map(|(k, _)| k.clone())
+        {
+            map.remove(&oldest_key);
+        }
+    }
+
     let entry = map
         .entry(trigger_id.to_string())
-        .or_insert(BackoffEntry { until: Instant::now(), failures: 0 });
+        .or_insert(BackoffEntry { until: now, failures: 0, last_updated: now });
     entry.failures += 1;
+    entry.last_updated = now;
     let exp = entry.failures.min(4) - 1;
     let secs = (INITIAL_BACKOFF_SECS * 2u64.pow(exp)).min(MAX_BACKOFF_SECS);
-    entry.until = Instant::now() + Duration::from_secs(secs);
+    entry.until = now + Duration::from_secs(secs);
 }
 
 fn clear_backoff(trigger_id: &str) {

@@ -1065,6 +1065,18 @@ fn apply_oauth_outcome(
     if let Some(s) = sessions.get_mut(session_id) {
         match outcome {
             OAuthCallbackOutcome::Success(tokens) => {
+                // Warn if no refresh_token was returned -- the credential will
+                // work until the access token expires, then silently die because
+                // the refresh engine won't find a refresh_token to use.
+                if tokens.refresh_token.is_none() {
+                    tracing::warn!(
+                        session_id = session_id,
+                        provider = audit_subject,
+                        "OAuth completed without a refresh_token. The credential will \
+                         not be refreshable. The provider may require prompt=consent \
+                         or offline_access scope."
+                    );
+                }
                 s.status = OAuthSessionStatus::complete();
                 s.access_token = encrypt_token(tokens.access_token);
                 s.refresh_token = encrypt_token(tokens.refresh_token);

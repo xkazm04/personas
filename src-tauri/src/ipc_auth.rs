@@ -274,7 +274,7 @@ pub fn require_auth_sync(_state: &Arc<AppState>) -> Result<(), AppError> {
 /// Used only for cloud/remote commands (cloud_*, gitlab_*).
 #[allow(dead_code)]
 pub fn require_cloud_auth_sync(state: &Arc<AppState>, command: &str) -> Result<(), AppError> {
-    match state.auth.try_lock() {
+    match state.auth.try_read() {
         Ok(auth) => {
             // Cloud commands require a real access token -- a cached user
             // profile alone (offline mode) is not sufficient because cloud
@@ -356,7 +356,7 @@ pub async fn require_privileged(state: &Arc<AppState>, command: &str) -> Result<
 /// Async auth check that enforces Google OAuth.
 /// Used only for cloud/remote commands (cloud_*, gitlab_*).
 pub async fn require_cloud_auth(state: &Arc<AppState>, command: &str) -> Result<(), AppError> {
-    let auth = state.auth.lock().await;
+    let auth = state.auth.read().await;
 
     // Cloud commands require a real access token -- a cached user
     // profile alone (offline mode) is not sufficient because cloud

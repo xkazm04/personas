@@ -67,8 +67,13 @@ export const listExecutionsForUseCase = (
 export const getExecutionLog = (id: string, callerPersonaId: string) =>
   invoke<string | null>("get_execution_log", { id, callerPersonaId });
 
-export const getExecutionLogLines = (id: string, callerPersonaId: string) =>
-  invoke<string[]>("get_execution_log_lines", { id, callerPersonaId });
+export const getExecutionLogLines = (
+  id: string,
+  callerPersonaId: string,
+  offset?: number,
+  limit?: number,
+) =>
+  invoke<string[]>("get_execution_log_lines", { id, callerPersonaId, offset, limit });
 
 // ============================================================================
 // Traces

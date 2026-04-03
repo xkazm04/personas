@@ -306,19 +306,25 @@ async fn probe_cli_tools() -> Vec<AuthDetection> {
                 // Skip probes whose binary path failed validation
                 let bin_path = maybe_path?;
 
-                let result = timeout(Duration::from_secs(3), async {
-                    let mut child = Command::new(&bin_path)
-                        .args(&args)
-                        .stdout(std::process::Stdio::piped())
-                        .stderr(std::process::Stdio::piped())
-                        // Clear env to prevent credential leaks to the subprocess.
-                        // Re-add only PATH (needed for child subprocesses) and
-                        // HOME/USERPROFILE (needed by many CLIs for config dirs).
-                        .env_clear()
-                        .envs(sanitized_env())
-                        .spawn()
-                        .ok()?;
+                // Spawn child outside the timeout so we can kill it if the
+                // deadline fires. Dropping a tokio::process::Child without
+                // calling kill() orphans the process on both Unix and Windows.
+                let mut child = match Command::new(&bin_path)
+                    .args(&args)
+                    .stdout(std::process::Stdio::piped())
+                    .stderr(std::process::Stdio::piped())
+                    // Clear env to prevent credential leaks to the subprocess.
+                    // Re-add only PATH (needed for child subprocesses) and
+                    // HOME/USERPROFILE (needed by many CLIs for config dirs).
+                    .env_clear()
+                    .envs(sanitized_env())
+                    .spawn()
+                {
+                    Ok(c) => c,
+                    Err(_) => return None,
+                };
 
+                let result = timeout(Duration::from_secs(3), async {
                     // Read stdout and stderr with size limits
                     let mut stdout_reader = child.stdout.take()?;
                     let mut stderr_reader = child.stderr.take()?;
@@ -344,6 +350,12 @@ async fn probe_cli_tools() -> Vec<AuthDetection> {
                     }
                 })
                 .await;
+
+                // If the timeout fired, explicitly kill the child process to
+                // prevent orphaned processes from accumulating.
+                if result.is_err() {
+                    let _ = child.kill().await;
+                }
 
                 match result {
                     Ok(Some(identity)) => Some(AuthDetection {

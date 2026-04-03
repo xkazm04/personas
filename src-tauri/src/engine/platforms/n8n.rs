@@ -214,8 +214,10 @@ impl N8nClient {
             return Err(AppError::Validation("Webhook URL must use https (or http for localhost)".into()));
         }
 
-        if parsed_webhook.host_str() != parsed_base.host_str() {
-            return Err(AppError::Validation("Webhook URL host must match the n8n instance base URL".into()));
+        if parsed_webhook.host_str() != parsed_base.host_str()
+            || parsed_webhook.port_or_known_default() != parsed_base.port_or_known_default()
+        {
+            return Err(AppError::Validation("Webhook URL origin (host+port) must match the n8n instance base URL".into()));
         }
 
         let resp = self

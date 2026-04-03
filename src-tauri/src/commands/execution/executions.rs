@@ -307,29 +307,62 @@ pub fn get_execution_log(
 }
 
 /// Get parsed display lines from the execution log for session recovery (replay after refresh).
+///
+/// Supports pagination via optional `offset` and `limit` parameters to avoid
+/// loading entire multi-MB log files into memory.  When neither is supplied the
+/// command returns the **last 500** matching lines (tail mode).
 #[tauri::command]
 pub fn get_execution_log_lines(
     state: State<'_, Arc<AppState>>,
     id: String,
     caller_persona_id: String,
+    offset: Option<usize>,
+    limit: Option<usize>,
 ) -> Result<Vec<String>, AppError> {
     require_auth_sync(&state)?;
     let execution = repo::get_by_id(&state.db, &id)?;
     verify_execution_owner(&execution, &caller_persona_id)?;
     if let Some(ref path) = execution.log_file_path {
         let requested = safe_resolve_log_path(path, state.engine.log_dir())?;
-        match std::fs::read_to_string(&requested) {
-            Ok(content) => {
-                let lines: Vec<String> = content
-                    .lines()
-                    .filter_map(|line| {
-                        // Extract display text from log lines with [STDOUT] prefix
-                        line.find("[STDOUT] ").map(|pos| line[pos + 9..].to_string())
-                    })
-                    .collect();
-                Ok(lines)
+        let file = match std::fs::File::open(&requested) {
+            Ok(f) => f,
+            Err(_) => return Ok(vec![]),
+        };
+        let reader = std::io::BufReader::new(file);
+        use std::io::BufRead;
+
+        let max_lines = limit.unwrap_or(500);
+        let skip = offset.unwrap_or(0);
+
+        // When no offset is given, return the *last* `max_lines` (tail mode)
+        // to show the most recent output.  With an explicit offset, return
+        // lines starting from that position.
+        if offset.is_some() {
+            // Forward pagination: skip `offset` matching lines, take `limit`
+            let lines: Vec<String> = reader
+                .lines()
+                .filter_map(|l| l.ok())
+                .filter_map(|line| {
+                    line.find("[STDOUT] ").map(|pos| line[pos + 9..].to_string())
+                })
+                .skip(skip)
+                .take(max_lines)
+                .collect();
+            Ok(lines)
+        } else {
+            // Tail mode: collect only the last `max_lines` matching lines
+            // using a ring buffer to keep memory bounded.
+            use std::collections::VecDeque;
+            let mut ring = VecDeque::with_capacity(max_lines + 1);
+            for line in reader.lines().filter_map(|l| l.ok()) {
+                if let Some(pos) = line.find("[STDOUT] ") {
+                    ring.push_back(line[pos + 9..].to_string());
+                    if ring.len() > max_lines {
+                        ring.pop_front();
+                    }
+                }
             }
-            Err(_) => Ok(vec![]),
+            Ok(ring.into_iter().collect())
         }
     } else {
         Ok(vec![])

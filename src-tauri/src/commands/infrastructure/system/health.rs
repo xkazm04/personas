@@ -80,7 +80,7 @@ pub async fn system_health_check(
     sections.push(build_cloud_section(cloud_connected));
 
     // -- Section 4: Account --
-    let auth = state.auth.lock().await;
+    let auth = state.auth.read().await;
     let auth_resp = auth.to_response();
     drop(auth);
     sections.push(build_account_section(&auth_resp));
@@ -167,7 +167,7 @@ pub async fn health_check_account(
     state: State<'_, Arc<AppState>>,
 ) -> Result<HealthCheckSection, AppError> {
     require_auth_sync(&state)?;
-    let auth = state.auth.lock().await;
+    let auth = state.auth.read().await;
     let auth_resp = auth.to_response();
     drop(auth);
     Ok(build_account_section(&auth_resp))

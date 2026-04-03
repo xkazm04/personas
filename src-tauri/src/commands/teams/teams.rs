@@ -299,7 +299,19 @@ pub async fn execute_team(
 
     tokio::spawn(async move {
         let _guard = run_guard;
-        pipeline_executor::run_pipeline(ctx).await;
+        let db_for_panic = ctx.db.clone();
+        let run_id_for_panic = ctx.run_id.clone();
+        let result = std::panic::AssertUnwindSafe(pipeline_executor::run_pipeline(ctx));
+        if futures_util::FutureExt::catch_unwind(result).await.is_err() {
+            tracing::error!(run_id = %run_id_for_panic, "Pipeline task panicked — marking run as failed");
+            let _ = team_repo::update_pipeline_run(
+                &db_for_panic,
+                &run_id_for_panic,
+                "failed",
+                "[]",
+                Some("Internal error: pipeline task panicked"),
+            );
+        }
     });
 
     Ok(run_id)

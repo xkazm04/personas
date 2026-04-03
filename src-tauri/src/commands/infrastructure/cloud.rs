@@ -156,7 +156,7 @@ pub async fn cloud_connect(
         .map_err(|e| AppError::Cloud(format!("Failed to store cloud config: {e}")))?;
 
     // Push Supabase user token to the cloud client for per-user isolation
-    if let Some(ref token) = state.auth.lock().await.access_token {
+    if let Some(ref token) = state.auth.read().await.access_token {
         client.set_user_token(Some(token.expose_secret().to_string())).await;
     }
 
@@ -211,7 +211,7 @@ pub async fn cloud_reconnect_from_keyring(
     let latency_ms = health_start.elapsed().as_millis() as u64;
 
     // Push Supabase user token to the cloud client for per-user isolation
-    if let Some(ref token) = state.auth.lock().await.access_token {
+    if let Some(ref token) = state.auth.read().await.access_token {
         client.set_user_token(Some(token.expose_secret().to_string())).await;
     }
 

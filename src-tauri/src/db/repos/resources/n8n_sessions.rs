@@ -103,7 +103,7 @@ pub fn update(
 
         // Static query: each column uses IIF(:flag, :value, existing) to conditionally update.
         // This avoids dynamic SQL with manual parameter index tracking.
-        conn.execute(
+        let rows_changed = conn.execute(
             "UPDATE n8n_transform_sessions SET
                 updated_at      = :now,
                 workflow_name    = IIF(:has_workflow_name,  :workflow_name,  workflow_name),
@@ -142,6 +142,10 @@ pub fn update(
                 ":questions_json":    input.questions_json.as_ref().and_then(|v| v.as_deref()),
             },
         )?;
+
+        if rows_changed == 0 {
+            return Err(AppError::NotFound(format!("N8nTransformSession {id}")));
+        }
 
         get(pool, id)
 

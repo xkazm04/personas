@@ -67,11 +67,13 @@ export default function App() {
     // These pull in all 5 domain stores — loading them async keeps
     // them out of the main bundle (~300 KB savings).
     // Loaded in parallel (no interdependency) to avoid a boot waterfall.
-    void Promise.all([
+    Promise.all([
       import("@/lib/storeBusWiring").then(m => m.initStoreBus()),
       import("@/lib/eventBridge").then(m => m.initAllListeners()),
       import("@/lib/execution/middleware").then(m => m.registerAllMiddleware()),
-    ]);
+    ]).catch((err) => {
+      console.error("[App] Critical startup module failed to initialize:", err);
+    });
     void useAuthStore.getState().initialize();
     // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.
     // Only loaded in dev builds; tree-shaken from production.

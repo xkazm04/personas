@@ -4,6 +4,7 @@ use serde::Deserialize;
 
 use crate::db::models::{Persona, PersonaDesignReview};
 
+use super::str_utils::truncate_str;
 use super::topology_types::{BlueprintConnection, BlueprintMember, TopologyBlueprint, compute_dag_layout};
 
 // ============================================================================
@@ -50,7 +51,7 @@ pub fn build_llm_topology_prompt(
         .filter(|p| p.enabled && !existing_set.contains(p.id.as_str()))
         .map(|p| {
             let prompt_snippet = if p.system_prompt.len() > 200 {
-                format!("{}...", &p.system_prompt[..200])
+                format!("{}...", truncate_str(&p.system_prompt, 200))
             } else {
                 p.system_prompt.clone()
             };
@@ -69,7 +70,7 @@ pub fn build_llm_topology_prompt(
         .take(50)
         .map(|t| {
             let snippet = if t.instruction.len() > 150 {
-                format!("{}...", &t.instruction[..150])
+                format!("{}...", truncate_str(&t.instruction, 150))
             } else {
                 t.instruction.clone()
             };

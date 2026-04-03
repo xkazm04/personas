@@ -4,6 +4,7 @@ import { SuspenseFallback } from '@/features/shared/components/feedback/Suspense
 import { Bot, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { useToastStore } from "@/stores/toastStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { UnsavedChangesBanner, CloudNudgeBanner, PartialLoadBanner } from './EditorBanners';
@@ -77,12 +78,19 @@ export function EditorBody() {
 
   const handleDelete = useCallback(async () => {
     if (!selectedPersona) return;
-    await deletePersona(selectedPersona.id);
-    const { buildPersonaId, resetBuildSession } = useAgentStore.getState();
-    if (buildPersonaId === selectedPersona.id) {
-      resetBuildSession();
+    try {
+      await deletePersona(selectedPersona.id);
+      const { buildPersonaId, resetBuildSession } = useAgentStore.getState();
+      if (buildPersonaId === selectedPersona.id) {
+        resetBuildSession();
+      }
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      console.error("[EditorBody] Failed to delete persona:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      useToastStore.getState().addToast(`Delete failed: ${msg}`, 'error');
+      // Keep the delete confirmation dialog open so the user can retry
     }
-    setShowDeleteConfirm(false);
   }, [selectedPersona, deletePersona, setShowDeleteConfirm]);
 
   if (!selectedPersona) {

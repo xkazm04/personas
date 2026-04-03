@@ -358,7 +358,7 @@ pub async fn login_with_google(
     // Reject if an OAuth flow is already in progress (e.g. double-click)
     // to avoid overwriting the CSRF nonce that the first flow's callback needs.
     {
-        let auth = state.auth.lock().await;
+        let auth = state.auth.read().await;
         if auth.pending_oauth_state.is_some() {
             return Err(AppError::Auth(
                 "An OAuth sign-in is already in progress".into(),
@@ -373,7 +373,7 @@ pub async fn login_with_google(
 
     // Store the state nonce so the callback handler can verify it
     {
-        let mut auth = state.auth.lock().await;
+        let mut auth = state.auth.write().await;
         auth.pending_oauth_state = Some(oauth_state.clone());
     }
 
@@ -446,7 +446,7 @@ pub async fn login_with_google(
 pub async fn get_auth_state(
     state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<AuthStateResponse, AppError> {
-    let auth = state.auth.lock().await;
+    let auth = state.auth.read().await;
     Ok(auth.to_response())
 }
 
@@ -455,7 +455,7 @@ pub async fn get_auth_state(
 pub async fn clear_pending_oauth(
     state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    let mut auth = state.auth.lock().await;
+    let mut auth = state.auth.write().await;
     auth.pending_oauth_state = None;
     tracing::info!("Cleared pending OAuth state");
     Ok(())
@@ -470,7 +470,7 @@ pub async fn logout(
     clear_tokens();
 
     {
-        let mut auth = state.auth.lock().await;
+        let mut auth = state.auth.write().await;
         *auth = AuthStateInner::default();
     }
 
@@ -509,7 +509,7 @@ pub async fn refresh_session(
     // After acquiring the lock, check whether the token is still valid.
     // A previous holder of the lock may have already completed a refresh.
     {
-        let auth = state.auth.lock().await;
+        let auth = state.auth.read().await;
         if let Some(expires_at) = auth.token_expires_at {
             if expires_at > std::time::Instant::now() + std::time::Duration::from_secs(30) {
                 tracing::debug!("Token already refreshed by a concurrent caller, skipping");
@@ -534,7 +534,7 @@ pub async fn refresh_session(
 
             let access_token = SecureString::new(token_resp.access_token);
             let response = {
-                let mut auth = state.auth.lock().await;
+                let mut auth = state.auth.write().await;
                 auth.access_token = Some(access_token.duplicate());
                 auth.user = Some(user);
                 auth.is_offline = false;
@@ -556,7 +556,7 @@ pub async fn refresh_session(
                 let cached_user = load_cached_user();
                 if cached_user.is_some() {
                     let response = {
-                        let mut auth = state.auth.lock().await;
+                        let mut auth = state.auth.write().await;
                         auth.user = cached_user;
                         auth.is_offline = true;
                         auth.to_response()
@@ -592,7 +592,7 @@ pub async fn handle_auth_callback(
     // Our CSRF nonce is in the query string as `app_state` (embedded in redirect_to).
     let state: &Arc<AppState> = &app.state::<Arc<AppState>>();
     {
-        let mut auth = state.auth.lock().await;
+        let mut auth = state.auth.write().await;
         let expected_state = auth.pending_oauth_state.take();
         let received_state = params.get("app_state");
 
@@ -648,7 +648,7 @@ pub async fn handle_auth_callback(
     // Update in-memory state
     let access_token = SecureString::new(access_token);
     let response = {
-        let mut auth = state.auth.lock().await;
+        let mut auth = state.auth.write().await;
         auth.access_token = Some(access_token.duplicate());
         auth.user = Some(user);
         auth.subscription = None; // Fetched lazily or in Phase 12
@@ -707,7 +707,7 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
                 + std::time::Duration::from_secs(token_resp.expires_in);
 
             let response = {
-                let mut auth = state.auth.lock().await;
+                let mut auth = state.auth.write().await;
                 auth.access_token = Some(SecureString::new(token_resp.access_token));
                 auth.user = Some(user);
                 auth.is_offline = false;
@@ -723,7 +723,7 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
             if matches!(&e, AppError::NetworkOffline(_)) {
                 if let Some(cached_user) = load_cached_user() {
                     let response = {
-                        let mut auth = state.auth.lock().await;
+                        let mut auth = state.auth.write().await;
                         auth.user = Some(cached_user);
                         auth.is_offline = true;
                         auth.to_response()
