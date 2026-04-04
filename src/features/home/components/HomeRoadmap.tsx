@@ -1,4 +1,5 @@
 import { Rocket } from 'lucide-react';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 interface RoadmapItem {
   id: string;
@@ -120,29 +121,22 @@ export default function HomeRoadmap() {
   const nextCount = items.filter((i) => i.status === 'next').length;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
-      {/* Background mesh */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[20%] w-[400px] h-[400px] bg-cyan-500/4 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[0%] right-[10%] w-[300px] h-[300px] bg-purple-500/3 blur-[100px] rounded-full" />
-      </div>
+    <ContentBox>
+      <ContentHeader
+        icon={<Rocket className="w-5 h-5 text-cyan-400" />}
+        iconColor="cyan"
+        title="Product Roadmap"
+        subtitle="What we're building now and what comes next."
+      />
+      <ContentBody centered>
+      <div className="relative">
+        {/* Background mesh */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] left-[20%] w-[400px] h-[400px] bg-cyan-500/4 blur-[120px] rounded-full" />
+          <div className="absolute bottom-[0%] right-[10%] w-[300px] h-[300px] bg-purple-500/3 blur-[100px] rounded-full" />
+        </div>
 
-      <div className="flex-1 overflow-y-auto relative z-10">
-        <div className="w-full max-w-2xl mx-auto px-6 py-6 space-y-6">
-          {/* Header */}
-          <div className="animate-fade-slide-in"
-          >
-            <div className="flex items-center gap-3 mb-1">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/15 ring-1 ring-cyan-500/20">
-                <Rocket className="w-4 h-4 text-cyan-400" />
-              </div>
-              <h1 className="text-lg font-semibold text-foreground/90">Product Roadmap</h1>
-            </div>
-            <p className="typo-body text-muted-foreground/50 ml-11">
-              What we're building now and what comes next.
-            </p>
-          </div>
-
+        <div className="w-full max-w-2xl mx-auto space-y-6 relative z-10">
           {/* Summary pills */}
           {items.length > 0 && (
             <>
@@ -178,6 +172,7 @@ export default function HomeRoadmap() {
           to { stroke-dashoffset: -24; }
         }
       `}</style>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }

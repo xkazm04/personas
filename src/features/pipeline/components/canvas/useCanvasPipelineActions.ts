@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { errMsg } from '@/stores/storeTypes';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -33,7 +34,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
     try {
       const data = await getPipelineAnalytics(selectedTeamId);
       dispatch({ type: 'SET_ANALYTICS', analytics: data });
-    } catch (err) { logger.error('Failed to fetch pipeline analytics', { error: String(err) }); }
+    } catch (err) { logger.error('Failed to fetch pipeline analytics', { error: errMsg(err, 'Unknown analytics error') }); }
     finally { dispatch({ type: 'SET_ANALYTICS_LOADING', loading: false }); }
   }, [selectedTeamId, dispatch]);
 
@@ -90,7 +91,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
   const handleExecuteTeam = useCallback(async () => {
     if (!selectedTeamId || cs.pipelineRunning) return;
     try { dispatch({ type: 'SET_PIPELINE_RUNNING', running: true }); await executeTeam(selectedTeamId); }
-    catch (err) { logger.error('Failed to execute team', { error: String(err) }); dispatch({ type: 'SET_PIPELINE_RUNNING', running: false }); }
+    catch (err) { logger.error('Failed to execute team', { error: errMsg(err, 'Unknown execution error') }); dispatch({ type: 'SET_PIPELINE_RUNNING', running: false }); }
   }, [selectedTeamId, cs.pipelineRunning, dispatch]);
 
   // -- Optimizer suggestions ------------------------------------------
@@ -110,7 +111,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
   // -- Canvas assistant -----------------------------------------------
   const handleAssistantSuggest = useCallback(async (query: string) => {
     try { return await suggestTopologyLlm(query, selectedTeamId ?? undefined); }
-    catch (err) { logger.warn('LLM topology failed, falling back to keyword-based', { error: String(err) }); return suggestTopology(query, selectedTeamId ?? undefined); }
+    catch (err) { logger.warn('LLM topology failed, falling back to keyword-based', { error: errMsg(err, 'LLM topology suggestion failed') }); return suggestTopology(query, selectedTeamId ?? undefined); }
   }, [selectedTeamId]);
 
   const handleAssistantApply = useCallback(async (blueprint: TopologyBlueprint) => {
@@ -121,7 +122,7 @@ export function useCanvasPipelineActions({ cs, dispatch }: UseCanvasPipelineActi
       for (const m of blueprint.members) { const member = await addTeamMember(m.persona_id, m.role, m.position_x, m.position_y); if (member) newMemberIds.push(member.id); }
       for (const c of blueprint.connections) { const sourceId = newMemberIds[c.source_index]; const targetId = newMemberIds[c.target_index]; if (sourceId && targetId) await createTeamConnection(sourceId, targetId, c.connection_type); }
       fetchAnalytics();
-    } catch (err) { logger.error('Failed to apply blueprint', { error: String(err) }); }
+    } catch (err) { logger.error('Failed to apply blueprint', { error: errMsg(err, 'Blueprint application failed') }); }
     finally { dispatch({ type: 'SET_ASSISTANT_APPLYING', applying: false }); }
   }, [selectedTeamId, addTeamMember, createTeamConnection, fetchAnalytics, dispatch]);
 

@@ -2,9 +2,9 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    DevContext, DevContextGroup, DevContextGroupRelationship, DevGoal, DevGoalSignal, DevIdea,
-    DevPipeline, DevProject, DevScan, DevTask, ContextHealthSnapshot, TriageRule,
-    CrossProjectRelation, PortfolioHealthSummary, TechRadarEntry, RiskMatrixEntry,
+    DevContext, DevContextGroup, DevContextGroupRelationship, DevGoal, DevGoalDependency,
+    DevGoalSignal, DevIdea, DevPipeline, DevProject, DevScan, DevTask, ContextHealthSnapshot,
+    TriageRule, CrossProjectRelation, PortfolioHealthSummary, TechRadarEntry, RiskMatrixEntry,
     TestRunResult, GitOperationResult,
 };
 use crate::db::repos::dev_tools as repo;
@@ -151,6 +151,7 @@ pub fn dev_tools_create_goal(
     context_id: Option<String>,
     status: Option<String>,
     target_date: Option<String>,
+    parent_goal_id: Option<String>,
 ) -> Result<DevGoal, AppError> {
     require_auth_sync(&state)?;
     repo::create_goal(
@@ -161,6 +162,7 @@ pub fn dev_tools_create_goal(
         context_id.as_deref(),
         status.as_deref(),
         target_date.as_deref(),
+        parent_goal_id.as_deref(),
     )
 }
 
@@ -209,6 +211,39 @@ pub fn dev_tools_reorder_goals(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     repo::reorder_goals(&state.db, &ids)
+}
+
+// ============================================================================
+// Goal Dependencies
+// ============================================================================
+
+#[tauri::command]
+pub fn dev_tools_list_goal_dependencies(
+    state: State<'_, Arc<AppState>>,
+    goal_id: String,
+) -> Result<Vec<DevGoalDependency>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_goal_dependencies(&state.db, &goal_id)
+}
+
+#[tauri::command]
+pub fn dev_tools_add_goal_dependency(
+    state: State<'_, Arc<AppState>>,
+    goal_id: String,
+    depends_on_id: String,
+    dependency_type: Option<String>,
+) -> Result<DevGoalDependency, AppError> {
+    require_auth_sync(&state)?;
+    repo::add_goal_dependency(&state.db, &goal_id, &depends_on_id, dependency_type.as_deref())
+}
+
+#[tauri::command]
+pub fn dev_tools_remove_goal_dependency(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::remove_goal_dependency(&state.db, &id)
 }
 
 // ============================================================================

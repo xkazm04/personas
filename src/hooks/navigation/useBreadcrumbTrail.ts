@@ -193,6 +193,9 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
         } else if (pluginTab === 'ocr') {
           trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setPluginTab('browse') });
           trail.push({ label: 'OCR' });
+        } else if (pluginTab === 'obsidian-brain') {
+          trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setPluginTab('browse') });
+          trail.push({ label: 'Obsidian Brain' });
         } else {
           trail.push({ label: sectionLabel });
         }

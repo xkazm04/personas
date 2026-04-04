@@ -1,9 +1,11 @@
-import { Globe, LogOut, User, Check, Sparkles, LayoutGrid, Wrench, AlertCircle, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Globe, LogOut, User, Check, Sparkles, LayoutGrid, Wrench, AlertCircle, RefreshCw, Activity } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useAuthStore } from '@/stores/authStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { TIERS, TIER_CYCLE } from '@/lib/constants/uiModes';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
 
 export default function AccountSettings() {
   const user = useAuthStore((s) => s.user);
@@ -16,6 +18,7 @@ export default function AccountSettings() {
   const viewMode = useSystemStore((s) => s.viewMode);
   const setViewMode = useSystemStore((s) => s.setViewMode);
 
+  const [telemetryOn, setTelemetryOn] = useState(isTelemetryEnabled);
   const clearError = () => useAuthStore.setState({ error: null });
 
   return (
@@ -58,6 +61,44 @@ export default function AccountSettings() {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Telemetry */}
+        <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
+          <SectionHeading title="Troubleshooting Telemetry" icon={<Activity className="text-rose-400" />} />
+          <p className="text-sm text-muted-foreground/60 leading-relaxed">
+            When enabled, anonymous crash reports and feature usage analytics are sent to help identify and fix bugs.
+            No personal data, credentials, or execution content is ever included.
+          </p>
+          <div className="flex items-center justify-between gap-4 rounded-lg bg-secondary/20 border border-primary/8 p-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground/85">Send anonymous telemetry</p>
+              <p className="text-xs text-muted-foreground/50 mt-0.5">
+                {telemetryOn
+                  ? 'Crash reports and usage analytics are active. Restart the app for changes to take full effect.'
+                  : 'Telemetry is disabled. No data is sent to Sentry. Restart the app for changes to take full effect.'}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const next = !telemetryOn;
+                setTelemetryEnabled(next);
+                setTelemetryOn(next);
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full shrink-0 transition-colors ${
+                telemetryOn ? 'bg-emerald-500/70' : 'bg-secondary/60 border border-primary/15'
+              }`}
+              role="switch"
+              aria-checked={telemetryOn}
+              aria-label="Toggle telemetry"
+            >
+              <span
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                  telemetryOn ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
         </div>
 

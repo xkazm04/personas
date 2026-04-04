@@ -11,3 +11,4 @@ pub mod network;
 pub mod ocr;
 pub mod signing;
 pub mod artist;
+pub mod obsidian_brain;

@@ -463,6 +463,10 @@ pub struct QueueStatusEvent {
     pub position: Option<usize>,
     /// Total queue depth for this persona
     pub queue_depth: usize,
+    /// Total executions running globally across all personas
+    pub global_running: usize,
+    /// Global maximum concurrent execution limit
+    pub global_capacity: usize,
 }
 
 /// Heartbeat event emitted during stream silence so frontend can detect stuck executions.

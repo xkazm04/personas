@@ -116,7 +116,7 @@ function EnvironmentStatus({
             <RefreshCw className={`w-3 h-3 ${checking ? 'animate-spin' : ''}`} />
             Refresh
           </button>
-          <span className="text-muted-foreground text-xs">{expanded ? '▲' : '▼'}</span>
+          <span className="text-muted-foreground text-md">{expanded ? '▲' : '▼'}</span>
         </div>
       </div>
 
@@ -183,9 +183,9 @@ function EnvironmentStatus({
                     ) : (
                       <meta.Icon className="w-3.5 h-3.5" style={{ color: meta.color }} />
                     )}
-                    <span className="typo-heading text-foreground text-xs">{c.name}</span>
+                    <span className="typo-heading text-foreground text-md">{c.name}</span>
                   </div>
-                  <span className="typo-body text-muted-foreground text-xs flex-1">
+                  <span className="typo-body text-muted-foreground text-md flex-1">
                     {c.connected
                       ? c.healthy ? 'Connected & healthy' : 'Connected (not verified)'
                       : 'Not connected'}
@@ -336,7 +336,7 @@ function CreativeSessionChat({
               : 'Connect tools above to start creating...'
           }
           disabled={running}
-          className="flex-1 px-3 py-2 rounded-lg bg-background/80 border border-primary/10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-rose-500/30 disabled:opacity-50"
+          className="flex-1 px-3 py-2 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-rose-500/30 disabled:opacity-50"
         />
         {running ? (
           <button
@@ -371,7 +371,7 @@ function OutputLine({ line }: { line: string }) {
   const isError = line.startsWith('[Error]');
   const isSystem = line.startsWith('[System]');
 
-  let className = 'text-xs leading-relaxed ';
+  let className = 'text-md leading-relaxed ';
   if (isUser) className += 'text-rose-400 font-medium';
   else if (isTool) className += 'text-blue-400 font-mono text-[11px]';
   else if (isMilestone) className += 'text-emerald-400 font-medium text-[11px]';
@@ -416,8 +416,8 @@ function StatusRow({
       ) : (
         <XCircle className="w-4 h-4 text-red-400" />
       )}
-      <span className="typo-heading text-foreground w-28 text-xs">{label}</span>
-      <span className="typo-body text-muted-foreground text-xs flex-1">{detail}</span>
+      <span className="typo-heading text-foreground w-28 text-md">{label}</span>
+      <span className="typo-body text-muted-foreground text-md flex-1">{detail}</span>
       {hint && <span className="text-[10px] text-amber-400">{hint}</span>}
       {action}
     </div>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { artistCheckBlender, artistInstallBlenderMcp } from '@/api/artist';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -11,18 +11,23 @@ export function useBlenderMcp() {
   const [installing, setInstalling] = useState(false);
   const setBlenderMcpState = useSystemStore((s) => s.setBlenderMcpState);
   const cachedStatus = useSystemStore((s) => s.cachedBlenderStatus);
-  const checkedAt = useSystemStore((s) => s.blenderStatusCheckedAt);
   const setCachedBlenderStatus = useSystemStore((s) => s.setCachedBlenderStatus);
+  const mountedRef = useRef(true);
 
   const check = useCallback(async (force = false) => {
-    // Skip if we have a recent cached result
-    if (!force && cachedStatus && checkedAt && Date.now() - checkedAt < STATUS_CACHE_TTL) {
+    // Read latest cache from store to avoid stale closure deps
+    const store = useSystemStore.getState();
+    const cached = store.cachedBlenderStatus;
+    const at = store.blenderStatusCheckedAt;
+
+    if (!force && cached && at && Date.now() - at < STATUS_CACHE_TTL) {
       return;
     }
 
     setChecking(true);
     try {
       const result = await artistCheckBlender();
+      if (!mountedRef.current) return;
       setCachedBlenderStatus(result);
       if (result.mcpRunning) {
         setBlenderMcpState('running');
@@ -32,15 +37,16 @@ export function useBlenderMcp() {
         setBlenderMcpState('not-installed');
       }
     } catch (err) {
+      if (!mountedRef.current) return;
       setBlenderMcpState('error');
       useToastStore.getState().addToast(
         err instanceof Error ? err.message : String(err),
         'error',
       );
     } finally {
-      setChecking(false);
+      if (mountedRef.current) setChecking(false);
     }
-  }, [cachedStatus, checkedAt, setCachedBlenderStatus, setBlenderMcpState]);
+  }, [setCachedBlenderStatus, setBlenderMcpState]);
 
   const installMcp = useCallback(async () => {
     setInstalling(true);
@@ -55,12 +61,19 @@ export function useBlenderMcp() {
         'error',
       );
     } finally {
-      setInstalling(false);
+      if (mountedRef.current) setInstalling(false);
     }
   }, [check, setBlenderMcpState]);
 
-  // Auto-check on mount (uses cache if available)
-  useEffect(() => { check(); }, [check]);
+  // Deferred auto-check: yield to the main thread before running
+  useEffect(() => {
+    mountedRef.current = true;
+    const id = requestIdleCallback(() => { check(); }, { timeout: 2000 });
+    return () => {
+      mountedRef.current = false;
+      cancelIdleCallback(id);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { status: cachedStatus, checking, installing, check: () => check(true), installMcp };
 }

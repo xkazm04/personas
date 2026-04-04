@@ -53,7 +53,7 @@ export default function GalleryPage() {
             <button
               key={m.id}
               onClick={() => setGalleryMode(m.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-md transition-colors ${
                 galleryMode === m.id
                   ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                   : 'text-muted-foreground hover:bg-secondary/40 border border-transparent'
@@ -74,7 +74,7 @@ export default function GalleryPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search..."
-            className="pl-8 pr-3 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-rose-500/30 w-48"
+            className="pl-8 pr-3 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-rose-500/30 w-48"
           />
         </div>
 
@@ -82,7 +82,7 @@ export default function GalleryPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-          className="px-2 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-xs text-foreground"
+          className="px-2 py-1.5 rounded-lg bg-background/80 border border-primary/10 text-md text-foreground"
         >
           <option value="date">Date</option>
           <option value="name">Name</option>

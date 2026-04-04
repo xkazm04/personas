@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Key, Users, Sparkles, Plus, List, Star, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine, Palette, CalendarClock } from 'lucide-react';
+import { Key, Users, Sparkles, Plus, List, Star, ChevronDown, Cloud, Wrench, Puzzle, Clock, FileSignature, ScanLine, Palette, CalendarClock, Brain } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
@@ -535,13 +535,10 @@ function PluginsSidebarNav() {
 
   const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
 
+  const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-3 py-3 border-b border-primary/10">
-        <span className="typo-label text-muted-foreground/50">Plugins</span>
-      </div>
-
       {/* Nav items */}
       <div className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
         {/* Browse */}
@@ -558,63 +555,38 @@ function PluginsSidebarNav() {
           Browse
         </button>
 
-        {/* Doc Signing */}
-        <button
-          onClick={() => setPluginTab('doc-signing')}
-          aria-current={pluginTab === 'doc-signing' ? 'page' : undefined}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            pluginTab === 'doc-signing'
-              ? 'bg-primary/10 text-foreground/90'
-              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
-          }`}
-        >
-          <FileSignature className="w-4 h-4 flex-shrink-0" />
-          Doc Signing
-        </button>
-
-        {/* OCR */}
-        <button
-          onClick={() => setPluginTab('ocr')}
-          aria-current={pluginTab === 'ocr' ? 'page' : undefined}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            pluginTab === 'ocr'
-              ? 'bg-primary/10 text-foreground/90'
-              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
-          }`}
-        >
-          <ScanLine className="w-4 h-4 flex-shrink-0" />
-          OCR
-        </button>
-
         {/* Artist */}
-        <button
-          onClick={() => setPluginTab('artist')}
-          aria-current={pluginTab === 'artist' ? 'page' : undefined}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            pluginTab === 'artist'
-              ? 'bg-primary/10 text-foreground/90'
-              : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
-          }`}
-        >
-          <Palette className="w-4 h-4 flex-shrink-0" />
-          Artist
-          {creativeSessionRunning && (
-            <span className="relative ml-auto flex h-2.5 w-2.5">
-              <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />
-              <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
-            </span>
-          )}
-        </button>
+        {enabledPlugins.has('artist') && (
+          <button
+            onClick={() => setPluginTab('artist')}
+            aria-current={pluginTab === 'artist' ? 'page' : undefined}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+              pluginTab === 'artist'
+                ? 'bg-primary/10 text-foreground/90'
+                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+            }`}
+          >
+            <Palette className="w-4 h-4 flex-shrink-0" />
+            Artist
+            {creativeSessionRunning && (
+              <span className="relative ml-auto flex h-2.5 w-2.5">
+                <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />
+                <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
+              </span>
+            )}
+          </button>
+        )}
 
         {/* Dev Tools */}
-        <div className="mt-3 pt-3 border-t border-primary/10 space-y-1">
+        {enabledPlugins.has('dev-tools') && (
+          <div className="space-y-1">
             <button
               onClick={() => setPluginTab('dev-tools')}
               aria-current={pluginTab === 'dev-tools' ? 'page' : undefined}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 pluginTab === 'dev-tools'
-                  ? 'bg-amber-500/10 text-foreground/90'
-                  : 'text-muted-foreground/70 hover:bg-amber-500/5 hover:text-foreground/80'
+                  ? 'bg-primary/10 text-foreground/90'
+                  : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
               }`}
             >
               <Wrench className="w-4 h-4 flex-shrink-0" />
@@ -640,8 +612,8 @@ function PluginsSidebarNav() {
                   ))}
                 </div>
                 {activeProject && (
-                  <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/15">
-                    <p className="text-[10px] uppercase tracking-wider text-amber-400/50 font-medium mb-0.5">Active Project</p>
+                  <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-secondary/20 border border-primary/10">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-0.5">Active Project</p>
                     <p className="typo-caption text-foreground/70 truncate">{activeProject.name}</p>
                     {activeProject.root_path && (
                       <p className="text-[10px] text-muted-foreground/40 truncate mt-0.5">{activeProject.root_path}</p>
@@ -651,6 +623,55 @@ function PluginsSidebarNav() {
               </>
             )}
           </div>
+        )}
+
+        {/* Doc Signing */}
+        {enabledPlugins.has('doc-signing') && (
+          <button
+            onClick={() => setPluginTab('doc-signing')}
+            aria-current={pluginTab === 'doc-signing' ? 'page' : undefined}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+              pluginTab === 'doc-signing'
+                ? 'bg-primary/10 text-foreground/90'
+                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+            }`}
+          >
+            <FileSignature className="w-4 h-4 flex-shrink-0" />
+            Doc Signing
+          </button>
+        )}
+
+        {/* Obsidian Brain */}
+        {enabledPlugins.has('obsidian-brain') && (
+          <button
+            onClick={() => setPluginTab('obsidian-brain')}
+            aria-current={pluginTab === 'obsidian-brain' ? 'page' : undefined}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+              pluginTab === 'obsidian-brain'
+                ? 'bg-primary/10 text-foreground/90'
+                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+            }`}
+          >
+            <Brain className="w-4 h-4 flex-shrink-0" />
+            Obsidian Brain
+          </button>
+        )}
+
+        {/* OCR */}
+        {enabledPlugins.has('ocr') && (
+          <button
+            onClick={() => setPluginTab('ocr')}
+            aria-current={pluginTab === 'ocr' ? 'page' : undefined}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+              pluginTab === 'ocr'
+                ? 'bg-primary/10 text-foreground/90'
+                : 'text-muted-foreground/70 hover:bg-secondary/40 hover:text-foreground/80'
+            }`}
+          >
+            <ScanLine className="w-4 h-4 flex-shrink-0" />
+            OCR
+          </button>
+        )}
       </div>
     </div>
   );

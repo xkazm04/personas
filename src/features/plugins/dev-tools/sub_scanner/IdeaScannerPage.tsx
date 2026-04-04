@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Lightbulb, Play, CheckSquare, Square, Clock,
-  BarChart3,
+  BarChart3, BrainCircuit,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
@@ -16,6 +16,58 @@ import {
   SCAN_AGENTS, AGENT_CATEGORIES,
   type ScanAgentDef,
 } from '../constants/scanAgents';
+import { ProjectSelector } from '../DevToolsPage';
+import { IdeaEvolutionPanel } from './IdeaEvolutionPanel';
+import { useOverviewStore } from '@/stores/overviewStore';
+import type { DevContext } from '@/lib/bindings/DevContext';
+import { parseJsonArray } from '../sub_context/contextMapTypes';
+
+// ---------------------------------------------------------------------------
+// Auto-scan: match scan types to contexts based on keywords
+// ---------------------------------------------------------------------------
+
+/** Keyword patterns that map context attributes to relevant scan agents */
+const SCAN_MATCH_RULES: { agentKey: string; keywords: RegExp }[] = [
+  { agentKey: 'code-optimizer', keywords: /performance|render|bundle|query|slow|cache|optim/i },
+  { agentKey: 'security-auditor', keywords: /auth|login|token|secret|password|credential|session|encrypt|permission/i },
+  { agentKey: 'architecture-analyst', keywords: /architect|module|component|layer|service|pattern|coupling|abstract/i },
+  { agentKey: 'test-strategist', keywords: /test|spec|coverage|mock|assert|e2e|integration|unit/i },
+  { agentKey: 'dependency-auditor', keywords: /package|dependency|import|library|version|npm|cargo/i },
+  { agentKey: 'ux-reviewer', keywords: /ui|ux|component|page|view|form|modal|button|layout|style/i },
+  { agentKey: 'accessibility-checker', keywords: /a11y|accessibility|aria|wcag|screen.?reader|keyboard|contrast/i },
+  { agentKey: 'mobile-specialist', keywords: /mobile|responsive|viewport|touch|swipe|tablet/i },
+  { agentKey: 'error-handler', keywords: /error|exception|catch|boundary|fallback|retry|toast|alert/i },
+  { agentKey: 'onboarding-designer', keywords: /onboard|wizard|setup|welcome|tutorial|getting.?started/i },
+  { agentKey: 'feature-scout', keywords: /feature|roadmap|missing|todo|placeholder|future/i },
+  { agentKey: 'monetization-advisor', keywords: /billing|payment|subscription|plan|pricing|tier|premium/i },
+  { agentKey: 'analytics-planner', keywords: /analytics|tracking|event|metric|telemetry|log/i },
+  { agentKey: 'documentation-auditor', keywords: /doc|readme|comment|api.?doc|jsdoc|guide/i },
+  { agentKey: 'growth-hacker', keywords: /share|referral|invite|social|viral|notification/i },
+  { agentKey: 'tech-debt-tracker', keywords: /debt|legacy|workaround|hack|deprecated|fixme|todo/i },
+  { agentKey: 'innovation-catalyst', keywords: /ai|ml|machine.?learn|llm|agent|automat|innovat/i },
+  { agentKey: 'risk-assessor', keywords: /risk|single.?point|scale|failover|backup|disaster|recovery/i },
+  { agentKey: 'integration-planner', keywords: /api|webhook|integration|sync|external|third.?party|oauth/i },
+  { agentKey: 'devops-optimizer', keywords: /ci|cd|deploy|docker|pipeline|build|monitor|infra/i },
+];
+
+function matchAgentsToContext(ctx: DevContext): string[] {
+  const searchable = [
+    ctx.name,
+    ctx.description ?? '',
+    ...parseJsonArray(ctx.keywords),
+    ...parseJsonArray(ctx.tech_stack),
+    ...parseJsonArray(ctx.api_surface),
+    ...parseJsonArray(ctx.file_paths),
+  ].join(' ');
+
+  const matched = SCAN_MATCH_RULES
+    .filter((rule) => rule.keywords.test(searchable))
+    .map((rule) => rule.agentKey);
+
+  // Always include at least architecture-analyst and code-optimizer as baseline
+  if (matched.length === 0) return ['architecture-analyst', 'code-optimizer'];
+  return [...new Set(matched)];
+}
 
 // ---------------------------------------------------------------------------
 // Types (local until devToolsSlice wired)
@@ -101,7 +153,7 @@ function levelColor(value: number): string {
 
 function LevelBadge({ label, value }: { label: string; value: number }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${levelColor(value)}`}>
+    <span className={`rounded-full px-2.5 py-0.5 text-md font-medium border ${levelColor(value)}`}>
       {label}: {value}
     </span>
   );
@@ -135,8 +187,8 @@ function AgentCard({
       <div className={`w-9 h-9 rounded-lg ${ac.bg} border ${ac.border} flex items-center justify-center text-lg mb-2`}>
         {agent.emoji}
       </div>
-      <span className="text-sm font-medium text-foreground/80 mb-0.5">{agent.label}</span>
-      <span className="text-[10px] text-muted-foreground/50 line-clamp-2 leading-relaxed">{agent.description}</span>
+      <span className="text-md font-medium text-foreground/80 mb-0.5">{agent.label}</span>
+      <span className="text-md text-muted-foreground/50 line-clamp-2 leading-relaxed">{agent.description}</span>
       <div className="absolute top-3 right-3">
         {selected ? (
           <CheckSquare className="w-4 h-4 text-amber-400" />
@@ -170,18 +222,18 @@ function ScanProgress({
       className="border border-amber-500/20 bg-amber-500/5 rounded-xl p-4"
     >
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center text-sm">
+        <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center text-md">
           {currentAgent?.emoji ?? '...'}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground/80">
+          <p className="text-md font-medium text-foreground/80">
             Scanning with {currentAgent?.label ?? '...'}
           </p>
-          <p className="text-[10px] text-muted-foreground/50">
+          <p className="text-md text-muted-foreground/50">
             Analyzing codebase patterns and generating ideas
           </p>
         </div>
-        <span className="text-xs text-amber-400 font-medium">{Math.round(progress)}%</span>
+        <span className="text-md text-amber-400 font-medium">{Math.round(progress)}%</span>
       </div>
       <div className="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
         <motion.div
@@ -214,16 +266,16 @@ function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
       className="border border-primary/10 rounded-xl p-4 hover:bg-primary/5 hover:border-primary/20 transition-colors"
     >
       <div className="flex items-start gap-3 mb-3">
-        <div className={`w-7 h-7 rounded-lg ${ac.bg} border ${ac.border} flex items-center justify-center text-sm flex-shrink-0`}>
+        <div className={`w-7 h-7 rounded-lg ${ac.bg} border ${ac.border} flex items-center justify-center text-md flex-shrink-0`}>
           {agent?.emoji ?? '?'}
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-foreground/80 mb-0.5">{idea.title}</h4>
-          <p className="text-xs text-muted-foreground/60 line-clamp-2">{idea.description}</p>
+          <h4 className="text-md font-medium text-foreground/80 mb-0.5">{idea.title}</h4>
+          <p className="text-md text-muted-foreground/60 line-clamp-2">{idea.description}</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
+        <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
           {catLabel}
         </span>
         <LevelBadge label="Effort" value={idea.effort} />
@@ -250,10 +302,15 @@ export default function IdeaScannerPage() {
   const fetchScans = useSystemStore((s) => s.fetchScans);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
+  // Context map data for auto-scan
+  const fetchContexts = useSystemStore((s) => s.fetchContexts);
+
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
   const [scanProgress, setScanProgress] = useState(isRunning ? 50 : 0);
   const [currentAgentKey, setCurrentAgentKey] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
+  const [autoScanRunning, setAutoScanRunning] = useState(false);
+  const [autoScanStatus, setAutoScanStatus] = useState<string | null>(null);
 
   // Map store ideas to display format
   const ideas: ScanIdea[] = useMemo(() =>
@@ -311,6 +368,7 @@ export default function IdeaScannerPage() {
           }
           setScanProgress(100);
           setCurrentAgentKey(null);
+          useOverviewStore.getState().processEnded('idea_scan', status === 'completed' ? 'completed' : 'failed');
           // Update store phase — this drives isRunning via scanPhase
           setTimeout(() => {
             useSystemStore.setState({
@@ -350,14 +408,78 @@ export default function IdeaScannerPage() {
     if (selectedAgents.size === 0) return;
     setScanProgress(5);
     setCurrentAgentKey([...selectedAgents][0] ?? null);
+    useOverviewStore.getState().processStarted('idea_scan', undefined, `Idea Scan (${selectedAgents.size} agents)`);
 
     try {
       await runScan([...selectedAgents]);
-      // scanPhase is now "running" in the store → isRunning becomes true
     } catch {
       setScanProgress(0);
+      useOverviewStore.getState().processEnded('idea_scan', 'failed');
     }
   }, [selectedAgents, runScan]);
+
+  // Auto-scan: evaluate all contexts and run matching agents per context
+  const handleAutoScan = useCallback(async () => {
+    if (!activeProjectId || autoScanRunning) return;
+
+    setAutoScanRunning(true);
+    setAutoScanStatus('Loading contexts...');
+    useOverviewStore.getState().processStarted('auto_scan', undefined, 'Automated Context Scan');
+
+    try {
+      // Ensure contexts are loaded
+      await fetchContexts(activeProjectId);
+      const ctxList = useSystemStore.getState().contexts;
+
+      if (ctxList.length === 0) {
+        setAutoScanStatus('No contexts found. Run Context Map scan first.');
+        setAutoScanRunning(false);
+        useOverviewStore.getState().processEnded('auto_scan', 'failed');
+        return;
+      }
+
+      let completed = 0;
+      for (const ctx of ctxList) {
+        const matchedAgents = matchAgentsToContext(ctx);
+        setAutoScanStatus(`Scanning "${ctx.name}" (${matchedAgents.length} agents) — ${completed + 1}/${ctxList.length}`);
+        setScanProgress(Math.round((completed / ctxList.length) * 90) + 5);
+
+        try {
+          await runScan(matchedAgents, ctx.id);
+          // Wait for scan to complete by polling scanPhase
+          await new Promise<void>((resolve) => {
+            const check = () => {
+              const phase = useSystemStore.getState().scanPhase;
+              if (phase !== 'running') { resolve(); return; }
+              setTimeout(check, 2000);
+            };
+            setTimeout(check, 3000);
+          });
+        } catch {
+          // Continue with next context on individual failure
+        }
+        completed++;
+      }
+
+      setAutoScanStatus(`Completed! Scanned ${ctxList.length} contexts.`);
+      setScanProgress(100);
+      useOverviewStore.getState().processEnded('auto_scan', 'completed');
+
+      // Refresh ideas
+      useSystemStore.getState().fetchIdeas(activeProjectId);
+      useSystemStore.getState().fetchScans(activeProjectId);
+
+      setTimeout(() => {
+        setScanProgress(0);
+        setAutoScanStatus(null);
+        setAutoScanRunning(false);
+      }, 2000);
+    } catch {
+      setAutoScanStatus('Auto-scan failed');
+      setAutoScanRunning(false);
+      useOverviewStore.getState().processEnded('auto_scan', 'failed');
+    }
+  }, [activeProjectId, autoScanRunning, fetchContexts, runScan]);
 
   // Group agents by category
   const agentsByCategory = useMemo(() => {
@@ -397,24 +519,64 @@ export default function IdeaScannerPage() {
               accentColor="amber"
               size="sm"
               icon={<Play className="w-3.5 h-3.5" />}
-              disabled={selectedAgents.size === 0 || isRunning}
-              loading={isRunning}
+              disabled={selectedAgents.size === 0 || isRunning || autoScanRunning}
+              loading={isRunning && !autoScanRunning}
               onClick={handleRunScan}
             >
               Run Scan ({selectedAgents.size})
             </Button>
+            <Button
+              variant="accent"
+              accentColor="violet"
+              size="sm"
+              icon={<BrainCircuit className="w-3.5 h-3.5" />}
+              disabled={isRunning || autoScanRunning || !activeProjectId}
+              loading={autoScanRunning}
+              onClick={handleAutoScan}
+            >
+              Auto-Scan
+            </Button>
           </div>
         }
-      />
+      >
+        <ProjectSelector />
+      </ContentHeader>
 
-      <ContentBody>
+      <ContentBody centered>
         <div className="space-y-6">
           {/* Scan progress */}
           <AnimatePresence>
-            {isRunning && (
+            {isRunning && !autoScanRunning && (
               <ScanProgress running={isRunning} currentAgent={currentAgent} progress={scanProgress} />
             )}
           </AnimatePresence>
+
+          {/* Auto-scan progress */}
+          {autoScanRunning && autoScanStatus && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="border border-violet-500/20 bg-violet-500/5 rounded-xl p-4"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center">
+                  <BrainCircuit className="w-4 h-4 text-violet-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-md font-medium text-foreground/80">Automated Context Scan</p>
+                  <p className="text-md text-muted-foreground/50">{autoScanStatus}</p>
+                </div>
+                <span className="text-md text-violet-400 font-medium">{Math.round(scanProgress)}%</span>
+              </div>
+              <div className="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-violet-400 rounded-full"
+                  animate={{ width: `${scanProgress}%` }}
+                  transition={{ duration: 0.4 }}
+                />
+              </div>
+            </motion.div>
+          )}
 
           {/* Agent selection grid */}
           <div className="space-y-5">
@@ -424,7 +586,7 @@ export default function IdeaScannerPage() {
               if (agents.length === 0) return null;
               return (
                 <div key={cat.key}>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2.5 flex items-center gap-2">
+                  <h3 className="text-md font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2.5 flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${catTw.dot}`} />
                     {cat.label}
                   </h3>
@@ -446,7 +608,7 @@ export default function IdeaScannerPage() {
           {/* Results section */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+              <h3 className="text-md font-semibold uppercase tracking-wider text-muted-foreground/60">
                 Results ({ideas.length} idea{ideas.length !== 1 ? 's' : ''})
               </h3>
               {/* Category filter tabs */}
@@ -479,7 +641,7 @@ export default function IdeaScannerPage() {
             {filteredIdeas.length === 0 ? (
               <div className="text-center py-16 border border-dashed border-primary/10 rounded-xl">
                 <Lightbulb className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground/50">
+                <p className="text-md text-muted-foreground/50">
                   {ideas.length === 0
                     ? 'No scan results yet. Select agents above and run a scan.'
                     : 'No ideas match this filter.'}
@@ -494,17 +656,20 @@ export default function IdeaScannerPage() {
             )}
           </div>
 
+          {/* Idea Evolution */}
+          <IdeaEvolutionPanel />
+
           {/* Scan history */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 mb-3">
+            <h3 className="text-md font-semibold uppercase tracking-wider text-muted-foreground/60 mb-3">
               Scan History ({history.length})
             </h3>
             {history.length === 0 ? (
-              <p className="text-xs text-muted-foreground/40">No previous scans.</p>
+              <p className="text-md text-muted-foreground/40">No previous scans.</p>
             ) : (
               <div className="border border-primary/10 rounded-xl overflow-hidden">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">
+                <div className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-md font-medium text-muted-foreground/60 uppercase tracking-wider">
                   <span>Agents</span>
                   <span>Status</span>
                   <span>Ideas</span>
@@ -519,24 +684,24 @@ export default function IdeaScannerPage() {
                   const totalTokens = (entry.inputTokens ?? 0) + (entry.outputTokens ?? 0);
                   return (
                     <div key={entry.id} className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2.5 border-b border-primary/5 last:border-b-0 hover:bg-primary/5 transition-colors items-center">
-                      <span className="text-xs text-foreground/70 truncate" title={agentKeys.join(', ')}>
+                      <span className="text-md text-foreground/70 truncate" title={agentKeys.join(', ')}>
                         {agentEmojis} <span className="text-muted-foreground/50">{agentKeys.length > 1 ? `(${agentKeys.length})` : agentKeys[0]}</span>
                       </span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium border w-fit ${statusStyle}`}>
+                      <span className={`rounded-full px-2.5 py-0.5 text-md font-medium border w-fit ${statusStyle}`}>
                         {entry.status}
                       </span>
-                      <span className="text-xs text-foreground/70 flex items-center gap-1">
-                        <BarChart3 className="w-3 h-3 text-muted-foreground/40" />
+                      <span className="text-md text-foreground/70 flex items-center gap-1">
+                        <BarChart3 className="w-3.5 h-3.5 text-muted-foreground/40" />
                         {entry.ideaCount}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/50 font-mono">
+                      <span className="text-md text-muted-foreground/50 font-mono">
                         {totalTokens > 0 ? totalTokens.toLocaleString() : '-'}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/50">
+                      <span className="text-md text-muted-foreground/50">
                         {formatDuration(entry.durationMs)}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/40 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
+                      <span className="text-md text-muted-foreground/40 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
                         {relativeTime(entry.timestamp)}
                       </span>
                     </div>

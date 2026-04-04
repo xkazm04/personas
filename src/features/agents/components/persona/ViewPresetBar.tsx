@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bookmark, Check, Plus, Trash2, X, ChevronDown, Sparkles } from 'lucide-react';
 import { listSavedViewsByType, createSavedView, deleteSavedView, type SavedView } from '@/api/overview/savedViews';
 import { log } from '@/lib/log';
+import { errMsg } from '@/stores/storeTypes';
 
 /** The filter/sort/grouping state persisted in view_config JSON. */
 export interface AgentListViewConfig {
@@ -74,7 +75,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
       const data = await listSavedViewsByType('agent_list');
       setViews(data);
     } catch (e) {
-      log.error('ViewPresetBar', 'Failed to load views', { error: String(e) });
+      log.error('ViewPresetBar', 'Failed to load views', { error: errMsg(e, 'Failed to load views') });
     }
   }, []);
 
@@ -113,7 +114,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
       setActiveViewId(view.id);
       await loadViews();
     } catch (e) {
-      log.error('ViewPresetBar', 'Failed to save view', { error: String(e) });
+      log.error('ViewPresetBar', 'Failed to save view', { error: errMsg(e, 'Failed to save view') });
     }
   };
 
@@ -124,7 +125,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
       if (activeViewId === id) setActiveViewId(null);
       await loadViews();
     } catch (err) {
-      log.error('ViewPresetBar', 'Failed to delete view', { error: String(err) });
+      log.error('ViewPresetBar', 'Failed to delete view', { error: errMsg(err, 'Failed to delete view') });
     }
   };
 

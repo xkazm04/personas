@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { ChevronRight, MoreHorizontal } from 'lucide-react';
 import { useBreadcrumbTrail, type BreadcrumbSegment } from '@/hooks/navigation/useBreadcrumbTrail';
+import { useSystemStore } from '@/stores/systemStore';
 
 /** Renders a single breadcrumb segment (clickable or current). */
 function Segment({ segment, isCurrent }: { segment: BreadcrumbSegment; isCurrent: boolean }) {
@@ -83,7 +84,11 @@ function EllipsisDropdown({ segments }: { segments: BreadcrumbSegment[] }) {
  * middle segments collapse into an ellipsis dropdown.
  */
 export default function BreadcrumbTrail() {
+  const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const trail = useBreadcrumbTrail();
+
+  // Never show breadcrumbs for plugin or home pages
+  if (sidebarSection === 'plugins' || sidebarSection === 'home') return null;
 
   // Responsive: measure container width and collapse middle segments if needed
   const containerRef = useRef<HTMLElement>(null);

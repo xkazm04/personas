@@ -181,24 +181,32 @@ function _invokeCore<T>(
 ): Promise<T> {
   const start = performance.now();
 
-  // Inject IPC session token for privileged command authentication.
-  // The Rust backend sets window.__IPC_TOKEN via a js_init_script.
-  const token = (globalThis as Record<string, unknown>).__IPC_TOKEN as string | undefined;
-  if (token) {
-    const opts: InvokeOptions = options ?? { headers: {} };
-    const h = new Headers(opts.headers);
-    h.set("x-ipc-token", token);
-    options = { ...opts, headers: h };
-  }
+  // Wait for BOTH the IPC session token AND the __TAURI_INTERNALS__ monkey-patch
+  // before invoking. On Windows WebView2, the manual options.headers approach does
+  // not reliably deliver headers to the Rust backend — the monkey-patch is the only
+  // mechanism that works. Previously we only waited when __IPC_TOKEN was undefined,
+  // which meant calls could proceed before the monkey-patch was active.
+  const g = globalThis as Record<string, unknown>;
+  const token = g.__IPC_TOKEN as string | undefined;
+  const patched = !!(
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ as
+      | (Record<string, unknown> & { __ipc_patched?: boolean })
+      | undefined
+  )?.__ipc_patched;
 
-  // If token is not yet available, wait for it before invoking.
-  // The init script sets __IPC_TOKEN synchronously but may not have run
-  // if the app bundle loads before the plugin init script executes.
-  if (!token) {
+  if (!token || !patched) {
     return waitForIpcToken().then(() =>
       _invokeCore<T>(cmd, args, options, timeoutMs),
     );
   }
+
+  // Inject IPC session token for privileged command authentication.
+  // This is redundant with the monkey-patch but provides defense-in-depth
+  // for platforms where options.headers does work (macOS, Linux).
+  const opts: InvokeOptions = options ?? { headers: {} };
+  const h = new Headers(opts.headers);
+  h.set("x-ipc-token", token);
+  options = { ...opts, headers: h };
 
   const invocation = invoke<T>(cmd, args ? coerceArgs(args) : undefined, options);
 

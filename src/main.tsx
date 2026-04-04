@@ -5,6 +5,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import App from "./App";
 import { initSentry } from "./lib/sentry";
 import { initAnalytics } from "./lib/analytics";
+import { isTelemetryEnabled } from "./lib/telemetryPreference";
 import { persistCrash } from "./lib/utils/crashPersistence";
 import { createLogger } from "./lib/log";
 import "./styles/globals.css";
@@ -150,18 +151,20 @@ if (root) {
     // non-critical: not in Tauri context or plugin not available
   }
 
-  try {
-    initSentry(appVersion);
-    sentryReady = true;
-  } catch (e) {
-    console.warn("[main] Sentry init failed:", e);
-  }
+  if (isTelemetryEnabled()) {
+    try {
+      initSentry(appVersion);
+      sentryReady = true;
+    } catch (e) {
+      console.warn("[main] Sentry init failed:", e);
+    }
 
-  // Feature usage analytics -- subscribes to Zustand store navigation changes
-  try {
-    const { useSystemStore } = await import("./stores/systemStore");
-    initAnalytics(useSystemStore.subscribe);
-  } catch (e) {
-    console.warn("[main] Analytics init failed:", e);
+    // Feature usage analytics -- subscribes to Zustand store navigation changes
+    try {
+      const { useSystemStore } = await import("./stores/systemStore");
+      initAnalytics(useSystemStore.subscribe);
+    } catch (e) {
+      console.warn("[main] Analytics init failed:", e);
+    }
   }
 })();

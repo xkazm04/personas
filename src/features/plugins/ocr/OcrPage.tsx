@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useToastStore } from '@/stores/toastStore';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import {
   ocrWithGemini,
   ocrWithClaude,
@@ -27,35 +29,43 @@ export default function OcrPage() {
   ];
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center gap-1 px-4 pt-4 pb-2">
-        {tabs.map((t) => {
-          const Icon = t.icon;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg typo-heading transition-colors ${
-                tab === t.id
-                  ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                  : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/80 border border-transparent'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-      <div
-          key={tab}
-          className="animate-fade-slide-in flex-1 min-h-0 overflow-y-auto px-4 pb-4"
-        >
+    <ContentBox>
+      <ContentHeader
+        icon={<ScanLine className="w-5 h-5 text-violet-400" />}
+        iconColor="violet"
+        title="OCR"
+        subtitle="Extract and compare text from images and documents"
+        actions={
+          <div className="flex items-center gap-1">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg typo-heading transition-colors ${
+                    tab === t.id
+                      ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                      : 'text-muted-foreground/60 hover:bg-secondary/40 hover:text-foreground/80 border border-transparent'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        }
+      />
+
+      <ContentBody centered>
+        <div key={tab} className="animate-fade-slide-in">
           {tab === 'extract' && <ExtractPanel />}
           {tab === 'compare' && <ComparePanel />}
           {tab === 'history' && <HistoryPanel />}
         </div>
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }
 
@@ -199,15 +209,14 @@ function ExtractPanel() {
             placeholder="Gemini API Key (AIza...)"
             className="w-full px-3 py-2 rounded-lg bg-secondary/30 border border-primary/10 text-sm text-foreground/80 placeholder:text-muted-foreground/30 focus-ring"
           />
-          <select
+          <ThemedSelect
             value={geminiModel}
             onChange={(e) => setGeminiModel(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-secondary/30 border border-primary/10 text-sm text-foreground/80 focus-ring"
           >
             <option value="gemini-3-flash-preview">Gemini 3 Flash Preview (latest)</option>
             <option value="gemini-2.5-flash">Gemini 2.5 Flash (fast, free tier)</option>
             <option value="gemini-2.5-pro">Gemini 2.5 Pro (most accurate)</option>
-          </select>
+          </ThemedSelect>
         </div>
       )}
 

@@ -39,6 +39,7 @@ import type { NetworkSlice } from "./slices/network/networkSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
 import type { AmbientContextSlice } from "./slices/system/ambientContextSlice";
 import type { ArtistSlice } from "./slices/system/artistSlice";
+import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
 import type { RotationSlice } from "./slices/vault/rotationSlice";
@@ -46,6 +47,7 @@ import type { CompositionSlice } from "./slices/pipeline/compositionSlice";
 import type { ProcessActivitySlice } from "./slices/processActivitySlice";
 
 // -- Shared helpers ------------------------------------------------------
+import * as Sentry from "@sentry/react";
 import { isTauriError, type TauriErrorKind } from "@/lib/types/tauriError";
 
 /** A single scoped error entry keyed by action name. */
@@ -98,6 +100,13 @@ export function reportError(
   const { severity = "both", stateUpdates, action } = options ?? {};
   const message = errMsg(err, fallback);
   const kind = errKind(err);
+
+  Sentry.withScope((scope) => {
+    if (kind) scope.setTag("error.kind", kind);
+    if (action) scope.setTag("error.action", action);
+    scope.setExtra("fallback", fallback);
+    Sentry.captureException(err);
+  });
 
   if (severity !== "toast") {
     if (action) {
@@ -220,5 +229,6 @@ export type SystemStore = CoreState &
   NetworkSlice &
   SetupSlice &
   AmbientContextSlice &
-  ArtistSlice;
+  ArtistSlice &
+  ObsidianBrainSlice;
 

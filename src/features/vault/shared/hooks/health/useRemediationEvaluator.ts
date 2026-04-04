@@ -138,8 +138,8 @@ export function useRemediationEvaluator() {
       });
     };
 
-    // Initial evaluation after a short delay (let store hydrate)
-    const initialTimeout = setTimeout(safeEvaluate, 5_000);
+    // Initial evaluation after startup settles (avoid IPC contention)
+    const initialTimeout = setTimeout(safeEvaluate, 15_000);
 
     // Periodic evaluation
     timerRef.current = setInterval(safeEvaluate, EVAL_INTERVAL_MS);

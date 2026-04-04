@@ -124,8 +124,12 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           selectedPersona: deriveSelectedPersona(personas, nextId, nextCache),
         };
       });
-      // Fire-and-forget: load sidebar badge data
-      get().fetchPersonaSummaries();
+      // Deferred: load sidebar badge data during idle time to avoid IPC stampede
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(() => get().fetchPersonaSummaries());
+      } else {
+        setTimeout(() => get().fetchPersonaSummaries(), 500);
+      }
       // One-time icon assignment for existing personas (idempotent)
       const needsAssignment = !localStorage.getItem('personas-icon-auto-assigned-v1');
       if (needsAssignment) {

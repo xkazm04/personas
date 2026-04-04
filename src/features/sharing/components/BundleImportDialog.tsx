@@ -11,6 +11,7 @@ import { EnclaveVerificationView } from './EnclaveVerificationView';
 import { ImportSuccessCelebration } from './ImportSuccessCelebration';
 import { BundlePreviewContent } from './BundlePreviewContent';
 import { createLogger } from "@/lib/log";
+import { errMsg } from "@/stores/storeTypes";
 
 const logger = createLogger("bundle-import");
 
@@ -108,9 +109,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
         setPhase('preview');
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errMsg(err, 'Failed to load file');
       logger.warn('Failed to load file', { error: msg });
-      setError(msg || 'Failed to load file');
+      setError(msg);
       setPhase('pick');
     }
   };
@@ -133,9 +134,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       setPreview(p);
       setPhase('preview');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errMsg(err, 'Failed to read clipboard');
       logger.warn('Failed to paste from clipboard', { error: msg });
-      setError(msg || 'Failed to read clipboard');
+      setError(msg);
       setClipboardData(null);
       setPhase('pick');
     }
@@ -158,9 +159,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       setPreview(p);
       setPhase('preview');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errMsg(err, 'Failed to load share link');
       logger.warn('Failed to preview share link', { error: msg });
-      setError(msg || 'Failed to load share link');
+      setError(msg);
       setShareLinkUrl(null);
       setPhase('pick');
     }
@@ -187,9 +188,9 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
       setPhase('done');
       addToast(`Imported ${result.imported} resource${result.imported !== 1 ? 's' : ''}`, 'success');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errMsg(err, 'Failed to import bundle');
       logger.warn('Failed to import bundle', { filePath, clipboard: !!clipboardData, error: msg });
-      setError(msg || 'Failed to import bundle');
+      setError(msg);
       setPhase('preview');
     }
   };

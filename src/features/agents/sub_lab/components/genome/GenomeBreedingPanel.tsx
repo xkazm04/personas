@@ -18,6 +18,7 @@ import { GenerationEvolutionChart } from './GenerationEvolutionChart';
 import { GenomeDiffView } from './GenomeDiffView';
 import { silentCatch } from '@/lib/silentCatch';
 import { log } from '@/lib/log';
+import { errMsg } from '@/stores/storeTypes';
 
 // ============================================================================
 // Parent selector
@@ -392,7 +393,7 @@ export function GenomeBreedingPanel() {
 
   const loadRuns = useCallback(async () => {
     const data = await genomeApi.listBreedingRuns().catch((e) => {
-      log.warn('genome', 'listBreedingRuns failed', { error: String(e) });
+      log.warn('genome', 'listBreedingRuns failed', { error: errMsg(e, 'Failed to list breeding runs') });
       return [] as GenomeBreedingRun[];
     });
     setRuns(data);
@@ -401,7 +402,7 @@ export function GenomeBreedingPanel() {
 
   const loadResults = useCallback(async (runId: string) => {
     const data = await genomeApi.getBreedingResults(runId).catch((e) => {
-      log.warn('genome', 'getBreedingResults failed', { error: String(e) });
+      log.warn('genome', 'getBreedingResults failed', { error: errMsg(e, 'Failed to get breeding results') });
       return [] as GenomeBreedingResult[];
     });
     setResults(data);

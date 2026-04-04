@@ -71,7 +71,7 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
 
       {/* Info */}
       <div className="px-3 py-2 space-y-0.5">
-        <p className="text-xs text-foreground truncate font-medium">{asset.fileName}</p>
+        <p className="text-md text-foreground truncate font-medium">{asset.fileName}</p>
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span>{ext}</span>
           <span>&middot;</span>

@@ -1,3 +1,5 @@
+import { Zap, Gauge, ShieldAlert, ShieldCheck, Shield } from 'lucide-react';
+
 interface EffortRiskFilterProps {
   effortRange: [number, number];
   riskRange: [number, number];
@@ -7,14 +9,14 @@ interface EffortRiskFilterProps {
 
 const PRESETS = {
   effort: [
-    { label: 'Quick Wins', range: [1, 3] as [number, number], color: 'emerald' },
-    { label: 'Moderate', range: [4, 6] as [number, number], color: 'amber' },
-    { label: 'Heavy', range: [7, 10] as [number, number], color: 'red' },
+    { label: 'Quick Wins', range: [1, 3] as [number, number], color: 'emerald', icon: Zap },
+    { label: 'Moderate', range: [4, 6] as [number, number], color: 'amber', icon: Gauge },
+    { label: 'Heavy', range: [7, 10] as [number, number], color: 'red', icon: ShieldAlert },
   ],
   risk: [
-    { label: 'Safe', range: [1, 3] as [number, number], color: 'emerald' },
-    { label: 'Moderate', range: [4, 6] as [number, number], color: 'amber' },
-    { label: 'Risky', range: [7, 10] as [number, number], color: 'red' },
+    { label: 'Safe', range: [1, 3] as [number, number], color: 'emerald', icon: ShieldCheck },
+    { label: 'Moderate', range: [4, 6] as [number, number], color: 'amber', icon: Shield },
+    { label: 'Risky', range: [7, 10] as [number, number], color: 'red', icon: ShieldAlert },
   ],
 };
 
@@ -36,21 +38,23 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
       {/* Effort */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Effort</span>
+          <span className="text-md font-semibold text-muted-foreground/60 uppercase tracking-wider">Effort</span>
           {!rangesEqual(effortRange, allRange) && (
-            <button onClick={() => onEffortChange(allRange)} className="text-[10px] text-primary/50 hover:text-primary">Clear</button>
+            <button onClick={() => onEffortChange(allRange)} className="text-md text-primary/50 hover:text-primary">Clear</button>
           )}
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           {PRESETS.effort.map(p => {
             const isActive = rangesEqual(effortRange, p.range);
             const colors = PRESET_COLORS[p.color]!;
+            const Icon = p.icon;
             return (
               <button
                 key={p.label}
                 onClick={() => onEffortChange(isActive ? allRange : p.range)}
-                className={`flex-1 px-1.5 py-1 text-[10px] font-medium rounded border transition-colors ${isActive ? colors.active : colors.inactive}`}
+                className={`flex-1 flex flex-col items-center gap-1 px-2 py-2 text-md font-medium rounded-lg border transition-colors ${isActive ? colors.active : colors.inactive}`}
               >
+                <Icon className="w-4.5 h-4.5" />
                 {p.label}
               </button>
             );
@@ -61,21 +65,23 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
       {/* Risk */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Risk</span>
+          <span className="text-md font-semibold text-muted-foreground/60 uppercase tracking-wider">Risk</span>
           {!rangesEqual(riskRange, allRange) && (
-            <button onClick={() => onRiskChange(allRange)} className="text-[10px] text-primary/50 hover:text-primary">Clear</button>
+            <button onClick={() => onRiskChange(allRange)} className="text-md text-primary/50 hover:text-primary">Clear</button>
           )}
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           {PRESETS.risk.map(p => {
             const isActive = rangesEqual(riskRange, p.range);
             const colors = PRESET_COLORS[p.color]!;
+            const Icon = p.icon;
             return (
               <button
                 key={p.label}
                 onClick={() => onRiskChange(isActive ? allRange : p.range)}
-                className={`flex-1 px-1.5 py-1 text-[10px] font-medium rounded border transition-colors ${isActive ? colors.active : colors.inactive}`}
+                className={`flex-1 flex flex-col items-center gap-1 px-2 py-2 text-md font-medium rounded-lg border transition-colors ${isActive ? colors.active : colors.inactive}`}
               >
+                <Icon className="w-4.5 h-4.5" />
                 {p.label}
               </button>
             );

@@ -1,0 +1,284 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Search, FolderOpen, CheckCircle2, XCircle, Save, RefreshCw } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-dialog';
+import { useToastStore } from '@/stores/toastStore';
+import { useSystemStore } from '@/stores/systemStore';
+import {
+  obsidianBrainDetectVaults,
+  obsidianBrainTestConnection,
+  obsidianBrainSaveConfig,
+  obsidianBrainGetConfig,
+  type DetectedVault,
+  type VaultConnectionResult,
+  type ObsidianVaultConfig,
+} from '@/api/obsidianBrain';
+
+export default function SetupPanel() {
+  const addToast = useToastStore((s) => s.addToast);
+  const setObsidianVaultPath = useSystemStore((s) => s.setObsidianVaultPath);
+  const setObsidianVaultName = useSystemStore((s) => s.setObsidianVaultName);
+  const setObsidianConnected = useSystemStore((s) => s.setObsidianConnected);
+
+  const [detectedVaults, setDetectedVaults] = useState<DetectedVault[]>([]);
+  const [detecting, setDetecting] = useState(false);
+  const [vaultPath, setVaultPath] = useState('');
+  const [connectionResult, setConnectionResult] = useState<VaultConnectionResult | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Sync options
+  const [syncMemories, setSyncMemories] = useState(true);
+  const [syncPersonas, setSyncPersonas] = useState(true);
+  const [syncConnectors, setSyncConnectors] = useState(false);
+  const [autoSync, setAutoSync] = useState(false);
+
+  // Folder mapping
+  const [memoriesFolder, setMemoriesFolder] = useState('memories');
+  const [personasFolder, setPersonasFolder] = useState('Personas');
+  const [connectorsFolder, setConnectorsFolder] = useState('Connectors');
+
+  // Load existing config on mount
+  useEffect(() => {
+    obsidianBrainGetConfig().then((config) => {
+      if (config) {
+        setVaultPath(config.vaultPath);
+        setSyncMemories(config.syncMemories);
+        setSyncPersonas(config.syncPersonas);
+        setSyncConnectors(config.syncConnectors);
+        setAutoSync(config.autoSync);
+        setMemoriesFolder(config.folderMapping.memoriesFolder);
+        setPersonasFolder(config.folderMapping.personasFolder);
+        setConnectorsFolder(config.folderMapping.connectorsFolder);
+        setObsidianVaultPath(config.vaultPath);
+        setObsidianVaultName(config.vaultName);
+        setObsidianConnected(true);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const detectVaults = useCallback(async () => {
+    setDetecting(true);
+    try {
+      const vaults = await obsidianBrainDetectVaults();
+      setDetectedVaults(vaults);
+      if (vaults.length === 0) {
+        addToast('No Obsidian vaults detected. Try browsing manually.', 'success');
+      }
+    } catch (e) {
+      addToast(`Detection failed: ${e}`, 'error');
+    } finally {
+      setDetecting(false);
+    }
+  }, [addToast]);
+
+  const browseFolder = useCallback(async () => {
+    const selected = await open({ directory: true, title: 'Select Obsidian Vault' });
+    if (selected && typeof selected === 'string') {
+      setVaultPath(selected);
+      setConnectionResult(null);
+    }
+  }, []);
+
+  const testConnection = useCallback(async () => {
+    if (!vaultPath) return;
+    setTesting(true);
+    try {
+      const result = await obsidianBrainTestConnection(vaultPath);
+      setConnectionResult(result);
+      if (result.valid) {
+        setObsidianConnected(true);
+        setObsidianVaultName(result.vaultName);
+      }
+    } catch (e) {
+      addToast(`Connection test failed: ${e}`, 'error');
+    } finally {
+      setTesting(false);
+    }
+  }, [vaultPath, addToast, setObsidianConnected, setObsidianVaultName]);
+
+  const saveConfig = useCallback(async () => {
+    if (!vaultPath || !connectionResult?.valid) {
+      addToast('Please select and test a valid vault first', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const config: ObsidianVaultConfig = {
+        vaultPath,
+        vaultName: connectionResult.vaultName,
+        syncMemories,
+        syncPersonas,
+        syncConnectors,
+        autoSync,
+        folderMapping: { memoriesFolder, personasFolder, connectorsFolder },
+      };
+      await obsidianBrainSaveConfig(config);
+      setObsidianVaultPath(vaultPath);
+      setObsidianVaultName(connectionResult.vaultName);
+      addToast('Obsidian Brain configuration saved', 'success');
+    } catch (e) {
+      addToast(`Save failed: ${e}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, setObsidianVaultPath, setObsidianVaultName]);
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6 py-4">
+      {/* Vault Discovery */}
+      <section className="space-y-3">
+        <h2 className="typo-heading text-foreground/90">Vault Connection</h2>
+        <p className="typo-body text-muted-foreground/60">
+          Connect to an Obsidian vault to enable bidirectional sync of memories, personas, and connectors.
+        </p>
+
+        <div className="flex gap-2">
+          <button
+            onClick={detectVaults}
+            disabled={detecting}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50"
+          >
+            <Search className="w-4 h-4" />
+            {detecting ? 'Detecting...' : 'Auto-Detect Vaults'}
+          </button>
+          <button
+            onClick={browseFolder}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/40 text-foreground/70 hover:bg-secondary/60 transition-colors"
+          >
+            <FolderOpen className="w-4 h-4" />
+            Browse
+          </button>
+        </div>
+
+        {/* Detected vaults */}
+        {detectedVaults.length > 0 && (
+          <div className="space-y-1">
+            <p className="typo-caption text-muted-foreground/50">Detected vaults:</p>
+            {detectedVaults.map((v) => (
+              <button
+                key={v.path}
+                onClick={() => { setVaultPath(v.path); setConnectionResult(null); }}
+                className={`w-full text-left px-3 py-2 rounded-lg border transition-colors ${
+                  vaultPath === v.path
+                    ? 'border-violet-500/30 bg-violet-500/5'
+                    : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/20'
+                }`}
+              >
+                <p className="typo-heading text-foreground/80">{v.name}</p>
+                <p className="typo-caption text-muted-foreground/40 truncate">{v.path}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Manual path input */}
+        <div className="flex gap-2 items-center">
+          <input
+            type="text"
+            value={vaultPath}
+            onChange={(e) => { setVaultPath(e.target.value); setConnectionResult(null); }}
+            placeholder="Vault path..."
+            className="flex-1 px-3 py-2 rounded-lg bg-secondary/30 border border-primary/10 text-foreground/80 typo-body placeholder:text-muted-foreground/30 focus:outline-none focus:border-violet-500/30"
+          />
+          <button
+            onClick={testConnection}
+            disabled={!vaultPath || testing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${testing ? 'animate-spin' : ''}`} />
+            Test
+          </button>
+        </div>
+
+        {/* Connection result */}
+        {connectionResult && (
+          <div className={`flex items-start gap-3 px-4 py-3 rounded-lg border ${
+            connectionResult.valid
+              ? 'bg-emerald-500/5 border-emerald-500/20'
+              : 'bg-red-500/5 border-red-500/20'
+          }`}>
+            {connectionResult.valid ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+            ) : (
+              <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            )}
+            <div>
+              {connectionResult.valid ? (
+                <>
+                  <p className="typo-heading text-emerald-400">Connected to "{connectionResult.vaultName}"</p>
+                  <p className="typo-caption text-muted-foreground/50">{connectionResult.noteCount} notes found</p>
+                </>
+              ) : (
+                <p className="typo-heading text-red-400">{connectionResult.error}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Sync Options */}
+      <section className="space-y-3">
+        <h2 className="typo-heading text-foreground/90">Sync Options</h2>
+        <div className="space-y-2">
+          {[
+            { label: 'Memories', desc: 'Persona memories with category, importance, and tags', checked: syncMemories, onChange: setSyncMemories },
+            { label: 'Persona Profiles', desc: 'System prompts, config, and design context', checked: syncPersonas, onChange: setSyncPersonas },
+            { label: 'Connectors', desc: 'Connector definitions and service documentation', checked: syncConnectors, onChange: setSyncConnectors },
+            { label: 'Auto-Sync', desc: 'Automatically push changes when memories are created', checked: autoSync, onChange: setAutoSync },
+          ].map((opt) => (
+            <label key={opt.label} className="flex items-start gap-3 px-3 py-2 rounded-lg hover:bg-secondary/20 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={opt.checked}
+                onChange={(e) => opt.onChange(e.target.checked)}
+                className="mt-1 rounded border-primary/20 text-violet-500 focus:ring-violet-500/20"
+              />
+              <div>
+                <p className="typo-heading text-foreground/80">{opt.label}</p>
+                <p className="typo-caption text-muted-foreground/50">{opt.desc}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      {/* Folder Mapping */}
+      <section className="space-y-3">
+        <h2 className="typo-heading text-foreground/90">Folder Structure</h2>
+        <p className="typo-caption text-muted-foreground/50">
+          Customize how data is organized in your vault.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'Personas Folder', value: personasFolder, onChange: setPersonasFolder },
+            { label: 'Memories Subfolder', value: memoriesFolder, onChange: setMemoriesFolder },
+            { label: 'Connectors Folder', value: connectorsFolder, onChange: setConnectorsFolder },
+          ].map((field) => (
+            <div key={field.label} className="space-y-1">
+              <label className="typo-caption text-muted-foreground/50">{field.label}</label>
+              <input
+                type="text"
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                className="w-full px-3 py-1.5 rounded-lg bg-secondary/30 border border-primary/10 text-foreground/80 typo-body focus:outline-none focus:border-violet-500/30"
+              />
+            </div>
+          ))}
+        </div>
+        <p className="typo-caption text-muted-foreground/30">
+          Preview: <code className="text-violet-400/60">{personasFolder}/AgentName/{memoriesFolder}/fact/memory-title.md</code>
+        </p>
+      </section>
+
+      {/* Save */}
+      <button
+        onClick={saveConfig}
+        disabled={saving || !connectionResult?.valid}
+        className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors disabled:opacity-40"
+      >
+        <Save className="w-4 h-4" />
+        {saving ? 'Saving...' : 'Save Configuration'}
+      </button>
+    </div>
+  );
+}

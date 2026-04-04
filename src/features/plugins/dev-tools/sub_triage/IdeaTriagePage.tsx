@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   motion, AnimatePresence, useMotionValue, useTransform,
 } from 'framer-motion';
@@ -8,9 +8,10 @@ import {
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
-import { AGENT_CATEGORIES } from '../constants/scanAgents';
+import { SCAN_AGENTS, AGENT_CATEGORIES } from '../constants/scanAgents';
 import { TriageRulesPanel } from './TriageRulesPanel';
 import { EffortRiskFilter } from './EffortRiskFilter';
+import { ProjectSelector } from '../DevToolsPage';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -134,22 +135,22 @@ function SwipeCard({
         {/* Category + agent */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-xl">{idea.agentEmoji}</span>
-          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
+          <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
             {catLabel}
           </span>
         </div>
 
         {/* Title + description */}
         <h3 className="text-lg font-semibold text-foreground/90 mb-2">{idea.title}</h3>
-        <p className="text-sm text-muted-foreground/70 mb-4 leading-relaxed flex-1 min-h-0 overflow-y-auto">
+        <p className="text-md text-muted-foreground/70 mb-4 leading-relaxed flex-1 min-h-0 overflow-y-auto">
           {idea.description}
         </p>
 
         {/* Reasoning */}
         {idea.reasoning && (
           <div className="bg-primary/5 rounded-xl p-3 mb-4">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-1">Reasoning</p>
-            <p className="text-xs text-muted-foreground/60 leading-relaxed">{idea.reasoning}</p>
+            <p className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mb-1">Reasoning</p>
+            <p className="text-md text-muted-foreground/60 leading-relaxed">{idea.reasoning}</p>
           </div>
         )}
 
@@ -158,7 +159,7 @@ function SwipeCard({
           {(['effort', 'impact', 'risk'] as const).map((key) => (
             <span
               key={key}
-              className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${levelColor(idea[key])}`}
+              className={`rounded-full px-2.5 py-0.5 text-md font-medium border ${levelColor(idea[key])}`}
             >
               {key}: {idea[key]}
             </span>
@@ -176,20 +177,48 @@ function SwipeCard({
 export default function IdeaTriagePage() {
   const { triageIdea, deleteIdea } = useDevToolsActions();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const storeIdeas = useSystemStore((s) => s.ideas);
+  const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
+  const triageCounts = useSystemStore((s) => s.triageCounts);
 
-  const [ideas, setIdeas] = useState<TriageIdea[]>([]);
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
+  const [filterScanType, setFilterScanType] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [effortRange, setEffortRange] = useState<[number, number]>([1, 10]);
   const [riskRange, setRiskRange] = useState<[number, number]>([1, 10]);
 
+  // Load ideas from store on mount / project change
+  useEffect(() => {
+    if (activeProjectId) fetchIdeas(activeProjectId);
+  }, [activeProjectId, fetchIdeas]);
+
+  // Map store ideas to triage format
+  const ideas: TriageIdea[] = useMemo(() =>
+    storeIdeas.map((i) => {
+      const agent = SCAN_AGENTS.find((a) => a.key === i.scan_type);
+      return {
+        id: i.id,
+        title: i.title,
+        description: i.description ?? '',
+        reasoning: i.reasoning ?? '',
+        category: (i.category as CategoryKey) || 'technical',
+        agentEmoji: agent?.emoji ?? '?',
+        effort: i.effort ?? 5,
+        impact: i.impact ?? 5,
+        risk: i.risk ?? 5,
+        status: (i.status as TriageIdea['status']) || 'pending',
+      };
+    }),
+  [storeIdeas]);
+
   const pendingIdeas = ideas
     .filter((i) => i.status === 'pending' && (filterCategory === 'all' || i.category === filterCategory))
+    .filter((i) => !filterScanType || storeIdeas.find((si) => si.id === i.id)?.scan_type === filterScanType)
     .filter((i) => i.effort >= effortRange[0] && i.effort <= effortRange[1])
     .filter((i) => i.risk >= riskRange[0] && i.risk <= riskRange[1]);
-  const acceptedCount = ideas.filter((i) => i.status === 'accepted').length;
-  const rejectedCount = ideas.filter((i) => i.status === 'rejected').length;
-  const pendingCount = ideas.filter((i) => i.status === 'pending').length;
+  const acceptedCount = triageCounts?.accepted ?? ideas.filter((i) => i.status === 'accepted').length;
+  const rejectedCount = triageCounts?.rejected ?? ideas.filter((i) => i.status === 'rejected').length;
+  const pendingCount = triageCounts?.pending ?? ideas.filter((i) => i.status === 'pending').length;
   const totalCount = ideas.length;
 
   const visibleStack = pendingIdeas.slice(0, 3);
@@ -198,15 +227,12 @@ export default function IdeaTriagePage() {
     const idea = pendingIdeas[0];
     if (!idea) return;
     const decision = direction === 'right' ? 'accepted' : 'rejected';
-
-    setIdeas((prev) => prev.map((i) => i.id === idea.id ? { ...i, status: decision } : i));
     triageIdea(idea.id, decision);
   }, [pendingIdeas, triageIdea]);
 
   const handleDelete = useCallback(() => {
     const idea = pendingIdeas[0];
     if (!idea) return;
-    setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
     deleteIdea(idea.id);
   }, [pendingIdeas, deleteIdea]);
 
@@ -242,13 +268,13 @@ export default function IdeaTriagePage() {
         subtitle="Evaluate and prioritize generated ideas"
         actions={
           <div className="flex items-center gap-2">
-            <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+            <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
               {acceptedCount} accepted
             </span>
-            <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/25">
+            <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-red-500/15 text-red-400 border border-red-500/25">
               {rejectedCount} rejected
             </span>
-            <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
+            <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
               {pendingCount} pending
             </span>
             <button
@@ -260,7 +286,9 @@ export default function IdeaTriagePage() {
             </button>
           </div>
         }
-      />
+      >
+        <ProjectSelector />
+      </ContentHeader>
 
       <ContentBody>
         {/* Auto-Triage Rules Panel */}
@@ -271,15 +299,15 @@ export default function IdeaTriagePage() {
         )}
 
         <div className="flex gap-6 h-full min-h-[500px]">
-          {/* Left sidebar: category filters + effort/risk filter */}
-          <div className="w-44 flex-shrink-0 space-y-1">
-            <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
-              Filter by Category
+          {/* Left sidebar: category + scan type filters + effort/risk filter */}
+          <div className="w-52 flex-shrink-0 space-y-1">
+            <h3 className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mb-2">
+              Category
             </h3>
             <button
-              onClick={() => setFilterCategory('all')}
-              className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors ${
-                filterCategory === 'all'
+              onClick={() => { setFilterCategory('all'); setFilterScanType(null); }}
+              className={`w-full text-left px-3 py-2 rounded-lg text-md transition-colors ${
+                filterCategory === 'all' && !filterScanType
                   ? 'bg-primary/10 text-foreground/80 font-medium'
                   : 'text-muted-foreground/60 hover:bg-primary/5'
               }`}
@@ -292,9 +320,9 @@ export default function IdeaTriagePage() {
               return (
                 <button
                   key={cat.key}
-                  onClick={() => setFilterCategory(cat.key as CategoryKey)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-2 ${
-                    filterCategory === cat.key
+                  onClick={() => { setFilterCategory(cat.key as CategoryKey); setFilterScanType(null); }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-md transition-colors flex items-center gap-2 ${
+                    filterCategory === cat.key && !filterScanType
                       ? 'bg-primary/10 text-foreground/80 font-medium'
                       : 'text-muted-foreground/60 hover:bg-primary/5'
                   }`}
@@ -305,6 +333,34 @@ export default function IdeaTriagePage() {
                 </button>
               );
             })}
+
+            {/* Scan type filter */}
+            <h3 className="text-md uppercase tracking-wider text-muted-foreground/50 font-medium mt-3 pt-3 border-t border-border/15 mb-2">
+              Scan Type
+            </h3>
+            <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
+              {SCAN_AGENTS.filter((a) => {
+                // Only show scan types that have ideas
+                return ideas.some((i) => storeIdeas.find((si) => si.id === i.id)?.scan_type === a.key);
+              }).map((agent) => {
+                const count = ideas.filter((i) => i.status === 'pending' && storeIdeas.find((si) => si.id === i.id)?.scan_type === agent.key).length;
+                return (
+                  <button
+                    key={agent.key}
+                    onClick={() => { setFilterScanType(filterScanType === agent.key ? null : agent.key); setFilterCategory('all'); }}
+                    className={`w-full text-left px-3 py-1.5 rounded-lg text-md transition-colors flex items-center gap-2 ${
+                      filterScanType === agent.key
+                        ? 'bg-primary/10 text-foreground/80 font-medium'
+                        : 'text-muted-foreground/60 hover:bg-primary/5'
+                    }`}
+                  >
+                    <span>{agent.emoji}</span>
+                    <span className="flex-1 truncate">{agent.label}</span>
+                    <span className="text-muted-foreground/40">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Effort / Risk filters */}
             <div className="pt-3 mt-3 border-t border-border/15">
@@ -322,7 +378,7 @@ export default function IdeaTriagePage() {
             {/* Progress bar */}
             {totalCount > 0 && (
               <div className="w-full max-w-md mb-6">
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground/50 mb-1.5">
+                <div className="flex items-center justify-between text-md text-muted-foreground/50 mb-1.5">
                   <span>{pendingIdeas.length} remaining</span>
                   <span>{totalCount - pendingCount} / {totalCount} reviewed</span>
                 </div>
@@ -341,10 +397,10 @@ export default function IdeaTriagePage() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
                   <ArrowLeftRight className="w-7 h-7 text-amber-400/50" />
                 </div>
-                <p className="text-sm text-muted-foreground/60 mb-1">
+                <p className="text-md text-muted-foreground/60 mb-1">
                   {totalCount === 0 ? 'No ideas to triage' : 'All ideas reviewed!'}
                 </p>
-                <p className="text-xs text-muted-foreground/40">
+                <p className="text-md text-muted-foreground/40">
                   {totalCount === 0
                     ? 'Run the Idea Scanner first to generate ideas.'
                     : `${acceptedCount} accepted, ${rejectedCount} rejected`}
@@ -403,7 +459,7 @@ export default function IdeaTriagePage() {
 
             {/* Keyboard hint */}
             {pendingIdeas.length > 0 && (
-              <p className="text-[10px] text-muted-foreground/30 mt-3 flex items-center gap-3">
+              <p className="text-md text-muted-foreground/30 mt-3 flex items-center gap-3">
                 <span className="flex items-center gap-1">
                   <ChevronLeft className="w-3 h-3" /> / A = Reject
                 </span>
@@ -433,7 +489,7 @@ export default function IdeaTriagePage() {
               onClick={(e) => e.stopPropagation()}
               className="w-80 rounded-2xl border border-primary/15 bg-background/95 backdrop-blur-xl shadow-elevation-4 p-6"
             >
-              <h3 className="text-sm font-semibold text-foreground/90 mb-4">Keyboard Shortcuts</h3>
+              <h3 className="text-md font-semibold text-foreground/90 mb-4">Keyboard Shortcuts</h3>
               <div className="space-y-2.5">
                 {[
                   { keys: ['<-', 'A'], action: 'Reject idea' },
@@ -442,12 +498,12 @@ export default function IdeaTriagePage() {
                   { keys: ['Esc'], action: 'Close overlay' },
                 ].map((shortcut) => (
                   <div key={shortcut.action} className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground/70">{shortcut.action}</span>
+                    <span className="text-md text-muted-foreground/70">{shortcut.action}</span>
                     <div className="flex items-center gap-1">
                       {shortcut.keys.map((key, ki) => (
                         <span key={ki}>
                           {ki > 0 && <span className="text-muted-foreground/30 text-[10px] mx-0.5">/</span>}
-                          <kbd className="inline-block px-1.5 py-0.5 text-[10px] font-mono bg-primary/10 border border-primary/15 rounded text-muted-foreground/80">
+                          <kbd className="inline-block px-1.5 py-0.5 text-md font-mono bg-primary/10 border border-primary/15 rounded text-muted-foreground/80">
                             {key}
                           </kbd>
                         </span>
@@ -458,7 +514,7 @@ export default function IdeaTriagePage() {
               </div>
               <button
                 onClick={() => setShowShortcuts(false)}
-                className="mt-5 w-full text-center text-xs text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
+                className="mt-5 w-full text-center text-md text-muted-foreground/50 hover:text-muted-foreground/70 transition-colors"
               >
                 Press ? or Esc to close
               </button>

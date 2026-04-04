@@ -2342,7 +2342,23 @@ export const en = {
     monitoring_cron: "Cron Scheduler: Runs personas on configured schedules (cron expressions). Active only while the app is running.",
     monitoring_webhook: "Webhook Server: A local HTTP server (localhost:9420) listens for inbound webhooks when webhook triggers are configured.",
 
-    // Section 5: Process Execution
+    // Section 5: Local Network Sharing (P2P)
+    p2p_title: "Local Network Sharing (P2P)",
+    p2p_tldr: "The app can discover and communicate with other Personas instances on your local network.",
+    p2p_detail_1: "When enabled, the app broadcasts its presence on your local network via mDNS (_personas._tcp.local.) so other Personas Desktop instances can discover it.",
+    p2p_detail_2: "A QUIC transport binds on all network interfaces (0.0.0.0) to accept connections from LAN peers. Only peers with trusted cryptographic identities can exchange data.",
+    p2p_detail_3: "Connected peers can exchange persona manifests (names, descriptions, tool lists) and agent-to-agent messages. Credential values are never shared over P2P.",
+    p2p_detail_4: "Share links serve persona bundles over HTTP on your local network. These links are only accessible to devices on the same network.",
+
+    // Section 6: Credential & Filesystem Scanning
+    foraging_title: "Credential & Filesystem Scanning",
+    foraging_tldr: "The app can scan your filesystem to discover existing credentials and read third-party app data.",
+    foraging_detail_1: "The Credential Discovery feature scans known paths on your filesystem (e.g., ~/.aws/credentials, ~/.ssh/) to detect existing API keys and tokens you may want to import.",
+    foraging_detail_2: "Discovered credential files are read only when you explicitly trigger a scan. Found credentials are shown for review before any import.",
+    foraging_detail_3: "Obsidian Brain integration reads Obsidian vault configuration and note files from known OS paths when you enable the feature.",
+    foraging_detail_4: "No filesystem data is transmitted externally. All scanned data remains local unless you explicitly import it into the app.",
+
+    // Section 7: Process Execution
     process_title: "Process Execution",
     process_tldr: "The app runs AI tools and scripts on your machine to carry out agent tasks.",
     process_detail_1: "The app spawns AI provider CLI processes (e.g., claude, codex, gemini) as child processes on your machine.",
@@ -2350,15 +2366,15 @@ export const en = {
     process_detail_3: "Browser automation (Auto-Credential setup) may launch a Playwright-controlled browser session to help set up OAuth credentials. This requires your explicit consent each time.",
     process_detail_4: "Automations can trigger external workflows (GitHub Actions, GitLab CI/CD, n8n, webhooks) based on execution output.",
 
-    // Section 6: Error Reporting & Telemetry
+    // Section 8: Error Reporting & Telemetry
     telemetry_title: "Error Reporting & Telemetry",
-    telemetry_tldr: "Anonymous crash reports may be sent to help fix bugs -- no personal data included.",
+    telemetry_tldr: "Anonymous crash reports and usage data help fix bugs -- you can opt out at any time.",
     telemetry_detail_1: "Crash reports may be sent to Sentry for error tracking. IP addresses, email addresses, and request bodies are stripped before transmission.",
-    telemetry_detail_2: "Anonymous feature usage data (which sections and tabs you visit) is sent to Sentry to help prioritize development. No personal data, credential values, or execution content is included.",
+    telemetry_detail_2: "Anonymous feature usage data (which sections and tabs you visit) is sent to Sentry to help prioritize development. Anonymous device IDs are used for session counting.",
     telemetry_detail_3: "No personal data, credential values, or execution content is included in any telemetry.",
-    telemetry_detail_4: "The app checks for updates via GitHub Releases.",
+    telemetry_detail_4: "You can disable all telemetry at any time in Settings > Account. The app checks for updates via GitHub Releases.",
 
-    // Section 7: Deployment (Optional)
+    // Section 9: Deployment (Optional)
     deploy_title: "Deployment (Optional)",
     deploy_tldr: "You can optionally run agents in the cloud -- nothing is uploaded unless you choose to.",
     deploy_detail_1: "You may optionally deploy personas to a cloud orchestrator, GitHub Actions, or GitLab CI/CD. This sends persona configuration (not credentials) to the selected platform.",
@@ -2372,8 +2388,9 @@ export const en = {
     notice_credentials: "Credentials you store grant the app access to your accounts on third-party services. Use scoped tokens with minimal permissions where possible.",
     notice_license: "This software is provided under the MIT License, without warranty of any kind.",
 
-    // Consent checkbox and button
-    checkbox: "I understand that this application sends data to AI providers, accesses system resources (clipboard, file system, network), and executes processes on my behalf. I accept responsibility for how I configure and use it.",
+    // Consent checkboxes and button
+    checkbox: "I understand that this application sends data to AI providers, accesses system resources (clipboard, file system, local network), and executes processes on my behalf. I accept responsibility for how I configure and use it.",
+    checkbox_telemetry: "Help improve Personas by sending anonymous crash reports and usage analytics. No personal data is included. You can change this later in Settings.",
     source_link: "View source & license",
     accept_button: "I Understand, Continue",
   },

@@ -1,5 +1,6 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback } from 'react';
+import * as Sentry from "@sentry/react";
 import {
   getExportStats,
   exportFull,
@@ -8,6 +9,7 @@ import {
   exportCredentials,
   importCredentials,
 } from '@/api/system/dataPortability';
+import { errMsg } from '@/stores/storeTypes';
 import type {
   ExportStats,
   PortabilityImportResult,
@@ -53,7 +55,8 @@ export function useDataPortability() {
       const saved = await exportFull();
       setExportStatus(saved ? 'success' : 'idle');
     } catch (e) {
-      setErrorMsg(String(e));
+      Sentry.captureException(e);
+      setErrorMsg(errMsg(e, "Export failed"));
       setExportStatus('error');
     }
   }, []);
@@ -70,7 +73,8 @@ export function useDataPortability() {
       setExportStatus(saved ? 'success' : 'idle');
       if (saved) setShowExportModal(false);
     } catch (e) {
-      setErrorMsg(String(e));
+      Sentry.captureException(e);
+      setErrorMsg(errMsg(e, "Selective export failed"));
       setExportStatus('error');
     }
   }, []);
@@ -89,7 +93,8 @@ export function useDataPortability() {
         setImportStatus('idle');
       }
     } catch (e) {
-      setErrorMsg(String(e));
+      Sentry.captureException(e);
+      setErrorMsg(errMsg(e, "Import failed"));
       setImportStatus('error');
     }
   }, []);
@@ -109,7 +114,8 @@ export function useDataPortability() {
         setCredExportPassphrase('');
       }
     } catch (e) {
-      setErrorMsg(String(e));
+      Sentry.captureException(e);
+      setErrorMsg(errMsg(e, "Credential export failed"));
       setCredExportStatus('error');
     }
   }, [credExportPassphrase]);
@@ -133,7 +139,8 @@ export function useDataPortability() {
         setCredImportStatus('idle');
       }
     } catch (e) {
-      setErrorMsg(String(e));
+      Sentry.captureException(e);
+      setErrorMsg(errMsg(e, "Credential import failed"));
       setCredImportStatus('error');
     }
   }, [credImportPassphrase]);
@@ -152,7 +159,8 @@ export function useDataPortability() {
         setCredImportStatus('idle');
       }
     } catch (e) {
-      setErrorMsg(String(e));
+      Sentry.captureException(e);
+      setErrorMsg(errMsg(e, "Credential import failed"));
       setCredImportStatus('error');
     }
   }, [credImportPassphrase]);

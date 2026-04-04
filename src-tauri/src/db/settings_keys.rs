@@ -90,6 +90,9 @@ pub const BYOM_POLICY: &str = "byom_policy";
 /// GitLab pipeline notification preferences (JSON-encoded).
 pub const GITLAB_PIPELINE_NOTIFICATION_PREFS: &str = "gitlab_pipeline_notification_prefs";
 
+/// Obsidian Brain vault configuration (JSON-encoded ObsidianVaultConfig).
+pub const OBSIDIAN_BRAIN_CONFIG: &str = "obsidian_brain_config";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -110,6 +113,7 @@ const ALLOWED_KEYS: &[&str] = &[
     ENGINE_CAPABILITIES,
     BYOM_POLICY,
     GITLAB_PIPELINE_NOTIFICATION_PREFS,
+    OBSIDIAN_BRAIN_CONFIG,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).

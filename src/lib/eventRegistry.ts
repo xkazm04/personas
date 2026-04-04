@@ -518,6 +518,8 @@ export interface EventPayloadMap {
     action: string;
     position?: number;
     queue_depth: number;
+    global_running?: number;
+    global_capacity?: number;
   };
 
   // Auth
@@ -736,7 +738,7 @@ export interface EventPayloadMap {
   // Process activity
   [EventName.PROCESS_ACTIVITY]: {
     domain: string;
-    action: 'started' | 'completed' | 'failed' | 'cancelled';
+    action: 'started' | 'completed' | 'failed' | 'cancelled' | 'queued';
     run_id?: string;
     label?: string;
   };

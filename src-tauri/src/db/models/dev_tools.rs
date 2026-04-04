@@ -38,6 +38,7 @@ pub struct DirectoryScanResult {
 pub struct DevGoal {
     pub id: String,
     pub project_id: String,
+    pub parent_goal_id: Option<String>,
     pub context_id: Option<String>,
     pub order_index: i32,
     pub title: String,
@@ -49,6 +50,20 @@ pub struct DevGoal {
     pub completed_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+// ============================================================================
+// Dev Goal Dependencies
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevGoalDependency {
+    pub id: String,
+    pub goal_id: String,
+    pub depends_on_id: String,
+    pub dependency_type: String,
+    pub created_at: String,
 }
 
 // ============================================================================

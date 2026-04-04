@@ -82,7 +82,7 @@ export function ExportSection({
             ? 'Importing...'
             : importStatus === 'success'
               ? 'Imported!'
-              : 'Import Archive'}
+              : 'Import Workspace'}
         </button>
       </div>
 

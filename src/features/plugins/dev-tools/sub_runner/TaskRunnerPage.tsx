@@ -11,7 +11,9 @@ import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { TaskOutputPanel } from './TaskOutputPanel';
+import { SelfHealingPanel } from './SelfHealingPanel';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -313,6 +315,12 @@ export default function TaskRunnerPage() {
     const completeUn = listen<{ task_id: string; output_lines: number }>(EventName.TASK_EXEC_COMPLETE, () => {
       // Refetch tasks to get final state
       if (activeProjectId) fetchTasks(activeProjectId);
+      // End process in activity drawer if no more running tasks
+      setTimeout(() => {
+        const store = useSystemStore.getState();
+        const stillRunning = store.tasks.some((t) => t.status === 'running');
+        if (!stillRunning) useOverviewStore.getState().processEnded('task_runner', 'completed');
+      }, 500);
     });
 
     return () => {
@@ -367,7 +375,7 @@ export default function TaskRunnerPage() {
               size="sm"
               icon={<Play className="w-3.5 h-3.5" />}
               disabled={queuedCount === 0 && runningCount === 0}
-              onClick={() => startBatch()}
+              onClick={() => { startBatch(); useOverviewStore.getState().processStarted('task_runner', undefined, 'Task Runner Batch'); }}
             >
               Start Batch
             </Button>
@@ -424,6 +432,17 @@ export default function TaskRunnerPage() {
               </p>
             </div>
           )}
+
+          {/* Self-healing panel */}
+          <SelfHealingPanel onRetryTask={async (taskId) => {
+            // Re-create the failed task and queue it for retry
+            const task = tasks.find((t) => t.id === taskId);
+            if (task) {
+              try {
+                await createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId });
+              } catch { /* ignore */ }
+            }
+          }} />
 
           {/* Task queue */}
           <div>

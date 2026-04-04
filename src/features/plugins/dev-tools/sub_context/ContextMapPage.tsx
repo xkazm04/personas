@@ -7,6 +7,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
 import { cancelScanCodebase } from '@/api/devTools/devTools';
+import { useOverviewStore } from '@/stores/overviewStore';
 
 import type { ContextGroup, ContextItem } from './contextMapTypes';
 import { parseJsonArray } from './contextMapTypes';
@@ -81,6 +82,7 @@ export default function ContextMapPage() {
         const { status } = event.payload;
         if (status === 'completed' || status === 'failed' || status === 'cancelled') {
           if (status === 'completed') fetchContextMap();
+          useOverviewStore.getState().processEnded('context_scan', status === 'completed' ? 'completed' : 'failed');
           setTimeout(() => {
             useSystemStore.setState({
               codebaseScanPhase: status === 'completed' ? 'complete' : 'error',
@@ -102,7 +104,10 @@ export default function ContextMapPage() {
 
   const handleScan = useCallback(async () => {
     setScanLines([]);
-    try { await scanCodebase(activeProject?.root_path); } catch { /* store handles error */ }
+    useOverviewStore.getState().processStarted('context_scan', undefined, 'Context Map Scan');
+    try { await scanCodebase(activeProject?.root_path); } catch {
+      useOverviewStore.getState().processEnded('context_scan', 'failed');
+    }
   }, [scanCodebase, activeProject?.root_path]);
 
   const handleCancelScan = useCallback(async () => {

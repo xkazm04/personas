@@ -26,6 +26,9 @@ function StatusDot({ status }: { status: ActiveProcess["status"] }) {
   if (status === "running") {
     return <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />;
   }
+  if (status === "queued") {
+    return <span className="inline-block w-2 h-2 rounded-full bg-amber-400 shrink-0" />;
+  }
   if (status === "completed") {
     return <span className="text-green-400 shrink-0 text-xs">{"\u2713"}</span>;
   }
@@ -50,7 +53,7 @@ function ProcessRow({
     <div className="border-b border-primary/5 last:border-b-0">
       <button
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-primary/5 transition-colors text-left"
-        onClick={() => isExecution && setExpanded((v) => !v)}
+        onClick={() => isExecution && process.status === "running" && setExpanded((v) => !v)}
       >
         <StatusDot status={process.status} />
         <div className="min-w-0 flex-1">
@@ -67,7 +70,11 @@ function ProcessRow({
           )}
         </div>
         <div className="typo-caption text-muted-foreground/60 shrink-0 text-right">
-          {process.status === "running" ? elapsedStr(process.startedAt) : process.status}
+          {process.status === "running"
+            ? elapsedStr(process.startedAt)
+            : process.status === "queued"
+              ? `#${(process.queuePosition ?? 0) + 1} in queue`
+              : process.status}
         </div>
       </button>
 
@@ -97,8 +104,14 @@ function DrawerContent({ onClose }: DrawerProps) {
     })),
   );
 
-  const activeEntries = Object.entries(activeProcesses);
-  const hasContent = activeEntries.length > 0 || recentProcesses.length > 0;
+  const runningEntries = Object.entries(activeProcesses).filter(
+    ([, p]) => p.status === "running",
+  );
+  const queuedEntries = Object.entries(activeProcesses)
+    .filter(([, p]) => p.status === "queued")
+    .sort((a, b) => (a[1].queuePosition ?? 99) - (b[1].queuePosition ?? 99));
+
+  const hasContent = runningEntries.length > 0 || queuedEntries.length > 0 || recentProcesses.length > 0;
 
   return (
     <>
@@ -127,13 +140,25 @@ function DrawerContent({ onClose }: DrawerProps) {
             </div>
           )}
 
-          {/* Active section */}
-          {activeEntries.length > 0 && (
+          {/* Active (running) section */}
+          {runningEntries.length > 0 && (
             <div>
               <div className="px-3 pt-3 pb-1 typo-caption text-muted-foreground/60 uppercase tracking-wide">
-                Active ({activeEntries.length})
+                Active ({runningEntries.length})
               </div>
-              {activeEntries.map(([key, proc]) => (
+              {runningEntries.map(([key, proc]) => (
+                <ProcessRow key={key} processKey={key} process={proc} />
+              ))}
+            </div>
+          )}
+
+          {/* Queued section */}
+          {queuedEntries.length > 0 && (
+            <div>
+              <div className="px-3 pt-3 pb-1 typo-caption text-muted-foreground/60 uppercase tracking-wide">
+                Queued ({queuedEntries.length})
+              </div>
+              {queuedEntries.map(([key, proc]) => (
                 <ProcessRow key={key} processKey={key} process={proc} />
               ))}
             </div>

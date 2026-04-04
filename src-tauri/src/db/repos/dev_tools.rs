@@ -1,8 +1,8 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{
-    DevContext, DevContextGroup, DevContextGroupRelationship, DevGoal, DevGoalSignal, DevIdea,
-    DevProject, DevScan, DevTask, TriageRule,
+    DevContext, DevContextGroup, DevContextGroupRelationship, DevGoal, DevGoalDependency,
+    DevGoalSignal, DevIdea, DevProject, DevScan, DevTask, TriageRule,
 };
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
@@ -30,6 +30,7 @@ fn row_to_goal(row: &Row) -> rusqlite::Result<DevGoal> {
     Ok(DevGoal {
         id: row.get("id")?,
         project_id: row.get("project_id")?,
+        parent_goal_id: row.get("parent_goal_id")?,
         context_id: row.get("context_id")?,
         order_index: row.get("order_index")?,
         title: row.get("title")?,
@@ -360,6 +361,7 @@ pub fn create_goal(
     context_id: Option<&str>,
     status: Option<&str>,
     target_date: Option<&str>,
+    parent_goal_id: Option<&str>,
 ) -> Result<DevGoal, AppError> {
     if title.trim().is_empty() {
         return Err(AppError::Validation("Title cannot be empty".into()));
@@ -382,9 +384,9 @@ pub fn create_goal(
         let order_index = max_order + 1;
 
         conn.execute(
-            "INSERT INTO dev_goals (id, project_id, context_id, order_index, title, description, status, target_date, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
-            params![id, project_id, context_id, order_index, title, description, status, target_date, now],
+            "INSERT INTO dev_goals (id, project_id, parent_goal_id, context_id, order_index, title, description, status, target_date, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
+            params![id, project_id, parent_goal_id, context_id, order_index, title, description, status, target_date, now],
         )?;
 
         get_goal_by_id(pool, &id)
@@ -528,6 +530,70 @@ pub fn create_goal_signal(
             row_to_goal_signal,
         )
         .map_err(AppError::Database)
+    })
+}
+
+// ============================================================================
+// Goal Dependencies
+// ============================================================================
+
+pub fn list_goal_dependencies(
+    pool: &DbPool,
+    goal_id: &str,
+) -> Result<Vec<DevGoalDependency>, AppError> {
+    timed_query!("dev_goal_dependencies", "dev_goal_dependencies::list", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, goal_id, depends_on_id, dependency_type, created_at
+             FROM dev_goal_dependencies WHERE goal_id = ?1 ORDER BY created_at",
+        )?;
+        let rows = stmt.query_map(params![goal_id], |row| {
+            Ok(DevGoalDependency {
+                id: row.get("id")?,
+                goal_id: row.get("goal_id")?,
+                depends_on_id: row.get("depends_on_id")?,
+                dependency_type: row.get("dependency_type")?,
+                created_at: row.get("created_at")?,
+            })
+        })
+        .map_err(AppError::Database)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)?;
+        Ok(rows)
+    })
+}
+
+pub fn add_goal_dependency(
+    pool: &DbPool,
+    goal_id: &str,
+    depends_on_id: &str,
+    dependency_type: Option<&str>,
+) -> Result<DevGoalDependency, AppError> {
+    timed_query!("dev_goal_dependencies", "dev_goal_dependencies::add", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let dep_type = dependency_type.unwrap_or("blocks");
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO dev_goal_dependencies (id, goal_id, depends_on_id, dependency_type, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            params![id, goal_id, depends_on_id, dep_type, now],
+        )?;
+        Ok(DevGoalDependency {
+            id,
+            goal_id: goal_id.to_string(),
+            depends_on_id: depends_on_id.to_string(),
+            dependency_type: dep_type.to_string(),
+            created_at: now,
+        })
+    })
+}
+
+pub fn remove_goal_dependency(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("dev_goal_dependencies", "dev_goal_dependencies::remove", {
+        let conn = pool.get()?;
+        let count = conn.execute("DELETE FROM dev_goal_dependencies WHERE id = ?1", params![id])?;
+        Ok(count > 0)
     })
 }
 

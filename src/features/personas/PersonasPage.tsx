@@ -2,7 +2,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Puzzle } from 'lucide-react';
+
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -34,6 +34,8 @@ const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPag
 const DocSigningPage = lazy(() => import('@/features/plugins/doc-signing/DocSigningPage'));
 const OcrPage = lazy(() => import('@/features/plugins/ocr/OcrPage'));
 const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
+const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
+const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
@@ -73,30 +75,37 @@ export default function PersonasPage() {
   // Prevents showing UnifiedMatrixEntry before the first load completes.
   const [personasFetched, setPersonasFetched] = useState(false);
 
-  const runStartup = useCallback(() => {
-    // Run all startup fetches in parallel and collect failures.
-    // Vault and pipeline stores are dynamically imported to keep them out of the main bundle.
+  const runStartup = useCallback(async () => {
+    // Staggered startup: fetch personas first (critical for first paint),
+    // then secondary data in a second wave to avoid IPC stampede.
     setError(null);
-    const STARTUP_LABELS = ['personas', 'tools', 'credentials', 'recipes', 'groups'] as const;
-    Promise.allSettled([
-      fetchPersonas(),
+    const failed: string[] = [];
+
+    // Wave 1: Personas — needed for initial render
+    try {
+      await fetchPersonas();
+    } catch {
+      failed.push('personas');
+    }
+    setPersonasFetched(true);
+
+    // Wave 2: Secondary data — deferred so UI is interactive first
+    const secondaryResults = await Promise.allSettled([
       fetchToolDefinitions(),
       import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
-    ]).then((results) => {
-      setPersonasFetched(true);
-      const failed = (results as PromiseSettledResult<void>[])
-        .map((r, i) => (r.status === 'rejected' ? STARTUP_LABELS[i] : null))
-        .filter((l): l is NonNullable<typeof l> => l !== null);
-      if (failed.length > 0) {
-        setError(`Startup failed -- ${failed.join(', ')} could not be loaded`);
-      }
-      // Auto-reconnect GitLab if a vault credential exists (non-blocking)
-      void useSystemStore.getState().gitlabInitialize();
-    }).catch(() => {
-      setPersonasFetched(true);
+    ]);
+    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
+    secondaryResults.forEach((r, i) => {
+      if (r.status === 'rejected') failed.push(SECONDARY_LABELS[i]);
     });
+
+    if (failed.length > 0) {
+      setError(`Startup failed -- ${failed.join(', ')} could not be loaded`);
+    }
+    // Auto-reconnect GitLab if a vault credential exists (non-blocking)
+    void useSystemStore.getState().gitlabInitialize();
   }, [fetchPersonas, fetchToolDefinitions, setError]);
 
   useEffect(() => {
@@ -222,18 +231,11 @@ export default function PersonasPage() {
       if (pluginTab === 'artist') {
         return <ErrorBoundary name="Artist"><Suspense fallback={SectionFallback}><ArtistPage /></Suspense></ErrorBoundary>;
       }
-      // Default browse view — placeholder for future plugin marketplace
-      return (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center">
-              <Puzzle className="w-8 h-8 text-primary/60" />
-            </div>
-            <p className="typo-heading text-foreground/80">Plugins</p>
-            <p className="typo-body text-muted-foreground/60 max-w-xs">Extend your workspace with plugins. More coming soon.</p>
-          </div>
-        </div>
-      );
+      if (pluginTab === 'obsidian-brain') {
+        return <ErrorBoundary name="ObsidianBrain"><Suspense fallback={SectionFallback}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
+      }
+      // Browse view — plugin cards with enable/disable toggles
+      return <ErrorBoundary name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'schedules') return <ErrorBoundary name="Schedules"><Suspense fallback={SectionFallback}><SchedulesPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;

@@ -60,7 +60,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 {/* Viewer controls */}
                 <button
                   onClick={toggleAutoRotate}
-                  className={`p-1.5 rounded-lg text-xs transition-colors ${
+                  className={`p-1.5 rounded-lg text-md transition-colors ${
                     autoRotate ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground hover:bg-secondary/40'
                   }`}
                   title="Auto-rotate"
@@ -69,7 +69,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags }: Gallery3DP
                 </button>
                 <button
                   onClick={toggleWireframe}
-                  className={`p-1.5 rounded-lg text-xs transition-colors ${
+                  className={`p-1.5 rounded-lg text-md transition-colors ${
                     wireframe ? 'bg-rose-500/15 text-rose-400' : 'text-muted-foreground hover:bg-secondary/40'
                   }`}
                   title="Wireframe"

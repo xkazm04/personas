@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { errMsg } from '@/stores/storeTypes';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
 import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
@@ -117,7 +118,7 @@ export function useAutomationSetupState(personaId: string, editAutomationId?: st
       }
     } catch (err) {
       setLocalPhase(null);
-      setDeployError(String(err));
+      setDeployError(errMsg(err, 'Automation deployment failed'));
     }
   };
 

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Wrench, Target, Check, X, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useSystemStore } from "@/stores/systemStore";
+import { useIsDarkTheme } from '@/stores/themeStore';
 import { CONNECTOR_META, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 
 /* ------------------------------------------------------------------ */
@@ -71,7 +72,7 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
               <div className={`w-8 h-px transition-colors duration-300 ${i <= current || done ? 'bg-primary/30' : 'bg-primary/8'}`} />
             )}
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full typo-caption transition-all duration-300 ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full typo-body transition-all duration-300 ${
                 done
                   ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                   : active
@@ -94,6 +95,7 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
 /* ------------------------------------------------------------------ */
 
 function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (role: string) => void }) {
+  const isDark = useIsDarkTheme();
   return (
     <div className="space-y-6">
       <div>
@@ -115,7 +117,7 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
                   : 'border-primary/10 bg-primary/3 hover:border-primary/20 hover:bg-primary/5'
               }`}
             >
-              {/* Illustration */}
+              {/* Illustration — darken for light themes for better contrast */}
               <div
                 className="w-24 h-24 mb-3 transition-transform duration-300 group-hover:scale-105"
                 style={{ color: role.accentColor }}
@@ -124,13 +126,13 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
                   src={role.illustration}
                   alt={role.label}
                   className="w-full h-full"
-                  style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.2))' }}
+                  style={{ filter: isDark ? 'drop-shadow(0 2px 8px rgba(0,0,0,0.2))' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.1)) brightness(0.7) contrast(1.2)' }}
                 />
               </div>
 
               {/* Label */}
               <span className="typo-body-lg font-bold text-foreground">{role.label}</span>
-              <span className="typo-caption text-muted-foreground/60 mt-0.5">{role.subtitle}</span>
+              <span className="typo-body text-muted-foreground/60 mt-0.5">{role.subtitle}</span>
 
               {/* Selection indicator */}
               {isSelected && (
@@ -245,7 +247,7 @@ function GoalStep({ value, onChange }: { value: string; onChange: (v: string) =>
         className="w-full rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 typo-body text-foreground placeholder:text-muted-foreground/40 focus-ring focus-visible:border-primary/30 resize-none transition-all"
       />
       <div className="flex items-center justify-between">
-        <span className="typo-caption text-muted-foreground/50">
+        <span className="typo-body text-muted-foreground/50">
           {value.trim().length < 10 ? `Min 10 characters (${value.trim().length}/10)` : 'Ready to save'}
         </span>
       </div>
@@ -303,7 +305,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
   };
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} titleId="setup-stepper" maxWidthClass="max-w-2xl">
+    <BaseModal isOpen={isOpen} onClose={onClose} titleId="setup-stepper" maxWidthClass="max-w-2xl" panelClassName="max-h-[85vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden">
       <div className="p-6 flex flex-col" style={{ minHeight: '480px' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -442,7 +444,7 @@ function SetupCardItem({
       onClick={locked ? undefined : onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`group relative text-left focus-ring h-[200px] flex flex-col ${
+      className={`group relative text-left focus-ring h-[224px] flex flex-col ${
         locked ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
       }`}
     >
@@ -457,7 +459,7 @@ function SetupCardItem({
 
         {/* Icon or illustration */}
         <div
-          className={`absolute inset-0 flex items-center justify-center ${card.iconText} transition-all duration-500 pointer-events-none ${hovered && !locked ? 'opacity-50' : 'opacity-20'}`}
+          className={`absolute inset-0 flex items-center justify-center ${card.iconText} transition-all duration-500 pointer-events-none ${hovered && !locked ? 'opacity-100' : 'opacity-90'}`}
         >
           {roleDef ? (
             <img src={roleDef.illustration} alt={roleDef.label} className="w-20 h-20 opacity-80" />
@@ -474,8 +476,8 @@ function SetupCardItem({
         )}
 
         {/* Title overlaid at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-6 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-10">
-          <h3 className="typo-card-label tracking-wide uppercase">
+        <div className="absolute bottom-0 left-0 right-0 px-3 pb-2.5 pt-8 bg-gradient-to-t dark:from-black/40 from-transparent to-transparent pointer-events-none z-10">
+          <h3 className="text-lg font-semibold tracking-wide uppercase dark:text-white text-foreground/85 drop-shadow-sm">
             {displayTitle}
           </h3>
         </div>
@@ -484,7 +486,7 @@ function SetupCardItem({
         {completed && (
           <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30">
             <Check className="w-3 h-3 text-emerald-400" />
-            <span className="text-[10px] font-medium text-emerald-400 max-w-[80px] truncate">
+            <span className="text-sm font-medium text-emerald-400 max-w-[80px] truncate">
               {value}
             </span>
           </div>
@@ -497,8 +499,8 @@ function SetupCardItem({
       </div>
 
       {/* Description below */}
-      <div className="mt-1.5 px-1 h-[48px] flex items-start">
-        <p className="typo-caption leading-relaxed text-muted-foreground/80 line-clamp-3">
+      <div className="mt-2 px-1 h-[64px] flex items-start">
+        <p className="typo-body leading-relaxed dark:text-foreground text-muted-foreground/80 line-clamp-3">
           {locked
             ? card.id === 'tool'
               ? 'Select a role first to unlock tool options.'

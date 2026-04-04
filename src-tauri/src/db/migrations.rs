@@ -194,6 +194,11 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         "ALTER TABLE persona_executions ADD COLUMN log_truncated INTEGER NOT NULL DEFAULT 0;"
     ); // ignore "duplicate column" error on re-run
 
+    // -- Goal hierarchy: parent_goal_id for tree structure -------------------
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_goals ADD COLUMN parent_goal_id TEXT REFERENCES dev_goals(id) ON DELETE SET NULL;"
+    ); // ignore "duplicate column" error on re-run
+
     // -- Enforce at most one production version per persona --------------------
     // Before creating the unique index, fix any existing violations by keeping
     // only the highest-version-number production row per persona.
@@ -1365,6 +1370,7 @@ CREATE TABLE IF NOT EXISTS dev_projects (
 CREATE TABLE IF NOT EXISTS dev_goals (
   id             TEXT PRIMARY KEY,
   project_id     TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+  parent_goal_id TEXT REFERENCES dev_goals(id) ON DELETE SET NULL,
   context_id     TEXT,
   order_index    INTEGER NOT NULL DEFAULT 0,
   title          TEXT NOT NULL,
@@ -1379,6 +1385,21 @@ CREATE TABLE IF NOT EXISTS dev_goals (
 );
 CREATE INDEX IF NOT EXISTS idx_dev_goals_project ON dev_goals(project_id);
 CREATE INDEX IF NOT EXISTS idx_dev_goals_status ON dev_goals(status);
+CREATE INDEX IF NOT EXISTS idx_dev_goals_parent ON dev_goals(parent_goal_id);
+
+-- ============================================================================
+-- Dev Tools: Goal Dependencies (cross-goal blocking relationships)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_goal_dependencies (
+  id             TEXT PRIMARY KEY,
+  goal_id        TEXT NOT NULL REFERENCES dev_goals(id) ON DELETE CASCADE,
+  depends_on_id  TEXT NOT NULL REFERENCES dev_goals(id) ON DELETE CASCADE,
+  dependency_type TEXT NOT NULL DEFAULT 'blocks',
+  created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dev_goal_deps_goal ON dev_goal_dependencies(goal_id);
+CREATE INDEX IF NOT EXISTS idx_dev_goal_deps_dep ON dev_goal_dependencies(depends_on_id);
 
 -- ============================================================================
 -- Dev Tools: Goal Signals
@@ -3630,6 +3651,33 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         );
         CREATE INDEX IF NOT EXISTS idx_artist_tags_asset ON artist_tags(asset_id);
         CREATE INDEX IF NOT EXISTS idx_artist_tags_tag ON artist_tags(tag);"
+    )?;
+
+    // ── Obsidian Brain: Sync State & Log ─────────────────────────────
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS obsidian_sync_state (
+            id              TEXT PRIMARY KEY,
+            entity_type     TEXT NOT NULL,
+            entity_id       TEXT NOT NULL,
+            vault_file_path TEXT NOT NULL,
+            content_hash    TEXT NOT NULL,
+            sync_direction  TEXT NOT NULL,
+            synced_at       TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(entity_type, entity_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_obsidian_sync_entity ON obsidian_sync_state(entity_type, entity_id);
+
+        CREATE TABLE IF NOT EXISTS obsidian_sync_log (
+            id              TEXT PRIMARY KEY,
+            sync_type       TEXT NOT NULL,
+            entity_type     TEXT NOT NULL,
+            entity_id       TEXT,
+            vault_file_path TEXT,
+            action          TEXT NOT NULL,
+            details         TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_obsidian_sync_log_created ON obsidian_sync_log(created_at DESC);"
     )?;
 
     Ok(())

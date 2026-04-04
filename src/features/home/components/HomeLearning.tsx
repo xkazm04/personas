@@ -7,6 +7,7 @@ import {
 import { useSystemStore } from '@/stores/systemStore';
 import { TOUR_REGISTRY } from '@/stores/slices/system/tourSlice';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 
 // -- Tour icons & colors -----------------------------------------------
 
@@ -225,22 +226,18 @@ export default function HomeLearning() {
   const [activeTrick, setActiveTrick] = useState<Trick | null>(null);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
-          <GraduationCap className="w-5 h-5 text-indigo-400" />
-        </div>
-        <div>
-          <h2 className="typo-heading text-foreground/90">Learning Center</h2>
-          <p className="typo-body text-muted-foreground/60">Guided tours and quick tricks to master Personas</p>
-        </div>
-      </div>
-
+    <ContentBox>
+      <ContentHeader
+        icon={<GraduationCap className="w-5 h-5 text-indigo-400" />}
+        iconColor="indigo"
+        title="Learning Center"
+        subtitle="Guided tours and quick tricks to master Personas"
+      />
+      <ContentBody centered>
       {/* 2-column layout */}
-      <div className="flex gap-6 max-w-[1600px]">
+      <div className="flex gap-6 w-full">
         {/* Left column: Guided Tours */}
-        <div className="w-[680px] flex-shrink-0 space-y-4">
+        <div className="w-1/2 flex-shrink-0 space-y-4">
           <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
             <Compass className="w-4 h-4 text-indigo-400" />
             <h3 className="typo-heading text-foreground/80">Guided Tours</h3>
@@ -294,7 +291,7 @@ export default function HomeLearning() {
         <div className="w-px bg-primary/10 self-stretch flex-shrink-0" />
 
         {/* Right column: Tricks & Tips */}
-        <div className="flex-1 min-w-0 space-y-5">
+        <div className="w-1/2 min-w-0 space-y-5">
           <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
             <Sparkles className="w-4 h-4 text-amber-400" />
             <h3 className="typo-heading text-foreground/80">Tricks & Tips</h3>
@@ -339,7 +336,8 @@ export default function HomeLearning() {
       {activeTrick && (
         <TrickModal trick={activeTrick} onClose={() => setActiveTrick(null)} />
       )}
-    </div>
+      </ContentBody>
+    </ContentBox>
   );
 }
 

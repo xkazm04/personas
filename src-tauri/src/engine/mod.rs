@@ -143,10 +143,10 @@ use self::types::{ExecutionResult, ExecutionState, HealingEventPayload, QueueSta
 
 use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
 
-/// Hard engine-level ceiling for any single execution (30 minutes).
+/// Hard engine-level ceiling for any single execution (20 minutes).
 /// This is a non-overridable safety net that prevents runaway executions
 /// regardless of per-persona timeout configuration.
-pub const ENGINE_MAX_EXECUTION_SECS: u64 = 30 * 60;
+pub const ENGINE_MAX_EXECUTION_SECS: u64 = 20 * 60;
 
 /// Engine ceiling expressed in milliseconds for validation and clamping.
 pub const ENGINE_MAX_EXECUTION_MS: i32 = (ENGINE_MAX_EXECUTION_SECS * 1000) as i32;
@@ -694,6 +694,8 @@ impl ExecutionEngine {
                     "Execution queued (position {})", position,
                 );
                 // Emit queue status event to frontend
+                let global_running = self.tracker.lock().await.total_running();
+                let global_capacity = self.tracker.lock().await.global_max_concurrent();
                 let _ = app.emit(
                     event_name::QUEUE_STATUS,
                     QueueStatusEvent {
@@ -702,7 +704,13 @@ impl ExecutionEngine {
                         action: "queued".into(),
                         position: Some(position),
                         queue_depth,
+                        global_running,
+                        global_capacity,
                     },
+                );
+                // Emit process activity so the drawer shows this process as queued
+                process_activity::emit_process_activity(
+                    &app, "execution", "queued", Some(&execution_id), Some(&persona.name),
                 );
                 // Store the execution context for when a slot opens
                 self.queued_contexts.lock().await.insert(
@@ -789,7 +797,6 @@ impl ExecutionEngine {
         let exec_id = execution_id.clone();
         let persona_id = persona.id.clone();
         let persona_timeout_ms = persona.timeout_ms;
-        let persona_max_concurrent = persona.max_concurrent;
         let log_dir = self.log_dir.clone();
         let pool_clone = pool.clone();
 
@@ -935,15 +942,13 @@ impl ExecutionEngine {
                 }
             }
 
-            // Drain queue: promote next waiting execution for this persona
+            // Drain queue: promote next waiting execution globally
             drain_and_start_next(
                 tracker,
                 tasks.clone(),
                 queued_contexts,
                 cancelled_flags,
                 child_pids,
-                persona_id_cleanup,
-                persona_max_concurrent,
                 app_for_drain,
                 pool_for_drain,
                 circuit_breaker_for_drain,
@@ -1359,8 +1364,11 @@ pub(crate) fn kill_process(pid: u32) {
 // Queue drain: promote next waiting execution when a slot opens
 // =============================================================================
 
-/// After an execution finishes and its running slot is freed, check if there's
-/// a queued execution waiting for this persona and start it.
+/// After an execution finishes and its running slot is freed, check all
+/// persona queues globally for the highest-priority candidate and start it.
+///
+/// Uses `drain_next_global` to pick the best candidate across ALL personas,
+/// respecting both per-persona and global concurrency limits.
 ///
 /// Takes owned types and returns a boxed Send future so the function can be
 /// awaited inside `tokio::spawn` blocks (which require Send futures).
@@ -1371,24 +1379,27 @@ fn drain_and_start_next(
     queued_contexts: Arc<Mutex<HashMap<String, QueuedExecutionContext>>>,
     cancelled_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     child_pids: Arc<Mutex<HashMap<String, u32>>>,
-    persona_id: String,
-    max_concurrent: i32,
     app: AppHandle,
     pool: DbPool,
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
     healing_personas: Arc<Mutex<HashSet<String>>>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
     Box::pin(async move {
-    let persona_id = persona_id.as_str();
-    // Atomically: check capacity, dequeue, register as running, and read queue depth
-    // in a single lock scope to prevent races with concurrent drains or new admissions.
+    // Atomically: scan all persona queues for the best candidate, check both
+    // per-persona and global capacity, dequeue, register as running.
     let next = {
         let mut t = tracker.lock().await;
-        t.drain_next(persona_id, max_concurrent)
-            .map(|queued| (queued, t.queue_depth(persona_id)))
+        t.drain_next_global()
+            .map(|queued| {
+                let pid = queued.persona_id.clone();
+                let depth = t.queue_depth(&pid);
+                let global_running = t.total_running();
+                let global_capacity = t.global_max_concurrent();
+                (queued, pid, depth, global_running, global_capacity)
+            })
     };
 
-    if let Some((queued, queue_depth)) = next {
+    if let Some((queued, persona_id, queue_depth, global_running, global_capacity)) = next {
         let exec_id = queued.execution_id.clone();
         let exec_id_for_tasks = exec_id.clone();
 
@@ -1397,17 +1408,21 @@ fn drain_and_start_next(
             event_name::QUEUE_STATUS,
             QueueStatusEvent {
                 execution_id: exec_id.clone(),
-                persona_id: persona_id.to_string(),
+                persona_id: persona_id.clone(),
                 action: "promoted".into(),
                 position: None,
                 queue_depth,
+                global_running,
+                global_capacity,
             },
         );
 
         tracing::info!(
             persona_id = %persona_id,
             execution_id = %exec_id,
-            "Queue: promoted execution to running slot",
+            global_running = global_running,
+            "Queue: promoted execution to running slot (global {}/{})",
+            global_running, global_capacity,
         );
 
         // Retrieve the saved context
@@ -1440,7 +1455,6 @@ fn drain_and_start_next(
             let persona = ctx.persona;
             let persona_id_owned = persona.id.clone();
             let persona_timeout_ms = persona.timeout_ms;
-            let persona_max_concurrent_inner = persona.max_concurrent;
             let pool_clone = ctx.pool.clone();
             let pool_for_drain = ctx.pool.clone();
             let app_handle = ctx.app.clone();
@@ -1571,15 +1585,13 @@ fn drain_and_start_next(
                 tasks_clone.lock().await.remove(&exec_id_cleanup);
                 cancelled_flags.lock().await.remove(&exec_id_cleanup);
 
-                // Recursively drain next (owned types for Send safety)
+                // Recursively drain next globally (owned types for Send safety)
                 drain_and_start_next(
                     tracker_clone,
                     tasks_clone.clone(),
                     queued_contexts_clone,
                     cancelled_flags_clone,
                     child_pids_clone,
-                    persona_id_cleanup,
-                    persona_max_concurrent_inner,
                     app_for_drain,
                     pool_for_drain,
                     circuit_breaker_for_drain,
@@ -1591,7 +1603,7 @@ fn drain_and_start_next(
             tasks.lock().await.insert(exec_id_for_tasks, handle);
         } else {
             // Context was missing (e.g., cancelled while queued) -- release the slot
-            tracker.lock().await.remove_running(persona_id, &exec_id);
+            tracker.lock().await.remove_running(&persona_id, &exec_id);
         }
     }
     }) // close Box::pin(async move { ... })
@@ -2530,6 +2542,8 @@ fn spawn_healing_chain(
         tracker.lock().await.remove_running(&persona_id_cleanup, &exec_id_cleanup);
         cancelled_flags.lock().await.remove(&exec_id_cleanup);
         healing_personas.lock().await.remove(&persona_id_cleanup);
+        // TODO: call drain_and_start_next here to promote queued executions
+        // when a healing slot frees up (requires passing additional Arc clones)
         #[cfg(feature = "desktop")]
         crate::tray::refresh_tray(&app_for_cleanup);
     });
@@ -2824,6 +2838,8 @@ fn spawn_delayed_retry(
         // 13. Cleanup
         tracker.lock().await.remove_running(&persona_id, &exec_id);
         cancelled_flags.lock().await.remove(&exec_id);
+        // TODO: call drain_and_start_next here to promote queued executions
+        // when a retry slot frees up (requires passing additional Arc clones)
         #[cfg(feature = "desktop")]
         crate::tray::refresh_tray(&app);
     });

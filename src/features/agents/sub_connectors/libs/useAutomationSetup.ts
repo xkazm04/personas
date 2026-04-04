@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { errMsg } from '@/stores/storeTypes';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
 import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
@@ -161,7 +162,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
       });
       if (result) { setDeployResult(result); setLocalPhase('success'); void fetchAutomations(personaId); }
       else { setLocalPhase(null); setDeployError('Deployment failed. Check your platform credentials and try again.'); }
-    } catch (err) { setLocalPhase(null); setDeployError(String(err)); }
+    } catch (err) { setLocalPhase(null); setDeployError(errMsg(err, 'Automation deployment failed')); }
   };
 
   const handleClose = useCallback(() => {

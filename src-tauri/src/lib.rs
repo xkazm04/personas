@@ -1546,6 +1546,18 @@ pub fn run() {
             commands::artist::artist_read_image_base64,
             commands::artist::artist_run_creative_session,
             commands::artist::artist_cancel_creative_session,
+            // Obsidian Brain -- Second Brain Sync
+            commands::obsidian_brain::obsidian_brain_detect_vaults,
+            commands::obsidian_brain::obsidian_brain_test_connection,
+            commands::obsidian_brain::obsidian_brain_save_config,
+            commands::obsidian_brain::obsidian_brain_get_config,
+            commands::obsidian_brain::obsidian_brain_push_sync,
+            commands::obsidian_brain::obsidian_brain_get_sync_log,
+            commands::obsidian_brain::obsidian_brain_pull_sync,
+            commands::obsidian_brain::obsidian_brain_resolve_conflict,
+            commands::obsidian_brain::obsidian_brain_list_vault_files,
+            commands::obsidian_brain::obsidian_brain_read_vault_note,
+            commands::obsidian_brain::obsidian_brain_push_goals,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
@@ -1665,6 +1677,10 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
             commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools -- Goal Dependencies
+            commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies,
+            commands::infrastructure::dev_tools::dev_tools_add_goal_dependency,
+            commands::infrastructure::dev_tools::dev_tools_remove_goal_dependency,
             // Dev Tools -- Goal Signals
             commands::infrastructure::dev_tools::dev_tools_list_goal_signals,
             commands::infrastructure::dev_tools::dev_tools_create_goal_signal,

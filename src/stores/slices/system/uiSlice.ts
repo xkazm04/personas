@@ -90,6 +90,10 @@ export interface UiSlice {
   setContextScanComplete: (complete: boolean) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
+  // Plugin enable/disable
+  enabledPlugins: Set<PluginTab>;
+  togglePlugin: (plugin: PluginTab) => void;
+
   // Feedback-driven persona improvement
   feedbackImprovementPersonaId: string | null;
   feedbackImprovementComplete: boolean;
@@ -156,6 +160,18 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
+  enabledPlugins: new Set<PluginTab>(['dev-tools', 'doc-signing', 'ocr', 'artist', 'obsidian-brain']),
+  togglePlugin: (plugin) => set((state) => {
+    const next = new Set(state.enabledPlugins);
+    if (next.has(plugin)) {
+      next.delete(plugin);
+      // Reset to browse if the disabled plugin was active
+      if (state.pluginTab === plugin) return { enabledPlugins: next, pluginTab: 'browse' as PluginTab };
+    } else {
+      next.add(plugin);
+    }
+    return { enabledPlugins: next };
+  }),
   feedbackImprovementPersonaId: null,
   feedbackImprovementComplete: false,
   setFeedbackImprovementPersonaId: (id) => set({ feedbackImprovementPersonaId: id }),

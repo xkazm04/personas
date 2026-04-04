@@ -5,6 +5,7 @@ import type { DevProject } from "@/lib/bindings/DevProject";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
+import type { DevGoalDependency } from "@/lib/bindings/DevGoalDependency";
 import * as devApi from "@/api/devTools/devTools";
 
 export interface DevToolsProjectSlice {
@@ -26,12 +27,18 @@ export interface DevToolsProjectSlice {
   goalSignals: DevGoalSignal[];
 
   fetchGoals: (projectId: string) => Promise<void>;
-  createGoal: (projectId: string, title: string, description?: string, contextId?: string, targetDate?: string) => Promise<DevGoal>;
+  createGoal: (projectId: string, title: string, description?: string, contextId?: string, targetDate?: string, parentGoalId?: string) => Promise<DevGoal>;
   updateGoal: (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string }) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   reorderGoals: (projectId: string, goalIds: string[]) => Promise<void>;
   recordGoalSignal: (goalId: string, signalType: string, delta?: number, message?: string, sourceId?: string) => Promise<DevGoalSignal>;
   fetchGoalSignals: (goalId: string) => Promise<void>;
+
+  // -- Goal Dependencies -------------------------------------------------
+  goalDependencies: DevGoalDependency[];
+  fetchGoalDependencies: (goalId: string) => Promise<void>;
+  addGoalDependency: (goalId: string, dependsOnId: string, dependencyType?: string) => Promise<DevGoalDependency>;
+  removeGoalDependency: (id: string) => Promise<void>;
 }
 
 export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevToolsProjectSlice> = (set, get) => ({
@@ -120,9 +127,9 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
     }
   },
 
-  createGoal: async (projectId, title, description, contextId, targetDate) => {
+  createGoal: async (projectId, title, description, contextId, targetDate, parentGoalId) => {
     try {
-      const goal = await devApi.createGoal(projectId, title, description, contextId, targetDate);
+      const goal = await devApi.createGoal(projectId, title, description, contextId, targetDate, parentGoalId);
       set((state) => ({ goals: [...state.goals, goal], error: null }));
       return goal;
     } catch (err) {
@@ -182,6 +189,41 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       set({ goalSignals, error: null });
     } catch (err) {
       reportError(err, "Failed to fetch goal signals", set);
+    }
+  },
+
+  // -- Goal Dependencies state -------------------------------------------
+  goalDependencies: [],
+
+  fetchGoalDependencies: async (goalId) => {
+    try {
+      const goalDependencies = await devApi.listGoalDependencies(goalId);
+      set({ goalDependencies, error: null });
+    } catch (err) {
+      reportError(err, "Failed to fetch goal dependencies", set);
+    }
+  },
+
+  addGoalDependency: async (goalId, dependsOnId, dependencyType) => {
+    try {
+      const dep = await devApi.addGoalDependency(goalId, dependsOnId, dependencyType);
+      set((state) => ({ goalDependencies: [...state.goalDependencies, dep], error: null }));
+      return dep;
+    } catch (err) {
+      reportError(err, "Failed to add goal dependency", set);
+      throw err;
+    }
+  },
+
+  removeGoalDependency: async (id) => {
+    try {
+      await devApi.removeGoalDependency(id);
+      set((state) => ({
+        goalDependencies: state.goalDependencies.filter((d) => d.id !== id),
+        error: null,
+      }));
+    } catch (err) {
+      reportError(err, "Failed to remove goal dependency", set);
     }
   },
 });

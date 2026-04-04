@@ -52,6 +52,7 @@ mod shared_event;
 mod tool_audit;
 mod sla;
 mod skill;
+mod obsidian_brain;
 
 pub use json_column::Json;
 pub use persona::*;
@@ -105,4 +106,5 @@ pub use shared_event::*;
 pub use tool_audit::*;
 pub use sla::*;
 pub use skill::*;
+pub use obsidian_brain::*;
 pub use agent_ir::*;

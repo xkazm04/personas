@@ -12,7 +12,7 @@ use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::credentials as repo;
 use crate::engine::crypto;
 use crate::error::AppError;
-use crate::ipc_auth::{require_privileged, require_privileged_sync};
+use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
 
 #[tauri::command]

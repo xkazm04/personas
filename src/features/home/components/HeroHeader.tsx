@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useIsDarkTheme } from '@/stores/themeStore';
 
 const BG_OPTIONS = [
   '/illustrations/bg-v1-command-room.png',
@@ -13,16 +14,19 @@ interface HeroHeaderProps {
 
 export default function HeroHeader({ greeting, displayName }: HeroHeaderProps) {
   const bgSrc = useMemo(() => BG_OPTIONS[Math.floor(Math.random() * BG_OPTIONS.length)]!, []);
+  const isDark = useIsDarkTheme();
 
   return (
     <div className="relative w-full">
-      {/* Random cinematic background at low opacity */}
-      <div
-        className="animate-fade-slide-in absolute inset-0 -top-4 -left-4 -right-4 overflow-hidden pointer-events-none z-0 rounded-2xl"
-      >
-        <img src={bgSrc} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
-      </div>
+      {/* Random cinematic background at low opacity — dark themes only */}
+      {isDark && (
+        <div
+          className="animate-fade-slide-in absolute inset-0 -top-4 -left-4 -right-4 overflow-hidden pointer-events-none z-0 rounded-2xl"
+        >
+          <img src={bgSrc} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
+        </div>
+      )}
 
       <div className="relative z-10">
         {/* Logo + greeting -- centered row */}

@@ -8,13 +8,14 @@ const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
 const IdeaScannerPage = lazy(() => import('./sub_scanner/IdeaScannerPage'));
 const IdeaTriagePage = lazy(() => import('./sub_triage/IdeaTriagePage'));
 const TaskRunnerPage = lazy(() => import('./sub_runner/TaskRunnerPage'));
+const LifecyclePage = lazy(() => import('./sub_lifecycle/LifecyclePage'));
 
 
 // ---------------------------------------------------------------------------
 // Project Selector Banner — shown on all tabs except "projects"
 // ---------------------------------------------------------------------------
 
-function ProjectSelector() {
+export function ProjectSelector() {
   const projects = useSystemStore((s) => s.projects);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
@@ -100,11 +101,9 @@ function ProjectSelector() {
 
 export default function DevToolsPage() {
   const devToolsTab = useSystemStore((s) => s.devToolsTab);
-  const showProjectSelector = devToolsTab !== 'projects';
 
   return (
     <div className="h-full w-full flex flex-col">
-      {showProjectSelector && <ProjectSelector />}
       <div
           data-testid="dev-tools-page"
           key={devToolsTab}
@@ -116,6 +115,7 @@ export default function DevToolsPage() {
             {devToolsTab === 'idea-scanner' && <IdeaScannerPage />}
             {devToolsTab === 'idea-triage' && <IdeaTriagePage />}
             {devToolsTab === 'task-runner' && <TaskRunnerPage />}
+            {devToolsTab === 'lifecycle' && <LifecyclePage />}
           </Suspense>
         </div>
     </div>

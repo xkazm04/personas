@@ -268,8 +268,35 @@ const registry: EventRegistration[] = [
           const store = useOverviewStore.getState();
           if (payload.action === "started") {
             store.processStarted(payload.domain, payload.run_id, payload.label);
+          } else if (payload.action === "queued") {
+            store.processQueued(payload.domain, payload.run_id, payload.label);
           } else {
             store.processEnded(payload.domain, payload.action, payload.run_id);
+          }
+        },
+      );
+      return [unlisten];
+    },
+  },
+
+  // -- Queue status (execution queued/promoted in global queue) ---------------
+  {
+    event: EventName.QUEUE_STATUS,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.QUEUE_STATUS,
+        (payload) => {
+          const store = useOverviewStore.getState();
+          if (payload.action === "queued") {
+            store.processQueued(
+              "execution",
+              payload.execution_id,
+              undefined,
+              payload.position,
+              payload.persona_id,
+            );
+          } else if (payload.action === "promoted") {
+            store.processPromoted(payload.execution_id);
           }
         },
       );
@@ -360,23 +387,38 @@ export async function initAllListeners(): Promise<void> {
   if (attached) return;
   attached = true;
 
-  const results = await Promise.allSettled(
-    registry.map((reg) => reg.setup()),
-  );
-
-  for (const result of results) {
-    if (result.status === "fulfilled") {
-      unlisteners.push(...result.value);
-    } else {
-      logger.error("Failed to attach listener", { reason: String(result.reason) });
+  // Register listeners in small batches to avoid flooding the IPC bridge.
+  // 5 concurrent IPC calls is a safe throughput ceiling for cold-start.
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < registry.length; i += BATCH_SIZE) {
+    const batch = registry.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map((reg) => reg.setup()),
+    );
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        unlisteners.push(...result.value);
+      } else {
+        logger.error("Failed to attach listener", { reason: String(result.reason) });
+      }
     }
   }
 
   // Kick off backend template integrity verification (defense-in-depth).
-  // Runs async and doesn't block app startup.
-  void import("@/lib/personas/templates/templateCatalog").then((m) =>
-    m.verifyTemplatesWithBackend(),
-  );
+  // Deferred to idle time to avoid competing with startup IPC calls.
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(() => {
+      void import("@/lib/personas/templates/templateCatalog").then((m) =>
+        m.verifyTemplatesWithBackend(),
+      );
+    });
+  } else {
+    setTimeout(() => {
+      void import("@/lib/personas/templates/templateCatalog").then((m) =>
+        m.verifyTemplatesWithBackend(),
+      );
+    }, 3_000);
+  }
 }
 
 /**

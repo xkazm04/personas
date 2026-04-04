@@ -8,6 +8,7 @@ import {
   Clipboard,
   FolderSearch,
   Terminal,
+  Network,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
@@ -16,15 +17,25 @@ import {
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import { setTelemetryEnabled } from '@/lib/telemetryPreference';
 
 const CONSENT_KEY = '__personas_user_consent_accepted';
-const CONSENT_VERSION = '1';
+const CONSENT_VERSION = '2';
 
 export function hasUserConsented(): boolean {
   try {
     return localStorage.getItem(CONSENT_KEY) === CONSENT_VERSION;
   } catch {
     return false;
+  }
+}
+
+/** Return the stored consent version, or null if never consented. */
+export function storedConsentVersion(): string | null {
+  try {
+    return localStorage.getItem(CONSENT_KEY);
+  } catch {
+    return null;
   }
 }
 
@@ -51,9 +62,10 @@ interface SectionProps {
   items: string[];
   color: string;
   defaultOpen?: boolean;
+  isNew?: boolean;
 }
 
-function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }: SectionProps) {
+function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false, isNew }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className={`border rounded-xl overflow-hidden transition-colors ${open ? `border-${color}/25 bg-${color}/5` : 'border-primary/10 bg-secondary/20'}`}
@@ -65,7 +77,14 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }
       >
         <span className="shrink-0">{icon}</span>
         <div className="flex-1 min-w-0">
-          <span className="typo-heading text-foreground">{title}</span>
+          <span className="typo-heading text-foreground">
+            {title}
+            {isNew && (
+              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/25">
+                New
+              </span>
+            )}
+          </span>
           <p className="text-sm text-muted-foreground/70 mt-0.5">{tldr}</p>
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -90,18 +109,22 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false }
 
 interface FirstUseConsentModalProps {
   onAccept: () => void;
+  /** When true, this is a re-consent for a version bump (show "what's new" hints). */
+  isVersionBump?: boolean;
 }
 
-export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
+export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsentModalProps) {
   const [acknowledged, setAcknowledged] = useState(false);
+  const [telemetryChecked, setTelemetryChecked] = useState(true);
   const noop = useCallback(() => {}, []);
   const { t } = useTranslation();
   const c = t.consent;
 
   const handleAccept = useCallback(() => {
     persistConsent();
+    setTelemetryEnabled(telemetryChecked);
     onAccept();
-  }, [onAccept]);
+  }, [onAccept, telemetryChecked]);
 
   return (
     <BaseModal
@@ -120,7 +143,11 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
             </div>
             <div>
               <h2 id="first-use-consent-title" className="typo-heading-lg text-foreground">{c.title}</h2>
-              <p className="typo-body text-muted-foreground/70">{c.subtitle}</p>
+              <p className="typo-body text-muted-foreground/70">
+                {isVersionBump
+                  ? "We've updated our disclosures. Please review the changes before continuing."
+                  : c.subtitle}
+              </p>
             </div>
           </div>
         </div>
@@ -130,6 +157,20 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           <p className="typo-body text-muted-foreground/80 mb-4">
             {c.intro}
           </p>
+
+          {/* Important warnings -- above accordion sections */}
+          <div className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5">
+            <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+            <div className="typo-body text-muted-foreground/80 space-y-1.5">
+              <p><span className="font-medium text-amber-400/90">{c.important}</span></p>
+              <ul className="space-y-1 list-disc list-inside">
+                <li>{c.notice_responsibility}</li>
+                <li>{c.notice_accuracy}</li>
+                <li>{c.notice_credentials}</li>
+                <li>{c.notice_license}</li>
+              </ul>
+            </div>
+          </div>
 
           <ConsentSection
             icon={<Brain className="w-4 h-4 text-violet-400" />}
@@ -165,6 +206,26 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
           />
 
           <ConsentSection
+            icon={<Network className="w-4 h-4 text-indigo-400" />}
+            title={c.p2p_title}
+            tldr={c.p2p_tldr}
+            color="indigo"
+            isNew={isVersionBump}
+            defaultOpen={!!isVersionBump}
+            items={[c.p2p_detail_1, c.p2p_detail_2, c.p2p_detail_3, c.p2p_detail_4]}
+          />
+
+          <ConsentSection
+            icon={<FolderSearch className="w-4 h-4 text-teal-400" />}
+            title={c.foraging_title}
+            tldr={c.foraging_tldr}
+            color="teal"
+            isNew={isVersionBump}
+            defaultOpen={!!isVersionBump}
+            items={[c.foraging_detail_1, c.foraging_detail_2, c.foraging_detail_3, c.foraging_detail_4]}
+          />
+
+          <ConsentSection
             icon={<Terminal className="w-4 h-4 text-orange-400" />}
             title={c.process_title}
             tldr={c.process_tldr}
@@ -188,21 +249,7 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
             items={[c.deploy_detail_1, c.deploy_detail_2, c.deploy_detail_3]}
           />
 
-          {/* Important warnings */}
-          <div className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 mt-4">
-            <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-            <div className="typo-body text-muted-foreground/80 space-y-1.5">
-              <p><span className="font-medium text-amber-400/90">{c.important}</span></p>
-              <ul className="space-y-1 list-disc list-inside">
-                <li>{c.notice_responsibility}</li>
-                <li>{c.notice_accuracy}</li>
-                <li>{c.notice_credentials}</li>
-                <li>{c.notice_license}</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Acknowledgment checkbox */}
+          {/* General consent checkbox */}
           <label className="flex items-start gap-3 cursor-pointer py-3 select-none">
             <input
               type="checkbox"
@@ -212,6 +259,19 @@ export function FirstUseConsentModal({ onAccept }: FirstUseConsentModalProps) {
             />
             <span className="typo-body text-foreground/90">
               {c.checkbox}
+            </span>
+          </label>
+
+          {/* Telemetry opt-in checkbox */}
+          <label className="flex items-start gap-3 cursor-pointer pb-2 select-none border-t border-primary/10 pt-3">
+            <input
+              type="checkbox"
+              checked={telemetryChecked}
+              onChange={e => setTelemetryChecked(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-primary/30 accent-blue-500"
+            />
+            <span className="typo-body text-muted-foreground/80">
+              {c.checkbox_telemetry}
             </span>
           </label>
         </div>

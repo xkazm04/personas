@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { errMsg } from '@/stores/storeTypes';
 import { Globe, Key, Loader2, Unplug } from 'lucide-react';
 import type { HealthCheckSection } from "@/api/system/system";
 import { registerClaudeDesktopMcp, unregisterClaudeDesktopMcp } from "@/api/system/system";
@@ -171,7 +172,7 @@ function ClaudeDesktopMcpButton({
       setResult(msg);
       onDone?.();
     } catch (e) {
-      setResult(String(e));
+      setResult(errMsg(e, 'MCP registration failed'));
     } finally {
       setBusy(false);
     }

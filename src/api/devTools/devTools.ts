@@ -4,6 +4,7 @@ import type { DevProject } from "@/lib/bindings/DevProject";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
+import type { DevGoalDependency } from "@/lib/bindings/DevGoalDependency";
 import type { DevContextGroup } from "@/lib/bindings/DevContextGroup";
 import type { DevContext } from "@/lib/bindings/DevContext";
 import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
@@ -22,7 +23,9 @@ function isCommandNotFound(err: unknown): boolean {
   if (typeof err === 'object' && err !== null && 'kind' in err) {
     return (err as { kind: string }).kind === 'not_found';
   }
-  const msg = typeof err === "string" ? err : err instanceof Error ? err.message : String(err);
+  const msg = typeof err === "string" ? err : err instanceof Error ? err.message
+    : typeof err === "object" && err !== null && "error" in err ? String((err as { error: string }).error)
+    : String(err);
   return msg.includes("not found") || msg.includes("Command") && msg.includes("not found");
 }
 
@@ -95,13 +98,14 @@ export const setActiveProject = (id: string | null) =>
 export const listGoals = (projectId: string) =>
   safeInvoke<DevGoal[]>([], "dev_tools_list_goals", { projectId });
 
-export const createGoal = (projectId: string, title: string, description?: string, contextId?: string, targetDate?: string) =>
+export const createGoal = (projectId: string, title: string, description?: string, contextId?: string, targetDate?: string, parentGoalId?: string) =>
   invoke<DevGoal>("dev_tools_create_goal", {
     projectId,
     title,
     description: description,
     contextId: contextId,
     targetDate: targetDate,
+    parentGoalId: parentGoalId,
   });
 
 export const updateGoal = (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string }) =>
@@ -132,6 +136,23 @@ export const recordGoalSignal = (goalId: string, signalType: string, delta?: num
 
 export const listGoalSignals = (goalId: string) =>
   safeInvoke<DevGoalSignal[]>([], "dev_tools_list_goal_signals", { goalId });
+
+// ============================================================================
+// Goal Dependencies
+// ============================================================================
+
+export const listGoalDependencies = (goalId: string) =>
+  safeInvoke<DevGoalDependency[]>([], "dev_tools_list_goal_dependencies", { goalId });
+
+export const addGoalDependency = (goalId: string, dependsOnId: string, dependencyType?: string) =>
+  invoke<DevGoalDependency>("dev_tools_add_goal_dependency", {
+    goalId,
+    dependsOnId,
+    dependencyType: dependencyType,
+  });
+
+export const removeGoalDependency = (id: string) =>
+  invoke<boolean>("dev_tools_remove_goal_dependency", { id });
 
 // ============================================================================
 // Context Groups

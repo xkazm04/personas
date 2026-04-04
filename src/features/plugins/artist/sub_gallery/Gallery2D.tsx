@@ -76,9 +76,9 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags }: Gallery2DP
           <LightboxImage filePath={currentAsset.filePath} alt={currentAsset.fileName} />
 
           {/* Caption */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 rounded-lg px-4 py-2 text-white text-sm">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 rounded-lg px-4 py-2 text-white text-md">
             {currentAsset.fileName}
-            <span className="ml-3 text-white/70 text-xs">
+            <span className="ml-3 text-white/70 text-md">
               {lightboxIndex! + 1} / {assets.length}
             </span>
           </div>
