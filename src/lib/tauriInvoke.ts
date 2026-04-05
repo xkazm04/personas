@@ -171,6 +171,11 @@ export function invokeWithTimeout<T>(
   return promise;
 }
 
+// Track concurrent in-flight IPC calls to detect stampedes early.
+let _inflight = 0;
+let _stampedWarned = false;
+const IPC_STAMPEDE_THRESHOLD = 50;
+
 function _invokeCore<T>(
   cmd: CommandName,
   args: InvokeArgs | undefined,
@@ -179,6 +184,11 @@ function _invokeCore<T>(
   _retryDepth = 0,
 ): Promise<T> {
   const start = performance.now();
+  _inflight++;
+  if (_inflight > IPC_STAMPEDE_THRESHOLD && !_stampedWarned) {
+    _stampedWarned = true;
+    console.error(`[tauriInvoke] IPC stampede: ${_inflight} concurrent calls in-flight (cmd=${cmd})`);
+  }
 
   // Wait for the IPC session token before invoking.
   // Safety: cap retry depth to prevent infinite Promise loops (OOM).
@@ -221,6 +231,7 @@ function _invokeCore<T>(
   // fire uselessly after the backend responds.
   invocation.finally(() => {
     settled = true;
+    _inflight = Math.max(0, _inflight - 1);
     if (timerId !== null) clearTimeout(timerId);
   }).catch(() => {/* rejection handled by Promise.race */});
 

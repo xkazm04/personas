@@ -4,6 +4,7 @@ mod commands;
 mod db;
 mod engine;
 mod error;
+pub mod freeze_monitor;
 mod gitlab;
 pub mod ipc_auth;
 pub mod keyed_pool;
@@ -830,6 +831,9 @@ pub fn run() {
                         f.write_all(timing_text.as_bytes())
                     });
             }
+
+            // Lightweight freeze/OOM monitor — tracks WebView2 memory, writes alerts to disk
+            freeze_monitor::start(app.handle().clone(), app_data_dir.join("logs"));
 
             // Auto-start scheduler after a brief delay
             let app_handle = app.handle().clone();

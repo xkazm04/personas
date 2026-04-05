@@ -521,11 +521,13 @@ pub fn generate_ipc_auth_script(token: &str) -> String {
     }}
   }}
   if (!patchInvoke()) {{
-    // Retry until __TAURI_INTERNALS__ becomes available
+    // Retry until __TAURI_INTERNALS__ becomes available.
+    // Use 10ms interval (fast) with 200 tries (2s max) so the patch
+    // is applied before any JS invoke() call fires.
     var tries = 0;
     var iv = setInterval(function() {{
-      if (patchInvoke() || ++tries > 100) clearInterval(iv);
-    }}, 50);
+      if (patchInvoke() || ++tries > 200) clearInterval(iv);
+    }}, 10);
   }}
 }})();"#,
         token
