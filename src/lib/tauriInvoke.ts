@@ -176,19 +176,19 @@ function _invokeCore<T>(
   args: InvokeArgs | undefined,
   options: InvokeOptions | undefined,
   timeoutMs: number,
+  _retryDepth = 0,
 ): Promise<T> {
   const start = performance.now();
 
   // Wait for the IPC session token before invoking.
-  // The Rust init script sets __IPC_TOKEN and patches __TAURI_INTERNALS__.invoke
-  // to inject the token header automatically. We wait once for readiness, then
-  // proceed — no recursive retry to avoid infinite Promise loops (OOM).
+  // Safety: cap retry depth to prevent infinite Promise loops (OOM).
+  // After waitForIpcToken resolves (max 2s), we proceed regardless.
   const g = globalThis as Record<string, unknown>;
   const token = g.__IPC_TOKEN as string | undefined;
 
-  if (!token) {
+  if (!token && _retryDepth < 2) {
     return waitForIpcToken().then(() =>
-      _invokeCore<T>(cmd, args, options, timeoutMs),
+      _invokeCore<T>(cmd, args, options, timeoutMs, _retryDepth + 1),
     );
   }
 
