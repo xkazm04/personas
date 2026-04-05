@@ -254,7 +254,7 @@ export default function PersonasPage() {
   return (
     <CanvasDragProvider>
     <CredentialNavProvider>
-      <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
+      <div className="flex flex-col h-full bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
       {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64) */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
@@ -274,20 +274,10 @@ export default function PersonasPage() {
               onDismiss={() => setError(null)}
             />
           )}
-          <AnimatePresence mode="wait" initial={false} custom={sectionDir}>
-            <motion.div
-              key={sidebarSection + (selectedPersonaId || '')}
-              custom={sectionDir}
-              variants={sectionFadeVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={sectionTransition}
-              className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden"
-            >
-              {renderContent()}
-            </motion.div>
-          </AnimatePresence>
+          {/* AnimatePresence disabled — testing if framer-motion layout measurement causes freeze */}
+          <div className="flex-1 flex flex-col w-full min-w-0 overflow-y-hidden">
+            {renderContent()}
+          </div>
         </div>
       </div>
 

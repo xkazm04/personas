@@ -128,7 +128,7 @@ export default function Sidebar() {
   }, [sidebarSection, setSidebarSection]);
 
   return (
-    <nav className="flex h-full" role="navigation" aria-label="Primary">
+    <nav className="flex h-full" role="navigation" aria-label="Primary" style={{ contain: 'layout style paint' }}>
       <SidebarLevel1
         collapsed={collapsed}
         disabledSections={disabledSections}

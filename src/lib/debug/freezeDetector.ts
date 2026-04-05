@@ -62,7 +62,9 @@ function start(): void {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) ring = JSON.parse(stored) as FreezeEvent[];
   } catch { ring = []; }
-  patchCallbacks();
+  // Callback patching disabled — it patches Promise.then, MutationObserver,
+  // ResizeObserver constructors which can break React 19's internal scheduling.
+  // patchCallbacks();
   lastFrame = 0;
   rafId = requestAnimationFrame(tick);
   console.info('[freeze-detector] started');

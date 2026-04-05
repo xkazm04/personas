@@ -51,17 +51,23 @@ export default function WelcomeLayout({
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
           </div>
 
-          <SetupCards />
+          <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 300px' } as React.CSSProperties}>
+            <SetupCards />
+          </div>
 
           <SectionDivider label={quickNavLabel} />
 
-          <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
+          <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 400px' } as React.CSSProperties}>
+            <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
+          </div>
 
           <SectionDivider label="Language" />
 
-          <Suspense fallback={<SuspenseFallback />}>
-            <LanguageCards />
-          </Suspense>
+          <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 200px' } as React.CSSProperties}>
+            <Suspense fallback={<SuspenseFallback />}>
+              <LanguageCards />
+            </Suspense>
+          </div>
 
           <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center justify-center pt-4 pb-8">
             <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
