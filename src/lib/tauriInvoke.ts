@@ -41,13 +41,11 @@ const DEFAULT_TIMEOUT_MS = 90_000;
 let _tokenReady: Promise<void> | null = null;
 function waitForIpcToken(): Promise<void> {
   const g = globalThis as Record<string, unknown>;
-  const isReady = () =>
-    !!g.__IPC_TOKEN &&
-    !!(
-      (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ as
-        | (Record<string, unknown> & { __ipc_patched?: boolean })
-        | undefined
-    )?.__ipc_patched;
+  // Wait for the IPC token to be set by the Rust init script.
+  // The monkey-patch (__ipc_patched) is also set by the init script but may
+  // arrive slightly later; we don't gate on it here to avoid infinite retry
+  // loops that cause OOM when the patch timing differs from the token timing.
+  const isReady = () => !!g.__IPC_TOKEN;
   if (isReady()) return Promise.resolve();
   if (_tokenReady) return _tokenReady;
   _tokenReady = new Promise<void>((resolve) => {
@@ -181,28 +179,22 @@ function _invokeCore<T>(
 ): Promise<T> {
   const start = performance.now();
 
-  // Wait for BOTH the IPC session token AND the __TAURI_INTERNALS__ monkey-patch
-  // before invoking. On Windows WebView2, the manual options.headers approach does
-  // not reliably deliver headers to the Rust backend — the monkey-patch is the only
-  // mechanism that works. Previously we only waited when __IPC_TOKEN was undefined,
-  // which meant calls could proceed before the monkey-patch was active.
+  // Wait for the IPC session token before invoking.
+  // The Rust init script sets __IPC_TOKEN and patches __TAURI_INTERNALS__.invoke
+  // to inject the token header automatically. We wait once for readiness, then
+  // proceed — no recursive retry to avoid infinite Promise loops (OOM).
   const g = globalThis as Record<string, unknown>;
   const token = g.__IPC_TOKEN as string | undefined;
-  const patched = !!(
-    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ as
-      | (Record<string, unknown> & { __ipc_patched?: boolean })
-      | undefined
-  )?.__ipc_patched;
 
-  if (!token || !patched) {
+  if (!token) {
     return waitForIpcToken().then(() =>
       _invokeCore<T>(cmd, args, options, timeoutMs),
     );
   }
 
   // Inject IPC session token for privileged command authentication.
-  // This is redundant with the monkey-patch but provides defense-in-depth
-  // for platforms where options.headers does work (macOS, Linux).
+  // Also acts as defense-in-depth on platforms where the monkey-patch
+  // (set by ipc_auth.rs init script) hasn't run yet.
   const opts: InvokeOptions = options ?? { headers: {} };
   const h = new Headers(opts.headers);
   h.set("x-ipc-token", token);
