@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import HeroHeader from './HeroHeader';
@@ -37,6 +37,14 @@ export default function WelcomeLayout({
   navTranslations,
   onCardClick
 }: WelcomeLayoutProps) {
+  // Defer below-fold content to reduce initial DOM from ~666 to ~200 nodes.
+  // WebView2 renderer hangs when too many nodes are committed at once.
+  const [showBelowFold, setShowBelowFold] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setShowBelowFold(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
       <HeroMesh preset="welcome" />
@@ -51,23 +59,20 @@ export default function WelcomeLayout({
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
           </div>
 
-          <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 300px' } as React.CSSProperties}>
+          {showBelowFold && (
             <SetupCards />
-          </div>
+          )}
+          {showBelowFold && (
+            <>
+              <SectionDivider label={quickNavLabel} />
+              <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
 
-          <SectionDivider label={quickNavLabel} />
-
-          <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 400px' } as React.CSSProperties}>
-            <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
-          </div>
-
-          <SectionDivider label="Language" />
-
-          <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 200px' } as React.CSSProperties}>
-            <Suspense fallback={<SuspenseFallback />}>
-              <LanguageCards />
-            </Suspense>
-          </div>
+              <SectionDivider label="Language" />
+              <Suspense fallback={<SuspenseFallback />}>
+                <LanguageCards />
+              </Suspense>
+            </>
+          )}
 
           <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center justify-center pt-4 pb-8">
             <div className="flex items-center gap-2 text-sm text-muted-foreground/60">
