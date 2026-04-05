@@ -12,6 +12,9 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
     let _ = conn.execute_batch(
         "ALTER TABLE persona_messages ADD COLUMN thread_id TEXT;"
     ); // ignore "duplicate column" error on re-run
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_goals ADD COLUMN parent_goal_id TEXT REFERENCES dev_goals(id) ON DELETE SET NULL;"
+    ); // ignore "duplicate column" error on re-run
 
     conn.execute_batch(SCHEMA)?;
 
@@ -192,11 +195,6 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
     // -- Track whether execution log files may be incomplete ------------------
     let _ = conn.execute_batch(
         "ALTER TABLE persona_executions ADD COLUMN log_truncated INTEGER NOT NULL DEFAULT 0;"
-    ); // ignore "duplicate column" error on re-run
-
-    // -- Goal hierarchy: parent_goal_id for tree structure -------------------
-    let _ = conn.execute_batch(
-        "ALTER TABLE dev_goals ADD COLUMN parent_goal_id TEXT REFERENCES dev_goals(id) ON DELETE SET NULL;"
     ); // ignore "duplicate column" error on re-run
 
     // -- Enforce at most one production version per persona --------------------
