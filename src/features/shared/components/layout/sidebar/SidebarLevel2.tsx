@@ -5,7 +5,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
-import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
+// useBadgeCounts removed — badge counts now passed as props from Sidebar
 import type { HomeTab, OverviewTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
@@ -23,9 +23,12 @@ import { filterByTier } from './sidebarData';
 
 interface SidebarLevel2Props {
   onCreatePersona: () => void;
+  pendingReviewCount?: number;
+  unreadMessageCount?: number;
+  pendingEventCount?: number;
 }
 
-export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
+export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0, unreadMessageCount = 0, pendingEventCount = 0 }: SidebarLevel2Props) {
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const { currentKey: credentialView, navigate } = useCredentialNav();
   // Vault and pipeline stores loaded lazily to keep them out of the main bundle.
@@ -41,9 +44,11 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
       const s = useVaultStore.getState();
       setCredentials(s.credentials);
       setConnectorDefinitions(s.connectorDefinitions);
+      let prevCreds = s.credentials;
+      let prevDefs = s.connectorDefinitions;
       vaultUnsub = useVaultStore.subscribe((s) => {
-        setCredentials(s.credentials);
-        setConnectorDefinitions(s.connectorDefinitions);
+        if (s.credentials !== prevCreds) { prevCreds = s.credentials; setCredentials(s.credentials); }
+        if (s.connectorDefinitions !== prevDefs) { prevDefs = s.connectorDefinitions; setConnectorDefinitions(s.connectorDefinitions); }
       });
     });
     void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
@@ -60,7 +65,7 @@ export default function SidebarLevel2({ onCreatePersona }: SidebarLevel2Props) {
   const setHomeTab = useSystemStore((s) => s.setHomeTab);
   const templateTab = useSystemStore((s) => s.templateTab);
   const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
-  const { pendingReviewCount, unreadMessageCount, pendingEventCount } = useBadgeCounts();
+  // Badge counts passed as props from Sidebar (single useBadgeCounts instance)
   const templateGalleryTotal = useSystemStore((s) => s.templateGalleryTotal);
   const settingsTab = useSystemStore((s) => s.settingsTab);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
@@ -216,9 +221,11 @@ function SchedulesSidebarNav() {
 
   useEffect(() => {
     void import('@/stores/overviewStore').then(({ useOverviewStore }) => {
-      const s = useOverviewStore.getState();
-      setCronAgents(s.cronAgents);
-      return useOverviewStore.subscribe((s) => setCronAgents(s.cronAgents));
+      let prev = useOverviewStore.getState().cronAgents;
+      setCronAgents(prev);
+      return useOverviewStore.subscribe((s) => {
+        if (s.cronAgents !== prev) { prev = s.cronAgents; setCronAgents(s.cronAgents); }
+      });
     }).then((unsub) => { return () => unsub?.(); });
   }, []);
 

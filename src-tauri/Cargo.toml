@@ -133,7 +133,9 @@ opt-level = 3
 lto = "thin"
 codegen-units = 2
 strip = true
-panic = "abort"
+# Use "unwind" to allow catch_unwind to handle ONNX Runtime DLL panics gracefully.
+# The ort crate panics on DLL version mismatches which would crash the entire app with "abort".
+panic = "unwind"
 
 [profile.dev]
 opt-level = 0

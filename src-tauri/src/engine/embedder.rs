@@ -121,13 +121,27 @@ impl EmbeddingManager {
 
         // Load model on blocking thread (ONNX init is CPU-bound)
         let model = tokio::task::spawn_blocking(move || {
-            TextEmbedding::try_new(
-                InitOptions::new(EmbeddingModel::AllMiniLML6V2Q).with_cache_dir(cache_dir),
-            )
+            // Wrap in catch_unwind because the `ort` crate panics if an incompatible
+            // system-wide onnxruntime.dll is found on PATH (version mismatch).
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                TextEmbedding::try_new(
+                    InitOptions::new(EmbeddingModel::AllMiniLML6V2Q).with_cache_dir(cache_dir),
+                )
+            })) {
+                Ok(result) => result.map_err(|e| format!("Failed to load embedding model: {e}")),
+                Err(panic) => {
+                    let msg = panic
+                        .downcast_ref::<String>()
+                        .map(|s| s.as_str())
+                        .or_else(|| panic.downcast_ref::<&str>().copied())
+                        .unwrap_or("unknown panic");
+                    Err(format!("ONNX Runtime init panicked (likely DLL version mismatch): {msg}"))
+                }
+            }
         })
         .await
         .map_err(|e| AppError::Internal(format!("Model loading task panicked: {e}")))?
-        .map_err(|e| AppError::Internal(format!("Failed to load embedding model: {e}")))?;
+        .map_err(AppError::Internal)?;
 
         tracing::info!("Embedding model loaded successfully");
         *guard = Some(Arc::new(model));

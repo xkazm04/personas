@@ -49,6 +49,7 @@ export function useDataPortability() {
   }, []);
 
   const handleExportFull = useCallback(async () => {
+    if (exportStatus === 'loading') return;
     setExportStatus('loading');
     setErrorMsg('');
     try {
@@ -59,13 +60,14 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, "Export failed"));
       setExportStatus('error');
     }
-  }, []);
+  }, [exportStatus]);
 
   const handleExportSelective = useCallback(async (
     personaIds: string[],
     teamIds: string[],
     credentialIds: string[],
   ) => {
+    if (exportStatus === 'loading') return;
     setExportStatus('loading');
     setErrorMsg('');
     try {
@@ -77,9 +79,10 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, "Selective export failed"));
       setExportStatus('error');
     }
-  }, []);
+  }, [exportStatus]);
 
   const handleImport = useCallback(async () => {
+    if (importStatus === 'loading') return;
     setImportStatus('loading');
     setImportResult(null);
     setErrorMsg('');
@@ -97,9 +100,10 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, "Import failed"));
       setImportStatus('error');
     }
-  }, []);
+  }, [importStatus]);
 
   const handleCredExport = useCallback(async () => {
+    if (credExportStatus === 'loading') return;
     if (credExportPassphrase.length < 8) {
       setErrorMsg('Passphrase must be at least 8 characters');
       return;
@@ -118,9 +122,10 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, "Credential export failed"));
       setCredExportStatus('error');
     }
-  }, [credExportPassphrase]);
+  }, [credExportPassphrase, credExportStatus]);
 
   const handleCredImport = useCallback(async () => {
+    if (credImportStatus === 'loading') return;
     if (!credImportPassphrase) {
       setErrorMsg('Please enter the passphrase used during export');
       return;
@@ -143,9 +148,10 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, "Credential import failed"));
       setCredImportStatus('error');
     }
-  }, [credImportPassphrase]);
+  }, [credImportPassphrase, credImportStatus]);
 
   const handleCredImportWithResolutions = useCallback(async (resolutions: Record<string, string>) => {
+    if (credImportStatus === 'loading') return;
     setCredImportStatus('loading');
     setErrorMsg('');
     try {
@@ -163,7 +169,7 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, "Credential import failed"));
       setCredImportStatus('error');
     }
-  }, [credImportPassphrase]);
+  }, [credImportPassphrase, credImportStatus]);
 
   return {
     stats,

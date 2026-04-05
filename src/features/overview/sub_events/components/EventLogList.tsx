@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
-import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X } from 'lucide-react';
+import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X, BookOpen } from 'lucide-react';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useSystemStore } from '@/stores/systemStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -268,16 +270,30 @@ export default function EventLogList() {
       </div>
 
       <ContentBody flex>
-        <UnifiedTable<PersonaEvent>
-          columns={columns}
-          data={filteredEvents}
-          getRowKey={(e) => e.id}
-          onRowClick={setSelectedEvent}
-          isLoading={isLoading}
-          emptyTitle="No events yet"
-          emptyDescription="Events from webhooks, executions, and persona actions will appear here as your agents run."
-          className="flex-1"
-        />
+        {!isLoading && filteredEvents.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center p-6">
+            <EmptyState
+              icon={Zap}
+              title="No events yet"
+              subtitle="Events from webhooks, executions, and persona actions will appear here as your agents run."
+              iconColor="text-amber-400/80"
+              iconContainerClassName="bg-amber-500/10 border-amber-500/20"
+              action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
+              secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+            />
+          </div>
+        ) : (
+          <UnifiedTable<PersonaEvent>
+            columns={columns}
+            data={filteredEvents}
+            getRowKey={(e) => e.id}
+            onRowClick={setSelectedEvent}
+            isLoading={isLoading}
+            emptyTitle="No events yet"
+            emptyDescription="Events from webhooks, executions, and persona actions will appear here as your agents run."
+            className="flex-1"
+          />
+        )}
       </ContentBody>
 
       {selectedEvent && (

@@ -6,6 +6,7 @@ import HomeWelcome from '@/features/home/components/HomeWelcome';
 const HomeRoadmap = lazy(() => import('@/features/home/components/HomeRoadmap'));
 const HomeLearning = lazy(() => import('@/features/home/components/HomeLearning'));
 
+
 export default function HomePage() {
   const homeTab = useSystemStore((s) => s.homeTab);
   const showSystemCheck = homeTab === 'system-check' && import.meta.env.DEV;

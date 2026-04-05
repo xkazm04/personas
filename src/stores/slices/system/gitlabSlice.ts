@@ -228,6 +228,23 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
         gitlabAgents: [],
         gitlabError: null,
         gitlabSelectedProjectId: null,
+        gitlabRedeployingAgentId: null,
+        // Pipeline state
+        gitlabPipelines: [],
+        gitlabActivePipeline: null,
+        gitlabPipelineJobs: [],
+        gitlabJobLog: null,
+        gitlabPipelineLoading: false,
+        gitlabTriggeringPipeline: false,
+        // GitOps versioning state
+        gitlabPersonaVersions: [],
+        gitlabPersonaBranches: [],
+        gitlabVersionsLoading: false,
+        gitlabRollingBack: false,
+        // Deployment history state
+        gitlabDeploymentHistory: [],
+        gitlabDeploymentHistoryLoading: false,
+        gitlabRollingBackFromHistory: false,
       });
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });

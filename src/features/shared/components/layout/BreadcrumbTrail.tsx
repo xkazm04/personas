@@ -87,9 +87,6 @@ export default function BreadcrumbTrail() {
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const trail = useBreadcrumbTrail();
 
-  // Never show breadcrumbs for plugin or home pages
-  if (sidebarSection === 'plugins' || sidebarSection === 'home') return null;
-
   // Responsive: measure container width and collapse middle segments if needed
   const containerRef = useRef<HTMLElement>(null);
   const [isNarrow, setIsNarrow] = useState(false);
@@ -105,6 +102,9 @@ export default function BreadcrumbTrail() {
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, [checkWidth]);
+
+  // Never show breadcrumbs for plugin or home pages
+  if (sidebarSection === 'plugins' || sidebarSection === 'home') return null;
 
   // Don't render for single-segment trails (root views)
   if (trail.length <= 1) return null;

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MessageSquare, CheckCheck, RefreshCw, Send, Plus, List, GitBranch, ChevronRight, ChevronDown, MessageCircle } from 'lucide-react';
+import { MessageSquare, CheckCheck, RefreshCw, Plus, List, GitBranch, ChevronRight, ChevronDown, MessageCircle, BookOpen } from 'lucide-react';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
@@ -228,11 +229,13 @@ export default function MessageList() {
           /* ==================== THREADED VIEW ==================== */
           threadSummaries.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-              <div className="text-center">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center"><GitBranch className="w-5 h-5 text-muted-foreground/80" /></div>
-                <p className="text-sm text-muted-foreground/90">No message threads yet</p>
-                <p className="text-sm text-muted-foreground/80 mt-1.5 max-w-sm mx-auto leading-relaxed">Threads are created automatically when agents produce messages during executions.</p>
-              </div>
+              <EmptyState
+                icon={GitBranch}
+                title="No message threads yet"
+                subtitle="Threads are created automatically when agents produce messages during executions."
+                action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
+                secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+              />
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto">
@@ -342,15 +345,17 @@ export default function MessageList() {
           /* ==================== FLAT VIEW (original) ==================== */
           filteredMessages.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-              <div className="text-center">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center"><MessageSquare className="w-5 h-5 text-muted-foreground/80" /></div>
-                {filter !== 'all' || selectedPersonaId ? (
-                  <><p className="text-sm text-muted-foreground/90">No {filter === 'unread' ? 'unread' : filter === 'high' ? 'high-priority' : ''} messages{selectedPersonaId ? ' for the selected persona' : ''}</p><p className="text-sm text-muted-foreground/80 mt-1">Try switching to "All" to see all messages</p></>
-                ) : (
-                  <><p className="text-sm text-muted-foreground/90">No messages yet</p><p className="text-sm text-muted-foreground/80 mt-1.5 max-w-sm mx-auto leading-relaxed">Messages are created when agents run and communicate with each other.</p>
-                    <button onClick={() => useSystemStore.getState().setSidebarSection('personas')} className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl typo-heading text-primary bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors"><Send className="w-3.5 h-3.5" />Go to Agents</button></>
-                )}
-              </div>
+              <EmptyState
+                icon={MessageSquare}
+                title={filter !== 'all' || selectedPersonaId
+                  ? `No ${filter === 'unread' ? 'unread' : filter === 'high' ? 'high-priority' : ''} messages${selectedPersonaId ? ' for the selected persona' : ''}`
+                  : 'No messages yet'}
+                subtitle={filter !== 'all' || selectedPersonaId
+                  ? 'Try switching to "All" to see all messages.'
+                  : 'Messages are created when agents run and communicate with each other.'}
+                action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
+                secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+              />
             </div>
           ) : (
             <div ref={parentRef} className="flex-1 overflow-y-auto">

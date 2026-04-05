@@ -33,7 +33,7 @@ export function UniversalAutoCredReview({
   discoveredConnector,
 }: UniversalAutoCredReviewProps) {
   // Derive fields from discovered_fields or from extracted_values keys
-  const fields: DiscoveredField[] = discoveredFields ?? Object.keys(extractedValues)
+  const fields: DiscoveredField[] = (discoveredFields ?? Object.keys(extractedValues)
     .filter((k) => !k.startsWith('__'))
     .map((key) => ({
       key,
@@ -45,7 +45,7 @@ export function UniversalAutoCredReview({
         ? 'password'
         : 'text',
       required: true,
-    }));
+    }))).filter((f) => f.key);
 
   const filledCount = fields.filter((f) => (extractedValues[f.key] ?? '').trim()).length;
   const allFilled = filledCount === fields.length;

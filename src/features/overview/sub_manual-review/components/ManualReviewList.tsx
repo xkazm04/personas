@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { ClipboardCheck, Plus } from 'lucide-react';
+import { ClipboardCheck, Plus, BookOpen } from 'lucide-react';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from "@/stores/systemStore";
@@ -191,13 +192,13 @@ export default function ManualReviewList() {
       <ContentBody flex>
         {filteredReviews.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-6">
-            <div className="text-center">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-secondary/40 border border-primary/15 flex items-center justify-center">
-                <ClipboardCheck className="w-6 h-6 text-muted-foreground/60" />
-              </div>
-              <p className="text-sm font-medium text-foreground/70">No review items yet</p>
-              <p className="text-sm text-muted-foreground/60 mt-1">Items requiring approval will appear here</p>
-            </div>
+            <EmptyState
+              icon={ClipboardCheck}
+              title="No review items yet"
+              subtitle="Items requiring approval will appear here when agents request human review."
+              action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
+              secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+            />
           </div>
         ) : filter === 'pending' ? (
           <div className="flex-1 overflow-hidden">

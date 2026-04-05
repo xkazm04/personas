@@ -141,13 +141,15 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
       let discoveredConnector: DiscoveredConnector | undefined;
 
       if (result.discovered_fields && Array.isArray(result.discovered_fields)) {
-        discoveredFields = result.discovered_fields.map((f: Record<string, unknown>) => ({
-          key: String(f.key ?? ''),
-          label: String(f.label ?? ''),
-          type: String(f.type ?? 'text'),
-          required: Boolean(f.required),
-          help_text: f.help_text ? String(f.help_text) : undefined,
-        }));
+        discoveredFields = result.discovered_fields
+          .map((f: Record<string, unknown>) => ({
+            key: String(f.key ?? ''),
+            label: String(f.label ?? ''),
+            type: String(f.type ?? 'text'),
+            required: Boolean(f.required),
+            help_text: f.help_text ? String(f.help_text) : undefined,
+          }))
+          .filter((f) => f.key && f.label);
       }
 
       if (result.discovered_connector && typeof result.discovered_connector === 'object') {

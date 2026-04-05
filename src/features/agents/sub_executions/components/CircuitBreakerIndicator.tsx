@@ -92,7 +92,7 @@ export function CircuitBreakerIndicator() {
       : 'bg-muted-foreground/5';
 
   return (
-    <div className={`border ${borderColor} ${bgColor}rounded-xl typo-body`} data-testid="circuit-breaker-indicator">
+    <div className={`border ${borderColor} ${bgColor} rounded-xl typo-body`} data-testid="circuit-breaker-indicator">
       {/* Summary row */}
       <button
         onClick={() => setExpanded((v) => !v)}

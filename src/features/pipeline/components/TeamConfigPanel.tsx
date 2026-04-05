@@ -54,16 +54,10 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
     return () => clearTimeout(timer);
   }, [confirmRemove]);
 
-  if (!member) return null;
-
-  const personaName = member.persona_name || member.name || 'Agent';
-  const personaIcon = member.persona_icon || member.icon || '';
-  const personaColor = member.persona_color || member.color || '#6366f1';
-
   // Look up the full persona record for stats
   const persona = useMemo(
-    () => (member.persona_id ? personas.find((p) => p.id === member.persona_id) : undefined),
-    [member.persona_id, personas],
+    () => (member?.persona_id ? personas.find((p) => p.id === member.persona_id) : undefined),
+    [member?.persona_id, personas],
   );
 
   const stats = useMemo(() => {
@@ -77,6 +71,12 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
 
     return { triggerCount, lastRun, health, toolCount, connectorCount: connectors.length, model };
   }, [persona, personaTriggerCounts, personaLastRun, personaHealthMap]);
+
+  if (!member) return null;
+
+  const personaName = member.persona_name || member.name || 'Agent';
+  const personaIcon = member.persona_icon || member.icon || '';
+  const personaColor = member.persona_color || member.color || '#6366f1';
 
   const handleViewPersona = () => {
     if (!member.persona_id) return;

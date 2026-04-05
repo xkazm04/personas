@@ -167,7 +167,12 @@ export default function Sidebar() {
                 <div className="animate-fade-slide-in"
                     key={sidebarSection}
                   >
-                    <SidebarLevel2 onCreatePersona={handleCreatePersona} />
+                    <SidebarLevel2
+                      onCreatePersona={handleCreatePersona}
+                      pendingReviewCount={pendingReviewCount}
+                      unreadMessageCount={unreadMessageCount}
+                      pendingEventCount={pendingEventCount}
+                    />
                   </div>
               </div>
               <div

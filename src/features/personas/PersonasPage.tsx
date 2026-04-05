@@ -49,6 +49,7 @@ const sectionFadeVariants = {
   exit: (dir: number) => ({ opacity: 0, y: -dir * 12 }),
 };
 
+
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
   const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
@@ -98,7 +99,7 @@ export default function PersonasPage() {
     ]);
     const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
     secondaryResults.forEach((r, i) => {
-      if (r.status === 'rejected') failed.push(SECONDARY_LABELS[i]);
+      if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
     });
 
     if (failed.length > 0) {
@@ -251,14 +252,12 @@ export default function PersonasPage() {
     <CanvasDragProvider>
     <CredentialNavProvider>
       <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
-      {/* Background effects matching GoalsLayout */}
+      {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64) */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
-      <div className="absolute top-0 left-0 w-1/3 h-1/2 bg-accent/5 blur-3xl pointer-events-none" />
 
       {/* Main layout */}
       <div className="relative z-10 flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <Sidebar />
 
         {/* Content area */}

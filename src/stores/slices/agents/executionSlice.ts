@@ -30,6 +30,9 @@ import { createRunLifecycle } from "./runLifecycle";
 
 const executionLifecycle = createRunLifecycle('isExecuting', 'executionProgress');
 
+/** Maximum number of completed execution output snapshots to retain in memory. */
+const MAX_COMPLETED_SNAPSHOTS = 5;
+
 /** Queue status event emitted from the engine when an execution is queued/promoted. */
 export interface QueueStatusPayload {
   execution_id: string;
@@ -342,15 +345,23 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
 
     // Snapshot the output for this execution so DAG walkers can retrieve it
     // after the shared executionOutput array is cleared by the next run.
+    // Evict oldest entries beyond MAX_COMPLETED_SNAPSHOTS to prevent unbounded
+    // memory growth in long-running sessions.
     const finishedExecId = get().activeExecutionId;
     if (finishedExecId) {
       const snapshot = [...get().executionOutput];
-      set({
-        completedExecutionOutputs: {
-          ...get().completedExecutionOutputs,
-          [finishedExecId]: snapshot,
-        },
-      });
+      const prev = get().completedExecutionOutputs;
+      const updated = { ...prev, [finishedExecId]: snapshot };
+
+      const keys = Object.keys(updated);
+      if (keys.length > MAX_COMPLETED_SNAPSHOTS) {
+        // Keys preserve insertion order for non-integer strings (UUIDs) — evict oldest.
+        for (const key of keys.slice(0, keys.length - MAX_COMPLETED_SNAPSHOTS)) {
+          delete updated[key];
+        }
+      }
+
+      set({ completedExecutionOutputs: updated });
     }
 
     // If a chat stream is active, finalize it now -- this runs at the store

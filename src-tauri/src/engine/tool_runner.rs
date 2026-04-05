@@ -92,7 +92,12 @@ pub async fn invoke_tool_direct(
             ToolKind::Automation => Box::pin(invoke_automation_tool(pool, tool, input_json)),
             ToolKind::Script => Box::pin(invoke_script(tool, input_json, &env_map)),
             ToolKind::Api => {
-                let guide = tool.implementation_guide.as_ref().unwrap();
+                let guide = tool.implementation_guide.as_ref().ok_or_else(|| {
+                    AppError::Execution(format!(
+                        "Tool '{}' is categorized as API but has no implementation_guide",
+                        tool.name
+                    ))
+                })?;
                 Box::pin(invoke_api(tool, guide, input_json, &env_map))
             }
         };

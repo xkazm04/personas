@@ -409,6 +409,19 @@ fn report_frontend_ready(tti_ms: f64) {
 pub fn run() {
     startup_timing::mark_process_start();
 
+    // Prevent ort/ONNX from finding a stale system-wide onnxruntime.dll (e.g. in System32).
+    // The ort crate panics if the DLL version doesn't match its expected version.
+    // By setting ORT_DYLIB_PATH to a non-existent file, ort will fail to load the DLL
+    // gracefully instead of finding the wrong system DLL and panicking.
+    if std::env::var_os("ORT_DYLIB_PATH").is_none() {
+        let sentinel = dirs::data_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("com.personas.desktop")
+            .join("lib")
+            .join("onnxruntime.dll");
+        std::env::set_var("ORT_DYLIB_PATH", &sentinel);
+    }
+
     // Load .env file (project root) into process environment so that
     // runtime env vars like SUPABASE_URL are available without needing
     // them baked in at compile time.

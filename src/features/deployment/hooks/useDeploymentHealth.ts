@@ -27,16 +27,35 @@ export function useDeploymentHealth(
 
   const uniquePersonaIds = [...new Set(personaEntries.map((e) => e.personaId))].sort();
   const stableKey = uniquePersonaIds.join(',');
+  // Track deployment row IDs so re-mapping triggers when deployments change
+  const deploymentIdsKey = personaEntries.map((e) => e.id).sort().join(',');
+  const personaEntriesRef = useRef(personaEntries);
+  personaEntriesRef.current = personaEntries;
+
+  // Cache fetched stats so re-mapping doesn't require re-fetching
+  const statsCache = useRef<Record<string, HealthDataPoint[]>>({});
 
   useEffect(() => {
-    if (stableKey === prevKeyRef.current || uniquePersonaIds.length === 0) return;
-    prevKeyRef.current = stableKey;
+    const needsFetch = stableKey !== prevKeyRef.current && uniquePersonaIds.length > 0;
+    if (!needsFetch) {
+      // Persona IDs unchanged — just re-map with current deployment rows
+      const entries = personaEntriesRef.current;
+      if (entries.length === 0) return;
+      const mapped: DeploymentHealthMap = {};
+      for (const entry of entries) {
+        const data = statsCache.current[entry.personaId];
+        if (data) mapped[entry.id] = data;
+      }
+      setHealthMap(mapped);
+      return;
+    }
 
+    prevKeyRef.current = stableKey;
     let cancelled = false;
     setIsLoading(true);
 
     (async () => {
-      const statsMap: Record<string, HealthDataPoint[]> = {};
+      const newStats: Record<string, HealthDataPoint[]> = {};
 
       // Fetch stats for each unique personaId (7-day window)
       const results = await Promise.allSettled(
@@ -49,7 +68,7 @@ export function useDeploymentHealth(
       for (const result of results) {
         if (result.status === 'fulfilled') {
           const { personaId, daily } = result.value;
-          statsMap[personaId] = daily.map((d) => ({
+          newStats[personaId] = daily.map((d) => ({
             date: d.date,
             count: d.count,
             successRate: d.success_rate,
@@ -60,10 +79,13 @@ export function useDeploymentHealth(
 
       if (cancelled) return;
 
+      statsCache.current = newStats;
+
       // Map persona stats back to deployment row IDs
+      const entries = personaEntriesRef.current;
       const mapped: DeploymentHealthMap = {};
-      for (const entry of personaEntries) {
-        const data = statsMap[entry.personaId];
+      for (const entry of entries) {
+        const data = newStats[entry.personaId];
         if (data) mapped[entry.id] = data;
       }
 
@@ -72,7 +94,7 @@ export function useDeploymentHealth(
     })();
 
     return () => { cancelled = true; };
-  }, [stableKey]);
+  }, [stableKey, deploymentIdsKey]);
 
   return { healthMap, isLoading };
 }

@@ -88,7 +88,7 @@ export function AutoCredReview({
 
       {/* Field values */}
       <div className="space-y-2.5">
-        {ctx.fields.map((field) => {
+        {ctx.fields.filter((field) => field.key).map((field) => {
           const isEmpty = !(extractedValues[field.key] ?? '').trim();
           const isMissing = (completeness?.missingKeys.includes(field.key)) ?? (isPartial && isEmpty && field.required);
           return (

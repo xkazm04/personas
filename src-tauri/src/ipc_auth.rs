@@ -489,16 +489,36 @@ pub fn generate_ipc_auth_script(token: &str) -> String {
   function patchInvoke() {{
     if (!window.__TAURI_INTERNALS__ || !window.__TAURI_INTERNALS__.invoke) return false;
     if (window.__TAURI_INTERNALS__.__ipc_patched) return true;
-    var _orig = window.__TAURI_INTERNALS__.invoke;
-    window.__TAURI_INTERNALS__.invoke = function(cmd, args, options) {{
-      var opts = options || {{}};
-      var h = new Headers(opts.headers || {{}});
-      h.set('x-ipc-token', _t);
-      opts.headers = h;
-      return _orig.call(this, cmd, args, opts);
-    }};
-    window.__TAURI_INTERNALS__.__ipc_patched = true;
-    return true;
+    try {{
+      var _orig = window.__TAURI_INTERNALS__.invoke;
+      // Property may be read-only (frozen object) in newer WebView2/Tauri.
+      // Try direct assignment first, fall back to defineProperty.
+      try {{
+        window.__TAURI_INTERNALS__.invoke = function(cmd, args, options) {{
+          var opts = options || {{}};
+          var h = new Headers(opts.headers || {{}});
+          h.set('x-ipc-token', _t);
+          opts.headers = h;
+          return _orig.call(this, cmd, args, opts);
+        }};
+      }} catch(_e) {{
+        Object.defineProperty(window.__TAURI_INTERNALS__, 'invoke', {{
+          value: function(cmd, args, options) {{
+            var opts = options || {{}};
+            var h = new Headers(opts.headers || {{}});
+            h.set('x-ipc-token', _t);
+            opts.headers = h;
+            return _orig.call(this, cmd, args, opts);
+          }},
+          writable: true,
+          configurable: true
+        }});
+      }}
+      window.__TAURI_INTERNALS__.__ipc_patched = true;
+      return true;
+    }} catch(_e) {{
+      return true; // Give up patching — IPC token is still injected via header
+    }}
   }}
   if (!patchInvoke()) {{
     // Retry until __TAURI_INTERNALS__ becomes available

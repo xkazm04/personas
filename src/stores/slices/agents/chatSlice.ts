@@ -161,7 +161,6 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       const contextLines = allMessages.map(
         (m) => `${m.role === "user" ? "Human" : "Assistant"}: ${m.content}`,
       );
-      contextLines.push(`Human: ${content}`);
       conversationInput = JSON.stringify({
         ...(isOps ? { _ops: true } : { _chat: true }),
         conversation: contextLines.join("\n\n"),

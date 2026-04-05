@@ -261,7 +261,10 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("teams", "teams::delete", {
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
-        // Clean up related rows which have no FK CASCADE on team_id
+        // Clean up all related rows explicitly (SQLite FK CASCADE requires
+        // foreign_keys pragma ON, which is OFF by default).
+        tx.execute("DELETE FROM persona_team_connections WHERE team_id = ?1", params![id])?;
+        tx.execute("DELETE FROM persona_team_members WHERE team_id = ?1", params![id])?;
         tx.execute("DELETE FROM pipeline_runs WHERE team_id = ?1", params![id])?;
         tx.execute("DELETE FROM team_memories WHERE team_id = ?1", params![id])?;
         let rows = tx.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
@@ -817,9 +820,20 @@ mod tests {
         let conns_after = get_connections(&pool, &team.id).unwrap();
         assert_eq!(conns_after.len(), 0);
 
-        // Delete team (CASCADE removes remaining members)
+        // Re-add a member + connection so we can verify delete cleans them up
+        let m3 = add_member(&pool, &team.id, &p1.id, None, None, None, None).unwrap();
+        let m2_ref = &members_after[0];
+        let _conn2 = create_connection(&pool, &team.id, &m3.id, &m2_ref.id, None, None, None).unwrap();
+        assert_eq!(get_members(&pool, &team.id).unwrap().len(), 2);
+        assert_eq!(get_connections(&pool, &team.id).unwrap().len(), 1);
+
+        // Delete team (explicit cleanup of members & connections)
         let deleted = delete(&pool, &team.id).unwrap();
         assert!(deleted);
         assert!(get_by_id(&pool, &team.id).is_err());
+
+        // Verify no orphaned members or connections remain
+        assert_eq!(get_members(&pool, &team.id).unwrap().len(), 0);
+        assert_eq!(get_connections(&pool, &team.id).unwrap().len(), 0);
     }
 }

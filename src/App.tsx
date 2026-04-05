@@ -66,26 +66,18 @@ export default function App() {
     const stored = storedConsentVersion();
     return stored !== null && !hasUserConsented();
   });
-  // Gate BackgroundServices until after first paint + short delay to avoid
-  // IPC stampede during startup.
-  const [bgReady, setBgReady] = useState(false);
-
   useEffect(() => {
-    // Staggered init: storeBus first (sync, no IPC), then event listeners
-    // (15 IPC calls), then middleware. This avoids flooding the IPC bridge
-    // with 20+ simultaneous calls that cause the cold-start freeze.
-    (async () => {
-      try {
-        const bus = await import("@/lib/storeBusWiring");
-        bus.initStoreBus();
-        const bridge = await import("@/lib/eventBridge");
-        await bridge.initAllListeners();
-        const mw = await import("@/lib/execution/middleware");
-        mw.registerAllMiddleware();
-      } catch (err) {
-        console.error("[App] Critical startup module failed to initialize:", err);
-      }
-    })();
+    // Dynamic imports: event bridge + middleware + background hooks.
+    // These pull in all 5 domain stores — loading them async keeps
+    // them out of the main bundle (~300 KB savings).
+    // Loaded in parallel (no interdependency) to avoid a boot waterfall.
+    Promise.all([
+      import("@/lib/storeBusWiring").then(m => m.initStoreBus()),
+      import("@/lib/eventBridge").then(m => m.initAllListeners()),
+      import("@/lib/execution/middleware").then(m => m.registerAllMiddleware()),
+    ]).catch((err) => {
+      console.error("[App] Critical startup module failed to initialize:", err);
+    });
     void useAuthStore.getState().initialize();
     // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.
     // Loaded in dev builds always, or in production when PERSONAS_TEST_PORT is set
@@ -103,11 +95,6 @@ export default function App() {
         invoke("report_frontend_ready", { ttiMs: tti }).catch(() => {});
       });
     }
-
-    // Defer BackgroundServices mount to avoid competing with startup IPC calls.
-    // 4s delay ensures personas list + primary UI are loaded first.
-    const bgTimer = setTimeout(() => setBgReady(true), 4_000);
-    return () => clearTimeout(bgTimer);
   }, []);
 
   const { t } = useTranslation();
@@ -143,13 +130,11 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden">
             <PersonasPage />
           </div>
-          {bgReady && (
-            <SilentErrorBoundary name="BackgroundServices">
-              <Suspense fallback={null}>
-                <BackgroundServices />
-              </Suspense>
-            </SilentErrorBoundary>
-          )}
+          <SilentErrorBoundary name="BackgroundServices">
+            <Suspense fallback={null}>
+              <BackgroundServices />
+            </Suspense>
+          </SilentErrorBoundary>
           <Suspense fallback={null}>
             <HealingToast />
             <AlertToastContainer />

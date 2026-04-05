@@ -83,7 +83,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
     try {
       const policy = await createRotationPolicy(input);
       // Refresh status for this credential
-      get().fetchRotationStatus(input.credential_id);
+      await get().fetchRotationStatus(input.credential_id);
       return policy;
     } catch (err) {
       reportError(err, "Failed to create rotation policy", set);
@@ -94,7 +94,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
   updateRotationPolicy: async (id, input) => {
     try {
       const policy = await updateRotationPolicy(id, input);
-      get().fetchRotationStatus(policy.credential_id);
+      await get().fetchRotationStatus(policy.credential_id);
       return policy;
     } catch (err) {
       reportError(err, "Failed to update rotation policy", set);
@@ -105,7 +105,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
   deleteRotationPolicy: async (id) => {
     try {
       const credentialId = await deleteRotationPolicy(id);
-      get().fetchRotationStatus(credentialId);
+      await get().fetchRotationStatus(credentialId);
       return credentialId;
     } catch (err) {
       reportError(err, "Failed to delete rotation policy", set);
@@ -116,7 +116,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
   rotateCredentialNow: async (credentialId) => {
     try {
       const result = await rotateCredentialNow(credentialId);
-      get().fetchRotationStatus(credentialId);
+      await get().fetchRotationStatus(credentialId);
       return result;
     } catch (err) {
       reportError(err, "Failed to rotate credential", set);
@@ -127,7 +127,7 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
   refreshOAuthNow: async (credentialId) => {
     try {
       const result = await refreshCredentialOAuthNow(credentialId);
-      get().fetchRotationStatus(credentialId);
+      await get().fetchRotationStatus(credentialId);
       return result;
     } catch (err) {
       reportError(err, "Failed to refresh OAuth token", set);

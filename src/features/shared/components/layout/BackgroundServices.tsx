@@ -12,6 +12,7 @@ import { useLabEvents } from "@/hooks/lab/useLabEvents";
 import { useHealthDigestScheduler } from "@/features/agents/health";
 import { useCredentialRemediation } from "@/features/vault/shared/hooks/health/useCredentialRemediation";
 
+
 export default function BackgroundServices() {
   useLabEvents();
   useHealthDigestScheduler();

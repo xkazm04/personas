@@ -76,14 +76,14 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
     if (!success) setLinkingConnector(connectorName);
   };
 
-  if (!selectedPersona) {
-    return <div className="flex items-center justify-center py-8 text-muted-foreground/80">No persona selected</div>;
-  }
-
   const { unlinked, healthy, unhealthy } = readinessCounts;
   const testableCount = statuses.length - unlinked;
 
   useEffect(() => { onMissingCountChange?.(unlinked); }, [unlinked, onMissingCountChange]);
+
+  if (!selectedPersona) {
+    return <div className="flex items-center justify-center py-8 text-muted-foreground/80">No persona selected</div>;
+  }
 
   const hasGraphContent = dependencyGraph.nodes.length > 0;
 

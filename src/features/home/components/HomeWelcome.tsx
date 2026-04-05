@@ -17,6 +17,7 @@ const NAV_CARDS: NavCard[] = [
   { id: 'settings', icon: Settings, color: 'slate', gradFrom: 'from-slate-400/8', gradTo: 'to-zinc-500/4', glowColor: 'bg-slate-400/15', accentBorder: 'border-slate-400/20 hover:border-slate-300/40', iconBg: 'bg-slate-400/15', iconText: 'text-slate-400' },
 ];
 
+
 export default function HomeWelcome() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const user = useAuthStore((s) => s.user);

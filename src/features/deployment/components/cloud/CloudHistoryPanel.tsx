@@ -47,11 +47,28 @@ export function CloudHistoryPanel() {
   const fetchingRef = useRef(new Set<string>());
   const outputCacheRef = useRef(new Map<string, { lines: string[]; ts: number }>());
   const OUTPUT_CACHE_TTL = 5 * 60 * 1000;
+  const OUTPUT_CACHE_MAX = 50;
+
+  /** Evict expired entries, then trim oldest if over cap (LRU via Map insertion order). */
+  const evictCache = useCallback(() => {
+    const cache = outputCacheRef.current;
+    const now = Date.now();
+    for (const [key, entry] of cache) {
+      if (now - entry.ts >= OUTPUT_CACHE_TTL) cache.delete(key);
+    }
+    while (cache.size > OUTPUT_CACHE_MAX) {
+      const oldest = cache.keys().next().value;
+      if (oldest !== undefined) cache.delete(oldest);
+      else break;
+    }
+  }, []);
 
   const fetchOutput = useCallback(async (execId: string) => {
-    // Return cached output if still fresh
+    // Return cached output if still fresh (re-insert to mark as recently used)
     const cached = outputCacheRef.current.get(execId);
     if (cached && Date.now() - cached.ts < OUTPUT_CACHE_TTL) {
+      outputCacheRef.current.delete(execId);
+      outputCacheRef.current.set(execId, cached);
       setOutputMap((prev) => ({ ...prev, [execId]: { lines: cached.lines, loading: false } }));
       return;
     }
@@ -61,6 +78,7 @@ export function CloudHistoryPanel() {
     try {
       const lines = await cloudGetExecutionOutput(execId);
       outputCacheRef.current.set(execId, { lines, ts: Date.now() });
+      evictCache();
       setOutputMap((prev) => ({ ...prev, [execId]: { lines, loading: false } }));
     } catch (e) {
       setOutputMap((prev) => ({
@@ -70,7 +88,7 @@ export function CloudHistoryPanel() {
     } finally {
       fetchingRef.current.delete(execId);
     }
-  }, []);
+  }, [evictCache]);
 
   // Debounce filter-driven refetches to avoid API spam when iterating filters
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);

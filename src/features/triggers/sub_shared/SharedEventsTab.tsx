@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Store, Search, X, Rss, RssIcon } from 'lucide-react';
 import * as api from '@/api/events/sharedEvents';
 import { createLogger } from "@/lib/log";
+import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 
 const logger = createLogger("shared-events");
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
@@ -18,12 +19,13 @@ export function SharedEventsTab() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [cat, subs] = await Promise.all([
-        api.browseCatalog(category || undefined, search || undefined),
+        api.browseCatalog(category || undefined, debouncedSearch || undefined),
         api.listSubscriptions(),
       ]);
       setCatalog(cat);
@@ -33,7 +35,7 @@ export function SharedEventsTab() {
     } finally {
       setLoading(false);
     }
-  }, [category, search]);
+  }, [category, debouncedSearch]);
 
   useEffect(() => { void load(); }, [load]);
 

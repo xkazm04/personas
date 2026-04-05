@@ -182,13 +182,24 @@ function parseCronField(field: string, min: number, max: number): Set<number> | 
       continue;
     }
 
-    // Step: */N or N-M/S
-    const stepMatch = trimmed.match(/^(\*|(\d+)-(\d+))\/(\d+)$/);
+    // Step: */N, N-M/S, or N/S (bare start/step)
+    const stepMatch = trimmed.match(/^(\*|(\d+)(?:-(\d+))?)\/(\d+)$/);
     if (stepMatch) {
       const step = parseInt(stepMatch[4]!, 10);
       if (isNaN(step) || step <= 0) return null;
-      const rangeStart = stepMatch[1] === '*' ? min : parseInt(stepMatch[2]!, 10);
-      const rangeEnd = stepMatch[1] === '*' ? max : parseInt(stepMatch[3]!, 10);
+      let rangeStart: number;
+      let rangeEnd: number;
+      if (stepMatch[1] === '*') {
+        rangeStart = min;
+        rangeEnd = max;
+      } else if (stepMatch[3] !== undefined) {
+        rangeStart = parseInt(stepMatch[2]!, 10);
+        rangeEnd = parseInt(stepMatch[3]!, 10);
+      } else {
+        // N/S — start at N, step to field max (mirrors Rust parse_field)
+        rangeStart = parseInt(stepMatch[2]!, 10);
+        rangeEnd = max;
+      }
       for (let i = rangeStart; i <= rangeEnd; i += step) result.add(i);
       continue;
     }

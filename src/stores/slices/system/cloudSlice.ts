@@ -159,9 +159,9 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
   },
 
   cloudDisconnectAction: async () => {
+    clearPendingOAuthTimeout();
     try {
       await cloudDisconnect();
-      clearPendingOAuthTimeout();
       set({
         cloudConfig: null,
         cloudStatus: null,
@@ -211,6 +211,8 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       clearPendingOAuthTimeout();
       set({ cloudPendingOAuthState: result.state });
       pendingOAuthTimeoutRef = setTimeout(() => {
+        pendingOAuthTimeoutRef = null;
+        if (!get().cloudPendingOAuthState) return;
         set({ cloudPendingOAuthState: null, cloudError: "OAuth authorization timed out. Please try again." });
         storeBus.emit('toast', { message: "OAuth authorization timed out -- please retry.", type: "error" });
       }, PENDING_OAUTH_TIMEOUT_MS);

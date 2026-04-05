@@ -239,6 +239,9 @@ export default function IdeaTriagePage() {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable) return;
+
       if (e.key === '?') {
         setShowShortcuts((prev) => !prev);
         return;

@@ -61,12 +61,20 @@ function useScenarioConfigs(): Record<EmptyStateVariant, ScenarioConfig> {
 
 // -- Component ----------------------------------------------------
 
+interface EmptyStateAction {
+  label: string;
+  onClick: () => void;
+  icon?: LucideIcon;
+}
+
 interface EmptyStateProps {
   icon?: LucideIcon;
   title?: string;
   subtitle?: string;
   description?: string;
-  action?: { label: string; onClick: () => void };
+  action?: EmptyStateAction;
+  /** Second CTA rendered as a ghost button alongside the primary action. */
+  secondaryAction?: EmptyStateAction;
   iconColor?: string;
   iconContainerClassName?: string;
   className?: string;
@@ -81,6 +89,7 @@ export default function EmptyState({
   subtitle,
   description,
   action,
+  secondaryAction,
   iconColor,
   iconContainerClassName,
   className,
@@ -99,15 +108,15 @@ export default function EmptyState({
 
   return (
     <div
-      className={`animate-fade-slide-in py-8 flex flex-col items-center justify-center text-center gap-2.5 ${className ?? ''}`}
+      className={`animate-fade-slide-in py-8 flex flex-col items-center justify-center text-center gap-3 ${className ?? ''}`}
     >
       {Icon && (
-        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${resolvedContainerClass}`}>
-          <Icon className={`w-4 h-4 ${resolvedIconColor}`} />
+        <div className={`w-14 h-14 rounded-xl border flex items-center justify-center ${resolvedContainerClass}`}>
+          <Icon className={`w-6 h-6 ${resolvedIconColor}`} />
         </div>
       )}
-      {resolvedTitle && <h3 className="typo-heading text-foreground/90">{resolvedTitle}</h3>}
-      {detailText && <p className="typo-body text-muted-foreground/60 max-w-[34ch]">{detailText}</p>}
+      {resolvedTitle && <h3 className="typo-heading-lg text-foreground/90">{resolvedTitle}</h3>}
+      {detailText && <p className="typo-body-lg text-muted-foreground/60 max-w-[40ch]">{detailText}</p>}
 
       {/* Step guide for multi-step scenarios */}
       {steps && (
@@ -121,7 +130,7 @@ export default function EmptyState({
                   <div className={`w-6 h-6 rounded-lg border flex items-center justify-center ${step.color}`}>
                     <StepIcon className="w-3 h-3" />
                   </div>
-                  <span className="typo-caption text-muted-foreground/70">{step.label}</span>
+                  <span className="typo-body text-muted-foreground/70">{step.label}</span>
                 </div>
               </div>
             );
@@ -130,13 +139,27 @@ export default function EmptyState({
       )}
 
       {children ? <div className="pt-1">{children}</div> : null}
-      {action && (
-        <button
-          onClick={action.onClick}
-          className="mt-1 px-3 py-1.5 typo-heading rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors"
-        >
-          {action.label}
-        </button>
+      {(action || secondaryAction) && (
+        <div className="flex items-center gap-3 mt-1">
+          {action && (
+            <button
+              onClick={action.onClick}
+              className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors"
+            >
+              {action.icon && <action.icon className="w-3.5 h-3.5" />}
+              {action.label}
+            </button>
+          )}
+          {secondaryAction && (
+            <button
+              onClick={secondaryAction.onClick}
+              className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl text-muted-foreground/80 hover:text-foreground hover:bg-primary/8 border border-primary/10 transition-colors"
+            >
+              {secondaryAction.icon && <secondaryAction.icon className="w-3.5 h-3.5" />}
+              {secondaryAction.label}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

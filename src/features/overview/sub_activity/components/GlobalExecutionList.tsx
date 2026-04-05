@@ -1,10 +1,11 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Loader2, RefreshCw, BarChart3, Bot } from 'lucide-react';
+import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
@@ -192,15 +193,13 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
               null
             ) : filteredExecutions.length === 0 ? (
               <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-                {personas.length === 0 ? (
-                  <EmptyState
-                    icon={Bot}
-                    title="No agents created yet"
-                    subtitle="Create your first agent to see execution activity here."
-                  />
-                ) : (
-                  <EmptyState variant="dashboard-no-executions" />
-                )}
+                <EmptyState
+                  icon={Bot}
+                  title={personas.length === 0 ? "No agents created yet" : "No executions yet"}
+                  subtitle={personas.length === 0 ? "Create your first persona to see execution activity here." : "Run an agent to see execution activity here."}
+                  action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
+                  secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+                />
               </div>
             ) : (
               <div ref={parentRef} className="flex-1 overflow-y-auto">

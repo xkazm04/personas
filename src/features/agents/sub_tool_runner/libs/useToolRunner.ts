@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { invokeToolDirect, type ToolInvocationResult } from '@/api/agents/tools';
 
 interface ToolRunState {
@@ -18,6 +18,7 @@ const MAX_HISTORY = 10;
 export function useToolRunner(personaId: string | undefined) {
   const [states, setStates] = useState<Record<string, ToolRunState>>({});
   const [history, setHistory] = useState<Record<string, HistoryEntry[]>>({});
+  const runningRef = useRef<Set<string>>(new Set());
 
   const getState = useCallback(
     (toolId: string): ToolRunState =>
@@ -33,7 +34,9 @@ export function useToolRunner(personaId: string | undefined) {
   const runTool = useCallback(
     async (toolId: string, inputJson: string) => {
       if (!personaId) return;
+      if (runningRef.current.has(toolId)) return;
 
+      runningRef.current.add(toolId);
       setStates((prev) => ({
         ...prev,
         [toolId]: { isRunning: true, result: null, error: null },
@@ -56,6 +59,8 @@ export function useToolRunner(personaId: string | undefined) {
           ...prev,
           [toolId]: { isRunning: false, result: null, error: msg },
         }));
+      } finally {
+        runningRef.current.delete(toolId);
       }
     },
     [personaId],

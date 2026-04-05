@@ -52,8 +52,10 @@ pub fn delete_rotation_policy(
     id: String,
 ) -> Result<String, AppError> {
     require_privileged_sync(&state, "delete_rotation_policy")?;
+    // Fetch credential_id before deletion so the frontend can refresh status
+    let policy = rotation_repo::get_policy_by_id(&state.db, &id)?;
     rotation_repo::delete_policy(&state.db, &id)?;
-    Ok(id)
+    Ok(policy.credential_id)
 }
 
 // ============================================================================
