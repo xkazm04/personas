@@ -22,7 +22,8 @@ if (_queueMicrotask) {
 // Count Promise.then to detect promise storms
 let promiseThenCount = 0;
 const _origThen = Promise.prototype.then;
-Promise.prototype.then = function(onFulfilled?: any, onRejected?: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(Promise.prototype as any).then = function(onFulfilled?: any, onRejected?: any) {
   promiseThenCount++;
   return _origThen.call(this, onFulfilled, onRejected);
 };

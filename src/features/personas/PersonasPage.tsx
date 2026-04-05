@@ -41,13 +41,12 @@ const SchedulesPage = lazy(() => import('@/features/schedules/components/Schedul
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
 
-// Direction-aware cross-fade variants for section switches.
-// `custom` receives the navigation direction (1 = down, -1 = up, 0 = no motion).
-const sectionFadeVariants = {
-  initial: (dir: number) => ({ opacity: 0, y: dir * 12 }),
-  animate: { opacity: 1, y: 0 },
-  exit: (dir: number) => ({ opacity: 0, y: -dir * 12 }),
-};
+// Direction-aware cross-fade variants — re-enable with AnimatePresence when freeze is fully resolved.
+// const sectionFadeVariants = {
+//   initial: (dir: number) => ({ opacity: 0, y: dir * 12 }),
+//   animate: { opacity: 1, y: 0 },
+//   exit: (dir: number) => ({ opacity: 0, y: -dir * 12 }),
+// };
 
 
 export default function PersonasPage() {
@@ -161,8 +160,9 @@ export default function PersonasPage() {
     navDirectionRef.current = currIdx >= prevIdx ? 1 : -1;
     navSectionRef.current = sidebarSection;
   }
-  const sectionDir = shouldAnimate ? navDirectionRef.current : 0;
-  const sectionTransition = { ...transition, duration: shouldAnimate ? 0.15 : 0.01 };
+  // Re-enable with AnimatePresence:
+  // const sectionDir = shouldAnimate ? navDirectionRef.current : 0;
+  // const sectionTransition = { ...transition, duration: shouldAnimate ? 0.15 : 0.01 };
 
   useEffect(() => {
     const wasElsewhere = prevSectionRef.current !== 'personas';

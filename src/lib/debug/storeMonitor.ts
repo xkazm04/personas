@@ -95,7 +95,7 @@ function tick(): void {
 
   // 2. Heap growing >20MB in 2 seconds
   if (snapshots.length >= 2) {
-    const prev = snapshots[snapshots.length - 2];
+    const prev = snapshots[snapshots.length - 2]!;
     const growth = heapMB - prev.heapMB;
     if (growth > 20) {
       alerts.push(`HEAP GROWTH: +${growth}MB in 2s (${prev.heapMB}→${heapMB}MB)`);
@@ -104,7 +104,7 @@ function tick(): void {
 
   // 3. DOM growing >200 nodes in 2 seconds (after initial render)
   if (snapshots.length >= 4) { // skip first 6 seconds
-    const prev = snapshots[snapshots.length - 2];
+    const prev = snapshots[snapshots.length - 2]!;
     const growth = domNodes - prev.domNodes;
     if (growth > 200) {
       alerts.push(`DOM GROWTH: +${growth} nodes in 2s (${prev.domNodes}→${domNodes})`);

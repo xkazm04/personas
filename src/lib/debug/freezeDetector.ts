@@ -2,7 +2,7 @@
  *  stalls. Activate by setting localStorage `__personas_freeze_detector` to any truthy value.
  *  When absent the module is a complete no-op (zero overhead). */
 
-import { patchAll as patchCallbacks, unpatchAll, currentCallback } from './callbackTracker';
+import { unpatchAll, currentCallback } from './callbackTracker';
 
 const FLAG = '__personas_freeze_detector';
 const STORAGE_KEY = '__personas_freeze_events';

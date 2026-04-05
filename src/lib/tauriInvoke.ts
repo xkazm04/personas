@@ -207,7 +207,7 @@ function _invokeCore<T>(
   // (set by ipc_auth.rs init script) hasn't run yet.
   const opts: InvokeOptions = options ?? { headers: {} };
   const h = new Headers(opts.headers);
-  h.set("x-ipc-token", token);
+  if (token) h.set("x-ipc-token", token);
   options = { ...opts, headers: h };
 
   const invocation = invoke<T>(cmd, args ? coerceArgs(args) : undefined, options);
