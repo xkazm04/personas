@@ -25,6 +25,8 @@ pub struct EmbeddingManager {
     cache_dir: PathBuf,
     /// True while an idle-unloader task is running. Prevents duplicate spawns.
     unloader_active: Arc<AtomicBool>,
+    /// True if model loading panicked (ONNX DLL issue). Prevents repeated panic retries that cause OOM.
+    poisoned: Arc<AtomicBool>,
 }
 
 impl EmbeddingManager {
@@ -35,6 +37,7 @@ impl EmbeddingManager {
             last_used: Arc::new(RwLock::new(Instant::now())),
             cache_dir,
             unloader_active: Arc::new(AtomicBool::new(false)),
+            poisoned: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -96,6 +99,14 @@ impl EmbeddingManager {
 
     /// Ensure the model is loaded. Downloads on first use (~23MB).
     async fn ensure_loaded(&self) -> Result<(), AppError> {
+        // If a previous load attempt panicked (ONNX DLL mismatch), don't retry.
+        // Repeated panics leak memory (backtrace allocations) and cause OOM.
+        if self.poisoned.load(Ordering::Relaxed) {
+            return Err(AppError::Internal(
+                "Embedding model permanently unavailable (ONNX Runtime failed to load)".into(),
+            ));
+        }
+
         // Fast path: already loaded
         {
             let guard = self.model.read().await;
@@ -140,8 +151,17 @@ impl EmbeddingManager {
             }
         })
         .await
-        .map_err(|e| AppError::Internal(format!("Model loading task panicked: {e}")))?
-        .map_err(AppError::Internal)?;
+        .map_err(|e| AppError::Internal(format!("Model loading task panicked: {e}")))
+        .and_then(|r| r.map_err(AppError::Internal));
+
+        let model = match model {
+            Ok(m) => m,
+            Err(e) => {
+                self.poisoned.store(true, Ordering::Relaxed);
+                tracing::error!("Embedding model permanently disabled: {e}");
+                return Err(e);
+            }
+        };
 
         tracing::info!("Embedding model loaded successfully");
         *guard = Some(Arc::new(model));

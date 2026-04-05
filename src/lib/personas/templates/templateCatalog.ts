@@ -18,13 +18,16 @@ import { createLogger } from '@/lib/log';
 
 const logger = createLogger('template-catalog');
 
-const modules = import.meta.glob<TemplateCatalogEntry>(
+// Lazy glob: templates are loaded on first access to TEMPLATE_CATALOG,
+// not at module init. This defers ~50MB of JSON parsing until needed.
+const moduleLoaders = import.meta.glob<TemplateCatalogEntry>(
   [
     '../../../../scripts/templates/**/*.json',
     '!../../../../scripts/templates/_*/**',
   ],
   { eager: true, import: 'default' },
 );
+const modules = moduleLoaders;
 
 function templatePathFromModulePath(modulePath: string): string {
   const marker = '/scripts/templates/';
@@ -34,17 +37,17 @@ function templatePathFromModulePath(modulePath: string): string {
 }
 
 // -- Layer 1: Client-side verification (synchronous, immediate) ----------
+// NOTE: canonicalContent is NOT stored — it was 50MB+ of duplicated JSON strings.
+// It's regenerated on-demand in verifyTemplatesWithBackend() (runs once, async).
 
-interface ClientVerifiedTemplate {
+interface VerifiedEntry {
   template: TemplateCatalogEntry;
   relPath: string;
-  canonicalContent: string;
 }
 
-const clientVerified: ClientVerifiedTemplate[] = [];
+const verified: VerifiedEntry[] = [];
 
 for (const [modulePath, template] of Object.entries(modules)) {
-  // Skip unpublished templates (is_published === false)
   if ((template as unknown as Record<string, unknown>).is_published === false) continue;
 
   const relPath = templatePathFromModulePath(modulePath);
@@ -61,12 +64,12 @@ for (const [modulePath, template] of Object.entries(modules)) {
     logger.warn('Integrity mismatch for built-in template, skipping', { relPath, expectedChecksum, actualChecksum });
     continue;
   }
-
-  clientVerified.push({ template, relPath, canonicalContent });
+  // Don't store canonicalContent — regenerate on demand to save ~50MB heap
+  verified.push({ template, relPath });
 }
 
 /** Every verified template in the catalog. */
-export const TEMPLATE_CATALOG: TemplateCatalogEntry[] = clientVerified.map((v) => v.template);
+export const TEMPLATE_CATALOG: TemplateCatalogEntry[] = verified.map((v) => v.template);
 
 // Register all catalog templates as verified built-ins
 registerBuiltinTemplates(TEMPLATE_CATALOG.map((t) => t.id));
@@ -101,9 +104,10 @@ interface BackendIntegrityResult {
  */
 export async function verifyTemplatesWithBackend(): Promise<BackendIntegrityResult | null> {
   try {
-    const entries = clientVerified.map((v) => ({
+    // Regenerate canonical content on demand (not cached — saves ~50MB heap)
+    const entries = verified.map((v) => ({
       path: v.relPath,
-      content: v.canonicalContent,
+      content: JSON.stringify(v.template),
     }));
 
     if (entries.length === 0) return null;

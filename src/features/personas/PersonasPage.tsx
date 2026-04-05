@@ -90,6 +90,9 @@ export default function PersonasPage() {
     }
     setPersonasFetched(true);
 
+    // Yield to browser — let React paint before loading secondary data
+    await new Promise(r => setTimeout(r, 100));
+
     // Wave 2: Secondary data — deferred so UI is interactive first
     const secondaryResults = await Promise.allSettled([
       fetchToolDefinitions(),

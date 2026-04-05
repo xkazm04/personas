@@ -43,7 +43,7 @@ export function LanguageCardGrid() {
               }`}
             >
               <div className="relative aspect-[4/3] bg-secondary/30 overflow-hidden">
-                <img src={langIllustration(lang.code)} alt="" loading="lazy" decoding="async"
+                <img src={langIllustration(lang.code)} alt="" loading="eager" decoding="async"
                   className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${isActive ? 'opacity-90 scale-100' : 'opacity-30 scale-105 group-hover:opacity-85 group-hover:scale-100'}`} />
                 <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity ${isActive ? 'opacity-80' : 'opacity-40 group-hover:opacity-70'}`} />
                 {isActive && (
@@ -114,7 +114,7 @@ export default function LanguageSwitcher() {
                         <img
                           src={langIllustration(lang.code)}
                           alt=""
-                          loading="lazy"
+                          loading="eager"
                           decoding="async"
                           className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
                             isActive

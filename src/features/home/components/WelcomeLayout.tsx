@@ -44,7 +44,6 @@ export default function WelcomeLayout({
         <div className="w-full px-6 py-4 space-y-4">
           <HeroHeader greeting={greeting} displayName={displayName} />
 
-          {/* Get Started section with tour button next to title */}
           <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
             <span className="typo-section-title">Get Started</span>

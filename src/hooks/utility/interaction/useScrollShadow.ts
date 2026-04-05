@@ -29,14 +29,13 @@ export function useScrollShadow(scrollRef: RefObject<HTMLElement | null>) {
     const ro = new ResizeObserver(update);
     ro.observe(el);
 
-    // Also observe children mutations that might change scrollHeight
-    const mo = new MutationObserver(update);
-    mo.observe(el, { childList: true, subtree: true });
+    // MutationObserver removed: it caused an infinite loop.
+    // React render → DOM mutation → MutationObserver → setState → re-render → DOM mutation → ...
+    // ResizeObserver is sufficient to detect content height changes.
 
     return () => {
       el.removeEventListener('scroll', update);
       ro.disconnect();
-      mo.disconnect();
     };
   }, [scrollRef, update]);
 

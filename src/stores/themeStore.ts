@@ -167,21 +167,19 @@ function applyBrightness(level: BrightnessLevel, themeId: ThemeId, customConfig?
   const el = document.documentElement;
   el.style.setProperty('--app-brightness', String(val));
 
-  // Defer the expensive token compensation to avoid blocking the main thread.
-  // The brightness filter applies instantly via CSS; the color compensation
-  // is a cosmetic refinement that can arrive a frame later.
-  requestAnimationFrame(() => {
-    el.removeAttribute('data-brightness');
-    // Use a microtask to batch the read/write cycle after the frame paints
-    queueMicrotask(() => {
-      const computed = getComputedStyle(el);
-      for (const token of BRIGHTNESS_EXEMPT_TOKENS) {
-        const current = computed.getPropertyValue(`--${token}`).trim();
-        if (current) el.style.setProperty(`--${token}-raw`, current);
-      }
-      el.setAttribute('data-brightness', `${light ? 'light' : 'dark'}-${level}`);
-    });
-  });
+  // Synchronous: remove data-brightness, read computed styles, then re-set.
+  // The previous rAF+microtask version caused post-render freeze by triggering
+  // two full CSS recalculations on 500+ DOM nodes after first paint.
+  el.removeAttribute('data-brightness');
+  void el.offsetHeight; // force style recalc
+
+  const computed = getComputedStyle(el);
+  for (const token of BRIGHTNESS_EXEMPT_TOKENS) {
+    const current = computed.getPropertyValue(`--${token}`).trim();
+    if (current) el.style.setProperty(`--${token}-raw`, current);
+  }
+
+  el.setAttribute('data-brightness', `${light ? 'light' : 'dark'}-${level}`);
 }
 
 interface ThemeState {

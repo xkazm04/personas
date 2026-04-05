@@ -1,3 +1,6 @@
+import './lib/debug/freezeDetector';
+import './lib/debug/freezeWatchdog';
+import { monitorStore } from './lib/debug/storeMonitor';
 import React from "react";
 import ReactDOM from "react-dom/client";
 import * as Sentry from "@sentry/react";
@@ -142,6 +145,21 @@ if (root) {
 // -- Async setup (Sentry, analytics) -----------------------------------------
 // Runs after React is already mounted and error handlers are active.
 // Only Sentry enrichment and analytics are deferred here.
+
+// Wire store monitoring for freeze diagnostics
+(async () => {
+  try {
+    const [{ useSystemStore }, { useAgentStore }] = await Promise.all([
+      import("./stores/systemStore"),
+      import("./stores/agentStore"),
+    ]);
+    monitorStore(useSystemStore, 'systemStore');
+    monitorStore(useAgentStore, 'agentStore');
+    // Lazy stores monitored when they load
+    import("./stores/overviewStore").then(({ useOverviewStore }) => monitorStore(useOverviewStore, 'overviewStore')).catch(() => {});
+    import("./stores/vaultStore").then(({ useVaultStore }) => monitorStore(useVaultStore, 'vaultStore')).catch(() => {});
+  } catch {}
+})();
 
 (async () => {
   let appVersion = "dev";

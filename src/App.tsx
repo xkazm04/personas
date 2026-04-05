@@ -61,12 +61,14 @@ const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareL
 
 export default function App() {
   const [consented, setConsented] = useState(hasUserConsented);
-  // True when user consented to an older version and needs to re-accept
   const [isVersionBump] = useState(() => {
     const stored = storedConsentVersion();
     return stored !== null && !hasUserConsented();
   });
+  // Defer heavy background services until UI is interactive
+  const [bgReady, setBgReady] = useState(false);
   useEffect(() => {
+    import('./lib/debug/freezeWatchdog').then(m => m.markAction('appInit:start'));
     // Dynamic imports: event bridge + middleware + background hooks.
     // These pull in all 5 domain stores — loading them async keeps
     // them out of the main bundle (~300 KB savings).
@@ -95,6 +97,10 @@ export default function App() {
         invoke("report_frontend_ready", { ttiMs: tti }).catch(() => {});
       });
     }
+    // Defer BackgroundServices: health digest, credential remediation, lab events
+    // These trigger heavy IPC cascades that compete with UI rendering.
+    const bgTimer = setTimeout(() => setBgReady(true), 4000);
+    return () => clearTimeout(bgTimer);
   }, []);
 
   const { t } = useTranslation();
@@ -130,21 +136,25 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden">
             <PersonasPage />
           </div>
-          <SilentErrorBoundary name="BackgroundServices">
-            <Suspense fallback={null}>
-              <BackgroundServices />
-            </Suspense>
-          </SilentErrorBoundary>
-          <Suspense fallback={null}>
-            <HealingToast />
-            <AlertToastContainer />
-            <GuidedTour />
-            <TourSpotlight />
-            <ExecutionMiniPlayer />
-            <CommandPalette />
-            <NotificationCenter />
-            <ShareLinkHandler />
-          </Suspense>
+          {bgReady && (
+            <>
+              <SilentErrorBoundary name="BackgroundServices">
+                <Suspense fallback={null}>
+                  <BackgroundServices />
+                </Suspense>
+              </SilentErrorBoundary>
+              <Suspense fallback={null}>
+                <HealingToast />
+                <AlertToastContainer />
+                <GuidedTour />
+                <TourSpotlight />
+                <ExecutionMiniPlayer />
+                <CommandPalette />
+                <NotificationCenter />
+                <ShareLinkHandler />
+              </Suspense>
+            </>
+          )}
           <ChartGradientDefs />
           <ToastContainer />
           {import.meta.env.DEV && isMobilePreview && (
