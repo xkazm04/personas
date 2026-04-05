@@ -832,7 +832,7 @@ pub fn run() {
                     });
             }
 
-            // Lightweight freeze/OOM monitor — tracks WebView2 memory, writes alerts to disk
+            // Lightweight freeze/OOM monitor — uses Windows API, no external process spawn
             freeze_monitor::start(app.handle().clone(), app_data_dir.join("logs"));
 
             // Auto-start scheduler after a brief delay

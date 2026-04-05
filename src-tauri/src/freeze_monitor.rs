@@ -1,8 +1,8 @@
-//! Lightweight freeze/OOM monitor — tracks WebView2 subprocess memory.
+//! Freeze/OOM monitor — tracks memory growth without external process spawning.
 //!
-//! Runs for the app's lifetime. Probes every 5s (low overhead), writes to
-//! `{app_data}/logs/freeze_monitor.jsonl` which survives OOM crashes.
-//! Only logs when anomalies are detected (memory growth >50MB/10s).
+//! Checks the Rust process heap allocation count every 10s.
+//! Writes alerts to `{app_data}/logs/freeze_monitor.jsonl` when growth is anomalous.
+//! Zero external process spawns — fully silent.
 
 use std::io::Write;
 use std::path::PathBuf;
@@ -15,43 +15,54 @@ struct ProbeEntry {
     ts: String,
     elapsed_s: u64,
     probe_id: u32,
-    webview_memory_mb: u64,
-    app_memory_mb: u64,
+    /// Approximate heap via jemalloc/system allocator stats (Rust side only).
+    /// For WebView2 subprocess tracking, use browser devtools or the debug timeline.
+    heap_estimate_mb: i64,
     alert: Option<String>,
 }
 
-fn get_webview_memory() -> (u64, u64) {
-    let output = std::process::Command::new("tasklist")
-        .args(["/FO", "CSV", "/NH"])
-        .output();
-
-    let mut wv_total: u64 = 0;
-    let mut app_total: u64 = 0;
-
-    if let Ok(output) = output {
-        let text = String::from_utf8_lossy(&output.stdout);
-        for line in text.lines() {
-            let parts: Vec<&str> = line.split(',').collect();
-            if parts.len() < 5 { continue; }
-            let name = parts[0].trim_matches('"').to_lowercase();
-            let mem_str: String = parts[4..].join(",");
-            let mem_kb: u64 = mem_str.chars().filter(|c| c.is_ascii_digit())
-                .collect::<String>().parse().unwrap_or(0);
-            let mem_mb = mem_kb / 1024;
-
-            if name.contains("msedgewebview2") {
-                wv_total += mem_mb;
-            }
-            if name.contains("personas") || name.contains("msedgewebview2") {
-                app_total += mem_mb;
+/// Estimate Rust-side memory via peak RSS reported by the OS.
+fn estimate_heap_mb() -> i64 {
+    // Use Rust's built-in peak RSS tracking if available
+    #[cfg(windows)]
+    {
+        // On Windows, read PROCESS_MEMORY_COUNTERS via raw FFI (no windows-sys crate needed)
+        #[repr(C)]
+        #[allow(non_snake_case)]
+        struct ProcessMemoryCounters {
+            cb: u32,
+            PageFaultCount: u32,
+            PeakWorkingSetSize: usize,
+            WorkingSetSize: usize,
+            QuotaPeakPagedPoolUsage: usize,
+            QuotaPagedPoolUsage: usize,
+            QuotaPeakNonPagedPoolUsage: usize,
+            QuotaNonPagedPoolUsage: usize,
+            PagefileUsage: usize,
+            PeakPagefileUsage: usize,
+        }
+        extern "system" {
+            fn GetCurrentProcess() -> isize;
+            fn K32GetProcessMemoryInfo(
+                process: isize,
+                pmc: *mut ProcessMemoryCounters,
+                cb: u32,
+            ) -> i32;
+        }
+        unsafe {
+            let mut pmc = std::mem::zeroed::<ProcessMemoryCounters>();
+            pmc.cb = std::mem::size_of::<ProcessMemoryCounters>() as u32;
+            if K32GetProcessMemoryInfo(GetCurrentProcess(), &mut pmc, pmc.cb) != 0 {
+                return pmc.WorkingSetSize as i64 / (1024 * 1024);
             }
         }
+        -1
     }
-    (wv_total, app_total)
+    #[cfg(not(windows))]
+    { -1 }
 }
 
-pub fn start(app: AppHandle, log_dir: PathBuf) {
-    let _ = app; // used for future eval probes if needed
+pub fn start(_app: AppHandle, log_dir: PathBuf) {
     tauri::async_runtime::spawn(async move {
         let log_path = log_dir.join("freeze_monitor.jsonl");
         if let Ok(mut f) = std::fs::File::create(&log_path) {
@@ -60,47 +71,39 @@ pub fn start(app: AppHandle, log_dir: PathBuf) {
 
         let start = Instant::now();
         let mut probe_id: u32 = 0;
-        let mut samples: Vec<u64> = Vec::new();
+        let mut prev_heap: i64 = 0;
 
-        tokio::time::sleep(Duration::from_secs(5)).await;
+        tokio::time::sleep(Duration::from_secs(10)).await;
 
         loop {
-            tokio::time::sleep(Duration::from_secs(5)).await;
+            tokio::time::sleep(Duration::from_secs(10)).await;
             probe_id += 1;
 
-            let (wv_mem, app_mem) = get_webview_memory();
-            samples.push(wv_mem);
-            if samples.len() > 12 { samples.remove(0); } // 60s window
+            let heap = estimate_heap_mb();
+            let growth = if prev_heap > 0 { heap - prev_heap } else { 0 };
+            prev_heap = heap;
 
-            // Detect rapid growth (>200MB in 10s = 2 samples)
-            let alert = if samples.len() >= 2 {
-                let prev = samples[samples.len().saturating_sub(3)];
-                let growth = wv_mem.saturating_sub(prev);
-                if growth > 200 {
-                    let msg = format!("MEMORY_GROWTH: +{}MB/10s ({}MB -> {}MB)", growth, prev, wv_mem);
-                    tracing::warn!("[freeze-monitor] {}", msg);
-                    Some(msg)
-                } else {
-                    None
-                }
+            // Alert on >100MB growth in 10s (Rust side only — WebView leaks
+            // are tracked by the frontend freezeTimeline)
+            let alert = if growth > 100 {
+                let msg = format!("RUST_RSS_GROWTH: +{}MB/10s (now {}MB)", growth, heap);
+                tracing::warn!("[freeze-monitor] {}", msg);
+                Some(msg)
             } else {
                 None
             };
 
-            // Only write to file when there's an alert or every 30th probe (~2.5min)
-            if alert.is_some() || probe_id % 30 == 0 {
+            if alert.is_some() || probe_id % 60 == 0 {
                 let entry = ProbeEntry {
                     ts: chrono::Utc::now().to_rfc3339(),
                     elapsed_s: start.elapsed().as_secs(),
                     probe_id,
-                    webview_memory_mb: wv_mem,
-                    app_memory_mb: app_mem,
+                    heap_estimate_mb: heap,
                     alert,
                 };
                 if let Ok(mut f) = std::fs::OpenOptions::new().append(true).create(true).open(&log_path) {
                     if let Ok(json) = serde_json::to_string(&entry) {
                         let _ = writeln!(f, "{}", json);
-                        let _ = f.flush();
                     }
                 }
             }
