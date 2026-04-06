@@ -48,12 +48,12 @@ export function useDataPortability() {
       .catch(() => setStatsStatus('error'));
   }, []);
 
-  const handleExportFull = useCallback(async () => {
+  const handleExportFull = useCallback(async (passphrase?: string) => {
     if (exportStatus === 'loading') return;
     setExportStatus('loading');
     setErrorMsg('');
     try {
-      const saved = await exportFull();
+      const saved = await exportFull(passphrase);
       setExportStatus(saved ? 'success' : 'idle');
     } catch (e) {
       Sentry.captureException(e);
@@ -66,12 +66,13 @@ export function useDataPortability() {
     personaIds: string[],
     teamIds: string[],
     credentialIds: string[],
+    passphrase?: string,
   ) => {
     if (exportStatus === 'loading') return;
     setExportStatus('loading');
     setErrorMsg('');
     try {
-      const saved = await exportSelective(personaIds, teamIds, credentialIds);
+      const saved = await exportSelective(personaIds, teamIds, credentialIds, passphrase);
       setExportStatus(saved ? 'success' : 'idle');
       if (saved) setShowExportModal(false);
     } catch (e) {
@@ -81,13 +82,13 @@ export function useDataPortability() {
     }
   }, [exportStatus]);
 
-  const handleImport = useCallback(async () => {
+  const handleImport = useCallback(async (passphrase?: string) => {
     if (importStatus === 'loading') return;
     setImportStatus('loading');
     setImportResult(null);
     setErrorMsg('');
     try {
-      const result = await importPortabilityBundle();
+      const result = await importPortabilityBundle(passphrase);
       if (result) {
         setImportResult(result);
         setImportStatus('success');

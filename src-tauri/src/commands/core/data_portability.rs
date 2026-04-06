@@ -58,7 +58,8 @@ const MAX_TEAM_CONNECTIONS: usize = 200;
 // Export bundle types
 // ============================================================================
 
-/// Top-level archive manifest (version 2 = full portability format).
+/// Top-level archive manifest (version 2/3 = full portability format).
+/// Version 3 adds optional `encrypted_credentials` for unified export.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PortabilityBundle {
     pub format_version: u32,
@@ -70,6 +71,8 @@ pub struct PortabilityBundle {
     pub tool_definitions: Vec<ToolDefinitionExport>,
     pub teams: Vec<TeamExport>,
     pub credentials: Vec<CredentialMetaExport>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credentials: Option<CredentialExportEnvelope>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -246,18 +249,32 @@ pub async fn get_export_stats(
 }
 
 /// Full export: export everything into a compressed JSON archive via save dialog.
+/// When `passphrase` is provided (>= 8 chars), credential secrets are encrypted
+/// and embedded in the bundle.
 #[tauri::command]
 pub async fn export_full(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
+    passphrase: Option<String>,
 ) -> Result<bool, AppError> {
     require_privileged(&state, "export_full").await?;
     let pool = &state.db;
-    let bundle = build_export_bundle(pool, ExportScope::Full)?;
+    let mut bundle = build_export_bundle(pool, ExportScope::Full)?;
+
+    if let Some(ref pp) = passphrase {
+        if pp.len() >= 8 {
+            let envelope = build_encrypted_credentials(pool, pp, None)?;
+            bundle.encrypted_credentials = Some(envelope);
+            bundle.format_version = 3;
+        }
+    }
+
     save_bundle_to_file(&app, &bundle, "personas_full_export").await
 }
 
 /// Selective export: export only specified personas and teams.
+/// When `passphrase` is provided (>= 8 chars), credential secrets for the
+/// selected `credential_ids` are encrypted and embedded in the bundle.
 #[tauri::command]
 pub async fn export_selective(
     state: State<'_, Arc<AppState>>,
@@ -265,23 +282,43 @@ pub async fn export_selective(
     persona_ids: Vec<String>,
     team_ids: Vec<String>,
     credential_ids: Vec<String>,
+    passphrase: Option<String>,
 ) -> Result<bool, AppError> {
-    require_auth(&state).await?;
+    // When passphrase is provided (credential secrets involved), upgrade to privileged
+    if passphrase.as_ref().is_some_and(|pp| pp.len() >= 8) {
+        require_privileged(&state, "export_selective").await?;
+    } else {
+        require_auth(&state).await?;
+    }
+
     let pool = &state.db;
     let scope = ExportScope::Selective {
         persona_ids: persona_ids.clone(),
         team_ids: team_ids.clone(),
         credential_ids: credential_ids.clone(),
     };
-    let bundle = build_export_bundle(pool, scope)?;
+    let mut bundle = build_export_bundle(pool, scope)?;
+
+    if let Some(ref pp) = passphrase {
+        if pp.len() >= 8 {
+            let filter_ids = if credential_ids.is_empty() { None } else { Some(&credential_ids) };
+            let envelope = build_encrypted_credentials(pool, pp, filter_ids)?;
+            bundle.encrypted_credentials = Some(envelope);
+            bundle.format_version = 3;
+        }
+    }
+
     save_bundle_to_file(&app, &bundle, "personas_selective_export").await
 }
 
 /// Import a previously exported portability bundle.
+/// When `passphrase` is provided and the bundle contains `encrypted_credentials`,
+/// credential secrets are decrypted and written to the imported credential shells.
 #[tauri::command]
 pub async fn import_portability_bundle(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
+    passphrase: Option<String>,
 ) -> Result<Option<PortabilityImportResult>, AppError> {
     require_privileged(&state, "import_portability_bundle").await?;
     let app_clone = app.clone();
@@ -314,9 +351,9 @@ pub async fn import_portability_bundle(
     let bundle: PortabilityBundle = serde_json::from_str(&content)
         .map_err(|e| AppError::Validation(format!("Invalid export file: {e}")))?;
 
-    if bundle.format_version != 2 {
+    if bundle.format_version != 2 && bundle.format_version != 3 {
         return Err(AppError::Validation(format!(
-            "Unsupported format version: {} (expected 2)",
+            "Unsupported format version: {} (expected 2 or 3)",
             bundle.format_version
         )));
     }
@@ -324,7 +361,30 @@ pub async fn import_portability_bundle(
     validate_bundle(&bundle)?;
 
     let pool = &state.db;
-    let result = import_bundle(pool, &bundle)?;
+    let mut result = import_bundle(pool, &bundle)?;
+
+    // If bundle contains encrypted credentials and passphrase is provided, decrypt and apply
+    if let (Some(envelope), Some(ref pp)) = (&bundle.encrypted_credentials, &passphrase) {
+        if !pp.is_empty() {
+            match apply_encrypted_credentials(pool, envelope, pp, &bundle.credentials) {
+                Ok(count) => {
+                    if count > 0 {
+                        result.warnings.push(format!(
+                            "{} credential secret(s) decrypted and applied",
+                            count
+                        ));
+                    }
+                }
+                Err(e) => {
+                    result.warnings.push(format!(
+                        "Failed to decrypt embedded credentials: {}. Credential shells were still imported without secrets.",
+                        e
+                    ));
+                }
+            }
+        }
+    }
+
     Ok(Some(result))
 }
 
@@ -606,6 +666,7 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
         tool_definitions: tool_exports,
         teams: team_exports,
         credentials: credential_exports,
+        encrypted_credentials: None,
     })
 }
 
@@ -1364,33 +1425,207 @@ fn parse_make_preview(v: &serde_json::Value) -> Result<Vec<CompetitiveImportPrev
 }
 
 // ============================================================================
-// Encrypted credential export / import
+// Unified credential encryption helpers (shared by export_full / export_selective)
+// ============================================================================
+
+/// Build an encrypted `CredentialExportEnvelope` for embedding in a portability bundle.
+/// When `filter_ids` is Some, only credentials matching those IDs are included.
+/// When None, all credentials are included.
+fn build_encrypted_credentials(
+    pool: &DbPool,
+    passphrase: &str,
+    filter_ids: Option<&Vec<String>>,
+) -> Result<CredentialExportEnvelope, AppError> {
+    let all_creds = cred_repo::get_all(pool)?;
+
+    let mut entries = Vec::new();
+    for cred in &all_creds {
+        if let Some(ids) = filter_ids {
+            if !ids.contains(&cred.id) {
+                continue;
+            }
+        }
+
+        let fields = cred_repo::get_decrypted_fields(pool, cred).unwrap_or_default();
+        if let Err(e) = audit_log::log_decrypt(
+            pool,
+            &cred.id,
+            &cred.name,
+            "data_portability:unified_export",
+            None,
+            None,
+        ) {
+            tracing::warn!(
+                credential_id = %cred.id,
+                error = %e,
+                "Failed to write audit log for credential decrypt"
+            );
+        }
+        entries.push(CredentialExportEntry {
+            name: cred.name.clone(),
+            service_type: cred.service_type.clone(),
+            metadata: cred.metadata.clone(),
+            fields,
+        });
+    }
+
+    let bundle = CredentialExportBundle {
+        format_version: 1,
+        exported_at: chrono::Utc::now().to_rfc3339(),
+        credentials: entries,
+    };
+
+    let plaintext = serde_json::to_vec(&bundle)
+        .map_err(|e| AppError::Internal(format!("Serialization failed: {e}")))?;
+
+    // Generate random salt and nonce
+    use aes_gcm::aead::rand_core::RngCore;
+    let mut salt = [0u8; 16];
+    let mut nonce_bytes = [0u8; 12];
+    OsRng.fill_bytes(&mut salt);
+    OsRng.fill_bytes(&mut nonce_bytes);
+
+    let key = derive_key(passphrase, &salt);
+    let cipher = Aes256Gcm::new_from_slice(&key)
+        .map_err(|e| AppError::Internal(format!("Cipher init failed: {e}")))?;
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext.as_ref())
+        .map_err(|e| AppError::Internal(format!("Encryption failed: {e}")))?;
+
+    Ok(CredentialExportEnvelope {
+        format: CREDENTIAL_EXPORT_FORMAT.into(),
+        salt: B64.encode(salt),
+        nonce: B64.encode(nonce_bytes),
+        ciphertext: B64.encode(ciphertext),
+    })
+}
+
+/// Decrypt embedded credentials from a portability bundle and write the fields
+/// to the matching imported credential shells.
+/// Returns the number of credentials whose secrets were successfully applied.
+fn apply_encrypted_credentials(
+    pool: &DbPool,
+    envelope: &CredentialExportEnvelope,
+    passphrase: &str,
+    _credential_metas: &[CredentialMetaExport],
+) -> Result<u32, AppError> {
+    if envelope.format != CREDENTIAL_EXPORT_FORMAT {
+        return Err(AppError::Validation(format!(
+            "Unsupported embedded credential format: {} (expected {})",
+            envelope.format, CREDENTIAL_EXPORT_FORMAT
+        )));
+    }
+
+    let salt = B64
+        .decode(&envelope.salt)
+        .map_err(|e| AppError::Validation(format!("Invalid salt: {e}")))?;
+    let nonce_bytes = B64
+        .decode(&envelope.nonce)
+        .map_err(|e| AppError::Validation(format!("Invalid nonce: {e}")))?;
+    let ciphertext = B64
+        .decode(&envelope.ciphertext)
+        .map_err(|e| AppError::Validation(format!("Invalid ciphertext: {e}")))?;
+
+    let key = derive_key(passphrase, &salt);
+    let cipher = Aes256Gcm::new_from_slice(&key)
+        .map_err(|e| AppError::Internal(format!("Cipher init failed: {e}")))?;
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let plaintext = cipher
+        .decrypt(nonce, ciphertext.as_ref())
+        .map_err(|_| {
+            AppError::Validation("Decryption failed -- wrong passphrase or corrupted data".into())
+        })?;
+
+    let cred_bundle: CredentialExportBundle = serde_json::from_slice(&plaintext)
+        .map_err(|e| AppError::Validation(format!("Invalid inner credential data: {e}")))?;
+
+    // Find matching imported credential shells by name + service_type
+    // The import_bundle creates credentials with " (imported)" suffix
+    let existing = cred_repo::get_all(pool).unwrap_or_default();
+
+    let mut applied = 0u32;
+    let mut conn = pool.get()?;
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
+    for entry in &cred_bundle.credentials {
+        // The imported credential shell has name "{name} (imported)" and same service_type
+        let imported_name = format!("{} (imported)", entry.name);
+        let matching_cred = existing.iter().find(|c| {
+            c.name == imported_name && c.service_type == entry.service_type
+        });
+
+        let Some(cred) = matching_cred else {
+            continue;
+        };
+
+        // Derive field sensitivity from connector schema
+        let sens_map = cred_repo::sensitivity_map_for_connector(pool, &entry.service_type);
+
+        for (key, value) in &entry.fields {
+            let is_sensitive = cred_repo::is_field_sensitive(sens_map.as_ref(), key);
+            let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+                .map_err(|e| AppError::Internal(format!("Field encryption failed: {}", e)))?;
+
+            let field_type = classify_credential_field_type(key);
+            let field_id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+
+            // Insert or replace (the shell may have empty fields from import_bundle)
+            tx.execute(
+                "INSERT OR REPLACE INTO credential_fields
+                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                rusqlite::params![
+                    field_id,
+                    cred.id,
+                    key,
+                    enc_val,
+                    field_iv,
+                    field_type,
+                    is_sensitive as i32,
+                    now,
+                ],
+            )?;
+        }
+
+        applied += 1;
+    }
+
+    tx.commit().map_err(AppError::Database)?;
+    Ok(applied)
+}
+
+// ============================================================================
+// Encrypted credential export / import (standalone)
 // ============================================================================
 
 const PBKDF2_ITERATIONS: u32 = 600_000;
 const CREDENTIAL_EXPORT_FORMAT: &str = "personas_credentials_v1";
 
 #[derive(Debug, Serialize, Deserialize)]
-struct CredentialExportBundle {
-    format_version: u32,
-    exported_at: String,
-    credentials: Vec<CredentialExportEntry>,
+pub struct CredentialExportBundle {
+    pub format_version: u32,
+    pub exported_at: String,
+    pub credentials: Vec<CredentialExportEntry>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct CredentialExportEntry {
-    name: String,
-    service_type: String,
-    metadata: Option<String>,
-    fields: HashMap<String, String>,
+pub struct CredentialExportEntry {
+    pub name: String,
+    pub service_type: String,
+    pub metadata: Option<String>,
+    pub fields: HashMap<String, String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct CredentialExportEnvelope {
-    format: String,
-    salt: String,
-    nonce: String,
-    ciphertext: String,
+pub struct CredentialExportEnvelope {
+    pub format: String,
+    pub salt: String,
+    pub nonce: String,
+    pub ciphertext: String,
 }
 
 #[derive(Debug, Serialize, TS)]

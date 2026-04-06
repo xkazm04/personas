@@ -63,6 +63,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
       onClose={onClose}
       titleId="vector-kb-title"
       size="6xl"
+      portal
       panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]"
     >
       {/* Header */}

@@ -32,7 +32,7 @@ function push(ev: FreezeEvent): void {
 async function reportSevere(ev: FreezeEvent): Promise<void> {
   try {
     const { invoke } = await import('@tauri-apps/api/core');
-    await invoke('log_frontend_error', { error: `UI freeze: ${ev.duration}ms`, context: JSON.stringify(ev) });
+    await invoke('log_frontend_error', { level: 'error', message: `UI freeze: ${ev.duration}ms ${JSON.stringify(ev)}` });
   } catch { /* not in Tauri context */ }
 }
 

@@ -5,6 +5,7 @@ import {
   Bot,
   Users,
   Key,
+  KeyRound,
   Info,
   Check,
   Minus,
@@ -43,7 +44,7 @@ interface CategoryConfig {
 interface ExportSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (personaIds: string[], teamIds: string[], credentialIds: string[]) => void;
+  onExport: (personaIds: string[], teamIds: string[], credentialIds: string[], passphrase?: string) => void;
   exporting: boolean;
 }
 
@@ -214,11 +215,13 @@ export function ExportSelectionModal({
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<Set<string>>(new Set());
   const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(new Set());
   const [selectedCredentialIds, setSelectedCredentialIds] = useState<Set<string>>(new Set());
+  const [exportPassphrase, setExportPassphrase] = useState('');
 
   // Load data when modal opens
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
+    setExportPassphrase('');
     Promise.all([listPersonas(), listTeams(), listCredentials()])
       .then(([p, t, c]) => {
         setPersonas(p);
@@ -333,8 +336,11 @@ export function ExportSelectionModal({
       Array.from(selectedPersonaIds),
       Array.from(selectedTeamIds),
       Array.from(selectedCredentialIds),
+      exportPassphrase.length >= 8 ? exportPassphrase : undefined,
     );
   };
+
+  const passphraseValid = exportPassphrase.length === 0 || exportPassphrase.length >= 8;
 
   const isFullExport =
     totalItems > 0 &&
@@ -402,13 +408,39 @@ export function ExportSelectionModal({
               ))}
             </div>
 
+            {/* Passphrase for credential encryption */}
+            <div className="rounded-xl border border-primary/10 bg-secondary/5 px-5 py-4 space-y-2.5">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground/80">
+                <KeyRound className="w-4 h-4 text-amber-400/70" />
+                Encrypt credentials with passphrase
+                <span className="text-xs font-normal text-muted-foreground/50 ml-1">(optional)</span>
+              </label>
+              <input
+                type="password"
+                placeholder="Passphrase (min 8 characters)"
+                value={exportPassphrase}
+                onChange={(e) => setExportPassphrase(e.target.value)}
+                className={`px-3 py-2 rounded-lg border bg-secondary/20 text-sm
+                  text-foreground/90 placeholder:text-muted-foreground/40 outline-none w-full
+                  ${!passphraseValid
+                    ? 'border-red-500/30 focus-visible:border-red-500/50'
+                    : 'border-primary/10 focus-visible:border-amber-500/30'
+                  }`}
+              />
+              {!passphraseValid && (
+                <p className="text-xs text-red-400/80">Passphrase must be at least 8 characters</p>
+              )}
+              <p className="text-xs text-muted-foreground/50">
+                If set, credential secrets will be included in the export and protected with AES-256 encryption.
+              </p>
+            </div>
+
             {/* Auto-included note */}
             <div className="flex items-start gap-2.5 px-2 py-3 rounded-lg bg-blue-500/5 border border-blue-500/10">
               <Info className="w-4 h-4 text-blue-400/70 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground/60 leading-relaxed">
                 Groups, tools, memories, and test suites linked to selected personas are automatically
-                included. Credential secrets are never included — use the separate Credential Vault export
-                to transfer secrets between machines.
+                included.{!exportPassphrase ? ' Credential secrets are not included unless a passphrase is set above.' : ''}
               </p>
             </div>
           </>
@@ -427,7 +459,7 @@ export function ExportSelectionModal({
         </button>
         <button
           onClick={handleExport}
-          disabled={exporting || totalSelected === 0}
+          disabled={exporting || totalSelected === 0 || !passphraseValid}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium
             bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20
             transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

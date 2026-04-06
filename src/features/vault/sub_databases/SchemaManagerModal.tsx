@@ -45,7 +45,7 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
   const queryLanguage = getQueryLanguage(credential.service_type);
 
   return (
-    <BaseModal isOpen onClose={onClose} titleId="schema-manager-title" size="6xl" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]">
+    <BaseModal isOpen onClose={onClose} titleId="schema-manager-title" size="6xl" portal panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden h-[90vh]">
       {/* Header */}
       <div className="flex items-center gap-3 px-6 py-4 border-b border-primary/10 bg-secondary/20 shrink-0">
         <div

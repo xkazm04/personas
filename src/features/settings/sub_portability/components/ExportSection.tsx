@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import {
   Upload,
   Download,
   PackageCheck,
   Check,
+  KeyRound,
 } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -18,8 +20,8 @@ interface ExportSectionProps {
   showExportModal: boolean;
   onOpenExportModal: () => void;
   onCloseExportModal: () => void;
-  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[]) => void;
-  onImport: () => void;
+  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[], passphrase?: string) => void;
+  onImport: (passphrase?: string) => void;
 }
 
 export function ExportSection({
@@ -32,6 +34,12 @@ export function ExportSection({
   onExportSelective,
   onImport,
 }: ExportSectionProps) {
+  const [importPassphrase, setImportPassphrase] = useState('');
+
+  const handleImport = () => {
+    onImport(importPassphrase || undefined);
+  };
+
   return (
     <div className="rounded-xl border border-primary/10 bg-card-bg p-6 space-y-4">
       <SectionHeading title="Workspace Export & Import" />
@@ -65,7 +73,7 @@ export function ExportSection({
         </button>
 
         <button
-          onClick={onImport}
+          onClick={handleImport}
           disabled={importStatus === 'loading'}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
             bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
@@ -84,6 +92,26 @@ export function ExportSection({
               ? 'Imported!'
               : 'Import Workspace'}
         </button>
+      </div>
+
+      {/* Import passphrase input */}
+      <div className="space-y-1.5">
+        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground/60">
+          <KeyRound className="w-3.5 h-3.5" />
+          Decrypt credentials on import (if encrypted)
+        </label>
+        <input
+          type="password"
+          placeholder="Enter passphrase to decrypt credentials"
+          value={importPassphrase}
+          onChange={(e) => setImportPassphrase(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-primary/10 bg-secondary/20 text-sm
+            text-foreground/90 placeholder:text-muted-foreground/40 outline-none
+            focus-visible:border-blue-500/30 w-full max-w-sm"
+        />
+        <p className="text-xs text-muted-foreground/50">
+          Leave empty if the export does not contain encrypted credentials.
+        </p>
       </div>
 
       {/* Import result */}

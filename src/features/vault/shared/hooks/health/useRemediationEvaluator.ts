@@ -23,8 +23,8 @@ import {
 } from '@/lib/credentials/remediationBus';
 import { executeRemediationAction } from '@/lib/credentials/remediationExecutor';
 
-/** Evaluation interval: check all credentials every 2 minutes. */
-const EVAL_INTERVAL_MS = 2 * 60 * 1000;
+/** Evaluation interval: check all credentials every 30 minutes. */
+const EVAL_INTERVAL_MS = 30 * 60 * 1000;
 
 /** Minimum credentials to evaluate (skip if store is empty). */
 const MIN_CREDENTIALS = 1;

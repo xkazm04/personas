@@ -13,14 +13,14 @@ export type { ExportStats, PortabilityImportResult, CompetitiveImportPreview, Cr
 export const getExportStats = () =>
   invoke<ExportStats>("get_export_stats");
 
-export const exportFull = () =>
-  invoke<boolean>("export_full");
+export const exportFull = (passphrase?: string) =>
+  invoke<boolean>("export_full", { passphrase: passphrase ?? null });
 
-export const exportSelective = (personaIds: string[], teamIds: string[], credentialIds: string[]) =>
-  invoke<boolean>("export_selective", { personaIds, teamIds, credentialIds });
+export const exportSelective = (personaIds: string[], teamIds: string[], credentialIds: string[], passphrase?: string) =>
+  invoke<boolean>("export_selective", { personaIds, teamIds, credentialIds, passphrase: passphrase ?? null });
 
-export const importPortabilityBundle = () =>
-  invoke<PortabilityImportResult | null>("import_portability_bundle");
+export const importPortabilityBundle = (passphrase?: string) =>
+  invoke<PortabilityImportResult | null>("import_portability_bundle", { passphrase: passphrase ?? null });
 
 export const previewCompetitiveImport = () =>
   invoke<CompetitiveImportPreview[] | null>("preview_competitive_import");

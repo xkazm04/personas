@@ -108,7 +108,7 @@ export function BaseModal({
   }
 
   const content = (
-    <div className={containerClassName ?? `fixed inset-0 z-50 flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`}>
+    <div className={containerClassName ?? `fixed inset-0 ${portal ? 'z-[10000]' : 'z-50'} flex items-center justify-center ${IS_MOBILE ? 'p-0' : 'p-4'}`}>
       <div
         className="animate-fade-slide-in absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}

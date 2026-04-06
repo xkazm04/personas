@@ -1,5 +1,5 @@
-import { useMemo, type RefObject } from 'react';
-import { Search, Key, X, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
+import { type RefObject } from 'react';
+import { Search, Key, X } from 'lucide-react';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { VaultStatusBadge } from '@/features/vault/sub_credentials/components/card/badges/VaultStatusBadge';
@@ -62,22 +62,6 @@ export function CredentialToolbar({
   bulk,
   isDailyRun,
 }: CredentialToolbarProps) {
-  const healthCounts = useMemo(() => {
-    let healthy = 0;
-    let failing = 0;
-    let untested = 0;
-    for (const cred of credentials) {
-      if (cred.healthcheck_last_success === null || cred.healthcheck_last_success === undefined) {
-        untested++;
-      } else if (cred.healthcheck_last_success) {
-        healthy++;
-      } else {
-        failing++;
-      }
-    }
-    return { healthy, failing, untested };
-  }, [credentials]);
-
   const { isStarter: isSimple } = useTier();
 
   return (
@@ -97,52 +81,22 @@ export function CredentialToolbar({
                 ? 'Search catalog...'
                 : 'Search credentials...'
             }
-            className="w-full pl-8 pr-16 py-1.5 rounded-lg border border-primary/15 bg-background/80 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
+            className="w-full pl-8 pr-8 py-1.5 rounded-lg border border-primary/15 bg-background/80 text-sm text-foreground placeholder-muted-foreground/40 focus-ring"
           />
           {credentialSearch && (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute right-10 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/50 hover:text-foreground/80 transition-colors"
               title="Clear search"
             >
               <X className="w-3 h-3" />
             </button>
           )}
-          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-1 py-0.5 rounded border border-primary/15 bg-secondary/40 text-muted-foreground/60 font-mono pointer-events-none">
-            {navigator.platform?.includes('Mac') ? '\u2318K' : 'Ctrl+K'}
-          </kbd>
         </div>
       )}
 
       {/* Spacer */}
       {!showSearchBar && <div className="flex-1" />}
-
-      {/* Health counts (inline, hidden in simple mode) */}
-      {!isSimple && credentials.length > 0 && (
-        <div className="flex items-center gap-3 text-sm">
-          {healthCounts.healthy > 0 && (
-            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-              <CheckCircle2 className="w-3 h-3" />
-              <span className="font-medium">{healthCounts.healthy}</span>
-              <span className="text-foreground/50 hidden sm:inline">healthy</span>
-            </span>
-          )}
-          {healthCounts.failing > 0 && (
-            <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
-              <AlertCircle className="w-3 h-3" />
-              <span className="font-medium">{healthCounts.failing}</span>
-              <span className="text-foreground/50 hidden sm:inline">attention</span>
-            </span>
-          )}
-          {healthCounts.untested > 0 && (
-            <span className="flex items-center gap-1 text-foreground/60">
-              <HelpCircle className="w-3 h-3" />
-              <span className="font-medium">{healthCounts.untested}</span>
-              <span className="text-foreground/50 hidden sm:inline">untested</span>
-            </span>
-          )}
-        </div>
-      )}
 
       {/* Action buttons (hidden in simple mode except vault badge) */}
       {!isSimple && (
