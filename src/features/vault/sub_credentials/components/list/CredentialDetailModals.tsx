@@ -1,6 +1,7 @@
 import { CredentialPlaygroundModal } from '@/features/vault/shared/playground/CredentialPlaygroundModal';
 import { SchemaManagerModal } from '@/features/vault/sub_databases/SchemaManagerModal';
 import { VectorKbModal } from '@/features/vault/shared/vector/VectorKbModal';
+import { GatewayMembersModal } from '@/features/vault/sub_credentials/components/gateway/GatewayMembersModal';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface CredentialDetailModalsProps {
@@ -38,6 +39,13 @@ export function CredentialDetailModals({
         onClose={onClose}
       />
     );
+  }
+
+  // MCP gateway credentials open a membership management modal instead of
+  // the playground — they have no healthcheck / tools of their own; everything
+  // is delegated to their underlying members.
+  if (selectedCredential.service_type === 'mcp_gateway') {
+    return <GatewayMembersModal credential={selectedCredential} onClose={onClose} />;
   }
 
   return (

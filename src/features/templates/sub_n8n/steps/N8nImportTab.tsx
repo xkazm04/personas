@@ -8,8 +8,6 @@ import { N8nWizardFooter } from '../widgets/N8nWizardFooter';
 import { N8nUploadStep } from './upload/N8nUploadStep';
 import { N8nParserResults } from './N8nParserResults';
 import { N8nSessionList } from './N8nSessionList';
-import { CredentialGapPanel } from '../widgets/CredentialGapPanel';
-import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 
@@ -45,7 +43,6 @@ export default function N8nImportTab() {
     direction,
   } = useN8nWizard();
 
-  const credentials = useVaultStore((s) => s.credentials);
   const setWorkflowImport = useAgentStore((s) => s.setWorkflowImport);
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -185,15 +182,6 @@ export default function N8nImportTab() {
                   platformNeedsConfirmation={state.platformNeedsConfirmation}
                   onConfirmPlatform={() => dispatch({ type: 'CONFIRM_PLATFORM' })}
                 />
-                {!analyzing && state.parsedResult.suggested_connectors && state.parsedResult.suggested_connectors.length > 0 && (
-                  <div className="mt-4">
-                    <CredentialGapPanel
-                      connectors={state.parsedResult.suggested_connectors}
-                      credentials={credentials}
-                      selectedConnectorNames={state.selectedConnectorNames}
-                    />
-                  </div>
-                )}
               </>
             )}
           </motion.div>

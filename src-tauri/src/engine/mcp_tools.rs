@@ -413,6 +413,82 @@ pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppErr
 /// gateway pattern from the LangSmith/Arcade /research run.
 const MCP_GATEWAY_CONNECTOR: &str = "mcp_gateway";
 
+/// JSON-RPC error code used by Arcade (and similar gateways) to signal that
+/// a tool call requires fresh OAuth consent from the user. When we see this
+/// code in a failed tool result we convert it into a typed
+/// `AppError::AuthorizationRequired` so the frontend can surface the URL via
+/// `PendingAuthModal` instead of treating it as a generic error.
+const JSONRPC_AUTHORIZATION_REQUIRED_CODE: i64 = -32001;
+
+/// Scan a failed `McpToolResult` for the authorization-required sentinel
+/// shape. Returns `Some(authorize_url)` only when ALL of the following match:
+///
+/// 1. `result.is_error == true`
+/// 2. At least one content block's `text` parses as JSON
+/// 3. That JSON has EITHER:
+///    - a top-level or nested `error.code == -32001`, OR
+///    - a top-level `kind == "authorization_required"`
+/// 4. AND carries an `authorize_url` (or `error.data.authorize_url`) that
+///    starts with `http://` or `https://`
+///
+/// The layered AND conditions keep this conservative — a regular error that
+/// happens to contain a URL field WILL NOT trigger this path. If Arcade's
+/// sentinel shape ever changes, update this function and its sibling callers
+/// — nothing else needs to move.
+///
+/// Added 2026-04-08. See `.planning/handoffs/2026-04-08-mcp-gateway-arcade.md`
+/// Phase B for the broader JIT-auth rationale.
+fn detect_authorization_required(result: &McpToolResult) -> Option<String> {
+    if !result.is_error {
+        return None;
+    }
+    for block in &result.content {
+        let Some(text) = block.text.as_deref() else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(text) else {
+            continue;
+        };
+
+        // Condition 3a: JSON-RPC error with the -32001 code
+        let has_auth_code = value
+            .get("error")
+            .and_then(|e| e.get("code"))
+            .and_then(|c| c.as_i64())
+            == Some(JSONRPC_AUTHORIZATION_REQUIRED_CODE);
+
+        // Condition 3b: top-level kind sentinel
+        let has_auth_kind = value
+            .get("kind")
+            .and_then(|k| k.as_str())
+            == Some("authorization_required");
+
+        if !has_auth_code && !has_auth_kind {
+            continue;
+        }
+
+        // Condition 4: extract authorize_url from either the top-level field
+        // or the JSON-RPC error.data.authorize_url location.
+        let url = value
+            .get("authorize_url")
+            .and_then(|u| u.as_str())
+            .or_else(|| {
+                value
+                    .get("error")
+                    .and_then(|e| e.get("data"))
+                    .and_then(|d| d.get("authorize_url"))
+                    .and_then(|u| u.as_str())
+            });
+
+        if let Some(url) = url {
+            if url.starts_with("http://") || url.starts_with("https://") {
+                return Some(url.to_string());
+            }
+        }
+    }
+    None
+}
+
 /// Separator used to prefix gateway member tool names. A tool named `search`
 /// on a gateway member with display_name `arcade` is exposed to the persona as
 /// `arcade::search`. The double-colon is chosen because MCP tool names are
@@ -635,6 +711,24 @@ pub async fn execute_tool(
     match result {
         Ok(mut r) => {
             r.duration_ms = duration_ms;
+            // JIT OAuth detection: if this tool result matches the
+            // authorization-required sentinel, convert it into a typed error
+            // so the frontend can surface the consent URL via PendingAuthModal.
+            // This happens AFTER audit logging so the tool_error status is
+            // still recorded accurately — the detector only changes how the
+            // result is delivered to the caller, not how it's logged.
+            if let Some(authorize_url) = detect_authorization_required(&r) {
+                tracing::info!(
+                    credential_id = %credential_id,
+                    tool_name = %tool_name,
+                    "MCP tool returned authorization-required sentinel; surfacing as typed AppError::AuthorizationRequired"
+                );
+                return Err(AppError::AuthorizationRequired {
+                    credential_id: credential_id.to_string(),
+                    tool_name: tool_name.to_string(),
+                    authorize_url,
+                });
+            }
             Ok(r)
         }
         Err(e) => Err(e),

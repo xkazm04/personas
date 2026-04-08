@@ -12,7 +12,7 @@
  * (finding #1 from the /research run on the same date). See
  * .planning/handoffs/2026-04-08-mcp-gateway-arcade.md for the full phase plan.
  */
-import { invoke } from '@tauri-apps/api/core';
+import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 
 /** A single member entry in an MCP gateway, enriched with credential metadata. */
 export interface GatewayMember {
@@ -36,62 +36,43 @@ export interface GatewayMember {
  *   as `arcade::search`, `arcade::create_doc`, etc.). Keep short and unique
  *   within a single gateway.
  */
-export async function addMcpGatewayMember(
+export const addMcpGatewayMember = (
   gatewayCredentialId: string,
   memberCredentialId: string,
   displayName: string,
   sortOrder = 0,
-): Promise<string> {
-  return invoke<string>('add_mcp_gateway_member', {
+) =>
+  invoke<string>('add_mcp_gateway_member', {
     gatewayCredentialId,
     memberCredentialId,
     displayName,
     sortOrder,
   });
-}
 
 /** Remove a member from a gateway. */
-export async function removeMcpGatewayMember(
+export const removeMcpGatewayMember = (
   gatewayCredentialId: string,
   memberCredentialId: string,
-): Promise<void> {
-  await invoke<void>('remove_mcp_gateway_member', {
+) =>
+  invoke<void>('remove_mcp_gateway_member', {
     gatewayCredentialId,
     memberCredentialId,
   });
-}
 
 /** List all members of a gateway (ordered by sortOrder, then createdAt). */
-export async function listMcpGatewayMembers(
-  gatewayCredentialId: string,
-): Promise<GatewayMember[]> {
-  return invoke<GatewayMember[]>('list_mcp_gateway_members', {
+export const listMcpGatewayMembers = (gatewayCredentialId: string) =>
+  invoke<GatewayMember[]>('list_mcp_gateway_members', {
     gatewayCredentialId,
   });
-}
 
 /** Toggle the enabled flag on a gateway member without removing it. */
-export async function setMcpGatewayMemberEnabled(
+export const setMcpGatewayMemberEnabled = (
   gatewayCredentialId: string,
   memberCredentialId: string,
   enabled: boolean,
-): Promise<void> {
-  await invoke<void>('set_mcp_gateway_member_enabled', {
+) =>
+  invoke<void>('set_mcp_gateway_member_enabled', {
     gatewayCredentialId,
     memberCredentialId,
     enabled,
   });
-}
-
-/**
- * Mark a pending-auth execution as unblocked so the runner can resume.
- *
- * **Phase B scaffolding (2026-04-08)**: this command currently returns an
- * Internal error because the runner pause/resume path is not yet wired. The
- * data layer (executions.pending_auth_* columns, StreamLineType::
- * AuthorizationRequired variant) is in place so the runner integration is a
- * focused follow-up. See handoff Phase B.
- */
-export async function completePendingAuth(executionId: string): Promise<void> {
-  await invoke<void>('complete_pending_auth', { executionId });
-}

@@ -1,8 +1,16 @@
 /**
  * Release log ("What's New") — typed access layer over `releases.json`.
  *
- * The JSON is the single source of truth: `/research` (and other skills) edit
- * it directly via Read/Write tools. The frontend imports it natively via Vite.
+ * The JSON is the structural source of truth (versions, item ids, types,
+ * statuses, dates). All user-facing strings — labels, titles, descriptions,
+ * summaries — live in the per-feature i18n folder at
+ * `src/features/home/components/releases/i18n/{lang}.ts` and are looked up
+ * by `version` + `item.id`.
+ *
+ * Why split: release item content is user-facing news. It must follow the
+ * project i18n convention (every string in all 14 locale files, never
+ * hardcoded English). The structural metadata (status, type, dates) is
+ * code, not content, and stays in JSON for diff-friendliness.
  *
  * Schema invariants:
  * - `active` MUST reference an existing release.version
@@ -34,12 +42,14 @@ export type ReleaseItemPriority = 'now' | 'next' | 'later';
 
 export type ReleaseStatus = 'released' | 'active' | 'planned' | 'roadmap';
 
+/**
+ * Structural metadata for a release item. The user-facing title/description
+ * live in the i18n locale files (looked up by `release.version` + `item.id`).
+ */
 export interface ReleaseItem {
-  /** Unique within its release. */
+  /** Unique within its release. Looked up in i18n as `releases[version].items[id]`. */
   id: string;
   type: ReleaseItemType;
-  title: string;
-  description?: string;
   status?: ReleaseItemStatus;
   /** Roadmap-only. */
   priority?: ReleaseItemPriority;
@@ -47,16 +57,12 @@ export interface ReleaseItem {
   sort_order?: number;
   /** ISO date string when the item was logged. */
   added_at?: string;
-  /** Optional pointer to a handoff doc, /research note, PR, or commit. */
-  source?: string;
 }
 
 export interface Release {
   version: string;
-  label?: string;
   status: ReleaseStatus;
   released_at?: string;
-  summary?: string;
   items: ReleaseItem[];
 }
 
@@ -138,45 +144,42 @@ export function getNavReleases(limit = 10): Release[] {
 }
 
 // =============================================================================
-// Item type metadata (label, color tokens — used by ReleaseDetailView)
+// Item type / status visual metadata
+//
+// Only color tokens live here — labels are i18n strings, looked up via
+// `useReleasesTranslation` in the components.
 // =============================================================================
 
 export const RELEASE_TYPE_META: Record<
   ReleaseItemType,
-  { label: string; badgeBg: string; badgeText: string; badgeBorder: string }
+  { badgeBg: string; badgeText: string; badgeBorder: string }
 > = {
   feature: {
-    label: 'Feature',
     badgeBg: 'bg-cyan-500/10',
     badgeText: 'text-cyan-400',
     badgeBorder: 'border-cyan-500/20',
   },
   fix: {
-    label: 'Fix',
     badgeBg: 'bg-emerald-500/10',
     badgeText: 'text-emerald-400',
     badgeBorder: 'border-emerald-500/20',
   },
   security: {
-    label: 'Security',
     badgeBg: 'bg-red-500/10',
     badgeText: 'text-red-400',
     badgeBorder: 'border-red-500/20',
   },
   docs: {
-    label: 'Docs',
     badgeBg: 'bg-blue-500/10',
     badgeText: 'text-blue-400',
     badgeBorder: 'border-blue-500/20',
   },
   chore: {
-    label: 'Chore',
     badgeBg: 'bg-secondary/50',
-    badgeText: 'text-muted-foreground/70',
+    badgeText: 'text-foreground',
     badgeBorder: 'border-primary/10',
   },
   breaking: {
-    label: 'Breaking',
     badgeBg: 'bg-orange-500/10',
     badgeText: 'text-orange-400',
     badgeBorder: 'border-orange-500/20',
@@ -185,30 +188,26 @@ export const RELEASE_TYPE_META: Record<
 
 export const RELEASE_STATUS_META: Record<
   ReleaseStatus,
-  { label: string; badgeBg: string; badgeText: string; badgeBorder: string }
+  { badgeBg: string; badgeText: string; badgeBorder: string }
 > = {
   released: {
-    label: 'Released',
     badgeBg: 'bg-emerald-500/10',
     badgeText: 'text-emerald-400',
     badgeBorder: 'border-emerald-500/20',
   },
   active: {
-    label: 'Active',
     badgeBg: 'bg-cyan-500/10',
     badgeText: 'text-cyan-400',
     badgeBorder: 'border-cyan-500/20',
   },
   planned: {
-    label: 'Planned',
     badgeBg: 'bg-purple-500/10',
     badgeText: 'text-purple-400',
     badgeBorder: 'border-purple-500/20',
   },
   roadmap: {
-    label: 'Roadmap',
     badgeBg: 'bg-secondary/50',
-    badgeText: 'text-muted-foreground/70',
+    badgeText: 'text-foreground',
     badgeBorder: 'border-primary/10',
   },
 };

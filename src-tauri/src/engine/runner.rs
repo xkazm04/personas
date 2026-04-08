@@ -1172,23 +1172,6 @@ pub async fn run_execution(
                                     model: model.clone(),
                                     session_id: session_id.clone(),
                                 }),
-                                // TODO(jit-auth-runner): wire this variant into the pause/resume flow.
-                                // Right now we log-and-continue so the execution still fails fast on
-                                // unauthorized tool calls rather than hanging forever. The full plan
-                                // lives in `.planning/handoffs/2026-04-08-mcp-gateway-arcade.md` Phase B
-                                // -- when that lands, replace this arm with a state transition to
-                                // AwaitingAuth + Tauri event emit + oneshot park.
-                                StreamLineType::AuthorizationRequired { credential_id, tool_name, authorize_url } => {
-                                    tracing::warn!(
-                                        execution_id = %exec_id_for_stream,
-                                        credential_id = %credential_id,
-                                        tool_name = %tool_name,
-                                        authorize_url = %authorize_url,
-                                        "JIT authorization required but runner pause/resume is not yet wired. \
-                                         Execution will fail -- user must pre-authorize this tool out-of-band."
-                                    );
-                                    None
-                                }
                                 StreamLineType::Unknown => None,
                             };
                             if let Some(event) = structured_event {

@@ -524,14 +524,23 @@ Research run complete.
 
 ---
 
-## Phase 12: Roadmap / Release Log Update (optional)
+## Phase 12: Release Log Update ("What's New") — optional
 
 After Phase 11's summary, offer to log accepted findings into the in-app
 release notes ("What's New" view in the desktop app). This is what makes the
-work visible to future-you and any other contributor opening the app.
+work visible to future-you, other contributors opening the app, and — most
+importantly — **the actual users** of the desktop app, who will read these
+strings as news, not engineering logs.
 
-**Skip the phase entirely** if zero findings were accepted in Phase 8 — there
-is nothing to log.
+**Skip the phase entirely** if zero findings were accepted in Phase 8 —
+there is nothing to log.
+
+**Critical rule before you start writing anything:** the release log is
+**user-facing news**, NOT an internal changelog. The voice rules in
+`.claude/CLAUDE.md` → "UI Conventions → Internationalization → Voice for
+user-facing copy" apply to every word you write here. If you find yourself
+typing a file path, a Rust struct name, an env var, or a `.planning/handoffs/`
+reference, you have already failed — go back and rewrite as impact + benefit.
 
 ### 12a. Read the release config
 
@@ -539,17 +548,34 @@ Read `src/data/releases.json`. Identify:
 - `config.active` — the version that the in-app view opens by default
 - the matching release object inside `config.releases`
 - how many items it already contains
+- the highest existing item id in that release (for ID generation)
 
 If the file is missing or unparseable, warn (`release log not found, skipping
-Phase 12`) and stop. Do **not** create the file from scratch — its existence is
-a project-level decision, not the skill's call.
+Phase 12`) and stop. Do **not** create the file from scratch — its existence
+is a project-level decision, not the skill's call.
 
-### 12b. Ask the user
+### 12b. Locate the i18n folder
+
+Read the directory listing of `src/features/home/components/releases/i18n/`.
+There should be exactly 14 locale files (`en.ts, cs.ts, de.ts, es.ts, fr.ts,
+ja.ts, ko.ts, zh.ts, ar.ts, hi.ts, ru.ts, id.ts, bn.ts, vi.ts`) plus
+`useReleasesTranslation.ts`. Read `en.ts` to learn the namespace shape — the
+items live under `whatsNew.releases.{version}.items.{itemId}` with `title`
+and `description` keys.
+
+If any locale file is missing, warn loudly:
+```
+Locale file {lang}.ts is missing — refusing to write a partial set.
+The "What's New" view loads via direct property access; missing keys crash
+the UI. Restore the file or skip Phase 12.
+```
+
+### 12c. Ask the user
 
 Print:
 ```
 Add accepted findings to the release log?
-Active release: {version}{ (label)} — currently {N} item(s).
+Active release: {version} — currently {N} item(s).
 
 Reply with numbers from the accepted list (e.g., "1, 3"), "all", or "none".
 ```
@@ -558,23 +584,25 @@ Use the **same numbering** as the Phase 7 summary table so the user does not
 have to re-translate. Only accepted findings are eligible — declined ones are
 implicitly excluded.
 
-If the user replies `none` (or empty), skip to Phase 12d (still confirm).
+If the user replies `none` (or empty), skip to Phase 12g (still confirm
+"unchanged" in the summary).
 
-### 12c. Append items
+### 12d. Build structural items for `releases.json`
 
-For each chosen finding, build a `ReleaseItem` object:
+For each chosen finding, build the structural metadata only:
 
 ```json
 {
-  "id": "{version}-{auto-incremented-index}",
+  "id": "{next-numeric-id}",
   "type": "{inferred type}",
-  "title": "{finding title}",
-  "description": "{1-2 sentences derived from finding summary}",
   "status": "completed",
-  "added_at": "{today YYYY-MM-DD}",
-  "source": "{handoff path | research note path | obsidian wikilink}"
+  "added_at": "{today YYYY-MM-DD}"
 }
 ```
+
+**No `title`, `description`, `summary`, `label`, or `source` fields.** Those
+are user-facing strings that live in the i18n locale files, not in JSON. The
+JSON is structural metadata only — versions, types, statuses, dates, ids.
 
 **Type inference rules** (in order — first match wins):
 1. Finding was escalated to severity `CRITICAL` by the Phase 6 security
@@ -586,33 +614,85 @@ For each chosen finding, build a `ReleaseItem` object:
 4. Finding adds documentation only → `"docs"`
 5. Otherwise → `"feature"`
 
-**Source field rules**:
-- If a handoff was written in Phase 8 Option B → use the handoff path
-  (`.planning/handoffs/{date}-{slug}.md`)
-- Else if `/gsd:add-todo` was invoked → omit `source` (todos move; the
-  Research note is the durable anchor)
-- Else → use the Obsidian Research note path
-  (`Obsidian/personas/Research/{date}-{slug}.md`)
-
-**Item ID convention**: `{version}-{N}` where `N` is the next integer after
-the highest existing `{version}-N` id in that release. If no existing items
-match the pattern, start at `1`.
+**Item ID convention**: simple incrementing strings — find the highest
+existing numeric id in `release.items` (`"1", "2", "3", ...`) and increment.
+If no items exist yet, start at `"1"`. The id is what links the JSON
+structural entry to its i18n content.
 
 Append the new items to the **end** of `release.items` so they appear last
 within their type group in the UI (the changelog view groups by type but
 keeps within-type ordering stable).
 
-### 12d. Write the file back
+### 12e. Build user-facing content for the i18n files
 
-Write the updated JSON back to `src/data/releases.json`. Preserve:
+For each chosen finding, draft a `{ title, description }` pair in **English**
+following the user-facing-news voice:
+
+- **Title (≤ 8 words):** lead with the user benefit. Imperative or noun
+  phrase, NOT a technical summary. Examples:
+  - ❌ "Add Bearer token middleware to /api routes"
+  - ✅ "Safer access for the desktop app"
+  - ❌ "Implement A2A JSON-RPC handler"
+  - ✅ "Open your agents to other AI tools"
+- **Description (1-3 short sentences):** explain what the user can now do
+  and why they would care. NO file paths, NO module names, NO version-bump
+  details, NO `.planning/handoffs/` references, NO Rust/TS jargon. Examples:
+  - ❌ "Adds external_api_keys table, Bearer token middleware on the
+       management HTTP API, gateway_exposure column on personas..."
+  - ✅ "Personas can now talk to other AI tools through a shared protocol.
+       Pick exactly which agents you want to share, and protect them with
+       access keys you control — your private agents stay private by
+       default."
+
+**The translation test:** read your draft and ask "would a non-developer
+who has never seen the codebase understand this and care about it?". If the
+answer is no, rewrite.
+
+### 12f. Write content to ALL 14 locale files
+
+This is the i18n contract from `.claude/CLAUDE.md`: every key in `en.ts`
+must exist in every other locale file. Skipping any file breaks the UI for
+that language at runtime.
+
+For each new item, for each of the 14 locale files:
+
+1. Read the file.
+2. Locate the `whatsNew.releases.{version}.items` object. (If the release
+   itself is new, you also need to add `releases.{version}` with `label`,
+   `summary`, and an empty `items` object. Use the version string as the
+   default label, and a one-line summary.)
+3. Append the new item id with the English `title` + `description` pair you
+   drafted in 12e.
+4. For non-English locale files, ALSO ensure the file has a top-of-file
+   `// TODO(i18n-{lang}): translate from English placeholders` marker. If
+   the marker is already there, leave it. If it's missing, add it.
+5. Write the file back, preserving 2-space indentation and the existing
+   field ordering.
+
+**Do not attempt to translate the strings yourself.** Write English
+everywhere. The TODO marker is the signal that human translation is pending.
+
+**Validate before writing:** after building the new content for all 14
+files in memory, double-check that:
+- Every file gets the same set of new keys
+- The id exists in `releases.json` AND in every locale file's items map
+- No locale file has been skipped
+
+### 12g. Write the JSON back
+
+Write the updated `releases.json` with:
 - Two-space indentation
 - Trailing newline
-- Field ordering inside each item (`id, type, title, description, status,
-  added_at, source`) for diff-friendliness
+- Field ordering inside each item (`id, type, status, priority, sort_order,
+  added_at`) for diff-friendliness
+
+### 12h. Confirm
 
 Confirm with a one-line print:
 ```
 Release log updated: {N} item(s) added to {version}.
+  - releases.json (structural)
+  - {14} locale files (English content + TODO markers preserved)
 ```
 
 If the user replied `none`, print:
@@ -620,14 +700,14 @@ If the user replied `none`, print:
 Release log unchanged.
 ```
 
-### 12e. Add to the Phase 11 summary footer
+### 12i. Add to the Phase 11 summary footer
 
-Append a `Release log:` line to the existing Phase 11 printout (this means
-Phase 12 must run before the user dismisses the summary, OR the summary must
-be re-printed afterward — pick the latter so the summary stays canonical):
+Append a `Release log:` line to the existing Phase 11 printout (re-print
+the summary so it stays canonical):
 
 ```
-  Release log: {N} item(s) added to {version} | unchanged
+  Release log: {N} item(s) added to {version} (en + 13 locale placeholders)
+                | unchanged
 ```
 
 ---
@@ -654,7 +734,9 @@ be re-printed afterward — pick the latter so the summary stays canonical):
 - **Never** invoke `/add-template` or `/add-credential` without explicit user acceptance in Phase 8.
 - **Never** skip Phase 10 unless the user typed `skip` — the learning loop is the whole point.
 - The Obsidian vault is the source of truth for memory between runs. Do not duplicate this data into other locations.
-- **Phase 12 is the only place** the skill writes to `src/data/releases.json`. Never touch it from any other phase. Never write items the user did not explicitly accept in Phase 8 → Phase 12b.
+- **Phase 12 is the only place** the skill writes to `src/data/releases.json` AND to any file under `src/features/home/components/releases/i18n/`. Never touch them from any other phase. Never write items the user did not explicitly accept in Phase 8 → Phase 12c.
+- **Never write English directly into a `.tsx` literal** anywhere in the codebase. Per `.claude/CLAUDE.md` → Internationalization, every user-facing string lands in all 14 locale files. If a Phase 8 handoff plan would touch frontend code, the "Cross-cutting concerns" section MUST instruct the implementing CLI to follow the i18n contract (English first, then placeholders + TODO markers in the other 13).
+- **Never put technical jargon in user-facing copy.** Release notes are news, not engineering logs. Voice rules in CLAUDE.md → "UI Conventions → Internationalization → Voice for user-facing copy". Apply them in Phase 12e *before* writing anything.
 
 ---
 
@@ -678,6 +760,18 @@ This section records *why* each non-obvious rule exists. When a rule looks redun
 - Does the bundling pattern hold across different source types? (this run was a tightly-scoped technical video — articles may extract more diffuse findings)
 - Is the 30-second timestamp anchor frequency right? Could be denser for fast-paced videos
 - Is loading all 3 reference files always worth the token cost? Focus-aware loading (Phase 1a) helps but only on user opt-in
+
+### 2026-04-08 — release log content is news, not a changelog (run 3/5)
+
+**Rules added (Phase 12 rewrite):**
+- **The release log is user-facing news.** First version of Phase 12 wrote technical descriptions ("Adds external_api_keys table, Bearer token middleware...") and source pointers (`.planning/handoffs/2026-04-08-...`) into the release log. The user opened the app, saw an internal changelog, and rejected the entire framing: "this is now designed as internal log, we should rather redesign into user-facing news. Planning file reference is not valid then, language should rather present impact and benefit then technical resolution." Phase 12e now has explicit voice rules + the "translation test" (would a non-developer who has never seen the codebase understand and care?), and Phase 12d explicitly drops the `source` field from the structural item.
+- **i18n is non-negotiable.** Phase 12 used to write to `releases.json` only with English `title`/`description` fields baked in. That broke the project's i18n contract — every user-facing string must live in all 14 locale files. Phase 12 now writes to BOTH `releases.json` (structural metadata: id/type/status/dates) AND every locale file under `src/features/home/components/releases/i18n/` (English content + TODO markers in the 13 non-English files). Skipping any locale file crashes the UI at runtime because the `useReleasesTranslation` hook does direct property access.
+- **Phase 12b (locate i18n folder) is a precondition.** Before writing anything, the skill verifies all 14 locale files exist. Missing files are a hard stop, not a "best effort" — refusing to ship a partial set is safer than corrupting the structure.
+- **Voice rules live in CLAUDE.md, referenced from skill.md.** The actual voice rules ("lead with impact, no file paths, no jargon, one idea per item, translation test") live in `.claude/CLAUDE.md` → "UI Conventions → Internationalization → Voice for user-facing copy". Phase 12 references them rather than duplicating, so all code-touching skills (handoff executors, /add-template, /add-credential, ad-hoc edits) get the same rule from the same place.
+
+**Rules considered but not added:**
+- "Auto-translate the strings into all 14 languages." Too risky — translation quality matters and an LLM-generated French changelog would embarrass the project. Phase 12 writes English everywhere with TODO markers; humans translate later.
+- "Skip locale files for languages the project hasn't shipped translations for." That's the trap that breaks i18n contracts in every project. Either every key is in every file, or the system is broken in subtle ways for some users.
 
 ### 2026-04-08 — release log integration (run 2/5)
 

@@ -2,12 +2,17 @@
  * Top-bar navigation for the "What's New" view.
  *
  * Renders one pill per release returned by `getNavReleases()`. The active
- * release shows a subtle "Active" badge; the special roadmap entry uses an
+ * release shows a "Current" status badge; the special roadmap entry uses an
  * outline arrow to signal it's a forward-looking view rather than a release.
+ *
+ * All labels are looked up from the per-feature i18n folder via
+ * `useReleasesTranslation`. Per project convention, no English strings live
+ * in this file directly. See `.claude/CLAUDE.md` → "Internationalization".
  */
 import { ArrowRight } from 'lucide-react';
 import type { Release } from '@/data/releases';
 import { RELEASE_STATUS_META } from '@/data/releases';
+import { useReleasesTranslation } from './i18n/useReleasesTranslation';
 
 interface ReleasesNavBarProps {
   releases: Release[];
@@ -16,21 +21,25 @@ interface ReleasesNavBarProps {
 }
 
 export function ReleasesNavBar({ releases, selectedVersion, onSelect }: ReleasesNavBarProps) {
+  const { t } = useReleasesTranslation();
+
   return (
     <div
       className="flex flex-wrap items-center gap-2 border-b border-primary/8 px-4 py-3"
       role="tablist"
-      aria-label="Releases"
+      aria-label={t.title}
     >
       {releases.map((release) => {
         const isSelected = release.version === selectedVersion;
         const isRoadmap = release.status === 'roadmap';
         const meta = RELEASE_STATUS_META[release.status];
-        const label = release.label
-          ? `${release.label} (${release.version})`
-          : release.version === 'roadmap'
-            ? 'Roadmap'
+        const releaseI18n = t.releases[release.version as keyof typeof t.releases];
+        const label = isRoadmap
+          ? t.navBar.roadmapLabel
+          : releaseI18n?.label
+            ? `${releaseI18n.label} (${release.version})`
             : release.version;
+        const statusLabel = t.status[release.status];
 
         return (
           <button
@@ -63,7 +72,7 @@ export function ReleasesNavBar({ releases, selectedVersion, onSelect }: Releases
                   meta.badgeBorder,
                 ].join(' ')}
               >
-                {meta.label}
+                {statusLabel}
               </span>
             )}
 

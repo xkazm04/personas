@@ -29,5 +29,4 @@ export type UnregisteredCommand =
   | "zapier_trigger_webhook"
   | "get_setting"
   | "set_setting"
-  | "lab_create_version_snapshot"
-  | "clear_pending_oauth";
+  | "lab_create_version_snapshot";

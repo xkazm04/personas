@@ -15,6 +15,7 @@ import { Rocket } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { getActiveRelease, getNavReleases, getReleaseByVersion } from '@/data/releases';
+import { useReleasesTranslation } from './i18n/useReleasesTranslation';
 import { ReleasesNavBar } from './ReleasesNavBar';
 import ReleaseDetailView from './ReleaseDetailView';
 import HomeRoadmapView from './HomeRoadmapView';
@@ -33,6 +34,7 @@ function readInitialSelection(): string {
 }
 
 export default function HomeReleases() {
+  const { t } = useReleasesTranslation();
   const [selectedVersion, setSelectedVersion] = useState<string>(() => readInitialSelection());
 
   const navReleases = getNavReleases();
@@ -48,16 +50,14 @@ export default function HomeReleases() {
   }, []);
 
   const subtitle =
-    selected.status === 'roadmap'
-      ? "What we're building now and what comes next."
-      : 'Release notes and changelog for the desktop app.';
+    selected.status === 'roadmap' ? t.subtitle.roadmap : t.subtitle.changelog;
 
   return (
     <ContentBox>
       <ContentHeader
         icon={<Rocket className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
-        title="What's New"
+        title={t.title}
         subtitle={subtitle}
       />
       <ReleasesNavBar
