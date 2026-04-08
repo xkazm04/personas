@@ -191,6 +191,7 @@ pub async fn run_evolution_cycle(
         provider: "anthropic".to_string(),
         base_url: None,
         auth_token: None,
+        effort: None, // falls back to prompt::DEFAULT_EFFORT
     };
 
     // Score the incumbent first (baseline)

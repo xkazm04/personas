@@ -797,6 +797,28 @@ pub fn apply_provider_env(cli_args: &mut CliArgs, profile: &ModelProfile) {
     }
 }
 
+/// Default Claude CLI effort level passed by `build_cli_args` when neither
+/// the persona nor the model profile specifies one.
+///
+/// CLI 2.1.94 silently changed the implicit default from `medium` to `high`
+/// for API-key, Bedrock, Vertex, Foundry, Team, and Enterprise users —
+/// silently increasing cost and latency for personas executions on those
+/// tiers. We pin "medium" everywhere so behavior stays deterministic across
+/// CLI versions and account tiers; callers (lab, persona settings) can
+/// override per-execution via `ModelProfile.effort`.
+pub const DEFAULT_EFFORT: &str = "medium";
+
+/// Resolve the effort level for a given model profile, falling back to
+/// `DEFAULT_EFFORT` when unset or empty.
+fn resolve_effort(model_profile: Option<&ModelProfile>) -> String {
+    model_profile
+        .and_then(|p| p.effort.as_deref())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or(DEFAULT_EFFORT)
+        .to_string()
+}
+
 /// Build CLI arguments for spawning the Claude CLI process.
 ///
 /// When called without a persona or model profile (both `None`), produces the
@@ -819,6 +841,11 @@ pub fn build_cli_args(
         "--verbose".to_string(),
         "--dangerously-skip-permissions".to_string(),
     ]);
+
+    // Effort level — explicit so personas behavior is deterministic across
+    // CLI versions and account tiers (see DEFAULT_EFFORT docstring).
+    args.push("--effort".to_string());
+    args.push(resolve_effort(model_profile));
 
     // Model override
     if let Some(profile) = model_profile {
@@ -892,6 +919,11 @@ pub fn build_resume_cli_args(claude_session_id: &str) -> CliArgs {
         "--verbose".to_string(),
         "--dangerously-skip-permissions".to_string(),
     ]);
+
+    // Pin effort on resume too — keeps continued sessions on the same effort
+    // policy as their initial run regardless of CLI version drift.
+    args.push("--effort".to_string());
+    args.push(DEFAULT_EFFORT.to_string());
 
     CliArgs {
         command,
@@ -1726,6 +1758,11 @@ mod tests {
             .args
             .contains(&"--dangerously-skip-permissions".to_string()));
 
+        // Effort is locked to medium by default to avoid the CLI 2.1.94
+        // tier-dependent default drift.
+        assert!(args.args.contains(&"--effort".to_string()));
+        assert!(args.args.contains(&DEFAULT_EFFORT.to_string()));
+
         // Platform-specific command
         if cfg!(windows) {
             assert_eq!(args.command, "cmd");
@@ -1746,6 +1783,43 @@ mod tests {
 
         assert!(args.args.contains(&"--model".to_string()));
         assert!(args.args.contains(&"claude-sonnet-4-20250514".to_string()));
+    }
+
+    #[test]
+    fn test_cli_args_effort_override() {
+        let profile = ModelProfile {
+            effort: Some("high".into()),
+            ..Default::default()
+        };
+        let args = build_cli_args(None, Some(&profile));
+
+        // The override should be present, not the default.
+        assert!(args.args.contains(&"--effort".to_string()));
+        assert!(args.args.contains(&"high".to_string()));
+        // Sanity: only one --effort flag was pushed
+        let effort_count = args.args.iter().filter(|a| *a == "--effort").count();
+        assert_eq!(effort_count, 1, "exactly one --effort flag expected");
+    }
+
+    #[test]
+    fn test_cli_args_effort_blank_falls_back_to_default() {
+        let profile = ModelProfile {
+            effort: Some("   ".into()),
+            ..Default::default()
+        };
+        let args = build_cli_args(None, Some(&profile));
+
+        assert!(args.args.contains(&"--effort".to_string()));
+        assert!(args.args.contains(&DEFAULT_EFFORT.to_string()));
+    }
+
+    #[test]
+    fn test_resume_cli_args_pins_effort() {
+        let args = build_resume_cli_args("sess-resume-1");
+        assert!(args.args.contains(&"--effort".to_string()));
+        assert!(args.args.contains(&DEFAULT_EFFORT.to_string()));
+        assert!(args.args.contains(&"--resume".to_string()));
+        assert!(args.args.contains(&"sess-resume-1".to_string()));
     }
 
     #[test]

@@ -95,6 +95,34 @@ export const cleanupDeadTriggerEvents = () =>
   invoke<TriggerCleanupResult>("cleanup_dead_trigger_events");
 
 // ============================================================================
+// Rename event type — atomic across every store that references it
+// See docs/design/event-routing-proposal.md + src-tauri/src/db/repos/resources/triggers.rs
+// ============================================================================
+
+export interface RenameEventTypeResult {
+  events_updated: number;
+  subscriptions_updated: number;
+  trigger_publishers_updated: number;
+  trigger_listeners_updated: number;
+  handler_keys_updated: number;
+  persona_handlers_updated: number;
+}
+
+/**
+ * Atomically rename an event type everywhere it's referenced:
+ * `persona_events`, `persona_event_subscriptions`, `persona_triggers.config`
+ * (event_type / listen_event_type / _handler_key), and
+ * `personas.structured_prompt.eventHandlers`. Rejects reserved infrastructure
+ * event types (catalog) and collisions (if the new name already exists
+ * anywhere). Returns per-store counts.
+ */
+export const renameEventType = (oldEventType: string, newEventType: string) =>
+  invoke<RenameEventTypeResult>("rename_event_type", {
+    oldEventType,
+    newEventType,
+  });
+
+// ============================================================================
 // Trigger Health
 // ============================================================================
 

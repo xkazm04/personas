@@ -298,20 +298,46 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
     resetAction();
   }, [current, isProcessing, activeAction, actionNotes, onApprove, onReject, buildNotes, resetAction]);
 
-  // Keyboard
+  // Keyboard — with multiple decisions, arrow keys triage the CURRENT decision
+  // instead of firing the review-wide action. The review-wide "Accept all" /
+  // "Reject all" lives on the bottom button bar in that mode.
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
       if (isProcessing) return;
 
+      const multiDecisionMode = hasMultipleDecisions && !!currentDecision && activeAction === null;
+
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        if (activeAction === 'approve') handleConfirmAction();
-        else { setActiveAction('approve'); setActionNotes(''); }
+        if (multiDecisionMode) {
+          // Accept current decision (force-set, don't toggle) and auto-advance
+          setDecisionVerdicts((prev) => ({ ...prev, [currentDecision!.id]: 'accept' }));
+          if (decisionIdx < decisions.length - 1) {
+            setDecisionDir(1);
+            setDecisionIdx((i) => i + 1);
+          }
+        } else if (activeAction === 'approve') {
+          handleConfirmAction();
+        } else {
+          setActiveAction('approve');
+          setActionNotes('');
+        }
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        if (activeAction === 'reject') handleConfirmAction();
-        else { setActiveAction('reject'); setActionNotes(''); }
+        if (multiDecisionMode) {
+          // Reject current decision and auto-advance
+          setDecisionVerdicts((prev) => ({ ...prev, [currentDecision!.id]: 'reject' }));
+          if (decisionIdx < decisions.length - 1) {
+            setDecisionDir(1);
+            setDecisionIdx((i) => i + 1);
+          }
+        } else if (activeAction === 'reject') {
+          handleConfirmAction();
+        } else {
+          setActiveAction('reject');
+          setActionNotes('');
+        }
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
         if (activeAction === 'retry') handleConfirmAction();
@@ -322,7 +348,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
     }
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isProcessing, activeAction, handleConfirmAction, resetAction]);
+  }, [isProcessing, activeAction, handleConfirmAction, resetAction, hasMultipleDecisions, currentDecision, decisionIdx, decisions.length]);
 
   // Decision summary counts
   const acceptCount = Object.values(decisionVerdicts).filter((v) => v === 'accept').length;
@@ -448,14 +474,51 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
 
                 <div className="p-5 space-y-4">
                   {/* Header */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start gap-3">
                     <PersonaIcon icon={current!.persona_icon ?? null} color={current!.persona_color ?? null} display="framed" frameSize={"lg"} />
-                    <span className="text-sm font-medium text-foreground/80">{current!.persona_name || 'Unknown'}</span>
-                    <SeverityBadge severity={current!.severity} />
-                    <span className="ml-auto flex items-center gap-1 text-xs text-foreground/60">
-                      <Clock className="w-3 h-3" />
-                      {formatRelativeTime(current!.created_at)}
-                    </span>
+                    <span className="text-sm font-medium text-foreground/80 mt-1">{current!.persona_name || 'Unknown'}</span>
+                    <div className="mt-1"><SeverityBadge severity={current!.severity} /></div>
+                    <div className="ml-auto flex flex-col items-end gap-1">
+                      {hasMultipleDecisions && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-foreground/60">
+                            Decision {decisionIdx + 1} of {decisions.length}
+                          </span>
+                          <button onClick={goPrevDecision} disabled={decisionIdx === 0} className="p-0.5 rounded hover:bg-secondary/40 disabled:opacity-30 transition-colors">
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="flex items-center gap-1">
+                            {decisions.map((d, i) => {
+                              const v = decisionVerdicts[d.id];
+                              const dotColor = v === 'accept' ? 'bg-emerald-400' : v === 'reject' ? 'bg-red-400' : i === decisionIdx ? 'bg-primary' : 'bg-foreground/20';
+                              return (
+                                <button
+                                  key={d.id}
+                                  onClick={() => { setDecisionDir(i > decisionIdx ? 1 : -1); setDecisionIdx(i); }}
+                                  className={`w-2 h-2 rounded-full transition-all ${dotColor} ${i === decisionIdx ? 'scale-125' : ''}`}
+                                />
+                              );
+                            })}
+                          </div>
+                          <button onClick={goNextDecision} disabled={decisionIdx >= decisions.length - 1} className="p-0.5 rounded hover:bg-secondary/40 disabled:opacity-30 transition-colors">
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                          {(acceptCount > 0 || rejectCount > 0) && (
+                            <button
+                              onClick={() => setDecisionVerdicts({})}
+                              className="text-xs text-foreground/50 hover:text-foreground/80 transition-colors"
+                              title="Clear all verdicts"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      <span className="flex items-center gap-1 text-xs text-foreground/60">
+                        <Clock className="w-3 h-3" />
+                        {formatRelativeTime(current!.created_at)}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Title */}
@@ -497,46 +560,6 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   {/* ---- Decision content ---- */}
                   {hasDecisions && (
                     <div className="space-y-3">
-                      {/* Decision header with navigator + bulk controls */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
-                            {hasMultipleDecisions ? `Decision ${decisionIdx + 1} of ${decisions.length}` : 'Decision'}
-                          </span>
-                          {hasMultipleDecisions && (
-                            <div className="flex items-center gap-1">
-                              <button onClick={goPrevDecision} disabled={decisionIdx === 0} className="p-0.5 rounded hover:bg-secondary/40 disabled:opacity-30 transition-colors">
-                                <ChevronLeft className="w-3.5 h-3.5" />
-                              </button>
-                              {/* Decision dots */}
-                              <div className="flex items-center gap-1">
-                                {decisions.map((d, i) => {
-                                  const v = decisionVerdicts[d.id];
-                                  const dotColor = v === 'accept' ? 'bg-emerald-400' : v === 'reject' ? 'bg-red-400' : i === decisionIdx ? 'bg-primary' : 'bg-foreground/20';
-                                  return (
-                                    <button
-                                      key={d.id}
-                                      onClick={() => { setDecisionDir(i > decisionIdx ? 1 : -1); setDecisionIdx(i); }}
-                                      className={`w-2 h-2 rounded-full transition-all ${dotColor} ${i === decisionIdx ? 'scale-125' : ''}`}
-                                    />
-                                  );
-                                })}
-                              </div>
-                              <button onClick={goNextDecision} disabled={decisionIdx >= decisions.length - 1} className="p-0.5 rounded hover:bg-secondary/40 disabled:opacity-30 transition-colors">
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <button onClick={() => setAllDecisions('accept')} className="text-emerald-400 hover:text-emerald-300 transition-colors">Accept all</button>
-                          <span className="text-foreground/20">|</span>
-                          <button onClick={() => setAllDecisions('reject')} className="text-red-400 hover:text-red-300 transition-colors">Reject all</button>
-                          <span className="text-foreground/20">|</span>
-                          <button onClick={() => setDecisionVerdicts({})} className="text-foreground/50 hover:text-foreground/70 transition-colors">Clear</button>
-                        </div>
-                      </div>
-
                       {/* Focused decision card — one at a time */}
                       <AnimatePresence mode="wait" custom={decisionDir}>
                         {currentDecision && (
@@ -606,9 +629,14 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   <div className="grid grid-cols-3 divide-x divide-primary/10">
                     <ActionZone
                       active={activeAction === 'reject'}
-                      onClick={() => { setActiveAction(activeAction === 'reject' ? null : 'reject'); setActionNotes(''); }}
+                      onClick={() => {
+                        if (activeAction === 'reject') { setActiveAction(null); return; }
+                        if (hasMultipleDecisions) setAllDecisions('reject');
+                        setActiveAction('reject');
+                        setActionNotes('');
+                      }}
                       icon={<X className="w-5 h-5" />}
-                      label="Reject"
+                      label={hasMultipleDecisions ? 'Reject all' : 'Reject'}
                       colorClasses="text-red-400 hover:bg-red-500/10"
                       activeClasses="bg-red-500/10"
                       notes={actionNotes}
@@ -632,9 +660,14 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                     />
                     <ActionZone
                       active={activeAction === 'approve'}
-                      onClick={() => { setActiveAction(activeAction === 'approve' ? null : 'approve'); setActionNotes(''); }}
+                      onClick={() => {
+                        if (activeAction === 'approve') { setActiveAction(null); return; }
+                        if (hasMultipleDecisions) setAllDecisions('accept');
+                        setActiveAction('approve');
+                        setActionNotes('');
+                      }}
                       icon={<Check className="w-5 h-5" />}
-                      label="Approve"
+                      label={hasMultipleDecisions ? 'Accept all' : 'Approve'}
                       colorClasses="text-emerald-400 hover:bg-emerald-500/10"
                       activeClasses="bg-emerald-500/10"
                       notes={actionNotes}
@@ -645,11 +678,23 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                     />
                   </div>
                   <div className="text-center py-1.5 text-[11px] text-foreground/30 border-t border-primary/5">
-                    <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8592;</kbd> Reject
-                    <span className="mx-2 text-foreground/15">|</span>
-                    <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8595;</kbd> Retry
-                    <span className="mx-2 text-foreground/15">|</span>
-                    <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8594;</kbd> Approve
+                    {hasMultipleDecisions ? (
+                      <>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8592;</kbd> Reject this
+                        <span className="mx-2 text-foreground/15">|</span>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8595;</kbd> Retry
+                        <span className="mx-2 text-foreground/15">|</span>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8594;</kbd> Accept this
+                      </>
+                    ) : (
+                      <>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8592;</kbd> Reject
+                        <span className="mx-2 text-foreground/15">|</span>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8595;</kbd> Retry
+                        <span className="mx-2 text-foreground/15">|</span>
+                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground/40 font-mono">&#8594;</kbd> Approve
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

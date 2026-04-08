@@ -61,6 +61,11 @@ pub struct TestModelConfig {
     pub model: Option<String>,
     pub base_url: Option<String>,
     pub auth_token: Option<String>,
+    /// Effort level: "low" / "medium" / "high".
+    /// `None` falls back to `prompt::DEFAULT_EFFORT` ("medium").
+    /// The lab uses this to vary effort across test cells alongside model.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effort: Option<String>,
 }
 
 /// Parse and validate model configs from frontend JSON values.
@@ -624,6 +629,9 @@ pub(crate) async fn execute_scenario(
         base_url: model.base_url.clone(),
         auth_token: model.auth_token.clone(),
         prompt_cache_policy: None,
+        // Lab can vary --effort across cells alongside model. Falls back to
+        // prompt::DEFAULT_EFFORT when None.
+        effort: model.effort.clone(),
     };
 
     let mut cli_args = prompt::build_cli_args(None, Some(&model_profile));

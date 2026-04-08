@@ -185,6 +185,7 @@ pub async fn dev_tools_execute_task(
     let root_path = project.root_path.clone();
     let project_name = project.name.clone();
     let goal_id = task.goal_id.clone();
+    let worktree_name = extract_worktree_name(task.session_id.as_deref());
 
     tokio::spawn(async move {
         let result = tokio::select! {
@@ -197,6 +198,7 @@ pub async fn dev_tools_execute_task(
                 &pool,
                 &root_path,
                 prompt_text,
+                worktree_name,
             ) => res
         };
 
@@ -431,6 +433,7 @@ pub async fn dev_tools_start_batch(
             }
             TASK_EXEC_JOBS.set_status(&app_handle, &tid, "running", None);
 
+            let batch_worktree_name = extract_worktree_name(task.session_id.as_deref());
             let result = tokio::select! {
                 _ = cancel_token.cancelled() => {
                     Err(AppError::Internal("Task execution cancelled by user".into()))
@@ -441,6 +444,7 @@ pub async fn dev_tools_start_batch(
                     &pool,
                     &project.root_path,
                     prompt_text,
+                    batch_worktree_name,
                 ) => res
             };
 
@@ -515,6 +519,37 @@ pub async fn dev_tools_start_batch(
     Ok(json!({ "batch_id": batch_id, "started": started }))
 }
 
+/// Cancel an in-flight task execution. Callable from other modules
+/// (e.g. competition cancellation needs to cancel all running competitor tasks).
+/// Returns true if the task was running and got cancelled, false otherwise.
+pub fn cancel_running_task(
+    pool: &crate::db::DbPool,
+    app: &tauri::AppHandle,
+    task_id: &str,
+) -> Result<bool, AppError> {
+    if let Some(token) = TASK_EXEC_JOBS.get_cancel_token(task_id)? {
+        token.cancel();
+        TASK_EXEC_JOBS.set_status(app, task_id, "cancelled", None);
+        let now = chrono::Utc::now().to_rfc3339();
+        let _ = repo::update_task(
+            pool,
+            task_id,
+            None,
+            None,
+            Some("cancelled"),
+            None,
+            None,
+            None,
+            Some(Some("Cancelled by user")),
+            None,
+            Some(Some(&now)),
+        );
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
 #[tauri::command]
 pub async fn dev_tools_cancel_task_execution(
     state: State<'_, Arc<AppState>>,
@@ -550,18 +585,41 @@ pub async fn dev_tools_cancel_task_execution(
 // Core task execution logic
 // =============================================================================
 
+/// Extract a Claude Code worktree name from a task's session_id field.
+/// Convention: session_id = "worktree:<name>" signals the task should run
+/// in an isolated Claude Code git worktree (requires Claude Code >= v2.1.49).
+fn extract_worktree_name(session_id: Option<&str>) -> Option<String> {
+    session_id
+        .and_then(|s| s.strip_prefix("worktree:"))
+        .map(|s| s.to_string())
+}
+
 async fn run_task_execution(
     app: &tauri::AppHandle,
     task_id: &str,
     pool: &crate::db::DbPool,
     root_path: &str,
     prompt_text: String,
+    worktree_name: Option<String>,
 ) -> Result<i32, AppError> {
     TASK_EXEC_JOBS.emit_line(app, task_id, "[Milestone] Starting task execution...");
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
+
+    // If the task is bound to a worktree (e.g. from a competition run),
+    // pass --worktree <name> so Claude Code creates an isolated checkout
+    // at <repo>/.claude/worktrees/<name>/ on branch worktree-<name>.
+    if let Some(ref wt) = worktree_name {
+        cli_args.args.push("--worktree".to_string());
+        cli_args.args.push(wt.clone());
+        TASK_EXEC_JOBS.emit_line(
+            app,
+            task_id,
+            format!("[Milestone] Using Claude Code worktree: {wt}"),
+        );
+    }
 
     let exec_dir = std::path::PathBuf::from(root_path);
     let mut cmd = Command::new(&cli_args.command);

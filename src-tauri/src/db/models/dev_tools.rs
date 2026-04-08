@@ -208,6 +208,58 @@ pub struct DevTask {
 }
 
 // ============================================================================
+// Dev Competitions (multi-clone parallel task execution)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevCompetition {
+    pub id: String,
+    pub project_id: String,
+    pub task_title: String,
+    pub task_description: Option<String>,
+    pub source_idea_id: Option<String>,
+    pub source_goal_id: Option<String>,
+    pub slot_count: i32,
+    pub status: String, // 'running' | 'awaiting_review' | 'resolved' | 'cancelled'
+    pub winner_task_id: Option<String>,
+    pub winner_insight: Option<String>,
+    pub reviewer_notes: Option<String>,
+    pub created_at: String,
+    pub resolved_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevCompetitionSlot {
+    pub id: String,
+    pub competition_id: String,
+    pub task_id: String,
+    pub strategy_label: String,
+    pub strategy_prompt: Option<String>,
+    pub worktree_name: String,
+    pub branch_name: Option<String>,
+    pub slot_index: i32,
+    pub disqualified: bool,
+    pub disqualify_reason: Option<String>,
+    pub diff_hash: Option<String>,
+    pub diff_stats_json: Option<String>,
+    pub diff_analyzed_at: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevStrategyStats {
+    pub label: String,
+    pub wins: i32,
+    pub total: i32,
+    pub disqualified_count: i32,
+    pub win_rate: f64,
+    pub last_win_at: Option<String>,
+}
+
+// ============================================================================
 // Scan Agent Meta
 // ============================================================================
 

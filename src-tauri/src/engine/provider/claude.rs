@@ -113,4 +113,14 @@ mod tests {
         assert!(args.args.contains(&"-p".to_string()));
         assert!(args.args.contains(&"stream-json".to_string()));
     }
+
+    #[test]
+    fn test_build_execution_args_pins_effort_medium() {
+        // Personas pins --effort medium so behavior stays deterministic across
+        // CLI 2.1.94's tier-dependent default change.
+        let provider = ClaudeProvider;
+        let args = provider.build_execution_args(None, None);
+        assert!(args.args.contains(&"--effort".to_string()));
+        assert!(args.args.contains(&"medium".to_string()));
+    }
 }

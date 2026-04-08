@@ -914,6 +914,20 @@ pub struct TriggerCleanupResult {
     pub source_triggers_scanned: u32,
 }
 
+/// Atomically rename an event type everywhere it's referenced: persona_events,
+/// persona_event_subscriptions, persona_triggers (config event_type /
+/// listen_event_type / _handler_key), and personas.structured_prompt
+/// .eventHandlers. Rejects reserved infrastructure event types and collisions.
+#[tauri::command]
+pub fn rename_event_type(
+    state: State<'_, Arc<AppState>>,
+    old_event_type: String,
+    new_event_type: String,
+) -> Result<repo::RenameEventTypeResult, AppError> {
+    require_auth_sync(&state)?;
+    repo::rename_event_type(&state.db, &old_event_type, &new_event_type)
+}
+
 /// One-shot cleanup + self-healing sweep for the trigger / event subsystem.
 ///
 /// 1. Deletes triggers whose owning persona no longer exists (with cascade

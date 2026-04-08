@@ -107,7 +107,7 @@ export default function DevToolsPage() {
       <div
           data-testid="dev-tools-page"
           key={devToolsTab}
-          className="animate-fade-slide-in flex-1 min-h-0"
+          className="animate-fade-slide-in flex-1 min-h-0 flex flex-col"
         >
           <Suspense fallback={<SuspenseFallback />}>
             {devToolsTab === 'projects' && <ProjectManagerPage />}

@@ -178,6 +178,8 @@ Use as-is.
 
 **Sanity check:** if the resulting text is <300 words, report it's too thin to harvest meaningful ideas and stop.
 
+> **Source-type agnosticism confirmed.** Runs 1-5 used YouTube videos (Phase 2a); run 6 used a blog article (Phase 2b WebFetch). Both paths produced the same downstream shape — same frontmatter, same Phase 6 rules, same output formats. The skill is source-type agnostic; do not special-case downstream phases based on whether the source came from 2a, 2b, or 2c.
+
 ---
 
 ## Phase 3: Raw Idea Extraction
@@ -194,6 +196,23 @@ For each idea, capture:
 - `tentative_bucket` — your initial guess: `code` / `template` / `credential` / `unclear`
 
 Apply memory-informed filtering: if `Patterns/user-preferences.md` says "user rejects migration ideas" or similar, deprioritize matching ideas (still extract, but mark `low_priority: true`).
+
+**Also check `Patterns/descoped-reopenable.md`** (if it exists) for findings that were previously descoped but may now be viable due to changed ecosystem conditions. If any apply to the current source, surface them explicitly in Phase 7 as "previously descoped, reconsider?" items alongside the new findings.
+
+### Source-type yield calibration
+
+Different source types produce different finding profiles. **A "low" finding count is not a failure mode if it matches the source type's expected yield.** Don't force extraction past the natural limit just to hit a number.
+
+| Source type | Expected yield | Typical pattern |
+|---|---|---|
+| **Technical interview / engineering talk** | **densest** — 3-5 strong findings with concrete file anchors | Run 3 (Codex/Bolin): 3 accepted findings + 1 security escalation. Interviews with engineers on specific systems often reveal architectural critiques that map directly to codebase gaps. |
+| **Feature walkthrough / dev-focused demo** | dense — 3-4 findings with mix of code + template ideas | Run 1 (A2A Gateway): 4 accepted findings. Run 2 (Everything is a CLI): 4 accepted findings. Demos that show a specific workflow tend to produce at least one clear architectural finding. |
+| **Product demo / competitor walkthrough** | **low + many catches** — 1-3 real findings, 5-10 "already existed" catches | Run 4 (Paperclip): 2 findings, **8 already-existed catches**. Product demos of competing systems are high signal for the host-first rule because every feature demonstrated is potentially "does personas have this?". Expect the catch count to exceed the finding count. |
+| **Philosophical / forward-looking article or video** | low — 1-2 findings, mostly discovery-brief territory | Run 5 (Karpathy LLM Wiki): 2 accepted findings + 7 already-existed (the skill's own prior iteration had already implemented the core insight). Philosophical sources often produce narrow deltas against existing implementations. |
+| **Product launch article** | low-medium — 1-3 findings including at least one scaffolding-shaped finding | Run 6 (Claude Managed Agents): 2 findings, one of which became a theoretical scaffolding handoff (Option C). Launch articles frequently describe gated/preview features that fit Option C. |
+| **Blog post / raw text** | varies widely | Phase 2b and 2c work the same as 2a downstream; the yield depends on content density, not transport. |
+
+**If the finding count feels low, check the source type first.** If the source is a product demo and you have 7+ catches, that's a successful run, not a failed one. Surface the catch count prominently in Phase 7 as the primary metric for low-finding runs.
 
 ---
 
@@ -343,30 +362,23 @@ For each accepted finding:
 
 ### Code bucket
 
-**Do not auto-edit code** — the user will want to review the change. There are **three** routing options for code findings; pick based on the shape of what was accepted:
+**Do not auto-edit code** — the user will want to review the change. Pick a routing option based on the shape of what was accepted.
+
+**The handoff plan is the default for clustered code findings.** Across runs 1-6, the user picked a handoff plan in every run where 2+ findings had concrete file anchors. Do NOT ask "handoff vs todos vs record" as an open question — propose the handoff as the default and only offer alternatives if the findings are clearly single/unrelated (Option A) or the user explicitly asks to defer (Option D).
 
 **Option A — Single isolated finding → Obsidian + optional todo**
-For one or two unrelated code findings, write each into the Obsidian Research note (Phase 9) as a checked-but-not-implemented item with the exact `file_path:line`. Then ask: *"Should I open this as a todo via /gsd:add-todo?"* If yes, invoke that skill.
+For one unrelated code finding with a clear `file_path:line` anchor, write it into the Obsidian Research note (Phase 9) as a checked-but-not-implemented item. Then ask: *"Should I open this as a todo via /gsd:add-todo?"* If yes, invoke that skill. Do NOT use this for 2+ findings — see Option B.
 
-**Option B — Bundled cluster (3+ findings or any forced pair from Phase 7 cluster detection) → implementation plan handoff**
-When multiple code findings cluster (same file, dependency edges, security pair, protocol pair), do NOT route them as individual todos — that loses the bundling story. Instead, ask the user:
+**Option B — Implementation-ready handoff plan (DEFAULT for 2+ clustered code findings)**
+Write a self-contained handoff to `.planning/handoffs/{YYYY-MM-DD}-{slug}.md`. This is the default output for accepted clustered findings — confirmed across 5 of 6 iteration runs. Structure:
 
-```
-These N findings cluster naturally (same file / shared migration / forced pair).
-Options:
-  (a) write one implementation plan handoff document for another CLI to execute
-  (b) split into N individual /gsd:add-todo items
-  (c) just record in the Obsidian Research note for now
-```
-
-If the user picks (a), write a self-contained handoff to `.planning/handoffs/{YYYY-MM-DD}-{slug}.md` with this structure:
 - **Header** — date, source link, original triage decision, target repo path
 - **Why this matters** — one-paragraph context (what problem, what infrastructure already exists)
 - **Goal** — numbered list of the bundled findings as deliverables
 - **Non-goals** — explicit "do NOT do these" list (deferred findings, scope creep traps, layers not to touch). This is the most important section — it prevents the implementing CLI from drifting.
 - **Dependency graph & order** — which tasks ship together, which depend on which
 - **Per-task spec** — for each task: file path & line anchor, schema/migration SQL, struct definitions, function signatures, error mapping, acceptance criteria
-- **Cross-cutting concerns** — convention compliance (point at `.claude/CLAUDE.md` — auto-loaded by every Claude Code session in this repo, contains UI conventions including the typography contrast rule, state management, IPC patterns, and "what NOT to do"), security defaults (default to denial), backward compat constraints, tests to add. **If any task in the handoff touches frontend code (`src/**/*.tsx`), explicitly include a "Honor the typography contrast / muted-text antipattern rule from CLAUDE.md UI Conventions" line so the implementing CLI does not re-introduce muted body text.**
+- **Cross-cutting concerns** — convention compliance (point at `.claude/CLAUDE.md`), security defaults (default to denial), backward compat constraints, tests to add. **If any task touches frontend code (`src/**/*.tsx`), explicitly include a "Honor the typography contrast / muted-text antipattern rule from CLAUDE.md UI Conventions" line.**
 - **Final acceptance checklist** — manual smoke tests + negative paths
 - **What to do if you get stuck** — explicit rule: prefer the more conservative option, leave a `TODO(handoff-{date})` comment, write follow-ups to a sibling file rather than expanding scope silently
 - **Out of band** — the deferred findings, so the implementing CLI knows they're queued and won't accidentally implement them
@@ -375,8 +387,30 @@ The handoff plan must be **self-contained** — readable without the conversatio
 
 Record the handoff path in the Research note frontmatter (`handoff: .planning/handoffs/{date}-{slug}.md`) and in the Phase 11 final summary.
 
-**Option C — Just record, no further action**
-For findings the user wants to think about, write them into the Research note only. No todo, no handoff. The Research note serves as a future search target.
+**Option C — Theoretical scaffolding handoff (gated/preview/whitelist-dependent features)**
+Same structure as Option B, BUT with a much stricter non-goals section. Use this when the accepted finding depends on an external dependency that isn't available yet: whitelist-gated APIs, preview products, unreleased SDKs, features behind a private beta.
+
+Distinguishing characteristics vs. Option B:
+- **Non-goals section explicitly forbids any real integration attempts.** Example phrasing: *"Do NOT make any HTTP calls to {external host}. Not in tests, not in examples, not in commented-out code."* and *"Do NOT hardcode endpoint URLs before the API is publicly documented."*
+- **Implementation style is scaffolding only:** stub structs/traits, settings keys with no defaults, `Err(AppError::NotImplemented(...))` returns, variant added to enums with dispatch points returning NotImplemented. The compile passes; no runtime behavior is exercised.
+- **Every stub point gets a `TODO({feature-name}-{reason})` marker** (e.g., `TODO(managed-agents-whitelist)`) so a future CLI session can grep for all the breadcrumbs and finish the work when access is granted.
+- **Tests only cover the deterministic stub path** (assert `NotImplemented` is returned). No integration tests; no fixtures that imply real API shape.
+- **Out-of-band section lists "what to do when access is granted"** as a concrete checklist: grep for the TODO marker, flesh out stub methods, add UI surface, update docs.
+- **Small Cargo.toml / deps additions are allowed only if** the dependencies are already present for other reasons. Do NOT add new dependencies that only the stub would use.
+
+When to pick Option C over B:
+- The source mentions a product in public beta / research preview / whitelist gate
+- The API spec isn't publicly documented
+- Authentication credentials for the external system aren't available to the dev team
+- The user explicitly says "prepare theoretically" or "scaffold for future"
+
+Run 6 (2026-04-08, Claude Managed Agents) produced the first handoff in this shape. It's a real category — codify it.
+
+**Option D — Just record, no further action (escape hatch only)**
+For findings the user wants to think about without acting on yet, write them into the Research note only. No todo, no handoff. The Research note serves as a future search target. This is the escape hatch, not a default — prefer B or C for any finding concrete enough to have a file anchor.
+
+**Discovery briefs — de-prioritized.**
+Earlier iterations offered a "discovery brief" shape for findings that needed architectural analysis before implementation. Run 2 wrote one; run 3's candidate was descoped; run 6's candidate was converted into a theoretical-scaffolding handoff (Option C) instead. Pattern: users prefer concrete plans (even stubs) over pure analysis documents. **Do NOT propose a discovery brief as a first-class option.** If a finding seems to need one, first ask whether it can be expressed as Option C (scaffolding) — that captures the architectural intent in compilable code. Only write a discovery brief as a last resort when there's genuinely nothing code-shaped to scaffold (e.g. a pure product-direction question). If written, place at `.planning/research/{date}-{slug}.md`.
 
 ### Template bucket
 Auto-invoke `/add-template` with a pre-filled description derived from the finding's title + summary + recommended services. Pass the description as the first user message inside the skill so the user doesn't have to retype it.
@@ -513,6 +547,39 @@ If no, skip this step.
 
 This step exists because runs 2 and 3 both discovered structural facts the skill needed but didn't have. The pattern: a finding gets misframed, the user corrects, the correction is broader than just "this run was wrong" — it's a fact every future run needs to know. Capturing it in `codebase-stack.md` prevents the same misframe in run N+1.
 
+### 10f. Descoped-but-reopenable tracking
+
+For each finding that was descoped (not declined, not accepted — descoped because of an external blocker like a hard technical problem, a missing dependency, or an unavailable product), record it in `C:/Users/mkdol/Documents/Obsidian/personas/Patterns/descoped-reopenable.md`. This is a separate file from `Patterns/user-preferences.md` — user preferences are permanent rules; descoped-reopenable entries are conditional waits.
+
+File format (create if missing):
+
+```markdown
+# Descoped-But-Reopenable Findings
+
+Findings that were descoped due to an external blocker but may become viable
+later when the blocker clears. Phase 3 of future runs reads this file and
+surfaces any matching items as "previously descoped, reconsider?" candidates.
+
+## Entries
+
+### {YYYY-MM-DD} — {finding title}
+- **Source run:** {research note wikilink, e.g. [[2026-04-08-paperclip-hire-agents]]}
+- **Original descope reason:** {verbatim quote from the user or self-assessment}
+- **Blocker:** {what needs to change for this to become viable}
+- **Reconsider trigger:** {concrete signal to watch for — e.g. "Anthropic ships X feature", "personas adds Y capability", "OSS project Z hits 1.0"}
+- **Related findings:** {wikilinks to any related Research notes}
+```
+
+**When to add an entry:** if during Phase 8 the user descopes a finding AND the decline reason names a specific external blocker (not "no business need" or "too niche" — those are permanent rejections). The trigger for adding an entry is a phrase like *"come back when..."*, *"we can't do this until..."*, *"the platform doesn't support this yet..."*, or a technical problem the user explicitly acknowledges as unsolved.
+
+**When NOT to add:** descopes based on priority ("not now"), scope ("too big"), or permanent preference ("we don't like this pattern"). Those belong in Lessons or user-preferences.
+
+**Example from run 4 / run 6:** Paperclip run 4 surfaced "maximizer mode" (run-until-done semantics) which was descoped because of the goal-verification problem. Run 6 (Claude Managed Agents) observed that Anthropic solved the same problem externally. A properly-tracked descoped-reopenable entry from run 4 would have flagged this in run 6's Phase 3 automatically. **Write the entry now even if the blocker never clears — the cost of an unused entry is small; the cost of missing a reopen opportunity is a silently-missed finding.**
+
+**Cross-check on future runs (Phase 3):** when reading `descoped-reopenable.md`, check each entry's "Reconsider trigger" against the current source. If the source describes a solution to the blocker, surface the entry in Phase 7 as a revived candidate next to the new findings.
+
+**Cleanup:** when a descoped-reopenable entry is eventually accepted and actioned in a future run, remove it from the file (or move it to a "resolved" section at the bottom with the run date and handoff path). Don't let the file grow indefinitely.
+
 ---
 
 ## Phase 11: Final Summary
@@ -527,12 +594,20 @@ Research run complete.
   Accepted:     {K} ({list})
   Declined:     {L} ({list})
 
+  Already existed:  {A} (caught by host-first rule — see list)
+  Descoped-reopenable: {D} (tracked in Patterns/descoped-reopenable.md)
+
   Actions taken:
     - /add-template invoked: {N} times ({names})
     - /add-credential invoked: {N} times ({names})
     - Implementation plan handoffs written: {N} ({paths})
+    - Theoretical scaffolding handoffs written: {N} ({paths})
     - /gsd:add-todo invoked: {N} times
     - Findings logged for later: {N} (in Obsidian Research note only)
+
+  Already-existed catches:
+    {for each catch, one line: "{candidate title} → already at {file:line}"}
+    {if none: "none"}
 
   Files updated:
     + Obsidian/personas/Research/{date}-{slug}.md
@@ -541,9 +616,16 @@ Research run complete.
     + .planning/handoffs/{date}-{slug}.md
     {if pattern promoted:}
     ~ Obsidian/personas/Patterns/user-preferences.md
+    {if descoped-reopenable entry added:}
+    ~ Obsidian/personas/Patterns/descoped-reopenable.md
+    {if codebase-stack.md updated in Phase 10e:}
+    ~ .claude/codebase-stack.md
 
+  Source-type yield:  {expected vs actual for this source type — see Phase 3 calibration table}
   Snapshot freshness: {fresh | stale by N commits — consider /refresh-context}
 ```
+
+**Surface `already_existed` prominently when the finding count is low.** A product demo run that extracts 2 findings + 8 catches is a high-yield run — frame it that way. Do not let the user read "only 2 findings" as a failure when the real output is "8 existing features confirmed + 2 real gaps found".
 
 ---
 
@@ -827,3 +909,41 @@ This section records *why* each non-obvious rule exists. When a rule looks redun
 **Rules considered but not added:**
 - "Auto-bump the version when filings cross some threshold." Out of scope — version bumps are a human decision tied to release cuts, not extraction volume.
 - "Write to a separate `pending` bucket and have the user move items into a release later." Adds a workflow step the user has to remember. The active release IS the pending bucket.
+
+### 2026-04-08 — post-session batch update (follow-ups from runs 1-6)
+
+After the 6-run iteration session completed, six follow-up topics accumulated as "queued for later". This entry is the batch that applied them. Each one was observed across multiple runs before being codified.
+
+**Rules added:**
+
+- **Phase 8 Option B is now the DEFAULT for 2+ clustered code findings.** Across runs 1-6, the user picked a handoff plan in every single run that produced 2+ findings with file anchors. The old "three options, ask the user to pick" framing added friction without value. The skill now proposes the handoff as the default and only offers alternatives (A for single finding, D for pure defer) when the shape is clearly different. Run-5-style direct implementation is still a user override, not a Phase 8 option — it's what happens when the user tells the skill to implement instead of plan.
+
+- **Phase 8 Option C — theoretical scaffolding handoff.** Run 6 (Claude Managed Agents launch) produced the first handoff where the feature was behind a whitelist gate and no real integration was possible. The shape is distinct enough from a regular handoff to warrant its own name: stub provider + reserved settings keys + `TODO({feature-name}-{reason})` breadcrumbs + strict non-goals forbidding any real HTTP calls. Picked when the source describes a product in public beta / research preview / whitelist gate / un-documented API. The existence of this option prevents the discovery-brief fallback for architectural findings that DO have a compilable stub.
+
+- **Discovery briefs demoted.** Only 1 of 3 attempted discovery briefs across runs 1-6 survived (run 2's cloud-headless-personas). Runs 3 and 6 each had a candidate; run 3 was descoped entirely, run 6 was converted to Option C. Pattern: users prefer concrete plans (even stubs) over pure analysis documents. The skill now explicitly does NOT propose discovery briefs as a first-class option — only as a last-resort escape hatch when nothing code-shaped exists to scaffold. Run 1-2's baseline "discovery brief is a first-class Phase 8 option" was the wrong framing.
+
+- **Phase 2b agnosticism note.** Run 6 was the first article source (blog post via WebFetch); runs 1-5 were all YouTube. Both paths produced identical downstream shapes — same frontmatter, same rules, same outputs. Added a short note in Phase 2 confirming this so future runs don't waste energy worrying about source-type branches in downstream phases.
+
+- **Phase 3 source-type yield calibration table.** Added after observing that run 4's 2 findings / 8 catches felt low when it was actually a high-signal product-demo run. The calibration table maps source type → expected yield profile so a future run can self-assess whether "only 2 findings" is failure or expected behavior. Five source types documented from runs 1-6: technical interview (densest), feature walkthrough (dense), product demo (low + many catches), philosophical article (low, mostly deltas), product launch (low-medium, scaffolding-shaped). When the count feels low, check the type first.
+
+- **Phase 10f — descoped-but-reopenable tracking in `Patterns/descoped-reopenable.md`.** Run 4's "maximizer mode" was descoped because of the hard goal-verification problem. Run 6 discovered Anthropic solved the same problem externally. A properly-tracked descoped-reopenable entry from run 4 would have flagged this in run 6's Phase 3 automatically. The new Phase 10f adds entries when a user descopes a finding with a specific external blocker (not "no business need" or "too niche" — those are permanent rejections). Phase 3 reads this file and surfaces revived candidates. The file is separate from `user-preferences.md` because these are conditional waits, not permanent rules.
+
+- **Phase 11 — `already_existed` count surfaced in the printed summary.** Previously tracked only in Research note frontmatter from run 4 onward. Now surfaced as a first-class line in the printed final summary, with a per-catch list. Also added a "surface this prominently when the finding count is low" reminder — a 2-findings / 8-catches run should be framed as high-yield, not low.
+
+- **Phase 11 — `descoped-reopenable` count surfaced.** Parallel to `already_existed`. Tracks how much potential work is parked against external blockers.
+
+- **Phase 11 — `source-type yield` line.** Tells the user whether the run's output matches the expected profile for the source type. Prevents "this run felt low" reactions when the run was actually performing correctly.
+
+**Rules considered but not added:**
+
+- "Auto-write a handoff plan without asking the user." Too aggressive. Cluster detection is automatic; the final Phase 8 decision still belongs to the user. The change is defaulting toward B, not bypassing user consent.
+- "Run Phase 3's descoped-reopenable cross-check automatically on every run without surfacing it." Defeats the purpose — the whole point is for the user to see when a previously-blocked finding is now viable. It stays visible in Phase 7 output.
+- "Add fuzzy matching for descoped-reopenable 'reconsider triggers'." Out of scope for v1. Exact-substring match on the trigger phrase is enough until there's a real miss to justify complexity.
+- "Demote Phase 12 (release log) similarly to discovery briefs." Phase 12 has different dynamics — it's a terminal write, not a mid-run routing decision. It stays.
+
+**Open questions for future runs:**
+
+- The Phase 3 yield calibration table was written after 6 runs of data. Does it generalize to run 7+? If a run produces a source type not in the table, the skill should extend the table rather than force-fit.
+- Phase 10f tracks descoped-reopenable entries but doesn't delete them when blockers clear. The "cleanup" rule exists but has never run in practice. Watch for file growth over time.
+- The "handoff as default" change means the user sees fewer Phase 8 choices. If that feels prescriptive on a specific run, the user can still override — but if overrides happen frequently, the default may be wrong. Track override rate across the next few runs.
+- Option C (theoretical scaffolding) has only been used once (run 6). Whether the strict non-goals section holds up in practice — or if implementing CLIs drift into real HTTP anyway — is unknown until a second scaffolding handoff exists.

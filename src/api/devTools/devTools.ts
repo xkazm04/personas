@@ -11,6 +11,9 @@ import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroup
 import type { DevIdea } from "@/lib/bindings/DevIdea";
 import type { DevScan } from "@/lib/bindings/DevScan";
 import type { DevTask } from "@/lib/bindings/DevTask";
+import type { DevCompetition } from "@/lib/bindings/DevCompetition";
+import type { DevCompetitionSlot } from "@/lib/bindings/DevCompetitionSlot";
+import type { CompetitionSlotInput } from "@/lib/bindings/CompetitionSlotInput";
 import type { ScanAgentMeta } from "@/lib/bindings/ScanAgentMeta";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
 
@@ -204,6 +207,58 @@ export const generateCrossProjectMetadata = () =>
 
 export const getCrossProjectMetadata = () =>
   safeInvoke<CrossProjectMetadataMap | null>(null, "dev_tools_get_cross_project_metadata");
+
+// ============================================================================
+// Competitions (multi-clone parallel task execution via Claude Code worktrees)
+// ============================================================================
+
+export interface CompetitionDetail {
+  competition: DevCompetition;
+  slots: { slot: DevCompetitionSlot; task: DevTask | null }[];
+}
+
+export const startCompetition = (
+  projectId: string,
+  taskTitle: string,
+  taskDescription: string | null,
+  sourceIdeaId: string | null,
+  sourceGoalId: string | null,
+  slots: CompetitionSlotInput[],
+) =>
+  invoke<{ competition: DevCompetition; slots: DevCompetitionSlot[] }>(
+    "dev_tools_start_competition",
+    {
+      projectId,
+      taskTitle,
+      taskDescription: taskDescription,
+      sourceIdeaId: sourceIdeaId,
+      sourceGoalId: sourceGoalId,
+      slots,
+    },
+  );
+
+export const listCompetitions = (projectId: string, status?: string) =>
+  safeInvoke<DevCompetition[]>([], "dev_tools_list_competitions", {
+    projectId,
+    status: status,
+  });
+
+export const getCompetition = (id: string) =>
+  invoke<CompetitionDetail>("dev_tools_get_competition", { id });
+
+export const pickCompetitionWinner = (
+  id: string,
+  winnerTaskId: string,
+  reviewerNotes: string | null,
+) =>
+  invoke<DevCompetition>("dev_tools_pick_competition_winner", {
+    id,
+    winnerTaskId,
+    reviewerNotes: reviewerNotes,
+  });
+
+export const cancelCompetition = (id: string) =>
+  invoke<DevCompetition>("dev_tools_cancel_competition", { id });
 
 // ============================================================================
 // Context Groups

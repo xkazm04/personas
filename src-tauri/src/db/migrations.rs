@@ -16,6 +16,26 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         "ALTER TABLE dev_goals ADD COLUMN parent_goal_id TEXT REFERENCES dev_goals(id) ON DELETE SET NULL;"
     ); // ignore "duplicate column" error on re-run
 
+    // Competition slot diff metadata + auto-DQ (safe to run on existing DBs)
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_competition_slots ADD COLUMN disqualified INTEGER NOT NULL DEFAULT 0;"
+    );
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_competition_slots ADD COLUMN disqualify_reason TEXT;"
+    );
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_competition_slots ADD COLUMN diff_hash TEXT;"
+    );
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_competition_slots ADD COLUMN diff_stats_json TEXT;"
+    );
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_competition_slots ADD COLUMN diff_analyzed_at TEXT;"
+    );
+    let _ = conn.execute_batch(
+        "ALTER TABLE dev_competitions ADD COLUMN winner_insight TEXT;"
+    );
+
     conn.execute_batch(SCHEMA)?;
 
     // -- Smee Relay management table ------------------------------------------
@@ -1555,6 +1575,52 @@ CREATE TABLE IF NOT EXISTS dev_tasks (
 );
 CREATE INDEX IF NOT EXISTS idx_dev_tasks_status ON dev_tasks(status);
 CREATE INDEX IF NOT EXISTS idx_dev_tasks_project ON dev_tasks(project_id);
+
+-- ============================================================================
+-- Dev Tools: Competitions (multi-clone parallel task execution)
+--
+-- A competition spawns N dev_tasks on the same underlying work item, each
+-- tagged with a distinct worktree_name (via session_id) so Claude Code runs
+-- them in isolated git worktrees. The human reviews candidates and picks a
+-- winner; losers are dismissed.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dev_competitions (
+  id                  TEXT PRIMARY KEY,
+  project_id          TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+  task_title          TEXT NOT NULL,
+  task_description    TEXT,
+  source_idea_id      TEXT,
+  source_goal_id      TEXT,
+  slot_count          INTEGER NOT NULL,
+  status              TEXT NOT NULL DEFAULT 'running',
+  winner_task_id      TEXT,
+  winner_insight      TEXT,
+  reviewer_notes      TEXT,
+  created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+  resolved_at         TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_dev_competitions_project ON dev_competitions(project_id);
+CREATE INDEX IF NOT EXISTS idx_dev_competitions_status ON dev_competitions(status);
+
+CREATE TABLE IF NOT EXISTS dev_competition_slots (
+  id                  TEXT PRIMARY KEY,
+  competition_id      TEXT NOT NULL REFERENCES dev_competitions(id) ON DELETE CASCADE,
+  task_id             TEXT NOT NULL REFERENCES dev_tasks(id) ON DELETE CASCADE,
+  strategy_label      TEXT NOT NULL,
+  strategy_prompt     TEXT,
+  worktree_name       TEXT NOT NULL,
+  branch_name         TEXT,
+  slot_index          INTEGER NOT NULL,
+  disqualified        INTEGER NOT NULL DEFAULT 0,
+  disqualify_reason   TEXT,
+  diff_hash           TEXT,
+  diff_stats_json     TEXT,
+  diff_analyzed_at    TEXT,
+  created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_dev_competition_slots_comp ON dev_competition_slots(competition_id);
+CREATE INDEX IF NOT EXISTS idx_dev_competition_slots_task ON dev_competition_slots(task_id);
 
 -- ============================================================================
 -- Dev Tools: Triage Rules

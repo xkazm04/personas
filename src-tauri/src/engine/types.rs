@@ -291,6 +291,13 @@ pub struct ModelProfile {
     /// Controls Anthropic prompt caching for system prompt reuse across executions.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prompt_cache_policy: Option<String>,
+    /// Effort level: "low", "medium", or "high". Controls Claude reasoning depth.
+    /// When `None`, the engine falls back to `prompt::DEFAULT_EFFORT` ("medium")
+    /// so behavior stays deterministic across CLI versions and account tiers.
+    /// (CLI 2.1.94 silently changed the implicit default from medium to high
+    /// for API-key/Bedrock/Vertex/Foundry/Team/Enterprise users.)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effort: Option<String>,
 }
 
 /// Well-known provider identifiers used in ModelProfile.provider.

@@ -42,7 +42,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  MoreHorizontal, Plus, X, Zap, Search,
+  MoreHorizontal, Plus, Pencil, X, Zap, Search,
   Radio, RefreshCw, GitBranch, Wand2, type LucideIcon,
 } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -58,6 +58,7 @@ import {
   linkPersonaToEvent,
   unlinkPersonaFromEvent,
   initializeEventHandlersForPersona,
+  renameEventType,
 } from '@/api/pipeline/triggers';
 import {
   listEvents,
@@ -71,6 +72,7 @@ import {
 } from '../libs/eventCanvasConstants';
 import { AddPersonaModal } from './AddPersonaModal';
 import { DisconnectDialog } from './DisconnectDialog';
+import { RenameEventDialog } from './RenameEventDialog';
 
 import {
   Clock, Globe, Webhook, Link, Clipboard, AppWindow,
@@ -221,6 +223,12 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
   const [actionMenuRow, setActionMenuRow] = useState<string | null>(null);
   const [addPersonaForEvent, setAddPersonaForEvent] = useState<{ eventType: string } | null>(null);
   const [disconnectTarget, setDisconnectTarget] = useState<{ connection: Connection; personaName: string; eventLabel: string } | null>(null);
+  const [renameTarget, setRenameTarget] = useState<{
+    eventType: string;
+    reserved: boolean;
+    sources: number;
+    connections: number;
+  } | null>(null);
 
   const actionMenuRef = useRef<HTMLDivElement>(null);
 
@@ -512,6 +520,18 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
     } catch { /* best-effort */ }
   }, [addPersonaForEvent, reload]);
 
+  const handleRename = useCallback(
+    async (newEventType: string) => {
+      if (!renameTarget) return;
+      // The backend throws on validation/collision/reserved. We propagate
+      // the error up so the dialog can show it inline — don't swallow it here.
+      await renameEventType(renameTarget.eventType, newEventType);
+      setRenameTarget(null);
+      await reload();
+    },
+    [renameTarget, reload],
+  );
+
   const handleDisconnect = useCallback(async () => {
     if (!disconnectTarget) return;
     const { connection } = disconnectTarget;
@@ -718,7 +738,7 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                 {isActionOpen && (
                   <div
                     ref={actionMenuRef}
-                    className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-background border border-primary/15 shadow-elevation-4 shadow-black/30 py-1 z-30"
+                    className="absolute right-0 top-full mt-1 w-52 rounded-xl bg-background border border-primary/15 shadow-elevation-4 shadow-black/30 py-1 z-30"
                   >
                     <button
                       onClick={() => {
@@ -729,6 +749,31 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
                     >
                       <Plus className="w-3.5 h-3.5 text-emerald-400" />
                       Add persona
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActionMenuRow(null);
+                        setRenameTarget({
+                          eventType: row.eventType,
+                          // Catalog (SYS) events are infrastructure-emitted
+                          // and the backend rejects renaming them. We disable
+                          // the dialog's input on the frontend too so the
+                          // user sees why before submitting.
+                          reserved: row.sourceClass === 'common',
+                          sources: row.sourcePersonas.length,
+                          connections: row.connections.length,
+                        });
+                      }}
+                      disabled={row.sourceClass === 'common'}
+                      title={
+                        row.sourceClass === 'common'
+                          ? 'Built-in events cannot be renamed'
+                          : 'Rename this event across all stores'
+                      }
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground/80 hover:bg-secondary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-cyan-400" />
+                      Rename event
                     </button>
                   </div>
                 )}
@@ -756,6 +801,19 @@ export function UnifiedRoutingView({ initialTriggers, initialEvents, personas, g
         eventLabel={disconnectTarget?.eventLabel ?? ''}
         onConfirm={handleDisconnect}
         onCancel={() => setDisconnectTarget(null)}
+      />
+
+      {/* ── Rename Event Dialog ── */}
+      <RenameEventDialog
+        open={!!renameTarget}
+        oldEventType={renameTarget?.eventType ?? ''}
+        reserved={renameTarget?.reserved ?? false}
+        affectedCounts={{
+          sources: renameTarget?.sources ?? 0,
+          connections: renameTarget?.connections ?? 0,
+        }}
+        onConfirm={handleRename}
+        onCancel={() => setRenameTarget(null)}
       />
     </div>
   );

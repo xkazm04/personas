@@ -1565,6 +1565,7 @@ pub fn run() {
             commands::tools::triggers::initialize_event_handlers_for_persona,
             commands::tools::triggers::update_persona_event_handler,
             commands::tools::triggers::cleanup_dead_trigger_events,
+            commands::tools::triggers::rename_event_type,
             commands::tools::triggers::get_webhook_status,
             commands::tools::triggers::preview_cron_schedule,
             commands::tools::triggers::dry_run_trigger,
@@ -1820,6 +1821,15 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_search_across_projects,
             commands::infrastructure::dev_tools::dev_tools_get_project_summary,
             commands::infrastructure::dev_tools::dev_tools_get_dependency_graph,
+            // Dev Tools -- Competitions (multi-clone parallel execution)
+            commands::infrastructure::dev_tools::dev_tools_start_competition,
+            commands::infrastructure::dev_tools::dev_tools_list_competitions,
+            commands::infrastructure::dev_tools::dev_tools_get_competition,
+            commands::infrastructure::dev_tools::dev_tools_pick_competition_winner,
+            commands::infrastructure::dev_tools::dev_tools_cancel_competition,
+            commands::infrastructure::dev_tools::dev_tools_refresh_competition_slot,
+            commands::infrastructure::dev_tools::dev_tools_get_competition_slot_diff,
+            commands::infrastructure::dev_tools::dev_tools_get_strategy_leaderboard,
             // Dev Tools -- Implementation Pipeline (Direction 3)
             commands::infrastructure::dev_tools::dev_tools_create_branch,
             commands::infrastructure::dev_tools::dev_tools_apply_diff,

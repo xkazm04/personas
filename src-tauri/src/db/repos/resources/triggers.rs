@@ -760,6 +760,324 @@ pub fn delete_auto_listeners_for(pool: &DbPool, source_trigger_id: &str) -> Resu
     })
 }
 
+// ============================================================================
+// Event type rename
+// See docs/design/event-routing-proposal.md
+//
+// Atomically rewrites every storage site that holds `old` to `new`:
+//   1. persona_events.event_type
+//   2. persona_event_subscriptions.event_type
+//   3. persona_triggers.config JSON — the `event_type` key (publishers),
+//      the `listen_event_type` key (listeners), and the `_handler_key`
+//      advisory (S3 link_persona_to_event)
+//   4. personas.structured_prompt.eventHandlers — moves the key
+//
+// All inside a single transaction. Rejects catalog / reserved infrastructure
+// event types so renaming can't desync hardcoded engine emitters from their
+// listeners, and rejects collisions so streams don't merge by accident.
+// ============================================================================
+
+/// Event types that are hardcoded in engine emitters and listener paths.
+/// Renaming any of these would break the runtime dispatch because the code
+/// that publishes them still uses the literal string. Verified against:
+///   - `src/features/triggers/sub_builder/libs/eventCanvasConstants.ts`
+///   - `src-tauri/src/engine/dispatch.rs`
+///   - `src-tauri/src/engine/chain.rs`
+///   - `src-tauri/src/engine/background.rs`
+///   - `src-tauri/src/engine/polling.rs`
+pub(crate) const RESERVED_EVENT_TYPES: &[&str] = &[
+    "webhook_received",
+    "schedule_fired",
+    "polling_changed",
+    "chain_completed",
+    "chain_triggered",
+    "file_changed",
+    "clipboard_changed",
+    "app_focus_changed",
+    "composite_fired",
+    "trigger_fired",
+    "execution_completed",
+    "execution_failed",
+    "persona_action",
+    "emit_event",
+];
+
+/// Counts for UI feedback after a rename. Every field is the number of rows
+/// whose stored event_type value was actually changed from `old` to `new`.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct RenameEventTypeResult {
+    pub events_updated: u32,
+    pub subscriptions_updated: u32,
+    pub trigger_publishers_updated: u32,
+    pub trigger_listeners_updated: u32,
+    pub handler_keys_updated: u32,
+    pub persona_handlers_updated: u32,
+}
+
+/// Look for any row that references an event_type in ANY of the four stores.
+/// Used as a collision check before a rename goes through, and as a read-only
+/// hook into the "does this event_type exist anywhere?" question.
+pub fn event_type_in_use(pool: &DbPool, event_type: &str) -> Result<bool, AppError> {
+    timed_query!("persona_triggers", "persona_triggers::event_type_in_use", {
+        let conn = pool.get()?;
+
+        // persona_events
+        let n_events: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_events WHERE event_type = ?1",
+                params![event_type],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        if n_events > 0 {
+            return Ok(true);
+        }
+
+        // persona_event_subscriptions
+        let n_subs: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_event_subscriptions WHERE event_type = ?1",
+                params![event_type],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        if n_subs > 0 {
+            return Ok(true);
+        }
+
+        // persona_triggers config (publishers + listeners + handler_key)
+        let n_triggers: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_triggers
+                 WHERE json_extract(config, '$.event_type') = ?1
+                    OR json_extract(config, '$.listen_event_type') = ?1
+                    OR json_extract(config, '$._handler_key') = ?1",
+                params![event_type],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+        if n_triggers > 0 {
+            return Ok(true);
+        }
+
+        // personas.structured_prompt.eventHandlers — can't use dynamic
+        // JSONPath string concat here because keys with dots (e.g.
+        // `stock.alert.v2`) collide with JSONPath path separators. Pull
+        // every persona with a non-null handlers map and membership-check
+        // in Rust. The personas table is small (typically < 20 rows).
+        let sps: Vec<String> = {
+            let mut stmt = conn.prepare(
+                "SELECT structured_prompt FROM personas
+                 WHERE structured_prompt IS NOT NULL
+                   AND json_extract(structured_prompt, '$.eventHandlers') IS NOT NULL",
+            )?;
+            let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?
+        };
+        for sp_str in sps {
+            let Ok(sp_val) = serde_json::from_str::<serde_json::Value>(&sp_str) else {
+                continue;
+            };
+            let Some(handlers) = sp_val.get("eventHandlers").and_then(|v| v.as_object()) else {
+                continue;
+            };
+            if handlers.contains_key(event_type) {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    })
+}
+
+/// Atomically rename an event type everywhere it's referenced. Returns a
+/// per-store count of rows actually rewritten. Runs inside a single
+/// transaction; any error rolls everything back.
+pub fn rename_event_type(
+    pool: &DbPool,
+    old: &str,
+    new: &str,
+) -> Result<RenameEventTypeResult, AppError> {
+    timed_query!("persona_triggers", "persona_triggers::rename_event_type", {
+        // ── Validation ─────────────────────────────────────────────────
+        use crate::db::repos::communication::events as event_repo;
+
+        let old = old.trim();
+        let new = new.trim();
+
+        if old.is_empty() || new.is_empty() {
+            return Err(AppError::Validation(
+                "event_type names cannot be empty".into(),
+            ));
+        }
+        if old == new {
+            return Err(AppError::Validation(
+                "old and new event_type are identical; nothing to rename".into(),
+            ));
+        }
+        if new.len() > event_repo::MAX_TYPE_LEN {
+            return Err(AppError::Validation(format!(
+                "new event_type exceeds maximum length of {} characters",
+                event_repo::MAX_TYPE_LEN
+            )));
+        }
+        if !event_repo::is_safe_type_string(new) {
+            return Err(AppError::Validation(
+                "new event_type contains invalid characters; only alphanumeric, \
+                 underscore, hyphen, dot, colon, and forward-slash are allowed \
+                 (must start with alphanumeric or underscore)"
+                    .into(),
+            ));
+        }
+        if RESERVED_EVENT_TYPES.contains(&old) {
+            return Err(AppError::Validation(format!(
+                "`{old}` is a reserved infrastructure event type and cannot be renamed. \
+                 Renaming it would desync hardcoded engine emitters from their listeners."
+            )));
+        }
+        if RESERVED_EVENT_TYPES.contains(&new) {
+            return Err(AppError::Validation(format!(
+                "`{new}` is a reserved infrastructure event type and cannot be used as a rename target."
+            )));
+        }
+
+        // Collision: new must not already exist anywhere
+        if event_type_in_use(pool, new)? {
+            return Err(AppError::Validation(format!(
+                "event_type `{new}` is already in use; renaming would merge two streams. \
+                 Delete or rename the existing `{new}` references first."
+            )));
+        }
+
+        // ── Atomic rewrite ─────────────────────────────────────────────
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
+        let now = chrono::Utc::now().to_rfc3339();
+
+        // 1. persona_events.event_type
+        let events_updated = tx.execute(
+            "UPDATE persona_events SET event_type = ?1 WHERE event_type = ?2",
+            params![new, old],
+        )? as u32;
+
+        // 2. persona_event_subscriptions.event_type
+        let subscriptions_updated = tx.execute(
+            "UPDATE persona_event_subscriptions
+             SET event_type = ?1, updated_at = ?2
+             WHERE event_type = ?3",
+            params![new, now, old],
+        )? as u32;
+
+        // 3a. persona_triggers.config — publisher event_type key
+        let trigger_publishers_updated = tx.execute(
+            "UPDATE persona_triggers
+             SET config = json_set(config, '$.event_type', ?1),
+                 updated_at = ?2
+             WHERE json_extract(config, '$.event_type') = ?3",
+            params![new, now, old],
+        )? as u32;
+
+        // 3b. persona_triggers.config — listener listen_event_type key
+        let listeners_updated = tx.execute(
+            "UPDATE persona_triggers
+             SET config = json_set(config, '$.listen_event_type', ?1),
+                 updated_at = ?2
+             WHERE json_extract(config, '$.listen_event_type') = ?3",
+            params![new, now, old],
+        )? as u32;
+
+        // 3c. persona_triggers.config — S3 _handler_key advisory
+        let handler_keys_updated = tx.execute(
+            "UPDATE persona_triggers
+             SET config = json_set(config, '$._handler_key', ?1),
+                 updated_at = ?2
+             WHERE json_extract(config, '$._handler_key') = ?3",
+            params![new, now, old],
+        )? as u32;
+
+        // 4. personas.structured_prompt.eventHandlers — key rename
+        //
+        //    Dynamic JSONPath like `'$.eventHandlers.' || ?1` breaks on keys
+        //    containing dots (SQLite treats them as nested path separators,
+        //    so `eventHandlers.stock.alert.v2` is read as
+        //    `eventHandlers -> stock -> alert -> v2` — wrong). Pull every
+        //    persona with a non-null handlers map and filter in Rust. The
+        //    personas table is small, so this is fine.
+        let persona_handlers_updated: u32 = {
+            let candidates: Vec<(String, String)> = {
+                let mut stmt = tx.prepare(
+                    "SELECT id, structured_prompt FROM personas
+                     WHERE structured_prompt IS NOT NULL
+                       AND json_extract(structured_prompt, '$.eventHandlers') IS NOT NULL",
+                )?;
+                let rows = stmt.query_map([], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                    ))
+                })?;
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)?
+            };
+
+            let mut count = 0u32;
+            for (persona_id, sp_str) in candidates {
+                // Parse, move the key in memory, write back. Doing this in
+                // JSON-land rather than via nested json_set/json_remove is
+                // safer — it preserves every other field and works with any
+                // nesting order.
+                let mut sp_val: serde_json::Value = match serde_json::from_str(&sp_str) {
+                    Ok(v) => v,
+                    Err(_) => continue, // corrupted — skip (matches existing handler path behavior)
+                };
+                let Some(sp_obj) = sp_val.as_object_mut() else {
+                    continue;
+                };
+                let Some(handlers_val) = sp_obj.get_mut("eventHandlers") else {
+                    continue;
+                };
+                let Some(handlers) = handlers_val.as_object_mut() else {
+                    continue;
+                };
+                // Defensive: skip if new already collides inside this persona.
+                // The pre-tx collision check already covered the cross-persona
+                // case, but a single persona could in theory have both keys.
+                if handlers.contains_key(new) {
+                    continue;
+                }
+                let Some(handler_text) = handlers.remove(old) else {
+                    continue;
+                };
+                handlers.insert(new.to_string(), handler_text);
+
+                let new_sp = serde_json::to_string(&sp_val).map_err(|e| {
+                    AppError::Internal(format!(
+                        "Failed to serialize updated structured_prompt: {e}"
+                    ))
+                })?;
+                let rows = tx.execute(
+                    "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
+                    params![new_sp, now, persona_id],
+                )?;
+                count += rows as u32;
+            }
+            count
+        };
+
+        tx.commit().map_err(AppError::Database)?;
+
+        Ok(RenameEventTypeResult {
+            events_updated,
+            subscriptions_updated,
+            trigger_publishers_updated,
+            trigger_listeners_updated: listeners_updated,
+            handler_keys_updated,
+            persona_handlers_updated,
+        })
+    })
+}
+
 /// Backfill: walk every schedule/polling/webhook trigger in the DB and create
 /// a matching event_listener auto-listener for any that don't already have
 /// one. Idempotent. Returns (triggers_scanned, listeners_created).
@@ -2030,5 +2348,273 @@ mod tests {
         let (scanned, created) = backfill_auto_listeners(&pool).unwrap();
         assert_eq!(scanned, 1);
         assert_eq!(created, 0);
+    }
+
+    // ========================================================================
+    // rename_event_type
+    // ========================================================================
+
+    use crate::db::models::CreatePersonaEventInput;
+    use crate::db::repos::communication::events as event_repo;
+
+    /// Helper: insert a persona_event_subscriptions row directly via SQL so we
+    /// can verify the rename rewrites it, without going through the full
+    /// create_subscription_with_trigger dual-write.
+    fn insert_subscription(pool: &DbPool, persona_id: &str, event_type: &str) -> String {
+        let conn = pool.get().unwrap();
+        let sub_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO persona_event_subscriptions
+             (id, persona_id, event_type, source_filter, enabled, use_case_id, created_at, updated_at)
+             VALUES (?1, ?2, ?3, NULL, 1, NULL, ?4, ?4)",
+            params![sub_id, persona_id, event_type, now],
+        )
+        .unwrap();
+        sub_id
+    }
+
+    /// Helper: seed the persona with an eventHandlers entry via direct SQL.
+    fn seed_handler(pool: &DbPool, persona_id: &str, event_type: &str, text: &str) {
+        let sp = serde_json::json!({
+            "identity": "Test identity.",
+            "instructions": "Do things.",
+            "eventHandlers": { event_type: text }
+        })
+        .to_string();
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "UPDATE personas SET structured_prompt = ?1 WHERE id = ?2",
+            params![sp, persona_id],
+        )
+        .unwrap();
+    }
+
+    /// Helper: read structured_prompt + return eventHandlers object.
+    fn read_handlers(pool: &DbPool, persona_id: &str) -> serde_json::Value {
+        let conn = pool.get().unwrap();
+        let sp: Option<String> = conn
+            .query_row(
+                "SELECT structured_prompt FROM personas WHERE id = ?1",
+                params![persona_id],
+                |row| row.get::<_, Option<String>>(0),
+            )
+            .unwrap();
+        sp.as_deref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .and_then(|v| v.get("eventHandlers").cloned())
+            .unwrap_or(serde_json::Value::Null)
+    }
+
+    #[test]
+    fn test_rename_happy_path_updates_every_store() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        // 1. Historical persona_event (source_type: 'trigger' + source_id required
+        //    to satisfy validators). The exact values don't matter; only the
+        //    event_type column is what we're renaming.
+        event_repo::publish(
+            &pool,
+            CreatePersonaEventInput {
+                event_type: "stock.alert.old_name".into(),
+                source_type: "trigger".into(),
+                source_id: Some("fake-trigger-id".into()),
+                target_persona_id: None,
+                project_id: None,
+                payload: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // 2. Legacy subscription row
+        insert_subscription(&pool, &persona.id, "stock.alert.old_name");
+
+        // 3. Trigger publisher: create a schedule trigger with custom event_type.
+        //    This ALSO creates a Fix 4a auto-listener with the matching
+        //    listen_event_type, which is a second trigger row we expect the
+        //    rename to rewrite.
+        create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"*/15 * * * *","event_type":"stock.alert.old_name"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // 4. S3 link_persona_to_event creates another event_listener with the
+        //    _handler_key advisory set to the event_type.
+        link_persona_to_event(&pool, &persona.id, "stock.alert.old_name", Some("Handle old name.")).unwrap();
+
+        // 5. Persona handler entry — already seeded by the S3 link above.
+        //    Confirm it's there before rename.
+        let before = read_handlers(&pool, &persona.id);
+        assert!(before.get("stock.alert.old_name").is_some());
+
+        // ── Rename ──
+        let result = rename_event_type(&pool, "stock.alert.old_name", "stock.alert.new_name").unwrap();
+
+        assert_eq!(result.events_updated, 1, "historical events should be rewritten");
+        assert_eq!(result.subscriptions_updated, 1, "legacy subs should be rewritten");
+        assert_eq!(
+            result.trigger_publishers_updated, 1,
+            "the schedule trigger's config.event_type should be rewritten",
+        );
+        assert!(
+            result.trigger_listeners_updated >= 2,
+            "both the Fix 4a auto-listener AND the S3 link_persona event_listener should be rewritten",
+        );
+        assert_eq!(
+            result.handler_keys_updated, 1,
+            "the S3 _handler_key advisory should be rewritten",
+        );
+        assert_eq!(result.persona_handlers_updated, 1);
+
+        // ── Verify: nothing references the old name anymore ──
+        assert!(!event_type_in_use(&pool, "stock.alert.old_name").unwrap());
+        assert!(event_type_in_use(&pool, "stock.alert.new_name").unwrap());
+
+        // structured_prompt eventHandlers key was moved
+        let after = read_handlers(&pool, &persona.id);
+        assert!(after.get("stock.alert.old_name").is_none());
+        assert_eq!(
+            after.get("stock.alert.new_name").and_then(|v| v.as_str()).unwrap(),
+            "Handle old name.",
+            "handler text is preserved verbatim, only the key name changes",
+        );
+    }
+
+    #[test]
+    fn test_rename_rejects_empty_names() {
+        let pool = init_test_db().unwrap();
+        assert!(rename_event_type(&pool, "", "new").is_err());
+        assert!(rename_event_type(&pool, "old", "").is_err());
+        assert!(rename_event_type(&pool, "   ", "new").is_err());
+    }
+
+    #[test]
+    fn test_rename_rejects_same_name() {
+        let pool = init_test_db().unwrap();
+        let err = rename_event_type(&pool, "same", "same").unwrap_err();
+        assert!(format!("{err:?}").contains("identical"));
+    }
+
+    #[test]
+    fn test_rename_rejects_reserved_source() {
+        let pool = init_test_db().unwrap();
+        for reserved in RESERVED_EVENT_TYPES {
+            let err = rename_event_type(&pool, reserved, "my_custom_name").unwrap_err();
+            assert!(
+                format!("{err:?}").contains("reserved"),
+                "expected reserved-name error for {reserved}, got {err:?}",
+            );
+        }
+    }
+
+    #[test]
+    fn test_rename_rejects_reserved_target() {
+        let pool = init_test_db().unwrap();
+        let err = rename_event_type(&pool, "some_custom_event", "trigger_fired").unwrap_err();
+        assert!(format!("{err:?}").contains("reserved"));
+    }
+
+    #[test]
+    fn test_rename_rejects_invalid_format() {
+        let pool = init_test_db().unwrap();
+        // Starts with a digit? That's actually fine per the validator (alnum).
+        // Starts with a dot? Not allowed.
+        let err = rename_event_type(&pool, "old_name", ".leading.dot").unwrap_err();
+        assert!(format!("{err:?}").contains("invalid characters"));
+        // Contains a space? Not allowed.
+        let err2 = rename_event_type(&pool, "old_name", "has space").unwrap_err();
+        assert!(format!("{err2:?}").contains("invalid characters"));
+    }
+
+    #[test]
+    fn test_rename_rejects_collision() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        // Seed an existing stream under the target name.
+        insert_subscription(&pool, &persona.id, "already.exists");
+
+        let err = rename_event_type(&pool, "old_name", "already.exists").unwrap_err();
+        assert!(format!("{err:?}").contains("already in use"));
+    }
+
+    #[test]
+    fn test_rename_no_op_when_old_has_no_references() {
+        // Renaming an event type that isn't referenced anywhere should succeed
+        // with zero counts across the board (it's idempotent — nothing breaks).
+        let pool = init_test_db().unwrap();
+        let result = rename_event_type(&pool, "nonexistent.event", "also_nonexistent").unwrap();
+        assert_eq!(result.events_updated, 0);
+        assert_eq!(result.subscriptions_updated, 0);
+        assert_eq!(result.trigger_publishers_updated, 0);
+        assert_eq!(result.trigger_listeners_updated, 0);
+        assert_eq!(result.handler_keys_updated, 0);
+        assert_eq!(result.persona_handlers_updated, 0);
+    }
+
+    #[test]
+    fn test_rename_preserves_other_handlers_and_other_events() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        // Seed a persona with TWO handler keys; only one should be renamed.
+        let sp = serde_json::json!({
+            "identity": "Multi-handler persona.",
+            "eventHandlers": {
+                "event.one": "handler one",
+                "event.two": "handler two"
+            }
+        })
+        .to_string();
+        {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE personas SET structured_prompt = ?1 WHERE id = ?2",
+                params![sp, persona.id],
+            )
+            .unwrap();
+        }
+
+        // Add subscriptions for both names
+        insert_subscription(&pool, &persona.id, "event.one");
+        insert_subscription(&pool, &persona.id, "event.two");
+
+        rename_event_type(&pool, "event.one", "event.renamed").unwrap();
+
+        let handlers = read_handlers(&pool, &persona.id);
+        assert!(handlers.get("event.one").is_none());
+        assert_eq!(
+            handlers.get("event.renamed").and_then(|v| v.as_str()).unwrap(),
+            "handler one",
+        );
+        // Untouched sibling
+        assert_eq!(
+            handlers.get("event.two").and_then(|v| v.as_str()).unwrap(),
+            "handler two",
+        );
+
+        // event.two subscription untouched
+        assert!(event_type_in_use(&pool, "event.two").unwrap());
+    }
+
+    #[test]
+    fn test_rename_event_type_in_use_returns_false_for_unknown() {
+        let pool = init_test_db().unwrap();
+        assert!(!event_type_in_use(&pool, "totally.unseen.event").unwrap());
+    }
+
+    // Placate the "unused import" lint for helpers used only by specific tests.
+    #[allow(dead_code)]
+    fn _seed_handler_keeper(pool: &DbPool, persona_id: &str) {
+        seed_handler(pool, persona_id, "x", "y");
     }
 }
