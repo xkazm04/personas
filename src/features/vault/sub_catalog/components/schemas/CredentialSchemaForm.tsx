@@ -133,6 +133,7 @@ export function CredentialSchemaForm({
         name: `${effectiveName} Credential`,
         service_type: serviceType,
         data: credData,
+        healthcheck_passed: health.result?.success === true,
       });
 
       await Promise.all([fetchCredentials(), fetchConnectorDefinitions()]);

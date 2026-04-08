@@ -126,11 +126,7 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
           trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setAgentTab('all') });
           trail.push({ label: 'Teams' });
         } else if (isCreatingPersona) {
-          trail.push({ label: sectionLabel, onClick: () => {
-            setSidebarSection('personas');
-            useSystemStore.getState().setIsCreatingPersona(false);
-          }});
-          trail.push({ label: 'New Agent' });
+          // No breadcrumb during agent creation — the matrix IS the creation surface
         } else if (selectedPersonaId && selectedPersona) {
           const personaName = selectedPersona.name || 'Agent';
           const editorLabel = TAB_LABELS[editorTab] ?? editorTab;

@@ -4,7 +4,6 @@ import {
   Download,
   PackageCheck,
   Check,
-  KeyRound,
 } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -35,9 +34,12 @@ export function ExportSection({
   onImport,
 }: ExportSectionProps) {
   const [importPassphrase, setImportPassphrase] = useState('');
+  const [showImportInput, setShowImportInput] = useState(false);
 
   const handleImport = () => {
     onImport(importPassphrase || undefined);
+    setImportPassphrase('');
+    setShowImportInput(false);
   };
 
   return (
@@ -72,46 +74,48 @@ export function ExportSection({
               : 'Export Workspace'}
         </button>
 
-        <button
-          onClick={handleImport}
-          disabled={importStatus === 'loading'}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
-            bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
-            transition-colors disabled:opacity-50"
-        >
-          {importStatus === 'loading' ? (
-            <LoadingSpinner />
-          ) : importStatus === 'success' ? (
-            <Check className="w-4 h-4" />
-          ) : (
-            <Upload className="w-4 h-4" />
-          )}
-          {importStatus === 'loading'
-            ? 'Importing...'
-            : importStatus === 'success'
-              ? 'Imported!'
-              : 'Import Workspace'}
-        </button>
-      </div>
-
-      {/* Import passphrase input */}
-      <div className="space-y-1.5">
-        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground/60">
-          <KeyRound className="w-3.5 h-3.5" />
-          Decrypt credentials on import (if encrypted)
-        </label>
-        <input
-          type="password"
-          placeholder="Enter passphrase to decrypt credentials"
-          value={importPassphrase}
-          onChange={(e) => setImportPassphrase(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-primary/10 bg-secondary/20 text-sm
-            text-foreground/90 placeholder:text-muted-foreground/40 outline-none
-            focus-visible:border-blue-500/30 w-full max-w-sm"
-        />
-        <p className="text-xs text-muted-foreground/50">
-          Leave empty if the export does not contain encrypted credentials.
-        </p>
+        {!showImportInput ? (
+          <button
+            onClick={() => setShowImportInput(true)}
+            disabled={importStatus === 'loading'}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
+              bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
+              transition-colors disabled:opacity-50"
+          >
+            {importStatus === 'success' ? <Check className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
+            {importStatus === 'success' ? 'Imported!' : 'Import Workspace'}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <input
+              type="password"
+              placeholder="Passphrase (optional)"
+              value={importPassphrase}
+              onChange={(e) => setImportPassphrase(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleImport()}
+              className="px-3 py-2 rounded-lg border border-primary/15 bg-secondary/20 text-sm
+                text-foreground/90 placeholder:text-muted-foreground/40 outline-none
+                focus-visible:border-blue-500/30 w-56"
+              autoFocus
+            />
+            <button
+              onClick={handleImport}
+              disabled={importStatus === 'loading'}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium
+                bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15
+                transition-colors disabled:opacity-50"
+            >
+              {importStatus === 'loading' ? <LoadingSpinner /> : <Upload className="w-4 h-4" />}
+              Import
+            </button>
+            <button
+              onClick={() => { setShowImportInput(false); setImportPassphrase(''); }}
+              className="text-xs text-muted-foreground/50 hover:text-muted-foreground/80 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Import result */}

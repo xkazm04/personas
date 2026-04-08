@@ -194,7 +194,7 @@ export function MatrixCommandCenter({
       return (<div className={WRAP}><TestRunningIndicator testOutputLines={testOutputLines} onCancelTest={undefined} /></div>);
     if (buildPhase === 'test_complete')
       return (<div className={WRAP}><TestResultsPanel passed={testPassed} outputLines={testOutputLines} error={testError} onApprove={onApproveTest} onReject={onRejectTest} toolResults={toolTestResults} summary={testSummary} /></div>);
-    if (buildPhase === 'promoted')
+    if (buildPhase === 'promoted' && !isSaved)
       return (<div className={WRAP}><PromotionSuccessIndicator onViewAgent={onViewAgent} /></div>);
     // Creation: Design question awaiting answer
     if (isCreation && designQuestion && onAnswerQuestion)
@@ -215,41 +215,26 @@ export function MatrixCommandCenter({
     if (!isCreation && buildCompleted) return (<div className={WRAP}><BuildCompletedIndicator />{onRefine && <SavedRefineInput onRefine={onRefine} />}</div>);
     // Creation: Post-generation
     if (isCreation && hasDesignResult) return (<div className={WRAP}><CreationPostGeneration completeness={completeness} onRefine={onRefine} onStartTest={onStartTest} onApplyEdits={onApplyEdits} onDiscardEdits={onDiscardEdits} onSaveVersion={onSaveVersion} /></div>);
-    // Saved: Show prompt sections + action buttons (production-ready view)
+    // Saved: Compact command hub — refine input + test button (matches template matrix)
     if (isSaved && hasDesignResult) return (
-      <div className="flex flex-col gap-3 w-full h-full">
-        {/* Prompt section chips */}
-        {sections.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {sections.map((section) => { const Icon = section.icon; return (
-              <button key={section.key} type="button" onClick={() => setOpenSection(section)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/10 bg-primary/5 hover:bg-primary/10 hover:border-primary/20 transition-colors cursor-pointer px-2 py-1">
-                <Icon className={`w-3 h-3 ${section.color} flex-shrink-0`} />
-                <span className="text-[13px] text-foreground/70 truncate">{section.label}</span>
-              </button>
-            ); })}
-          </div>
-        )}
-        {sections.length > 0 && <p className="text-sm text-muted-foreground/50 leading-relaxed line-clamp-2">{sections[0]!.content.slice(0, 100)}...</p>}
-        {/* Action buttons */}
-        <div className="flex gap-1.5 mt-auto">
-          {onStartTest && (
-            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
-              <Play className="w-3 h-3" />
-              Test
-            </button>
-          )}
-          {onSaveVersion && (
-            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
-              <Save className="w-3 h-3" />
-              Save
-            </button>
-          )}
-        </div>
+      <div className="flex flex-col gap-2.5 w-full h-full justify-center">
         {onRefine && (
           <SavedRefineInput onRefine={onRefine} />
         )}
-        {openSection && <PromptModal section={openSection} onClose={() => setOpenSection(null)} />}
+        <div className="flex gap-1.5">
+          {onStartTest && (
+            <button type="button" onClick={onStartTest} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 transition-colors">
+              <Play className="w-3.5 h-3.5" />
+              Test Agent
+            </button>
+          )}
+          {onSaveVersion && (
+            <button type="button" onClick={onSaveVersion} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/15 hover:bg-violet-500/20 transition-colors">
+              <Save className="w-3.5 h-3.5" />
+              Save Version
+            </button>
+          )}
+        </div>
       </div>
     );
     // Pre-build / Pre-generation

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   FolderKanban, Plus, Target, ChevronRight, GripVertical,
   Trash2, CheckCircle2, Circle, Clock, AlertCircle, X, Folder,
-  FolderOpen, Search, Pencil, MoreHorizontal,
+  FolderOpen, Search, Pencil, MoreHorizontal, Network,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -12,6 +12,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useContextScanBackground } from '../hooks/useContextScanBackground';
 import { ImplementationLog } from './ImplementationLog';
 import { GitHubRepoSelector } from './GitHubRepoSelector';
+import { CrossProjectMetadataModal } from './CrossProjectMetadataModal';
 
 // ---------------------------------------------------------------------------
 // Types – thin view-models mapped from store bindings
@@ -341,12 +342,12 @@ function ProjectModal({
 
                 {/* Description */}
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Description (optional)</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Purpose & Description</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Brief description of the project..."
-                    rows={2}
+                    placeholder="What does this project do? Used by the Codebases connector so agents know each project's purpose and capabilities."
+                    rows={3}
                     className="w-full px-3 py-2 text-sm bg-secondary/40 border border-primary/10 rounded-xl text-foreground placeholder:text-muted-foreground/50 focus-ring resize-none"
                   />
                 </div>
@@ -637,6 +638,7 @@ export default function ProjectManagerPage() {
   const storeActiveProjectId = useSystemStore((s) => s.activeProjectId);
   const [activeProjectId, setLocalActiveProject] = useState<string | null>(storeActiveProjectId);
   const [showModal, setShowModal] = useState(false);
+  const [showCrossProjectMap, setShowCrossProjectMap] = useState(false);
   const [editingProject, setEditingProject] = useState<EditProjectData | null>(null);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
@@ -721,15 +723,28 @@ export default function ProjectManagerPage() {
         title="Projects"
         subtitle="Manage local development projects and goals"
         actions={
-          <Button
-            variant="accent"
-            accentColor="amber"
-            size="sm"
-            icon={<Plus className="w-3.5 h-3.5" />}
-            onClick={() => { setEditingProject(null); setShowModal(true); }}
-          >
-            New Project
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="accent"
+              accentColor="violet"
+              size="sm"
+              icon={<Network className="w-3.5 h-3.5" />}
+              onClick={() => setShowCrossProjectMap(true)}
+              disabledReason={projects.length === 0 ? 'Create at least one project first' : undefined}
+              disabled={projects.length === 0}
+            >
+              Cross-Project Map
+            </Button>
+            <Button
+              variant="accent"
+              accentColor="amber"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => { setEditingProject(null); setShowModal(true); }}
+            >
+              New Project
+            </Button>
+          </div>
         }
       />
 
@@ -854,6 +869,11 @@ export default function ProjectManagerPage() {
         onUpdate={handleUpdateProject}
         onScanNow={startBackgroundScan}
         editProject={editingProject}
+      />
+
+      <CrossProjectMetadataModal
+        open={showCrossProjectMap}
+        onClose={() => setShowCrossProjectMap(false)}
       />
     </ContentBox>
   );

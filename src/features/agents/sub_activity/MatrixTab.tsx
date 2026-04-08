@@ -26,16 +26,25 @@ export function MatrixTab() {
   const [session, setSession] = useState<BuildSessionSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load build session data for this persona
+  // Load build session data for this persona.
+  // Use get_latest_build_session which includes promoted sessions — the original
+  // get_active_build_session filters them out with `phase NOT IN (..., 'promoted')`,
+  // which causes dimension data loss after promotion.
   useEffect(() => {
     if (!selectedPersona?.id) return;
     let cancelled = false;
     setIsLoading(true);
 
-    invokeWithTimeout<BuildSessionSummary | null>('get_active_build_session', { personaId: selectedPersona.id })
+    invokeWithTimeout<BuildSessionSummary | null>('get_latest_build_session', { personaId: selectedPersona.id })
       .then((s) => {
         if (cancelled) return;
         setSession(s ?? null);
+        // Hydrate buildCellData from session's resolvedCells so the matrix
+        // displays the original template data (tasks, connectors, etc.)
+        // instead of falling back to generic category extraction.
+        if (s?.resolvedCells && Object.keys(s.resolvedCells).length > 0) {
+          useAgentStore.setState({ buildCellData: s.resolvedCells });
+        }
       })
       .catch(() => setSession(null))
       .finally(() => { if (!cancelled) setIsLoading(false); });

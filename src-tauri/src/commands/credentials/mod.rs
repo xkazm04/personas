@@ -12,6 +12,7 @@ pub(crate) mod shared;
 pub mod db_schema;
 pub mod api_proxy;
 pub mod mcp_tools;
+pub mod mcp_gateways;
 #[cfg(feature = "desktop")]
 pub mod desktop;
 #[cfg(feature = "desktop")]
@@ -23,3 +24,4 @@ pub mod credential_recipes;
 pub mod nl_query;
 pub mod vector_kb;
 pub mod openapi_autopilot;
+pub mod external_api_keys;

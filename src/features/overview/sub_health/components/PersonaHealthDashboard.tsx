@@ -38,10 +38,17 @@ export default function PersonaHealthDashboard() {
   const [gradeFilter, setGradeFilter] = useState<FilterGrade>('all');
   const [healthView, setHealthView] = useState<HealthView>('heartbeats');
 
-  // Initial load
+  // Initial load — deferred to idle to avoid blocking the main thread
+  // during section navigation. The health computation is expensive (~400ms).
   useEffect(() => {
     if (healthSignals.length === 0 && !healthLoading) {
-      void refreshHealthDashboard();
+      const run = () => void refreshHealthDashboard();
+      if (typeof requestIdleCallback === 'function') {
+        const id = requestIdleCallback(run, { timeout: 2000 });
+        return () => cancelIdleCallback(id);
+      }
+      const t = setTimeout(run, 200);
+      return () => clearTimeout(t);
     }
   }, []);
 

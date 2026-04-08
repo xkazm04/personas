@@ -8,7 +8,7 @@ import type { KnowledgeGraphSummary } from '@/lib/bindings/KnowledgeGraphSummary
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { OverviewStatCard } from '@/features/overview/sub_observability/components/OverviewStatCard';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
@@ -31,6 +31,8 @@ export default function KnowledgeGraphDashboard() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [showAnnotateModal, setShowAnnotateModal] = useState(false);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const [showScopeDropdown, setShowScopeDropdown] = useState(false);
   const { failureDrilldownDate } = useOverviewFilterValues();
   const { setFailureDrilldownDate } = useOverviewFilterActions();
 
@@ -148,19 +150,54 @@ export default function KnowledgeGraphDashboard() {
             </div>
           )}
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <ThemedSelect value={selectedPersonaId ?? ''} onChange={(e) => setSelectedPersonaId(e.target.value || null)} className="py-1.5">
-              <option value="">All Personas (Global)</option>
-              {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </ThemedSelect>
-            <ThemedSelect value={selectedType ?? ''} onChange={(e) => { setSelectedType(e.target.value || null); if (failureDrilldownDate && e.target.value !== 'failure_pattern') setFailureDrilldownDate(null); }} className="py-1.5">
-              <option value="">All Types</option>
-              {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}
-            </ThemedSelect>
-            <ThemedSelect value={selectedScope ?? ''} onChange={(e) => setSelectedScope(e.target.value || null)} className="py-1.5">
-              <option value="">All Scopes</option>
-              {Object.entries(SCOPE_TYPES).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}
-            </ThemedSelect>
+          <div className="flex items-center gap-4 flex-wrap">
+            <PersonaColumnFilter value={selectedPersonaId ?? ''} onChange={(v) => setSelectedPersonaId(v || null)} personas={personas} />
+
+            <button
+              type="button"
+              onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+              className={`relative flex items-center gap-1.5 text-sm font-medium transition-colors ${selectedType ? 'text-primary' : 'text-foreground/80 hover:text-foreground'}`}
+            >
+              {selectedType ? (KNOWLEDGE_TYPES[selectedType as keyof typeof KNOWLEDGE_TYPES]?.label ?? selectedType) : 'Type'}
+              {selectedType && (
+                <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedType(null); setShowTypeDropdown(false); if (failureDrilldownDate) setFailureDrilldownDate(null); }} className="ml-0.5 p-0.5 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground/70">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </button>
+            {showTypeDropdown && (
+              <div className="absolute mt-8 z-50 min-w-[160px] rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden">
+                <button onClick={() => { setSelectedType(null); setShowTypeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}>All Types</button>
+                {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
+                  <button key={key} onClick={() => { setSelectedType(key); setShowTypeDropdown(false); if (failureDrilldownDate && key !== 'failure_pattern') setFailureDrilldownDate(null); }}
+                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${selectedType === key ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}
+                  >{val.label}</button>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowScopeDropdown(!showScopeDropdown)}
+              className={`relative flex items-center gap-1.5 text-sm font-medium transition-colors ${selectedScope ? 'text-primary' : 'text-foreground/80 hover:text-foreground'}`}
+            >
+              {selectedScope ? (SCOPE_TYPES[selectedScope as keyof typeof SCOPE_TYPES]?.label ?? selectedScope) : 'Scope'}
+              {selectedScope && (
+                <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedScope(null); setShowScopeDropdown(false); }} className="ml-0.5 p-0.5 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground/70">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </button>
+            {showScopeDropdown && (
+              <div className="absolute mt-8 z-50 min-w-[140px] rounded-xl border border-primary/15 bg-background shadow-xl overflow-hidden">
+                <button onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}>All Scopes</button>
+                {Object.entries(SCOPE_TYPES).map(([key, val]) => (
+                  <button key={key} onClick={() => { setSelectedScope(key); setShowScopeDropdown(false); }}
+                    className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${selectedScope === key ? 'bg-primary/10 text-foreground' : 'text-muted-foreground/70 hover:bg-secondary/30'}`}
+                  >{val.label}</button>
+                ))}
+              </div>
+            )}
           </div>
 
           {failureDrilldownDate && (
@@ -210,7 +247,7 @@ export default function KnowledgeGraphDashboard() {
             </div>
           ) : loading ? (
             null
-          ) : allEntries.length === 0 ? (
+          ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
             <div className="flex-1 flex items-center justify-center p-6">
               <EmptyState
                 icon={Brain}
@@ -221,6 +258,10 @@ export default function KnowledgeGraphDashboard() {
                 action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
                 secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
               />
+            </div>
+          ) : allEntries.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-muted-foreground/40">No patterns match current filters</p>
             </div>
           ) : (
             <div ref={entryListRef} className="overflow-y-auto max-h-[600px] rounded-xl">
@@ -235,7 +276,7 @@ export default function KnowledgeGraphDashboard() {
                       style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
                       className="pb-2"
                     >
-                      <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} personaIcon={personaMap.get(entry.persona_id)?.icon ?? null} personaColor={personaMap.get(entry.persona_id)?.color ?? null} onMutated={() => { void fetchData(); }} />
+                      <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} onMutated={() => { void fetchData(); }} />
                     </div>
                   );
                 })}
@@ -260,7 +301,7 @@ export default function KnowledgeGraphDashboard() {
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
                         className="pb-2"
                       >
-                        <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} personaIcon={personaMap.get(entry.persona_id)?.icon ?? null} personaColor={personaMap.get(entry.persona_id)?.color ?? null} onMutated={() => { void fetchData(); }} />
+                        <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} onMutated={() => { void fetchData(); }} />
                       </div>
                     );
                   })}

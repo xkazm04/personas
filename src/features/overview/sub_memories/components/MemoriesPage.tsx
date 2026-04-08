@@ -5,8 +5,8 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { MemoryRow } from './MemoryCard';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryConflictReview } from './MemoryConflictReview';
@@ -14,7 +14,7 @@ import ReviewResultsModal from './ReviewResultsModal';
 import MemoryDetailModal from './MemoryDetailModal';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
-import type { MemoryReviewResult, MemoryStats } from '@/api/overview/memories';
+import type { MemoryReviewResult } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/types/types';
 
 const CATEGORY_HEX_COLORS: Record<string, string> = {
@@ -25,57 +25,6 @@ const CATEGORY_HEX_COLORS: Record<string, string> = {
   learned: '#06b6d4',
   constraint: '#ef4444',
 };
-
-function MemoryStatsSummaryBar({ stats }: { stats: MemoryStats }) {
-  const avgPct = ((stats.avg_importance / 5) * 100);
-  const total = stats.total || 1;
-
-  return (
-    <div className="flex items-center gap-4 px-4 md:px-6 py-1.5 border-b border-primary/10 bg-secondary/5 flex-shrink-0 h-10">
-      <span className="text-xs font-mono text-foreground/60 flex-shrink-0 tabular-nums">
-        {stats.total} total
-      </span>
-
-      {/* Avg importance ring */}
-      <div className="flex items-center gap-1.5 flex-shrink-0" title={`Avg importance: ${stats.avg_importance.toFixed(1)}/5`}>
-        <svg width="18" height="18" viewBox="0 0 18 18" className="flex-shrink-0">
-          <circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/15" />
-          <circle
-            cx="9" cy="9" r="7" fill="none"
-            stroke={avgPct <= 40 ? '#34d399' : avgPct <= 60 ? '#fbbf24' : '#fb7185'}
-            strokeWidth="2"
-            strokeDasharray={`${(avgPct / 100) * 44} 44`}
-            strokeLinecap="round"
-            transform="rotate(-90 9 9)"
-            style={{ transition: 'stroke-dasharray 300ms' }}
-          />
-        </svg>
-        <span className="text-xs text-foreground/50 tabular-nums">{stats.avg_importance.toFixed(1)}</span>
-      </div>
-
-      {/* Category segmented bar */}
-      {stats.category_counts.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <div className="flex h-2 rounded-full overflow-hidden flex-1 bg-muted-foreground/10">
-            {stats.category_counts.map(([cat, count]) => (
-              <div
-                key={cat}
-                title={`${MEMORY_CATEGORY_COLORS[cat]?.label ?? cat}: ${count}`}
-                className="h-full"
-                style={{
-                  width: `${(count / total) * 100}%`,
-                  backgroundColor: CATEGORY_HEX_COLORS[cat] ?? '#6b7280',
-                  transition: 'width 300ms',
-                  minWidth: count > 0 ? '2px' : 0,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -167,13 +116,13 @@ export default function MemoriesPage() {
 
   const closeReviewModal = useCallback(() => { setReviewResult(null); setReviewError(null); }, []);
 
-  const categoryFilterOptions = useMemo(() => [
-    { value: '', label: 'All categories' },
-    ...ALL_MEMORY_CATEGORIES.map((cat) => ({
+  const categoryFilterOptions = useMemo(() => {
+    const categoryItems = ALL_MEMORY_CATEGORIES.map((cat) => ({
       value: cat,
       label: MEMORY_CATEGORY_COLORS[cat]?.label ?? cat,
-    })),
-  ], []);
+    })).sort((a, b) => a.label.localeCompare(b.label));
+    return [{ value: '', label: 'All categories' }, ...categoryItems];
+  }, []);
 
   return (
     <ContentBox>
@@ -235,11 +184,8 @@ export default function MemoriesPage() {
         </ContentBody>
       ) : (
         <ContentBody flex>
-          {/* Search + count bar */}
-          <div className="flex items-center gap-3 px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
-            <span className="text-sm font-mono text-foreground/60 flex-shrink-0">
-              Showing {memories.length} of {memoriesTotal}
-            </span>
+          {/* Consolidated search + stats row */}
+          <div className="flex items-center gap-3 px-4 md:px-6 py-1.5 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40" />
               <input
@@ -254,6 +200,28 @@ export default function MemoriesPage() {
                 </button>
               )}
             </div>
+            {memoryStats && memoryStats.total > 0 && (
+              <>
+                <span className="text-xs font-mono text-foreground/60 flex-shrink-0 tabular-nums">{memoryStats.total} total</span>
+                <div className="flex items-center gap-1.5 flex-shrink-0" title={`Avg importance: ${memoryStats.avg_importance.toFixed(1)}/5`}>
+                  <svg width="18" height="18" viewBox="0 0 18 18" className="flex-shrink-0">
+                    <circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/15" />
+                    <circle cx="9" cy="9" r="7" fill="none" stroke={(() => { const p = (memoryStats.avg_importance / 5) * 100; return p <= 40 ? '#34d399' : p <= 60 ? '#fbbf24' : '#fb7185'; })()}
+                      strokeWidth="2" strokeDasharray={`${((memoryStats.avg_importance / 5) * 100 / 100) * 44} 44`} strokeLinecap="round" transform="rotate(-90 9 9)" style={{ transition: 'stroke-dasharray 300ms' }} />
+                  </svg>
+                  <span className="text-xs text-foreground/50 tabular-nums">{memoryStats.avg_importance.toFixed(1)}</span>
+                </div>
+                {memoryStats.category_counts.length > 0 && (
+                  <div className="flex h-2 rounded-full overflow-hidden flex-1 bg-muted-foreground/10">
+                    {memoryStats.category_counts.map(([cat, count]) => (
+                      <div key={cat} title={`${MEMORY_CATEGORY_COLORS[cat]?.label ?? cat}: ${count}`} className="h-full"
+                        style={{ width: `${(count / (memoryStats.total || 1)) * 100}%`, backgroundColor: CATEGORY_HEX_COLORS[cat] ?? '#6b7280', transition: 'width 300ms', minWidth: count > 0 ? '2px' : 0 }} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+            <span className="text-sm font-mono text-foreground/60 flex-shrink-0">{memories.length}/{memoriesTotal}</span>
             {hasFilters && (
               <button onClick={clearFilters} className="flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-secondary/40 text-foreground/70 border border-primary/10 hover:bg-secondary/60 transition-colors">
                 <X className="w-3 h-3" /> Clear
@@ -261,18 +229,14 @@ export default function MemoriesPage() {
             )}
           </div>
 
-          {memoryStats && memoryStats.total > 0 && <MemoryStatsSummaryBar stats={memoryStats} />}
-
-          {memories.length === 0 ? (
+          {memories.length === 0 && !hasFilters ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 text-foreground/60">
               <div className="w-16 h-16 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
                 <Brain className="w-8 h-8 text-violet-400/40" />
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-foreground/80">No memories yet</p>
-                <p className="text-sm text-foreground/60 mt-1 max-w-xs">
-                  {hasFilters ? 'No memories match your filters. Try adjusting your search.' : 'When agents run, they can store valuable notes and learnings here.'}
-                </p>
+                <p className="text-sm text-foreground/60 mt-1 max-w-xs">When agents run, they can store valuable notes and learnings here.</p>
               </div>
             </div>
           ) : (
@@ -288,14 +252,12 @@ export default function MemoriesPage() {
                 </div>
                 <div className="flex items-center px-4 py-1.5 typo-label text-foreground/80">Title</div>
                 <div className="px-2 py-1.5 flex items-center">
-                  <ThemedSelect
-                    filterable
-                    options={categoryFilterOptions}
+                  <ColumnDropdownFilter
+                    label="Type"
                     value={selectedCategory ?? ''}
-                    onValueChange={(v) => setSelectedCategory(v || null)}
-                    placeholder="Category"
-                    wrapperClassName="w-full"
-                    className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                    options={categoryFilterOptions}
+                    onChange={(v) => setSelectedCategory(v || null)}
+                    allValue=""
                   />
                 </div>
                 <div className="flex items-center px-4 py-1.5 typo-label text-foreground/80">Priority</div>
@@ -303,20 +265,26 @@ export default function MemoriesPage() {
                 <div className="px-2 py-1.5" />
               </div>
 
-              <div ref={memoryListRef} className="flex-1 overflow-y-auto focus:outline-none" tabIndex={0} role="grid" aria-label="Memory list" onKeyDown={handleListKeyDown}>
-                <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                  {virtualizer.getVirtualItems().map((virtualRow) => {
-                    const memory = memories[virtualRow.index]!;
-                    const persona = personaMap.get(memory.persona_id);
-                    const isFocused = virtualRow.index === focusedIndex;
-                    return (
-                      <div key={memory.id} data-index={virtualRow.index} role="row" aria-selected={isFocused} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }} className={isFocused ? 'ring-1 ring-primary/40 ring-inset z-[1]' : ''}>
-                        <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} personaColor={persona?.color || '#6B7280'} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
-                      </div>
-                    );
-                  })}
+              {memories.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-muted-foreground/40">No memories match current filters</p>
                 </div>
-              </div>
+              ) : (
+                <div ref={memoryListRef} className="flex-1 overflow-y-auto focus:outline-none" tabIndex={0} role="grid" aria-label="Memory list" onKeyDown={handleListKeyDown}>
+                  <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+                    {virtualizer.getVirtualItems().map((virtualRow) => {
+                      const memory = memories[virtualRow.index]!;
+                      const persona = personaMap.get(memory.persona_id);
+                      const isFocused = virtualRow.index === focusedIndex;
+                      return (
+                        <div key={memory.id} data-index={virtualRow.index} role="row" aria-selected={isFocused} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }} className={isFocused ? 'ring-1 ring-primary/40 ring-inset z-[1]' : ''}>
+                          <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} index={virtualRow.index} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </ContentBody>

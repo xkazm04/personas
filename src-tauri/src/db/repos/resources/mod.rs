@@ -24,3 +24,5 @@ pub mod deployment_history;
 pub mod cloud_webhook_watermarks;
 pub mod skills;
 pub mod obsidian_brain;
+pub mod external_api_keys;
+pub mod mcp_gateways;

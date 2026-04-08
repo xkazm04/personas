@@ -1,0 +1,64 @@
+{
+  "id": "builtin-arcade",
+  "name": "arcade",
+  "label": "Arcade",
+  "color": "#F97316",
+  "icon_url": "/icons/connectors/arcade.svg",
+  "category": "integration",
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "Arcade API key",
+      "type": "password",
+      "required": true,
+      "placeholder": "arc_...",
+      "helpText": "From your Arcade dashboard -> Settings -> API keys",
+      "sensitive": true
+    },
+    {
+      "key": "gateway_url",
+      "label": "Gateway URL",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://api.arcade.dev/v1/mcp",
+      "helpText": "Override the default Arcade MCP gateway URL. Leave blank unless you use a self-hosted Arcade instance.",
+      "sensitive": false
+    },
+    {
+      "key": "organization",
+      "label": "Organization",
+      "type": "text",
+      "required": false,
+      "placeholder": "acme",
+      "helpText": "Optional Arcade organization slug.",
+      "sensitive": false
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.arcade.dev/v1/health",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates Arcade API key via the public health endpoint. Note: the Arcade health endpoint may evolve -- verify with https://docs.arcade.dev/ before relying on this connector for production personas."
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Arcade hosted MCP gateway providing thousands of enterprise-ready tools with managed OAuth and just-in-time authorization.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://docs.arcade.dev/",
+    "setup_guide": "1. Sign up at arcade.dev and create an organization.\n2. Go to Settings -> API keys and generate a new key.\n3. Paste the key here. The default gateway URL (https://api.arcade.dev/v1/mcp) is correct for hosted Arcade.\n4. Open the Arcade dashboard and configure which tools your organization exposes.\n5. Attach this credential to a persona -- tool discovery will return every tool your Arcade org exposes.\n\nNote: Arcade uses just-in-time OAuth for per-tool authorization. The underlying support in personas is scaffolded but not fully wired yet -- tools requiring fresh OAuth will currently fail until JIT auth runner integration ships. Tools that have already been authorized out-of-band work today.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {
+        "id": "api_key",
+        "label": "API Key",
+        "type": "credential",
+        "is_default": true
+      }
+    ]
+  }
+}

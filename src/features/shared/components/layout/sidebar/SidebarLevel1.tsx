@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
 import { BadgeSlot, type BadgeDefinition } from './BadgeSlot';
+import { ActivityDots, type ActivityDot } from './ActivityDots';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
@@ -138,7 +139,7 @@ export default function SidebarLevel1({
           priority: 4,
           active: n8nTransformActive || templateAdoptActive || rebuildActive || templateTestActive,
           label: [
-            n8nTransformActive && 'Transform',
+            n8nTransformActive && 'Build',
             templateAdoptActive && 'Adoption',
             rebuildActive && 'Rebuild',
             templateTestActive && 'Template test',
@@ -185,6 +186,18 @@ export default function SidebarLevel1({
     rebuildActive, templateTestActive, contextScanActive, contextScanComplete,
     setContextScanComplete, creativeSessionRunning,
   ]);
+
+  // Activity dots for the Agents (personas) section — shown center-right,
+  // one dot per active process, all visible simultaneously.
+  const agentActivityDots = useMemo((): ActivityDot[] => {
+    const dots: ActivityDot[] = [];
+    if (isExecuting) dots.push({ id: 'exec', color: 'bg-orange-500', pingColor: 'bg-orange-500/40', label: 'Execution in progress' });
+    if (isLabRunning) dots.push({ id: 'lab', color: 'bg-cyan-500', pingColor: 'bg-cyan-500/40', label: 'Lab running' });
+    if (isBuildingOrTesting) dots.push({ id: 'build', color: 'bg-violet-500', pingColor: 'bg-violet-500/40', label: buildPhase === 'testing' ? 'Testing agent' : 'Building agent' });
+    if (connectorTestActive) dots.push({ id: 'conn', color: 'bg-teal-500', pingColor: 'bg-teal-500/40', label: 'Connector test active' });
+    if (feedbackImprovementComplete && !isLabRunning && !isExecuting) dots.push({ id: 'feedback', color: 'bg-emerald-500', label: 'Feedback improvement complete' });
+    return dots;
+  }, [isExecuting, isLabRunning, isBuildingOrTesting, connectorTestActive, feedbackImprovementComplete, buildPhase]);
 
   return (
     <>
@@ -259,6 +272,9 @@ export default function SidebarLevel1({
               )}
               {badgesBySection[section.id] != null && (
                 <BadgeSlot badges={badgesBySection[section.id]!} />
+              )}
+              {section.id === 'personas' && agentActivityDots.length > 0 && (
+                <ActivityDots dots={agentActivityDots} />
               )}
             </button>
           );

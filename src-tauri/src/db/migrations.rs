@@ -282,6 +282,28 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_persona_skills_skill ON persona_skills(skill_id);"
     )?;
 
+    // -- A2A Gateway: external API keys for management API auth ---------------
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS external_api_keys (
+            id            TEXT PRIMARY KEY,
+            name          TEXT NOT NULL,
+            key_hash      TEXT NOT NULL UNIQUE,
+            key_prefix    TEXT NOT NULL,
+            scopes        TEXT NOT NULL DEFAULT '[]',
+            enabled       INTEGER NOT NULL DEFAULT 1,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            last_used_at  TEXT,
+            revoked_at    TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_external_api_keys_hash ON external_api_keys(key_hash);
+        CREATE INDEX IF NOT EXISTS idx_external_api_keys_prefix ON external_api_keys(key_prefix);"
+    )?;
+
+    // -- A2A Gateway: gateway_exposure column on personas (default local_only) -
+    let _ = conn.execute_batch(
+        "ALTER TABLE personas ADD COLUMN gateway_exposure TEXT NOT NULL DEFAULT 'local_only';"
+    ); // ignore "duplicate column" error on re-run
+
     tracing::info!("Database migrations complete");
     Ok(())
 }
@@ -3677,6 +3699,46 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         );
         CREATE INDEX IF NOT EXISTS idx_obsidian_sync_log_created ON obsidian_sync_log(created_at DESC);"
     )?;
+
+    // -- MCP gateway membership ------------------------------------------------
+    // Bundles multiple MCP-speaking credentials under one "gateway" credential so
+    // that attaching the gateway to a persona inherits every member's tools. Added
+    // 2026-04-08 as part of the LangSmith/Arcade MCP gateway pattern (finding #1
+    // from /research run on the same date, see .planning/handoffs/2026-04-08-
+    // mcp-gateway-arcade.md for the full phase plan).
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS mcp_gateway_members (
+            id                      TEXT PRIMARY KEY,
+            gateway_credential_id   TEXT NOT NULL,
+            member_credential_id    TEXT NOT NULL,
+            display_name            TEXT NOT NULL,
+            enabled                 INTEGER NOT NULL DEFAULT 1,
+            sort_order              INTEGER NOT NULL DEFAULT 0,
+            created_at              TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (gateway_credential_id) REFERENCES credentials(id) ON DELETE CASCADE,
+            FOREIGN KEY (member_credential_id) REFERENCES credentials(id) ON DELETE CASCADE,
+            UNIQUE (gateway_credential_id, member_credential_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_mcp_gateway_members_gw ON mcp_gateway_members(gateway_credential_id);
+        CREATE INDEX IF NOT EXISTS idx_mcp_gateway_members_member ON mcp_gateway_members(member_credential_id);"
+    )?;
+
+    // -- JIT OAuth scaffolding on executions -----------------------------------
+    // Scaffolding only -- the runner pause/resume integration is deferred until
+    // an integration test harness exists. See `.planning/handoffs/2026-04-08-
+    // mcp-gateway-arcade.md` Phase B for the full wiring plan. These columns let
+    // us persist a pending-auth URL per execution so the frontend can surface
+    // it without needing an in-memory-only registry (which loses state on reload).
+    // The AwaitingAuth execution STATE is intentionally NOT added to the
+    // ExecutionState lifecycle macro yet -- that's a cross-cutting change that
+    // should land with the runner integration, not before it.
+    for stmt in &[
+        "ALTER TABLE executions ADD COLUMN pending_auth_url TEXT;",
+        "ALTER TABLE executions ADD COLUMN pending_auth_started_at TEXT;",
+        "ALTER TABLE executions ADD COLUMN pending_auth_credential_id TEXT;",
+    ] {
+        let _ = conn.execute_batch(stmt); // ignore duplicate column errors on re-run
+    }
 
     Ok(())
 }

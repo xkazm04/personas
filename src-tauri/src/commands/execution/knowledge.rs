@@ -218,3 +218,55 @@ pub fn get_shared_knowledge_injection(
     let conn_refs: Vec<&str> = connector_types.iter().map(|s| s.as_str()).collect();
     repo::get_shared_injection(&state.db, &tool_refs, &conn_refs)
 }
+
+// ── KB Index (Karpathy-style index-file navigation) ──────────────────
+//
+// Inspired by the Karpathy LLM-knowledge-base research run (2026-04-08).
+// Builds a single index.md describing the structure of a markdown directory
+// so an agent can navigate by browse rather than vector search. Complement
+// to the vector KB, not a replacement.
+
+use std::path::Path;
+
+use crate::engine::kb_index;
+
+#[derive(Debug, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KbIndexResult {
+    pub path: String,
+    pub content: String,
+    pub wrote_to_disk: bool,
+}
+
+/// Build (and optionally write) the KB index for a directory.
+///
+/// - `root_path` is the directory to scan.
+/// - `write_to_disk = true` writes `<root>/index.md` and returns the path.
+/// - `write_to_disk = false` returns the index content as a string in the
+///   `content` field and leaves `path` empty.
+#[tauri::command]
+pub fn build_kb_index(
+    state: State<'_, Arc<AppState>>,
+    root_path: String,
+    write_to_disk: Option<bool>,
+    filename: Option<String>,
+) -> Result<KbIndexResult, AppError> {
+    require_auth_sync(&state)?;
+    let root = Path::new(&root_path);
+    if write_to_disk.unwrap_or(false) {
+        let written = kb_index::build_and_write_index(root, filename.as_deref())?;
+        Ok(KbIndexResult {
+            path: written.display().to_string(),
+            content: String::new(),
+            wrote_to_disk: true,
+        })
+    } else {
+        let content = kb_index::build_index(root)?;
+        Ok(KbIndexResult {
+            path: String::new(),
+            content,
+            wrote_to_disk: false,
+        })
+    }
+}

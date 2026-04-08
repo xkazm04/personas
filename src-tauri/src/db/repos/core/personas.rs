@@ -1,10 +1,10 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 use tracing::instrument;
 
-use crate::db::models::{CreatePersonaInput, HealthStatus, Persona, PersonaHealth, PersonaSummary, PersonaTrustLevel, PersonaTrustOrigin, UpdatePersonaInput};
+use crate::db::models::{CreatePersonaInput, HealthStatus, Persona, PersonaGatewayExposure, PersonaHealth, PersonaSummary, PersonaTrustLevel, PersonaTrustOrigin, UpdatePersonaInput};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -360,6 +360,12 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         trust_verified_at: row.get::<_, Option<String>>("trust_verified_at").unwrap_or(None),
         trust_score: row.get::<_, Option<f64>>("trust_score")?.unwrap_or(0.0),
         parameters: row.get::<_, Option<String>>("parameters").unwrap_or(None),
+        gateway_exposure: row
+            .get::<_, Option<String>>("gateway_exposure")
+            .ok()
+            .flatten()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(PersonaGatewayExposure::LocalOnly),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -406,6 +412,27 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Persona, AppError> {
             tracing::warn!(elapsed_ms, persona_id = %id, "personas::get_by_id exceeded 100ms threshold");
         }
         result
+    })
+}
+
+/// Look up a persona by id, but return `None` when its `gateway_exposure`
+/// is `local_only`. Used by the external A2A management API endpoints to
+/// avoid leaking the existence of personas not opted in to gateway visibility.
+pub fn find_by_id_if_exposed(
+    pool: &DbPool,
+    id: &str,
+) -> Result<Option<Persona>, AppError> {
+    timed_query!("personas", "personas::find_by_id_if_exposed", {
+        let conn = pool.get()?;
+        let result = conn
+            .query_row(
+                "SELECT * FROM personas WHERE id = ?1",
+                params![id],
+                row_to_persona,
+            )
+            .optional()
+            .map_err(AppError::Database)?;
+        Ok(result.filter(|p| p.gateway_exposure.is_externally_visible()))
     })
 }
 
@@ -576,6 +603,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         push_field_param!(input.design_context, "design_context", sets, param_idx, param_values, clone);
         push_field_param!(input.group_id, "group_id", sets, param_idx, param_values, clone);
         push_field_param!(input.parameters, "parameters", sets, param_idx, param_values, clone);
+        push_field_param!(input.gateway_exposure, "gateway_exposure", sets, param_idx, param_values, as_str);
 
         let sql = format!(
             "UPDATE personas SET {} WHERE id = ?{} RETURNING *",
@@ -1095,6 +1123,114 @@ mod tests {
         let deleted = delete(&pool, &persona.id).unwrap();
         assert!(deleted);
         assert!(get_by_id(&pool, &persona.id).is_err());
+    }
+
+    #[test]
+    fn test_gateway_exposure_defaults_to_local_only() {
+        let pool = init_test_db().unwrap();
+        let persona = create(
+            &pool,
+            CreatePersonaInput {
+                name: "Default Exposure".into(),
+                system_prompt: "noop".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            persona.gateway_exposure,
+            PersonaGatewayExposure::LocalOnly,
+            "newly created personas must default to LocalOnly"
+        );
+
+        // find_by_id_if_exposed must return None for local_only personas
+        let hidden = find_by_id_if_exposed(&pool, &persona.id).unwrap();
+        assert!(
+            hidden.is_none(),
+            "local_only personas must not be returned by find_by_id_if_exposed"
+        );
+    }
+
+    #[test]
+    fn test_gateway_exposure_update_roundtrip() {
+        let pool = init_test_db().unwrap();
+        let persona = create(
+            &pool,
+            CreatePersonaInput {
+                name: "Exposure Test".into(),
+                system_prompt: "noop".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        // Update to public
+        let updated = update(
+            &pool,
+            &persona.id,
+            UpdatePersonaInput {
+                gateway_exposure: Some(PersonaGatewayExposure::Public),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(updated.gateway_exposure, PersonaGatewayExposure::Public);
+
+        // Now find_by_id_if_exposed must return Some
+        let visible = find_by_id_if_exposed(&pool, &persona.id).unwrap();
+        assert!(visible.is_some(), "public personas must resolve");
+        assert_eq!(visible.unwrap().id, persona.id);
+
+        // Set to invite_only — also externally visible
+        let _ = update(
+            &pool,
+            &persona.id,
+            UpdatePersonaInput {
+                gateway_exposure: Some(PersonaGatewayExposure::InviteOnly),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let invite = find_by_id_if_exposed(&pool, &persona.id).unwrap();
+        assert!(invite.is_some(), "invite_only personas must resolve");
+
+        // Back to local_only — must hide again
+        let _ = update(
+            &pool,
+            &persona.id,
+            UpdatePersonaInput {
+                gateway_exposure: Some(PersonaGatewayExposure::LocalOnly),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(find_by_id_if_exposed(&pool, &persona.id).unwrap().is_none());
     }
 
     #[test]

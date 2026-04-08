@@ -148,3 +148,47 @@ pub struct VaultTreeNode {
     pub children: Vec<VaultTreeNode>,
     pub note_count: i64,
 }
+
+// ── Vault Lint (knowledge integrity check) ───────────────────────────
+//
+// Inspired by Karpathy-style LLM knowledge bases (research run 2026-04-08):
+// the wiki is treated like source code, with a "test suite" that detects
+// stale notes, broken wikilinks, and orphan pages so the data stays
+// trustworthy as it grows.
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct StaleNote {
+    pub path: String,
+    pub last_modified: String,
+    pub days_stale: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct BrokenWikilink {
+    pub source_path: String,
+    pub target: String,
+    pub line: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct OrphanNote {
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultLintReport {
+    pub vault_path: String,
+    pub scanned_count: i64,
+    pub stale_notes: Vec<StaleNote>,
+    pub broken_wikilinks: Vec<BrokenWikilink>,
+    pub orphans: Vec<OrphanNote>,
+    pub generated_at: String,
+}

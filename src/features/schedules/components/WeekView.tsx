@@ -18,7 +18,6 @@ export function WeekView({
   conflictsByHourCell,
   conflictsByEventId,
   onEventClick,
-  onEventHover,
 }: {
   anchor: Date;
   events: CalendarEvent[];
@@ -26,7 +25,6 @@ export function WeekView({
   conflictsByHourCell: Map<string, number>;
   conflictsByEventId: Map<string, ConflictGroup>;
   onEventClick: (ev: CalendarEvent) => void;
-  onEventHover: (ev: CalendarEvent | null, e?: React.MouseEvent) => void;
 }) {
   const { days, hourSlots } = useMemo(
     () => buildWeekGrid(anchor, events),
@@ -121,7 +119,6 @@ export function WeekView({
                         compact={false}
                         hasConflict={conflictsByEventId.has(ev.id)}
                         onClick={() => onEventClick(ev)}
-                        onHover={onEventHover}
                       />
                     ))}
                     {(slot?.events.length ?? 0) > 3 && (

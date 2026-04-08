@@ -528,6 +528,15 @@ pub async fn run_execution(
         };
     }
 
+    // Install Claude Code hooks sidecar (Karpathy-style auto-capture).
+    // No-op unless PERSONAS_HOOKS_SIDECAR=1 — see hooks_sidecar.rs for details.
+    // Best-effort: never fails the execution if the sidecar can't be written.
+    match super::hooks_sidecar::install_sidecar(&exec_dir) {
+        Ok(true) => logger.log("[hooks] installed Claude Code hooks sidecar in exec_dir"),
+        Ok(false) => {} // disabled or skipped
+        Err(e) => logger.log(&format!("[hooks] sidecar install failed (non-fatal): {e}")),
+    }
+
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
     // =========================================================================
@@ -1024,8 +1033,10 @@ pub async fn run_execution(
     // Track mid-stream protocol dispatches for execution-scoped dedup in post-mortem
     let stream_events_dispatched = Arc::new(std::sync::atomic::AtomicU64::new(0));
     let stream_memories_dispatched = Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let stream_messages_dispatched = Arc::new(std::sync::atomic::AtomicU64::new(0));
     let events_counter = stream_events_dispatched.clone();
     let memories_counter = stream_memories_dispatched.clone();
+    let messages_counter = stream_messages_dispatched.clone();
 
     // Pre-load quality gate config once per execution (avoids O(messages) DB reads).
     let gate_config = super::quality_gate::load(&pool_for_stream);
@@ -1161,6 +1172,23 @@ pub async fn run_execution(
                                     model: model.clone(),
                                     session_id: session_id.clone(),
                                 }),
+                                // TODO(jit-auth-runner): wire this variant into the pause/resume flow.
+                                // Right now we log-and-continue so the execution still fails fast on
+                                // unauthorized tool calls rather than hanging forever. The full plan
+                                // lives in `.planning/handoffs/2026-04-08-mcp-gateway-arcade.md` Phase B
+                                // -- when that lands, replace this arm with a state transition to
+                                // AwaitingAuth + Tauri event emit + oneshot park.
+                                StreamLineType::AuthorizationRequired { credential_id, tool_name, authorize_url } => {
+                                    tracing::warn!(
+                                        execution_id = %exec_id_for_stream,
+                                        credential_id = %credential_id,
+                                        tool_name = %tool_name,
+                                        authorize_url = %authorize_url,
+                                        "JIT authorization required but runner pause/resume is not yet wired. \
+                                         Execution will fail -- user must pre-authorize this tool out-of-band."
+                                    );
+                                    None
+                                }
                                 StreamLineType::Unknown => None,
                             };
                             if let Some(event) = structured_event {
@@ -1207,7 +1235,10 @@ pub async fn run_execution(
                                             }),
                                             _ => None,
                                         };
-                                        if let Some(msg) = protocol_msg {
+                                        if let Some(ref msg) = protocol_msg {
+                                            if matches!(msg, ProtocolMessage::UserMessage { .. }) {
+                                                messages_counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                            }
                                             let notif_ref = notif_channels_for_stream.as_deref();
                                             let mut dispatch_ctx = super::dispatch::DispatchContext::new(
                                                 &app,
@@ -1221,7 +1252,7 @@ pub async fn run_execution(
                                                 Some(gate_config.clone()),
                                             );
                                             dispatch_ctx.ops_mode = is_ops_for_stream;
-                                            super::dispatch::dispatch(&mut dispatch_ctx, &msg);
+                                            super::dispatch::dispatch(&mut dispatch_ctx, msg);
                                         }
                                     }
                                 }
@@ -1365,6 +1396,9 @@ pub async fn run_execution(
                                             ProtocolMessage::AgentMemory { .. } => {
                                                 memories_counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                                             }
+                                            ProtocolMessage::UserMessage { .. } => {
+                                                messages_counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                            }
                                             _ => {}
                                         }
                                         dispatch_ctx.dispatch_message(&protocol_msg);
@@ -1480,13 +1514,11 @@ pub async fn run_execution(
     // Use execution-scoped counters from mid-stream dispatch to avoid persona-wide
     // dedup that would either skip recovery or duplicate across executions.
     {
-        use crate::db::repos::core::memories as mem_repo_check;
-
         let mid_stream_events = stream_events_dispatched.load(std::sync::atomic::Ordering::Relaxed);
-        let existing_memories = mem_repo_check::count_by_execution(&pool, &execution_id).unwrap_or(0);
+        let mid_stream_memories = stream_memories_dispatched.load(std::sync::atomic::Ordering::Relaxed);
 
         let need_events = mid_stream_events == 0;
-        let need_memories = existing_memories == 0;
+        let need_memories = mid_stream_memories == 0;
 
         if need_events || need_memories {
             let notif_ref = persona.notification_channels.as_deref();
@@ -1679,9 +1711,19 @@ pub async fn run_execution(
         },
     );
 
-    // Deliver message to persona_messages if execution produced output
-    // (skip if cancelled/deleting — the persona row may be about to be CASCADE-deleted)
-    if success && !assistant_text.is_empty() && !cancelled.load(std::sync::atomic::Ordering::Acquire) {
+    // Deliver message to persona_messages if execution produced output but the AI
+    // did NOT already send a structured report via the emit_message protocol tool.
+    // When a protocol UserMessage exists, it IS the report — the raw dump is redundant.
+    // Also skip if the execution was already marked terminal in the DB (e.g. after an
+    // app restart where the engine process survived — avoids orphaned messages).
+    let protocol_messages_sent = stream_messages_dispatched.load(std::sync::atomic::Ordering::Relaxed);
+    let already_terminal = {
+        use crate::db::repos::execution::executions as exec_repo;
+        exec_repo::get_by_id(&pool, &execution_id)
+            .map(|e| matches!(e.status.as_str(), "completed" | "failed" | "cancelled"))
+            .unwrap_or(false)
+    };
+    if success && !assistant_text.is_empty() && protocol_messages_sent == 0 && !already_terminal && !cancelled.load(std::sync::atomic::Ordering::Acquire) {
         // Generate a descriptive title: use the first heading, first sentence,
         // or persona name + date range as fallback instead of generic "Execution output"
         let title = {

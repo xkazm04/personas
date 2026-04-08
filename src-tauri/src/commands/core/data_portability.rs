@@ -19,8 +19,8 @@ use crate::db::repos::core::{
 };
 use crate::db::repos::execution::{test_suites as suite_repo};
 use crate::db::repos::resources::{
-    audit_log, credentials as cred_repo, teams as team_repo,
-    tools as tool_repo, triggers as trigger_repo,
+    audit_log, connectors as connector_repo, credentials as cred_repo,
+    teams as team_repo, tools as tool_repo, triggers as trigger_repo,
 };
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -1637,6 +1637,9 @@ pub struct CredentialImportResult {
     pub warnings: Vec<String>,
     /// Non-empty when conflicts detected — frontend should show resolution UI
     pub conflicts: Vec<CredentialConflict>,
+    /// Path of the selected file — returned so the frontend can pass it back for resolution
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file_path: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, TS, Clone)]
@@ -1672,8 +1675,20 @@ pub async fn export_credentials(
     let pool = &state.db;
     let all_creds = cred_repo::get_all(pool)?;
 
+    // Collect built-in connector names so we can skip their credentials
+    let builtin_names: std::collections::HashSet<String> = connector_repo::get_all(pool)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|c| c.is_builtin)
+        .map(|c| c.name.to_lowercase())
+        .collect();
+
     let mut entries = Vec::with_capacity(all_creds.len());
     for cred in &all_creds {
+        // Skip credentials belonging to built-in connectors
+        if builtin_names.contains(&cred.service_type.to_lowercase()) {
+            continue;
+        }
         let fields = cred_repo::get_decrypted_fields(pool, cred)
             .unwrap_or_default();
         if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "data_portability:export", None, None) {
@@ -1757,27 +1772,32 @@ pub async fn import_credentials(
     app: AppHandle,
     passphrase: String,
     resolutions_json: Option<String>,
+    file_path_override: Option<String>,
 ) -> Result<Option<CredentialImportResult>, AppError> {
     require_privileged(&state, "import_credentials").await?;
 
-    let app_clone = app.clone();
-    let file_path = tokio::task::spawn_blocking(move || {
-        app_clone
-            .dialog()
-            .file()
-            .add_filter("Encrypted Credentials", &["enc"])
-            .blocking_pick_file()
-    })
-    .await
-    .map_err(|e| AppError::Internal(format!("Dialog task failed: {e}")))?;
+    let path = if let Some(override_path) = file_path_override {
+        std::path::PathBuf::from(override_path)
+    } else {
+        let app_clone = app.clone();
+        let file_path = tokio::task::spawn_blocking(move || {
+            app_clone
+                .dialog()
+                .file()
+                .add_filter("Encrypted Credentials", &["enc"])
+                .blocking_pick_file()
+        })
+        .await
+        .map_err(|e| AppError::Internal(format!("Dialog task failed: {e}")))?;
 
-    let Some(file_path) = file_path else {
-        return Ok(None);
+        let Some(file_path) = file_path else {
+            return Ok(None);
+        };
+
+        file_path
+            .into_path()
+            .map_err(|e| AppError::Internal(format!("Invalid file path: {e}")))?
     };
-
-    let path = file_path
-        .into_path()
-        .map_err(|e| AppError::Internal(format!("Invalid file path: {e}")))?;
 
     let content = tokio::fs::read_to_string(&path)
         .await
@@ -1833,12 +1853,15 @@ pub async fn import_credentials(
         .map(|c| (c.name.to_lowercase(), c.id.clone()))
         .collect();
 
+    let path_str = path.to_string_lossy().to_string();
+
     let mut result = CredentialImportResult {
         created: 0,
         skipped: 0,
         replaced: 0,
         warnings: Vec::new(),
         conflicts: Vec::new(),
+        file_path: None,
     };
 
     // First pass: if conflicts exist and no resolutions provided, return conflicts for UI
@@ -1854,6 +1877,8 @@ pub async fn import_credentials(
             }
         }
         if !result.conflicts.is_empty() {
+            // Include file path so frontend can re-use it for resolution pass
+            result.file_path = Some(path_str);
             return Ok(Some(result));
         }
     }

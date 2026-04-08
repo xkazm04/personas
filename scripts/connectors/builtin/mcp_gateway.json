@@ -1,0 +1,39 @@
+{
+  "id": "builtin-mcp-gateway",
+  "name": "mcp_gateway",
+  "label": "MCP Gateway",
+  "color": "#6366F1",
+  "icon_url": "/icons/connectors/mcp_gateway.svg",
+  "category": "integration",
+  "fields": [
+    {
+      "key": "label",
+      "label": "Gateway label",
+      "type": "text",
+      "required": true,
+      "placeholder": "Research tools",
+      "helpText": "A short label to identify this bundle (e.g. 'Research tools', 'Customer support stack'). Members are managed via the gateway settings panel.",
+      "sensitive": false
+    }
+  ],
+  "healthcheck_config": null,
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": false,
+    "summary": "Bundle multiple MCP servers under one credential. Attach the gateway to a persona once and inherit every member tool.",
+    "auth_type": "builtin",
+    "auth_type_label": "Built-in",
+    "docs_url": "https://modelcontextprotocol.io/",
+    "setup_guide": "1. Create this gateway credential with a descriptive label.\n2. Open the gateway's settings panel to add member MCP credentials.\n3. Attach the gateway to any persona -- the persona will see every enabled member's tools combined into one list, with tool names prefixed by the member's display name.",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {
+        "id": "builtin",
+        "label": "Built-in",
+        "type": "credential",
+        "is_default": true
+      }
+    ]
+  }
+}

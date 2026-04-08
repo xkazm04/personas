@@ -869,7 +869,7 @@ pub fn update_manual_review_status(
                 title: format!("Review {decision}: {}", review.title),
                 content: memory_content,
                 category: Some("learned".to_string()),
-                importance: Some(6),
+                importance: Some(5),
                 tags: Some(crate::db::models::Json(vec!["review".to_string(), decision.to_string()])),
             },
         );

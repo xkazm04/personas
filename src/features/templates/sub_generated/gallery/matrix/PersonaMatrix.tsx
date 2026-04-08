@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
-import { deriveArchCategories, type ArchCategory } from './architecturalCategories';
 import {
   UseCasesIcon, ConnectorsIcon, TriggersIcon, HumanReviewIcon,
   MessagesIcon, MemoryIcon, ErrorsIcon, EventsIcon,
@@ -212,7 +211,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   const isPreBuild = isCreationMode && !hasBuildStates && !designResult && (!buildPhase || buildPhase === 'initializing');
 
   // Quick-config overlay state (pre-build only)
-  const [quickConfig, setQuickConfig] = useState<QuickConfigState>({ frequency: null, days: ['mon'], monthDay: 1, time: '09:00', selectedConnectors: [], connectorTables: {} });
+  const [quickConfig, setQuickConfig] = useState<QuickConfigState>({ frequency: null, days: ['mon'], monthDay: 1, time: '09:00', selectedConnectors: [], connectorTables: {}, selectedEvents: [] });
   const quickConfigRef = useRef(quickConfig);
   quickConfigRef.current = quickConfig;
   const handleQuickConfigChange = useCallback((state: QuickConfigState) => {
@@ -277,9 +276,12 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
   }
 
   const cells = useMemo<MatrixCell[]>(() => {
-    // In creation mode or build mode with cellBuildStates, return skeleton cells
-    // so the ghosted outlines are visible before CLI produces content
-    if (!designResult && (hasBuildStates || isCreationMode)) {
+    // Use seeded data from buildCellData when available. This preserves specific
+    // template data (tool names, tasks, review rules) instead of falling back to
+    // generic category extraction. Only enter this branch when buildCellData
+    // actually has items, otherwise fall through to the designResult branch.
+    const hasBuildCellData = Object.keys(buildCellData).length > 0;
+    if ((hasBuildCellData && isSavedMode) || (!designResult && (hasBuildStates || isCreationMode))) {
       // Helper: render protocol badge if protocol capabilities are active for a cell
       const badge = (cellKey: string) => {
         const labels = protocolByCellKey[cellKey];
@@ -308,6 +310,23 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       const seededItems = (cellKey: string, color: string) => {
         const items = buildCellData[cellKey]?.items;
         if (!items || items.length === 0) return null;
+        // Connectors: render with icons instead of raw strings
+        if (cellKey === 'connectors') {
+          return (
+            <div className="space-y-1.5">
+              {items.slice(0, 4).map((item, i) => {
+                const name = item.split(' \u2014 ')[0]?.trim() ?? item.split(' - ')[0]?.trim() ?? item;
+                const meta = getConnectorMeta(name);
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
+                    <span className="text-sm text-foreground/70 leading-snug">{meta.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
         return <CellBullets items={items.slice(0, 4)} color={color} />;
       };
 
@@ -347,7 +366,6 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
 
     if (!designResult) return [];
     const connectorNames = designResult.suggested_connectors?.map((c: unknown) => typeof c === 'string' ? c : (c as Record<string, unknown>)?.name as string).filter(Boolean) ?? [];
-    const archCategories = deriveArchCategories(connectorNames);
     const triggers = extractTriggers(designResult.suggested_triggers ?? []);
     const review = extractHumanReview(designResult.protocol_capabilities);
     const memory = extractMemory(designResult.protocol_capabilities);
@@ -361,10 +379,10 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
       { key: 'use-cases', label: CELL_LABELS['use-cases']!, watermark: UseCasesIcon, watermarkColor: 'text-violet-400', filled: flows.length > 0,
         render: () => flows.length === 0 ? <CellBullets items={['General-purpose agent']} color="text-muted-foreground/50" /> : <CellBullets items={flows.slice(0, 3).map((f) => f.name)} color="text-foreground/70" />,
         editRender: editProps ? () => (<UseCaseEditCell editState={editProps.editState} callbacks={editProps.editCallbacks} />) : undefined },
-      { key: 'connectors', label: CELL_LABELS['connectors']!, watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', filled: archCategories.length > 0,
+      { key: 'connectors', label: CELL_LABELS['connectors']!, watermark: ConnectorsIcon, watermarkColor: 'text-cyan-400', filled: connectorNames.length > 0,
         render: () => {
-          if (archCategories.length === 0) return <CellBullets items={['No external services']} color="text-muted-foreground/50" />;
-          return (<div className="space-y-1.5">{archCategories.slice(0, 3).map((cat: ArchCategory) => { const CatIcon = cat.icon; return (<div key={cat.key} className="flex items-center gap-2"><CatIcon className="w-3.5 h-3.5 flex-shrink-0 opacity-70" style={{ color: cat.color }} /><span className="text-sm text-foreground/70 leading-snug">{cat.label}</span></div>); })}{archCategories.length > 3 && <span className="text-sm text-muted-foreground/40 pl-[22px]">+{archCategories.length - 3} more</span>}</div>);
+          if (connectorNames.length === 0) return <CellBullets items={['No external services']} color="text-muted-foreground/50" />;
+          return (<div className="space-y-1.5">{connectorNames.slice(0, 4).map((name: string) => { const meta = getConnectorMeta(name); return (<div key={name} className="flex items-center gap-2"><ConnectorIcon meta={meta} size="w-3.5 h-3.5" /><span className="text-sm text-foreground/70 leading-snug">{meta.label}</span></div>); })}{connectorNames.length > 4 && <span className="text-sm text-muted-foreground/40 pl-[22px]">+{connectorNames.length - 4} more</span>}</div>);
         },
         editRender: editProps ? () => (<ConnectorEditCell requiredConnectors={editProps.requiredConnectors} credentials={editProps.credentials} editState={editProps.editState} callbacks={editProps.editCallbacks} onNavigateCatalog={onNavigateCatalog} />) : undefined },
       { key: 'triggers', label: CELL_LABELS['triggers']!, watermark: TriggersIcon, watermarkColor: 'text-amber-400', filled: triggers.length > 0,
@@ -429,7 +447,7 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
             <MatrixCellRenderer cell={cell} isEditMode={isEditMode || editingCellKey === cell.key} buildLocked={buildLocked} cellBuildStatus={effectiveCellStates?.[cell.key]} onCellRef={handleCellRef} questionCount={pendingQuestions?.filter((q) => q.cellKey === cell.key).length ?? 0} onConfirmUpdate={(key) => useAgentStore.getState().confirmCellUpdate(key)} onCellClick={(isDraftPhase && isCreationMode) || isSavedMode ? () => handleCellEditClick(cell.key) : undefined} isInlineEditing={editingCellKey === cell.key} compact={isPreBuild} />
           </motion.div>
         ))}
-        <div className={`relative rounded-xl border border-primary/40 p-5 ${isPreBuild ? 'min-h-[280px]' : 'min-h-[200px]'} ring-1 ring-primary/15 shadow-elevation-4 shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden transition-[min-height] duration-400 ease-out${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
+        <div className={`relative rounded-xl border border-primary/40 p-5 ${isPreBuild ? 'min-h-[240px]' : 'min-h-[160px]'} ring-1 ring-primary/15 shadow-elevation-4 shadow-primary/5 bg-white/[0.05] backdrop-blur-lg overflow-hidden transition-[min-height] duration-400 ease-out${buildPhase === 'awaiting_input' ? ' animate-pulse' : ''}`}>
           {/* Corner glows -- stronger at corners, thinner mid-lanes */}
           <div className="absolute inset-0 pointer-events-none matrix-center-corner-glow" />
           {/* Subtle mid-lane fill */}

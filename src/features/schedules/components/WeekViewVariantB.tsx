@@ -32,7 +32,6 @@ export function WeekView({
   conflictsByHourCell,
   conflictsByEventId,
   onEventClick,
-  onEventHover,
 }: {
   anchor: Date;
   events: CalendarEvent[];
@@ -40,7 +39,6 @@ export function WeekView({
   conflictsByHourCell: Map<string, number>;
   conflictsByEventId: Map<string, ConflictGroup>;
   onEventClick: (ev: CalendarEvent) => void;
-  onEventHover: (ev: CalendarEvent | null, e?: React.MouseEvent) => void;
 }) {
   const [showFullDay, setShowFullDay] = useState(false);
 
@@ -189,7 +187,7 @@ export function WeekView({
                     )}
 
                     {/* Events as rounded cards */}
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 min-w-0 overflow-hidden">
                       {slot?.events.slice(0, 3).map((ev) => {
                         const color = colorMap.get(ev.triggerId) || '#3B82F6';
                         const hasConflict = conflictsByEventId.has(ev.id);
@@ -205,7 +203,6 @@ export function WeekView({
                                 compact={false}
                                 hasConflict={hasConflict}
                                 onClick={() => onEventClick(ev)}
-                                onHover={onEventHover}
                               />
                             </div>
                           </div>

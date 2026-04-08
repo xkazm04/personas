@@ -1,10 +1,14 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { Clock, Plug, ChevronUp, ChevronDown, Check, Zap, Table2, X, Search } from 'lucide-react';
+import { Clock, Plug, ChevronUp, ChevronDown, Check, Zap, Table2, X, Search, Radio } from 'lucide-react';
 import { ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useHealthyConnectors, type HealthyConnector } from './useHealthyConnectors';
+import { useAgentStore } from '@/stores/agentStore';
 import { listDbSchemaTables } from '@/api/vault/database/dbSchema';
+import { getPersonaDetail } from '@/api/agents/personas';
 import type { DbSchemaTable } from '@/lib/bindings/DbSchemaTable';
+import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,6 +35,13 @@ const MONTH_DAYS = Array.from({ length: 28 }, (_, i) => i + 1);
 
 const INPUT_CLS = 'h-9 px-3 rounded-lg border border-primary/15 bg-secondary/20 text-sm text-foreground/80 outline-none focus-visible:border-primary/30 transition-colors';
 
+export interface EventSubscription {
+  personaId: string;
+  personaName: string;
+  triggerId: string;
+  description: string;
+}
+
 export interface QuickConfigState {
   frequency: Frequency | null;
   days: string[];
@@ -39,6 +50,8 @@ export interface QuickConfigState {
   selectedConnectors: string[];
   /** Map of connector name -> selected table name for database connectors */
   connectorTables: Record<string, string>;
+  /** Event subscriptions from other personas' event_listener triggers */
+  selectedEvents: EventSubscription[];
 }
 
 export function serializeQuickConfig(state: QuickConfigState): string {
@@ -65,12 +78,16 @@ export function serializeQuickConfig(state: QuickConfigState): string {
     parts.push(`Services: ${serviceDescs.join(', ')}`);
   }
 
+  if (state.selectedEvents.length > 0) {
+    const eventDescs = state.selectedEvents.map((e) => `${e.description} (from ${e.personaName})`);
+    parts.push(`Event triggers: ${eventDescs.join(', ')}`);
+  }
+
   return parts.length > 0 ? `\n---\n${parts.join('\n')}` : '';
 }
 
-/** Build human-readable trigger summary for cell preview */
+/** Build human-readable trigger summary for cell preview (schedule + events) */
 export function describeTriggerConfig(state: QuickConfigState): string[] {
-  if (!state.frequency) return [];
   const lines: string[] = [];
   if (state.frequency === 'daily') {
     lines.push(`Daily at ${state.time || '09:00'}`);
@@ -78,9 +95,13 @@ export function describeTriggerConfig(state: QuickConfigState): string[] {
     const dayNames = state.days.map((d) => DAY_LABELS[d] ?? d);
     lines.push(`Weekly: ${dayNames.join(', ') || 'Monday'}`);
     lines.push(`At ${state.time || '09:00'}`);
-  } else {
+  } else if (state.frequency === 'monthly') {
     lines.push(`Monthly on day ${state.monthDay}`);
     lines.push(`At ${state.time || '09:00'}`);
+  }
+  // Include selected event triggers
+  for (const ev of state.selectedEvents) {
+    lines.push(`On ${ev.description}`);
   }
   return lines;
 }
@@ -464,6 +485,177 @@ function ServicesPanel({
 }
 
 // ---------------------------------------------------------------------------
+// Events panel — subscribe to other personas' event_listener triggers
+// ---------------------------------------------------------------------------
+
+function EventsPanel({
+  selectedEvents,
+  onToggleEvent,
+}: {
+  selectedEvents: EventSubscription[];
+  onToggleEvent: (event: EventSubscription) => void;
+}) {
+  const personas = useAgentStore((s) => s.personas);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Event subscriptions from the persona's design result (has specific names like stock.signal.strong_buy)
+  const [designEvents, setDesignEvents] = useState<Array<{ event_type: string; description?: string }>>([]);
+
+  // Load event_listener triggers + design event subscriptions for the selected persona
+  useEffect(() => {
+    if (!selectedPersonaId) { setTriggers([]); setDesignEvents([]); return; }
+    setLoading(true);
+    getPersonaDetail(selectedPersonaId)
+      .then((detail) => {
+        const eventTriggers = (detail.triggers ?? []).filter(
+          (t: PersonaTrigger) => t.trigger_type === 'event_listener' && t.enabled,
+        );
+        setTriggers(eventTriggers);
+
+        // Extract event subscriptions from last_design_result for specific names
+        try {
+          const dr = (detail as unknown as Record<string, unknown>).last_design_result;
+          if (typeof dr === 'string') {
+            const parsed = JSON.parse(dr) as Record<string, unknown>;
+            const subs = (parsed.suggested_event_subscriptions ?? []) as Array<{ event_type?: string; description?: string }>;
+            setDesignEvents(subs.filter((s) => s.event_type).map((s) => ({ event_type: s.event_type!, description: s.description })));
+          } else {
+            setDesignEvents([]);
+          }
+        } catch { setDesignEvents([]); }
+      })
+      .catch(() => { setTriggers([]); setDesignEvents([]); })
+      .finally(() => setLoading(false));
+  }, [selectedPersonaId]);
+
+  const selectedPersona = selectedPersonaId ? personas.find((p) => p.id === selectedPersonaId) : null;
+
+  return (
+    <div className="flex gap-6 px-1">
+      {/* Persona selector (left) */}
+      <div className="flex flex-col gap-2 min-w-[160px]">
+        <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Source Agent</span>
+        <div className="flex flex-col gap-1 overflow-y-auto">
+          {personas.filter((p) => p.enabled).map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSelectedPersonaId(p.id === selectedPersonaId ? null : p.id)}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-all duration-200 ${
+                selectedPersonaId === p.id
+                  ? 'bg-primary/10 border border-primary/25'
+                  : 'hover:bg-secondary/30 border border-transparent'
+              }`}
+            >
+              <PersonaIcon icon={p.icon} color={p.color} />
+              <span className={`text-xs truncate ${selectedPersonaId === p.id ? 'text-primary font-medium' : 'text-muted-foreground/60'}`}>
+                {p.name}
+              </span>
+            </button>
+          ))}
+          {personas.filter((p) => p.enabled).length === 0 && (
+            <p className="text-xs text-muted-foreground/40 py-2">No agents available</p>
+          )}
+        </div>
+      </div>
+
+      {/* Event triggers (right) */}
+      <div className="flex-1 flex flex-col gap-2">
+        <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">
+          {selectedPersona ? `Events from ${selectedPersona.name}` : 'Select an agent'}
+        </span>
+        {loading ? (
+          <p className="text-xs text-muted-foreground/40 py-2 animate-pulse">Loading events...</p>
+        ) : designEvents.length === 0 && triggers.length === 0 ? (
+          <p className="text-xs text-muted-foreground/40 py-2">
+            {selectedPersonaId ? 'No event subscriptions found' : 'Choose an agent to see its events'}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-1 overflow-y-auto">
+            {/* Show events from design result (has specific names like stock.signal.strong_buy) */}
+            {designEvents.map((de) => {
+              const stableId = `design:${de.event_type}`;
+              const isSelected = selectedEvents.some((e) => e.triggerId === stableId);
+              const event: EventSubscription = {
+                personaId: selectedPersonaId!,
+                personaName: selectedPersona?.name ?? 'Agent',
+                triggerId: stableId,
+                description: de.event_type,
+              };
+              return (
+                <button
+                  key={stableId}
+                  type="button"
+                  onClick={() => onToggleEvent(event)}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-200 ${
+                    isSelected
+                      ? 'bg-teal-500/10 border border-teal-500/25'
+                      : 'bg-secondary/10 border border-transparent hover:border-primary/15'
+                  }`}
+                >
+                  <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-teal-400' : 'text-muted-foreground/40'}`} />
+                  <div className="min-w-0 flex-1">
+                    <span className={`text-xs font-mono block truncate ${isSelected ? 'text-teal-300 font-medium' : 'text-muted-foreground/70'}`}>
+                      {de.event_type}
+                    </span>
+                    {de.description && (
+                      <span className="text-[10px] text-muted-foreground/40 block truncate">{de.description}</span>
+                    )}
+                  </div>
+                  {isSelected && (
+                    <Check className="w-3 h-3 ml-auto text-teal-400 flex-shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+            {/* Fallback: show triggers if no design events exist */}
+            {designEvents.length === 0 && triggers.map((t) => {
+              const eventLabel = (() => {
+                try {
+                  const cfg = t.config ? JSON.parse(t.config) as Record<string, unknown> : {};
+                  if (cfg.event_type) return String(cfg.event_type);
+                  if (cfg.description && String(cfg.description).length > 3) return String(cfg.description);
+                } catch { /* fallback */ }
+                return `${selectedPersona?.name ?? 'Agent'} event`;
+              })();
+              const isSelected = selectedEvents.some((e) => e.triggerId === t.id);
+              const event: EventSubscription = {
+                personaId: t.persona_id,
+                personaName: selectedPersona?.name ?? 'Agent',
+                triggerId: t.id,
+                description: eventLabel,
+              };
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => onToggleEvent(event)}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-200 ${
+                    isSelected
+                      ? 'bg-teal-500/10 border border-teal-500/25'
+                      : 'bg-secondary/10 border border-transparent hover:border-primary/15'
+                  }`}
+                >
+                  <Radio className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-teal-400' : 'text-muted-foreground/40'}`} />
+                  <span className={`text-xs font-mono ${isSelected ? 'text-teal-300 font-medium' : 'text-muted-foreground/60'}`}>
+                    {eventLabel}
+                  </span>
+                  {isSelected && (
+                    <Check className="w-3 h-3 ml-auto text-teal-400 flex-shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main toolbar overlay
 // ---------------------------------------------------------------------------
 
@@ -474,7 +666,7 @@ interface DimensionQuickConfigProps {
 export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
   const healthyConnectors = useHealthyConnectors();
   const [collapsed, setCollapsed] = useState(false);
-  const [openPanel, setOpenPanel] = useState<'schedule' | 'services' | null>(null);
+  const [openPanel, setOpenPanel] = useState<'conditions' | 'services' | null>(null);
 
   const [frequency, setFrequency] = useState<Frequency | null>(null);
   const [days, setDays] = useState<string[]>(['mon']);
@@ -482,11 +674,12 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
   const [time, setTime] = useState('09:00');
   const [selectedConnectors, setSelectedConnectors] = useState<string[]>([]);
   const [connectorTables, setConnectorTables] = useState<Record<string, string>>({});
+  const [selectedEvents, setSelectedEvents] = useState<EventSubscription[]>([]);
 
   // Notify parent on change
   useEffect(() => {
-    onChange({ frequency, days, monthDay, time, selectedConnectors, connectorTables });
-  }, [frequency, days, monthDay, time, selectedConnectors, connectorTables, onChange]);
+    onChange({ frequency, days, monthDay, time, selectedConnectors, connectorTables, selectedEvents });
+  }, [frequency, days, monthDay, time, selectedConnectors, connectorTables, selectedEvents, onChange]);
 
   const toggleConnector = useCallback((name: string) => {
     setSelectedConnectors((prev) =>
@@ -505,24 +698,47 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
     });
   }, []);
 
-  const togglePanel = (panel: 'schedule' | 'services') => {
+  const toggleEvent = useCallback((event: EventSubscription) => {
+    setSelectedEvents((prev) =>
+      prev.some((e) => e.triggerId === event.triggerId)
+        ? prev.filter((e) => e.triggerId !== event.triggerId)
+        : [...prev, event],
+    );
+  }, []);
+
+  const togglePanel = (panel: 'conditions' | 'services') => {
     setOpenPanel((prev) => (prev === panel ? null : panel));
   };
 
   // Animated panel height
-  const scheduleRef = useRef<HTMLDivElement>(null);
+  const conditionsRef = useRef<HTMLDivElement>(null);
   const servicesRef = useRef<HTMLDivElement>(null);
-  const [scheduleHeight, setScheduleHeight] = useState(0);
+  const [conditionsHeight, setConditionsHeight] = useState(0);
   const [servicesHeight, setServicesHeight] = useState(0);
 
+  // Track panel content height with ResizeObserver so async-loaded content
+  // (e.g. event triggers loading after persona selection) expands the panel.
   useEffect(() => {
-    if (openPanel === 'schedule' && scheduleRef.current) {
-      setScheduleHeight(scheduleRef.current.scrollHeight);
-    }
-    if (openPanel === 'services' && servicesRef.current) {
-      setServicesHeight(servicesRef.current.scrollHeight);
-    }
-  }, [openPanel, frequency, healthyConnectors.length]);
+    if (openPanel !== 'conditions' || !conditionsRef.current) return;
+    const el = conditionsRef.current;
+    setConditionsHeight(el.scrollHeight);
+    const ro = new ResizeObserver(() => {
+      setConditionsHeight(el.scrollHeight);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [openPanel]);
+
+  useEffect(() => {
+    if (openPanel !== 'services' || !servicesRef.current) return;
+    const el = servicesRef.current;
+    setServicesHeight(el.scrollHeight);
+    const ro = new ResizeObserver(() => {
+      setServicesHeight(el.scrollHeight);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [openPanel]);
 
   return (
     <div className="w-full min-w-[1100px]">
@@ -535,15 +751,20 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
             <div className="flex items-center gap-2 ml-2">
               <button
                 type="button"
-                onClick={() => togglePanel('schedule')}
+                onClick={() => togglePanel('conditions')}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                  openPanel === 'schedule'
+                  openPanel === 'conditions'
                     ? 'bg-primary/15 text-primary border border-primary/25'
                     : 'bg-secondary/20 text-muted-foreground/60 border border-transparent hover:border-primary/15'
                 }`}
               >
                 <Clock className="w-3 h-3" />
-                Schedule
+                Start Conditions
+                {(frequency || selectedEvents.length > 0) && (
+                  <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-primary/20 text-primary leading-none">
+                    {(frequency ? 1 : 0) + selectedEvents.length}
+                  </span>
+                )}
               </button>
 
               <button
@@ -570,21 +791,37 @@ export function DimensionQuickConfig({ onChange }: DimensionQuickConfigProps) {
           </button>
         </div>
 
-        {/* Schedule dropdown panel */}
+        {/* Start Conditions panel — schedule + event triggers unified */}
         <div
           className="transition-[max-height,opacity] duration-250 ease-out overflow-hidden"
           style={{
-            maxHeight: openPanel === 'schedule' ? scheduleHeight : 0,
-            opacity: openPanel === 'schedule' ? 1 : 0,
+            maxHeight: openPanel === 'conditions' ? conditionsHeight : 0,
+            opacity: openPanel === 'conditions' ? 1 : 0,
           }}
         >
-          <div ref={scheduleRef} className="border-t border-primary/8 px-4 py-4">
-            <SchedulePanel
-              frequency={frequency} setFrequency={setFrequency}
-              days={days} setDays={setDays}
-              monthDay={monthDay} setMonthDay={setMonthDay}
-              time={time} setTime={setTime}
-            />
+          <div ref={conditionsRef} className="border-t border-primary/8 px-4 py-4">
+            <div className="flex gap-6">
+              {/* Time-based schedule (left) */}
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2 block">Time Schedule</span>
+                <SchedulePanel
+                  frequency={frequency} setFrequency={setFrequency}
+                  days={days} setDays={setDays}
+                  monthDay={monthDay} setMonthDay={setMonthDay}
+                  time={time} setTime={setTime}
+                />
+              </div>
+              {/* Divider */}
+              <div className="w-px bg-primary/8 self-stretch" />
+              {/* Event-based triggers from other agents (right) */}
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wider mb-2 block">Event Triggers</span>
+                <EventsPanel
+                  selectedEvents={selectedEvents}
+                  onToggleEvent={toggleEvent}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

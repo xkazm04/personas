@@ -1,13 +1,13 @@
-import { useState, useCallback } from 'react';
-import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X, BookOpen } from 'lucide-react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2 } from 'lucide-react';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useSystemStore } from '@/stores/systemStore';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
@@ -19,13 +19,20 @@ const logger = createLogger("event-log");
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All statuses' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'processing', label: 'Processing' },
   { value: 'completed', label: 'Completed' },
-  { value: 'processed', label: 'Processed' },
   { value: 'failed', label: 'Failed' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'processed', label: 'Processed' },
+  { value: 'processing', label: 'Processing' },
   { value: 'skipped', label: 'Skipped' },
 ];
+
+const SOURCE_TYPE_LABELS: Record<string, string> = {
+  persona: 'Event',
+  user: 'Manual',
+  system: 'System',
+  scheduler: 'Scheduled',
+};
 
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
 
@@ -41,20 +48,55 @@ export default function EventLogList() {
     handleRefresh, getPersona,
     // Search
     searchText, setSearchText, serverHasMore,
+    // Cursor pagination
+    loadOlder, hasMoreOlder, isLoadingOlder,
     // Saved views
     savedViews, activeViewId, saveCurrentView, applySavedView, removeSavedView, clearFilters,
   } = useEventLog();
 
+  // Auto-load older events when the sentinel scrolls into view
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!hasMoreOlder || isLoadingOlder) return;
+    const node = loadMoreSentinelRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadOlder();
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMoreOlder, isLoadingOlder, loadOlder, filteredEvents.length]);
+
   const [copiedPayload, setCopiedPayload] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [viewName, setViewName] = useState('');
+  const [triggerFilter, setTriggerFilter] = useState<string>('all');
 
   const handleSeedEvent = useCallback(async () => {
     try { await seedMockEvent(); await handleRefresh(); }
     catch (err) { logger.error('Failed to seed mock event', { error: err }); }
   }, [handleRefresh]);
 
-  const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim();
+  // Apply client-side trigger filter on top of server-filtered events
+  const displayedEvents = useMemo(() => {
+    if (triggerFilter === 'all') return filteredEvents;
+    return filteredEvents.filter((e) => e.source_type === triggerFilter);
+  }, [filteredEvents, triggerFilter]);
+
+  // Unique trigger (source_type) values from current data for dropdown
+  const triggerOptions = useMemo(() => {
+    const unique = new Set<string>();
+    for (const e of filteredEvents) unique.add(e.source_type);
+    const items = Array.from(unique)
+      .sort((a, b) => (SOURCE_TYPE_LABELS[a] ?? a).localeCompare(SOURCE_TYPE_LABELS[b] ?? b))
+      .map((v) => ({ value: v, label: SOURCE_TYPE_LABELS[v] ?? v }));
+    return [{ value: 'all', label: 'All triggers' }, ...items];
+  }, [filteredEvents]);
+
+  const hasActiveFilters = statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim() || triggerFilter !== 'all';
 
   const handleSaveView = async () => {
     if (!viewName.trim()) return;
@@ -65,15 +107,32 @@ export default function EventLogList() {
 
   const typeOptions = [
     { value: 'all', label: 'All types' },
-    ...availableTypes.map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
+    ...[...availableTypes].sort((a, b) => a.localeCompare(b)).map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
   ];
 
 
   const columns: TableColumn<PersonaEvent>[] = [
     {
+      key: 'trigger',
+      label: 'Trigger',
+      width: 'minmax(100px, 0.6fr)',
+      filterComponent: (
+        <ColumnDropdownFilter
+          label="Trigger"
+          value={triggerFilter}
+          options={triggerOptions}
+          onChange={setTriggerFilter}
+        />
+      ),
+      render: (event) => {
+        const label = SOURCE_TYPE_LABELS[event.source_type] ?? event.source_type;
+        return <span className="text-sm text-foreground/70">{label}</span>;
+      },
+    },
+    {
       key: 'persona',
       label: 'Persona',
-      width: 'minmax(200px, 1.2fr)',
+      width: 'minmax(160px, 1fr)',
       filterComponent: (
         <PersonaColumnFilter
           value={selectedPersonaId}
@@ -84,25 +143,20 @@ export default function EventLogList() {
       render: (event) => {
         const targetPersona = getPersona(event.target_persona_id);
         if (targetPersona) {
-          return (
-            <div className="flex items-center gap-2 min-w-0">
-              <PersonaIcon icon={targetPersona.icon} color={targetPersona.color} display="framed" frameSize="lg" />
-              <span className="text-sm text-foreground truncate">{targetPersona.name}</span>
-            </div>
-          );
+          return <span className="text-sm text-foreground truncate">{targetPersona.name}</span>;
         }
-        return (
-          <div className="flex items-center gap-2 min-w-0">
-            <PersonaIcon icon={null} color={null} display="framed" frameSize="md" />
-            <span className="text-sm text-foreground/60 truncate">{event.source_type || 'System'}</span>
-          </div>
-        );
+        // Strip "persona:" prefix from source_type values
+        const raw = event.source_type || '';
+        const display = raw.startsWith('persona:') ? raw.slice(8) : '';
+        return display
+          ? <span className="text-sm text-foreground/70 truncate">{display}</span>
+          : <span className="text-sm text-muted-foreground/40">—</span>;
       },
     },
     {
       key: 'type',
-      label: 'Type',
-      width: 'minmax(200px, 1.2fr)',
+      label: 'Event Name',
+      width: 'minmax(180px, 1.2fr)',
       filterOptions: typeOptions,
       filterValue: typeFilter,
       onFilterChange: setTypeFilter,
@@ -114,7 +168,7 @@ export default function EventLogList() {
     {
       key: 'status',
       label: 'Status',
-      width: 'minmax(200px, 1fr)',
+      width: 'minmax(140px, 0.8fr)',
       filterOptions: STATUS_OPTIONS,
       filterValue: statusFilter,
       onFilterChange: setStatusFilter,
@@ -270,7 +324,7 @@ export default function EventLogList() {
       </div>
 
       <ContentBody flex>
-        {!isLoading && filteredEvents.length === 0 ? (
+        {!isLoading && displayedEvents.length === 0 && !hasActiveFilters ? (
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState
               icon={Zap}
@@ -283,16 +337,34 @@ export default function EventLogList() {
             />
           </div>
         ) : (
-          <UnifiedTable<PersonaEvent>
-            columns={columns}
-            data={filteredEvents}
-            getRowKey={(e) => e.id}
-            onRowClick={setSelectedEvent}
-            isLoading={isLoading}
-            emptyTitle="No events yet"
-            emptyDescription="Events from webhooks, executions, and persona actions will appear here as your agents run."
-            className="flex-1"
-          />
+          <div className="flex-1 flex flex-col min-h-0">
+            <UnifiedTable<PersonaEvent>
+              columns={columns}
+              data={displayedEvents}
+              getRowKey={(e) => e.id}
+              onRowClick={setSelectedEvent}
+              isLoading={isLoading}
+              emptyTitle="No events match current filters"
+              rowHeight={44}
+              className="flex-1"
+            />
+            {(hasMoreOlder || isLoadingOlder) && displayedEvents.length > 0 && (
+              <div ref={loadMoreSentinelRef} className="flex items-center justify-center py-2 border-t border-primary/5">
+                {isLoadingOlder ? (
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground/60">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Loading older events…
+                  </span>
+                ) : (
+                  <button
+                    onClick={loadOlder}
+                    className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
+                  >
+                    Load older events
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
       </ContentBody>
 

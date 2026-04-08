@@ -15,6 +15,7 @@ import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBui
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("unified-matrix-entry");
@@ -90,6 +91,13 @@ export function UnifiedMatrixEntry() {
 
     setFadeOut(true);
     setTimeout(() => {
+      // Remove process activity
+      try {
+        void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+          useOverviewStore.getState().processEnded('agent_build', 'completed', personaId);
+        });
+      } catch { /* best-effort */ }
+
       // Reset build state and intent
       useAgentStore.getState().resetBuildSession();
       setIntentText('');
@@ -120,6 +128,59 @@ export function UnifiedMatrixEntry() {
   const lifecycle = useMatrixLifecycle({
     personaId: draftPersonaId,
   });
+
+  // -- Auto-test on draft_ready when no pending questions -----------------
+  // Saves the user a click: as soon as the LLM has produced a draft and there
+  // are no outstanding questions, kick off the test pass automatically.
+  // If the LLM raises questions later, manual test remains available.
+  const autoTestedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const phase = build.buildPhase;
+    if (phase !== 'draft_ready') return;
+    if (!draftPersonaId) return;
+    if (autoTestedRef.current === draftPersonaId) return;
+    if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
+    if (build.buildError) return;
+    autoTestedRef.current = draftPersonaId;
+    void lifecycle.handleStartTest();
+  }, [build.buildPhase, build.pendingQuestions, build.buildError, draftPersonaId, lifecycle]);
+
+  // Reset auto-test guard if the user resets/restarts the build
+  useEffect(() => {
+    if (!draftPersonaId) autoTestedRef.current = null;
+  }, [draftPersonaId]);
+
+  // -- Sync build phase → process activity status -------------------------
+
+  const currentPhase = useAgentStore((s) => s.buildPhase);
+  useEffect(() => {
+    if (!draftPersonaId || !currentPhase) return;
+    // Terminal phases: end the process activity
+    if (currentPhase === 'promoted' || currentPhase === 'failed' || currentPhase === 'cancelled') {
+      const action = currentPhase === 'promoted' ? 'completed' as const : 'failed' as const;
+      void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+        useOverviewStore.getState().processEnded('agent_build', action, draftPersonaId);
+      }).catch(() => {});
+      return;
+    }
+    const phaseMap: Record<string, { status: ActiveProcess["status"]; event: string }> = {
+      'initializing': { status: 'running', event: 'Initializing...' },
+      'analyzing': { status: 'running', event: 'Analyzing...' },
+      'awaiting_input': { status: 'input_required', event: 'Waiting for answers' },
+      'resolving': { status: 'running', event: 'Building agent...' },
+      'draft_ready': { status: 'running', event: 'Draft ready — test & promote' },
+      'testing': { status: 'running', event: 'Testing agent...' },
+      'test_complete': { status: 'running', event: 'Test complete — approve to promote' },
+    };
+    const mapped = phaseMap[currentPhase];
+    if (!mapped) return;
+    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+      useOverviewStore.getState().updateProcessStatus(
+        'agent_build', mapped.status,
+        { lastEvent: mapped.event, runId: draftPersonaId },
+      );
+    }).catch(() => {});
+  }, [currentPhase, draftPersonaId]);
 
   // -- Sync agent name from build draft (agent_ir.name) -------------------
 
@@ -169,6 +230,17 @@ export function UnifiedMatrixEntry() {
       }
     }
 
+    // Register process activity
+    try {
+      void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+        useOverviewStore.getState().processStarted(
+          'agent_build', personaId,
+          `Build: ${workflowName?.slice(0, 30) || generateAgentName(trimmed)}`,
+          { section: 'personas', tab: 'matrix', personaId },
+        );
+      });
+    } catch { /* best-effort */ }
+
     try {
       await build.handleGenerate(
         trimmed,
@@ -181,6 +253,11 @@ export function UnifiedMatrixEntry() {
       setLaunchError(
         err instanceof Error ? err.message : "Build failed to start. Check CLI configuration.",
       );
+      try {
+        void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+          useOverviewStore.getState().processEnded('agent_build', 'failed', personaId);
+        });
+      } catch { /* best-effort */ }
       try {
         await deletePersona(personaId);
       } catch { /* best-effort cleanup */ }

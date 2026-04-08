@@ -31,9 +31,10 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
   return (
     <div className="border border-primary/8 rounded-lg overflow-hidden transition-colors hover:border-primary/15">
       {/* Compact row */}
-      <button
+      <div
+        role="row"
+        className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/20 transition-colors cursor-pointer"
         onClick={onToggle}
-        className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-secondary/20 transition-colors"
       >
         {isExpanded ? (
           <ChevronDown className="w-3 h-3 text-muted-foreground/60 shrink-0" />
@@ -67,7 +68,7 @@ export function EndpointRow({ endpoint, isExpanded, onToggle, onTry, testResult 
           <Play className="w-2.5 h-2.5" />
           Try
         </button>
-      </button>
+      </div>
 
       {/* Expanded detail */}
       {isExpanded && (

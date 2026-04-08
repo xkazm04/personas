@@ -5,4 +5,8 @@ export type CredentialImportResult = { created: number, skipped: number, replace
 /**
  * Non-empty when conflicts detected — frontend should show resolution UI
  */
-conflicts: Array<CredentialConflict>, };
+conflicts: Array<CredentialConflict>, 
+/**
+ * Path of the selected file — returned so the frontend can pass it back for resolution
+ */
+file_path: string | null, };

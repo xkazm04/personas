@@ -29,6 +29,7 @@ export function useDataPortability() {
   const [credExportStatus, setCredExportStatus] = useState<Status>('idle');
   const [credImportStatus, setCredImportStatus] = useState<Status>('idle');
   const [credImportResult, setCredImportResult] = useState<CredentialImportResult | null>(null);
+  const [credImportFilePath, setCredImportFilePath] = useState<string | null>(null);
   const [credExportPassphrase, setCredExportPassphrase] = useState('');
   const [credImportPassphrase, setCredImportPassphrase] = useState('');
   const [showCredExportInput, setShowCredExportInput] = useState(false);
@@ -133,14 +134,21 @@ export function useDataPortability() {
     }
     setCredImportStatus('loading');
     setCredImportResult(null);
+    setCredImportFilePath(null);
     setErrorMsg('');
     try {
       const result = await importCredentials(credImportPassphrase);
       if (result) {
         setCredImportResult(result);
-        setCredImportStatus('success');
-        setShowCredImportInput(false);
-        setCredImportPassphrase('');
+        if (result.conflicts.length > 0 && result.file_path) {
+          // Conflicts detected — keep passphrase and store file path for resolution pass
+          setCredImportFilePath(result.file_path);
+          setCredImportStatus('idle');
+        } else {
+          setCredImportStatus('success');
+          setShowCredImportInput(false);
+          setCredImportPassphrase('');
+        }
       } else {
         setCredImportStatus('idle');
       }
@@ -153,15 +161,20 @@ export function useDataPortability() {
 
   const handleCredImportWithResolutions = useCallback(async (resolutions: Record<string, string>) => {
     if (credImportStatus === 'loading') return;
+    if (!credImportFilePath) {
+      setErrorMsg('No import file available — please start the import again');
+      return;
+    }
     setCredImportStatus('loading');
     setErrorMsg('');
     try {
-      const result = await importCredentials(credImportPassphrase, JSON.stringify(resolutions));
+      const result = await importCredentials(credImportPassphrase, JSON.stringify(resolutions), credImportFilePath);
       if (result) {
         setCredImportResult(result);
         setCredImportStatus('success');
         setShowCredImportInput(false);
         setCredImportPassphrase('');
+        setCredImportFilePath(null);
       } else {
         setCredImportStatus('idle');
       }
@@ -170,7 +183,7 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, "Credential import failed"));
       setCredImportStatus('error');
     }
-  }, [credImportPassphrase, credImportStatus]);
+  }, [credImportPassphrase, credImportStatus, credImportFilePath]);
 
   return {
     stats,

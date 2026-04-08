@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 export function statusColor(status: string): string {
@@ -7,6 +7,8 @@ export function statusColor(status: string): string {
       return 'text-emerald-400';
     case 'failed':
       return 'text-red-400';
+    case 'warning':
+      return 'text-amber-400';
     case 'running':
     case 'pending':
       return 'text-amber-400';
@@ -24,6 +26,8 @@ export function statusBg(status: string): string {
       return 'bg-emerald-500/10 border-emerald-500/20';
     case 'failed':
       return 'bg-red-500/10 border-red-500/20';
+    case 'warning':
+      return 'bg-amber-500/10 border-amber-500/20';
     case 'running':
     case 'pending':
       return 'bg-amber-500/10 border-amber-500/20';
@@ -38,6 +42,8 @@ export function StatusIcon({ status }: { status: string }) {
       return <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
     case 'failed':
       return <XCircle className="w-4 h-4 text-red-400" />;
+    case 'warning':
+      return <AlertTriangle className="w-4 h-4 text-amber-400" />;
     case 'running':
       return <LoadingSpinner className="text-amber-400" />;
     case 'pending':

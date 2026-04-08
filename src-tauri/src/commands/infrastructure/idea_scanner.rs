@@ -376,6 +376,27 @@ pub async fn dev_tools_cancel_scan(
     }
 }
 
+/// Poll the status of an idea scan job. Used by the frontend to resync state
+/// after navigating away during a scan and missing the completion event.
+#[tauri::command]
+pub fn dev_tools_get_idea_scan_status(
+    state: State<'_, Arc<AppState>>,
+    scan_id: String,
+) -> Result<serde_json::Value, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    let jobs = IDEA_SCAN_JOBS.lock()?;
+    if let Some(job) = jobs.get(&scan_id) {
+        Ok(json!({
+            "scan_id": scan_id,
+            "status": job.status,
+            "error": job.error,
+            "lines": job.lines,
+        }))
+    } else {
+        Ok(json!({ "scan_id": scan_id, "status": "not_found" }))
+    }
+}
+
 // =============================================================================
 // Core scan logic
 // =============================================================================
@@ -456,7 +477,9 @@ async fn run_idea_scan(
 
     let mut ideas_created = 0i32;
 
-    let timeout_duration = std::time::Duration::from_secs(300); // 5 min
+    // Extended to 20 minutes. If timeout fires but ideas were created,
+    // the scan is treated as a partial success (see check below).
+    let timeout_duration = std::time::Duration::from_secs(1200);
     let stream_result = tokio::time::timeout(timeout_duration, async {
         while let Ok(Some(line)) = reader.next_line().await {
             if line.trim().is_empty() {
@@ -560,17 +583,26 @@ async fn run_idea_scan(
 
     if stream_result.is_err() {
         // Timeout fired — explicitly kill the child to prevent zombie processes.
-        // kill_on_drop only fires when the Child is dropped, but we hold it alive
-        // for the wait() call below, so we must kill manually.
         let _ = child.kill().await;
-        // Give the child a brief window to exit after being killed.
         let _ = tokio::time::timeout(
             std::time::Duration::from_secs(5),
             child.wait(),
         )
         .await;
+
+        // Smart timeout handling: if ideas were created, treat as partial success.
+        if ideas_created > 0 {
+            IDEA_SCAN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!(
+                    "[Warning] Scan timed out after 20 minutes but {ideas_created} ideas were created. Treating as partial success."
+                ),
+            );
+            return Ok(ideas_created);
+        }
         return Err(AppError::Internal(
-            "Idea scan timed out after 5 minutes".into(),
+            "Idea scan timed out after 20 minutes with no ideas created".into(),
         ));
     }
 

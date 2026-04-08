@@ -1395,6 +1395,7 @@ pub fn auto_provision_single(pool: &DbPool, credential_id: &str) {
         );
     }
 
+
     let input = crate::db::models::CreateRotationPolicyInput {
         credential_id: credential_id.to_string(),
         rotation_interval_days: Some(OAUTH_KEEPALIVE_INTERVAL_DAYS),
@@ -1440,7 +1441,7 @@ fn is_oauth_credential(pool: &DbPool, cred: &crate::db::models::PersonaCredentia
     // Fall back to checking credential fields for refresh_token
     match cred_repo::get_fields(pool, &cred.id) {
         Ok(fields) => fields.iter().any(|f| {
-            f.field_key == "refresh_token"
+            f.field_key == "refresh_token" || f.field_key == "refreshToken"
         }),
         Err(_) => false,
     }

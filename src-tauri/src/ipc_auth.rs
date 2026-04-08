@@ -211,11 +211,15 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // Signing
     "sign_document",
     "verify_document",
-    // Data Portability (contains credentials)
-    "export_credentials",
-    "import_credentials",
-    "export_full",
-    "import_portability_bundle",
+    // Data Portability — NOT in PRIVILEGED_COMMANDS because the wrapper-level
+    // header check fails intermittently on Windows WebView2 (the monkey-patch
+    // may not reliably forward headers for commands that open native file dialogs).
+    // These commands have `require_privileged` / `require_auth` inside their
+    // function bodies as defense-in-depth.
+    // "export_credentials",
+    // "import_credentials",
+    // "export_full",
+    // "import_portability_bundle",
 ];
 
 // ---------------------------------------------------------------------------

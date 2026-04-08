@@ -188,6 +188,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
         name: credentialName.trim() || `${designResult.connector.label} Credential`,
         service_type: designResult.connector.name,
         data: extractedValues,
+        healthcheck_passed: healthResult?.success === true,
       });
       await fetchCredentials();
       setPhase('done');
@@ -198,7 +199,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       savingRef.current = false;
       setIsSaving(false);
     }
-  }, [designResult, credentialName, extractedValues, createCredential, fetchCredentials]);
+  }, [designResult, credentialName, extractedValues, healthResult, createCredential, fetchCredentials]);
 
   /** Field-level completeness derived from extracted values and connector fields. */
   const completeness: ExtractionCompleteness | null = useMemo(() => {

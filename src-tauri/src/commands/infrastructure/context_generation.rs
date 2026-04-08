@@ -400,17 +400,29 @@ pub async fn dev_tools_scan_codebase(
 
         match result {
             Ok(summary) => {
-                CONTEXT_GEN_JOBS.set_status(&app_handle, &scan_id_for_task, "completed", None);
+                let is_warning = summary.status == "completed_with_warning";
+                let status_str = if is_warning { "completed_with_warning" } else { "completed" };
+                CONTEXT_GEN_JOBS.set_status(
+                    &app_handle,
+                    &scan_id_for_task,
+                    status_str,
+                    summary.error.clone(),
+                );
                 let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
                 // OS notification
-                crate::notifications::send(
-                    &app_handle,
-                    "Context Map Ready",
-                    &format!(
+                let title = if is_warning { "Context Map Ready (with warning)" } else { "Context Map Ready" };
+                let body = if is_warning {
+                    format!(
+                        "{}: {} groups, {} contexts mapped (scan exceeded timeout — partial results saved).",
+                        project_name, summary.groups_created, summary.contexts_created,
+                    )
+                } else {
+                    format!(
                         "{}: {} groups, {} contexts mapped.",
                         project_name, summary.groups_created, summary.contexts_created,
-                    ),
-                );
+                    )
+                };
+                crate::notifications::send(&app_handle, title, &body);
             }
             Err(e) => {
                 let msg = format!("{e}");
@@ -580,7 +592,10 @@ async fn run_context_generation(
     let mut contexts_created = 0i32;
     let mut files_mapped = 0i32;
 
-    let timeout_duration = std::time::Duration::from_secs(600);
+    // Extended to 30 minutes to handle large codebases.
+    // If timeout fires but contexts were already committed, the scan is treated
+    // as a partial success (see check below after the loop).
+    let timeout_duration = std::time::Duration::from_secs(1800);
     let stream_result = tokio::time::timeout(timeout_duration, async {
         while let Ok(Some(line)) = reader.next_line().await {
             if line.trim().is_empty() {
@@ -687,11 +702,37 @@ async fn run_context_generation(
     })
     .await;
 
-    let _ = child.wait().await;
-
+    // On timeout, kill the child explicitly to avoid zombie processes.
     if stream_result.is_err() {
+        let _ = child.kill().await;
+    }
+    let _ = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await;
+
+    let timed_out = stream_result.is_err();
+
+    // Smart timeout handling: if any work was committed, treat the scan as a
+    // partial success rather than a hard failure. The user can see the contexts
+    // in the database, so reporting "failed" would be misleading.
+    if timed_out {
+        if groups_created > 0 || contexts_created > 0 {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!(
+                    "[Warning] Scan timed out after 30 minutes but {groups_created} groups and {contexts_created} contexts were created. Treating as partial success."
+                ),
+            );
+            return Ok(ContextGenSummary {
+                scan_id: scan_id.to_string(),
+                groups_created,
+                contexts_created,
+                files_mapped,
+                status: "completed_with_warning".to_string(),
+                error: Some("Scan exceeded 30-minute timeout but partial results were saved".to_string()),
+            });
+        }
         return Err(AppError::Internal(
-            "Context generation timed out after 10 minutes".into(),
+            "Context generation timed out after 30 minutes with no contexts created".into(),
         ));
     }
 

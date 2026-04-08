@@ -397,6 +397,7 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "novu" => Some("https://api.novu.co/v1"),
         "knock" => Some("https://api.knock.app/v1"),
         "linkedin" => Some("https://api.linkedin.com"),
+        "reddit" => Some("https://oauth.reddit.com"),
         "sentry" => Some("https://sentry.io"),
         "alpha_vantage" => Some("https://www.alphavantage.co"),
         "google_workspace_oauth_template" => Some("https://www.googleapis.com"),

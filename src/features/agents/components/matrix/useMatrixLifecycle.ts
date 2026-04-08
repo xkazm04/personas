@@ -116,6 +116,7 @@ export function useMatrixLifecycle({
     const state = useAgentStore.getState();
     if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return;
 
+
     const effectivePersonaId = state.buildPersonaId || personaId;
     const sessionId = state.buildSessionId;
 

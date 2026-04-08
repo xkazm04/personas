@@ -31,7 +31,7 @@ function createWorkerBlob(): Blob {
     let lastHeartbeat = Date.now();
     let lastData = null;
     let frozen = false;
-    const TIMEOUT_MS = 500;
+    const TIMEOUT_MS = 750;
     const CHECK_MS = 200;
 
     setInterval(() => {
@@ -129,5 +129,5 @@ export function stopWatchdog(): void {
   if (worker) { worker.terminate(); worker = null; }
 }
 
-// Auto-start in dev mode
-startWatchdog();
+// Auto-start only in dev mode — no overhead in production
+if (import.meta.env.DEV) startWatchdog();

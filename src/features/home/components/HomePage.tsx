@@ -3,7 +3,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
 import HomeWelcome from '@/features/home/components/HomeWelcome';
 
-const HomeRoadmap = lazy(() => import('@/features/home/components/HomeRoadmap'));
+const HomeReleases = lazy(() => import('@/features/home/components/releases/HomeReleases'));
 const HomeLearning = lazy(() => import('@/features/home/components/HomeLearning'));
 
 
@@ -21,7 +21,7 @@ export default function HomePage() {
       {showSystemCheck ? (
         <SystemHealthPanel />
       ) : homeTab === 'roadmap' ? (
-        <Suspense fallback={fallback}><HomeRoadmap /></Suspense>
+        <Suspense fallback={fallback}><HomeReleases /></Suspense>
       ) : homeTab === 'learning' ? (
         <Suspense fallback={fallback}><HomeLearning /></Suspense>
       ) : (

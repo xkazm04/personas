@@ -30,6 +30,9 @@ import circleci from '../../../scripts/connectors/builtin/circleci.json';
 import convex from '../../../scripts/connectors/builtin/convex.json';
 import buffer from '../../../scripts/connectors/builtin/buffer.json';
 import linkedin from '../../../scripts/connectors/builtin/linkedin.json';
+import reddit from '../../../scripts/connectors/builtin/reddit.json';
+import mcpGateway from '../../../scripts/connectors/builtin/mcp_gateway.json';
+import arcade from '../../../scripts/connectors/builtin/arcade.json';
 import slack from '../../../scripts/connectors/builtin/slack.json';
 import discord from '../../../scripts/connectors/builtin/discord.json';
 import telegram from '../../../scripts/connectors/builtin/telegram.json';
@@ -82,6 +85,8 @@ import ntfy from '../../../scripts/connectors/builtin/ntfy.json';
 import obsidian from '../../../scripts/connectors/builtin/obsidian.json';
 import vectorKnowledgeBase from '../../../scripts/connectors/builtin/vector-knowledge-base.json';
 import localMessaging from '../../../scripts/connectors/builtin/local-messaging.json';
+import codebase from '../../../scripts/connectors/builtin/codebase.json';
+import codebases from '../../../scripts/connectors/builtin/codebases.json';
 
 /**
  * Builtin connector shape -- extends the shared ConnectorDefinitionBase.
@@ -113,6 +118,9 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   convex,
   buffer,
   linkedin,
+  reddit,
+  mcpGateway,
+  arcade,
   slack,
   discord,
   telegram,
@@ -165,4 +173,6 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   obsidian,
   vectorKnowledgeBase,
   localMessaging,
+  codebase,
+  codebases,
 ] as BuiltinConnectorDef[];

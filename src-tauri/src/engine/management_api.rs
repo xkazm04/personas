@@ -1,16 +1,23 @@
 //! Management API -- extends the webhook HTTP server with /api/* routes
 //! for persona execution, lab operations, and version management.
 //!
-//! These endpoints allow external tools (MCP servers, CLI scripts) to control
-//! Personas without going through the Tauri IPC layer.
+//! These endpoints allow external tools (MCP servers, CLI scripts, A2A clients)
+//! to control Personas without going through the Tauri IPC layer.
+//!
+//! All routes are gated by the [`require_api_key`] middleware which validates a
+//! `Bearer` token against the `external_api_keys` table. The desktop frontend
+//! uses a process-scoped "system" key created on first call to
+//! [`get_or_create_system_api_key`].
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
+use std::sync::Mutex;
 use tauri::Manager;
 
 use axum::{
-    extract::{Path, Query, State as AxumState},
+    extract::{Path, Query, Request, State as AxumState},
     http::{header, Method, StatusCode},
-    response::IntoResponse,
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
@@ -26,10 +33,15 @@ use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::ab as ab_repo;
 use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::lab::eval as eval_repo;
+use crate::db::repos::resources::external_api_keys as api_key_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
+use crate::engine::a2a::types::{
+    A2ARequest, A2AResponse, AgentCapabilities, AgentCard, AgentSkill,
+};
 use crate::engine::test_runner::{self, TestModelConfig};
 use crate::engine::types::EphemeralPersona;
+use crate::error::AppError;
 use crate::ActiveProcessRegistry;
 
 // =============================================================================
@@ -48,6 +60,7 @@ pub struct ManagementState {
 // =============================================================================
 
 pub fn management_router(state: ManagementState) -> Router {
+    let state_arc = Arc::new(state);
     Router::new()
         // Personas
         .route("/api/personas", get(list_personas))
@@ -69,13 +82,111 @@ pub fn management_router(state: ManagementState) -> Router {
         // Automation settings
         .route("/api/settings/auto-optimize/{persona_id}", get(get_auto_optimize).post(set_auto_optimize))
         .route("/api/settings/health-watch/{persona_id}", get(get_health_watch).post(set_health_watch))
-        .with_state(Arc::new(state))
+        // A2A Gateway -- agent card discovery + JSON-RPC entry point
+        .route("/agent-card/{persona_id}", get(get_agent_card))
+        .route("/a2a/{persona_id}", post(handle_a2a_request))
+        .with_state(state_arc.clone())
+        // Auth middleware runs INSIDE the CORS layer so OPTIONS preflight
+        // requests do not require an API key.
+        .layer(middleware::from_fn_with_state(state_arc, require_api_key))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
                 .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
                 .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]),
         )
+}
+
+// =============================================================================
+// API key auth middleware
+// =============================================================================
+
+/// Require a valid `Authorization: Bearer <token>` header. Tokens are checked
+/// against `external_api_keys`. Disabled / revoked / unknown tokens return
+/// 401. The middleware never logs token plaintext — only the prefix when a
+/// match succeeds, for traceability.
+async fn require_api_key(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    req: Request,
+    next: Next,
+) -> Result<Response, (StatusCode, Json<ApiResult>)> {
+    let token = req
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .map(str::to_string);
+
+    let Some(token) = token else {
+        return Err(err_json_tuple(StatusCode::UNAUTHORIZED, "missing api key"));
+    };
+
+    match api_key_repo::find_by_token(&state.pool, &token) {
+        Ok(Some(key)) => {
+            tracing::debug!(prefix = %key.key_prefix, "external api key accepted");
+            Ok(next.run(req).await)
+        }
+        Ok(None) => Err(err_json_tuple(
+            StatusCode::UNAUTHORIZED,
+            "invalid api key",
+        )),
+        Err(e) => {
+            tracing::error!(error = %e, "api key lookup failed");
+            Err(err_json_tuple(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "auth lookup failed",
+            ))
+        }
+    }
+}
+
+// =============================================================================
+// System API key bootstrap
+// =============================================================================
+
+/// Process-scoped cache of the "system" API key plaintext. The key is rotated
+/// on every app start: previous system keys are revoked and a fresh one is
+/// minted. The frontend fetches it via the `get_system_api_key` Tauri command
+/// and uses it to authenticate direct HTTP fetches against the management API.
+static SYSTEM_API_KEY: OnceLock<Mutex<Option<String>>> = OnceLock::new();
+
+fn system_api_key_cache() -> &'static Mutex<Option<String>> {
+    SYSTEM_API_KEY.get_or_init(|| Mutex::new(None))
+}
+
+/// Return the cached system API key plaintext, creating one on first call.
+/// Concurrent callers race the lock; only the first one through actually mints
+/// a fresh key. Subsequent callers return the cached value.
+pub fn get_or_create_system_api_key(pool: &DbPool) -> Result<String, AppError> {
+    let cache = system_api_key_cache();
+    {
+        let guard = cache.lock().expect("system api key mutex poisoned");
+        if let Some(token) = guard.as_ref() {
+            return Ok(token.clone());
+        }
+    }
+
+    // Revoke any leftover system keys from prior process runs to keep the
+    // table tidy and prevent stale tokens from accumulating.
+    if let Ok(existing) = api_key_repo::list(pool) {
+        for key in existing.iter().filter(|k| k.name == "system" && k.enabled) {
+            let _ = api_key_repo::revoke(pool, &key.id);
+        }
+    }
+
+    let resp = api_key_repo::create(
+        pool,
+        "system",
+        vec!["personas:read".into(), "personas:execute".into()],
+    )?;
+
+    let mut guard = cache.lock().expect("system api key mutex poisoned");
+    // Another thread may have raced us — prefer their value if so.
+    if let Some(existing) = guard.as_ref() {
+        return Ok(existing.clone());
+    }
+    *guard = Some(resp.plaintext_token.clone());
+    Ok(resp.plaintext_token)
 }
 
 // =============================================================================
@@ -138,6 +249,12 @@ fn err_json(status: StatusCode, msg: &str) -> (StatusCode, Json<ApiResult>) {
         data: None,
         error: Some(msg.to_string()),
     }))
+}
+
+/// Variant of `err_json` whose return type is the exact tuple expected by
+/// the auth middleware (`Result<Response, (StatusCode, Json<ApiResult>)>`).
+fn err_json_tuple(status: StatusCode, msg: &str) -> (StatusCode, Json<ApiResult>) {
+    err_json(status, msg)
 }
 
 // =============================================================================
@@ -578,5 +695,416 @@ async fn set_health_watch(
     match settings::set(&state.pool, &key, &json) {
         Ok(()) => ok_json(config).into_response(),
         Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    }
+}
+
+// =============================================================================
+// A2A Gateway -- agent card discovery
+// =============================================================================
+
+/// Build an A2A `AgentCard` from a persona's existing fields plus its
+/// `design_context.use_cases` (each use case becomes a `skill`). Personas
+/// without use cases get a single fallback skill.
+fn build_agent_card(persona: &Persona, host_origin: &str) -> AgentCard {
+    let ctx = persona.parsed_design_context();
+
+    let skills: Vec<AgentSkill> = match ctx.use_cases.as_ref() {
+        Some(uses) if !uses.is_empty() => uses
+            .iter()
+            .map(|u| AgentSkill {
+                id: u.id.clone(),
+                name: u.title.clone(),
+                description: u.description.clone(),
+                tags: u
+                    .category
+                    .as_ref()
+                    .map(|c| vec![c.clone()])
+                    .unwrap_or_default(),
+                examples: Vec::new(),
+                input_modes: vec!["text".into()],
+                output_modes: vec!["text".into()],
+            })
+            .collect(),
+        _ => vec![AgentSkill {
+            id: "default".into(),
+            name: persona.name.clone(),
+            description: persona.description.clone().unwrap_or_default(),
+            tags: Vec::new(),
+            examples: Vec::new(),
+            input_modes: vec!["text".into()],
+            output_modes: vec!["text".into()],
+        }],
+    };
+
+    AgentCard {
+        name: persona.name.clone(),
+        description: persona.description.clone(),
+        url: format!("{host_origin}/a2a/{}", persona.id),
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        capabilities: AgentCapabilities {
+            streaming: false,
+            push_notifications: false,
+            state_transition_history: false,
+        },
+        skills,
+        default_input_modes: vec!["text".into()],
+        default_output_modes: vec!["text".into()],
+    }
+}
+
+/// Derive the request's host origin (`scheme://host`) for use as the
+/// canonical URL prefix in agent cards. Falls back to the loopback address
+/// when the `Host` header is absent.
+fn host_origin_from_request(headers: &axum::http::HeaderMap) -> String {
+    let host = headers
+        .get(header::HOST)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("127.0.0.1:9420");
+    // Management API is HTTP-only on localhost; if a proxy ever fronts it,
+    // the X-Forwarded-Proto header would override this. Keep simple for now.
+    format!("http://{host}")
+}
+
+async fn get_agent_card(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(persona_id): Path<String>,
+    headers: axum::http::HeaderMap,
+) -> Result<Json<AgentCard>, (StatusCode, Json<ApiResult>)> {
+    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, &persona_id) {
+        Ok(Some(p)) => p,
+        Ok(None) => {
+            return Err(err_json(StatusCode::NOT_FOUND, "Persona not found"));
+        }
+        Err(e) => {
+            return Err(err_json(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                &e.to_string(),
+            ));
+        }
+    };
+    let origin = host_origin_from_request(&headers);
+    Ok(Json(build_agent_card(&persona, &origin)))
+}
+
+// =============================================================================
+// A2A Gateway -- JSON-RPC entry point
+// =============================================================================
+
+/// Translate an A2A `message/send` request into the existing `execute_persona`
+/// flow and wrap the result in the A2A response envelope.
+///
+/// Streaming (`message/stream`) and other A2A methods return JSON-RPC
+/// `-32601 Method not found`.
+// TODO(a2a-streaming): wire up `message/stream` once the engine exposes a
+// synchronous-text streaming surface for the management API.
+async fn handle_a2a_request(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(persona_id): Path<String>,
+    Json(req): Json<A2ARequest>,
+) -> impl IntoResponse {
+    let req_id = req.id.clone().unwrap_or(serde_json::Value::Null);
+
+    if req.method != "message/send" {
+        let body = A2AResponse::error(req_id, -32601, "Method not found");
+        return (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+    }
+
+    let params = match req.params {
+        Some(p) => p,
+        None => {
+            let body = A2AResponse::error(
+                req_id,
+                -32602,
+                "Invalid params: missing message",
+            );
+            return (StatusCode::BAD_REQUEST, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+
+    let prompt_text = match params.message.collect_text() {
+        Some(t) => t,
+        None => {
+            let body = A2AResponse::error(
+                req_id,
+                -32602,
+                "Invalid params: message must contain at least one text part",
+            );
+            return (StatusCode::BAD_REQUEST, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+
+    // Look up persona via the exposure-gated helper. Personas with
+    // `gateway_exposure = local_only` are reported as "not exposed" — we
+    // never leak their existence to external consumers.
+    let persona = match persona_repo::find_by_id_if_exposed(&state.pool, &persona_id) {
+        Ok(Some(p)) => p,
+        Ok(None) => {
+            let body = A2AResponse::error(
+                req_id,
+                -32602,
+                "Agent not found or not exposed",
+            );
+            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+        Err(e) => {
+            let body = A2AResponse::error(
+                req_id,
+                -32603,
+                format!("Internal error: {e}"),
+            );
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        }
+    };
+
+    if !persona.enabled {
+        let body = A2AResponse::error(req_id, -32603, "Agent is disabled");
+        return (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+    }
+
+    // InviteOnly is treated identically to Public for now; scope-based
+    // filtering arrives with the rate-limiter / per-key scopes finding.
+    if matches!(persona.gateway_exposure, PersonaGatewayExposure::InviteOnly) {
+        tracing::debug!(
+            persona_id = %persona.id,
+            "invite_only persona served as public until scopes ship"
+        );
+    }
+
+    // Wrap the user-supplied text into the engine's input shape and route
+    // through the same path used by `/api/execute`.
+    let input_value = serde_json::json!({ "input": prompt_text });
+    match run_persona_synchronous(&state, persona, input_value).await {
+        Ok(text) => {
+            let body = A2AResponse::success(req_id, text);
+            (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+        }
+        Err(e) => {
+            let body = A2AResponse::error(req_id, -32603, format!("Internal error: {e}"));
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+        }
+    }
+}
+
+/// Execute a persona synchronously and return its final text output.
+///
+/// The existing `/api/execute` handler is fire-and-forget — it returns an
+/// execution ID immediately. For A2A we need to block until completion, so
+/// we kick off the same engine call and then poll the executions table for
+/// terminal status.
+async fn run_persona_synchronous(
+    state: &ManagementState,
+    persona: Persona,
+    input: serde_json::Value,
+) -> Result<String, AppError> {
+    // 1. Create the execution row up front.
+    let persona_id = persona.id.clone();
+    let input_str = Some(input.to_string());
+    let execution = exec_repo::create(&state.pool, &persona_id, None, input_str, None, None)
+        .map_err(|e| AppError::Internal(format!("Failed to create execution: {e}")))?;
+
+    let tools = tool_repo::get_tools_for_persona(&state.pool, &persona_id).unwrap_or_default();
+
+    // 2. Hand off to the engine.
+    let app_state: tauri::State<'_, Arc<crate::AppState>> = state
+        .app
+        .try_state()
+        .ok_or_else(|| AppError::Internal("App state not available".into()))?;
+
+    app_state
+        .engine
+        .start_execution(
+            state.app.clone(),
+            state.pool.clone(),
+            execution.id.clone(),
+            persona,
+            tools,
+            Some(input),
+            None,
+        )
+        .await
+        .map_err(|e| AppError::Execution(e.to_string()))?;
+
+    // 3. Poll the execution until it reaches a terminal state. The cap is
+    //    intentionally generous; the engine has its own per-persona timeout
+    //    that will fail the row faster than this loop unwinds.
+    const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
+    const MAX_WAIT: std::time::Duration = std::time::Duration::from_secs(600);
+    let started = std::time::Instant::now();
+
+    loop {
+        let row = exec_repo::get_by_id(&state.pool, &execution.id)?;
+        let status = row.status.as_str();
+        match status {
+            "completed" | "success" => {
+                return Ok(row
+                    .output_data
+                    .unwrap_or_else(|| "".to_string()));
+            }
+            "failed" | "error" | "cancelled" | "timeout" => {
+                return Err(AppError::Execution(
+                    row.error_message.unwrap_or_else(|| status.to_string()),
+                ));
+            }
+            _ => {
+                if started.elapsed() > MAX_WAIT {
+                    return Err(AppError::Execution(
+                        "A2A execution timed out waiting for terminal status".into(),
+                    ));
+                }
+                tokio::time::sleep(POLL_INTERVAL).await;
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Tests
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    /// Build a fresh in-memory pool with full schema. Mirrors the helper used
+    /// by `external_api_keys.rs`'s tests.
+    fn test_pool() -> DbPool {
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let uri = format!("file:mgmt_api_testdb_{id}?mode=memory&cache=shared");
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
+        let pool = r2d2::Pool::builder()
+            .max_size(4)
+            .build(manager)
+            .expect("test pool build");
+        {
+            let conn = pool.get().expect("conn");
+            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            crate::db::migrations::run(&conn).expect("migrations");
+        }
+        pool
+    }
+
+    #[test]
+    fn system_api_key_is_cached_across_calls() {
+        // Reset the cache so the test is hermetic regardless of test order.
+        {
+            let cache = system_api_key_cache();
+            *cache.lock().unwrap() = None;
+        }
+        let pool = test_pool();
+        let a = get_or_create_system_api_key(&pool).expect("first");
+        let b = get_or_create_system_api_key(&pool).expect("second");
+        assert_eq!(a, b, "cached system key must be stable across calls");
+        assert!(a.starts_with("pk_"));
+    }
+
+    #[test]
+    fn agent_card_uses_design_context_use_cases() {
+        let now = chrono::Utc::now().to_rfc3339();
+        let design_context = serde_json::json!({
+            "useCases": [
+                {
+                    "id": "uc-1",
+                    "title": "Summarize emails",
+                    "description": "Reads and summarizes incoming email threads.",
+                    "category": "email"
+                }
+            ]
+        })
+        .to_string();
+        let persona = Persona {
+            id: "p-1".into(),
+            project_id: "default".into(),
+            name: "Email Buddy".into(),
+            description: Some("Summarizes email".into()),
+            system_prompt: "You summarize email.".into(),
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: true,
+            sensitive: false,
+            headless: false,
+            max_concurrent: 1,
+            timeout_ms: 30_000,
+            notification_channels: None,
+            last_design_result: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: Some(design_context),
+            group_id: None,
+            source_review_id: None,
+            trust_level: PersonaTrustLevel::Verified,
+            trust_origin: PersonaTrustOrigin::Builtin,
+            trust_verified_at: None,
+            trust_score: 1.0,
+            parameters: None,
+            gateway_exposure: PersonaGatewayExposure::Public,
+            created_at: now.clone(),
+            updated_at: now,
+        };
+        let card = build_agent_card(&persona, "http://localhost:9420");
+        assert_eq!(card.name, "Email Buddy");
+        assert_eq!(card.url, "http://localhost:9420/a2a/p-1");
+        assert_eq!(card.skills.len(), 1);
+        assert_eq!(card.skills[0].id, "uc-1");
+        assert_eq!(card.skills[0].name, "Summarize emails");
+        assert_eq!(card.skills[0].tags, vec!["email".to_string()]);
+        assert!(!card.capabilities.streaming);
+    }
+
+    #[test]
+    fn agent_card_falls_back_to_default_skill_when_no_use_cases() {
+        let now = chrono::Utc::now().to_rfc3339();
+        let persona = Persona {
+            id: "p-2".into(),
+            project_id: "default".into(),
+            name: "Helper".into(),
+            description: Some("Generic helper".into()),
+            system_prompt: "Help.".into(),
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: true,
+            sensitive: false,
+            headless: false,
+            max_concurrent: 1,
+            timeout_ms: 30_000,
+            notification_channels: None,
+            last_design_result: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            group_id: None,
+            source_review_id: None,
+            trust_level: PersonaTrustLevel::Verified,
+            trust_origin: PersonaTrustOrigin::Builtin,
+            trust_verified_at: None,
+            trust_score: 1.0,
+            parameters: None,
+            gateway_exposure: PersonaGatewayExposure::Public,
+            created_at: now.clone(),
+            updated_at: now,
+        };
+        let card = build_agent_card(&persona, "http://x");
+        assert_eq!(card.skills.len(), 1);
+        assert_eq!(card.skills[0].id, "default");
+        assert_eq!(card.skills[0].name, "Helper");
+        assert_eq!(card.skills[0].description, "Generic helper");
+    }
+
+    #[test]
+    fn host_origin_falls_back_to_loopback_without_host_header() {
+        let headers = axum::http::HeaderMap::new();
+        assert_eq!(host_origin_from_request(&headers), "http://127.0.0.1:9420");
+    }
+
+    #[test]
+    fn host_origin_uses_supplied_host_header() {
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert(header::HOST, "personas.local:8080".parse().unwrap());
+        assert_eq!(host_origin_from_request(&headers), "http://personas.local:8080");
     }
 }

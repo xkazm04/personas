@@ -32,5 +32,9 @@ export const previewCompetitiveImport = () =>
 export const exportCredentials = (passphrase: string) =>
   invoke<boolean>("export_credentials", { passphrase });
 
-export const importCredentials = (passphrase: string, resolutionsJson?: string) =>
-  invoke<CredentialImportResult | null>("import_credentials", { passphrase, resolutionsJson: resolutionsJson ?? null });
+export const importCredentials = (passphrase: string, resolutionsJson?: string, filePathOverride?: string) =>
+  invoke<CredentialImportResult | null>("import_credentials", {
+    passphrase,
+    resolutionsJson: resolutionsJson ?? null,
+    filePathOverride: filePathOverride ?? null,
+  });

@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, Table2, Code2, Terminal, MessageSquare } from 'lucide-react';
+import { X, Table2, Code2, Terminal, MessageSquare, Pencil, Check } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
+import * as credApi from '@/api/vault/credentials';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { TablesTab } from './tabs/TablesTab';
 import { QueriesTab } from './tabs/QueriesTab';
@@ -13,10 +15,10 @@ import { ChatTab } from './tabs/ChatTab';
 type SchemaTab = 'chat' | 'tables' | 'queries' | 'console';
 
 const TABS: { id: SchemaTab; label: string; icon: typeof Table2 }[] = [
-  { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'tables', label: 'Tables', icon: Table2 },
   { id: 'queries', label: 'Queries', icon: Code2 },
   { id: 'console', label: 'Console', icon: Terminal },
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
 ];
 
 interface SchemaManagerModalProps {
@@ -26,9 +28,35 @@ interface SchemaManagerModalProps {
 }
 
 export function SchemaManagerModal({ credential, connector, onClose }: SchemaManagerModalProps) {
-  const [activeTab, setActiveTab] = useState<SchemaTab>('chat');
+  const [activeTab, setActiveTab] = useState<SchemaTab>('tables');
   // Track which tabs have been visited -- mount lazily, keep mounted
-  const [visited, setVisited] = useState<Set<SchemaTab>>(() => new Set(['chat']));
+  const [visited, setVisited] = useState<Set<SchemaTab>>(() => new Set(['tables']));
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState(credential.name);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const saveName = useCallback(async () => {
+    const trimmed = editName.trim();
+    if (!trimmed || trimmed === credential.name) {
+      setIsEditingName(false);
+      setEditName(credential.name);
+      return;
+    }
+    try {
+      const updatedRaw = await credApi.updateCredential(credential.id, {
+        name: trimmed,
+        service_type: null,
+        encrypted_data: null,
+        metadata: null,
+      });
+      const updated = toCredentialMetadata(updatedRaw);
+      useVaultStore.setState((s) => ({
+        credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
+      }));
+    } catch { /* intentional: non-critical -- rename is best-effort */ }
+    setIsEditingName(false);
+  }, [credential.id, credential.name, editName]);
+
   const fetchDbSchemaTables = useVaultStore((s) => s.fetchDbSchemaTables);
   const fetchDbSavedQueries = useVaultStore((s) => s.fetchDbSavedQueries);
 
@@ -59,9 +87,45 @@ export function SchemaManagerModal({ credential, connector, onClose }: SchemaMan
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 id="schema-manager-title" className="text-sm font-semibold text-foreground/90 truncate">
-            {credential.name}
-          </h2>
+          <div className="flex items-center gap-1.5 mb-0.5 group/name">
+            {isEditingName ? (
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveName();
+                    if (e.key === 'Escape') { setIsEditingName(false); setEditName(credential.name); }
+                  }}
+                  onBlur={saveName}
+                  autoFocus
+                  className="flex-1 min-w-0 text-sm font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-md px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+                />
+                <button
+                  onMouseDown={(e) => { e.preventDefault(); saveName(); }}
+                  className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
+                  title="Save name"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <h2 id="schema-manager-title" className="text-sm font-semibold text-foreground/90 truncate">
+                  {credential.name}
+                </h2>
+                <button
+                  onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
+                  className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
+                  title="Rename credential"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              </>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground/60">
             Schema Manager -- {connector?.label || credential.service_type}
           </p>

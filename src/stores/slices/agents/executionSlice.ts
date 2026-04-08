@@ -27,6 +27,7 @@ import { executionSink } from "@/lib/execution/executionSink";
 import { TERMINAL_STATUS_SET } from "@/lib/execution/executionState";
 import { classifyLine } from "@/lib/utils/terminalColors";
 import { createRunLifecycle } from "./runLifecycle";
+import { trackRecentAgent } from "@/hooks/agents/useRecentAgents";
 
 const executionLifecycle = createRunLifecycle('isExecuting', 'executionProgress');
 
@@ -219,6 +220,9 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       executionLifecycle.markStarted(set);
       set({ executionOutput: [], executionOutputBytes: 0, executionPersonaId: personaId, activeUseCaseId: useCaseId ?? null });
     }
+
+    // Track this persona as recently accessed so it appears in the sidebar Recent group.
+    trackRecentAgent(personaId);
 
     // Pipeline: initiate stage
     let trace = createPipelineTrace('pending');

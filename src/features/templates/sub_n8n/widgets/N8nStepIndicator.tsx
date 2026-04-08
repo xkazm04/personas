@@ -1,27 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Search, Sparkles, Pencil, Check } from 'lucide-react';
-import { WIZARD_STEPS, STEP_META, type N8nWizardStep } from '../hooks/useN8nImportReducer';
+import { Upload, Search, Check, Hammer } from 'lucide-react';
+import { STEP_META, type N8nWizardStep } from '../hooks/useN8nImportReducer';
 
-const STEP_ICONS: Record<N8nWizardStep, React.ComponentType<{ className?: string }>> = {
+/** Visible steps in the n8n import wizard (upload → analyze → build persona). */
+const VISIBLE_STEPS: readonly N8nWizardStep[] = ['upload', 'analyze'] as const;
+
+const STEP_ICONS: Partial<Record<N8nWizardStep, React.ComponentType<{ className?: string }>>> = {
   upload: Upload,
   analyze: Search,
-  transform: Sparkles,
-  edit: Pencil,
-  confirm: Check,
 };
 
-const STEP_LABELS: Record<N8nWizardStep, string> = {
+const STEP_LABELS: Partial<Record<N8nWizardStep, string>> = {
   upload: 'Upload',
   analyze: 'Analyze',
-  transform: 'Transform',
-  edit: 'Review',
-  confirm: 'Confirm',
 };
 
 /** Estimated duration hints for long-running steps. */
 const STEP_DURATION_HINT: Partial<Record<N8nWizardStep, string>> = {
   analyze: '~30s',
-  transform: '~60s',
 };
 
 interface N8nStepIndicatorProps {
@@ -55,9 +51,9 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
   return (
     <nav className={`flex items-center gap-1 px-2 py-3 ${className}`} role="navigation" aria-label="Import wizard progress">
       <div className="flex items-center gap-1 w-full" role="list" aria-label="Wizard steps">
-      {WIZARD_STEPS.map((step, i) => {
-        const Icon = STEP_ICONS[step];
-        const label = STEP_LABELS[step];
+      {VISIBLE_STEPS.map((step, i) => {
+        const Icon = STEP_ICONS[step] ?? Hammer;
+        const label = STEP_LABELS[step] ?? step;
         const isCompleted = i < activeIndex;
         const isActive = i === activeIndex;
         const hint = STEP_DURATION_HINT[step];
@@ -102,7 +98,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
               {/* Step label + timer */}
               <div className="min-w-0">
                 <span className="sr-only">
-                  {`Step ${i + 1} of ${WIZARD_STEPS.length}: ${label} (${statusText})`}
+                  {`Step ${i + 1} of ${VISIBLE_STEPS.length}: ${label} (${statusText})`}
                 </span>
                 <span
                   className={`text-sm font-medium truncate transition-colors duration-300 block ${
@@ -128,7 +124,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
             </div>
 
             {/* Connector line */}
-            {i < WIZARD_STEPS.length - 1 && (
+            {i < VISIBLE_STEPS.length - 1 && (
               <div className="flex-1 h-px mx-1.5 min-w-4">
                 <div
                   className={`h-full rounded-full transition-colors duration-300 ${

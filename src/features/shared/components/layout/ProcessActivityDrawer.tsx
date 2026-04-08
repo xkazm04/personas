@@ -3,9 +3,12 @@ import { X } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
 import { useOverviewStore } from "@/stores/overviewStore";
+import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { useReasoningTrace } from "@/hooks/execution/useReasoningTrace";
 import ReasoningTrace from "./ReasoningTrace";
+import type { SidebarSection, DevToolsTab, PluginTab } from "@/lib/types/types";
 
 interface DrawerProps {
   onClose: () => void;
@@ -29,6 +32,12 @@ function StatusDot({ status }: { status: ActiveProcess["status"] }) {
   if (status === "queued") {
     return <span className="inline-block w-2 h-2 rounded-full bg-amber-400 shrink-0" />;
   }
+  if (status === "input_required") {
+    return <span className="inline-block w-2 h-2 rounded-full bg-orange-400 animate-pulse shrink-0" />;
+  }
+  if (status === "draft_ready") {
+    return <span className="inline-block w-2 h-2 rounded-full bg-violet-400 shrink-0" />;
+  }
   if (status === "completed") {
     return <span className="text-green-400 shrink-0 text-xs">{"\u2713"}</span>;
   }
@@ -38,22 +47,47 @@ function StatusDot({ status }: { status: ActiveProcess["status"] }) {
   return <span className="text-muted-foreground shrink-0 text-xs">{"\u2014"}</span>;
 }
 
+function statusLabel(status: ActiveProcess["status"], queuePosition?: number): string {
+  switch (status) {
+    case "running": return "";          // elapsed timer shown instead
+    case "queued": return `#${(queuePosition ?? 0) + 1} in queue`;
+    case "input_required": return "Input required";
+    case "draft_ready": return "Draft ready";
+    default: return status;
+  }
+}
+
 function ProcessRow({
   process,
+  onNavigate,
 }: {
   process: ActiveProcess;
   processKey: string;
+  onNavigate?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isExecution = process.domain === "execution";
   const executionId = isExecution && expanded ? (process.runId ?? null) : null;
   const { entries, isLive } = useReasoningTrace(executionId);
+  const hasNav = !!process.navigateTo;
+
+  const handleClick = () => {
+    if (hasNav && onNavigate) {
+      onNavigate();
+      return;
+    }
+    if (isExecution && process.status === "running") {
+      setExpanded((v) => !v);
+    }
+  };
 
   return (
     <div className="border-b border-primary/5 last:border-b-0">
       <button
-        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-primary/5 transition-colors text-left"
-        onClick={() => isExecution && process.status === "running" && setExpanded((v) => !v)}
+        className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-primary/5 transition-colors text-left ${
+          hasNav ? "cursor-pointer" : ""
+        }`}
+        onClick={handleClick}
       >
         <StatusDot status={process.status} />
         <div className="min-w-0 flex-1">
@@ -72,10 +106,11 @@ function ProcessRow({
         <div className="typo-caption text-muted-foreground/60 shrink-0 text-right">
           {process.status === "running"
             ? elapsedStr(process.startedAt)
-            : process.status === "queued"
-              ? `#${(process.queuePosition ?? 0) + 1} in queue`
-              : process.status}
+            : statusLabel(process.status, process.queuePosition)}
         </div>
+        {hasNav && (
+          <span className="text-primary/40 text-xs shrink-0 ml-1">&rsaquo;</span>
+        )}
       </button>
 
       {expanded && isExecution && (
@@ -103,15 +138,44 @@ function DrawerContent({ onClose }: DrawerProps) {
       recentProcesses: s.recentProcesses,
     })),
   );
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const setPluginTab = useSystemStore((s) => s.setPluginTab);
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+
+  const navigateToProcess = (process: ActiveProcess) => {
+    if (!process.navigateTo) return;
+    const { section, tab, personaId } = process.navigateTo;
+    setSidebarSection(section as SidebarSection);
+    if (tab) {
+      if (section === 'personas') {
+        setEditorTab(tab as "matrix" | "activity");
+      } else if (section === 'plugins') {
+        // Plugins section: tab is the dev-tools sub-tab. Always activate dev-tools.
+        setPluginTab('dev-tools' as PluginTab);
+        setDevToolsTab(tab as DevToolsTab);
+      } else {
+        setTemplateTab(tab as "n8n" | "generated");
+      }
+    }
+    if (personaId) {
+      useAgentStore.getState().selectPersona(personaId);
+    }
+    onClose();
+  };
 
   const runningEntries = Object.entries(activeProcesses).filter(
     ([, p]) => p.status === "running",
+  );
+  const actionEntries = Object.entries(activeProcesses).filter(
+    ([, p]) => p.status === "input_required" || p.status === "draft_ready",
   );
   const queuedEntries = Object.entries(activeProcesses)
     .filter(([, p]) => p.status === "queued")
     .sort((a, b) => (a[1].queuePosition ?? 99) - (b[1].queuePosition ?? 99));
 
-  const hasContent = runningEntries.length > 0 || queuedEntries.length > 0 || recentProcesses.length > 0;
+  const hasContent = runningEntries.length > 0 || actionEntries.length > 0 || queuedEntries.length > 0 || recentProcesses.length > 0;
 
   return (
     <>
@@ -123,13 +187,24 @@ function DrawerContent({ onClose }: DrawerProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
           <h3 className="typo-body font-semibold">Process Activity</h3>
-          <button
-            className="p-1 rounded hover:bg-primary/10 transition-colors"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            {(actionEntries.length > 0 || queuedEntries.length > 0 || recentProcesses.length > 0) && (
+              <button
+                className="px-2 py-1 rounded text-[10px] text-muted-foreground/50 hover:text-muted-foreground/80 hover:bg-primary/10 transition-colors"
+                onClick={() => useOverviewStore.getState().clearNonActive()}
+                title="Clear completed and queued items"
+              >
+                Clear
+              </button>
+            )}
+            <button
+              className="p-1 rounded hover:bg-primary/10 transition-colors"
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -140,6 +215,18 @@ function DrawerContent({ onClose }: DrawerProps) {
             </div>
           )}
 
+          {/* Action required section (input_required, draft_ready) */}
+          {actionEntries.length > 0 && (
+            <div>
+              <div className="px-3 pt-3 pb-1 typo-caption text-orange-400/70 uppercase tracking-wide">
+                Action Required ({actionEntries.length})
+              </div>
+              {actionEntries.map(([key, proc]) => (
+                <ProcessRow key={key} processKey={key} process={proc} onNavigate={() => navigateToProcess(proc)} />
+              ))}
+            </div>
+          )}
+
           {/* Active (running) section */}
           {runningEntries.length > 0 && (
             <div>
@@ -147,7 +234,7 @@ function DrawerContent({ onClose }: DrawerProps) {
                 Active ({runningEntries.length})
               </div>
               {runningEntries.map(([key, proc]) => (
-                <ProcessRow key={key} processKey={key} process={proc} />
+                <ProcessRow key={key} processKey={key} process={proc} onNavigate={() => navigateToProcess(proc)} />
               ))}
             </div>
           )}
@@ -159,7 +246,7 @@ function DrawerContent({ onClose }: DrawerProps) {
                 Queued ({queuedEntries.length})
               </div>
               {queuedEntries.map(([key, proc]) => (
-                <ProcessRow key={key} processKey={key} process={proc} />
+                <ProcessRow key={key} processKey={key} process={proc} onNavigate={() => navigateToProcess(proc)} />
               ))}
             </div>
           )}
@@ -175,6 +262,7 @@ function DrawerContent({ onClose }: DrawerProps) {
                   key={`recent-${proc.startedAt}-${i}`}
                   processKey={`recent-${i}`}
                   process={proc}
+                  onNavigate={() => navigateToProcess(proc)}
                 />
               ))}
             </div>

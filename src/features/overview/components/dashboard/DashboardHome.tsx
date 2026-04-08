@@ -11,7 +11,6 @@ import { selectActiveAlertCount } from '@/stores/selectors/activeAlertCount';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
-import DeployFirstAutomationCard from '@/features/overview/components/dashboard/cards/DeployFirstAutomationCard';
 import { HealthDigestPanel } from '@/features/agents/health';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { DashboardEmptyState } from './DashboardEmptyState';
@@ -186,7 +185,6 @@ export default function DashboardHome() {
               {/* Right: Health Digest + Deploy + Rotation + Health Issues */}
               <div className="space-y-4">
                 <HealthDigestPanel />
-                <DeployFirstAutomationCard />
                 <Suspense fallback={null}>
                   <AnalyticsInserts position="right" />
                 </Suspense>

@@ -58,6 +58,59 @@ impl FromStr for PersonaTrustLevel {
     }
 }
 
+/// Visibility of a persona to the external management HTTP API ("A2A gateway").
+///
+/// - `LocalOnly`  — not exposed via the management API at all (default).
+///                  Existing personas migrate to this so external visibility is opt-in.
+/// - `InviteOnly` — exposed only to API keys with an explicit grant. For now treated
+///                  identically to `Public`; scope-based filtering lands with the
+///                  rate-limiting/scopes finding.
+/// - `Public`     — exposed to any authenticated API key.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum PersonaGatewayExposure {
+    #[default]
+    LocalOnly,
+    InviteOnly,
+    Public,
+}
+
+impl fmt::Display for PersonaGatewayExposure {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl PersonaGatewayExposure {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::LocalOnly => "local_only",
+            Self::InviteOnly => "invite_only",
+            Self::Public => "public",
+        }
+    }
+
+    /// True when the persona should be visible to authenticated API keys.
+    pub fn is_externally_visible(&self) -> bool {
+        matches!(self, Self::InviteOnly | Self::Public)
+    }
+}
+
+impl FromStr for PersonaGatewayExposure {
+    type Err = AppError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "local_only" => Ok(Self::LocalOnly),
+            "invite_only" => Ok(Self::InviteOnly),
+            "public" => Ok(Self::Public),
+            _ => Err(AppError::Validation(format!(
+                "Invalid gateway_exposure '{s}': must be 'local_only', 'invite_only', or 'public'"
+            ))),
+        }
+    }
+}
+
 /// Origin of a persona's trust classification.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -310,6 +363,10 @@ pub struct Persona {
     /// Free parameters: JSON array of `PersonaParameter` definitions.
     /// Adjustable at runtime without triggering a rebuild.
     pub parameters: Option<String>,
+    /// Visibility to the external management HTTP API.
+    /// Defaults to `LocalOnly` so existing personas are not exposed.
+    #[serde(default)]
+    pub gateway_exposure: PersonaGatewayExposure,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -494,4 +551,5 @@ pub struct UpdatePersonaInput {
     pub design_context: Option<Option<String>>,
     pub group_id: Option<Option<String>>,
     pub parameters: Option<Option<String>>,
+    pub gateway_exposure: Option<PersonaGatewayExposure>,
 }

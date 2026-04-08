@@ -19,6 +19,7 @@ import {
 import { ProjectSelector } from '../DevToolsPage';
 import { IdeaEvolutionPanel } from './IdeaEvolutionPanel';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import type { DevContext } from '@/lib/bindings/DevContext';
 import { parseJsonArray } from '../sub_context/contextMapTypes';
 
@@ -295,7 +296,6 @@ export default function IdeaScannerPage() {
 
   // Wire to store for real idea data — survives navigation
   const storeIdeas = useSystemStore((s) => s.scanResults);
-  const currentScanId = useSystemStore((s) => s.currentScanId);
   const scanPhase = useSystemStore((s) => s.scanPhase);
   const isRunning = scanPhase === 'running';
   const scans = useSystemStore((s) => s.scans ?? []);
@@ -344,48 +344,121 @@ export default function IdeaScannerPage() {
     if (activeProjectId) fetchScans(activeProjectId);
   }, [activeProjectId, fetchScans]);
 
-  // Listen for streaming events — works even when navigating back to a running scan
+  // Finalization helper — reads everything from store, no closure deps
+  const finalizeScan = useCallback((outcome: 'success' | 'warning' | 'failed', errorMessage?: string) => {
+    const pid = useSystemStore.getState().activeProjectId;
+    if (outcome !== 'failed' && pid) {
+      useSystemStore.getState().fetchIdeas(pid);
+      useSystemStore.getState().fetchScans(pid);
+    }
+    setScanProgress(100);
+    setCurrentAgentKey(null);
+    useOverviewStore.getState().processEnded('idea_scan', outcome === 'failed' ? 'failed' : 'completed');
+
+    const center = useNotificationCenterStore.getState();
+    if (outcome === 'success') {
+      const ideaCount = useSystemStore.getState().ideas.length;
+      center.addProcessNotification({
+        processType: 'idea-scan',
+        status: 'success',
+        title: 'Idea Scan Completed',
+        summary: ideaCount > 0
+          ? `Generated ideas are ready for triage. Total ideas in backlog: ${ideaCount}.`
+          : 'Scan completed. Open the page to see new ideas.',
+        redirectSection: 'plugins',
+        redirectTab: 'idea-scanner',
+      });
+    } else if (outcome === 'warning') {
+      center.addProcessNotification({
+        processType: 'idea-scan',
+        status: 'warning',
+        title: 'Idea Scan (partial)',
+        summary: 'Scan exceeded the timeout but partial results were saved. Click Open to review what was generated.',
+        redirectSection: 'plugins',
+        redirectTab: 'idea-scanner',
+      });
+    } else {
+      center.addProcessNotification({
+        processType: 'idea-scan',
+        status: 'failed',
+        title: 'Idea Scan Failed',
+        summary: errorMessage ?? 'The idea scan failed before any ideas were generated. Try again or check the logs.',
+        redirectSection: 'plugins',
+        redirectTab: 'idea-scanner',
+      });
+    }
+
+    setTimeout(() => {
+      useSystemStore.setState({
+        scanPhase: outcome === 'failed' ? 'error' : 'complete',
+        currentScanId: null,
+      });
+      setScanProgress(0);
+    }, 800);
+  }, []);
+
+  // Listen for streaming events — registered ONCE on mount.
+  // Reads currentScanId from store at event time so listener is stable.
   useEffect(() => {
-    const outputPromise = listen<{ job_id: string; line: string }>(EventName.IDEA_SCAN_OUTPUT, (event) => {
-      if (currentScanId && event.payload.job_id === currentScanId) {
+    let outputUnlisten: (() => void) | null = null;
+    let statusUnlisten: (() => void) | null = null;
+
+    listen<{ job_id: string; line: string }>(EventName.IDEA_SCAN_OUTPUT, (event) => {
+      const id = useSystemStore.getState().currentScanId;
+      if (id && event.payload.job_id === id) {
         if (event.payload.line.startsWith('[Idea')) {
           setScanProgress((p) => Math.min(p + 3, 95));
         }
       }
-    });
+    }).then((fn) => { outputUnlisten = fn; });
 
-    const statusPromise = listen<{ job_id: string; status: string }>(EventName.IDEA_SCAN_STATUS, (event) => {
-      if (currentScanId && event.payload.job_id === currentScanId) {
-        const { status } = event.payload;
-        if (status === 'completed' || status === 'failed' || status === 'cancelled') {
-          // Fetch ideas and scans after completion
-          if (status === 'completed') {
-            const pid = useSystemStore.getState().activeProjectId;
-            if (pid) {
-              useSystemStore.getState().fetchIdeas(pid);
-              useSystemStore.getState().fetchScans(pid);
-            }
-          }
-          setScanProgress(100);
-          setCurrentAgentKey(null);
-          useOverviewStore.getState().processEnded('idea_scan', status === 'completed' ? 'completed' : 'failed');
-          // Update store phase — this drives isRunning via scanPhase
-          setTimeout(() => {
-            useSystemStore.setState({
-              scanPhase: status === 'completed' ? 'complete' : 'error',
-              currentScanId: null,
-            });
-            setScanProgress(0);
-          }, 1000);
+    listen<{ job_id: string; status: string; error?: string }>(EventName.IDEA_SCAN_STATUS, (event) => {
+      const id = useSystemStore.getState().currentScanId;
+      if (id && event.payload.job_id === id) {
+        const { status, error } = event.payload;
+        if (status === 'completed') {
+          finalizeScan('success');
+        } else if (status === 'completed_with_warning') {
+          finalizeScan('warning', error);
+        } else if (status === 'failed' || status === 'cancelled') {
+          finalizeScan('failed', error);
         }
       }
-    });
+    }).then((fn) => { statusUnlisten = fn; });
 
     return () => {
-      outputPromise.then((fn) => fn());
-      statusPromise.then((fn) => fn());
+      outputUnlisten?.();
+      statusUnlisten?.();
     };
-  }, [currentScanId]);
+  }, [finalizeScan]);
+
+  // On mount: if a scan is already active, poll its real status to resync
+  // (handles user navigating away during scan and missing completion event).
+  useEffect(() => {
+    const id = useSystemStore.getState().currentScanId;
+    if (!id) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const { invokeWithTimeout } = await import('@/lib/tauriInvoke');
+        const result = await invokeWithTimeout<{ scan_id: string; status: string; error?: string }>(
+          'dev_tools_get_idea_scan_status',
+          { scanId: id },
+        );
+        if (cancelled) return;
+        if (result.status === 'completed') {
+          finalizeScan('success');
+        } else if (result.status === 'completed_with_warning') {
+          finalizeScan('warning', result.error);
+        } else if (result.status === 'failed' || result.status === 'cancelled' || result.status === 'not_found') {
+          finalizeScan('failed', result.error);
+        }
+      } catch { /* ignore */ }
+    })();
+
+    return () => { cancelled = true; };
+  }, [finalizeScan]);
 
   const toggleAgent = (key: string) => {
     setSelectedAgents((prev) => {
@@ -408,7 +481,12 @@ export default function IdeaScannerPage() {
     if (selectedAgents.size === 0) return;
     setScanProgress(5);
     setCurrentAgentKey([...selectedAgents][0] ?? null);
-    useOverviewStore.getState().processStarted('idea_scan', undefined, `Idea Scan (${selectedAgents.size} agents)`);
+    useOverviewStore.getState().processStarted(
+      'idea_scan',
+      undefined,
+      `Idea Scan (${selectedAgents.size} agents)`,
+      { section: 'plugins', tab: 'idea-scanner' },
+    );
 
     try {
       await runScan([...selectedAgents]);
@@ -424,7 +502,12 @@ export default function IdeaScannerPage() {
 
     setAutoScanRunning(true);
     setAutoScanStatus('Loading contexts...');
-    useOverviewStore.getState().processStarted('auto_scan', undefined, 'Automated Context Scan');
+    useOverviewStore.getState().processStarted(
+      'auto_scan',
+      undefined,
+      'Automated Context Scan',
+      { section: 'plugins', tab: 'idea-scanner' },
+    );
 
     try {
       // Ensure contexts are loaded

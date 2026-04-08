@@ -6,8 +6,8 @@ import { unpatchAll, currentCallback } from './callbackTracker';
 
 const FLAG = '__personas_freeze_detector';
 const STORAGE_KEY = '__personas_freeze_events';
-const FREEZE_MS = 100;
-const SEVERE_MS = 500;
+const FREEZE_MS = 200;
+const SEVERE_MS = 750;
 const RING_SIZE = 50;
 
 interface FreezeEvent {

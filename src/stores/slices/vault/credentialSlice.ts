@@ -25,7 +25,7 @@ export interface CredentialSlice {
 
   // Actions
   fetchCredentials: () => Promise<void>;
-  createCredential: (input: { name: string; service_type: string; data: object }) => Promise<string>;
+  createCredential: (input: { name: string; service_type: string; data: object; healthcheck_passed?: boolean }) => Promise<string>;
   updateCredential: (id: string, input: { name?: string; service_type?: string; data?: object }) => Promise<void>;
   deleteCredential: (id: string) => Promise<void>;
   updateCredentialField: (id: string, key: string, value: string) => Promise<void>;
@@ -81,6 +81,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         iv: "",
         metadata: null,
         session_encrypted_data,
+        healthcheck_passed: input.healthcheck_passed ?? null,
       });
       // Optimistic: append the returned credential instead of re-fetching the full list
       const credMeta = toCredMeta(created);

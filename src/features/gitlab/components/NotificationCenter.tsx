@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, CheckCheck, Trash2 } from 'lucide-react';
-import { useNotificationCenterStore, type PipelineNotification } from '@/stores/notificationCenterStore';
+import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, CheckCheck, Trash2, ClipboardCheck, ArrowRight } from 'lucide-react';
+import { useNotificationCenterStore, type PipelineNotification, type ProcessType } from '@/stores/notificationCenterStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { StatusIcon, statusBg } from './pipelineHelpers';
@@ -25,12 +25,134 @@ function statusLabel(status: string): string {
     case 'success': return 'Succeeded';
     case 'failed': return 'Failed';
     case 'canceled': return 'Canceled';
+    case 'warning': return 'Completed with warning';
     default: return status;
   }
 }
 
+/** Process notifications use pipelineId === 0 and encode processType in ref. */
+function isProcessNotification(n: PipelineNotification): boolean {
+  return n.pipelineId === 0 && n.id.startsWith('proc-');
+}
+
+const PROCESS_LABELS: Record<string, string> = {
+  'n8n-transform': 'n8n Transform',
+  'template-adopt': 'Template Adoption',
+  'rebuild': 'Agent Rebuild',
+  'template-test': 'Template Test',
+  'context-scan': 'Context Map Scan',
+  'idea-scan': 'Idea Scan',
+  'execution': 'Agent Execution',
+  'matrix-build': 'Matrix Build',
+  'lab-run': 'Lab Run',
+  'connector-test': 'Connector Test',
+  'creative-session': 'Creative Session',
+};
+
 // ---------------------------------------------------------------------------
-// NotificationItem
+// ProcessNotificationItem (human reviews, execution results, etc.)
+// ---------------------------------------------------------------------------
+
+function ProcessNotificationItem({ notification }: { notification: PipelineNotification }) {
+  const markRead = useNotificationCenterStore((s) => s.markRead);
+  const dismiss = useNotificationCenterStore((s) => s.dismiss);
+  const setOpen = useNotificationCenterStore((s) => s.setOpen);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setPluginTab = useSystemStore((s) => s.setPluginTab);
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+
+  const processType = notification.ref as ProcessType;
+  const processLabel = PROCESS_LABELS[processType] ?? processType;
+
+  // Parse redirect from webUrl (format: "section#tab" or just "section")
+  const [redirectSection, redirectTab] = notification.webUrl.includes('#')
+    ? notification.webUrl.split('#', 2)
+    : [notification.webUrl, null];
+  const hasReviewRedirect = redirectTab === 'manual-review';
+
+  const handleRedirect = useCallback(() => {
+    markRead(notification.id);
+    setOpen(false);
+    // Navigate to the target section and tab
+    setSidebarSection(redirectSection as Parameters<typeof setSidebarSection>[0]);
+    if (redirectTab) {
+      // Plugins section uses devToolsTab; overview section uses overviewTab.
+      if (redirectSection === 'plugins') {
+        setPluginTab('dev-tools' as never);
+        setDevToolsTab(redirectTab as never);
+      } else {
+        void import('@/stores/overviewStore').then(({ useOverviewStore }) => {
+          useOverviewStore.getState().setOverviewTab(redirectTab as never);
+        });
+      }
+    }
+  }, [notification.id, markRead, setOpen, setSidebarSection, setPluginTab, setDevToolsTab, redirectSection, redirectTab]);
+
+  const handleClick = useCallback(() => {
+    if (!notification.read) markRead(notification.id);
+  }, [notification, markRead]);
+
+  // Compose body lines: prefer message if present, fall back to status label.
+  const headerTitle = notification.title ?? (hasReviewRedirect ? 'Human Review' : processLabel);
+  const bodyText = notification.message ?? statusLabel(notification.status);
+
+  return (
+    <div
+      onClick={handleClick}
+      className={`animate-fade-slide-in relative group p-3 rounded-xl border transition-colors cursor-default ${statusBg(notification.status)} ${
+        !notification.read ? 'ring-1 ring-orange-500/20' : ''
+      }`}
+    >
+      {!notification.read && (
+        <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-orange-500" />
+      )}
+
+      <button
+        onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
+        className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-muted-foreground/50 hover:text-foreground/70 transition-all"
+        aria-label="Dismiss"
+      >
+        <X className="w-3 h-3" />
+      </button>
+
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-1.5">
+        {hasReviewRedirect
+          ? <ClipboardCheck className="w-4 h-4 text-amber-400" />
+          : <StatusIcon status={notification.status} />
+        }
+        <span className="text-sm font-medium text-foreground/90">
+          {headerTitle}
+        </span>
+        <span className="text-xs text-muted-foreground/50 ml-auto mr-4">
+          {formatTimestamp(notification.timestamp)}
+        </span>
+      </div>
+
+      {/* Body — show stored message or fall back to status label */}
+      <p className="text-xs text-muted-foreground/70 mb-2.5 pl-6 leading-relaxed">
+        {bodyText}
+      </p>
+
+      {/* Quick actions */}
+      <div className="flex items-center gap-1.5 pl-6">
+        {redirectSection && (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground/70 hover:text-foreground/90 hover:bg-primary/10 transition-colors"
+            title={hasReviewRedirect ? 'Go to Approvals' : `Go to ${processLabel}`}
+          >
+            <ArrowRight className="w-3 h-3" />
+            {hasReviewRedirect ? 'Review' : 'Open'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// NotificationItem (pipeline / GitLab notifications)
 // ---------------------------------------------------------------------------
 
 function NotificationItem({ notification }: { notification: PipelineNotification }) {
@@ -218,15 +340,17 @@ export function NotificationCenter() {
                     <div className="w-14 h-14 rounded-2xl bg-secondary/40 border border-primary/10 flex items-center justify-center mb-4">
                       <BellOff className="w-7 h-7 text-muted-foreground/30" />
                     </div>
-                    <p className="text-sm text-muted-foreground/60 font-medium">No notifications yet</p>
-                    <p className="text-xs text-muted-foreground/40 mt-1 max-w-[220px]">
+                    <p className="text-lg text-muted-foreground font-medium">No notifications yet</p>
+                    <p className="text-md text-muted-foreground mt-1 max-w-[220px]">
                       Pipeline status changes will appear here as they happen.
                     </p>
                   </div>
                 ) : (
-                  notifications.map((n) => (
-                    <NotificationItem key={n.id} notification={n} />
-                  ))
+                  notifications.map((n) =>
+                    isProcessNotification(n)
+                      ? <ProcessNotificationItem key={n.id} notification={n} />
+                      : <NotificationItem key={n.id} notification={n} />,
+                  )
                 )}
             </div>
           </div>

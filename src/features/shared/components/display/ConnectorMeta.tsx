@@ -163,6 +163,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   // -- Social ----------------------------------------------------
   buffer:             { label: 'Buffer',             color: '#231F20', iconUrl: 'https://cdn.simpleicons.org/buffer/f0f0f0',           Icon: Share2 },
   linkedin:           { label: 'LinkedIn',           color: '#0A66C2', iconUrl: '/icons/connectors/linkedin.svg',                      Icon: Users },
+  reddit:             { label: 'Reddit',             color: '#FF4500', iconUrl: '/icons/connectors/reddit.svg',                        Icon: MessageCircle },
   twitter:            { label: 'X (Twitter)',        color: '#000000', iconUrl: 'https://cdn.simpleicons.org/x/f0f0f0',                Icon: MessageCircle },
 
   // -- E-Commerce ------------------------------------------------
@@ -234,6 +235,10 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   n8n:                { label: 'n8n',                color: '#EA4B71', iconUrl: '/icons/connectors/n8n.svg',                              Icon: Globe },
   zapier:             { label: 'Zapier',             color: '#FF4A00', iconUrl: '/icons/connectors/zapier.svg',                           Icon: Globe },
   github_actions:     { label: 'GitHub Actions',     color: '#2088FF', iconUrl: 'https://cdn.simpleicons.org/github/f0f0f0',             Icon: GithubIcon },
+
+  // -- Integration Hubs -----------------------------------------
+  mcp_gateway:        { label: 'MCP Gateway',        color: '#6366F1', iconUrl: '/icons/connectors/mcp_gateway.svg',                     Icon: Boxes },
+  arcade:             { label: 'Arcade',             color: '#F97316', iconUrl: '/icons/connectors/arcade.svg',                          Icon: Boxes },
 
   // -- Generic ---------------------------------------------------
   http:               { label: 'HTTP / REST',        color: '#3B82F6', iconUrl: null,                                                   Icon: Globe },

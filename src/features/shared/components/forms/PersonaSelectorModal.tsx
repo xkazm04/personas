@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Search, Check, Bot, X, ChevronDown } from 'lucide-react';
+import { Search, Check, X, ChevronDown } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { BaseModal } from '@/lib/ui/BaseModal';
 
 interface PersonaSelectorModalProps {
@@ -65,17 +64,9 @@ export function PersonaSelectorModal({
           onClick={() => setOpen(true)}
           className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary/15 bg-secondary/20 hover:border-primary/25 hover:bg-secondary/30 transition-all min-w-[180px]"
         >
-          {selected ? (
-            <>
-              <PersonaIcon icon={selected.icon} color={selected.color} frameSize="lg" />
-              <span className="text-sm font-medium text-foreground/85 truncate flex-1 text-left">{selected.name}</span>
-            </>
-          ) : (
-            <>
-              <Bot className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
-              <span className="text-sm text-muted-foreground/50 flex-1 text-left">{showAll ? 'All Personas' : placeholder}</span>
-            </>
-          )}
+          <span className="text-sm text-foreground/85 truncate flex-1 text-left">
+            {selected ? selected.name : showAll ? 'All Personas' : placeholder}
+          </span>
           <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
         </button>
       )}
@@ -85,24 +76,25 @@ export function PersonaSelectorModal({
         isOpen={open}
         onClose={handleClose}
         titleId="persona-selector-modal"
-        maxWidthClass="max-w-3xl"
-        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[80vh]"
+        maxWidthClass="max-w-md"
+        portal
+        panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[70vh]"
       >
         {/* Header */}
         <div className="px-5 pt-5 pb-3 border-b border-primary/10 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 id="persona-selector-modal" className="text-lg font-semibold text-foreground">Select Persona</h3>
+            <h3 id="persona-selector-modal" className="text-sm font-semibold text-foreground/70 uppercase tracking-wider">Select Persona</h3>
             <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-secondary/50 text-muted-foreground/60 hover:text-foreground/80 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary/10 bg-secondary/20">
-            <Search className="w-4 h-4 text-muted-foreground/40" />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-primary/10 bg-secondary/20">
+            <Search className="w-3.5 h-3.5 text-muted-foreground/40" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search personas..."
+              placeholder="Search..."
               className="flex-1 bg-transparent text-sm text-foreground/80 placeholder:text-muted-foreground/30 outline-none"
               autoFocus
             />
@@ -114,32 +106,24 @@ export function PersonaSelectorModal({
           </div>
         </div>
 
-        {/* Cards grid */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-            {/* All Personas option */}
+        {/* Two-column compact list */}
+        <div className="flex-1 overflow-y-auto p-3">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
             {showAll && (
               <button
                 type="button"
                 onClick={() => handleSelect('')}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
                   !value
-                    ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
-                    : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/30'
+                    ? 'bg-primary/8 text-primary'
+                    : 'text-foreground/70 hover:bg-secondary/40'
                 }`}
               >
-                <div className="w-9 h-9 rounded-xl bg-secondary/40 border border-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-muted-foreground/50" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-foreground/80 block">All Personas</span>
-                  <span className="text-sm text-muted-foreground/40 block">{personas.length} total</span>
-                </div>
-                {!value && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                <span className="text-sm truncate">All ({personas.length})</span>
+                {!value && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
               </button>
             )}
 
-            {/* Persona cards */}
             {filtered.map((p) => {
               const isActive = value === p.id;
               return (
@@ -147,27 +131,21 @@ export function PersonaSelectorModal({
                   key={p.id}
                   type="button"
                   onClick={() => handleSelect(p.id)}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
                     isActive
-                      ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
-                      : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/30'
+                      ? 'bg-primary/8 text-primary'
+                      : 'text-foreground/70 hover:bg-secondary/40'
                   }`}
                 >
-                  <PersonaIcon icon={p.icon} color={p.color} display="framed" frameSize="lg" />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-foreground/85 block truncate">{p.name}</span>
-                    {p.description && (
-                      <span className="text-sm text-muted-foreground/40 block truncate">{p.description.slice(0, 50)}</span>
-                    )}
-                  </div>
-                  {isActive && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                  <span className="text-sm truncate">{p.name}</span>
+                  {isActive && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
                 </button>
               );
             })}
           </div>
 
           {filtered.length === 0 && search && (
-            <div className="py-8 text-center text-sm text-muted-foreground/40">No personas matching &ldquo;{search}&rdquo;</div>
+            <div className="py-6 text-center text-sm text-muted-foreground/40">No personas matching &ldquo;{search}&rdquo;</div>
           )}
         </div>
       </BaseModal>

@@ -34,6 +34,10 @@ pub struct CreateCredentialInput {
     pub iv: String,
     pub metadata: Option<String>,
     pub session_encrypted_data: Option<String>,
+    /// When true, persist an initial healthcheck_last_success=true on creation
+    /// (used by catalog flows where the credential was tested before saving).
+    #[serde(default)]
+    pub healthcheck_passed: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

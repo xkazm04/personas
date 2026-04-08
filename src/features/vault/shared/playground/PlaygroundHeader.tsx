@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { X, Plug, Key, Plus } from 'lucide-react';
+import { X, Plug, Key, Plus, Pencil, Check } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getCredentialTags, getTagStyle, buildMetadataWithTags, SUGGESTED_TAGS } from '@/features/vault/shared/utils/credentialTags';
 import { toCredentialMetadata } from '@/lib/types/types';
@@ -18,6 +18,32 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
   const [showTagInput, setShowTagInput] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const tagInputRef = useRef<HTMLInputElement>(null);
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState(credential.name);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const saveName = useCallback(async () => {
+    const trimmed = editName.trim();
+    if (!trimmed || trimmed === credential.name) {
+      setIsEditingName(false);
+      setEditName(credential.name);
+      return;
+    }
+    try {
+      const updatedRaw = await credApi.updateCredential(credential.id, {
+        name: trimmed,
+        service_type: null,
+        encrypted_data: null,
+        metadata: null,
+      });
+      const updated = toCredentialMetadata(updatedRaw);
+      useVaultStore.setState((s) => ({
+        credentials: s.credentials.map((c) => (c.id === credential.id ? updated : c)),
+      }));
+    } catch { /* intentional: non-critical -- rename is best-effort */ }
+    setIsEditingName(false);
+  }, [credential.id, credential.name, editName]);
 
   const currentTags = getCredentialTags(credential);
   const iconUrl = connector?.icon_url;
@@ -71,9 +97,45 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <h2 id="credential-playground-title" className="text-sm font-semibold text-foreground/90 truncate mb-1">
-          {credential.name}
-        </h2>
+        <div className="flex items-center gap-1.5 mb-1 group/name">
+          {isEditingName ? (
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <input
+                ref={nameInputRef}
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveName();
+                  if (e.key === 'Escape') { setIsEditingName(false); setEditName(credential.name); }
+                }}
+                onBlur={saveName}
+                autoFocus
+                className="flex-1 min-w-0 text-sm font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-md px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
+              />
+              <button
+                onMouseDown={(e) => { e.preventDefault(); saveName(); }}
+                className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
+                title="Save name"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <h2 id="credential-playground-title" className="text-sm font-semibold text-foreground/90 truncate">
+                {credential.name}
+              </h2>
+              <button
+                onClick={() => { setEditName(credential.name); setIsEditingName(true); }}
+                className="p-0.5 rounded text-muted-foreground/30 hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
+                title="Rename credential"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            </>
+          )}
+        </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {fieldKeys.map((key) => (
             <span key={key} className="text-xs px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/8 text-muted-foreground/60 font-mono">

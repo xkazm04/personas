@@ -147,7 +147,14 @@ request manual_review BEFORE executing it. This is the human-in-the-loop pattern
 
 ### Protocol 4: Events (inter-persona communication)
 Output this JSON to trigger other personas or emit custom events:
-{"emit_event": {"type": "event_name", "data": {}}}
+{"emit_event": {"type": "<agent>.<task>.<event_type>", "data": {}}}
+
+**Event naming: three-level dot syntax REQUIRED**
+- `agent` — single lowercase word representing this persona's domain (e.g. `stock`, `invoice`, `email`)
+- `task` — use case or functional area (e.g. `news`, `scan`, `digest`, `signal`)
+- `event_type` — specific snake_case activity (e.g. `high_impact`, `strong_buy`, `completed`)
+- Examples: `stock.signal.strong_buy`, `invoice.scan.completed`, `email.digest.published`
+- NEVER use single-word names like `event_name` or `task_completed`.
 
 Use for: multi-agent coordination, triggering downstream workflows.
 Maps from n8n: Webhook output nodes, "Execute Workflow" nodes, any node that chains

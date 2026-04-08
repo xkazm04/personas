@@ -1154,7 +1154,7 @@ Do NOT just acknowledge answers — rewrite the persona sections to reflect them
 1. User Messages: {{"user_message": {{"title": "string", "content": "string", "content_type": "text|markdown", "priority": "low|normal|high|critical"}}}}
 2. Agent Memory: {{"agent_memory": {{"title": "string", "content": "string", "category": "fact|preference|instruction|context|learned", "importance": 1-10, "tags": ["tag1"]}}}}
 3. Manual Review: {{"manual_review": {{"title": "string", "description": "string", "severity": "info|warning|error|critical", "context_data": "string", "suggested_actions": ["Approve", "Reject", "Edit"]}}}}
-4. Events: {{"emit_event": {{"type": "event_name", "data": {{}}}}}}
+4. Events: {{"emit_event": {{"type": "<agent>.<task>.<event_type>", "data": {{}}}}}} — Event names MUST use three-level dot syntax (e.g. `stock.signal.strong_buy`, `invoice.scan.completed`). `agent` = single lowercase word for this agent's domain, `task` = use case area, `event_type` = specific snake_case activity. NEVER use single-word names.
 
 ## Generate the persona
 
@@ -1296,7 +1296,14 @@ Output this JSON on its own line to request human approval:
 
 ### Protocol 4: Events (inter-persona communication)
 Output this JSON to trigger other personas or emit custom events:
-{{"emit_event": {{"type": "event_name", "data": {{}}}}}}
+{{"emit_event": {{"type": "<agent>.<task>.<event_type>", "data": {{}}}}}}
+
+**Event naming: three-level dot syntax REQUIRED**
+- `agent` — single lowercase word for this persona's domain (e.g. `stock`, `invoice`, `email`, `news`)
+- `task` — use case or functional area (e.g. `news`, `scan`, `digest`, `signal`)
+- `event_type` — specific snake_case activity (e.g. `high_impact`, `strong_buy`, `completed`, `published`)
+- Examples: `stock.signal.strong_buy`, `stock.news.high_impact`, `invoice.scan.completed`, `email.digest.published`
+- NEVER use single-word names or generic types like `task_completed`.
 
 Your job:
 1. Analyze the template's character, purpose, and operational requirements.
@@ -1609,7 +1616,7 @@ The Personas platform supports these protocol messages in system prompts:
 1. User Messages: {{"user_message": {{"title": "string", "content": "string", "content_type": "text|markdown", "priority": "low|normal|high|critical"}}}}
 2. Agent Memory: {{"agent_memory": {{"title": "string", "content": "string", "category": "fact|preference|instruction|context|learned", "importance": 1-10, "tags": ["tag1"]}}}}
 3. Manual Review: {{"manual_review": {{"title": "string", "description": "string", "severity": "info|warning|error|critical", "context_data": "string", "suggested_actions": ["Approve", "Reject", "Edit"]}}}}
-4. Events: {{"emit_event": {{"type": "event_name", "data": {{}}}}}}
+4. Events: {{"emit_event": {{"type": "<agent>.<task>.<event_type>", "data": {{}}}}}} — Event names MUST use three-level dot syntax (e.g. `stock.signal.strong_buy`, `invoice.scan.completed`). `agent` = single lowercase word for this agent's domain, `task` = use case area, `event_type` = specific snake_case activity. NEVER use single-word names.
 
 ## Variable Placeholders
 

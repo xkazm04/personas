@@ -1,3 +1,4 @@
+import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
 import type { SidebarSection, HomeTab, EditorTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab } from "@/lib/types/types";
@@ -132,13 +133,13 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
 
-  setSidebarSection: (section) => set({ sidebarSection: section }),
-  setHomeTab: (tab) => set({ homeTab: tab }),
-  setTemplateTab: (tab) => set({ templateTab: tab }),
-  setAgentTab: (tab) => set({ agentTab: tab }),
-  setEditorTab: (tab) => set({ editorTab: tab }),
-  setCloudTab: (tab) => set({ cloudTab: tab }),
-  setSettingsTab: (tab) => set({ settingsTab: tab }),
+  setSidebarSection: (section) => startTransition(() => set({ sidebarSection: section })),
+  setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
+  setTemplateTab: (tab) => startTransition(() => set({ templateTab: tab })),
+  setAgentTab: (tab) => startTransition(() => set({ agentTab: tab })),
+  setEditorTab: (tab) => startTransition(() => set({ editorTab: tab })),
+  setCloudTab: (tab) => startTransition(() => set({ cloudTab: tab })),
+  setSettingsTab: (tab) => startTransition(() => set({ settingsTab: tab })),
   setRerunInputData: (data) => set({ rerunInputData: data }),
   setError: (error) => set({ error }),
   setN8nTransformActive: (active) => set({ n8nTransformActive: active }),

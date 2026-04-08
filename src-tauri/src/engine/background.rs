@@ -783,7 +783,7 @@ pub(crate) async fn event_bus_tick(
             // Parse input — log on failure since chain_trace_id is embedded in the payload JSON.
             // A parse failure here means the chain trace ID is lost and downstream
             // chain executions will create orphaned trace roots.
-            let input_val: Option<serde_json::Value> =
+            let parsed_payload: Option<serde_json::Value> =
                 m.payload.as_deref().and_then(|s| match serde_json::from_str(s) {
                     Ok(v) => Some(v),
                     Err(parse_err) => {
@@ -799,6 +799,34 @@ pub(crate) async fn event_bus_tick(
                         None
                     }
                 });
+
+            // Wrap the payload with `_event` metadata so the persona prompt
+            // (see engine/prompt.rs `## Triggering Event` block) can show the
+            // firing event_type + source. Without this, the persona has no
+            // way to route behavior per-event. `source_persona_id` is set only
+            // when the source_id refers to an actual persona row.
+            let source_persona_id = event.source_id.as_ref().and_then(|sid| {
+                match crate::db::repos::core::personas::get_by_id(pool, sid) {
+                    Ok(_) => Some(sid.clone()),
+                    Err(_) => None,
+                }
+            });
+            let mut event_meta = serde_json::Map::new();
+            event_meta.insert("event_type".into(), serde_json::Value::String(event.event_type.clone()));
+            event_meta.insert("source_type".into(), serde_json::Value::String(event.source_type.clone()));
+            if let Some(sid) = &event.source_id {
+                event_meta.insert("source_id".into(), serde_json::Value::String(sid.clone()));
+            }
+            if let Some(spid) = &source_persona_id {
+                event_meta.insert("source_persona_id".into(), serde_json::Value::String(spid.clone()));
+            }
+            if let Some(tpid) = &event.target_persona_id {
+                event_meta.insert("target_persona_id".into(), serde_json::Value::String(tpid.clone()));
+            }
+            let input_val: Option<serde_json::Value> = Some(serde_json::json!({
+                "_event": serde_json::Value::Object(event_meta),
+                "payload": parsed_payload.unwrap_or(serde_json::Value::Null),
+            }));
 
             // Start execution (admit() handles concurrency atomically --
             //    no separate has_capacity check to avoid TOCTOU gap)

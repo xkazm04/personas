@@ -167,7 +167,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
     <div className="flex items-center gap-2">
       {/* Active view indicator + reset */}
       {!isDefault && (
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/8 border border-primary/15 text-xs text-primary/80">
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/8 border border-primary/15 text-md text-primary/80">
           {activeLabel && <span className="font-medium">{activeLabel}</span>}
           {!activeLabel && <span className="font-medium">Custom filters</span>}
           <button
@@ -186,7 +186,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-primary/15 bg-secondary/30 text-muted-foreground/70 hover:bg-secondary/50 hover:text-muted-foreground transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-md font-medium border border-primary/15 bg-secondary/30 text-muted-foreground/70 hover:bg-secondary/50 hover:text-muted-foreground transition-all"
         >
           <Bookmark className="w-3.5 h-3.5" />
           Views
@@ -202,7 +202,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                   autoFocus
                   type="text"
                   placeholder="View name..."
-                  className="flex-1 bg-transparent border border-primary/20 rounded-lg px-2 py-1 text-xs focus-visible:outline-none focus-visible:border-primary/50 text-foreground"
+                  className="flex-1 bg-transparent border border-primary/20 rounded-lg px-2 py-1 text-md focus-visible:outline-none focus-visible:border-primary/50 text-foreground"
                   value={newViewName}
                   onChange={(e) => setNewViewName(e.target.value)}
                   onKeyDown={(e) => {
@@ -221,7 +221,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
               <button
                 type="button"
                 onClick={() => setIsSaving(true)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-primary hover:bg-primary/10 transition-colors text-left border-b border-primary/10"
+                className="w-full flex items-center gap-2 px-3 py-2 text-md text-primary hover:bg-primary/10 transition-colors text-left border-b border-primary/10"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Save Current View
@@ -230,7 +230,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
 
             <div className="max-h-64 overflow-y-auto py-1">
               {/* Smart presets */}
-              <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold flex items-center gap-1">
+              <div className="px-3 py-1 text-md uppercase tracking-wider text-muted-foreground/50 font-semibold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 Smart Presets
               </div>
@@ -239,7 +239,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                   key={preset.id}
                   type="button"
                   onClick={() => applyPreset(preset.id, preset.config)}
-                  className={`w-full px-3 py-1.5 text-xs text-left transition-colors flex items-center gap-2 ${
+                  className={`w-full px-3 py-1.5 text-md text-left transition-colors flex items-center gap-2 ${
                     activeViewId === preset.id
                       ? 'bg-primary/10 text-primary font-medium'
                       : 'text-foreground/80 hover:bg-secondary/50'
@@ -253,7 +253,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
               {/* User saved views */}
               {views.length > 0 && (
                 <>
-                  <div className="px-3 py-1 mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold border-t border-primary/10 pt-2">
+                  <div className="px-3 py-1 mt-1.5 text-md uppercase tracking-wider text-muted-foreground/50 font-semibold border-t border-primary/10 pt-2">
                     Your Views
                   </div>
                   {views.map((view) => (
@@ -266,7 +266,7 @@ export function ViewPresetBar({ currentConfig, onApplyConfig }: ViewPresetBarPro
                       }`}
                       onClick={() => applySavedView(view)}
                     >
-                      <span className={`text-xs truncate flex-1 pr-2 ${
+                      <span className={`text-md truncate flex-1 pr-2 ${
                         activeViewId === view.id ? 'text-primary font-medium' : 'text-foreground/80'
                       }`}>
                         {view.name}

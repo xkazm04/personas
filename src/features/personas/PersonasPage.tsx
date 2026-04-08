@@ -26,7 +26,7 @@ const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/ma
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
-const EventsPage = lazy(() => import('@/features/triggers/sub_eventbus/EventsPage').then(m => ({ default: m.EventsPage })));
+const TriggersPage = lazy(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
 const CloudDeployPanel = lazy(() => import('@/features/deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
@@ -136,7 +136,7 @@ export default function PersonasPage() {
     const id2 = requestIdleCallback(() => {
       import('@/features/deployment/components/cloud/CloudDeployPanel').catch(silentCatch("PersonasPage:prefetchCloudDeploy"));
       import('@/features/templates/components/DesignReviewsPage').catch(silentCatch("PersonasPage:prefetchDesignReviews"));
-      import('@/features/triggers/sub_eventbus/EventsPage').catch(silentCatch("PersonasPage:prefetchEvents"));
+      import('@/features/triggers/TriggersPage').catch(silentCatch("PersonasPage:prefetchEvents"));
     });
     return () => {
       cancelIdleCallback(id);
@@ -220,7 +220,7 @@ export default function PersonasPage() {
       return <ErrorBoundary name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={SectionFallback}><EventsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={SectionFallback}><TriggersPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'plugins') {
       if (pluginTab === 'dev-tools') {

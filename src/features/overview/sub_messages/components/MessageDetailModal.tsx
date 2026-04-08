@@ -22,6 +22,9 @@ interface MessageDetailModalProps {
 }
 
 export function MessageDetailModal({ message, onClose, onDelete }: MessageDetailModalProps) {
+  // Guard against incomplete message data (e.g. malformed realtime event)
+  const msgId = message.id ?? '';
+  const msgContent = message.content ?? '';
   const [deliveries, setDeliveries] = useState<PersonaMessageDelivery[]>([]);
   const [deliveriesLoading, setDeliveriesLoading] = useState(true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -30,11 +33,11 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
 
   useEffect(() => {
     setDeliveriesLoading(true);
-    getMessageDeliveries(message.id)
+    getMessageDeliveries(msgId)
       .then(setDeliveries)
       .catch(() => setDeliveries([]))
       .finally(() => setDeliveriesLoading(false));
-  }, [message.id]);
+  }, [msgId]);
 
   useEffect(() => {
     return () => { if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current); };
@@ -76,7 +79,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
         const ctx = parseDesignContext(persona.design_context);
         const enriched = serializeDesignContext({
           ...ctx,
-          userFeedback: { message: message.content.slice(0, 500), feedback: feedbackText, at: new Date().toISOString() },
+          userFeedback: { message: msgContent.slice(0, 500), feedback: feedbackText, at: new Date().toISOString() },
         });
         await updatePersona(message.persona_id, { design_context: enriched });
       }
@@ -84,7 +87,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
       // 2. Start background improvement via Matrix
       const instruction =
         `Improve this agent based on user feedback about its output.\n\n` +
-        `Message output the user wants improved:\n${message.content.slice(0, 500)}\n\n` +
+        `Message output the user wants improved:\n${msgContent.slice(0, 500)}\n\n` +
         `User feedback:\n${feedbackText}\n\n` +
         `Apply non-aggressive improvements to address the feedback while preserving working behavior.`;
 
@@ -111,15 +114,15 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                navigator.clipboard.writeText(message.id).then(() => {
+                navigator.clipboard.writeText(msgId).then(() => {
                   setCopiedId(true);
                   setTimeout(() => setCopiedId(false), 2000);
                 }).catch(silentCatch("MessageDetailModal:copyId"));
               }}
               className="inline-flex items-center gap-1 hover:text-muted-foreground transition-colors"
-              title={message.id}
+              title={msgId}
             >
-              ID: <span className="font-mono">{message.id.slice(0, 8)}</span>
+              ID: <span className="font-mono">{msgId.slice(0, 8)}</span>
               {copiedId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </button>
             {message.execution_id && (
@@ -165,7 +168,7 @@ export function MessageDetailModal({ message, onClose, onDelete }: MessageDetail
       <div className="space-y-6">
         <div>
           <div className="text-sm font-mono text-foreground/60 uppercase mb-2">Content</div>
-          <MarkdownRenderer content={message.content} className="text-sm leading-relaxed" />
+          <MarkdownRenderer content={msgContent} className="text-sm leading-relaxed" />
         </div>
 
         {/* Improve from feedback */}

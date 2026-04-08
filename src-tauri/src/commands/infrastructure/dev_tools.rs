@@ -1102,11 +1102,21 @@ pub fn dev_tools_upsert_cross_project_relation(
 }
 
 /// Get a cross-project dependency map: all projects with their relations.
+/// If a rich metadata map has been generated via generate_cross_project_metadata,
+/// return that instead so agents get the full metadata layer.
 #[tauri::command]
 pub fn dev_tools_get_cross_project_map(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
+
+    // Prefer the rich cached metadata map if it exists
+    if let Some(cached) = crate::db::repos::core::settings::get(&state.db, CROSS_PROJECT_METADATA_KEY)? {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&cached) {
+            return Ok(parsed);
+        }
+    }
+
     let projects = repo::list_projects(&state.db, None)?;
     let relations = repo::list_cross_project_relations(&state.db)?;
 
@@ -1117,7 +1127,9 @@ pub fn dev_tools_get_cross_project_map(
                 "id": p.id,
                 "name": p.name,
                 "root_path": p.root_path,
+                "description": p.description,
                 "tech_stack": p.tech_stack,
+                "github_url": p.github_url,
                 "status": p.status,
             })
         })
@@ -1140,6 +1152,322 @@ pub fn dev_tools_get_cross_project_map(
         "relations": relation_edges,
         "generated_at": chrono::Utc::now().to_rfc3339(),
     }))
+}
+
+// ============================================================================
+// Rich Cross-Project Metadata Map
+//
+// Aggregates per-project capabilities, keywords, tech layers, and entry points
+// from each project's already-generated context map. Caches the result in
+// app_settings under CROSS_PROJECT_METADATA_KEY so agents connecting via the
+// Codebases connector can efficiently evaluate which projects are relevant to
+// a business task without re-scanning the filesystem.
+// ============================================================================
+
+const CROSS_PROJECT_METADATA_KEY: &str = "dev_tools_cross_project_metadata";
+
+fn parse_json_array(raw: &Option<String>) -> Vec<String> {
+    raw.as_deref()
+        .and_then(|s| serde_json::from_str::<Vec<String>>(s).ok())
+        .unwrap_or_default()
+}
+
+fn top_n_by_count(counts: std::collections::HashMap<String, u32>, n: usize) -> Vec<String> {
+    let mut pairs: Vec<(String, u32)> = counts.into_iter().collect();
+    pairs.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    pairs.into_iter().take(n).map(|(k, _)| k).collect()
+}
+
+fn detect_tech_layers(tech_stack_fields: &[Vec<String>], declared_tech_stack: &Option<String>) -> Vec<String> {
+    let mut layers = std::collections::HashSet::new();
+    let all: Vec<String> = tech_stack_fields
+        .iter()
+        .flatten()
+        .cloned()
+        .chain(
+            declared_tech_stack
+                .as_deref()
+                .map(|s| s.split(',').map(|x| x.trim().to_string()).collect::<Vec<_>>())
+                .unwrap_or_default(),
+        )
+        .collect();
+
+    for item in &all {
+        let lower = item.to_lowercase();
+        if lower.contains("react") || lower.contains("vue") || lower.contains("svelte") || lower.contains("angular") {
+            layers.insert("frontend".to_string());
+        }
+        if lower.contains("rust") || lower.contains("tauri") || lower.contains("actix") {
+            layers.insert("rust-backend".to_string());
+        }
+        if lower.contains("node") || lower.contains("express") || lower.contains("nest") || lower.contains("fastify") {
+            layers.insert("node-backend".to_string());
+        }
+        if lower.contains("python") || lower.contains("fastapi") || lower.contains("django") || lower.contains("flask") {
+            layers.insert("python-backend".to_string());
+        }
+        if lower.contains("postgres") || lower.contains("mysql") || lower.contains("sqlite") || lower.contains("mongo") {
+            layers.insert("database".to_string());
+        }
+        if lower.contains("typescript") || lower.contains("ts") {
+            layers.insert("typescript".to_string());
+        }
+        if lower.contains("docker") || lower.contains("kubernetes") || lower.contains("terraform") {
+            layers.insert("devops".to_string());
+        }
+    }
+
+    let mut result: Vec<String> = layers.into_iter().collect();
+    result.sort();
+    result
+}
+
+fn jaccard_similarity(a: &[String], b: &[String]) -> f64 {
+    if a.is_empty() && b.is_empty() {
+        return 0.0;
+    }
+    let set_a: std::collections::HashSet<&String> = a.iter().collect();
+    let set_b: std::collections::HashSet<&String> = b.iter().collect();
+    let intersection = set_a.intersection(&set_b).count() as f64;
+    let union = set_a.union(&set_b).count() as f64;
+    if union == 0.0 { 0.0 } else { intersection / union }
+}
+
+/// Aggregate metadata for a single project from its existing context map.
+fn aggregate_project_metadata(
+    pool: &crate::db::DbPool,
+    project: &crate::db::models::DevProject,
+) -> Result<serde_json::Value, AppError> {
+    let contexts = repo::list_contexts_by_project(pool, &project.id, None)?;
+    let groups = repo::list_context_groups(pool, &project.id)?;
+    let goals = repo::list_goals_by_project(pool, &project.id, None).unwrap_or_default();
+
+    // Capabilities: derived from context groups (one entry per group with count)
+    let capabilities: Vec<serde_json::Value> = groups
+        .iter()
+        .map(|g| {
+            let count = contexts.iter().filter(|c| c.group_id.as_deref() == Some(&g.id)).count();
+            serde_json::json!({
+                "name": g.name,
+                "color": g.color,
+                "group_type": g.group_type,
+                "context_count": count,
+            })
+        })
+        .collect();
+
+    // Aggregate arrays from every context
+    let mut keyword_counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    let mut all_entry_points: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut all_db_tables: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut all_api_surface: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut all_cross_refs: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut tech_stack_fields: Vec<Vec<String>> = Vec::new();
+    let mut file_path_counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+
+    for ctx in &contexts {
+        for k in parse_json_array(&Some(ctx.keywords.clone().unwrap_or_default())) {
+            let normalized = k.trim().to_lowercase();
+            if !normalized.is_empty() && normalized.len() > 2 {
+                *keyword_counts.entry(normalized).or_insert(0) += 1;
+            }
+        }
+        for ep in parse_json_array(&ctx.entry_points) {
+            if !ep.trim().is_empty() { all_entry_points.insert(ep); }
+        }
+        for db in parse_json_array(&ctx.db_tables) {
+            if !db.trim().is_empty() { all_db_tables.insert(db); }
+        }
+        for api in parse_json_array(&ctx.api_surface) {
+            if !api.trim().is_empty() { all_api_surface.insert(api); }
+        }
+        for xref in parse_json_array(&ctx.cross_refs) {
+            if !xref.trim().is_empty() { all_cross_refs.insert(xref); }
+        }
+        tech_stack_fields.push(parse_json_array(&ctx.tech_stack));
+
+        // Extract directory prefixes from file_paths to show hot areas
+        for fp in parse_json_array(&Some(ctx.file_paths.clone())) {
+            let dir = fp.split(&['/', '\\'][..]).next().unwrap_or(&fp).to_string();
+            if !dir.is_empty() {
+                *file_path_counts.entry(dir).or_insert(0) += 1;
+            }
+        }
+    }
+
+    let top_keywords = top_n_by_count(keyword_counts, 30);
+    let hot_directories = top_n_by_count(file_path_counts, 10);
+    let tech_layers = detect_tech_layers(&tech_stack_fields, &project.tech_stack);
+
+    // Summary: human-readable one-liner
+    let summary = if contexts.is_empty() {
+        format!(
+            "No context map generated yet for {}. Run Context Map scan to enable rich metadata.",
+            project.name
+        )
+    } else {
+        let capability_list: Vec<String> = groups.iter().take(5).map(|g| g.name.clone()).collect();
+        format!(
+            "{} — {} contexts across {} groups ({}). Tech: {}. {}",
+            project.name,
+            contexts.len(),
+            groups.len(),
+            capability_list.join(", "),
+            if tech_layers.is_empty() { "unspecified".to_string() } else { tech_layers.join(", ") },
+            project.description.as_deref().unwrap_or("No description.")
+        )
+    };
+
+    Ok(serde_json::json!({
+        "project_id": project.id,
+        "name": project.name,
+        "root_path": project.root_path,
+        "description": project.description,
+        "github_url": project.github_url,
+        "status": project.status,
+        "declared_tech_stack": project.tech_stack,
+        "summary": summary,
+        "capabilities": capabilities,
+        "keywords": top_keywords,
+        "tech_layers": tech_layers,
+        "entry_points": all_entry_points.into_iter().take(20).collect::<Vec<_>>(),
+        "db_tables": all_db_tables.into_iter().take(20).collect::<Vec<_>>(),
+        "api_surface": all_api_surface.into_iter().take(20).collect::<Vec<_>>(),
+        "cross_refs": all_cross_refs.into_iter().collect::<Vec<_>>(),
+        "hot_directories": hot_directories,
+        "context_count": contexts.len(),
+        "group_count": groups.len(),
+        "active_goal_count": goals.iter().filter(|g| g.status == "in-progress" || g.status == "open").count(),
+    }))
+}
+
+/// Generate a rich cross-project metadata map by aggregating each project's
+/// existing context map. No filesystem scanning — reuses data already in the DB.
+#[tauri::command]
+pub fn dev_tools_generate_cross_project_metadata(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    let projects = repo::list_projects(&state.db, None)?;
+    let relations = repo::list_cross_project_relations(&state.db)?;
+
+    // Aggregate per project
+    let mut project_metadata: Vec<serde_json::Value> = Vec::new();
+    for project in &projects {
+        match aggregate_project_metadata(&state.db, project) {
+            Ok(meta) => project_metadata.push(meta),
+            Err(e) => {
+                tracing::warn!("Failed to aggregate metadata for {}: {}", project.name, e);
+            }
+        }
+    }
+
+    // Cross-project insights
+    let project_keyword_sets: Vec<(String, Vec<String>)> = project_metadata
+        .iter()
+        .map(|p| {
+            let name = p.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let keywords: Vec<String> = p
+                .get("keywords")
+                .and_then(|v| v.as_array())
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                .unwrap_or_default();
+            (name, keywords)
+        })
+        .collect();
+
+    // Shared keywords: appearing in 2+ projects
+    let mut keyword_project_count: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+    for (name, keywords) in &project_keyword_sets {
+        for kw in keywords {
+            keyword_project_count.entry(kw.clone()).or_default().push(name.clone());
+        }
+    }
+    let shared_keywords: Vec<serde_json::Value> = keyword_project_count
+        .iter()
+        .filter(|(_, projects)| projects.len() >= 2)
+        .map(|(kw, projects)| {
+            serde_json::json!({ "keyword": kw, "projects": projects, "count": projects.len() })
+        })
+        .collect();
+
+    // Similarity matrix
+    let mut similarity_matrix: Vec<serde_json::Value> = Vec::new();
+    for i in 0..project_keyword_sets.len() {
+        for j in (i + 1)..project_keyword_sets.len() {
+            let sim = jaccard_similarity(&project_keyword_sets[i].1, &project_keyword_sets[j].1);
+            if sim > 0.0 {
+                similarity_matrix.push(serde_json::json!({
+                    "source": project_keyword_sets[i].0,
+                    "target": project_keyword_sets[j].0,
+                    "similarity": (sim * 100.0).round() / 100.0,
+                }));
+            }
+        }
+    }
+
+    // Shared tech layers across projects
+    let mut tech_layer_counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    for p in &project_metadata {
+        if let Some(layers) = p.get("tech_layers").and_then(|v| v.as_array()) {
+            for l in layers {
+                if let Some(s) = l.as_str() {
+                    *tech_layer_counts.entry(s.to_string()).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+    let tech_distribution: Vec<serde_json::Value> = tech_layer_counts
+        .into_iter()
+        .map(|(layer, count)| serde_json::json!({ "layer": layer, "project_count": count }))
+        .collect();
+
+    let relation_edges: Vec<serde_json::Value> = relations
+        .iter()
+        .map(|r| {
+            serde_json::json!({
+                "source": r.source_project_id,
+                "target": r.target_project_id,
+                "type": r.relation_type,
+                "details": r.details,
+            })
+        })
+        .collect();
+
+    let result = serde_json::json!({
+        "projects": project_metadata,
+        "cross_project": {
+            "shared_keywords": shared_keywords,
+            "similarity_matrix": similarity_matrix,
+            "tech_distribution": tech_distribution,
+            "relations": relation_edges,
+        },
+        "generated_at": chrono::Utc::now().to_rfc3339(),
+        "total_projects": projects.len(),
+    });
+
+    // Cache result in app_settings
+    let json_str = serde_json::to_string(&result)
+        .map_err(|e| AppError::Validation(format!("Failed to serialize metadata: {e}")))?;
+    crate::db::repos::core::settings::set(&state.db, CROSS_PROJECT_METADATA_KEY, &json_str)?;
+
+    Ok(result)
+}
+
+/// Get the cached cross-project metadata map. Returns None if never generated.
+#[tauri::command]
+pub fn dev_tools_get_cross_project_metadata(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Option<serde_json::Value>, AppError> {
+    require_auth_sync(&state)?;
+    match crate::db::repos::core::settings::get(&state.db, CROSS_PROJECT_METADATA_KEY)? {
+        Some(json_str) => {
+            let parsed: serde_json::Value = serde_json::from_str(&json_str)
+                .map_err(|e| AppError::Validation(format!("Corrupted metadata cache: {e}")))?;
+            Ok(Some(parsed))
+        }
+        None => Ok(None),
+    }
 }
 
 /// Bulk create ideas targeting different projects.
@@ -1576,18 +1904,23 @@ pub fn dev_tools_get_project_summary(
     let groups = repo::list_context_groups(&state.db, &project_id)?;
     let ideas = repo::list_ideas(&state.db, Some(&project_id), None, None, None, None)?;
     let tasks = repo::list_tasks(&state.db, Some(&project_id), None)?;
+    let goals = repo::list_goals_by_project(&state.db, &project_id, None).unwrap_or_default();
 
     let pending_ideas = ideas.iter().filter(|i| i.status == "pending").count();
     let accepted_ideas = ideas.iter().filter(|i| i.status == "accepted").count();
     let running_tasks = tasks.iter().filter(|t| t.status == "running").count();
+    let active_goals = goals.iter().filter(|g| g.status == "in-progress" || g.status == "open").count();
 
     Ok(serde_json::json!({
         "project": {
             "id": project.id,
             "name": project.name,
             "root_path": project.root_path,
+            "description": project.description,
             "tech_stack": project.tech_stack,
+            "github_url": project.github_url,
             "status": project.status,
+            "created_at": project.created_at,
         },
         "context_map": {
             "groups": groups.len(),
@@ -1602,6 +1935,11 @@ pub fn dev_tools_get_project_summary(
         "tasks": {
             "total": tasks.len(),
             "running": running_tasks,
+        },
+        "goals": {
+            "total": goals.len(),
+            "active": active_goals,
+            "titles": goals.iter().take(10).map(|g| g.title.clone()).collect::<Vec<_>>(),
         },
     }))
 }

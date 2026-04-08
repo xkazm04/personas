@@ -272,7 +272,8 @@ async fn run_session(
     // Register run in ActiveProcessRegistry
     let _reg_flag = registry.register_run("build_session", &session_id);
 
-    super::process_activity::emit_process_activity(&app_handle, "build_session", "started", Some(&session_id), None);
+    // Note: process activity for agent builds is tracked frontend-side via 'agent_build' domain
+    // (see UnifiedMatrixEntry/MatrixAdoptionView). No backend emission needed here.
 
     // Update phase to Analyzing
     let _ = update_phase(&pool, &session_id, BuildPhase::Analyzing);
@@ -319,7 +320,6 @@ async fn run_session(
         // Check cancellation
         if cancel_flag.load(Ordering::Acquire) {
             tracing::info!(session_id = %session_id, "Build session cancelled");
-            super::process_activity::emit_process_activity(&app_handle, "build_session", "cancelled", Some(&session_id), None);
             let _ = std::fs::remove_dir_all(&session_exec_dir);
             cleanup_session(&sessions_map, &registry, &session_id);
             return;
@@ -658,10 +658,6 @@ async fn run_session(
     } else {
         BuildPhase::DraftReady
     };
-    {
-        let action = if final_phase == BuildPhase::Failed { "failed" } else { "completed" };
-        super::process_activity::emit_process_activity(&app_handle, "build_session", action, Some(&session_id), None);
-    }
     let resolved_json = serde_json::to_string(&serde_json::Value::Object(resolved_cells)).unwrap_or_else(|_| "{}".to_string());
     let _ = build_session_repo::update(&pool, &session_id, &UpdateBuildSession {
         phase: Some(final_phase.as_str().to_string()),
@@ -1550,7 +1546,15 @@ Per-service retry policies and fallbacks. Follows from connectors.
 
 ### 8. events — WHAT to observe
 Emitted/subscribed events for inter-agent coordination.
-data format: {{"items": ["Subscribe: manual_review_completed"], "subscriptions": [{{"event_type": "manual_review_completed", "source_filter": null, "direction": "subscribe"}}, {{"event_type": "digest_published", "source_filter": null, "direction": "emit"}}]}}
+
+**Event naming: three-level dot syntax `<agent>.<task>.<event_type>`**
+- `agent` — single lowercase word representing this agent's domain (e.g., `stock`, `invoice`, `email`, `news`)
+- `task` — use case or functional area producing the event (e.g., `news`, `scan`, `digest`, `signal`)
+- `event_type` — specific activity in snake_case (e.g., `high_impact`, `strong_buy`, `completed`, `rejected`)
+- Examples: `stock.news.high_impact`, `stock.signal.strong_buy`, `invoice.scan.completed`, `email.digest.published`
+- NEVER use generic names like `task_completed` or `alert_sent` — always three dotted levels
+
+data format: {{"items": ["Subscribe: stock.signal.strong_buy"], "subscriptions": [{{"event_type": "stock.signal.strong_buy", "source_filter": null, "direction": "subscribe"}}, {{"event_type": "stock.news.high_impact", "source_filter": null, "direction": "emit"}}]}}
 
 ## Available Credentials
 {cred_section}
@@ -1578,7 +1582,7 @@ The agent runs on a platform with built-in communication protocols. When composi
 1. **user_message** — Agent sends its main output/report. The title MUST be descriptive and identify the use case at first sight (e.g. "Weekly Tech News - Jan 15-21, 2026", NOT "Execution output"). Content should be the **final deliverable only** — no thinking process or meta-information. For stats/metrics, use ```chart blocks (label: value per line). Map from the "messages" dimension. Example instruction: "After completing analysis, send results via: {{"user_message": {{"title": "Weekly Tech Digest - Jan 15-21", "content": "## Headlines\n...\n\n```chart\nAI: 12\nCloud: 8\n```", "content_type": "success", "priority": "normal"}}}}"
 2. **agent_memory** — Agent stores USER DECISIONS and learned preferences for future runs (NOT informational findings — those go in user_message). Map from the "memory" dimension. Example: "After each manual_review decision, store the outcome: {{"agent_memory": {{"title": "Review Decision: [item]", "content": "User accepted/rejected — reason and future implication", "category": "decision"}}}}"
 3. **manual_review** — Agent flags items needing human approval. Map from the "human-review" dimension. **ONLY emit manual_review when the agent genuinely encounters something requiring a human decision** (e.g., ambiguous data, high-risk actions, policy violations). Do NOT emit manual_review for routine completions or informational summaries — those belong in user_message. Example: "Flag uncertain items via: {{"manual_review": {{"title": "Needs Review", "description": "why", "severity": "medium"}}}}"
-4. **emit_event** — Agent emits events for inter-agent coordination. Map from the "events" dimension. Event type names MUST be specific and prefixed with the agent's domain to avoid ambiguity (e.g., "invoice_scan_completed" not "task_completed", "sentiment_alert_triggered" not "alert_sent"). Example: "Emit completion: {{"emit_event": {{"type": "email_digest_published", "data": {{"status": "success", "items_processed": 5}}}}}}"
+4. **emit_event** — Agent emits events for inter-agent coordination. Map from the "events" dimension. Event type names MUST use the three-level dot syntax `<agent>.<task>.<event_type>` where `agent` is a single lowercase word representing this agent's domain, `task` is the use case producing the event, and `event_type` is a specific snake_case activity. Examples: `stock.signal.strong_buy`, `stock.news.high_impact`, `invoice.scan.completed`, `email.digest.published`. NEVER use generic names like `task_completed` or single-word names. Example: "Emit completion: {{"emit_event": {{"type": "email.digest.published", "data": {{"status": "success", "items_processed": 5}}}}}}"
 5. **knowledge_annotation** — Agent records tool/API insights. Example: "Record insights via: {{"knowledge_annotation": {{"scope": "tool:web_search", "note": "insight"}}}}"
 6. **execution_flow** — Agent declares its execution steps. Example: "Declare steps via: {{"execution_flow": {{"flows": [{{"step": 1, "action": "research", "status": "completed"}}]}}}}"
 

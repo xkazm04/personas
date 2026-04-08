@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useAgentStore } from "@/stores/agentStore";
+import { managementFetch } from '@/api/system/managementApiAuth';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
@@ -229,7 +230,7 @@ function HealthWatchToggle() {
 
   useEffect(() => {
     if (!persona) return;
-    fetch(`http://127.0.0.1:9420/api/settings/health-watch/${persona.id}`)
+    managementFetch(`/api/settings/health-watch/${persona.id}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.data?.enabled !== undefined) setEnabled(d.data.enabled); })
       .catch(() => {});
@@ -239,7 +240,7 @@ function HealthWatchToggle() {
     if (!persona) return;
     setLoading(true);
     try {
-      await fetch(`http://127.0.0.1:9420/api/settings/health-watch/${persona.id}`, {
+      await managementFetch(`/api/settings/health-watch/${persona.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !enabled, interval_hours: 6, error_threshold: 30 }),

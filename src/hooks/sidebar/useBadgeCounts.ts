@@ -30,10 +30,13 @@ export function useBadgeCounts(): BadgeCounts {
   const fetchAll = useCallback(async () => {
     const { useOverviewStore } = await import("@/stores/overviewStore");
     const state = useOverviewStore.getState();
-    void state.fetchPendingReviewCount();
-    void state.fetchUnreadMessageCount();
-    void state.fetchRecentEvents();
-    void fetchBudgetSpend();
+    // Stagger fetches across frames to avoid a burst of 4 simultaneous
+    // set() calls that cause cascading React re-renders in one frame.
+    await state.fetchPendingReviewCount();
+    state.fetchUnreadMessageCount().catch(() => {});
+    await new Promise(r => setTimeout(r, 0)); // yield to browser
+    state.fetchRecentEvents().catch(() => {});
+    fetchBudgetSpend().catch(() => {});
   }, [fetchBudgetSpend]);
 
   useEffect(() => {

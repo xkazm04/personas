@@ -137,6 +137,7 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
         name: session.credentialName.trim() || `${connectorLabel} Credential`,
         service_type: serviceType,
         data: cleanValues,
+        healthcheck_passed: session.healthResult?.success === true,
       });
 
       await fetchCredentials();

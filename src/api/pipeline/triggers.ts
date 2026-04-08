@@ -28,6 +28,51 @@ export const deleteTrigger = (id: string, personaId: string) =>
   invoke<boolean>("delete_trigger", { id, personaId });
 
 // ============================================================================
+// Builder: atomic persona <-> event linking
+// See docs/design/event-routing-proposal.md
+// ============================================================================
+
+/**
+ * Atomically create an event_listener trigger AND patch the persona's
+ * structured_prompt.eventHandlers with matching handler text. The persona
+ * will actually react to the wired event at runtime.
+ */
+export const linkPersonaToEvent = (
+  personaId: string,
+  eventType: string,
+  handlerText?: string,
+) =>
+  invoke<PersonaTrigger>("link_persona_to_event", {
+    personaId,
+    eventType,
+    handlerText: handlerText ?? null,
+  });
+
+/** Inverse: delete the event_listener trigger AND remove its handler entry. */
+export const unlinkPersonaFromEvent = (triggerId: string) =>
+  invoke<boolean>("unlink_persona_from_event", { triggerId });
+
+/**
+ * Seed a persona's `structured_prompt.eventHandlers` from its existing
+ * event_listener triggers. Idempotent — only fills in missing keys. Returns
+ * the number of handler entries created.
+ */
+export const initializeEventHandlersForPersona = (personaId: string) =>
+  invoke<number>("initialize_event_handlers_for_persona", { personaId });
+
+/** Update a single handler's text. Creates the eventHandlers map if needed. */
+export const updatePersonaEventHandler = (
+  personaId: string,
+  eventType: string,
+  handlerText: string,
+) =>
+  invoke<boolean>("update_persona_event_handler", {
+    personaId,
+    eventType,
+    handlerText,
+  });
+
+// ============================================================================
 // Trigger Health
 // ============================================================================
 

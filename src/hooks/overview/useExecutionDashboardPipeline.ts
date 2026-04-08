@@ -79,14 +79,26 @@ export function useExecutionDashboardPipeline() {
   }, [fetchAlertRules, fetchAlertHistory]);
 
   // ── Filter-dependent refresh (re-runs when days/persona/compare change) ──
+  // Split into two waves with a frame yield between them to avoid 5 concurrent
+  // set() calls landing in the same React render frame.
   const refresh = useCallback(
-    () => settleAndReport([
-      { name: 'executionDashboard', fn: () => fetchExecutionDashboard(fetchDays) },
-      { name: 'observabilityMetrics', fn: () => fetchObservabilityMetrics(fetchDays, selectedPersonaId || undefined) },
-      { name: 'toolUsage', fn: () => fetchToolUsage(effectiveDays, selectedPersonaId || undefined) },
-      { name: 'healingIssues', fn: fetchHealingIssues },
-      { name: 'globalExecutions', fn: () => fetchGlobalExecutions(true, undefined, selectedPersonaId || undefined) },
-    ], 'DashboardPipeline', mountedRef.current),
+    async () => {
+      const signal = mountedRef.current;
+      // Wave 1: critical above-the-fold data
+      await settleAndReport([
+        { name: 'executionDashboard', fn: () => fetchExecutionDashboard(fetchDays) },
+        { name: 'globalExecutions', fn: () => fetchGlobalExecutions(true, undefined, selectedPersonaId || undefined) },
+      ], 'DashboardPipeline', signal);
+      if (signal.cancelled) return;
+      // Yield to let React paint wave 1 results
+      await new Promise(r => setTimeout(r, 0));
+      // Wave 2: secondary data
+      await settleAndReport([
+        { name: 'observabilityMetrics', fn: () => fetchObservabilityMetrics(fetchDays, selectedPersonaId || undefined) },
+        { name: 'toolUsage', fn: () => fetchToolUsage(effectiveDays, selectedPersonaId || undefined) },
+        { name: 'healingIssues', fn: fetchHealingIssues },
+      ], 'DashboardPipeline', signal);
+    },
     [fetchExecutionDashboard, fetchObservabilityMetrics, fetchToolUsage, fetchHealingIssues, fetchGlobalExecutions, fetchDays, effectiveDays, selectedPersonaId],
   );
 

@@ -55,17 +55,31 @@ pub fn create_credential(
 
     // Store an empty blob -- all secrets live in credential_fields now.
     let name = input.name.clone();
+    let healthcheck_passed = input.healthcheck_passed.unwrap_or(false);
     let db_input = CreateCredentialInput {
         encrypted_data: String::new(),
         iv: String::new(),
         session_encrypted_data: None,
+        healthcheck_passed: None,
         ..input
     };
 
     // Create credential + save fields in a single transaction to prevent orphaned rows
-    let cred = repo::create_with_fields(&state.db, db_input, &field_map)?;
+    let mut cred = repo::create_with_fields(&state.db, db_input, &field_map)?;
 
     audit_log::insert_warn(&state.db, &cred.id, &name, "create", None);
+
+    // Persist pre-creation healthcheck result so credential appears as "healthy"
+    if healthcheck_passed {
+        if let Err(e) = repo::append_healthcheck_metadata(
+            &state.db, &cred.id, true, "Connection verified during setup",
+        ) {
+            tracing::warn!(credential_id = %cred.id, error = %e, "Failed to set initial healthcheck metadata");
+        } else {
+            // Re-read so the returned object includes updated metadata
+            cred = repo::get_by_id(&state.db, &cred.id)?;
+        }
+    }
 
     // Auto-provision a keepalive rotation policy for OAuth credentials
     crate::engine::rotation::auto_provision_single(&state.db, &cred.id);

@@ -1106,6 +1106,7 @@ mod tests {
                 iv: "iv_123".into(),
                 metadata: Some("{\"email\": \"test@gmail.com\"}".into()),
                 session_encrypted_data: None,
+                healthcheck_passed: None,
             },
         )
         .unwrap();
@@ -1176,6 +1177,7 @@ mod tests {
                 iv: "iv_evt".into(),
                 metadata: None,
                 session_encrypted_data: None,
+                healthcheck_passed: None,
             },
         )
         .unwrap();

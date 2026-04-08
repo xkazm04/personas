@@ -292,7 +292,6 @@ export function WeekView({
                   compact
                   hasConflict={conflictsByEventId.has(ev.id)}
                   onClick={() => onEventClick(ev)}
-                  onHover={onEventHover}
                 />
               ))}
               {popover.events.length > 5 && (

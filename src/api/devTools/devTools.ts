@@ -155,6 +155,57 @@ export const removeGoalDependency = (id: string) =>
   invoke<boolean>("dev_tools_remove_goal_dependency", { id });
 
 // ============================================================================
+// Cross-Project Metadata Map
+// ============================================================================
+
+export interface CrossProjectCapability {
+  name: string;
+  color: string;
+  group_type: string | null;
+  context_count: number;
+}
+
+export interface CrossProjectProjectMetadata {
+  project_id: string;
+  name: string;
+  root_path: string;
+  description: string | null;
+  github_url: string | null;
+  status: string;
+  declared_tech_stack: string | null;
+  summary: string;
+  capabilities: CrossProjectCapability[];
+  keywords: string[];
+  tech_layers: string[];
+  entry_points: string[];
+  db_tables: string[];
+  api_surface: string[];
+  cross_refs: string[];
+  hot_directories: string[];
+  context_count: number;
+  group_count: number;
+  active_goal_count: number;
+}
+
+export interface CrossProjectMetadataMap {
+  projects: CrossProjectProjectMetadata[];
+  cross_project: {
+    shared_keywords: { keyword: string; projects: string[]; count: number }[];
+    similarity_matrix: { source: string; target: string; similarity: number }[];
+    tech_distribution: { layer: string; project_count: number }[];
+    relations: { source: string; target: string; type: string; details: string | null }[];
+  };
+  generated_at: string;
+  total_projects: number;
+}
+
+export const generateCrossProjectMetadata = () =>
+  invoke<CrossProjectMetadataMap>("dev_tools_generate_cross_project_metadata");
+
+export const getCrossProjectMetadata = () =>
+  safeInvoke<CrossProjectMetadataMap | null>(null, "dev_tools_get_cross_project_metadata");
+
+// ============================================================================
 // Context Groups
 // ============================================================================
 

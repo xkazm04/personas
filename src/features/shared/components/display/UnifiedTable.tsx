@@ -6,7 +6,7 @@
  * Column headers show distinct action icons: ArrowUpDown (sort), Filter (dropdown), Search.
  */
 import { useState, useMemo, useRef, useCallback, type ReactNode } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X, Inbox } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 
 // ---------------------------------------------------------------------------
@@ -225,26 +225,17 @@ export function UnifiedTable<T>({
 
   const gridTemplate = columns.map((c) => c.width).join(' ');
 
-  // Virtual list (optional)
-  const useVirtual = rowHeight > 0 && sortedData.length > 30;
+  // Virtual list: enable whenever rowHeight is provided so rows are always in a
+  // bounded scroll container (important on small displays).
+  const useVirtual = rowHeight > 0;
   const { parentRef, virtualizer } = useVirtualList(sortedData, useVirtual ? rowHeight : 44);
 
   if (isLoading) {
     return <div className="py-8 text-center text-muted-foreground/50 text-sm">Loading...</div>;
   }
 
-  if (sortedData.length === 0) {
-    return (
-      <div className="py-12 text-center">
-        <Inbox className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
-        <p className="text-sm font-medium text-muted-foreground/50">{emptyTitle}</p>
-        {emptyDescription && <p className="text-sm text-muted-foreground/30 mt-1">{emptyDescription}</p>}
-      </div>
-    );
-  }
-
   return (
-    <div className={`border border-primary/10 rounded-xl overflow-hidden ${className ?? ''}`}>
+    <div className={`border border-primary/10 rounded-xl overflow-hidden flex flex-col min-h-0 ${className ?? ''}`}>
       {/* Header */}
       <div
         className="grid bg-primary/5 border-b border-primary/10"
@@ -255,9 +246,16 @@ export function UnifiedTable<T>({
         ))}
       </div>
 
+      {sortedData.length === 0 ? (
+        <div className="py-8 text-center">
+          <p className="text-sm text-muted-foreground/40">{emptyTitle}</p>
+          {emptyDescription && <p className="text-sm text-muted-foreground/30 mt-1">{emptyDescription}</p>}
+        </div>
+      ) : null}
+
       {/* Rows */}
-      {useVirtual ? (
-        <div ref={parentRef} className="overflow-y-auto" style={{ maxHeight: '60vh' }}>
+      {sortedData.length > 0 && (useVirtual ? (
+        <div ref={parentRef} className="flex-1 overflow-y-auto min-h-0">
           <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
             {virtualizer.getVirtualItems().map((vRow) => {
               const row = sortedData[vRow.index]!;
@@ -266,7 +264,7 @@ export function UnifiedTable<T>({
                   key={getRowKey(row)}
                   onClick={() => onRowClick?.(row)}
                   style={{ position: 'absolute', top: 0, transform: `translateY(${vRow.start}px)`, width: '100%', height: `${vRow.size}px`, gridTemplateColumns: gridTemplate }}
-                  className={`grid items-center transition-colors hover:bg-white/[0.04] ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-primary/[0.06]' : ''}`}
+                  className={`grid items-center transition-colors hover:bg-white/[0.05] ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-primary/[0.06]' : ''} ${vRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                 >
                   {columns.map((col) => (
                     <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -285,7 +283,7 @@ export function UnifiedTable<T>({
               key={getRowKey(row)}
               onClick={() => onRowClick?.(row)}
               style={{ gridTemplateColumns: gridTemplate }}
-              className={`grid items-center px-0 py-2.5 transition-colors hover:bg-white/[0.04] ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-primary/[0.06]' : ''}`}
+              className={`grid items-center px-0 py-2.5 transition-colors hover:bg-white/[0.05] ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-primary/[0.06]' : ''} ${idx % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
             >
               {columns.map((col) => (
                 <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -295,7 +293,7 @@ export function UnifiedTable<T>({
             </div>
           ))}
         </div>
-      )}
+      ))}
     </div>
   );
 }

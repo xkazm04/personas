@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef } from 'react';
+import { createContext, useContext, useRef, useState } from 'react';
 import { CheckCircle2, HelpCircle, AlertCircle, Loader2, Pencil } from 'lucide-react';
 import { getCellStateClasses } from '@/features/agents/components/matrix/cellStateClasses';
 import { getCellGlowColorClass } from '@/features/agents/components/matrix/cellGlowColors';
@@ -24,6 +24,62 @@ export interface MatrixCell {
   filled?: boolean;
 }
 
+/**
+ * Split a bullet item into title + description.
+ * Recognizes two separator conventions:
+ *   - `: ` (colon-space) — e.g. "stock.signal.strong_buy: Emitted when..."
+ *   - ` — ` (em-dash)    — e.g. "Weekly Analysis: The primary Monday workflow..."
+ * Only splits when the title part is a short label (under 60 chars) and
+ * the description is at least 10 chars. Returns null if no meaningful split.
+ */
+function splitBulletItem(item: string): { title: string; description: string } | null {
+  // Try `: ` first, then ` — ` (em-dash), then ` - ` (hyphen)
+  for (const sep of [': ', ' \u2014 ', ' -- ']) {
+    const idx = item.indexOf(sep);
+    if (idx >= 1 && idx <= 60) {
+      const title = item.slice(0, idx).trim();
+      const description = item.slice(idx + sep.length).trim();
+      if (description.length >= 10) return { title, description };
+    }
+  }
+  return null;
+}
+
+function BulletItem({ item, color }: { item: string; color: string }) {
+  const [showDescription, setShowDescription] = useState(false);
+  const split = splitBulletItem(item);
+
+  if (!split) {
+    return (
+      <li className="flex items-start gap-2 leading-tight">
+        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mt-[7px] flex-shrink-0" />
+        <span className={`text-sm ${color} leading-snug`}>{item}</span>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-start gap-2 leading-tight group">
+      <span className="w-1.5 h-1.5 rounded-full bg-primary opacity-50 mt-[7px] flex-shrink-0" />
+      <span className="min-w-0">
+        <button
+          type="button"
+          onClick={() => setShowDescription((v) => !v)}
+          className="text-sm font-medium text-primary/80 leading-snug hover:text-primary transition-colors text-left cursor-pointer"
+          title={split.description}
+        >
+          {split.title}
+        </button>
+        {showDescription && (
+          <p className="text-[12px] text-muted-foreground/60 leading-snug mt-0.5 animate-fade-slide-in">
+            {split.description}
+          </p>
+        )}
+      </span>
+    </li>
+  );
+}
+
 export function CellBullets({ items, color = 'text-foreground/70' }: { items: string[]; color?: string }) {
   const typewriter = useContext(TypewriterContext);
   // When typewriter is active, delegate to TypewriterBullets for line-by-line reveal
@@ -33,10 +89,7 @@ export function CellBullets({ items, color = 'text-foreground/70' }: { items: st
   return (
     <ul className="space-y-1.5">
       {items.map((item, i) => (
-        <li key={i} className="flex items-start gap-2 leading-tight">
-          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 mt-[7px] flex-shrink-0" />
-          <span className={`text-sm ${color} leading-snug`}>{item}</span>
-        </li>
+        <BulletItem key={i} item={item} color={color} />
       ))}
     </ul>
   );

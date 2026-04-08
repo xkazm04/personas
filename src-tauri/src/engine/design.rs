@@ -602,6 +602,7 @@ mod tests {
             trust_verified_at: None,
             trust_score: 0.0,
             parameters: None,
+            gateway_exposure: crate::db::models::PersonaGatewayExposure::LocalOnly,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
         }

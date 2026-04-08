@@ -824,6 +824,70 @@ fn format_dom(dom: &str) -> String {
 }
 
 // =============================================================================
+// Builder: persona <-> event linking
+// See docs/design/event-routing-proposal.md
+// =============================================================================
+
+/// Atomically wire a persona as a listener for an event_type. Creates an
+/// event_listener trigger AND patches the persona's structured_prompt so the
+/// persona actually knows what to do with the event at runtime.
+///
+/// `handler_text` is optional: when omitted, a generic placeholder is used.
+/// Returns the newly created trigger.
+#[tauri::command]
+pub fn link_persona_to_event(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    event_type: String,
+    handler_text: Option<String>,
+) -> Result<PersonaTrigger, AppError> {
+    require_auth_sync(&state)?;
+    repo::link_persona_to_event(
+        &state.db,
+        &persona_id,
+        &event_type,
+        handler_text.as_deref(),
+    )
+}
+
+/// Inverse of `link_persona_to_event`: delete the trigger AND remove its
+/// matching eventHandlers entry in a single transaction.
+#[tauri::command]
+pub fn unlink_persona_from_event(
+    state: State<'_, Arc<AppState>>,
+    trigger_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::unlink_persona_from_event(&state.db, &trigger_id)?;
+    Ok(true)
+}
+
+/// Seed a persona's eventHandlers from its existing event_listener triggers.
+/// Returns the number of handler entries created. Idempotent.
+#[tauri::command]
+pub fn initialize_event_handlers_for_persona(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<u32, AppError> {
+    require_auth_sync(&state)?;
+    repo::initialize_event_handlers_for_persona(&state.db, &persona_id)
+}
+
+/// Update a single event handler's text. Used by the "Refine handler" action
+/// in the Builder. Creates the eventHandlers map if it doesn't exist yet.
+#[tauri::command]
+pub fn update_persona_event_handler(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    event_type: String,
+    handler_text: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::update_persona_event_handler(&state.db, &persona_id, &event_type, &handler_text)?;
+    Ok(true)
+}
+
+// =============================================================================
 // Chain Triggers
 // =============================================================================
 
@@ -1194,16 +1258,22 @@ pub fn seed_mock_cron_agent(
     let next = (now + chrono::Duration::minutes(((t % 60) + 5) as i64)).to_rfc3339();
 
     let conn = state.db.get()?;
-    let result = {
-        let _fk_guard = crate::db::FkDisabledGuard::new(&conn)?;
+
+    // Ensure the persona row exists so list_cron_agents JOIN succeeds
+    if personas.is_empty() {
         conn.execute(
-            "INSERT INTO persona_triggers
-             (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
-             VALUES (?1, ?2, 'schedule', ?3, 1, ?4, ?5, ?4, ?4)",
-            rusqlite::params![trigger_id, p_id, config, now_str, next],
-        )
-    }; // _fk_guard dropped here → FK restored
-    result?;
+            "INSERT OR IGNORE INTO personas (id, name, system_prompt, icon, color, enabled, headless, created_at, updated_at)
+             VALUES (?1, ?2, 'Mock scheduled agent for development testing', ?3, ?4, 1, 0, ?5, ?5)",
+            rusqlite::params![p_id, p_name, p_icon, p_color, now_str],
+        )?;
+    }
+
+    conn.execute(
+        "INSERT INTO persona_triggers
+         (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
+         VALUES (?1, ?2, 'schedule', ?3, 1, ?4, ?5, ?4, ?4)",
+        rusqlite::params![trigger_id, p_id, config, now_str, next],
+    )?;
 
     let description = cron_to_human(cron_expr);
 

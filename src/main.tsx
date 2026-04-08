@@ -1,5 +1,8 @@
-import './lib/debug/freezeDetector';
-import './lib/debug/freezeWatchdog';
+// Debug diagnostics — dev only (tree-shaken in production builds)
+if (import.meta.env.DEV) {
+  import('./lib/debug/freezeDetector');
+  import('./lib/debug/freezeWatchdog');
+}
 import { monitorStore } from './lib/debug/storeMonitor';
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -146,8 +149,8 @@ if (root) {
 // Runs after React is already mounted and error handlers are active.
 // Only Sentry enrichment and analytics are deferred here.
 
-// Wire store monitoring for freeze diagnostics
-(async () => {
+// Wire store monitoring for freeze diagnostics (dev only — zero overhead in production)
+if (import.meta.env.DEV) (async () => {
   try {
     const [{ useSystemStore }, { useAgentStore }] = await Promise.all([
       import("./stores/systemStore"),

@@ -43,7 +43,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   // -- Customer-Facing -------------------------------------------
   { role: 'crm',                 label: 'CRM',                  members: ['hubspot', 'intercom', 'pipedrive', 'attio'] },
   { role: 'support_ticketing',   label: 'Support Ticketing',    members: ['zendesk', 'freshdesk', 'intercom', 'crisp'] },
-  { role: 'social_media',        label: 'Social Media',         members: ['buffer', 'linkedin', 'twitter'] },
+  { role: 'social_media',        label: 'Social Media',         members: ['buffer', 'linkedin', 'reddit', 'twitter'] },
 
   // -- Content & CMS ---------------------------------------------
   { role: 'cms',                 label: 'CMS',                  members: ['wordpress', 'webflow', 'contentful'] },
@@ -68,6 +68,9 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   { role: 'advertising',         label: 'Advertising',          members: ['google_ads'] },
   { role: 'e_signature',         label: 'E-Signature',          members: ['docusign'] },
   { role: 'hr_recruiting',       label: 'HR & Recruiting',      members: ['greenhouse'] },
+
+  // -- Integration Hubs ------------------------------------------
+  { role: 'tool_gateway',        label: 'Tool Gateway',         members: ['mcp_gateway', 'arcade'] },
 
   // -- Desktop Apps --------------------------------------------
   { role: 'code_editor',         label: 'Code Editor',          members: ['desktop_vscode'] },

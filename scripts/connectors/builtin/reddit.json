@@ -1,0 +1,61 @@
+{
+  "id": "builtin-reddit",
+  "name": "reddit",
+  "label": "Reddit",
+  "color": "#FF4500",
+  "icon_url": "/icons/connectors/reddit.svg",
+  "category": "social",
+  "fields": [
+    {
+      "key": "client_id",
+      "label": "Client ID",
+      "type": "text",
+      "required": true,
+      "placeholder": "abc123-_xyz",
+      "helpText": "From reddit.com/prefs/apps -> your app -> the string under 'web app' or 'installed app'",
+      "sensitive": true
+    },
+    {
+      "key": "client_secret",
+      "label": "Client Secret",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "From reddit.com/prefs/apps -> your app -> 'secret' (leave blank for installed-app type)",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://oauth.reddit.com/api/v1/me",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{access_token}}",
+      "User-Agent": "personas-desktop:builtin-reddit:v1.0 (by /u/personas_app)"
+    },
+    "description": "Validates OAuth token via Reddit /api/v1/me endpoint"
+  },
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Reddit social network for fetching subreddit posts, comments, and trends via the Reddit OAuth API.",
+    "auth_type": "oauth",
+    "auth_type_label": "OAuth",
+    "oauth_provider_id": "reddit",
+    "oauth_scopes": [
+      "identity",
+      "read"
+    ],
+    "docs_url": "https://www.reddit.com/dev/api",
+    "setup_guide": "1. Go to reddit.com/prefs/apps and click 'create app' (or 'create another app')\n2. Choose 'web app' as the type\n3. Set the redirect URI to http://127.0.0.1 (the port is assigned dynamically)\n4. Give it a name and description, then click 'create app'\n5. Copy the Client ID (the string under your app name, beneath 'web app')\n6. Copy the Client Secret (labelled 'secret')\n7. Paste both here, then click Authorize with Reddit\n\nNote: Reddit's API requires a unique User-Agent header — personas sets one automatically.",
+    "pricing_tier": "free",
+    "auth_methods": [
+      {
+        "id": "oauth",
+        "label": "OAuth",
+        "type": "oauth",
+        "is_default": true
+      }
+    ]
+  }
+}

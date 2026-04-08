@@ -11,6 +11,7 @@ import { isTerminalState } from '@/lib/execution/executionState';
 import { validatePayload, ExecutionStatusSchema } from '@/lib/validation/eventPayloads';
 import type { QueueStatusPayload } from '@/stores/slices/agents/executionSlice';
 import { getExecutionLogLines } from '@/api/agents/executions';
+import { checkNewHumanReviews } from '@/lib/notifications/checkHumanReviews';
 
 export function usePersonaExecution() {
   const clearOutput = useAgentStore((s) => s.clearExecutionOutput);
@@ -88,11 +89,21 @@ export function usePersonaExecution() {
     if (error) {
       store.appendExecutionOutput(`[ERROR] ${error}`);
     }
+
+    // Capture persona info before finishExecution resets state
+    const execPersonaId = store.executionPersonaId;
+    const execPersonaName = store.selectedPersona?.name ?? null;
+
     store.finishExecution(status, {
       durationMs: duration_ms ?? null,
       costUsd: cost_usd ?? null,
       errorMessage: error ?? null,
     });
+
+    // After successful execution, check for new human reviews
+    if (status === 'completed' && execPersonaId) {
+      void checkNewHumanReviews(execPersonaId, execPersonaName).catch(() => {});
+    }
   }, []);
 
   const { start, cleanup } = useCorrelatedCliStream({

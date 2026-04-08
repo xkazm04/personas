@@ -171,6 +171,20 @@ pub async fn get_active_build_session(
     Ok(session.as_ref().map(PersistedBuildSession::from_session))
 }
 
+/// Get the most recent build session for a persona, regardless of phase.
+/// Unlike `get_active_build_session`, this includes promoted/completed sessions
+/// so the frontend can access resolved_cells for the agent matrix display.
+#[tauri::command]
+pub async fn get_latest_build_session(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<Option<PersistedBuildSession>, AppError> {
+    require_auth(&state).await?;
+
+    let session = build_session_repo::get_latest_for_persona(&state.db, &persona_id)?;
+    Ok(session.as_ref().map(PersistedBuildSession::from_session))
+}
+
 /// List non-terminal build sessions, optionally filtered by persona_id.
 #[tauri::command]
 pub async fn list_build_sessions(
@@ -548,7 +562,8 @@ fn ensure_webhook_secrets(ir: &mut crate::db::models::AgentIr) {
 
 fn validate_triggers(ir: &crate::db::models::AgentIr) -> Result<(), AppError> {
     for t in &ir.triggers {
-        let trigger_type = t.trigger_type.as_deref().unwrap_or("manual");
+        let raw_type = t.trigger_type.as_deref().unwrap_or("manual");
+        let trigger_type = trigger_repo::normalize_trigger_type(raw_type);
         let config_str = t.config.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default());
         trigger_repo::validate_trigger_type(trigger_type)?;
         trigger_repo::validate_config(trigger_type, config_str.as_deref())?;
@@ -719,7 +734,8 @@ fn create_triggers_in_tx(
     let mut created_trigger_ids = Vec::new();
 
     for (idx, t) in ir.triggers.iter().enumerate() {
-        let trigger_type = t.trigger_type.as_deref().unwrap_or("manual").to_string();
+        let raw_type = t.trigger_type.as_deref().unwrap_or("manual");
+        let trigger_type = trigger_repo::normalize_trigger_type(raw_type).to_string();
         let config = t.config.as_ref()
             .map(|v| serde_json::to_string(v).unwrap_or_default());
         let use_case_id = use_case_ids.get(idx)

@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
 import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
+import { managementFetch } from '@/api/system/managementApiAuth';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
 
 const ArenaPanel = lazy(() => import('../arena/ArenaPanel').then((m) => ({ default: m.ArenaPanel })));
@@ -106,7 +107,7 @@ function AutoOptimizeToggle() {
   const fetchConfig = useCallback(async () => {
     if (!persona) return;
     try {
-      const resp = await fetch(`http://127.0.0.1:9420/api/settings/auto-optimize/${persona.id}`);
+      const resp = await managementFetch(`/api/settings/auto-optimize/${persona.id}`);
       if (resp.ok) {
         const data = await resp.json();
         setEnabled(data?.data?.enabled || false);
@@ -120,7 +121,7 @@ function AutoOptimizeToggle() {
     if (!persona) return;
     setLoading(true);
     try {
-      await fetch(`http://127.0.0.1:9420/api/settings/auto-optimize/${persona.id}`, {
+      await managementFetch(`/api/settings/auto-optimize/${persona.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

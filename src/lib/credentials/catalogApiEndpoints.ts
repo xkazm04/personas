@@ -977,6 +977,43 @@ const linkedin: EP[] = [
   ep('GET', '/v2/organizationalEntityAcls?q=roleAssignee', 'List managed pages', [], ['Organizations']),
 ];
 
+// -- Reddit ----------------------------------------------------------
+
+const reddit: EP[] = [
+  ep('GET', '/api/v1/me', 'Get authenticated user identity', [], ['User']),
+  ep('GET', '/r/{subreddit}/hot', 'List hot posts in a subreddit', [
+    pathP('subreddit', 'Subreddit name without /r/ prefix'),
+    queryP('limit', false, 'Number of posts (max 100)'),
+    queryP('after', false, 'Pagination cursor'),
+  ], ['Posts']),
+  ep('GET', '/r/{subreddit}/top', 'List top posts in a subreddit', [
+    pathP('subreddit'),
+    queryP('t', false, 'Time window: hour, day, week, month, year, all'),
+    queryP('limit', false, 'Number of posts (max 100)'),
+  ], ['Posts']),
+  ep('GET', '/r/{subreddit}/new', 'List newest posts in a subreddit', [
+    pathP('subreddit'),
+    queryP('limit', false, 'Number of posts (max 100)'),
+  ], ['Posts']),
+  ep('GET', '/r/{subreddit}/rising', 'List rising posts in a subreddit', [
+    pathP('subreddit'),
+  ], ['Posts']),
+  ep('GET', '/comments/{article}', 'Get post details with full comment tree', [
+    pathP('article', 'Post ID (base36 without t3_ prefix)'),
+    queryP('depth', false, 'Maximum comment thread depth'),
+    queryP('limit', false, 'Maximum comments to return'),
+  ], ['Comments']),
+  ep('GET', '/r/{subreddit}/about', 'Get subreddit metadata and rules', [
+    pathP('subreddit'),
+  ], ['Subreddit']),
+  ep('GET', '/search', 'Search posts across Reddit', [
+    queryP('q', true, 'Search query string'),
+    queryP('sort', false, 'Sort: relevance, hot, top, new, comments'),
+    queryP('limit', false, 'Number of results (max 100)'),
+    queryP('restrict_sr', false, 'Limit search to a single subreddit'),
+  ], ['Search']),
+];
+
 // -- Google Ads -------------------------------------------------------
 
 const google_ads: EP[] = [
@@ -1207,6 +1244,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   elevenlabs,
   leonardo_ai,
   linkedin,
+  reddit,
   google_ads,
   google_sheets,
   gmail,

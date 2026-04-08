@@ -12,13 +12,14 @@ use std::sync::LazyLock;
 /// Embedded checksum manifest: maps relative template path → expected hash.
 /// Populated at compile time from the same source of truth as the frontend.
 static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
-    let mut m = HashMap::with_capacity(92);
+    let mut m = HashMap::with_capacity(95);
     m.insert("content/autonomous-art-director.json", "0015358c67c74ec8");
     m.insert("content/content-performance-reporter.json", "000c69199b4a9fd2");
     m.insert("content/demo-recorder.json", "00178b31c6034d8c");
     m.insert("content/newsletter-curator.json", "0010f81605b96895");
     m.insert("development/dev-clone.json", "000dd30f5f901eb7");
     m.insert("development/qa-guardian.json", "001dc5e973996cec");
+    m.insert("development/self-evolving-codebase-memory.json", "000558d0a4375f09");
     m.insert("devops/devops-guardian.json", "00191a118384bf31");
     m.insert("devops/incident-logger.json", "001e95d651c6ad55");
     m.insert("devops/sentry-production-monitor.json", "001ee39aba1ded16");
@@ -27,6 +28,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("finance/freelancer-invoice-autopilot.json", "00001d171ba0a8dc");
     m.insert("finance/invoice-tracker.json", "00085ec0fc79c818");
     m.insert("hr/onboarding-tracker.json", "000ed1faf281cfc7");
+    m.insert("marketing/reddit-trend-digest.json", "0000699e2f9cc6c5");
     m.insert("marketing/visual-brand-asset-factory.json", "0000d76233262c49");
     m.insert("marketing/web-marketing.json", "001b8d0d2a1d49a4");
     m.insert("productivity/daily-standup-compiler.json", "001c29d0ff684c24");
@@ -37,6 +39,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("productivity/survey-insights-analyzer.json", "000a43c9a3a504b1");
     m.insert("project-management/technical-decision-tracker.json", "00054acc2354f001");
     m.insert("research/database-performance-monitor.json", "000a0be3798f4d4d");
+    m.insert("research/knowledge-base-health-auditor.json", "00189c0b9218d56a");
     m.insert("research/research-knowledge-curator.json", "000e94f34e9ff7bf");
     m.insert("research/research-paper-indexer.json", "0007bc576aafd620");
     m.insert("sales/contact-enrichment-agent.json", "000b6fa1e48080dd");

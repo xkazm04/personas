@@ -15,7 +15,8 @@ const logger = createLogger('event-log');
 
 export type SortDirection = 'desc' | 'asc';
 
-const PAGE_SIZE = 20;
+const INITIAL_LIMIT = 50;
+const LOAD_MORE_LIMIT = 50;
 const SAVED_VIEW_TYPE = 'event_log';
 
 export interface EventSearchState {
@@ -39,7 +40,6 @@ export function useEventLog() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [page, setPage] = useState(1);
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId: setPersonaId } = useOverviewFilterActions();
@@ -52,6 +52,12 @@ export function useEventLog() {
   const [serverHasMore, setServerHasMore] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cursor-based "load older" pagination — fetched on-demand via search_events
+  // with `until` cursor. Lives alongside recentEvents/serverResults.
+  const [olderEvents, setOlderEvents] = useState<PersonaEvent[]>([]);
+  const [hasMoreOlder, setHasMoreOlder] = useState(true);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
 
   // Saved views state
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
@@ -67,7 +73,7 @@ export function useEventLog() {
     const load = async () => {
       setIsLoading(true);
       try {
-        await fetchRecentEvents(100);
+        await fetchRecentEvents(INITIAL_LIMIT);
       } finally {
         if (active) setIsLoading(false);
       }
@@ -84,6 +90,11 @@ export function useEventLog() {
   }, []);
 
   const handleBusEvent = useCallback((evt: PersonaEvent) => {
+    // The 'event-bus' channel multiplexes full PersonaEvent payloads (CDC INSERT
+    // + manual emit_event_to_frontend) AND lightweight CDC notifications
+    // ({action,table,rowid}) for UPDATE/DELETE. Reject the latter — they have
+    // no id/event_type and corrupt the events list.
+    if (!evt?.id || !evt?.event_type) return;
     pushRecentEvent(evt, 200);
   }, [pushRecentEvent]);
   useEventBusListener(handleBusEvent);
@@ -146,57 +157,99 @@ export function useEventLog() {
     return Array.from(types).sort();
   }, [recentEvents]);
 
-  // Use server results when filters are active, otherwise client-side filter
+  // Use server results when filters are active, otherwise client-side filter.
+  // In both modes, merged with older events fetched via loadOlder.
   const filteredEvents = useMemo(() => {
     const hasFilters = statusFilter !== 'all' || typeFilter !== 'all' || selectedPersonaId || searchText.trim();
-    if (hasFilters && serverResults.length > 0) {
-      // Pre-compute timestamps to avoid repeated Date constructions in sort comparator
-      const tsMap = new Map<string, number>();
-      for (const e of serverResults) {
-        tsMap.set(e.id, new Date(e.created_at).getTime());
-      }
-      const sorted = [...serverResults].sort((a, b) => {
-        const ta = tsMap.get(a.id)!;
-        const tb = tsMap.get(b.id)!;
-        return sortDirection === 'desc' ? tb - ta : ta - tb;
-      });
-      return sorted;
+
+    let base: PersonaEvent[];
+    if (hasFilters) {
+      if (serverResults.length === 0 && !isSearching) return [];
+      base = serverResults;
+    } else {
+      base = recentEvents;
     }
 
-    if (hasFilters && !isSearching) {
-      // Server returned 0 results
-      return [];
+    // Dedupe-merge with on-demand older events
+    const seen = new Set<string>();
+    const merged: PersonaEvent[] = [];
+    for (const e of base) {
+      if (!seen.has(e.id)) { seen.add(e.id); merged.push(e); }
+    }
+    for (const e of olderEvents) {
+      if (!seen.has(e.id)) { seen.add(e.id); merged.push(e); }
     }
 
-    // No filters active — use local events
+    // Sort by created_at
     const tsMap = new Map<string, number>();
-    for (const e of recentEvents) {
+    for (const e of merged) {
       tsMap.set(e.id, new Date(e.created_at).getTime());
     }
-    const sorted = [...recentEvents].sort((a, b) => {
+    merged.sort((a, b) => {
       const ta = tsMap.get(a.id)!;
       const tb = tsMap.get(b.id)!;
       return sortDirection === 'desc' ? tb - ta : ta - tb;
     });
-    return sorted;
-  }, [recentEvents, serverResults, statusFilter, typeFilter, selectedPersonaId, searchText, sortDirection, isSearching]);
+    return merged;
+  }, [recentEvents, serverResults, olderEvents, statusFilter, typeFilter, selectedPersonaId, searchText, sortDirection, isSearching]);
 
-  // Reset page when filters change
+  // Reset older-events cursor when filters change — they'd reference stale criteria.
   useEffect(() => {
-    setPage(1);
-  }, [statusFilter, typeFilter, selectedPersonaId, sortDirection, searchText]);
+    setOlderEvents([]);
+    setHasMoreOlder(true);
+  }, [statusFilter, typeFilter, selectedPersonaId, searchText]);
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / PAGE_SIZE));
-  const paginatedEvents = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return filteredEvents.slice(start, start + PAGE_SIZE);
-  }, [filteredEvents, page]);
+  // Load events older than the current oldest displayed event using `until` cursor.
+  const loadOlder = useCallback(async () => {
+    if (isLoadingOlder || !hasMoreOlder) return;
+    if (filteredEvents.length === 0) return;
+
+    // Pick the chronologically oldest event regardless of sort direction.
+    let oldest = filteredEvents[0]!;
+    for (const e of filteredEvents) {
+      if (e.created_at < oldest.created_at) oldest = e;
+    }
+
+    setIsLoadingOlder(true);
+    try {
+      const filter: EventFilterInput = {
+        until: oldest.created_at,
+        limit: LOAD_MORE_LIMIT,
+      };
+      if (statusFilter !== 'all') filter.status = statusFilter;
+      if (typeFilter !== 'all') filter.eventType = typeFilter;
+      if (selectedPersonaId) filter.targetPersonaId = selectedPersonaId;
+      if (searchText.trim()) filter.search = searchText.trim();
+
+      const result = await searchEvents(filter);
+      const existing = new Set([
+        ...recentEvents.map((e) => e.id),
+        ...serverResults.map((e) => e.id),
+        ...olderEvents.map((e) => e.id),
+      ]);
+      const newOnes = result.events.filter(
+        (e) => !existing.has(e.id) && e.created_at < oldest.created_at,
+      );
+
+      if (newOnes.length === 0) {
+        setHasMoreOlder(false);
+      } else {
+        setOlderEvents((prev) => [...prev, ...newOnes]);
+        setHasMoreOlder(result.has_more);
+      }
+    } catch (err) {
+      logger.error('loadOlder failed', { error: err });
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  }, [filteredEvents, isLoadingOlder, hasMoreOlder, statusFilter, typeFilter, selectedPersonaId, searchText, recentEvents, serverResults, olderEvents]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    setOlderEvents([]);
+    setHasMoreOlder(true);
     try {
-      await fetchRecentEvents(100);
+      await fetchRecentEvents(INITIAL_LIMIT);
       if (isServerSearch) await executeSearch();
     } finally {
       setIsRefreshing(false);
@@ -268,20 +321,23 @@ export function useEventLog() {
     setPersonaId('');
     setSearchText('');
     setActiveViewId(null);
+    setOlderEvents([]);
+    setHasMoreOlder(true);
   };
 
   return {
     recentEvents, pendingEventCount, personas, availableTypes,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
     sortDirection, toggleSortDirection,
-    page, setPage, totalPages, pageSize: PAGE_SIZE,
     selectedEvent, setSelectedEvent,
     selectedPersonaId, setSelectedPersonaId: setPersonaId,
     isLoading, isRefreshing, isSearching,
-    filteredEvents, paginatedEvents,
+    filteredEvents,
     handleRefresh, getPersona,
     // Search
     searchText, setSearchText, serverHasMore,
+    // Cursor pagination
+    loadOlder, hasMoreOlder, isLoadingOlder,
     // Saved views
     savedViews, activeViewId, saveCurrentView, applySavedView, removeSavedView, clearFilters,
   };

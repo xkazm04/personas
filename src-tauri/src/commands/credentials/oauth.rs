@@ -192,9 +192,20 @@ where
 
                     // Validate state: must match expected value AND pass HMAC verification
                     // to prevent both CSRF and cross-instance replay attacks.
-                    let state_valid = callback_state.as_deref() == Some(&expected_state)
-                        && verify_oauth_state(&expected_state);
-                    if !state_valid {
+                    let strings_match = callback_state.as_deref() == Some(&expected_state);
+                    let hmac_valid = verify_oauth_state(&expected_state);
+                    if !strings_match {
+                        tracing::warn!(
+                            callback_state = ?callback_state,
+                            expected_state_len = expected_state.len(),
+                            callback_state_len = callback_state.as_ref().map(|s| s.len()),
+                            "OAuth state string mismatch — callback state differs from expected"
+                        );
+                    }
+                    if !hmac_valid {
+                        tracing::warn!("OAuth state HMAC/timestamp verification failed for expected_state");
+                    }
+                    if !strings_match || !hmac_valid {
                         OAuthCallbackOutcome::Error(
                             "OAuth state mismatch -- possible CSRF attack. Please retry the authorization.".into(),
                         )
@@ -696,6 +707,16 @@ static PROVIDER_REGISTRY: &[OAuthProviderConfig] = &[
         extra_auth_params: &[],
         default_scopes: &["openid", "profile", "email", "w_member_social"],
     },
+    OAuthProviderConfig {
+        id: "reddit",
+        name: "Reddit",
+        authorize_url: "https://www.reddit.com/api/v1/authorize",
+        token_url: "https://www.reddit.com/api/v1/access_token",
+        supports_pkce: true,
+        // duration=permanent is required by Reddit to issue a refresh token
+        extra_auth_params: &[("duration", "permanent")],
+        default_scopes: &["identity", "read"],
+    },
 ];
 
 fn find_provider(provider_id: &str) -> Option<&'static OAuthProviderConfig> {
@@ -872,6 +893,14 @@ fn generate_pkce_pair() -> (SecureString, String) {
 fn get_or_create_oauth_hmac_secret() -> [u8; 32] {
     use aes_gcm::aead::rand_core::{OsRng, RngCore};
 
+    // Cache the secret in a process-local OnceLock so every call within the
+    // same app session returns the identical secret. This prevents HMAC
+    // mismatches when the OS keyring is transiently inaccessible (e.g.
+    // after an NSIS reinstall on Windows, credential manager migration,
+    // or locked keyring).
+    static CACHED: std::sync::OnceLock<[u8; 32]> = std::sync::OnceLock::new();
+
+    *CACHED.get_or_init(|| {
     #[cfg(feature = "desktop")]
     {
         const SERVICE: &str = "personas-desktop";
@@ -888,6 +917,9 @@ fn get_or_create_oauth_hmac_secret() -> [u8; 32] {
                     }
                 }
             }
+            tracing::warn!("OAuth HMAC secret not found in keyring — generating ephemeral");
+        } else {
+            tracing::warn!("Failed to access keyring for OAuth HMAC secret");
         }
 
         // Generate a new secret
@@ -904,14 +936,12 @@ fn get_or_create_oauth_hmac_secret() -> [u8; 32] {
 
     #[cfg(not(feature = "desktop"))]
     {
-        // No keyring on mobile — use a per-process ephemeral secret.
-        static EPHEMERAL: OnceLock<[u8; 32]> = OnceLock::new();
-        *EPHEMERAL.get_or_init(|| {
-            let mut s = [0u8; 32];
-            OsRng.fill_bytes(&mut s);
-            s
-        })
+        let mut s = [0u8; 32];
+        OsRng.fill_bytes(&mut s);
+        s
     }
+    })
+
 }
 
 type HmacSha256 = Hmac<Sha256>;

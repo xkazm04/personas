@@ -269,6 +269,10 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
           providerStats: settled[3].status === 'fulfilled' ? 'ok' : 'failed',
         };
 
+        // Yield to the browser between API fetch and heavy computation to
+        // avoid a 400ms+ synchronous block that causes freeze-detector warnings.
+        await new Promise(r => setTimeout(r, 0));
+
         const spendMap = new Map(monthlySpend.map(s => [s.id, s]));
         const issuesByPersona = new Map<string, PersonaHealingIssue[]>();
         for (const issue of healingIssues) {

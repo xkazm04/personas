@@ -850,6 +850,25 @@ pub fn run() {
             let startup_rule_engine = state_arc.context_rule_engine.clone();
             let startup_composite_state = state_arc.composite_state.clone();
             let startup_smee_notifier = state_arc.smee_relay_notifier.clone();
+            // Bootstrap the process-scoped "system" API key now so the
+            // management HTTP API has a credential ready when the desktop
+            // frontend or any in-process consumer first hits an /api/* route.
+            // Fire-and-forget: if this fails the user can still mint a key
+            // via the Tauri commands later, and the management API will reject
+            // calls until they do.
+            {
+                let bootstrap_pool = state_arc.db.clone();
+                tauri::async_runtime::spawn_blocking(move || {
+                    match engine::management_api::get_or_create_system_api_key(&bootstrap_pool) {
+                        Ok(_) => tracing::info!("System API key bootstrapped"),
+                        Err(e) => tracing::warn!(
+                            "Failed to bootstrap system API key: {} (management API \
+                             routes will reject requests until a key is created)", e
+                        ),
+                    }
+                });
+            }
+
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                 let _webhook_shutdown = engine::background::start_loops(
@@ -942,6 +961,7 @@ pub fn run() {
             commands::core::memories::review_memories_with_cli,
             commands::core::memories::update_memory_tier,
             commands::core::memories::run_memory_lifecycle,
+            commands::core::memory_compile::compile_persona_memories,
             // Core -- Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
@@ -1074,6 +1094,7 @@ pub fn run() {
             commands::execution::knowledge::verify_knowledge_annotation,
             commands::execution::knowledge::dismiss_knowledge_annotation,
             commands::execution::knowledge::get_shared_knowledge_injection,
+            commands::execution::knowledge::build_kb_index,
             // Design -- Analysis
             commands::design::analysis::start_design_analysis,
             commands::design::analysis::refine_design,
@@ -1087,6 +1108,7 @@ pub fn run() {
             commands::design::build_sessions::cancel_build_session,
             commands::design::build_sessions::reset_build_session_phase,
             commands::design::build_sessions::get_active_build_session,
+            commands::design::build_sessions::get_latest_build_session,
             commands::design::build_sessions::list_build_sessions,
             commands::design::build_sessions::test_build_draft,
             commands::design::build_sessions::promote_build_draft,
@@ -1204,6 +1226,12 @@ pub fn run() {
             commands::credentials::crud::migrate_plaintext_credentials,
             commands::credentials::crud::list_credential_fields,
             commands::credentials::crud::update_credential_field,
+            // Credentials -- External API Keys (A2A Gateway management API auth)
+            commands::credentials::external_api_keys::create_external_api_key,
+            commands::credentials::external_api_keys::list_external_api_keys,
+            commands::credentials::external_api_keys::revoke_external_api_key,
+            commands::credentials::external_api_keys::delete_external_api_key,
+            commands::credentials::external_api_keys::get_system_api_key,
             // Credentials -- Audit Log (registered via intelligence module)
             // Credentials -- Connectors
             commands::credentials::connectors::list_connectors,
@@ -1295,6 +1323,12 @@ pub fn run() {
             commands::credentials::mcp_tools::execute_mcp_tool,
             commands::credentials::mcp_tools::healthcheck_mcp_preview,
             commands::credentials::mcp_tools::get_mcp_pool_metrics,
+            // Credentials -- MCP Gateway membership (bundles multiple MCP servers under one credential)
+            commands::credentials::mcp_gateways::add_mcp_gateway_member,
+            commands::credentials::mcp_gateways::remove_mcp_gateway_member,
+            commands::credentials::mcp_gateways::list_mcp_gateway_members,
+            commands::credentials::mcp_gateways::set_mcp_gateway_member_enabled,
+            commands::credentials::mcp_gateways::complete_pending_auth,
             // Credentials -- Desktop Discovery & Security (desktop only)
             #[cfg(feature = "desktop")]
             commands::credentials::desktop::discover_desktop_apps,
@@ -1522,6 +1556,10 @@ pub fn run() {
             commands::tools::triggers::validate_trigger,
             commands::tools::triggers::get_trigger_health_map,
             commands::tools::triggers::list_trigger_chains,
+            commands::tools::triggers::link_persona_to_event,
+            commands::tools::triggers::unlink_persona_from_event,
+            commands::tools::triggers::initialize_event_handlers_for_persona,
+            commands::tools::triggers::update_persona_event_handler,
             commands::tools::triggers::get_webhook_status,
             commands::tools::triggers::preview_cron_schedule,
             commands::tools::triggers::dry_run_trigger,
@@ -1575,6 +1613,7 @@ pub fn run() {
             commands::obsidian_brain::obsidian_brain_list_vault_files,
             commands::obsidian_brain::obsidian_brain_read_vault_note,
             commands::obsidian_brain::obsidian_brain_push_goals,
+            commands::obsidian_brain::obsidian_brain_lint_vault,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
@@ -1738,6 +1777,7 @@ pub fn run() {
             commands::infrastructure::idea_scanner::dev_tools_list_scan_agents,
             commands::infrastructure::idea_scanner::dev_tools_run_scan,
             commands::infrastructure::idea_scanner::dev_tools_cancel_scan,
+            commands::infrastructure::idea_scanner::dev_tools_get_idea_scan_status,
             // Dev Tools -- Tasks
             commands::infrastructure::dev_tools::dev_tools_list_tasks,
             commands::infrastructure::dev_tools::dev_tools_get_task,
@@ -1767,6 +1807,8 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_list_cross_project_relations,
             commands::infrastructure::dev_tools::dev_tools_upsert_cross_project_relation,
             commands::infrastructure::dev_tools::dev_tools_get_cross_project_map,
+            commands::infrastructure::dev_tools::dev_tools_generate_cross_project_metadata,
+            commands::infrastructure::dev_tools::dev_tools_get_cross_project_metadata,
             commands::infrastructure::dev_tools::dev_tools_create_idea_batch,
             commands::infrastructure::dev_tools::dev_tools_search_across_projects,
             commands::infrastructure::dev_tools::dev_tools_get_project_summary,

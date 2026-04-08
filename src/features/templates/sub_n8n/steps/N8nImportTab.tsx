@@ -7,9 +7,6 @@ import { N8nStepIndicator } from '../widgets/N8nStepIndicator';
 import { N8nWizardFooter } from '../widgets/N8nWizardFooter';
 import { N8nUploadStep } from './upload/N8nUploadStep';
 import { N8nParserResults } from './N8nParserResults';
-import { N8nTransformChat } from '../widgets/N8nTransformChat';
-import { N8nEditStep } from './N8nEditStep';
-import { N8nConfirmStep } from './confirm/N8nConfirmStep';
 import { N8nSessionList } from './N8nSessionList';
 import { CredentialGapPanel } from '../widgets/CredentialGapPanel';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -41,17 +38,9 @@ export default function N8nImportTab() {
     goBack,
     handleNext,
     processContent,
-    handleTransform,
-    handleCancelTransform,
-    handleTestDraft,
     handleReset,
-    updateDraft,
-    currentTransformId,
-    isRestoring,
     analyzing,
-    confirmResult,
     connectorsMissing,
-    setConnectorsMissing,
     fileInputRef,
     direction,
   } = useN8nWizard();
@@ -61,7 +50,9 @@ export default function N8nImportTab() {
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
-  /** Send the parsed workflow to the PersonaMatrix for processing. */
+  const setN8nTransformActive = useSystemStore((s) => s.setN8nTransformActive);
+
+  /** Send the parsed workflow to the PersonaMatrix for building. */
   const handleProcessWithMatrix = useCallback(() => {
     if (!state.parsedResult || !state.rawWorkflowJson) return;
 
@@ -73,10 +64,25 @@ export default function N8nImportTab() {
       platform: state.platform || 'unknown',
     });
 
+    // Register process activity so the activity drawer tracks this build
+    try {
+      void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+        useOverviewStore.getState().processStarted(
+          'n8n_build',
+          undefined,
+          `Build Persona: ${state.workflowName || 'Imported Workflow'}`,
+          { section: 'personas' },
+        );
+      });
+    } catch { /* best-effort */ }
+
+    // Show progress dot on design-reviews sidebar
+    setN8nTransformActive(true);
+
     // Navigate to personas page in creation mode — the matrix will pick up the workflow
     setSidebarSection('personas');
     setIsCreatingPersona(true);
-  }, [state.parsedResult, state.rawWorkflowJson, state.workflowName, state.platform, setWorkflowImport, setSidebarSection, setIsCreatingPersona]);
+  }, [state.parsedResult, state.rawWorkflowJson, state.workflowName, state.platform, setWorkflowImport, setSidebarSection, setIsCreatingPersona, setN8nTransformActive]);
 
   return (
     <div className="flex flex-col h-full">
@@ -190,77 +196,6 @@ export default function N8nImportTab() {
                 )}
               </>
             )}
-
-            {state.step === 'transform' && (
-              <N8nTransformChat
-                transformSubPhase={state.transformSubPhase}
-                questions={state.questions}
-                userAnswers={state.userAnswers}
-                onAnswerUpdated={(questionId, answer) =>
-                  dispatch({ type: 'ANSWER_UPDATED', questionId, answer })
-                }
-                transformPhase={state.transformPhase}
-                transformLines={state.transformLines}
-                streamingSections={state.streamingSections}
-                runId={currentTransformId}
-                isRestoring={isRestoring}
-                onRetry={() => void handleTransform()}
-                onCancel={() => void handleCancelTransform()}
-                errorMessage={state.error}
-              />
-            )}
-
-            {state.step === 'edit' && state.draft && (
-              state.parsedResult ? (
-                <N8nEditStep
-                  draft={state.draft}
-                  draftJson={state.draftJson}
-                  draftJsonError={state.draftJsonError}
-                  parsedResult={state.parsedResult}
-                  selectedToolIndices={state.selectedToolIndices}
-                  selectedTriggerIndices={state.selectedTriggerIndices}
-                  selectedConnectorNames={state.selectedConnectorNames}
-                  adjustmentRequest={state.adjustmentRequest}
-                  transforming={state.transforming}
-                  disabled={state.transforming || state.confirming || state.created}
-                  updateDraft={updateDraft}
-                  onDraftUpdated={(d) => dispatch({ type: 'DRAFT_UPDATED', draft: d })}
-                  onJsonEdited={(json, draft, error) => dispatch({ type: 'DRAFT_JSON_EDITED', json, draft, error })}
-                  onAdjustmentChange={(text) => dispatch({ type: 'SET_ADJUSTMENT', text })}
-                  onApplyAdjustment={() => void handleTransform()}
-                  onGoToAnalyze={() => dispatch({ type: 'GO_TO_STEP', step: 'analyze' })}
-                  onConnectorsMissingChange={setConnectorsMissing}
-                  testPhase={state.testPhase}
-                  testLines={state.testLines}
-                  testRunId={state.testRunId}
-                  onTestUseCase={() => void handleTestDraft()}
-                  testingUseCaseId={state.testStatus === 'running' ? '__testing__' : null}
-                />
-              ) : (
-                <div className="rounded-xl border border-primary/15 bg-secondary/20 p-4 text-sm text-muted-foreground">
-                  Missing parser results for this session. Return to Analyze or restart import.
-                </div>
-              )
-            )}
-
-            {state.step === 'confirm' && state.draft && (
-              state.parsedResult ? (
-                <N8nConfirmStep
-                  draft={state.draft}
-                  parsedResult={state.parsedResult}
-                  selectedToolIndices={state.selectedToolIndices}
-                  selectedTriggerIndices={state.selectedTriggerIndices}
-                  selectedConnectorNames={state.selectedConnectorNames}
-                  created={state.created}
-                  confirmResult={confirmResult}
-                  onReset={handleReset}
-                />
-              ) : (
-                <div className="rounded-xl border border-primary/15 bg-secondary/20 p-4 text-sm text-muted-foreground">
-                  Missing parser results for this session. Return to Analyze or restart import.
-                </div>
-              )
-            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -276,13 +211,8 @@ export default function N8nImportTab() {
         created={state.created}
         hasDraft={!!state.draft}
         hasParseResult={!!state.parsedResult}
-        transformSubPhase={state.transformSubPhase}
         analyzing={analyzing}
         connectorsMissing={connectorsMissing}
-        testStatus={state.testStatus}
-        testError={state.testError}
-        onTest={() => void handleTestDraft()}
-        onApplyAdjustment={() => void handleTransform()}
         onProcessWithMatrix={handleProcessWithMatrix}
       />
     </div>

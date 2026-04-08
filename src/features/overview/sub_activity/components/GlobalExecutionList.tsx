@@ -13,7 +13,9 @@ import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
-import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
+import { SortableColumnHeader, type SortDirection } from '@/features/shared/components/forms/SortableColumnHeader';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import type { GlobalExecution } from '@/lib/types/types';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
@@ -32,9 +34,9 @@ const EXEC_GRID_COLUMNS = 'minmax(280px,2fr) minmax(0,1fr) 120px 140px 120px';
 
 const STATUS_FILTER_OPTIONS = [
   { value: 'all', label: 'All statuses' },
-  { value: 'running', label: 'Running' },
   { value: 'completed', label: 'Completed' },
   { value: 'failed', label: 'Failed' },
+  { value: 'running', label: 'Running' },
 ];
 
 interface GlobalExecutionListProps {
@@ -63,10 +65,11 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
 
-  const personaFilterOptions = useMemo(() => [
-    { value: '', label: 'All personas' },
-    ...personas.map((p) => ({ value: p.id, label: p.name })),
-  ], [personas]);
+  const [startedSort, setStartedSort] = useState<SortDirection>(null);
+
+  const toggleStartedSort = useCallback(() => {
+    setStartedSort((d) => d === null ? 'desc' : d === 'desc' ? 'asc' : null);
+  }, []);
 
   const { filtered: personaFiltered } = useFilteredCollection(globalExecutions, {
     exact: [{ field: 'persona_id', value: selectedPersonaId || null }],
@@ -86,9 +89,23 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     filter === 'running' ? e.status === 'running' || e.status === 'pending' : e.status === filter,
     [filter]);
 
-  const { filtered: filteredExecutions } = useFilteredCollection(personaFiltered, {
+  const { filtered: statusFiltered } = useFilteredCollection(personaFiltered, {
     custom: [filter !== 'all' ? statusPredicate : null],
   });
+
+  const filteredExecutions = useMemo(() => {
+    if (startedSort === null) return statusFiltered;
+    const tsMap = new Map<string, number>();
+    for (const e of statusFiltered) {
+      tsMap.set(e.id, new Date(e.started_at || e.created_at).getTime());
+    }
+    const sorted = [...statusFiltered].sort((a, b) => {
+      const ta = tsMap.get(a.id) ?? 0;
+      const tb = tsMap.get(b.id) ?? 0;
+      return startedSort === 'asc' ? ta - tb : tb - ta;
+    });
+    return sorted;
+  }, [statusFiltered, startedSort]);
 
   useEffect(() => {
     let active = true;
@@ -205,28 +222,21 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
               <div ref={parentRef} className="flex-1 overflow-y-auto">
                 {!IS_MOBILE && (
                   <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: EXEC_GRID_COLUMNS }}>
-                    <div role="columnheader" className="px-4 py-1.5">
-                      <ThemedSelect
-                        filterable
-                        options={personaFilterOptions}
-                        value={selectedPersonaId}
-                        onValueChange={setSelectedPersonaId}
-                        placeholder="Persona"
-                        className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
-                      />
+                    <div role="columnheader" className="px-4 py-1.5 flex items-center">
+                      <PersonaColumnFilter value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
                     </div>
-                    <div role="columnheader" className="px-4 py-1.5">
-                      <ThemedSelect
-                        filterable
-                        options={STATUS_FILTER_OPTIONS}
+                    <div role="columnheader" className="px-4 py-1.5 flex items-center">
+                      <ColumnDropdownFilter
+                        label="Status"
                         value={filter}
-                        onValueChange={(v) => setFilter(v as FilterStatus)}
-                        placeholder="Status"
-                        className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                        options={STATUS_FILTER_OPTIONS}
+                        onChange={(v) => setFilter(v as FilterStatus)}
                       />
                     </div>
                     <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Duration</div>
-                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground/80">Started</div>
+                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5">
+                      <SortableColumnHeader label="Started" direction={startedSort} onToggle={toggleStartedSort} />
+                    </div>
                     <div role="columnheader" className="flex items-center px-4 py-1.5 typo-label text-foreground/80">ID</div>
                   </div>
                 )}

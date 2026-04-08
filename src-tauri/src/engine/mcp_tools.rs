@@ -408,19 +408,82 @@ pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppErr
     }
 }
 
+/// Sentinel connector name for MCP gateway credentials (bundles multiple MCP
+/// servers under one attachment point). Introduced 2026-04-08 with the
+/// gateway pattern from the LangSmith/Arcade /research run.
+const MCP_GATEWAY_CONNECTOR: &str = "mcp_gateway";
+
+/// Separator used to prefix gateway member tool names. A tool named `search`
+/// on a gateway member with display_name `arcade` is exposed to the persona as
+/// `arcade::search`. The double-colon is chosen because MCP tool names are
+/// typically snake_case and rarely contain `::`, keeping the parse unambiguous.
+const GATEWAY_TOOL_SEPARATOR: &str = "::";
+
+/// Split a possibly-prefixed gateway tool name into (member_display_name,
+/// real_tool_name). Returns `(None, full_name)` if the name is not prefixed.
+fn parse_gateway_tool_name(tool_name: &str) -> (Option<&str>, &str) {
+    match tool_name.split_once(GATEWAY_TOOL_SEPARATOR) {
+        Some((member, rest)) => (Some(member), rest),
+        None => (None, tool_name),
+    }
+}
+
 /// List available tools from an MCP server.
 ///
 /// Results are cached per credential_id for 60s to avoid redundant round-trips.
+///
+/// If the credential is an MCP gateway (connector_name == `mcp_gateway`), this
+/// fans out to each enabled member's tools/list, prefixes every tool name with
+/// `<member_display_name>::`, and merges the results. Members that fail are
+/// logged and skipped -- the gateway returns whatever succeeded.
 pub async fn list_tools(
     pool: &DbPool,
     credential_id: &str,
 ) -> Result<Vec<McpTool>, AppError> {
-    // Return cached result if fresh
+    // Return cached result if fresh (cache is keyed by the incoming credential_id,
+    // which is the gateway id for gateway credentials -- so gateway merges are
+    // cached as a single entry, invalidated when members change).
     if let Some(cached) = get_cached_tools(credential_id) {
         return Ok(cached);
     }
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
+
+    // Gateway path: fan out to members, prefix tool names, merge.
+    if credential.service_type == MCP_GATEWAY_CONNECTOR {
+        let members = crate::db::repos::resources::mcp_gateways::list_members(
+            pool,
+            credential_id,
+        )?;
+        let mut merged: Vec<McpTool> = Vec::new();
+        for member in members.into_iter().filter(|m| m.enabled) {
+            match Box::pin(list_tools(pool, &member.member_credential_id)).await {
+                Ok(tools) => {
+                    for mut tool in tools {
+                        tool.name = format!(
+                            "{prefix}{sep}{name}",
+                            prefix = member.display_name,
+                            sep = GATEWAY_TOOL_SEPARATOR,
+                            name = tool.name
+                        );
+                        merged.push(tool);
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        gateway_id = %credential_id,
+                        member_id = %member.member_credential_id,
+                        member_label = %member.member_label,
+                        error = %e,
+                        "MCP gateway member failed tools/list -- skipping and continuing"
+                    );
+                }
+            }
+        }
+        set_cached_tools(credential_id, merged.clone());
+        return Ok(merged);
+    }
+
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
     if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:list_tools", None, None) {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
@@ -476,6 +539,51 @@ pub async fn execute_tool(
     validate_argument_structure(&arguments)?;
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
+
+    // Gateway path: parse the `<member>::<real_tool>` prefix off the tool name,
+    // resolve to the underlying member credential, and recurse with the real
+    // credential + real tool name. The audit log records the gateway id via
+    // the `via_gateway` hint embedded in the tracing span so operators can
+    // trace back which bundle a call came through.
+    if credential.service_type == MCP_GATEWAY_CONNECTOR {
+        let (member_prefix, real_tool) = parse_gateway_tool_name(tool_name);
+        let Some(member_prefix) = member_prefix else {
+            return Err(AppError::Validation(format!(
+                "Gateway credential called with unprefixed tool name '{tool_name}'. \
+                 Expected '<member>{GATEWAY_TOOL_SEPARATOR}<tool>'."
+            )));
+        };
+        let members = crate::db::repos::resources::mcp_gateways::list_members(
+            pool,
+            credential_id,
+        )?;
+        let member = members
+            .into_iter()
+            .find(|m| m.enabled && m.display_name == member_prefix)
+            .ok_or_else(|| {
+                AppError::NotFound(format!(
+                    "Gateway member '{member_prefix}' not found or disabled on gateway {credential_id}"
+                ))
+            })?;
+        tracing::debug!(
+            via_gateway = %credential_id,
+            member_id = %member.member_credential_id,
+            member_label = %member.member_label,
+            real_tool = %real_tool,
+            "Routing tool call through MCP gateway to underlying member"
+        );
+        return Box::pin(execute_tool(
+            pool,
+            &member.member_credential_id,
+            real_tool,
+            arguments,
+            rate_limiter,
+            persona_id,
+            persona_name,
+        ))
+        .await;
+    }
+
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
     if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:execute_tool", persona_id, persona_name) {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");

@@ -22,6 +22,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
+import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
 
 interface MatrixAdoptionViewProps {
@@ -31,6 +32,18 @@ interface MatrixAdoptionViewProps {
 }
 
 type CellDataMap = Record<string, { items?: string[]; summary?: string; raw?: Record<string, unknown> }>;
+
+/** Normalize trigger type aliases to the canonical enum values the backend expects. */
+const TRIGGER_TYPE_ALIASES: Record<string, string> = {
+  event: "event_listener", event_bus: "event_listener", event_sub: "event_listener", event_subscription: "event_listener",
+  cron: "schedule", scheduled: "schedule", timer: "schedule",
+  poll: "polling", hook: "webhook", http: "webhook", web_hook: "webhook",
+  watcher: "file_watcher", fs_watcher: "file_watcher", watch: "file_watcher",
+  focus: "app_focus", window_focus: "app_focus",
+};
+function normalizeTriggerType(raw: string): string {
+  return TRIGGER_TYPE_ALIASES[raw] ?? raw;
+}
 
 /** Extract dimension items from an AgentIR design result. Works with loose shapes. */
 function extractDimensionData(ir: unknown): CellDataMap {
@@ -49,7 +62,7 @@ function extractDimensionData(ir: unknown): CellDataMap {
       const o = uc as Record<string, unknown>;
       const name = String(o.name ?? o.title ?? uc);
       const desc = o.description ? String(o.description) : "";
-      return desc ? `${name} — ${desc.slice(0, 120)}` : name;
+      return desc ? `${name}: ${desc}` : name;
     }) };
   }
 
@@ -67,8 +80,8 @@ function extractDimensionData(ir: unknown): CellDataMap {
   // Triggers
   const triggers = ((d.suggested_triggers ?? d.triggers ?? []) as unknown[]);
   if (triggers.length > 0) {
-    const items = triggers.map((t) => { const o = t as Record<string, unknown>; const type = String(o.trigger_type ?? "manual"); const desc = String(o.description ?? ""); return desc ? `${type}: ${desc}` : type; });
-    const structured = triggers.map((t) => { const o = t as Record<string, unknown>; return { trigger_type: String(o.trigger_type ?? "manual"), config: (o.config ?? {}) as Record<string, string>, description: String(o.description ?? "") }; });
+    const items = triggers.map((t) => { const o = t as Record<string, unknown>; const type = normalizeTriggerType(String(o.trigger_type ?? "manual")); const desc = String(o.description ?? ""); return desc ? `${type}: ${desc}` : type; });
+    const structured = triggers.map((t) => { const o = t as Record<string, unknown>; return { trigger_type: normalizeTriggerType(String(o.trigger_type ?? "manual")), config: (o.config ?? {}) as Record<string, string>, description: String(o.description ?? "") }; });
     data["triggers"] = { items, raw: { triggers: structured } };
   }
 
@@ -87,17 +100,32 @@ function extractDimensionData(ir: unknown): CellDataMap {
   const memoryCaps = caps.filter((c) => (c as Record<string, unknown>).type === "agent_memory");
   data["memory"] = { items: memoryCaps.length > 0 ? memoryCaps.map((c) => String((c as Record<string, unknown>).context ?? "Memory enabled")) : ["Stateless — no memory between runs"] };
 
-  // Error handling — parse bullet points (-/*) or bold headers (**)
+  // Error handling — parse structured sections with title: description syntax
   const sp = d.structured_prompt as Record<string, unknown> | undefined;
   if (sp?.errorHandling && typeof sp.errorHandling === "string") {
     const ehText = sp.errorHandling as string;
-    // Try bullet lines first, then bold headers
-    let lines = ehText.split("\n").filter((l) => l.trim().startsWith("-") || (l.trim().startsWith("*") && !l.trim().startsWith("**")));
-    if (lines.length === 0) {
-      // Fall back to **bold** section headers
-      lines = ehText.split("\n").filter((l) => /^\*\*[^*]+\*\*/.test(l.trim()));
+    const allLines = ehText.split("\n").map((l) => l.trim()).filter(Boolean);
+    const parsed: string[] = [];
+    // Look for **Header** followed by description lines, or "- item" bullets
+    for (let i = 0; i < allLines.length && parsed.length < 6; i++) {
+      const line = allLines[i]!;
+      const boldMatch = line.match(/^\*\*([^*]+)\*\*[:\s]*(.*)/);
+      if (boldMatch) {
+        const title = boldMatch[1]!.trim();
+        // Collect description from the rest of this line + next non-header lines
+        const descParts: string[] = [];
+        if (boldMatch[2]?.trim()) descParts.push(boldMatch[2].trim());
+        while (i + 1 < allLines.length && !allLines[i + 1]!.startsWith("**") && !allLines[i + 1]!.startsWith("- ")) {
+          i++;
+          descParts.push(allLines[i]!.replace(/^[\s\-*]+/, "").trim());
+        }
+        const desc = descParts.join(" ");
+        parsed.push(desc ? `${title}: ${desc}` : title);
+      } else if (line.startsWith("-") || line.startsWith("*")) {
+        parsed.push(line.replace(/^[\s\-*]+/, "").trim());
+      }
     }
-    data["error-handling"] = { items: lines.length > 0 ? lines.map((l) => l.replace(/^[\s\-*]+/, "").replace(/\*\*/g, "").trim()).slice(0, 6) : ["Default error handling"] };
+    data["error-handling"] = { items: parsed.length > 0 ? parsed : ["Default error handling"] };
   } else {
     data["error-handling"] = { items: ["Default error handling"] };
   }
@@ -243,6 +271,29 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           buildCellData: dimensionData,
           buildDraft: designResult,
         });
+
+        // Register process activity for the adoption flow
+        try {
+          const { useOverviewStore } = await import("@/stores/overviewStore");
+          const initialStatus = hasAdoptionQuestions && !questionsComplete ? 'input_required' as const : 'running' as const;
+          const initialEvent = hasAdoptionQuestions && !questionsComplete ? 'Adoption questions need answers' : 'Draft ready';
+          useOverviewStore.getState().processStarted(
+            'template_adopt',
+            persona.id,
+            `Adopt: ${name.slice(0, 40)}`,
+            { section: 'personas', tab: 'matrix', personaId: persona.id },
+          );
+          if (initialStatus !== 'running') {
+            useOverviewStore.getState().updateProcessStatus(
+              'template_adopt', initialStatus,
+              { lastEvent: initialEvent, runId: persona.id },
+            );
+          }
+        } catch { /* best-effort */ }
+
+        // Show progress dot on design-reviews sidebar
+        useSystemStore.getState().setTemplateAdoptActive(true);
+
         setSeeded(true);
       } catch (err) {
         logger.error("Failed to create draft persona for adoption", { err });
@@ -253,6 +304,53 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const build = useMatrixBuild({ personaId });
   const lifecycle = useMatrixLifecycle({ personaId });
 
+  // -- Sync build phase → process activity status --
+  const currentBuildPhase = useAgentStore((s) => s.buildPhase);
+
+  // -- Auto-test on draft_ready when no pending questions -----------------
+  // Adoption seeds the matrix to draft_ready immediately. Once any adoption
+  // questions are answered (or none exist), kick off the test automatically.
+  // If conditions aren't met (questions pending, errors), manual button remains.
+  const autoTestedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!seeded || !personaId) return;
+    if (currentBuildPhase !== 'draft_ready') return;
+    if (autoTestedRef.current === personaId) return;
+    if (hasAdoptionQuestions && !questionsComplete) return;
+    if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
+    if (build.buildError) return;
+    autoTestedRef.current = personaId;
+    void lifecycle.handleStartTest();
+  }, [seeded, personaId, currentBuildPhase, hasAdoptionQuestions, questionsComplete, build.pendingQuestions, build.buildError, lifecycle]);
+  useEffect(() => {
+    if (!seeded || !personaId) return;
+    // Terminal phases: end the process activity
+    if (currentBuildPhase === 'promoted' || currentBuildPhase === 'failed' || currentBuildPhase === 'cancelled') {
+      const action = currentBuildPhase === 'promoted' ? 'completed' as const : 'failed' as const;
+      void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+        useOverviewStore.getState().processEnded('template_adopt', action, personaId);
+      }).catch(() => {});
+      useSystemStore.getState().setTemplateAdoptActive(false);
+      return;
+    }
+    const phaseMap: Record<string, { status: ActiveProcess["status"]; event: string }> = {
+      'awaiting_input': { status: 'input_required', event: 'Waiting for answers' },
+      'analyzing': { status: 'running', event: 'Analyzing...' },
+      'resolving': { status: 'running', event: 'Building agent...' },
+      'draft_ready': { status: 'running', event: 'Draft ready — test & promote' },
+      'testing': { status: 'running', event: 'Testing agent...' },
+      'test_complete': { status: 'running', event: 'Test complete — approve to promote' },
+    };
+    const mapped = phaseMap[currentBuildPhase ?? ''];
+    if (!mapped) return;
+    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+      useOverviewStore.getState().updateProcessStatus(
+        'template_adopt', mapped.status,
+        { lastEvent: mapped.event, runId: personaId },
+      );
+    }).catch(() => {});
+  }, [currentBuildPhase, seeded, personaId]);
+
   // -- Post-promotion: navigate to the promoted agent with fade transition --
 
   const handleViewAgent = useCallback(() => {
@@ -260,6 +358,14 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
     setFadeOut(true);
     setTimeout(() => {
+      // Remove the process activity from the drawer
+      try {
+        void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+          useOverviewStore.getState().processEnded('template_adopt', 'completed', personaId);
+        });
+      } catch { /* best-effort */ }
+      useSystemStore.getState().setTemplateAdoptActive(false);
+
       // Reset build state
       useAgentStore.getState().resetBuildSession();
 
@@ -314,7 +420,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   }
 
   return (
-    <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-auto px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
       {/* Matrix variant tab switcher */}
       <div className="flex items-center gap-3 mb-2">
         <div className="flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1">

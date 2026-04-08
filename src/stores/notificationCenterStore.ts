@@ -10,13 +10,14 @@ export type ProcessType =
   | 'rebuild'
   | 'template-test'
   | 'context-scan'
+  | 'idea-scan'
   | 'execution'
   | 'matrix-build'
   | 'lab-run'
   | 'connector-test'
   | 'creative-session';
 
-export type PipelineNotificationStatus = 'success' | 'failed' | 'canceled';
+export type PipelineNotificationStatus = 'success' | 'failed' | 'canceled' | 'warning';
 
 export interface PipelineNotification {
   id: string;
@@ -27,6 +28,10 @@ export interface PipelineNotification {
   webUrl: string;
   timestamp: number;
   read: boolean;
+  /** Optional persistent title — used by process notifications. */
+  title?: string;
+  /** Optional persistent message body — used by process notifications. */
+  message?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -67,9 +72,10 @@ interface NotificationCenterStore {
   addNotification: (n: Omit<PipelineNotification, 'id' | 'timestamp' | 'read'>) => void;
   addProcessNotification: (n: {
     processType: ProcessType;
-    personaId: string | null;
-    personaName: string | null;
+    personaId?: string | null;
+    personaName?: string | null;
     status: string;
+    title?: string;
     summary: string;
     redirectSection: string;
     redirectTab: string | null;
@@ -105,15 +111,22 @@ export const useNotificationCenterStore = create<NotificationCenterStore>((set, 
     },
 
     addProcessNotification: (n) => {
+      let normalizedStatus: PipelineNotificationStatus = 'success';
+      if (n.status === 'failed' || n.status === 'error') normalizedStatus = 'failed';
+      else if (n.status === 'canceled' || n.status === 'cancelled') normalizedStatus = 'canceled';
+      else if (n.status === 'warning' || n.status === 'completed_with_warning') normalizedStatus = 'warning';
+
       const notification: PipelineNotification = {
         id: `proc-${++nextId}-${Date.now()}`,
         pipelineId: 0,
         projectId: null,
-        status: n.status === 'success' ? 'success' : 'failed',
+        status: normalizedStatus,
         ref: n.processType,
         webUrl: n.redirectSection + (n.redirectTab ? `#${n.redirectTab}` : ''),
         timestamp: Date.now(),
         read: false,
+        title: n.title,
+        message: n.summary,
       };
       const updated = [notification, ...get().notifications].slice(0, MAX_NOTIFICATIONS);
       saveNotifications(updated);

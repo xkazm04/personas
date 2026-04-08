@@ -6,6 +6,21 @@ pub const VALID_TRIGGER_TYPES: &[&str] = &[
 ];
 pub const MIN_INTERVAL_SECONDS: i64 = 60;
 
+/// Normalize common LLM/template trigger type aliases to valid enum values.
+/// Templates and LLMs sometimes produce shortened or alternative names
+/// (e.g., "event" instead of "event_listener", "cron" instead of "schedule").
+pub fn normalize_trigger_type(raw: &str) -> &str {
+    match raw {
+        "event" | "event_bus" | "event_sub" | "event_subscription" => "event_listener",
+        "cron" | "scheduled" | "timer" => "schedule",
+        "poll" => "polling",
+        "hook" | "http" | "web_hook" => "webhook",
+        "watcher" | "fs_watcher" | "watch" => "file_watcher",
+        "focus" | "window_focus" => "app_focus",
+        other => other,
+    }
+}
+
 pub fn validate_trigger_type(trigger_type: &str) -> Vec<ValidationError> {
     if !VALID_TRIGGER_TYPES.contains(&trigger_type) {
         vec![ValidationError::new(

@@ -1,0 +1,118 @@
+{
+  "active": "0.0.2",
+  "releases": [
+    {
+      "version": "roadmap",
+      "label": "Roadmap",
+      "status": "roadmap",
+      "summary": "What we're building now and what comes next.",
+      "items": [
+        {
+          "id": "rm-1",
+          "type": "feature",
+          "title": "Dev Mode",
+          "description": "Development mode tooling, debugging, and hot-reload capabilities for rapid agent iteration.",
+          "status": "in_progress",
+          "priority": "now",
+          "sort_order": 1
+        },
+        {
+          "id": "rm-2",
+          "type": "feature",
+          "title": "Cloud Integration",
+          "description": "Connect desktop app to cloud orchestrator for 24/7 agent execution with WebSocket streaming.",
+          "status": "in_progress",
+          "priority": "now",
+          "sort_order": 2
+        },
+        {
+          "id": "rm-3",
+          "type": "feature",
+          "title": "Web App",
+          "description": "Marketing site, auth portal, subscription management, and cloud dashboard.",
+          "status": "in_progress",
+          "priority": "now",
+          "sort_order": 3
+        },
+        {
+          "id": "rm-4",
+          "type": "feature",
+          "title": "Internationalization",
+          "description": "Multi-language support with locale management, RTL layouts, and community translations.",
+          "status": "in_progress",
+          "priority": "now",
+          "sort_order": 4
+        },
+        {
+          "id": "rm-5",
+          "type": "feature",
+          "title": "Distribution & Polish",
+          "description": "Production-ready installers, auto-updates, code signing, and final QA across all platforms.",
+          "status": "planned",
+          "priority": "next",
+          "sort_order": 5
+        },
+        {
+          "id": "rm-6",
+          "type": "feature",
+          "title": "Team (Group Projects)",
+          "description": "Shared workspaces, collaborative agent development, role-based access, and team dashboards.",
+          "status": "planned",
+          "priority": "next",
+          "sort_order": 6
+        }
+      ]
+    },
+    {
+      "version": "0.0.2",
+      "label": "Alpha 2",
+      "status": "active",
+      "summary": "A2A gateway foundation, release log infrastructure.",
+      "items": [
+        {
+          "id": "0.0.2-1",
+          "type": "feature",
+          "title": "A2A Gateway foundation",
+          "description": "Authentication, gateway exposure flag, agent-card discovery, and JSON-RPC entry point for external A2A clients. Adds external_api_keys table, Bearer token middleware on the management HTTP API, gateway_exposure column on personas, GET /agent-card/{persona_id}, and POST /a2a/{persona_id}.",
+          "status": "completed",
+          "added_at": "2026-04-08",
+          "source": ".planning/handoffs/2026-04-08-a2a-gateway.md"
+        },
+        {
+          "id": "0.0.2-2",
+          "type": "feature",
+          "title": "Per-process system API key bootstrap",
+          "description": "Process-scoped 'system' API key minted on every app start; rotated on restart, exposed to the desktop frontend via get_system_api_key for direct HTTP calls into the management API.",
+          "status": "completed",
+          "added_at": "2026-04-08",
+          "source": ".planning/handoffs/2026-04-08-a2a-gateway.md"
+        },
+        {
+          "id": "0.0.2-3",
+          "type": "feature",
+          "title": "Release log (What's New)",
+          "description": "In-app release navigation with a top-bar tab list, active release as default view, and the legacy roadmap as a special tab. Config lives in src/data/releases.json so /research can append accepted findings.",
+          "status": "completed",
+          "added_at": "2026-04-08"
+        }
+      ]
+    },
+    {
+      "version": "0.0.1",
+      "label": "Alpha 1",
+      "status": "released",
+      "released_at": "2026-04-01",
+      "summary": "Initial alpha release.",
+      "items": [
+        {
+          "id": "0.0.1-1",
+          "type": "chore",
+          "title": "Initial alpha release",
+          "description": "First tagged build with the desktop app, persona engine, and core management APIs.",
+          "status": "completed",
+          "added_at": "2026-04-01"
+        }
+      ]
+    }
+  ]
+}

@@ -87,6 +87,24 @@ pub enum StreamLineType {
         model: Option<String>,
         session_id: Option<String>,
     },
+    /// A tool call returned an "authorization required" response, meaning the
+    /// underlying MCP/API needs fresh OAuth consent from the user before the
+    /// call can complete. The runner should:
+    ///   1. persist `authorize_url` + `credential_id` to the executions row
+    ///   2. flip execution status to a pending-auth state
+    ///   3. emit a Tauri event so the frontend can surface the URL
+    ///   4. park the child process on a oneshot channel keyed by execution_id
+    ///   5. unpark when `complete_pending_auth` fires and retry the original call
+    ///
+    /// **Phase B scaffolding (2026-04-08)**: this variant is defined so the
+    /// parser can emit it and the runner can match on it, but the pause/resume
+    /// integration is not yet wired. See `.planning/handoffs/2026-04-08-
+    /// mcp-gateway-arcade.md` Phase B for the full plan.
+    AuthorizationRequired {
+        credential_id: String,
+        tool_name: String,
+        authorize_url: String,
+    },
     Unknown,
 }
 
@@ -399,6 +417,7 @@ impl EphemeralPersona {
             trust_verified_at: None,
             trust_score: 1.0,
             parameters: None,
+            gateway_exposure: crate::db::models::PersonaGatewayExposure::LocalOnly,
             created_at: now.clone(),
             updated_at: now,
         };

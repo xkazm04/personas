@@ -1,5 +1,4 @@
 import { XCircle, CheckCircle2 } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { CalendarEvent } from '../libs/calendarHelpers';
 
 export function EventBlock({
@@ -8,14 +7,12 @@ export function EventBlock({
   compact,
   hasConflict,
   onClick,
-  onHover,
 }: {
   event: CalendarEvent;
   color: string;
   compact: boolean;
   hasConflict?: boolean;
   onClick: () => void;
-  onHover: (ev: CalendarEvent | null, e?: React.MouseEvent) => void;
 }) {
   const kindStyles = {
     projected: { borderStyle: '2px solid', opacity: 0.7 },
@@ -38,9 +35,7 @@ export function EventBlock({
   return (
     <button
       onClick={onClick}
-      onMouseEnter={(e) => onHover(event, e)}
-      onMouseLeave={() => onHover(null)}
-      className={`flex items-center gap-1 rounded text-left transition-all hover:scale-[1.02] hover:shadow-elevation-1 cursor-pointer ${compact ? 'px-1 py-px text-[9px] w-full' : 'px-1.5 py-0.5 text-[10px]'
+      className={`flex items-center gap-1 rounded text-left transition-all hover:scale-[1.02] hover:shadow-elevation-1 cursor-pointer max-w-full overflow-hidden ${compact ? 'px-1 py-px text-[9px] w-full' : 'px-1.5 py-0.5 text-[10px]'
         }`}
       style={{
         backgroundColor: bgColor,
@@ -48,17 +43,7 @@ export function EventBlock({
         opacity: kindStyles[event.kind].opacity,
       }}
     >
-      <PersonaIcon icon={event.agentIcon} color={color} display="pop" frameSize="lg" />
-      {compact ? (
-        <span className="truncate" style={{ color }}>{event.agentName}</span>
-      ) : (
-        <>
-          <span className="truncate font-medium" style={{ color }}>{event.agentName}</span>
-          <span className="text-muted-foreground/50 shrink-0 ml-auto">
-            {event.time.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </>
-      )}
+      <span className="truncate font-medium" style={{ color }}>{event.agentName}</span>
       {event.kind === 'past-failure' && (
         <XCircle className="w-2.5 h-2.5 text-red-400 shrink-0" />
       )}

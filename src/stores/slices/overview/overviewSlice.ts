@@ -1,3 +1,4 @@
+import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
@@ -125,7 +126,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   pipelineErrors: {},
   pipelineFetchedAt: {},
 
-  setOverviewTab: (tab) => set({ overviewTab: tab }),
+  setOverviewTab: (tab) => startTransition(() => set({ overviewTab: tab })),
   setPipelineError: (source, error) => set((prev) => {
     const next = { ...prev.pipelineErrors };
     if (error) next[source] = error;

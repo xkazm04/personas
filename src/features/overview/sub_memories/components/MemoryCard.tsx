@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trash2 } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
@@ -46,9 +45,9 @@ export const ImportanceDots = ImportanceBar;
 
 // -- Memory Row ---------------------------------------------------------------
 export function MemoryRow({
-  memory, personaName, personaColor, onDelete, onSelect,
+  memory, personaName, onDelete, onSelect, index = 0,
 }: {
-  memory: PersonaMemory; personaName: string; personaColor: string; onDelete: () => void; onSelect: () => void;
+  memory: PersonaMemory; personaName: string; onDelete: () => void; onSelect: () => void; index?: number;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,11 +57,6 @@ export function MemoryRow({
     confirmTimerRef.current = setTimeout(() => setConfirmDelete(false), 3000);
     return () => { if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current); };
   }, [confirmDelete]);
-
-  const agentAvatar = (
-    <PersonaIcon icon={null} color={personaColor} display="framed" frameSize={"lg"}
-      frameStyle={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }} />
-  );
 
   const categoryBadge = (
     <CategoryChip category={memory.category} className="flex-shrink-0" />
@@ -84,10 +78,10 @@ export function MemoryRow({
   );
 
   return (
-    <div data-testid={`memory-row-${memory.id}`} className="animate-fade-slide-in border-b border-primary/10 hover:bg-secondary/20 transition-colors">
+    <div data-testid={`memory-row-${memory.id}`} className={`animate-fade-slide-in border-b border-primary/10 hover:bg-white/[0.05] transition-colors ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}>
       {/* Desktop row */}
       <div className="hidden md:flex items-center gap-4 px-6 py-3 cursor-pointer" onClick={onSelect}>
-        <div className="w-[140px] flex items-center gap-2 flex-shrink-0">{agentAvatar}<span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
+        <div className="w-[140px] flex items-center gap-2 flex-shrink-0"><span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
         <div className="flex-1 min-w-0"><span className="text-sm text-foreground/80 truncate block">{stripHtml(memory.title)}</span></div>
         {categoryBadge}
         <div className="w-[60px] flex-shrink-0"><ImportanceBar value={memory.importance} /></div>
@@ -98,7 +92,7 @@ export function MemoryRow({
       {/* Mobile card */}
       <div className="flex md:hidden flex-col gap-2 px-4 py-3 cursor-pointer" onClick={onSelect}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">{agentAvatar}<span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
+          <div className="flex items-center gap-2 min-w-0"><span className="text-sm text-foreground/90 truncate">{personaName}</span></div>
           <div className="flex items-center gap-2 flex-shrink-0">{deleteButton}</div>
         </div>
         <span className="text-sm text-foreground/80 line-clamp-2">{stripHtml(memory.title)}</span>

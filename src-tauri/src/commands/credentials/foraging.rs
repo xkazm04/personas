@@ -632,6 +632,7 @@ pub fn import_foraged_credential(
         iv: String::new(),
         metadata: None,
         session_encrypted_data: None,
+        healthcheck_passed: None,
     };
 
     let cred = crate::db::repos::resources::credentials::create_with_fields(&state.db, input, &fields)

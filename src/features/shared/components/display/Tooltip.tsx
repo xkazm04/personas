@@ -171,7 +171,7 @@ export function Tooltip({
             <div
               ref={tooltipRef}
               role="tooltip"
-              className="animate-fade-slide-in fixed z-[9999] pointer-events-none max-w-[240px] typo-caption text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
+              className="animate-fade-slide-in fixed z-[9999] pointer-events-none max-w-[480px] text-md font-normal text-foreground glass-sm rounded-lg px-2.5 py-1.5 shadow-elevation-3"
               style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const, top: 0, left: 0 }}
             >
               {content}

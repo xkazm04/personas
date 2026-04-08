@@ -308,10 +308,18 @@ const registry: EventRegistration[] = [
   {
     event: EventName.NETWORK_SNAPSHOT_UPDATED,
     setup: async () => {
+      // Throttle: apply at most once per 500ms to avoid rapid re-renders
+      // when the P2P engine fires snapshots in quick succession.
+      let pending: Record<string, unknown> | undefined;
+      let throttleTimer: ReturnType<typeof setTimeout> | null = null;
+      const flush = () => {
+        if (pending) { useSystemStore.setState(pending); pending = undefined; }
+        throttleTimer = null;
+      };
       const unlisten = await typedListen(
         EventName.NETWORK_SNAPSHOT_UPDATED,
         (payload) => {
-          useSystemStore.setState({
+          pending = {
             networkStatus: payload.status,
             connectionHealth: payload.health,
             discoveredPeers: payload.discoveredPeers,
@@ -320,10 +328,11 @@ const registry: EventRegistration[] = [
             manifestSyncMetrics: payload.manifestSyncMetrics,
             networkConsecutiveFailures: 0,
             networkError: null,
-          });
+          };
+          if (!throttleTimer) throttleTimer = setTimeout(flush, 500);
         },
       );
-      return [unlisten];
+      return [unlisten, () => { if (throttleTimer) clearTimeout(throttleTimer); }];
     },
   },
 

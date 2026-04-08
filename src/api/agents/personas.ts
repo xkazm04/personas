@@ -103,6 +103,11 @@ export interface PartialPersonaUpdate {
   design_context?: string | null;
   group_id?: string | null;
   parameters?: string | null;
+  /**
+   * Visibility to the external management HTTP API ("A2A gateway").
+   * Default is `local_only` so admins must opt personas in.
+   */
+  gateway_exposure?: import('@/lib/bindings/PersonaGatewayExposure').PersonaGatewayExposure;
 }
 
 // ============================================================================
@@ -255,5 +260,6 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     design_context: partial.design_context !== undefined ? partial.design_context : null,
     group_id: partial.group_id !== undefined ? partial.group_id : null,
     parameters: partial.parameters !== undefined ? partial.parameters : null,
+    gateway_exposure: partial.gateway_exposure !== undefined ? partial.gateway_exposure : null,
   };
 }

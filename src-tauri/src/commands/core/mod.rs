@@ -1,6 +1,7 @@
 pub mod personas;
 pub mod groups;
 pub mod memories;
+pub mod memory_compile;
 pub mod export_types;
 pub mod import_export;
 pub mod data_portability;

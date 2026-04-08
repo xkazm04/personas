@@ -15,7 +15,6 @@ import {
 } from '../libs/calendarHelpers';
 import { WeekView } from './WeekView';
 import { MonthView } from './MonthView';
-import { EventTooltip } from './EventTooltip';
 interface ScheduleCalendarProps {
   entries: ScheduleEntry[];
   onNavigateToExecution?: (agentId: string) => void;
@@ -29,8 +28,6 @@ export default function ScheduleCalendar({
 }: ScheduleCalendarProps) {
   const [view, setView] = useState<CalendarView>('week');
   const [anchor, setAnchor] = useState(() => new Date());
-  const [hoveredEvent, setHoveredEvent] = useState<CalendarEvent | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
   // Color map: assign stable colors to agents
   const colorMap = useMemo(() => {
@@ -74,15 +71,6 @@ export default function ScheduleCalendar({
     }
   }, [onNavigateToExecution, onNavigateToTrigger]);
 
-  const handleEventHover = useCallback((ev: CalendarEvent | null, e?: React.MouseEvent) => {
-    setHoveredEvent(ev);
-    if (ev && e) {
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top - 8 });
-    } else {
-      setTooltipPos(null);
-    }
-  }, []);
 
   const headerLabel = view === 'week'
     ? `${range.start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${new Date(range.end.getTime() - 1).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
@@ -170,7 +158,6 @@ export default function ScheduleCalendar({
           conflictsByHourCell={conflicts.byHourCell}
           conflictsByEventId={conflicts.byEventId}
           onEventClick={handleEventClick}
-          onEventHover={handleEventHover}
         />
       ) : (
         <MonthView
@@ -180,16 +167,6 @@ export default function ScheduleCalendar({
           conflictsByDayCell={conflicts.byDayCell}
           conflictsByEventId={conflicts.byEventId}
           onEventClick={handleEventClick}
-          onEventHover={handleEventHover}
-        />
-      )}
-
-      {/* Tooltip */}
-      {hoveredEvent && tooltipPos && (
-        <EventTooltip
-          event={hoveredEvent}
-          pos={tooltipPos}
-          conflictGroup={conflicts.byEventId.get(hoveredEvent.id)}
         />
       )}
     </div>

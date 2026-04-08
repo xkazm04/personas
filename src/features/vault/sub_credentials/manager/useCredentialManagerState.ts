@@ -111,10 +111,13 @@ export function useCredentialManagerState() {
     const today = new Date().toDateString();
     const alreadyRanToday = lastRun && new Date(lastRun).toDateString() === today;
     if (alreadyRanToday) return;
-    const timer = setTimeout(() => {
-      setIsDailyRun(true);
-      bulk.run(credentials);
-    }, 1500);
+    // Defer bulk healthcheck to idle time to avoid competing with navigation renders
+    const run = () => { setIsDailyRun(true); bulk.run(credentials); };
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(run, { timeout: 5000 });
+      return () => cancelIdleCallback(id);
+    }
+    const timer = setTimeout(run, 3000);
     return () => clearTimeout(timer);
   }, [loading, credentials.length]);
 

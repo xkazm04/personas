@@ -100,6 +100,29 @@ pub fn get_active_for_persona(
     })
 }
 
+/// Get the most recent build session for a persona, regardless of phase.
+/// Used by MatrixTab to retrieve resolved_cells even after promotion.
+pub fn get_latest_for_persona(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Option<BuildSession>, AppError> {
+    timed_query!("build_sessions", "build_sessions::get_latest_for_persona", {
+        let conn = pool.get()?;
+        let result = conn.query_row(
+            "SELECT * FROM build_sessions
+             WHERE persona_id = ?1
+             ORDER BY updated_at DESC LIMIT 1",
+            params![persona_id],
+            row_to_build_session,
+        );
+        match result {
+            Ok(session) => Ok(Some(session)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
+}
+
 /// Update a build session with only the provided (non-None) fields.
 /// Always updates `updated_at`.
 pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(), AppError> {

@@ -210,7 +210,7 @@ const AREAS: ScenarioArea[] = [
     label: 'triggers/ Typography',
     description: 'Migrate triggers feature to typo-* classes.',
     scope: ['src/features/triggers/'],
-    features: ['sub_canvas/', 'sub_eventbus/', 'sub_live_stream/', 'sub_studio/'],
+    features: ['sub_builder/', 'sub_live_stream/', 'sub_studio/'],
     dependsOn: ['typo-mapping'],
   },
   {

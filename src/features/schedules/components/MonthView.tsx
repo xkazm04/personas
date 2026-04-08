@@ -11,7 +11,6 @@ export function MonthView({
   conflictsByDayCell,
   conflictsByEventId,
   onEventClick,
-  onEventHover,
 }: {
   anchor: Date;
   events: CalendarEvent[];
@@ -19,7 +18,6 @@ export function MonthView({
   conflictsByDayCell: Map<string, number>;
   conflictsByEventId: Map<string, ConflictGroup>;
   onEventClick: (ev: CalendarEvent) => void;
-  onEventHover: (ev: CalendarEvent | null, e?: React.MouseEvent) => void;
 }) {
   const days = useMemo(() => buildMonthGrid(anchor, events), [anchor, events]);
 
@@ -100,7 +98,6 @@ export function MonthView({
                       compact
                       hasConflict={conflictsByEventId.has(ev.id)}
                       onClick={() => onEventClick(ev)}
-                      onHover={onEventHover}
                     />
                   ))}
                   {overflow > 0 && (

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, X } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaSelectorModal } from './PersonaSelectorModal';
 
@@ -7,38 +7,41 @@ interface PersonaColumnFilterProps {
   value: string;
   onChange: (personaId: string) => void;
   personas: Persona[];
+  /** Label shown when no filter is active (default: "Persona") */
+  label?: string;
 }
 
 /**
  * Thin wrapper for table column headers that shows a text label
  * matching standard header styling. Opens PersonaSelectorModal on click.
- * Does NOT embed the full trigger button — preserves table header consistency.
+ * Shows a Filter icon on the right when unfiltered, label + X when filtered.
  */
-export function PersonaColumnFilter({ value, onChange, personas }: PersonaColumnFilterProps) {
+export function PersonaColumnFilter({ value, onChange, personas, label = 'Persona' }: PersonaColumnFilterProps) {
   const [open, setOpen] = useState(false);
   const selected = value ? personas.find((p) => p.id === value) : null;
+  const isFiltered = !!selected;
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+        className={`flex items-center gap-1.5 typo-label transition-colors ${isFiltered ? 'text-primary' : 'text-foreground/80 hover:text-foreground'}`}
       >
-        <Users className="w-3.5 h-3.5 text-muted-foreground/50" />
-        {selected ? selected.name : 'Persona'}
-        {selected && (
+        <span>{selected ? selected.name : label}</span>
+        {selected ? (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onChange(''); }}
-            className="ml-0.5 p-0.5 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground/70"
+            className="p-0.5 rounded hover:bg-secondary/50 text-muted-foreground/40 hover:text-muted-foreground/70"
           >
             <X className="w-3 h-3" />
           </button>
+        ) : (
+          <Filter className="w-3 h-3 text-muted-foreground/40" />
         )}
       </button>
 
-      {/* Render modal at root level */}
       {open && (
         <PersonaSelectorModal
           value={value}

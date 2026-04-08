@@ -113,6 +113,12 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             content_type,
             priority,
         } => {
+            // Skip empty or whitespace-only messages (prevents "unknown" entries)
+            if content.trim().is_empty() {
+                ctx.logger.log("[MESSAGE] Skipped: empty content");
+                return;
+            }
+
             match msg_repo::create(
                 ctx.pool,
                 CreateMessageInput {
@@ -263,8 +269,14 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 }
             }
 
-            // Clamp importance to 1-10
-            let clamped_importance = importance.map(|v| v.clamp(1, 10));
+            // Clamp importance to valid range 1-5
+            let clamped_importance = importance.map(|v| v.clamp(1, 5));
+            // Normalize common category aliases to valid values
+            let normalized_category = category.as_ref().map(|c| match c.as_str() {
+                "learning" | "learnings" => "learned".to_string(),
+                "general" | "procedure" => "fact".to_string(),
+                other => other.to_string(),
+            });
             match mem_repo::create(
                 ctx.pool,
                 CreatePersonaMemoryInput {
@@ -272,7 +284,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     source_execution_id: Some(ctx.execution_id.to_string()),
                     title: title.clone(),
                     content: content.clone(),
-                    category: category.clone(),
+                    category: normalized_category,
                     importance: clamped_importance,
                     tags: tags.as_ref().map(|t| crate::db::models::Json(t.clone())),
                 },

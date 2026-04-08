@@ -1,4 +1,5 @@
 pub mod conflict;
+pub mod lint;
 pub mod markdown;
 
 use std::path::Path;
@@ -10,7 +11,7 @@ use uuid::Uuid;
 
 use crate::db::models::{
     DetectedVault, ObsidianVaultConfig, PullSyncResult, PushSyncResult, SyncConflict,
-    SyncLogEntry, SyncState, VaultConnectionResult, VaultTreeNode,
+    SyncLogEntry, SyncState, VaultConnectionResult, VaultLintReport, VaultTreeNode,
 };
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::core::personas as persona_repo;
@@ -1164,4 +1165,29 @@ pub fn obsidian_brain_push_goals(
     );
 
     Ok(PushSyncResult { created, updated, skipped, errors })
+}
+
+// ── Phase 5: Vault Lint (knowledge integrity check) ──────────────────
+//
+// Inspired by Karpathy-style LLM knowledge bases (research run 2026-04-08).
+// Treats the vault like source code: a lint pass that catches stale notes,
+// broken wikilinks, and orphan pages so the knowledge surface stays trusted
+// as it grows. Pure read-only — never mutates the vault.
+
+#[tauri::command]
+pub fn obsidian_brain_lint_vault(
+    state: State<'_, Arc<AppState>>,
+    vault_path: Option<String>,
+    stale_days: Option<i64>,
+) -> Result<VaultLintReport, AppError> {
+    require_auth_sync(&state)?;
+
+    // If the caller didn't supply a path, fall back to the configured vault.
+    let path = match vault_path {
+        Some(p) if !p.trim().is_empty() => p,
+        _ => get_config_or_err(&state.db)?.vault_path,
+    };
+
+    let stale_days = stale_days.unwrap_or(self::lint::DEFAULT_STALE_DAYS);
+    self::lint::lint_vault(Path::new(&path), stale_days)
 }

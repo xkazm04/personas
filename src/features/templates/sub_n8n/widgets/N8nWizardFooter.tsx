@@ -1,5 +1,5 @@
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Check, AlertCircle, FlaskConical, CheckCircle2, Wand2, Grid3X3 } from 'lucide-react';
-import type { N8nWizardStep, TransformSubPhase } from '../hooks/useN8nImportReducer';
+import { ArrowLeft, ArrowRight, RefreshCw, Check, AlertCircle, FlaskConical, CheckCircle2, Wand2, Hammer } from 'lucide-react';
+import type { N8nWizardStep } from '../hooks/useN8nImportReducer';
 
 interface N8nWizardFooterProps {
   step: N8nWizardStep;
@@ -11,7 +11,6 @@ interface N8nWizardFooterProps {
   created: boolean;
   hasDraft: boolean;
   hasParseResult: boolean;
-  transformSubPhase?: TransformSubPhase;
   analyzing?: boolean;
   /** Number of connectors still needing credentials */
   connectorsMissing?: number;
@@ -21,7 +20,7 @@ interface N8nWizardFooterProps {
   onTest?: () => void;
   /** Called to trigger re-generation with the pre-filled adjustment request */
   onApplyAdjustment?: () => void;
-  /** Called to process the workflow through the PersonaMatrix instead of n8n transform */
+  /** Called to build the persona through the PersonaMatrix */
   onProcessWithMatrix?: () => void;
 }
 
@@ -35,7 +34,6 @@ export function N8nWizardFooter({
   created,
   hasDraft,
   hasParseResult,
-  transformSubPhase,
   analyzing,
   connectorsMissing = 0,
   testStatus = 'idle',
@@ -56,29 +54,7 @@ export function N8nWizardFooter({
   } | null => {
     switch (step) {
       case 'analyze':
-        if (analyzing) {
-          return { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };
-        }
-        return {
-          label: 'Analyze & Transform',
-          icon: Sparkles,
-          disabled: !hasParseResult || transforming,
-          variant: 'violet',
-        };
-      case 'transform': {
-        const sub = transformSubPhase ?? 'idle';
-        if (sub === 'asking') {
-          return { label: 'Analyzing...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };
-        }
-        if (sub === 'answering') {
-          return { label: 'Submit Answers & Generate', icon: Sparkles, disabled: false, variant: 'violet' };
-        }
-        if (sub === 'generating') {
-          return { label: 'Generating...', icon: RefreshCw, disabled: true, variant: 'violet', spinning: true };
-        }
-        // completed or failed
-        return { label: 'View Draft', icon: ArrowRight, disabled: !hasDraft, variant: 'violet' };
-      }
+        return null;
       case 'edit':
         return {
           label: 'Review & Confirm',
@@ -168,14 +144,18 @@ export function N8nWizardFooter({
           </button>
         )}
 
-        {/* Process with Matrix -- alternative path on analyze step */}
-        {step === 'analyze' && !analyzing && onProcessWithMatrix && hasParseResult && (
+        {/* Build Persona -- primary action on analyze step */}
+        {step === 'analyze' && onProcessWithMatrix && hasParseResult && (
           <button
             onClick={onProcessWithMatrix}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 transition-colors"
+            disabled={analyzing}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border bg-violet-500/25 text-violet-300 border-violet-500/30 hover:bg-violet-500/35 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Grid3X3 className="w-4 h-4" />
-            Process with Matrix
+            {analyzing ? (
+              <><RefreshCw className="w-4 h-4 animate-spin" /> Analyzing...</>
+            ) : (
+              <><Hammer className="w-4 h-4" /> Build Persona</>
+            )}
           </button>
         )}
 

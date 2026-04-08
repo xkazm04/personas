@@ -53,7 +53,7 @@ export function FormActions({
               onClick={onSave}
               disabled={saveDisabled}
               data-testid="vault-schema-save"
-              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-45 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-45 disabled:cursor-not-allowed brightness-lock"
             >
               {isSaving ? (
                 <LoadingSpinner />

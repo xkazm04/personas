@@ -178,17 +178,31 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
         </SidebarSubNav>
       );
 
-    case 'design-reviews':
+    case 'design-reviews': {
+      const { n8nTransformActive: n8nBuildActive, templateAdoptActive } = useSystemStore.getState();
+      const drBadges: Record<string, SubNavBadge> = {};
+      if (templateGalleryTotal > 0) drBadges['generated'] = { count: templateGalleryTotal, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' };
+      const hasActiveProcess = n8nBuildActive || templateAdoptActive;
       return (
-        <SidebarSubNav
-          items={filterSimple(templateItems)}
-          activeId={templateTab}
-          onSelect={(id) => setTemplateTab(id as TemplateTab)}
-          badges={templateGalleryTotal > 0 ? {
-            generated: { count: templateGalleryTotal, className: 'bg-secondary/50 border border-primary/10 text-muted-foreground/90 font-normal' },
-          } : undefined}
-        />
+        <>
+          <SidebarSubNav
+            items={filterSimple(templateItems)}
+            activeId={templateTab}
+            onSelect={(id) => setTemplateTab(id as TemplateTab)}
+            badges={Object.keys(drBadges).length > 0 ? drBadges : undefined}
+          />
+          {hasActiveProcess && (
+            <div className={`mx-2 mt-2 flex items-center gap-2 px-3 py-2 rounded-lg ${n8nBuildActive ? 'bg-violet-500/8 border border-violet-500/15' : 'bg-amber-500/8 border border-amber-500/15'}`}>
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
+                <span className={`absolute inset-0 rounded-full animate-ping ${n8nBuildActive ? 'bg-violet-500/40' : 'bg-amber-500/40'}`} />
+                <span className={`relative w-2.5 h-2.5 rounded-full ${n8nBuildActive ? 'bg-violet-500 border border-violet-600/50' : 'bg-amber-500 border border-amber-600/50'}`} />
+              </span>
+              <span className={`text-[11px] truncate ${n8nBuildActive ? 'text-violet-300/80' : 'text-amber-300/80'}`}>{n8nBuildActive ? 'Building persona...' : 'Adopting template...'}</span>
+            </div>
+          )}
+        </>
       );
+    }
 
 
     case 'schedules':
@@ -318,9 +332,22 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
   const isCreatingPersona = useSystemStore((s) => s.isCreatingPersona);
   const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
   const buildPhase = useAgentStore((s) => s.buildPhase);
+  const executionPersonaId = useAgentStore((s) => s.executionPersonaId);
+  const isExecuting = useAgentStore((s) => s.isExecuting);
+  const backgroundExecutions = useAgentStore((s) => s.backgroundExecutions);
   const [favoritesCollapsed, setFavoritesCollapsed] = useState(false);
   const [recentsCollapsed, setRecentsCollapsed] = useState(false);
   const isDev = import.meta.env.DEV;
+
+  // Set of persona IDs that are currently executing (foreground + background)
+  const executingPersonaIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (isExecuting && executionPersonaId) ids.add(executionPersonaId);
+    for (const bg of backgroundExecutions) {
+      if (bg.status === 'running' || bg.status === 'queued') ids.add(bg.personaId);
+    }
+    return ids;
+  }, [isExecuting, executionPersonaId, backgroundExecutions]);
 
   const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted';
   const buildingPersona = hasActiveBuild ? personas.find((p) => p.id === buildPersonaId) : null;
@@ -450,27 +477,39 @@ function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) 
             </button>
             {!recentsCollapsed && (
               <div className="mt-1 space-y-0.5">
-                {recentPersonas.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => selectPersona(p.id)}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group"
-                  >
-                    <PersonaIcon icon={p.icon} color={p.color} />
-                    <span className="text-foreground/70 truncate text-[13px] min-w-0">{p.name}</span>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
-                      className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
-                      title="Add to favorites"
-                      aria-label="Add to favorites"
+                {recentPersonas.map((p) => {
+                  const isRunning = executingPersonaIds.has(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => selectPersona(p.id)}
+                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group ${
+                        isRunning ? 'bg-orange-500/5' : ''
+                      }`}
                     >
-                      <Star className="w-3 h-3 text-muted-foreground/40" aria-hidden="true" />
-                    </span>
-                  </button>
-                ))}
+                      {isRunning ? (
+                        <span className="relative flex h-5 w-5 items-center justify-center flex-shrink-0">
+                          <span className="absolute w-3 h-3 rounded-full animate-ping bg-orange-500/40" />
+                          <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
+                        </span>
+                      ) : (
+                        <PersonaIcon icon={p.icon} color={p.color} />
+                      )}
+                      <span className={`truncate text-[13px] min-w-0 ${isRunning ? 'text-orange-300/90' : 'text-foreground/70'}`}>{p.name}</span>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
+                        className="ml-auto flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
+                        title="Add to favorites"
+                        aria-label="Add to favorites"
+                      >
+                        <Star className="w-3 h-3 text-muted-foreground/40" aria-hidden="true" />
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

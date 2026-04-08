@@ -167,10 +167,10 @@ export function DataGrid<T>({
               <div key={col.key} className="px-4 py-2.5 flex items-center justify-center">
                 <div
                   onClick={onSelectAll}
-                  className={`w-4 h-4 rounded border transition-all flex items-center justify-center cursor-pointer ${
+                  className={`w-4 h-4 rounded-sm border-2 transition-all flex items-center justify-center cursor-pointer ${
                     selectAll
                       ? 'bg-primary/80 border-primary/60'
-                      : 'border-primary/25 hover:border-primary/50'
+                      : 'border-primary/30 hover:border-primary/50'
                   }`}
                 >
                   {selectAll && (
@@ -269,7 +269,7 @@ export function DataGrid<T>({
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={`grid gap-0 transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-white/[0.05] ${accent} ${rowCls} ${
                 onRowClick ? 'cursor-pointer' : ''
-              } ${idx % 2 === 0 ? 'bg-white/[0.04]' : ''}`}
+              } ${idx % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
               style={{ gridTemplateColumns: gridTemplate }}
             >
               {columns.map((col) => (

@@ -62,6 +62,8 @@
   border: none;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 }
 
 .titlebar-btn:hover {
@@ -109,13 +111,20 @@
   --brand-rose: #fb7185;
 
   /* Semantic status tokens */
-  --status-success: #34d399;
-  --status-warning: #fbbf24;
-  --status-error: #f87171;
-  --status-info: #60a5fa;
-  --status-pending: #fbbf24;
-  --status-processing: #60a5fa;
-  --status-neutral: #94a3b8;
+  --status-success-raw: #34d399;
+  --status-warning-raw: #fbbf24;
+  --status-error-raw: #f87171;
+  --status-info-raw: #60a5fa;
+  --status-pending-raw: #fbbf24;
+  --status-processing-raw: #60a5fa;
+  --status-neutral-raw: #94a3b8;
+  --status-success: var(--status-success-raw);
+  --status-warning: var(--status-warning-raw);
+  --status-error: var(--status-error-raw);
+  --status-info: var(--status-info-raw);
+  --status-pending: var(--status-pending-raw);
+  --status-processing: var(--status-processing-raw);
+  --status-neutral: var(--status-neutral-raw);
   --btn-primary: #0e7490;
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-blur: 12px;
