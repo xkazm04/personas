@@ -535,6 +535,10 @@ mod tests {
 
     /// Minimal test session to verify trait mechanics.
     struct TestSession {
+        // Required by the ProcessSession trait via `session_id()`. Tests don't
+        // currently exercise the id directly — keep the field so the trait
+        // impl stays valid but silence the dead-code lint.
+        #[allow(dead_code)]
         id: String,
         state: ExecutionState,
         error: Option<String>,

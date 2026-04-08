@@ -6,18 +6,6 @@ use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 use crate::db::models::{PersonaTrustLevel, PersonaTrustOrigin};
 
 // ============================================================================
-// Name collection helpers
-// ============================================================================
-
-pub fn tool_names(tools: &[PersonaToolDefinition]) -> Vec<String> {
-    tools.iter().map(|t| t.name.clone()).collect()
-}
-
-pub fn connector_names(connectors: &[ConnectorDefinition]) -> Vec<String> {
-    connectors.iter().map(|c| c.name.clone()).collect()
-}
-
-// ============================================================================
 // Feasibility Result
 // ============================================================================
 

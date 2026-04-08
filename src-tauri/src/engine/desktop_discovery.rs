@@ -277,56 +277,6 @@ fn expand_windows_glob(pattern: &str) -> Option<PathBuf> {
     None
 }
 
-/// Check if a process is currently running.
-async fn is_process_running(connector_name: &str) -> bool {
-    let process_names: &[&str] = match connector_name {
-        "desktop_vscode" => &["code", "Code.exe", "code.exe"],
-        "desktop_docker" => &["docker", "Docker Desktop.exe", "dockerd"],
-        "desktop_obsidian" => &["obsidian", "Obsidian.exe"],
-        "desktop_browser" => &["chrome", "chrome.exe", "msedge.exe"],
-        _ => return false,
-    };
-
-    #[cfg(target_os = "windows")]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        // Use tasklist -- minimal overhead
-        for name in process_names {
-            let mut cmd = tokio::process::Command::new("tasklist");
-            cmd.args(["/FI", &format!("IMAGENAME eq {name}"), "/NH"]);
-            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-
-            let output = cmd.output().await;
-
-            if let Ok(out) = output {
-                let stdout = String::from_utf8_lossy(&out.stdout);
-                if stdout.contains(name) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        for name in process_names {
-            let output = tokio::process::Command::new("pgrep")
-                .args(["-x", name])
-                .output()
-                .await;
-
-            if let Ok(out) = output {
-                if out.status.success() {
-                    return true;
-                }
-            }
-        }
-    }
-
-    false
-}
-
 // -- Claude Desktop MCP config import --------------------------------
 
 /// Claude Desktop configuration file structure.

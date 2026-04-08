@@ -1328,7 +1328,6 @@ pub fn run() {
             commands::credentials::mcp_gateways::remove_mcp_gateway_member,
             commands::credentials::mcp_gateways::list_mcp_gateway_members,
             commands::credentials::mcp_gateways::set_mcp_gateway_member_enabled,
-            commands::credentials::mcp_gateways::complete_pending_auth,
             // Credentials -- Desktop Discovery & Security (desktop only)
             #[cfg(feature = "desktop")]
             commands::credentials::desktop::discover_desktop_apps,
@@ -1619,6 +1618,7 @@ pub fn run() {
             commands::infrastructure::auth::get_auth_state,
             commands::infrastructure::auth::logout,
             commands::infrastructure::auth::refresh_session,
+            commands::infrastructure::auth::clear_pending_oauth,
             // Infrastructure -- System
             commands::infrastructure::system::system_health_check,
             commands::infrastructure::system::health_check_local,

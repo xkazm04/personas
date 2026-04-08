@@ -897,6 +897,9 @@ mod tests {
         // Simulates logout path: resetting to default clears any pending state
         let mut inner = AuthStateInner::default();
         inner.pending_oauth_state = Some("test-nonce".into());
+        // Sanity check: the setup actually took effect (also makes the
+        // intermediate `inner` value a real read, not dead code).
+        assert!(inner.pending_oauth_state.is_some());
         inner = AuthStateInner::default();
         assert!(inner.pending_oauth_state.is_none());
     }

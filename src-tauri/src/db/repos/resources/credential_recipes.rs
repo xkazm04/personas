@@ -45,15 +45,8 @@ pub fn upsert(pool: &DbPool, input: CreateCredentialRecipeInput) -> Result<Crede
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
 
-        // Check if recipe exists
-        let existing: Option<String> = conn
-            .query_row(
-                "SELECT id FROM credential_recipes WHERE connector_name = ?1",
-                params![input.connector_name],
-                |row| row.get(0),
-            )
-            .ok();
-
+        // The INSERT below uses ON CONFLICT(connector_name) DO UPDATE, so a
+        // pre-check SELECT was redundant — removed to save a DB roundtrip.
         let new_id = uuid::Uuid::new_v4().to_string();
         let recipe = conn.query_row(
             "INSERT INTO credential_recipes (id, connector_name, connector_label, category, color, oauth_type, fields_json, healthcheck_json, setup_instructions, summary, docs_url, source, usage_count, created_at, updated_at)
